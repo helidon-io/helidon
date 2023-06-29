@@ -20,6 +20,9 @@ import static io.helidon.common.http.Http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
+
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -65,12 +68,12 @@ class HttpProxyTest {
 
     @Test
     void testNoProxy() {
-        try (Http1ClientResponse response = client.get("/get").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
-        assertThat(httpProxy.counter(), is(0));
+        noProxyChecks();
+    }
+
+    @Test
+    void testNoProxyTypeDefaultsToNone() {
+        noProxyChecks();
     }
 
     @Test
@@ -85,8 +88,14 @@ class HttpProxyTest {
     }
 
     @Test
-    void testNoProxyType() {
+    void testNoProxyTypeButHasHost() {
         Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy);
+    }
+
+    @Test
+    void testProxyNoneTypeButHasHost() {
+        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
         successVerify(proxy);
     }
 
@@ -96,6 +105,18 @@ class HttpProxyTest {
         successVerify(proxy);
     }
 
+    @Test
+    void testSystemProxy() {
+        ProxySelector original = ProxySelector.getDefault();
+        try {
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
+            Proxy proxy = Proxy.create();
+            successVerify(proxy);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
+    }
+
     private void successVerify(Proxy proxy) {
         try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
@@ -103,6 +124,15 @@ class HttpProxyTest {
             assertThat(entity, is("Hello"));
         }
         assertThat(httpProxy.counter(), is(1));
+    }
+
+    private void noProxyChecks() {
+        try (Http1ClientResponse response = client.get("/get").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            String entity = response.entity().as(String.class);
+            assertThat(entity, is("Hello"));
+        }
+        assertThat(httpProxy.counter(), is(0));
     }
 
     private static class Routes {

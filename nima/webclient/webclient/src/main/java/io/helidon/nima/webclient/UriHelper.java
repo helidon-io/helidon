@@ -33,6 +33,7 @@ public class UriHelper {
             "http", 80,
             "https", 443
     );
+    private static final String EMPTY_STRING = "";
     private final String baseScheme;
     private final String baseAuthority;
     private final String basePath;
@@ -41,7 +42,7 @@ public class UriHelper {
 
     private String scheme;
     private String authority;
-    private String path;
+    private String path = EMPTY_STRING;
     private String host;
     private int port;
     private boolean skipUriEncoding = false;

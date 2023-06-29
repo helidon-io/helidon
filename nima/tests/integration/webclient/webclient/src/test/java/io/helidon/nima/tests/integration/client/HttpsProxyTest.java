@@ -21,6 +21,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
@@ -102,16 +104,23 @@ class HttpsProxyTest {
 
     @Test
     void testNoProxy() {
-        try (Http1ClientResponse response = client.get("/get").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
+        noProxyChecks();
     }
 
     @Test
-    void testNoProxyType() {
+    void testNoProxyTypeDefaultsToNone() {
+        noProxyChecks();
+    }
+
+    @Test
+    void testNoProxyTypeButHasHost() {
         Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).build();
+        successVerify(proxy);
+    }
+
+    @Test
+    void testProxyNoneTypeButHasHost() {
+        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(PROXY_PORT).build();
         successVerify(proxy);
     }
 
@@ -121,8 +130,28 @@ class HttpsProxyTest {
         successVerify(proxy);
     }
 
+    @Test
+    void testSystemProxy() {
+        ProxySelector original = ProxySelector.getDefault();
+        try {
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, PROXY_PORT)));
+            Proxy proxy = Proxy.create();
+            successVerify(proxy);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
+    }
+
     private void successVerify(Proxy proxy) {
         try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            String entity = response.entity().as(String.class);
+            assertThat(entity, is("Hello"));
+        }
+    }
+
+    private void noProxyChecks() {
+        try (Http1ClientResponse response = client.get("/get").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));

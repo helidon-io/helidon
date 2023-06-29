@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HexFormat;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +44,7 @@ import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
+import io.helidon.nima.webclient.Proxy.ProxyType;
 import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
@@ -129,11 +131,6 @@ class Http1ClientConnection implements ClientConnection {
         .append("Host: ").append(hostPort).append(newLine)
         .append("Accept: */*").append(newLine).append(newLine);
 
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, String.format("Proxy client connected %s %s",
-                                            connectionKey.proxy().address(),
-                                            Thread.currentThread().getName()));
-        }
         DataWriter writer = SocketWriter.create(tempSocket);
         BufferData data = BufferData.create(httpConnect.toString().getBytes(StandardCharsets.UTF_8));
         writer.writeNow(data);
@@ -297,7 +294,11 @@ class Http1ClientConnection implements ClientConnection {
         PROXY_PLAIN {
             @Override
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
-                connection.socket.connect(connection.connectionKey.proxy().address(),
+                UriHelper uri = UriHelper.create();
+                uri.scheme("http");
+                uri.host(remoteAddress.getHostName());
+                uri.port(remoteAddress.getPort());
+                connection.socket.connect(connection.connectionKey.proxy().address(uri).get(),
                         (int) connection.options.connectTimeout().toMillis());
                 int responseCode = connection.connectToProxy(remoteAddress);
                 if (responseCode != Status.OK_200.code()) {
@@ -309,7 +310,11 @@ class Http1ClientConnection implements ClientConnection {
         PROXY_HTTPS {
             @Override
             protected void connect(Http1ClientConnection connection, InetSocketAddress remoteAddress) throws IOException {
-                connection.socket.connect(connection.connectionKey.proxy().address(),
+                UriHelper uri = UriHelper.create();
+                uri.scheme("http");
+                uri.host(remoteAddress.getHostName());
+                uri.port(remoteAddress.getPort());
+                connection.socket.connect(connection.connectionKey.proxy().address(uri).get(),
                         (int) connection.options.connectTimeout().toMillis());
                 int responseCode = connection.connectToProxy(remoteAddress);
                 if (responseCode != Status.OK_200.code()) {
@@ -329,11 +334,20 @@ class Http1ClientConnection implements ClientConnection {
 
         static StrategyConnection get(Http1ClientConnection connection, InetSocketAddress remoteAddress) {
             Proxy proxy = connection.connectionKey.proxy();
-            UriHelper uri = UriHelper.create();
-            uri.scheme("http");
-            uri.host(remoteAddress.getHostName());
-            uri.port(remoteAddress.getPort());
-            if (proxy != null  && !proxy.isNoHosts(uri)) {
+            boolean useProxy = false;
+            if (proxy != null && proxy.type() != ProxyType.NONE) {
+                UriHelper uri = UriHelper.create();
+                uri.scheme("http");
+                uri.host(remoteAddress.getHostName());
+                uri.port(remoteAddress.getPort());
+                if (proxy.type() == ProxyType.SYSTEM) {
+                    Optional<InetSocketAddress> optional = proxy.address(uri);
+                    useProxy = optional.isPresent();
+                } else if (!proxy.isNoHosts(uri)) {
+                    useProxy = true;
+                }
+            }
+            if (useProxy) {
                 return connection.connectionKey.tls() != null ? StrategyConnection.PROXY_HTTPS : StrategyConnection.PROXY_PLAIN;
             } else {
                 return connection.connectionKey.tls() != null ? StrategyConnection.HTTPS : StrategyConnection.PLAIN;
