@@ -14,5 +14,9 @@
 # limitations under the License.
 #
 
-io.helidon.pico.runtime.testsubjects.EmptyModule
-io.helidon.pico.runtime.testsubjects.HelloPico$$Module
+app.value: "file"
+
+# needed to reset state of service registry in test
+pico:
+  permits-dynamic: true
+  service-lookup-caching: true

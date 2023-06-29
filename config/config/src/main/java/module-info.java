@@ -34,7 +34,11 @@ module io.helidon.config {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.media.type;
 
+    requires io.helidon.pico.api;
+
     requires static io.helidon.common.features.api;
+    requires static io.helidon.pico.runtime;
+    requires static jakarta.inject;
 
 
     exports io.helidon.config;
@@ -51,6 +55,10 @@ module io.helidon.config {
 
     provides io.helidon.config.spi.ConfigParser
             with io.helidon.config.PropertiesConfigParser;
+    provides io.helidon.common.config.spi.ConfigProvider
+            with io.helidon.config.HelidonConfigProvider;
+    provides io.helidon.pico.api.ModuleComponent
+            with io.helidon.config.Pico$$Module;
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;

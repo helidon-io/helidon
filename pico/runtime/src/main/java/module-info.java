@@ -21,7 +21,7 @@ module io.helidon.pico.runtime {
     requires static jakarta.inject;
     requires static jakarta.annotation;
     requires io.helidon.builder.api;
-    requires io.helidon.common.types;
+    requires transitive io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires transitive io.helidon.pico.api;

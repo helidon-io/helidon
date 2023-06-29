@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.pico.api.Contract;
 
 /**
  * {@link Source} of configuration.
@@ -62,6 +63,7 @@ import io.helidon.config.ConfigSources;
  * @see io.helidon.config.AbstractConfigSource
  * @see ConfigSources ConfigSources - access built-in implementations.
  */
+@Contract
 public interface ConfigSource extends Supplier<ConfigSource>, Source {
     @Override
     default ConfigSource get() {
