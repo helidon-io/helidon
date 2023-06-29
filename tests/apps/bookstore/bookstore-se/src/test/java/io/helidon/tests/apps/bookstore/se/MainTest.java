@@ -16,77 +16,98 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 public class MainTest {
 
-    private static WebServer webServer;
-    private static OkHttpClient client;
+    private static HttpClient client;
+    private final URI baseUri;
 
-    @BeforeAll
-    public static void startServer() throws Exception {
-        webServer = TestServer.start(false, false, false);
-        client = TestServer.newOkHttpClient(false, false);
+    public MainTest(WebServer server) throws Exception {
+        baseUri = URI.create("http://localhost:" + server.port());
+        client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
     }
 
-    @AfterAll
-    public static void stopServer() throws Exception {
-        TestServer.stop(webServer);
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        Main.setupServer(server, false);
     }
 
     @Test
     public void testHelloWorld() throws Exception {
-        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", false);
+        HttpRequest getBooksReq = HttpRequest.newBuilder()
+                .uri(baseUri.resolve("/books"))
+                .GET()
+                .build();
 
-        Request getBooks = builder.build();
-        try (Response getBooksRes = client.newCall(getBooks).execute()) {
-            assertThat(getBooksRes.code(), is(200));
-            assertThat(getBooksRes.header("content-length"), notNullValue());
-            String body = getBooksRes.body().string();
-            assertThat(body, is("[]"));
-        }
+        var getBooksRes = client.send(getBooksReq, HttpResponse.BodyHandlers.ofString());
+        assertThat(getBooksRes.statusCode(), is(200));
+        assertThat(getBooksRes.version(), is(HttpClient.Version.HTTP_1_1));
+        assertThat(getBooksRes.headers().firstValue("content-length").orElse(null), notNullValue());
+        assertThat(getBooksRes.body(), is("[]"));
 
-        Request postBook = builder.post(
-                RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
-        try (Response postBookRes = client.newCall(postBook).execute()) {
-            assertThat(postBookRes.code(), is(200));
-        }
+        HttpRequest postBookReq = HttpRequest.newBuilder()
+                .uri(baseUri.resolve("/books"))
+                .POST(HttpRequest.BodyPublishers.ofString(TestServer.getBookAsJson()))
+                .build();
 
-        builder = TestServer.newRequestBuilder(webServer, "/books/123456", false);
-        Request getBook = builder.build();
-        try (Response getBookRes = client.newCall(getBook).execute()) {
-            assertThat(getBookRes.code(), is(200));
-            assertThat(getBookRes.header("content-length"), notNullValue());
-            JsonReader jsonReader = Json.createReader(getBookRes.body().byteStream());
-            JsonObject jsonObject = jsonReader.readObject();
-            assertThat("Checking if correct ISBN", jsonObject.getString("isbn"),
-                    is("123456"));
-        }
+        var postBookRes = client.send(postBookReq, HttpResponse.BodyHandlers.ofString());
+        assertThat(postBookRes.statusCode(), is(200));
+        assertThat(postBookRes.version(), is(HttpClient.Version.HTTP_1_1));
 
-        Request deleteBook = builder.delete().build();
-        try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            assertThat(deleteBookRes.code(), is(200));
-        }
+        HttpRequest getBookReq = HttpRequest.newBuilder()
+                .uri(baseUri.resolve("/books/123456"))
+                .GET()
+                .build();
 
-        Request getNoBook = builder.build();
-        try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
-            assertThat(getNoBookRes.code(), is(404));
-        }
+        var getBookRes = client.send(getBookReq, HttpResponse.BodyHandlers.ofInputStream());
+
+        assertThat(getBookRes.statusCode(), is(200));
+        assertThat(getBookRes.version(), is(HttpClient.Version.HTTP_1_1));
+        assertThat(getBooksRes.headers().firstValue("content-length").orElse(null), notNullValue());
+        JsonReader jsonReader = Json.createReader(getBookRes.body());
+        JsonObject jsonObject = jsonReader.readObject();
+        assertThat("Checking if correct ISBN", jsonObject.getString("isbn"), is("123456"));
+
+
+        HttpRequest deleteBookReq = HttpRequest.newBuilder()
+                .uri(baseUri.resolve("/books/123456"))
+                .DELETE()
+                .build();
+
+        var deleteBookRes = client.send(deleteBookReq, HttpResponse.BodyHandlers.ofString());
+        assertThat(deleteBookRes.statusCode(), is(200));
+        assertThat(deleteBookRes.version(), is(HttpClient.Version.HTTP_1_1));
+
+        HttpRequest getNoBookReq = HttpRequest.newBuilder()
+                .uri(baseUri.resolve("/books/123456"))
+                .GET()
+                .build();
+
+        var getNoBookRes = client.send(getNoBookReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(getNoBookRes.statusCode(), is(404));
+        assertThat(getNoBookRes.version(), is(HttpClient.Version.HTTP_1_1));
     }
 }
