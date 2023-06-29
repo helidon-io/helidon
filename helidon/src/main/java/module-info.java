@@ -15,7 +15,7 @@
  */
 
 /**
- * Types need to start a Helidon application.
+ * Types needed to start a Helidon application.
  */
 module io.helidon {
     requires io.helidon.common;

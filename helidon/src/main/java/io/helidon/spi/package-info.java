@@ -16,6 +16,6 @@
 
 /**
  * Extension point to support a single main class ({@link io.helidon.Main}) to start various styles of applications,
- * such as Helidon injection based applications, and Helidon MicroProfile applications.
+ * such as Helidon Injection based applications, and Helidon MicroProfile applications.
  */
 package io.helidon.spi;

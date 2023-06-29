@@ -73,7 +73,7 @@ public class Helidon {
             basicInit();
             registryInit(true);
         } else {
-            LOGGER.log(System.Logger.Level.WARNING, "Duplicate call to method Helidon.start().");
+            LOGGER.log(System.Logger.Level.WARNING, "Helidon.start() has already been called.");
         }
     }
 

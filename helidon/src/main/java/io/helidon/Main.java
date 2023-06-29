@@ -52,7 +52,7 @@ public class Main {
                 .asList();
 
         if (services.isEmpty()) {
-            throw new IllegalStateException("Helidon Main class can only be called if an startup provider is available. "
+            throw new IllegalStateException("Helidon Main class can only be called if a startup provider is available. "
                                                     + "Please use either Helidon Injection, or Helidon MicroProfile "
                                                     + "(or a custom extension). If neither is available, you should use "
                                                     + "your own Main class.");
