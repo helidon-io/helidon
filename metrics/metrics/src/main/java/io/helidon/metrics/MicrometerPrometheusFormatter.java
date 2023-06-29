@@ -16,13 +16,10 @@
 package io.helidon.metrics;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
-import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -114,12 +111,11 @@ public class MicrometerPrometheusFormatter {
             return Optional.empty();
         }
 
-        String rawPrometheusOutput = prometheusMeterRegistry
+        String prometheusOutput = filter(prometheusMeterRegistry
                 .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
-                        meterNamesOfInterest);
+                        meterNamesOfInterest));
 
-        return rawPrometheusOutput.isBlank() ? Optional.empty() : Optional.of(rawPrometheusOutput);
-//        return filter(rawPrometheusOutput, scopeTagName, scopeSelection);
+        return prometheusOutput.isBlank() ? Optional.empty() : Optional.of(prometheusOutput);
     }
 
     /**
@@ -188,72 +184,13 @@ public class MicrometerPrometheusFormatter {
     }
 
     /**
-     * Filter the Prometheus-format report by the specified scope.
+     * Filter the Prometheus-format report.
      *
      * @param output Prometheus-format report
-     * @param scopeTagName tag name used to add the scope to each meter's identity during registration; blank means none
-     * @param scopeSelection scope(s) to filter; null means no filtering by scope
-     * @return output filtered by scope (if specified)
+     * @return output filtered
      */
-    static String filter(String output, String scopeTagName, Iterable<String> scopeSelection) {
-        if (scopeSelection == null || scopeTagName.isBlank()) {
-            return output;
-        }
-
-        Iterator<String> scopeSelections = scopeSelection.iterator();
-        if (!scopeSelections.hasNext()) {
-            return output;
-        }
-
-        StringJoiner scopeAlternatives = new StringJoiner("|");
-        while (scopeSelections.hasNext()) {
-            scopeAlternatives.add(scopeSelections.next());
-        }
-
-        String scopeExpression = scopeAlternatives.length() == 1 ? scopeAlternatives.toString()
-                : "(?:" + scopeAlternatives + ")";
-
-        /*
-         * Output looks like repeating sections of this:
-         *
-         * # HELP xxx
-         * # TYPE yyy
-         * meter-name{tagA=value1,tagB=value2} data
-         * meter-name{tagA=value3,tagB=value4} otherData
-         * ... (possibly more lines for the same meter with different tag values)
-         *
-         *
-         * To select using scope or meter name, always accumulate the type and help information.
-         * Then, once we have the line containing the actual meter ID, if that line matches the selection
-         * add the previously-gathered help and type and the meter line to the output.
-         */
-        Pattern scopePattern = Pattern.compile(String.format(".*?\\{.*?%s=\"%s\".*?}.*?",
-                                                             scopeTagName,
-                                                             scopeExpression));
-
-        StringBuilder allOutput = new StringBuilder();
-        StringBuilder typeAndHelpOutputForCurrentMeter = new StringBuilder();
-        StringBuilder meterOutputForCurrentMeter = new StringBuilder();
-
-        String[] lines = output.split("\r?\n");
-
-
-        for (String line : lines) {
-            if (line.startsWith(PROMETHEUS_HELP_PREFIX)) {
-                allOutput.append(flushForMeterAndClear(typeAndHelpOutputForCurrentMeter, meterOutputForCurrentMeter));
-                typeAndHelpOutputForCurrentMeter.append(line)
-                        .append(System.lineSeparator());
-            } else if (line.startsWith(PROMETHEUS_TYPE_PREFIX)) {
-                typeAndHelpOutputForCurrentMeter.append(line)
-                        .append(System.lineSeparator());
-            } else if (scopePattern.matcher(line).matches()) {
-                meterOutputForCurrentMeter.append(line)
-                        .append(System.lineSeparator());
-            }
-        }
-        return allOutput.append(flushForMeterAndClear(typeAndHelpOutputForCurrentMeter, meterOutputForCurrentMeter))
-                .toString()
-                .replaceFirst("# EOF\r?\n?", "");
+    private static String filter(String output) {
+        return output.replaceFirst("# EOF\r?\n?", "");
     }
 
     private static PrometheusMeterRegistry prometheusMeterRegistry() {

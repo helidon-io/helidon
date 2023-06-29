@@ -191,7 +191,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
                             .meterNameSelection(meterNameSelection)
                             .build();
 
-            return Optional.ofNullable(formatter.filteredOutput());
+            return formatter.filteredOutput();
         } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
             var formatter = JsonFormatter.builder()
                     .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
