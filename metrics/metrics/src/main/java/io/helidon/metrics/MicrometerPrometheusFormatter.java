@@ -15,15 +15,18 @@
  */
 package io.helidon.metrics;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.MetricsProgrammaticSettings;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
@@ -65,12 +68,14 @@ public class MicrometerPrometheusFormatter {
     private final Iterable<String> scopeSelection;
     private final Iterable<String> meterSelection;
     private final MediaType resultMediaType;
+    private final Map<String, Function<String, Boolean>> metricEnabledChecks;
 
     private MicrometerPrometheusFormatter(Builder builder) {
         scopeTagName = builder.scopeTagName;
         scopeSelection = builder.scopeSelection;
         meterSelection = builder.meterNameSelection;
         resultMediaType = builder.resultMediaType;
+        metricEnabledChecks = prepareMetricEnabledChecks();
     }
 
     /**
@@ -104,7 +109,7 @@ public class MicrometerPrometheusFormatter {
                                   Iterable<String> meterNameSelection) {
         String rawPrometheusOutput = prometheusMeterRegistry
                 .scrape(MicrometerPrometheusFormatter.MEDIA_TYPE_TO_FORMAT.get(resultMediaType),
-                        meterNamesOfInterest(prometheusMeterRegistry, meterNameSelection));
+                        meterNamesOfInterest(prometheusMeterRegistry, scopeSelection, meterNameSelection));
 
         return filter(rawPrometheusOutput, scopeTagName, scopeSelection);
     }
@@ -178,6 +183,16 @@ public class MicrometerPrometheusFormatter {
                 .replaceFirst("# EOF\r?\n?", "");
     }
 
+    Map<String, Function<String, Boolean>> prepareMetricEnabledChecks() {
+
+        io.helidon.metrics.api.RegistryFactory factory = io.helidon.metrics.api.RegistryFactory.getInstance();
+        Map<String, Function<String, Boolean>> result = new HashMap<>();
+        io.helidon.metrics.api.RegistryFactory.getInstance().scopes().forEach(scopeName ->
+                                 result.put(scopeName, metricName -> factory.getRegistry(scopeName).enabled(metricName)));
+        return result;
+    }
+
+
     private static PrometheusMeterRegistry prometheusMeterRegistry() {
         return Metrics.globalRegistry.getRegistries().stream()
                 .filter(PrometheusMeterRegistry.class::isInstance)
@@ -218,43 +233,60 @@ public class MicrometerPrometheusFormatter {
      * </p>
      *
      * @param prometheusMeterRegistry Prometheus meter registry to query
+     * @param scopeSelection scope names to select
      * @param meterNameSelection meter names to select
      * @return set of matching meter names, augmented with units where needed to match the names as stored in the meter registry
      */
-    static Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
+    Set<String> meterNamesOfInterest(PrometheusMeterRegistry prometheusMeterRegistry,
+                                            Iterable<String> scopeSelection,
                                             Iterable<String> meterNameSelection) {
-        if (meterNameSelection == null) {
-            return null; // null passed to PrometheusMeterRegistry.scrape means "no selection based on meter name
-        }
-        Iterator<String> meterNames = meterNameSelection.iterator();
-        if (!meterNames.hasNext()) {
-            return null;
-        }
 
-        Set<String> expandedMeterNameSelection = new HashSet<>();
-        while (meterNames.hasNext()) {
-            String meterName = meterNames.next();
-            String normalizedMeterName = normalizeMeterName(meterName);
-            Set<String> unitsForMeter = new HashSet<>();
-            unitsForMeter.add("");
+        Set<String> result = new HashSet<>();
 
-            Set<String> suffixesForMeter = new HashSet<>();
-            suffixesForMeter.add("");
+        // Either the scopes specifically selected by the caller or all scopes.
+        Set<String> scopesOfInterest = new HashSet<>();
+        (
+                scopeSelection == null || !scopeSelection.iterator().hasNext()
+                        ? io.helidon.metrics.api.RegistryFactory.getInstance().scopes()
+                        : scopeSelection)
+                .forEach(scopesOfInterest::add);
 
-            // Meter names include units (if specified) so retrieve matching meters to get the units.
-            prometheusMeterRegistry.find(meterName)
+        Set<String> meterNamesOfInterest = new HashSet<>();
+        (meterNameSelection == null || !meterNameSelection.iterator().hasNext()
+            ? allNames(prometheusMeterRegistry)
+            : meterNameSelection).forEach(meterNamesOfInterest::add);
+
+        for (String meterNameOfInterest : meterNamesOfInterest) {
+
+            Set<String> allUnitsForMeterName = new HashSet<>();
+
+            Set<String> allSuffixesForMeterName = new HashSet<>();
+
+            prometheusMeterRegistry.find(meterNameOfInterest)
                     .meters()
                     .forEach(meter -> {
                         Meter.Id meterId = meter.getId();
-                        unitsForMeter.add("_" + meterId.getBaseUnit());
-                        suffixesForMeter.addAll(meterNameSuffixes(meterId.getType()));
+                        String meterScope = meterId.getTag(MetricsProgrammaticSettings.instance().scopeTagName());
+                        if (scopesOfInterest.contains(meterScope)
+                                && metricEnabledChecks.getOrDefault(meterScope, s -> true).apply(meterNameOfInterest)) {
+                            if (allUnitsForMeterName.isEmpty()) {
+                                allUnitsForMeterName.add("");
+                            }
+                            allUnitsForMeterName.add("_" + meterId.getBaseUnit());
+                            if (allSuffixesForMeterName.isEmpty()) {
+                                allSuffixesForMeterName.add("");
+                            }
+                            allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
+                        }
                     });
 
-            unitsForMeter.forEach(units -> suffixesForMeter.forEach(
-                    suffix -> expandedMeterNameSelection.add(normalizedMeterName + units + suffix)));
+            String normalizedMeterName = normalizeMeterName(meterNameOfInterest);
+
+            allUnitsForMeterName.forEach(units -> allSuffixesForMeterName.forEach(
+                    suffix -> result.add(normalizedMeterName + units + suffix)));
         }
 
-        return expandedMeterNameSelection;
+        return result;
     }
 
     /**
@@ -291,6 +323,12 @@ public class MicrometerPrometheusFormatter {
         // Remove non-identifier characters.
         result = result.replaceAll("[^A-Za-z0-9_]", "");
 
+        return result;
+    }
+
+    private static Iterable<String> allNames(PrometheusMeterRegistry prometheusMeterRegistry) {
+        Set<String> result = new HashSet<>();
+        prometheusMeterRegistry.forEachMeter(meter -> result.add(meter.getId().getName()));
         return result;
     }
 

@@ -181,16 +181,18 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
                          Iterable<String> scopeSelection,
                          Iterable<String> meterNameSelection) {
         if (mediaType.equals(MediaTypes.TEXT_PLAIN) || mediaType.equals(MediaTypes.APPLICATION_OPENMETRICS_TEXT)) {
-            MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder()
-                    .resultMediaType(mediaType)
-                    .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
-                    .scopeSelection(scopeSelection)
-                    .meterNameSelection(meterNameSelection)
-                    .build();
+            var formatter =
+                    MicrometerPrometheusFormatter
+                            .builder()
+                            .resultMediaType(mediaType)
+                            .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+                            .scopeSelection(scopeSelection)
+                            .meterNameSelection(meterNameSelection)
+                            .build();
 
             return formatter.filteredOutput();
         } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
-            JsonFormatter formatter = JsonFormatter.builder()
+            var formatter = JsonFormatter.builder()
                     .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
                     .scopeSelection(scopeSelection)
                     .meterNameSelection(meterNameSelection)

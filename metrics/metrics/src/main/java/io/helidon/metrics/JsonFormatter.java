@@ -121,24 +121,26 @@ class JsonFormatter {
             if (matchingScope != null) {
                 Registry registry = registryFactory.getRegistry(scope);
                 registry.stream().forEach(metric -> {
-                    MetricInstance adjustedMetric = new MetricInstance(new MetricID(metric.id().getName(),
-                                                             tags(metric.id().getTags(), scope)),
-                                                metric.metric());
-                    if (matchesName(adjustedMetric.id())) {
+                    if (registry.enabled(metric.id().getName())) {
+                        MetricInstance adjustedMetric = new MetricInstance(new MetricID(metric.id().getName(),
+                                                                                        tags(metric.id().getTags(), scope)),
+                                                                           metric.metric());
+                        if (matchesName(adjustedMetric.id())) {
 
-                        Map<String, MetricOutputBuilder> meterOutputBuildersWithinParent =
-                                organizeByScope ? meterOutputBuildersByScope
-                                        .computeIfAbsent(matchingScope,
-                                                         ms -> new HashMap<>())
-                                        : meterOutputBuildersIgnoringScope;
+                            Map<String, MetricOutputBuilder> meterOutputBuildersWithinParent =
+                                    organizeByScope ? meterOutputBuildersByScope
+                                            .computeIfAbsent(matchingScope,
+                                                             ms -> new HashMap<>())
+                                            : meterOutputBuildersIgnoringScope;
 
-                        // Find the output builder for the key relevant to this meter and then add this meter's contribution
-                        // to the output.
-                        MetricOutputBuilder metricOutputBuilder = meterOutputBuildersWithinParent
-                                .computeIfAbsent(metricOutputKey(adjustedMetric),
-                                                 k -> MetricOutputBuilder.create(adjustedMetric));
-                        metricOutputBuilder.add(adjustedMetric);
+                            // Find the output builder for the key relevant to this meter and then add this meter's contribution
+                            // to the output.
+                            MetricOutputBuilder metricOutputBuilder = meterOutputBuildersWithinParent
+                                    .computeIfAbsent(metricOutputKey(adjustedMetric),
+                                                     k -> MetricOutputBuilder.create(adjustedMetric));
+                            metricOutputBuilder.add(adjustedMetric);
 
+                        }
                     }
                 });
           }
