@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -340,10 +340,14 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                     </list>
                                     <list key="dependencies">
                                         <map>
-                                            <value key="groupId">com.oracle.database.jdbc</value>
-                                            <value key="artifactId">ojdbc8-production</value>
+                                            <value key="groupId">io.helidon.integrations.db</value>
+                                            <value key="artifactId">ojdbc</value>
                                             <value key="scope">runtime</value>
-                                            <value key="type">pom</value>
+                                        </map>
+                                        <map>
+                                            <value key="groupId">com.oracle.database.jdbc</value>
+                                            <value key="artifactId">ucp</value>
+                                            <value key="scope">runtime</value>
                                         </map>
                                     </list>
                                     <value key="jdbcDataSource">oracle.jdbc.pool.OracleDataSource</value>
@@ -382,7 +386,6 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                         <includes>
                             <include>src/main/java/**</include>
                             <include>src/*/resources/*/persistence.xml.mustache</include>
-                            <include if="${server} == 'oracledb'">src/*/resources/**/serial-config.properties</include>
                         </includes>
                     </templates>
                     <model>
