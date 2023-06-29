@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient.http1;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -61,6 +62,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private boolean followRedirects;
     private int maxRedirects;
+    private Duration readTimeout;
     private Tls tls;
     private String uriTemplate;
     private ClientConnection connection;
@@ -76,6 +78,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         this.method = method;
         this.uri = helper;
         this.properties = new HashMap<>(properties);
+        this.readTimeout = clientConfig.socketOptions().readTimeout();
 
         this.clientConfig = clientConfig;
         this.mediaContext = clientConfig.mediaContext();
@@ -253,6 +256,17 @@ class ClientRequestImpl implements Http1ClientRequest {
         return this;
     }
 
+    /**
+     * Read timeout for this request.
+     *
+     * @param readTimeout response read timeout
+     * @return updated client request
+     */
+    public Http1ClientRequest readTimeout(Duration readTimeout) {
+        this.readTimeout = readTimeout;
+        return this;
+    }
+
     Http1ClientConfig clientConfig() {
         return clientConfig;
     }
@@ -343,6 +357,10 @@ class ClientRequestImpl implements Http1ClientRequest {
     @Override
     public UriQuery uriQuery() {
         return UriQuery.create(resolvedUri());
+    }
+
+    Duration readTimeout() {
+        return readTimeout;
     }
 
     private ClientResponseImpl invokeServices(WebClientService.Chain callChain,

@@ -16,6 +16,8 @@
 
 package io.helidon.nima.webclient;
 
+import java.time.Duration;
+
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 
@@ -54,4 +56,11 @@ public interface ClientConnection {
      * @return id of this channel (connection)
      */
     String channelId();
+
+    /**
+     * Read timeout for this connection.
+     *
+     * @param readTimeout connection read timeout
+     */
+    void readTimeout(Duration readTimeout);
 }
