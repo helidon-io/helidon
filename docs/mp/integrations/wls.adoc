@@ -481,7 +481,7 @@ public class HelidonWSEEClient {
 
 === Overview [[SSO-Integration-Overview]]
 
-The WebLogic Server and Helidon integration on OKE enables SSO authentication to:
+The WebLogic Server and Helidon integrations can be secured with IDCS over OIDC protocol.
 
 * Access the IDCS configured client application deployed on Oracle WebLogic cluster.
 * Access the Helidon REST endpoints configured with IDCS.
@@ -489,65 +489,123 @@ The WebLogic Server and Helidon integration on OKE enables SSO authentication to
 
 === Maven Coordinates [[SSO-Integration-Maven-Coordinates]]
 
-To enable this integration, add the Maven dependency to the `pom.xml` file, as shown in the following example:
+To enable IDCS support in Helidon MP, add the Maven dependency to the `pom.xml` file, as shown in the following example:
 
 [source, xml]
 ----
 <dependency>
-  <groupId>io.helidon.microprofile</groupId>
-   <artifactId>helidon-microprofile-security</artifactId>
+    <groupId>io.helidon.microprofile.jwt</groupId>
+    <artifactId>helidon-microprofile-jwt-auth</artifactId>
 </dependency>
 <dependency>
-  <groupId>io.helidon.microprofile</groupId>
-  <artifactId>helidon-microprofile-oidc</artifactId>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-oidc</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-idcs-mapper</artifactId>
 </dependency>
 ----
 
 === Usage [[SSO-Integration-Usage]]
 
-To set up the integration, you should integrate the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS). For more information about these integrations, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-94C760CC-9874-48A7-AD59-DA3108FB36C8[Integrating Oracle WebLogic Cluster and Helidon 3.x for SSO].
+To set up the integration between the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS) see {wls-sso-link}.
 
-Then, access the WebLogic cluster application endpoint from the Helidon REST endpoints by adding the following snippet in the Helidon source code:
+Configure Helidon application to use IDCS as an identity manager:
+[source, yaml]
+----
+idcs:
+  url: ${IDCS_URI}:443
+  client-id: "${IDCS_CLIENT_ID}"
+  client-secret: "${IDCS_CLIENT_SECRET}"
+
+wls:
+  service:
+    url: http://localhost:7001/wls-service
+
+security:
+  providers:
+    - abac:
+    - oidc:
+        server-type: "idcs" <1>
+        client-id: ${idcs.client-id}
+        client-secret: ${idcs.client-secret}
+        redirect: true <2>
+        identity-uri: ${idcs.url}
+        frontend-uri: "http://localhost:${server.port}"
+        logout-enabled: true
+        post-logout-uri: /
+        propagate: true <3>
+        outbound:
+          - name: "propagate-token"
+            hosts: [ "localhost" ] <4>
+
+    - idcs-role-mapper:
+        multitenant: false
+        oidc-config:
+          client-id: ${idcs.client-id}
+          client-secret: ${idcs.client-secret}
+          identity-uri: ${idcs.url}
+----
+<1> Configure OCID security provider to work with IDCS.
+<2> Enable redirect to IDCS SSO login page.
+<3> Propagate JWT token obtained from IDCS after login to subsequent JAX-RS calls.
+<4> For which hosts called by JAX-RS client can JWT token be used.
+
+Helidon will redirect clients accessing protected JAX-RS resources to IDCS login page.
+After the successful login, Helidon negotiates JWT bearer token and maps user's roles to current security context.
+
 [source, java]
 ----
+@Path("/helidon")
+@ApplicationScoped
 @Authenticated
-@GET
-@Produces (MediaType.APPLICATION_JSON)
-public JsonObject getDefaultMessage() {
-  // Get access token using WebLogic application registered at IDCS client id and secret.
-  // Use token to access to WebLogic application SSO endpoints
+public class HelidonResource {
+
+    @Inject
+    @ConfigProperty(name = "wls.service.url")
+    private URI wlsServiceUri;
+
+    @Inject
+    private JsonWebToken jwt; <1>
+
+    @Authenticated <2>
+    @GET
+    @RolesAllowed({"secret_role"}) <3>
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessage(@Context SecurityContext secCtx) {
+        var user = secCtx.userName();
+        var isInRole = secCtx.isUserInRole("secret_role"); <3>
+        var bearerToken = jwt.getRawToken(); // Manually access raw bearer token
+
+        // Bearer token is propagated automatically no manual action is needed with JAX-RS client
+        JsonObject response = ClientBuilder.newClient()
+                .target(wlsServiceUri) <4>
+                .request()
+                .buildGet()
+                .invoke(JsonObject.class);
+
+        return Json.createObjectBuilder()
+                .add("user", user)
+                .add("is_secret_role", isInRole)
+                .add("wls-response", response)
+                .build();
+    }
 }
 ----
-Use the IDCS *Client ID* and *Client Secret* of the WebLogic cluster application to obtain the access token to access the WebLogic cluster application SSO points.
+<1> JWT token negotiated by Helidon with IDCS after successful login.
+<2> JAX-RS resource method accessible only by authenticated users.
+<3> Roles user needs to be authorised to use, roles are provided by idcs-role-mapper.
+<4> JAX-RS client call, JWT token is added automatically when token propagation is configured.
 
-[source, java]
-----
-Client client = ClientBuilder.newClient();
-WebTarget target = client.target(WLS_TOKEN_SERVICE_URL);
-String scope = new StringJoiner(" ")
-        .add(WLS_QUOTE_APP_SCOPE)
-        .add(WLS_PIPELINE_APP_SCOPE)
-        .add(WLS_INSIGHT_APP_SCOPE)
-        .add(WLS_REPORT_APP_SCOPE)
-        .toString();
-Form form = new Form()
-        .param("grant_type", "client_credentials")
-        .param("client_id", WLS_IDCS_CLIENT_ID)
-        .param("client_secret", WLS_IDCS_CLIENT_SECRET)
-        .param("scope", scope);
-String token = target
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE), JsonObject.class)
-        .getString("access_token");
-----
-
-Access the Helidon SSO REST endpoint to verify the integration between Helidon 3.x application and the WebLogic cluster application. After a successful SSO authentication at the Helidon REST endpoint, you will be able to access the WebLogic cluster application.
+While JWT token can be directly injected and used in your JAX-RS resource for subsequent calls to Weblogic IDCS protected resources,
+with properly configured outbound token propagation token can be propagated automatically.
 
 === References [[SSO-Integration-References]]
 
 * xref:../../mp/security/providers.adoc[Security Providers]
 * xref:../../mp/security/providers.adoc#OIDC-Provider[OIDC Provider]
-* {wls-soap-link}
+* {wls-sso-link}
 
 
 
