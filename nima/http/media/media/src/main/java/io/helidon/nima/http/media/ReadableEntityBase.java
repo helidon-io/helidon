@@ -244,14 +244,6 @@ public abstract class ReadableEntityBase implements ReadableEntity {
             return currentBuffer.read(b, off, len);
         }
 
-        @Override
-        public void close() throws IOException {
-            if (!finished) {
-                // TODO we need to close the connection!
-            }
-            super.close();
-        }
-
         private void ensureBuffer(int estimate) {
             if (currentBuffer != null && currentBuffer.consumed()) {
                 currentBuffer = null;
