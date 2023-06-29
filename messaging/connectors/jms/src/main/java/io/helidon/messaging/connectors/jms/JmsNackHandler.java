@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,7 +205,7 @@ abstract class JmsNackHandler implements NackHandler<JmsMessage<?>> {
                         .ifPresent(s -> builder.property(DLQ_ORIG_TOPIC_PROP, s));
 
                 Message<?> dlqMessage = builder.build();
-                jmsConnector.consume(dlqMessage, sessionMetadata.session(), mapper, producer, config);
+                jmsConnector.sendToJMS(dlqMessage, sessionMetadata.session(), mapper, producer, config);
             } catch (Throwable e) {
                 e.addSuppressed(t);
                 LOGGER.log(ERROR, "Error when sending nacked message to DLQ", e);
