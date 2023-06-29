@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,8 +40,15 @@ class RedirectInterceptor implements HttpInterceptor {
             long requestId = clientRequest.configuration().requestId();
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Redirecting to " + newUri);
-            WebClientRequestBuilder requestBuilder = WebClientRequestBuilderImpl
-                    .create(clientRequest);
+            WebClientRequestBuilder requestBuilder;
+            if (httpResponse.status().code() == Http.Status.TEMPORARY_REDIRECT_307.code()
+                    || httpResponse.status().code() == 308) {
+                requestBuilder = WebClientRequestBuilderImpl
+                        .create(clientRequest, Http.Method.valueOf(clientRequest.method().name()));
+            } else {
+                requestBuilder = WebClientRequestBuilderImpl
+                        .create(clientRequest, Http.Method.GET);
+            }
             if (URI.create(newUri).getHost() == null) {
                 URI uri = clientRequest.uri();
                 String path = newUri;

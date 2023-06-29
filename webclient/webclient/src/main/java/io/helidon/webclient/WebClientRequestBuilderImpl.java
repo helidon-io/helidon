@@ -188,12 +188,13 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      * Creates new instance of {@link WebClientRequestBuilder} based on previous request.
      *
      * @param clientRequest previous request
+     * @param method Http.Method ro be used
      * @return client request builder
      */
-    static WebClientRequestBuilder create(WebClientRequestImpl clientRequest) {
+    static WebClientRequestBuilder create(WebClientRequestImpl clientRequest, Http.Method method) {
         WebClientRequestBuilderImpl builder = new WebClientRequestBuilderImpl(NettyClient.eventGroup(),
                                                                               clientRequest.configuration(),
-                                                                              Http.Method.GET);
+                                                                              method);
         builder.httpVersion = clientRequest.version();
         builder.proxy = clientRequest.proxy();
         builder.redirectionCount = clientRequest.redirectionCount() + 1;
