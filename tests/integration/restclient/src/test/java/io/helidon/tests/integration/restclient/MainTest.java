@@ -41,7 +41,7 @@ class MainTest {
     private WebTarget target;
 
     @Inject
-    @RegistryType(type = Registry.BASE_SCOPE)
+    @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry registry;
 
     @Test
@@ -53,7 +53,7 @@ class MainTest {
         MetricID metricID = new MetricID(retryTotal, method, retried, retryResult);
 
         // Counter should be undefined at this time
-        Counter counter = registry.getCounters().get(metricID);
+        Counter counter = registry.getCounter(metricID);
         assertThat(counter, nullValue());
 
         // Invoke proxy and verify return value
@@ -64,7 +64,7 @@ class MainTest {
         assertThat(jsonObject.getString("message"), is("Hello World!"));
 
         // Verify that @Retry code was executed by looking at counter
-        counter = registry.getCounters().get(metricID);
+        counter = registry.getCounter(metricID);
         assertThat(counter.getCount(), is(2L));
     }
 }
