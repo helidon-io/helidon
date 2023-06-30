@@ -35,19 +35,22 @@ import io.helidon.nima.webclient.WebClientServiceResponse;
 
 class HttpCallEntityChain extends HttpCallChainBase {
 
+    private final ClientRequestImpl request;
     private final Http1ClientConfig clientConfig;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Object entity;
 
-    HttpCallEntityChain(Http1ClientConfig clientConfig,
+    HttpCallEntityChain(ClientRequestImpl request,
+                        Http1ClientConfig clientConfig,
                         ClientConnection connection,
                         Tls tls,
                         Proxy proxy,
                         CompletableFuture<WebClientServiceRequest> whenSent,
                         CompletableFuture<WebClientServiceResponse> whenComplete,
                         Object entity) {
-        super(clientConfig, connection, tls, proxy);
+        super(clientConfig, connection, tls, proxy, request.keepAlive());
+        this.request = request;
         this.clientConfig = clientConfig;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;
@@ -67,6 +70,7 @@ class HttpCallEntityChain extends HttpCallChainBase {
         } else {
             entityBytes = entityBytes(entity, headers);
         }
+        connection.readTimeout(request.readTimeout());
 
         headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, entityBytes.length));
 

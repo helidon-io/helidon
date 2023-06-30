@@ -20,9 +20,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
@@ -46,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
@@ -77,6 +82,7 @@ class ClientRequestImplTest {
         rules.get("/afterRedirect", ClientRequestImplTest::afterRedirectGet);
         rules.put("/afterRedirect", ClientRequestImplTest::afterRedirectPut);
         rules.put("/chunkresponse", ClientRequestImplTest::chunkResponseHandler);
+        rules.put("/delayedEndpoint", ClientRequestImplTest::delayedHandler);
     }
 
     @Test
@@ -220,7 +226,8 @@ class ClientRequestImplTest {
                                                        null,
                                                        null,
                                                        requestImpl.uri(),
-                                                       requestImpl.headers());
+                                                       requestImpl.headers(),
+                                                       requestImpl.keepAlive());
             request.connection(connectionNow);
             Http1ClientResponse response = request.request();
             // connection will be queued up
@@ -243,10 +250,11 @@ class ClientRequestImplTest {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connectionList.add(ConnectionCache.connection(requestImpl.clientConfig(),
-                                                       null,
-                                                       null,
-                                                       requestImpl.uri(),
-                                                       requestImpl.headers()));
+                                                          null,
+                                                          null,
+                                                          requestImpl.uri(),
+                                                          requestImpl.headers(),
+                                                          requestImpl.keepAlive()));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
         }
@@ -263,10 +271,11 @@ class ClientRequestImplTest {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connection = ConnectionCache.connection(requestImpl.clientConfig(),
-                                                          null,
-                                                          null,
-                                                          requestImpl.uri(),
-                                                          requestImpl.headers());
+                                                    null,
+                                                    null,
+                                                    requestImpl.uri(),
+                                                    requestImpl.headers(),
+                                                    requestImpl.keepAlive());
             request.connection(connection);
             response = request.request();
             if (i < connectionQueueSize) {
@@ -283,10 +292,11 @@ class ClientRequestImplTest {
         Http1ClientRequest request = injectedHttp1client.put("/test");
         ClientRequestImpl requestImpl = (ClientRequestImpl) request;
         ClientConnection connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
-                                                null,
-                                                null,
-                                                requestImpl.uri(),
-                                                requestImpl.headers());
+                                                                    null,
+                                                                    null,
+                                                                    requestImpl.uri(),
+                                                                    requestImpl.headers(),
+                                                                    requestImpl.keepAlive());
         request.connection(connectionNow);
         Http1ClientResponse responseNow = request.request();
         // Verify that the connection was dequeued
@@ -322,6 +332,22 @@ class ClientRequestImplTest {
             assertThat(response.lastEndpointUri().getPath(), is("/afterRedirect"));
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
+    }
+
+    @Test
+    void testReadTimeoutPerRequest() {
+        String testEntity = "Test entity";
+        try (Http1ClientResponse response = injectedHttp1client.put("/delayedEndpoint")
+                .submit(testEntity)) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), is(testEntity));
+        }
+
+        UncheckedIOException ste = assertThrows(UncheckedIOException.class,
+                                                () -> injectedHttp1client.put("/delayedEndpoint")
+                                                        .readTimeout(Duration.ofMillis(1))
+                                                        .submit(testEntity));
+        assertThat(ste.getCause(), instanceOf(SocketTimeoutException.class));
     }
 
     private static void validateSuccessfulResponse(Http1Client client) {
@@ -386,6 +412,11 @@ class ClientRequestImplTest {
         }
         res.status(Http.Status.NO_CONTENT_204)
                 .send();
+    }
+
+    private static void delayedHandler(ServerRequest req, ServerResponse res) throws IOException, InterruptedException {
+        TimeUnit.MILLISECONDS.sleep(10);
+        customHandler(req, res, false);
     }
 
     private static void responseHandler(ServerRequest req, ServerResponse res) throws IOException {

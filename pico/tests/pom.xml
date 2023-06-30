@@ -48,6 +48,8 @@
         <module>resources-pico</module>
         <module>tck-jsr330</module>
         <module>interception</module>
+        <module>api</module>
+        <module>runtime</module>
     </modules>
 
 </project>

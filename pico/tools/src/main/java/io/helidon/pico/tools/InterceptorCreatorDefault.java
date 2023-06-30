@@ -1097,7 +1097,8 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         TypeName typeName = TypeName.create(serviceTypeName);
         return TypeName.builder()
                 .packageName(typeName.packageName())
-                .className(typeName.className() + INNER_INTERCEPTOR_CLASS_NAME);
+                .className(typeName.className() + INNER_INTERCEPTOR_CLASS_NAME)
+                .build();
     }
 
     /**

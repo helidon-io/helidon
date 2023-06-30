@@ -58,7 +58,7 @@ public class MpOpenApiFeature extends OpenApiFeature {
      *
      * @return new builder
      */
-    static MPOpenAPIBuilder builder() {
+    public static MPOpenAPIBuilder builder() {
         return new MPOpenAPIBuilder();
     }
 

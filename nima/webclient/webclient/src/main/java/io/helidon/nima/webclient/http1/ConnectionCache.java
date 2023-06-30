@@ -46,8 +46,9 @@ class ConnectionCache {
                                        Tls tls,
                                        Proxy proxy,
                                        UriHelper uri,
-                                       ClientRequestHeaders headers) {
-        boolean keepAlive = handleKeepAlive(clientConfig.defaultKeepAlive(), headers);
+                                       ClientRequestHeaders headers,
+                                       boolean defaultKeepAlive) {
+        boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : null;
         if (keepAlive) {
             return keepAliveConnection(clientConfig, effectiveTls, uri, proxy);

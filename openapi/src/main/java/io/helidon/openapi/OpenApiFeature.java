@@ -69,6 +69,15 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
     public static final String DEFAULT_CONTEXT = "/openapi";
 
     /**
+     * Returns a new builder for preparing an SE variant of {@code OpenApiFeature}.
+     *
+     * @return new builder
+     */
+    public static Builder<?, ?> builder() {
+        return new SeOpenApiFeature.Builder();
+    }
+
+    /**
      * URL query parameter for specifying the requested format when retrieving the OpenAPI document.
      */
     static final String OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER = "format";

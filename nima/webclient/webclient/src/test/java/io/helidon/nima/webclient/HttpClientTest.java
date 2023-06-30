@@ -193,5 +193,10 @@ class HttpClientTest {
         public FakeHttpClientRequest property(String propertyName, String propertyValue) {
             return null;
         }
+
+        @Override
+        public FakeHttpClientRequest keepAlive(boolean keepAlive) {
+            return this;
+        }
     }
 }

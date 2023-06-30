@@ -43,14 +43,15 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final ClientRequest.OutputStreamHandler osHandler;
 
-    HttpCallOutputStreamChain(Http1ClientConfig clientConfig,
+    HttpCallOutputStreamChain(ClientRequestImpl clientRequest,
+                              Http1ClientConfig clientConfig,
                               ClientConnection connection,
                               Tls tls,
                               Proxy proxy,
                               CompletableFuture<WebClientServiceRequest> whenSent,
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               ClientRequest.OutputStreamHandler osHandler) {
-        super(clientConfig, connection, tls, proxy);
+        super(clientConfig, connection, tls, proxy, clientRequest.keepAlive());
         this.clientConfig = clientConfig;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;

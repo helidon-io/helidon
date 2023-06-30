@@ -161,8 +161,23 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     @Override
-    public boolean process(Set<? extends TypeElement> annotations,
+    public final boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
+
+        Thread thread = Thread.currentThread();
+        ClassLoader previousClassloader = thread.getContextClassLoader();
+        thread.setContextClassLoader(PicoAnnotationProcessor.class.getClassLoader());
+
+        // we want everything to execute in the classloader of this type, so service loaders
+        // use the classpath of the annotation processor, and not some "random" classloader, such as a maven one
+        try {
+            return doProcess(annotations, roundEnv);
+        } finally {
+            thread.setContextClassLoader(previousClassloader);
+        }
+    }
+
+    protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         utils().roundEnv(roundEnv);
 
         if (disableBaseProcessing && getClass() == PicoAnnotationProcessor.class) {
@@ -179,7 +194,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             allElementsOfInterestInThisModule.addAll(elementsOfInterestInThisRound);
 
             // cumulatively collect the types to process in the module
-            gatherTypeInfosToProcessInThisModule(typeInfoToCreateActivatorsForInThisModule, allElementsOfInterestInThisModule);
+            gatherTypeInfosToProcessInThisModule(typeInfoToCreateActivatorsForInThisModule,
+                                                 allElementsOfInterestInThisModule);
 
             // optionally intercept and validate the model
             Set<TypeInfo> filtered = interceptorAndValidate(typeInfoToCreateActivatorsForInThisModule.values());

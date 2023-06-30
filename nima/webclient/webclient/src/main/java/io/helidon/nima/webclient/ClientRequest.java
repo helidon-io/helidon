@@ -283,6 +283,14 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
     B property(String propertyName, String propertyValue);
 
     /**
+     * Whether to use keep alive with this request.
+     *
+     * @param keepAlive use keep alive
+     * @return updated client request
+     */
+    B keepAlive(boolean keepAlive);
+
+    /**
      * Handle output stream.
      */
     interface OutputStreamHandler {

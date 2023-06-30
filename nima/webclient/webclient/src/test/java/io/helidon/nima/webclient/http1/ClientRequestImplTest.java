@@ -19,6 +19,7 @@ package io.helidon.nima.webclient.http1;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -49,7 +50,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
@@ -521,6 +521,11 @@ class ClientRequestImplTest {
         @Override
         public String channelId() {
             return null;
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+            //NOOP
         }
 
         // This will be used for testing the element of Prologue

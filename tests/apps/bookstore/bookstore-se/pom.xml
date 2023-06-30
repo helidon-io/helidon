@@ -92,6 +92,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.testing.junit5
+            </groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
@@ -99,12 +105,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>okhttp</artifactId>
-            <version>3.14.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -128,13 +128,21 @@
                         <compilerArg>--enable-preview</compilerArg>
                     </compilerArgs>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>--enable-preview</argLine>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <!--
+                            We use HTTP client from tests, and we do not want it as a module dependency
+                             -->
+                            <compilerArgs>
+                                <compilerArg>--enable-preview</compilerArg>
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.net.http</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

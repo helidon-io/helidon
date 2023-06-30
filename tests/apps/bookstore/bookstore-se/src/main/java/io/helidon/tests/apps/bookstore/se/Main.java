@@ -73,21 +73,8 @@ public final class Main {
      * @return the created {@link WebServer} instance
      */
     static WebServer startServer(boolean ssl, boolean http2, boolean compression) {
-        // load logging configuration
-        LogConfig.configureRuntime();
-
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
-
-        // Build server config based on params
-        var serverBuilder = WebServer.builder()
-                .addRouting(createRouting(config))
-                .config(config.get("server"))
-                .update(it -> configureJsonSupport(it, config))
-                .update(it -> configureSsl(it, ssl));
-        // .enableCompression(compression);
-
-        configureJsonSupport(serverBuilder, config);
+        WebServerConfig.Builder serverBuilder = WebServerConfig.builder();
+        setupServer(serverBuilder, ssl);
 
         WebServer server = serverBuilder.build();
         server.start();
@@ -96,6 +83,21 @@ public final class Main {
                                    + ", compression=" + compression + "]");
 
         return server;
+    }
+
+    static void setupServer(WebServerConfig.Builder serverBuilder, boolean ssl) {
+        // load logging configuration
+        LogConfig.configureRuntime();
+
+        // By default this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        // Build server config based on params
+        serverBuilder
+                .addRouting(createRouting(config))
+                .config(config.get("server"))
+                .update(it -> configureJsonSupport(it, config))
+                .update(it -> configureSsl(it, ssl));
     }
 
     static JsonLibrary getJsonLibrary(Config config) {

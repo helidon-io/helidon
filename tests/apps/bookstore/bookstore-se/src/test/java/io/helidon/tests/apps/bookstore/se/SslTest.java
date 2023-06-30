@@ -16,68 +16,94 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServer;
 
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.nima.webserver.WebServerConfig;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.tests.apps.bookstore.se.TestServer.APPLICATION_JSON;
+import javax.net.ssl.SSLContext;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Tests SSL/TLS with HTTP 1.1.
  */
+@ServerTest
 public class SslTest {
 
-    private static WebServer webServer;
-    private static OkHttpClient client;
+    private static HttpClient client;
+    private final URI baseSslUri;
 
-    @BeforeAll
-    public static void startServer() throws Exception {
-        webServer = TestServer.start(true, false, false);
-        client = TestServer.newOkHttpClient(true, false);
+    public SslTest(WebServer server) throws Exception {
+        SSLContext sslContext = TestServer.setupSSLTrust();
+        baseSslUri = URI.create("https://localhost:" + server.port());
+        client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
     }
 
-    @AfterAll
-    public static void stopServer() throws Exception {
-        TestServer.stop(webServer);
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        Main.setupServer(server, true);
     }
 
     @Test
     public void testHelloWorldSsl() throws Exception {
-        Request.Builder builder = TestServer.newRequestBuilder(webServer, "/books", true);
+        HttpRequest getBooksReq = HttpRequest.newBuilder()
+                .uri(baseSslUri.resolve("/books"))
+                .GET()
+                .build();
 
-        Request getBooks = builder.build();
-        try (Response getBooksRes = client.newCall(getBooks).execute()) {
-            assertThat(getBooksRes.code(), is(200));
-        }
+        var getBooksRes = client.send(getBooksReq, HttpResponse.BodyHandlers.ofString());
+        assertThat(getBooksRes.statusCode(), is(200));
+        assertThat(getBooksRes.version(), is(HttpClient.Version.HTTP_1_1));
 
-        Request postBook = builder.post(
-                RequestBody.create(APPLICATION_JSON, TestServer.getBookAsJson())).build();
-        try (Response postBookRes = client.newCall(postBook).execute()) {
-            assertThat(postBookRes.code(), is(200));
-        }
+        HttpRequest postBookReq = HttpRequest.newBuilder()
+                .uri(baseSslUri.resolve("/books"))
+                .POST(HttpRequest.BodyPublishers.ofString(TestServer.getBookAsJson()))
+                .build();
 
-        builder = TestServer.newRequestBuilder(webServer, "/books/123456", true);
-        Request getBook = builder.build();
-        try (Response getBookRes = client.newCall(getBook).execute()) {
-            assertThat(getBookRes.code(), is(200));
-        }
+        var postBookRes = client.send(postBookReq, HttpResponse.BodyHandlers.ofString());
+        assertThat(postBookRes.statusCode(), is(200));
+        assertThat(postBookRes.version(), is(HttpClient.Version.HTTP_1_1));
 
-        Request deleteBook = builder.delete().build();
-        try (Response deleteBookRes = client.newCall(deleteBook).execute()) {
-            assertThat(deleteBookRes.code(), is(200));
-        }
+        HttpRequest getBookReq = HttpRequest.newBuilder()
+                .uri(baseSslUri.resolve("/books/123456"))
+                .GET()
+                .build();
 
-        Request getNoBook = builder.build();
-        try (Response getNoBookRes = client.newCall(getNoBook).execute()) {
-            assertThat(getNoBookRes.code(), is(404));
-        }
+        var getBookRes = client.send(getBookReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(getBookRes.statusCode(), is(200));
+        assertThat(getBookRes.version(), is(HttpClient.Version.HTTP_1_1));
+
+        HttpRequest deleteBookReq = HttpRequest.newBuilder()
+                .uri(baseSslUri.resolve("/books/123456"))
+                .DELETE()
+                .build();
+
+        var deleteBookRes = client.send(deleteBookReq, HttpResponse.BodyHandlers.ofString());
+        assertThat(deleteBookRes.statusCode(), is(200));
+        assertThat(deleteBookRes.version(), is(HttpClient.Version.HTTP_1_1));
+
+        HttpRequest getNoBookReq = HttpRequest.newBuilder()
+                .uri(baseSslUri.resolve("/books/123456"))
+                .GET()
+                .build();
+
+        var getNoBookRes = client.send(getNoBookReq, HttpResponse.BodyHandlers.ofString());
+
+        assertThat(getNoBookRes.statusCode(), is(404));
+        assertThat(getNoBookRes.version(), is(HttpClient.Version.HTTP_1_1));
     }
 }

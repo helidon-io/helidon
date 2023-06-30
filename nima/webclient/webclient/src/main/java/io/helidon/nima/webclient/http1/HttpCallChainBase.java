@@ -40,15 +40,18 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     private final ClientConnection connection;
     private final Tls tls;
     private final Proxy proxy;
+    private final boolean keepAlive;
 
     HttpCallChainBase(Http1ClientConfig clientConfig,
                       ClientConnection connection,
                       Tls tls,
-                      Proxy proxy) {
+                      Proxy proxy,
+                      boolean keepAlive) {
         this.clientConfig = clientConfig;
         this.connection = connection;
         this.tls = tls;
         this.proxy = proxy;
+        this.keepAlive = keepAlive;
     }
 
     static void writeHeaders(Headers headers, BufferData bufferData, boolean validate) {
@@ -110,6 +113,7 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
                                           tls,
                                           proxy,
                                           request.uri(),
-                                          request.headers());
+                                          request.headers(),
+                                          keepAlive);
     }
 }

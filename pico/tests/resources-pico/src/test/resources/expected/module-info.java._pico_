@@ -26,6 +26,7 @@ module io.helidon.pico.tests.pico {
     requires io.helidon.pico.api;
     requires io.helidon.pico.runtime;
     requires io.helidon.pico.tests.plain;
+    requires io.helidon.config;
 
     exports io.helidon.pico.tests.pico;
     exports io.helidon.pico.tests.pico.interceptor;
