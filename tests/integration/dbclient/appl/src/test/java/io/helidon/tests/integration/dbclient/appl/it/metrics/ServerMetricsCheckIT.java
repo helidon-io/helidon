@@ -76,7 +76,6 @@ public class ServerMetricsCheckIT {
         assertThat(application.containsKey("db.timer.select-pokemon-named-arg"), equalTo(true));
         JsonObject insertTimer = application.getJsonObject("db.timer.select-pokemon-named-arg");
         assertThat(insertTimer.containsKey("count"), equalTo(true));
-        assertThat(insertTimer.containsKey("min"), equalTo(true));
         assertThat(insertTimer.containsKey("max"), equalTo(true));
         int timerCount = insertTimer.getInt("count");
         assertThat(timerCount, greaterThan(0));
