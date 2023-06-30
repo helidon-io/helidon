@@ -9,6 +9,47 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [3.2.2]
+
+This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
+
+- Config: Filter complex environment properties configuration [6994](https://github.com/helidon-io/helidon/pull/6994)
+- DB: Update serial config for ojdbc driver [7116](https://github.com/helidon-io/helidon/pull/7116)
+- JWT: Security propagation is now disabled with not configured [6806](https://github.com/helidon-io/helidon/pull/6806)
+- LRA: Fix LRA Logging [6733](https://github.com/helidon-io/helidon/pull/6733)
+- LRA: LRA coordinator docker fix [6725](https://github.com/helidon-io/helidon/pull/6725)
+- Messaging: 6847 WLS JMS connector doesn't support named factory bean  [6922](https://github.com/helidon-io/helidon/pull/6922)
+- Metrics: Improved performance of metric lookups in MetricProducer [6842](https://github.com/helidon-io/helidon/pull/6842)
+- Metrics: Remove metrics app registry clear-out code from metrics extension; add doc [6956](https://github.com/helidon-io/helidon/pull/6956)
+- MicroProfile: Support for injection of ServerRequest and ServerResponse also via CDI [6798](https://github.com/helidon-io/helidon/pull/6798)
+- MultiPart: Avoid calling MimeParser.offer with empty buffers [6898](https://github.com/helidon-io/helidon/pull/6898)
+- MultiPart: MultiPart Builder improvements  [6900](https://github.com/helidon-io/helidon/pull/6900)
+- Tracing: Add support for multiple baggage items [7022](https://github.com/helidon-io/helidon/pull/7022)
+- Tracing: Fix OpenTracingSpan Baggage propagation issue [6987](https://github.com/helidon-io/helidon/pull/6987)
+- Tracing: Make Jaeger Tracer OpenTelemetry Agent aware. [6537](https://github.com/helidon-io/helidon/pull/6537)
+- Tracing: Make Zipkin baggage aware [7004](https://github.com/helidon-io/helidon/pull/7004)
+- Tracing: Move tracer tags to process [7027](https://github.com/helidon-io/helidon/pull/7027)
+- WebServer: Avoid reflecting back user data coming from exception messages [6988](https://github.com/helidon-io/helidon/pull/6988)
+- WebServer: Fix websocket close event propagation on unclean disconnect [7013](https://github.com/helidon-io/helidon/pull/7013)
+- WebServer: Make ByteBufferDataChunk.isReleased and ByteBufDataChunk.isReleased thread-safe [6899](https://github.com/helidon-io/helidon/pull/6899)
+- WebServer: Release Netty ByteBuf after it is consumed by Tyrus [7042](https://github.com/helidon-io/helidon/pull/7042)
+- WebServer: Reset channel auto-read config before upgrading websocket connection [7050](https://github.com/helidon-io/helidon/pull/7050)
+- Build: Update validate workflow to use Oracle jdk [6934](https://github.com/helidon-io/helidon/pull/6934)
+- Build: release workflow [7098](https://github.com/helidon-io/helidon/pull/7098) [7104](https://github.com/helidon-io/helidon/pull/7104)
+- Dependencies: Integrate build tools 3.0.5 [6903](https://github.com/helidon-io/helidon/pull/6903)
+- Dependencies: Upgrade Jackson to 2.15.2 [7124](https://github.com/helidon-io/helidon/pull/7124)
+- Dependencies: Upgrade graphql to 18.6 [6974](https://github.com/helidon-io/helidon/pull/6974)
+- Dependencies: Upgrade grpc, guava, netty, snappy-java, use slim neo4j driver [7057](https://github.com/helidon-io/helidon/pull/7057)
+- Dependencies: Upgrade maven-dependency-plugin to 3.6.0 [6912](https://github.com/helidon-io/helidon/pull/6912)
+- Dependencies: upgrade Weld [6794](https://github.com/helidon-io/helidon/pull/6794)
+- Docs: Documentation enhancements for WebClient [6736](https://github.com/helidon-io/helidon/pull/6736)
+- Docs: Draft of the integration doc for 3.x [6864](https://github.com/helidon-io/helidon/pull/6864)
+- Docs: Fix table formatting [6821](https://github.com/helidon-io/helidon/pull/6821)
+- Examples: Fix params of @ExampleObject annotations in examples (#6040) [6782](https://github.com/helidon-io/helidon/pull/6782)
+- Test: 6524 Intermittent watermark test fix [6835](https://github.com/helidon-io/helidon/pull/6835)
+- Test: Add @target(ElementType.METHOD) for annotation @mptest [6490](https://github.com/helidon-io/helidon/pull/6490)
+- Test: CipherSuiteTest intermittent failure [6949](https://github.com/helidon-io/helidon/pull/6949)
+
 ## [3.2.1]
 
 This is a bugfix release of Helidon and is recommended for all users of Helidon 3.  Helidon 3 requires Java 17 or newer.
@@ -691,6 +732,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.2]: https://github.com/helidon-io/helidon/compare/3.2.1...3.2.2
 [3.2.1]: https://github.com/helidon-io/helidon/compare/3.2.0...3.2.1
 [3.2.0]: https://github.com/helidon-io/helidon/compare/3.1.2...3.2.0
 [3.1.2]: https://github.com/helidon-io/helidon/compare/3.1.1...3.1.2
