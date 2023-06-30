@@ -74,7 +74,7 @@ public class Registry extends AbstractRegistry {
      * @param registrySettings registry settings to influence the created registry
      */
     protected Registry(String scope, RegistrySettings registrySettings) {
-        super(scope, registrySettings, HelidonMetricFactory.create(registrySettings));
+        super(scope, registrySettings, HelidonMicrometerMetricFactory.create(registrySettings));
         this.registrySettings.set(registrySettings);
     }
 

@@ -35,9 +35,9 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Helidon-specific implementation of metric factory methods.
  */
-class HelidonMetricFactory implements MetricFactory {
+class HelidonMicrometerMetricFactory implements MetricFactory {
 
-    static HelidonMetricFactory create(RegistrySettings registrySettings) {
+    static HelidonMicrometerMetricFactory create(RegistrySettings registrySettings) {
 
         // Make sure there is a Prometheus meter registry present in the global registry; add one if needed.
         if (Metrics.globalRegistry.getRegistries()
@@ -46,16 +46,16 @@ class HelidonMetricFactory implements MetricFactory {
             Metrics.globalRegistry.add(new PrometheusMeterRegistry(registrySettings::value));
         }
 
-        return new HelidonMetricFactory(Metrics.globalRegistry);
+        return new HelidonMicrometerMetricFactory(Metrics.globalRegistry);
     }
 
-    static HelidonMetricFactory create(MeterRegistry meterRegistry) {
-        return new HelidonMetricFactory(meterRegistry);
+    static HelidonMicrometerMetricFactory create(MeterRegistry meterRegistry) {
+        return new HelidonMicrometerMetricFactory(meterRegistry);
     }
 
     private final MeterRegistry meterRegistry;
 
-    HelidonMetricFactory(MeterRegistry meterRegistry) {
+    HelidonMicrometerMetricFactory(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 

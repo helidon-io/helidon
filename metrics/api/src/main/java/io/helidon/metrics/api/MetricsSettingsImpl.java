@@ -20,18 +20,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 
 class MetricsSettingsImpl implements MetricsSettings {
 
     private static final RegistrySettings DEFAULT_REGISTRY_SETTINGS = RegistrySettings.create();
-
-    private static final Set<String> PREDEFINED_SCOPES = Set.of(Registry.APPLICATION_SCOPE,
-                                                                Registry.BASE_SCOPE,
-                                                                Registry.VENDOR_SCOPE);
 
     private final boolean isEnabled;
     private final KeyPerformanceIndicatorMetricsSettings kpiMetricsSettings;
@@ -113,7 +109,7 @@ class MetricsSettingsImpl implements MetricsSettings {
 
         private static Map<String, RegistrySettings> prepareRegistrySettings() {
             Map<String, RegistrySettings> result = new HashMap<>();
-            for (String predefinedScope : PREDEFINED_SCOPES) {
+            for (String predefinedScope : Registry.BUILT_IN_SCOPES) {
                 result.put(predefinedScope, RegistrySettings.create());
             }
             return result;

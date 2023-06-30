@@ -92,29 +92,29 @@ final class MicroProfileMetricsTracker implements IMetricsTracker {
                                .build(),
                                this.metricCategoryTag);
         this.connectionTimeoutCounter =
-            registry.counter(Metadata.builder()
-                             .withName(METRIC_NAME_TIMEOUT_RATE)
-                             .withDescription("Connection timeout total count")
-                             .build(),
-                             this.metricCategoryTag);
+                registry.counter(Metadata.builder()
+                               .withName(METRIC_NAME_TIMEOUT_RATE)
+                               .withDescription("Connection timeout total count")
+                               .build(),
+                                this.metricCategoryTag);
         registry.gauge(Metadata.builder()
-                                          .withName(METRIC_NAME_TOTAL_CONNECTIONS)
-                                          .withDescription("Total connections")
-                                          .build(),
-                                          poolStats::getTotalConnections,
-                                          this.metricCategoryTag);
+                               .withName(METRIC_NAME_TOTAL_CONNECTIONS)
+                               .withDescription("Total connections")
+                               .build(),
+                               poolStats::getTotalConnections,
+                               this.metricCategoryTag);
         registry.gauge(Metadata.builder()
-                                          .withName(METRIC_NAME_IDLE_CONNECTIONS)
-                                          .withDescription("Idle connections")
-                                          .build(),
-                                          poolStats::getIdleConnections,
-                                          this.metricCategoryTag);
+                               .withName(METRIC_NAME_IDLE_CONNECTIONS)
+                               .withDescription("Idle connections")
+                               .build(),
+                               poolStats::getIdleConnections,
+                               this.metricCategoryTag);
         registry.gauge(Metadata.builder()
-                                          .withName(METRIC_NAME_ACTIVE_CONNECTIONS)
-                                          .withDescription("Active connections")
-                                          .build(),
-                                          poolStats::getActiveConnections,
-                                          this.metricCategoryTag);
+                               .withName(METRIC_NAME_ACTIVE_CONNECTIONS)
+                               .withDescription("Active connections")
+                               .build(),
+                               poolStats::getActiveConnections,
+                               this.metricCategoryTag);
         // All of the pre-existing Hikari metrics implementations call
         // this "Pending connections" even though
         // PoolStats#getPendingThreads() is referenced.  We follow suit.

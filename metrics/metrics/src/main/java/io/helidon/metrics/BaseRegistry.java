@@ -219,11 +219,16 @@ final class BaseRegistry extends Registry {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            registerFunctionalCounter(result, gcCountMeta(), gcBean, GarbageCollectorMXBean::getCollectionCount,
+            registerFunctionalCounter(result,
+                                      gcCountMeta(),
+                                      gcBean,
+                                      GarbageCollectorMXBean::getCollectionCount,
                                       new Tag("name", poolName));
             // Express the GC time in seconds.
-            registerFunctionalCounter(result, gcTimeMeta(), gcBean, bean -> bean.getCollectionTime() / 1000.0D,
-                    new Tag("name", poolName));
+            registerFunctionalCounter(result,
+                                      gcTimeMeta(),
+                                      gcBean, bean -> bean.getCollectionTime() / 1000.0D,
+                                      new Tag("name", poolName));
         }
 
         return result;

@@ -446,18 +446,6 @@ public abstract class AbstractRegistry implements Registry {
 
     // -- Private methods -----------------------------------------------------
 
-//    private static boolean enforceConsistentMetadataType(Metadata existingMetadata, MetricType newType, Tag... tags) {
-//        if (!existingMetadata.getTypeRaw().equals(newType)) {
-//            throw new IllegalArgumentException("Attempting to register a new metric "
-//                                                       + new MetricID(existingMetadata.getName(), tags)
-//                                                       + " of type "
-//                                                       + newType.toString()
-//                                                       + " found pre-existing metadata with conflicting type "
-//                                                       + existingMetadata.getTypeRaw().toString());
-//        }
-//        return true;
-//    }
-
     /**
      * Infers the specific subtype of {@link Metric} from a provided metric instance.
      *
@@ -485,13 +473,6 @@ public abstract class AbstractRegistry implements Registry {
     protected MetricFactory metricFactory() {
         return metricFactory;
     }
-
-//    /**
-//     * Prepares the map from Java types of implementation metrics to the corresponding {@link MetricType}.
-//     *
-//     * @return prepared map for a given metrics implementation
-//     */
-//    protected abstract Map<Class<? extends HelidonMetric>, MetricType> prepareMetricToTypeMap();
 
     /**
      * Gauge factories based on either functions or suppliers.

@@ -75,7 +75,7 @@ public interface MetricFactory {
     Histogram summary(String scope, Metadata metadata, Tag... tags);
 
     /**
-     * Creates a gauge.
+     * Creates a gauge using a {@link java.util.function.Supplier} of the gauge value.
      *
      * @param scope registry scope
      * @param metadata metadata describing the gauge
@@ -87,7 +87,7 @@ public interface MetricFactory {
     <N extends Number> Gauge<N> gauge(String scope, Metadata metadata, Supplier<N> supplier, Tag... tags);
 
     /**
-     * Creates a gauge.
+     * Creates a gauge using a {@link java.util.function.Function} which, applied to a target object, returns the gauge value.
      *
      * @param scope registry scope
      * @param metadata metadata describing the gauge
@@ -105,7 +105,8 @@ public interface MetricFactory {
                                          Tag... tags);
 
     /**
-     * Creates a gauge.
+     * Creates a gauge using a {@link java.util.function.ToDoubleFunction} which, when applied to a target object, returns the
+     * gauge value.
      *
      * @param scope registry scope
      * @param metadata metadata describing the gauge
@@ -114,7 +115,6 @@ public interface MetricFactory {
      * @param tags tags further identifying the gauge
      * @return new gauge
      * @param <T> type of the target which reveals the value
-
      */
     <T> Gauge<Double> gauge(String scope,
                             Metadata metadata,

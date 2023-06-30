@@ -32,22 +32,16 @@ import io.helidon.metrics.api.spi.MetricFactory;
 import io.micrometer.core.instrument.Metrics;
 
 /**
- * Access point to all registries.
+ * Micrometer-specific implementation of {@link io.helidon.metrics.api.RegistryFactory}.
+ * <p>
+ *     Note that normally all code should use methods declared on the {@code RegistryFactory} from the API module and not
+ *     access this class directly. If this is the correct factory to use based on configuration and availability of other
+ *     implementations, then Helidon will use this one.
+ * </p>
  *
- * There are two options to use the factory:
- * <ol>
- *     <li>A singleton instance, obtained through {@link #getInstance()} or {@link #getInstance(io.helidon.config.Config)}.
- *     This instance is lazily initialized - the latest call that provides a config instance before a
- *     {@link org.eclipse.microprofile.metrics.MetricRegistry#BASE_SCOPE} registry is obtained would be used to configure
- *     the base registry (as that is the only configurable registry in current implementation)
- *     </li>
- *     <li>A custom instance, obtained through {@link #create(Config)} or {@link #create()}. This would create a
- *     new instance of a registry factory (in case multiple instances are desired), independent on the singleton instance
- *     and on other instances provided by these methods.</li>
- * </ol>
- */
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
+ */
 public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     private final Map<String, Registry> registries = new HashMap<>();
@@ -66,7 +60,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
         this.metricsSettings = metricsSettings;
         prometheusConfig = new HelidonPrometheusConfig(metricsSettings);
-        metricFactory = HelidonMetricFactory.create(Metrics.globalRegistry);
+        metricFactory = HelidonMicrometerMetricFactory.create(Metrics.globalRegistry);
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }

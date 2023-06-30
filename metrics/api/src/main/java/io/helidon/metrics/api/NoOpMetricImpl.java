@@ -27,7 +27,6 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -41,7 +40,7 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
 
     static class NoOpCounterImpl extends NoOpMetricImpl implements Counter {
 
-        static NoOpCounterImpl create(String registryType, Metadata metadata, Tag... tags) {
+        static NoOpCounterImpl create(String registryType, Metadata metadata) {
             return new NoOpCounterImpl(registryType, metadata);
         }
 
@@ -63,82 +62,98 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
     }
 
-    static class NoOpGaugeImpl<N extends Number, T> extends NoOpMetricImpl implements Gauge<N> {
+    static abstract class NoOpGaugeImpl<N extends Number> extends NoOpMetricImpl implements Gauge<N> {
 
-        private final Supplier<N> supplier;
-        private final T target;
-        private final Function<T, N> fn;
-
-        static <N extends Number> NoOpGaugeImpl<N, ?> create(String registryType,
-                                                             Metadata metadata,
-                                                             Supplier<N> supplier,
-                                                             Tag... tags) {
-            return new NoOpGaugeImpl<>(registryType, metadata, supplier);
+        static <N extends Number> NoOpGaugeImpl<N> create(String registryType,
+                                                          Metadata metadata,
+                                                          Supplier<N> supplier) {
+            return new SupplierBased<>(registryType, metadata, supplier);
         }
 
-        static <N extends Number, T> NoOpGaugeImpl<N, T> create(String registryType,
+        static <N extends Number, T> NoOpGaugeImpl<N> create(String registryType,
                                                              Metadata metadata,
                                                              T target,
-                                                             Function<T, N> fn,
-                                                             Tag... tags) {
-            return new NoOpGaugeImpl<>(registryType, metadata, target, fn);
+                                                             Function<T, N> fn) {
+            return new FunctionBased<>(registryType,
+                                       metadata,
+                                       target,
+                                       fn);
+        }
+        static <T> NoOpGaugeImpl<Double> create(String registryType,
+                                                             Metadata metadata,
+                                                             T target,
+                                                             ToDoubleFunction<T> fn) {
+            return new DoubleFnBased<>(registryType,
+                                       metadata,
+                                       target,
+                                       fn);
         }
 
-        static <T> NoOpGaugeImplToDoubleFn<T> create(String registryType,
-                                                   Metadata metadata,
-                                                   T target,
-                                                   ToDoubleFunction<T> fn,
-                                                   Tag... tags) {
-            return new NoOpGaugeImplToDoubleFn<T>(registryType, metadata, target, fn, tags);
+        private static class SupplierBased<N extends Number> extends NoOpGaugeImpl<N> {
+            private final Supplier<N> supplier;
+
+            private SupplierBased(String registryType, Metadata metadata, Supplier<N> supplier) {
+                super(registryType, metadata);
+                this.supplier = supplier;
+            }
+
+            @Override
+            public N getValue() {
+                return supplier.get();
+            }
         }
 
-        private NoOpGaugeImpl(String registryType, Metadata metadata, Supplier<N> supplier) {
+        private static class FunctionBased<N extends Number, T> extends NoOpGaugeImpl<N> {
+
+            private final T target;
+            private final Function<T, N> fn;
+
+
+
+            private FunctionBased(String registryType,
+                                  Metadata metadata,
+                                  T target,
+                                  Function<T, N> fn) {
+                super(registryType, metadata);
+                this.target = target;
+                this.fn = fn;
+            }
+
+            @Override
+            public N getValue() {
+                return fn.apply(target);
+            }
+        }
+
+        private static class DoubleFnBased<T> extends NoOpGaugeImpl<Double> {
+
+            private final T target;
+            private final ToDoubleFunction<T> fn;
+
+            private DoubleFnBased(String registryType,
+                                  Metadata metadata,
+                                  T target,
+                                  ToDoubleFunction<T> fn) {
+                super(registryType, metadata);
+                this.target = target;
+                this.fn = fn;
+            }
+
+            @Override
+            public Double getValue() {
+                return fn.applyAsDouble(target);
+            }
+        }
+
+
+        private NoOpGaugeImpl(String registryType, Metadata metadata) {
             super(registryType, metadata);
-            this.supplier = supplier;
-            target = null;
-            this.fn = null;
-        }
-
-        private NoOpGaugeImpl(String registryType, Metadata metadata, T target, Function<T, N> fn) {
-            super(registryType, metadata);
-            this.target = target;
-            this.fn = fn;
-            supplier = null;
-        }
-
-
-
-        @Override
-        public N getValue() {
-            return supplier != null
-                    ? supplier.get()
-                    : fn.apply(target);
-        }
-    }
-
-    static class NoOpGaugeImplToDoubleFn<T> extends NoOpMetricImpl implements Gauge<Double> {
-
-        private final T target;
-        private final ToDoubleFunction<T> fn;
-
-        private NoOpGaugeImplToDoubleFn(String registryType,
-                              Metadata metadata,
-                              T target,
-                              ToDoubleFunction<T> fn,
-                              Tag... tags) {
-            super(registryType, metadata);
-            this.target = target;
-            this.fn = fn;
-        }
-        @Override
-        public Double getValue() {
-            return fn.applyAsDouble(target);
         }
     }
 
     static class NoOpHistogramImpl extends NoOpMetricImpl implements Histogram {
 
-        static NoOpHistogramImpl create(String registryType, Metadata metadata, Tag... tags) {
+        static NoOpHistogramImpl create(String registryType, Metadata metadata) {
             return new NoOpHistogramImpl(registryType, metadata);
         }
 
@@ -214,7 +229,7 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
             }
         }
 
-        static NoOpTimerImpl create(String registryType, Metadata metadata, Tag... tags) {
+        static NoOpTimerImpl create(String registryType, Metadata metadata) {
             return new NoOpTimerImpl(registryType, metadata);
         }
 
@@ -257,13 +272,10 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
     }
 
-    static class NoOpFunctionalCounterImpl<T> extends NoOpMetricImpl implements Counter {
+    static class NoOpFunctionalCounterImpl extends NoOpMetricImpl implements Counter {
 
-        static <T> NoOpFunctionalCounterImpl create(String registryType,
-                                                Metadata metadata,
-                                                T origin,
-                                                ToDoubleFunction<T> function,
-                                                Tag... tags) {
+        static NoOpFunctionalCounterImpl create(String registryType,
+                                                Metadata metadata) {
             return new NoOpFunctionalCounterImpl(registryType, metadata);
         }
 

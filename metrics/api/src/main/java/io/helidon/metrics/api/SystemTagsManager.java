@@ -79,9 +79,7 @@ public interface SystemTagsManager {
      *
      * @param explicitTags iterable over the key/value pairs for tags
      * @return iterator over all tags, explicit and global and app
-     * @deprecated use a variant which accepts {@code scope} instead
      */
-    @Deprecated(since = "4.0.0", forRemoval = true)
     Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
 
     /**
@@ -90,9 +88,7 @@ public interface SystemTagsManager {
      *
      * @param metricId metric ID
      * @return iterator over all tags, explicit and global and app, without a tag for scope
-     * @deprecated use a variant which accepts {@code scope} instance
      */
-    @Deprecated(since = "4.0.0", forRemoval = true)
     Iterable<Map.Entry<String, String>> allTags(MetricID metricId);
 
     /**

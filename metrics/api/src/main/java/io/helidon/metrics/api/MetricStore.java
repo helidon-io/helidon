@@ -148,14 +148,21 @@ class MetricStore implements FunctionalCounterRegistry {
         return getOrRegisterGauge(() -> getMetricLocked(name, tags),
                                   () -> getConsistentMetadataLocked(name),
                                   () -> new MetricID(name, tags),
-                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, object, func, tags));
+                                  (Metadata metadata) -> metricFactory.gauge(scope,
+                                                                             metadata,
+                                                                             object,
+                                                                             func,
+                                                                             tags));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(String name, Supplier<R> valueSupplier, Tag... tags) {
         return getOrRegisterGauge(() -> getMetricLocked(name, tags),
                                   () -> getConsistentMetadataLocked(name),
                                   () -> new MetricID(name, tags),
-                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, valueSupplier, tags));
+                                  (Metadata metadata) -> metricFactory.gauge(scope,
+                                                                             metadata,
+                                                                             valueSupplier,
+                                                                             tags));
     }
 
     <T, R extends Number> Gauge<R> getOrRegisterGauge(Metadata newMetadata,
@@ -165,7 +172,11 @@ class MetricStore implements FunctionalCounterRegistry {
         return getOrRegisterGauge(() -> getMetricLocked(newMetadata.getName(), tags),
                                   () -> getConsistentMetadataLocked(newMetadata),
                                   () -> new MetricID(newMetadata.getName(), tags),
-                                  (Metadata metadata) -> metricFactory.gauge(scope, newMetadata, object, valueFunction, tags));
+                                  (Metadata metadata) -> metricFactory.gauge(scope,
+                                                                             newMetadata,
+                                                                             object,
+                                                                             valueFunction,
+                                                                             tags));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(Metadata newMetadata,
@@ -175,21 +186,29 @@ class MetricStore implements FunctionalCounterRegistry {
         return getOrRegisterGauge(() -> getMetricLocked(metricName, tags),
                                   () -> getConsistentMetadataLocked(newMetadata),
                                   () -> new MetricID(metricName, tags),
-                                  (Metadata metadata) -> metricFactory.gauge(scope, newMetadata, valueSupplier, tags));
+                                  (Metadata metadata) -> metricFactory.gauge(scope,
+                                                                             newMetadata,
+                                                                             valueSupplier,
+                                                                             tags));
     }
 
     <T, R extends Number> Gauge<R> getOrRegisterGauge(MetricID metricID, T object, Function<T, R> valueFunction) {
         return getOrRegisterGauge(() -> allMetrics.get(metricID),
                                   () -> allMetadata.get(metricID.getName()),
                                   () -> metricID,
-                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, object, valueFunction));
+                                  (Metadata metadata) -> metricFactory.gauge(scope,
+                                                                             metadata,
+                                                                             object,
+                                                                             valueFunction));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(MetricID metricID, Supplier<R> valueSupplier) {
         return getOrRegisterGauge(() -> allMetrics.get(metricID),
                                   () -> allMetadata.get(metricID.getName()),
                                   () -> metricID,
-                                  (Metadata metadata) -> metricFactory.gauge(scope, metadata, valueSupplier));
+                                  (Metadata metadata) -> metricFactory.gauge(scope,
+                                                                             metadata,
+                                                                             valueSupplier));
     }
 
     <T, U extends Metric> U getOrRegisterMetric(Metadata newMetadata,
@@ -337,6 +356,7 @@ class MetricStore implements FunctionalCounterRegistry {
                     allMetricIDsByName.remove(metricID.getName());
                     allMetadata.remove(metricID.getName());
                     tagNameSets.remove(metricID.getName());
+                    metricTypes.remove(metricID.getName());
                 }
                 HelidonMetric doomedMetric = allMetrics.remove(metricID);
                 if (doomedMetric != null) {
@@ -370,7 +390,7 @@ class MetricStore implements FunctionalCounterRegistry {
             allMetricIDsByName.remove(name);
             allMetadata.remove(name);
             tagNameSets.remove(name);
-
+            metricTypes.remove(name);
             return result;
         });
 

@@ -31,36 +31,36 @@ import org.eclipse.microprofile.metrics.Timer;
 class NoOpMetricFactory implements MetricFactory {
     @Override
     public Counter counter(String scope, Metadata metadata, Tag... tags) {
-        return NoOpMetricImpl.NoOpCounterImpl.create(scope, metadata, tags);
+        return NoOpMetricImpl.NoOpCounterImpl.create(scope, metadata);
     }
 
     @Override
     public <T> Counter counter(String scope, Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
-        return NoOpMetricImpl.NoOpFunctionalCounterImpl.create(scope, metadata, origin, function, tags);
+        return NoOpMetricImpl.NoOpFunctionalCounterImpl.create(scope, metadata);
     }
 
     @Override
     public Timer timer(String scope, Metadata metadata, Tag... tags) {
-        return NoOpMetricImpl.NoOpTimerImpl.create(scope, metadata, tags);
+        return NoOpMetricImpl.NoOpTimerImpl.create(scope, metadata);
     }
 
     @Override
     public Histogram summary(String scope, Metadata metadata, Tag... tags) {
-        return NoOpMetricImpl.NoOpHistogramImpl.create(scope, metadata, tags);
+        return NoOpMetricImpl.NoOpHistogramImpl.create(scope, metadata);
     }
 
     @Override
     public <N extends Number> Gauge<N> gauge(String scope, Metadata metadata, Supplier<N> supplier, Tag... tags) {
-        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, supplier, tags);
+        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, supplier);
     }
 
     @Override
     public <N extends Number, T> Gauge<N> gauge(String scope, Metadata metadata, T target, Function<T, N> fn, Tag... tags) {
-        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, target, fn, tags);
+        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, target, fn);
     }
 
     @Override
     public <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
-        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, target, fn, tags);
+        return NoOpMetricImpl.NoOpGaugeImpl.create(scope, metadata, target, fn);
     }
 }

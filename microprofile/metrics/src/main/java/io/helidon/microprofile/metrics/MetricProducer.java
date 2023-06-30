@@ -48,15 +48,15 @@ class MetricProducer {
                                         Metric metric,
                                         Class<? extends org.eclipse.microprofile.metrics.Metric> metricType) {
         return metric == null ? Metadata.builder()
-                .withName(getName(ip))
-                .withDescription("")
-                .withUnit(chooseDefaultUnit(metricType))
-                .build()
+                    .withName(getName(ip))
+                    .withDescription("")
+                    .withUnit(chooseDefaultUnit(metricType))
+                    .build()
                 : Metadata.builder()
-                        .withName(getName(metric, ip))
-                        .withDescription(metric.description())
-                        .withUnit(metric.unit())
-                        .build();
+                    .withName(getName(metric, ip))
+                    .withDescription(metric.description())
+                    .withUnit(metric.unit())
+                    .build();
     }
 
     private static String chooseDefaultUnit(Class<? extends org.eclipse.microprofile.metrics.Metric> metricType) {

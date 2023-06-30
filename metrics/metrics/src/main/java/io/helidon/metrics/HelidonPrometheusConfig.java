@@ -19,6 +19,10 @@ import io.helidon.metrics.api.MetricsSettings;
 
 import io.micrometer.prometheus.PrometheusConfig;
 
+/**
+ * Helidon implementation of {@link io.micrometer.prometheus.PrometheusConfig} for creating a Micrometer Prometheus meter
+ * registry.
+ */
 class HelidonPrometheusConfig implements PrometheusConfig {
 
     private MetricsSettings metricsSettings;

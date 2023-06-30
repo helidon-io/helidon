@@ -89,6 +89,6 @@ class NoOpMetricRegistry extends AbstractRegistry {
 
     @Override
     public <T> Counter counter(Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
-        return NoOpMetricImpl.NoOpFunctionalCounterImpl.create(scope(), metadata, origin, function, tags);
+        return NoOpMetricImpl.NoOpFunctionalCounterImpl.create(scope(), metadata);
     }
 }

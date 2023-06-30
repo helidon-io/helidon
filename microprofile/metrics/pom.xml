@@ -66,16 +66,6 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
 
-<!--
-    TODO
-    The following dependency is temporary while the MP implementation directly binds to Micrometer. Later it will bind instead
-    to the neutral Helidon API instead.
--->
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>
             <artifactId>microprofile-metrics-api</artifactId>

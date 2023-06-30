@@ -50,7 +50,7 @@ import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * JSON formatter for a Micrometer meter registry.
+ * JSON formatter for a metric registry (independent of the underlying registry implementation).
  */
 class JsonFormatter {
 
@@ -185,26 +185,12 @@ class JsonFormatter {
         return isByScope;
     }
 
-//    private static String meterOutputKey(Meter meter) {
-//        return meter instanceof Counter || meter instanceof Gauge
-//            ? flatNameAndTags(meter.getId())
-//            : structureName(meter.getId());
-//    }
-
     private static String metricOutputKey(MetricInstance metric) {
         return metric.metric() instanceof org.eclipse.microprofile.metrics.Counter
                 || metric.metric() instanceof org.eclipse.microprofile.metrics.Gauge<?>
                 ? flatNameAndTags(metric.id())
                 : structureName(metric.id());
     }
-
-//    private static String flatNameAndTags(Meter.Id meterId) {
-//        StringJoiner sj = new StringJoiner(";");
-//        sj.add(meterId.getName());
-//        meterId.getTagsAsIterable()
-//                .forEach(t -> sj.add(t.getKey() + "=" + t.getValue()));
-//        return sj.toString();
-//    }
 
     private static String flatNameAndTags(MetricID metricID) {
         StringJoiner sj = new StringJoiner(";");
@@ -213,32 +199,9 @@ class JsonFormatter {
         return sj.toString();
     }
 
-//    private static String structureName(Meter.Id meterId) {
-//        return meterId.getName();
-//    }
-//
     private static String structureName(MetricID metricID) {
         return metricID.getName();
     }
-
-//    private String matchingScope(Meter.Id meterId) {
-//        String scope = scope(meterId);
-//
-//        Iterator<String> scopeIterator = scopeSelection.iterator();
-//        if (!scopeIterator.hasNext()) {
-//            return scope;
-//        }
-//        if (scope == null) {
-//            return null;
-//        }
-//
-//        while (scopeIterator.hasNext()) {
-//            if (scopeIterator.next().equals(scope)) {
-//                return scope;
-//            }
-//        }
-//        return null;
-//    }
 
     private String matchingScope(String scope) {
         Iterator<String> scopeIterator = scopeSelection.iterator();
@@ -257,45 +220,10 @@ class JsonFormatter {
         return null;
     }
 
-//    private String matchingScope(MetricID metricId) {
-//        String scope = scope(metricId);
-//
-//        Iterator<String> scopeIterator = scopeSelection.iterator();
-//        if (!scopeIterator.hasNext()) {
-//            return scope;
-//        }
-//        if (scope == null) {
-//            return null;
-//        }
-//
-//        while (scopeIterator.hasNext()) {
-//            if (scopeIterator.next().equals(scope)) {
-//                return scope;
-//            }
-//        }
-//        return null;
-//    }
-
-//    private String scope(Meter.Id meterId) {
-//        return meterId.getTag(scopeTagName);
-//    }
-
     private String scope(MetricID metricId) {
         return metricId.getTags().get(scopeTagName);
     }
 
-//    private boolean matchesName(Meter.Id meterId) {
-//        Iterator<String> nameIterator = meterNameSelection.iterator();
-//        if (!nameIterator.hasNext()) {
-//            return true;
-//        }
-//        while (nameIterator.hasNext()) {
-//            if (nameIterator.next().equals(meterId.getName())) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 
     private boolean matchesName(MetricID metricId) {
         Iterator<String> nameIterator = meterNameSelection.iterator();
@@ -309,107 +237,6 @@ class JsonFormatter {
         }
         return false;
     }
-
-//    private abstract static class MeterOutputBuilder {
-//
-//        private static MeterOutputBuilder create(Meter meter) {
-//            return meter instanceof Counter || meter instanceof Gauge
-//                    ? new Flat(meter)
-//                    : new Structured(meter);
-//        }
-//
-//        private final Meter meter;
-//
-//        protected MeterOutputBuilder(Meter meter) {
-//            this.meter = meter;
-//        }
-//
-//        protected Meter meter() {
-//            return meter;
-//        }
-//
-//        protected abstract void add(Meter meter);
-//        protected abstract void apply(JsonObjectBuilder builder);
-//
-//        private static class Flat extends MeterOutputBuilder {
-//
-//            private Flat(Meter meter) {
-//                super(meter);
-//            }
-//
-//            @Override
-//            protected void apply(JsonObjectBuilder builder) {
-//                if (meter() instanceof Counter counter) {
-//                    builder.add(flatNameAndTags(counter.getId()), counter.count());
-//                    return;
-//                }
-//                if (meter() instanceof Gauge gauge) {
-//                    builder.add(flatNameAndTags(gauge.getId()), gauge.value());
-//                    return;
-//                }
-//                throw new IllegalArgumentException("Attempt to format meter with structured data as flat JSON "
-//                                                           + meter().getClass().getName());
-//            }
-//
-//            @Override
-//            protected void add(Meter meter) {
-//            }
-//        }
-//
-//        private static class Structured extends MeterOutputBuilder {
-//
-//            private final List<Meter> children = new ArrayList<>();
-//            private final JsonObjectBuilder sameNameBuilder = JSON.createObjectBuilder();
-//
-//            Structured(Meter meter) {
-//                super(meter);
-//            }
-//
-//            @Override
-//            protected void add(Meter meter) {
-//                if (!meter().getClass().isInstance(meter)) {
-//                    throw new IllegalArgumentException("Attempt to add metric of type " + meter.getClass().getName()
-//                    + " to existing output for a meter of type " + meter().getClass().getName());
-//                }
-//                children.add(meter);
-//            }
-//
-//            @Override
-//            protected void apply(JsonObjectBuilder builder) {
-//                Meter.Id meterId = meter().getId();
-//                children.forEach(child -> {
-//                    Meter.Id childId = child.getId();
-//                    if (meter() instanceof DistributionSummary distributionSummary) {
-//                        sameNameBuilder.add(valueId("count", childId), distributionSummary.count());
-//                        sameNameBuilder.add(valueId("max", childId), distributionSummary.max());
-//                        sameNameBuilder.add(valueId("mean", childId), distributionSummary.mean());
-//                        sameNameBuilder.add(valueId("total", childId), distributionSummary.totalAmount());
-//                    } else if (meter() instanceof Timer timer) {
-//                        sameNameBuilder.add(valueId("count", childId), timer.count());
-//                        sameNameBuilder.add(valueId("elapsedTime", childId), timer.totalTime(TimeUnit.SECONDS));
-//                        sameNameBuilder.add(valueId("max", childId), timer.max(TimeUnit.SECONDS));
-//                        sameNameBuilder.add(valueId("mean", childId), timer.mean(TimeUnit.SECONDS));
-//                    } else {
-//                        throw new IllegalArgumentException("Unrecognized meter type " + meter().getClass().getName());
-//                    }
-//                });
-//                builder.add(meterId.getName(), sameNameBuilder);
-//            }
-//
-//
-//            private static String valueId(String valueName, Meter.Id meterId) {
-//                return valueName + tagsPortion(meterId);
-//            }
-//
-//            private static String tagsPortion(Meter.Id meterId) {
-//                StringJoiner sj = new StringJoiner(";", ";", "");
-//                sj.setEmptyValue("");
-//                meterId.getTagsAsIterable().forEach(tag -> sj.add(tag.getKey() + "=" + tag.getValue()));
-//                return sj.toString();
-//            }
-//        }
-//    }
-
 
     private abstract static class MetricOutputBuilder {
 
