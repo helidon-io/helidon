@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.nima.faulttolerance;
-
-import io.helidon.config.Config;
-
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+package io.helidon.spi;
 
 /**
- * This service will be part of Níma on Pico module.
- * It may use pico to get config sources exposed through pico.
+ * {@link java.util.ServiceLoader} provider interface to discover the correct startup type.
+ * Only the first provider (with the highest {@link io.helidon.common.Weight}) will be used.
  */
-@Singleton
-class ConfigService implements Provider<Config> {
-    private static volatile Config config;
-    static void config(Config config) {
-        ConfigService.config = config;
-    }
-
-    @Override
-    public Config get() {
-        return config;
-    }
+public interface HelidonStartupProvider {
+    /**
+     * Start the runtime.
+     *
+     * @param arguments command line arguments
+     */
+    void start(String[] arguments);
 }

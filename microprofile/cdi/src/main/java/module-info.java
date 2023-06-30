@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ module io.helidon.microprofile.cdi {
     // weld requires jakarta.el.ELResolver on module path
     requires jakarta.el;
 
+    requires io.helidon;
     requires io.helidon.common;
     requires io.helidon.logging.common;
     requires io.helidon.common.features.api;
@@ -56,6 +57,7 @@ module io.helidon.microprofile.cdi {
 
     uses jakarta.enterprise.inject.spi.Extension;
 
+    provides io.helidon.spi.HelidonStartupProvider with io.helidon.microprofile.cdi.CdiStartupProvider;
     provides jakarta.enterprise.inject.se.SeContainerInitializer with io.helidon.microprofile.cdi.HelidonContainerInitializer;
     provides jakarta.enterprise.inject.spi.CDIProvider with io.helidon.microprofile.cdi.HelidonCdiProvider;
 

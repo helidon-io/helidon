@@ -23,10 +23,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.http.NotFoundException;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
-import io.helidon.nima.Nima;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.http.HttpRules;
@@ -94,7 +94,7 @@ class ConfigService implements HttpService {
     private void value(ServerRequest req, ServerResponse res) {
         String name = req.path().pathParameters().value("name");
 
-        ConfigValue<String> value = Nima.config().get(name).asString();
+        ConfigValue<String> value = GlobalConfig.config().get(name).asString();
         if (value.isPresent()) {
             JsonObjectBuilder json = JSON.createObjectBuilder()
                     .add("name", name);
@@ -107,7 +107,7 @@ class ConfigService implements HttpService {
     }
 
     private void values(ServerRequest req, ServerResponse res) {
-        Map<String, String> mapOfValues = new HashMap<>(Nima.config().asMap()
+        Map<String, String> mapOfValues = new HashMap<>(GlobalConfig.config().asMap()
                                                                 .orElseGet(Map::of));
 
         JsonObjectBuilder json = JSON.createObjectBuilder();

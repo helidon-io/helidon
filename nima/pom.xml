@@ -36,7 +36,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>nima</module>
         <module>common</module>
         <module>http</module>
         <module>webclient</module>

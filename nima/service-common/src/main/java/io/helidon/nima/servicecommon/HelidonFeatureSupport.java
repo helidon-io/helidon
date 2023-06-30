@@ -17,7 +17,7 @@ package io.helidon.nima.servicecommon;
 
 import java.util.Objects;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.webserver.cors.CorsEnabledServiceHelper;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -166,7 +166,7 @@ public abstract class HelidonFeatureSupport implements FeatureSupport {
                     .ifPresent(restServiceSettingsBuilder::routing);
 
             config.get(CorsEnabledServiceHelper.CORS_CONFIG_KEY)
-                    .as(CrossOriginConfig::create)
+                    .map(CrossOriginConfig::create)
                     .ifPresent(this::crossOriginConfig);
 
             return identity();

@@ -29,10 +29,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima</groupId>
-            <artifactId>helidon-nima</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.nima.webserver</groupId>
             <artifactId>helidon-nima-webserver</artifactId>
         </dependency>

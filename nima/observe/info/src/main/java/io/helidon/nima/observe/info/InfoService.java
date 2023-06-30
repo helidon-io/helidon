@@ -19,8 +19,8 @@ package io.helidon.nima.observe.info;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.http.NotFoundException;
-import io.helidon.config.Config;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.http.HttpRules;

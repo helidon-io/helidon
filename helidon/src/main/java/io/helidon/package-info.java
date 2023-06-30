@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 
 /**
- * Main entry point for Níma application.
- * Bootstraps required services, which implicitly starts server(s) available.
+ * Startup of Helidon applications.
+ *
+ * @see io.helidon.Main
  */
-package io.helidon.nima;
+package io.helidon;

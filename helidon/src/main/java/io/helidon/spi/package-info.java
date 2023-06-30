@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-module io.helidon.nima {
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.logging.common;
 
-    exports io.helidon.nima;
-}
+/**
+ * Extension point to support a single main class ({@link io.helidon.Main}) to start various styles of applications,
+ * such as Helidon Injection based applications, and Helidon MicroProfile applications.
+ */
+package io.helidon.spi;

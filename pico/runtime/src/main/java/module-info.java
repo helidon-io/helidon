@@ -21,16 +21,20 @@ module io.helidon.pico.runtime {
     requires static jakarta.inject;
     requires static jakarta.annotation;
     requires io.helidon.builder.api;
+    // required for compilation of generated types
     requires transitive io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires transitive io.helidon.pico.api;
     requires static io.helidon.config.metadata;
+    requires io.helidon;
 
     exports io.helidon.pico.runtime;
 
     provides io.helidon.pico.spi.PicoServicesProvider
             with io.helidon.pico.runtime.DefaultPicoServicesProvider;
+    provides io.helidon.spi.HelidonStartupProvider
+            with io.helidon.pico.runtime.HelidonInjectionStartupProvider;
 
     uses io.helidon.pico.api.ModuleComponent;
     uses io.helidon.pico.api.Application;

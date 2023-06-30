@@ -25,6 +25,7 @@ module io.helidon.pico.api {
     requires transitive io.helidon.builder.api;
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
+    requires io.helidon.logging.common;
 
     exports io.helidon.pico.api;
     exports io.helidon.pico.spi;

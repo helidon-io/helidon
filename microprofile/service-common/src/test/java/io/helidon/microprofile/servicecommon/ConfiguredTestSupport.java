@@ -17,7 +17,6 @@ package io.helidon.microprofile.servicecommon;
 
 import java.util.Optional;
 
-import io.helidon.config.Config;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
 import io.helidon.nima.webserver.http.HttpService;
 
@@ -69,7 +68,7 @@ public class ConfiguredTestSupport extends HelidonFeatureSupport {
         }
 
         @Override
-        public Builder config(Config config) {
+        public Builder config(io.helidon.common.config.Config config) {
             super.config(config);
             config.get("importance").asInt().ifPresent(this::importance);
             return this;

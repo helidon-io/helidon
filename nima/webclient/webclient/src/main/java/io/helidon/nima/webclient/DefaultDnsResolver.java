@@ -19,6 +19,7 @@ package io.helidon.nima.webclient;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.nima.webclient.spi.DnsResolver;
@@ -29,6 +30,9 @@ final class DefaultDnsResolver implements DnsResolver {
 
     @Override
     public InetAddress resolveAddress(String hostname, DnsAddressLookup dnsAddressLookup) {
+        Objects.requireNonNull(hostname);
+        Objects.requireNonNull(dnsAddressLookup);
+
         return hostnameAddresses.computeIfAbsent(hostname, host -> {
             try {
                 InetAddress[] processed = dnsAddressLookup.filter(InetAddress.getAllByName(hostname));

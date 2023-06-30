@@ -27,3 +27,5 @@ fault-tolerance:
       executor-name: "platform-executor"
     other-name:
       executor-name: "abcd"
+pico:
+  permits-dynamic: true

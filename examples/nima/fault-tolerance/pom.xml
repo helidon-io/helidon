@@ -30,13 +30,13 @@
     <name>Helidon Examples Níma Fault Tolerance</name>
 
     <properties>
-        <mainClass>io.helidon.examples.nima.faulttolerance.FtMain</mainClass>
+        <mainClass>io.helidon.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima</groupId>
-            <artifactId>helidon-nima</artifactId>
+            <groupId>io.helidon</groupId>
+            <artifactId>helidon</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.webserver</groupId>

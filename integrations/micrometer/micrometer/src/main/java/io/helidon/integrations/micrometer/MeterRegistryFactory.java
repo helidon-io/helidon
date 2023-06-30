@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.integrations.micrometer;
 
 import java.util.ArrayList;
@@ -27,8 +28,8 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.http.Http;
-import io.helidon.config.Config;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
@@ -266,7 +267,8 @@ public final class MeterRegistryFactory {
         public Builder config(Config config) {
 
             config.get(BUILTIN_REGISTRIES_CONFIG_KEY)
-                    .ifExists(this::enrollBuiltInRegistries);
+                    .as(Config.class)
+                    .ifPresent(this::enrollBuiltInRegistries);
 
             return this;
         }
@@ -357,7 +359,7 @@ public final class MeterRegistryFactory {
                                         BuiltInRegistryType.valueByName(registryType);
 
                                 MicrometerBuiltInRegistrySupport builtInRegistrySupport =
-                                        MicrometerBuiltInRegistrySupport.create(type, registryConfig.asNode());
+                                        MicrometerBuiltInRegistrySupport.create(type, registryConfig.as(Config.class));
 
                                 candidateBuiltInRegistryTypes.put(type, builtInRegistrySupport);
                             } catch (BuiltInRegistryType.UnrecognizedBuiltInRegistryTypeException e) {

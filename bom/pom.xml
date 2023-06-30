@@ -37,6 +37,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>io.helidon</groupId>
+                <artifactId>helidon</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- webserver -->
             <dependency>
                 <groupId>io.helidon.reactive.webserver</groupId>
@@ -1175,11 +1180,6 @@
             </dependency>
 
             <!-- Níma -->
-            <dependency>
-                <groupId>io.helidon.nima</groupId>
-                <artifactId>helidon-nima</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <dependency>
                 <groupId>io.helidon.nima.common</groupId>
                 <artifactId>helidon-nima-common-tls</artifactId>

@@ -40,5 +40,6 @@
         <module>observe</module>
         <module>logging</module>
         <module>sse</module>
+        <module>imperative</module>
     </modules>
 </project>
