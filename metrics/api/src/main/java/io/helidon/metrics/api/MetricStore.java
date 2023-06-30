@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -246,6 +247,12 @@ class MetricStore implements FunctionalCounterRegistry {
      * the proposed tag names
      */
     private Set<String> checkOrStoreTagNames(String metricName, Set<String> tagNames) {
+
+        Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
+        reservedTagNamesUsed.retainAll(MetricsProgrammaticSettings.instance().reservedTagNames());
+        if (!reservedTagNamesUsed.isEmpty()) {
+            throw new IllegalArgumentException("Program-specified tag names include reserved names: " + reservedTagNamesUsed);
+        }
         Set<String> currentTagNames = tagNameSets.get(metricName);
         if (currentTagNames == null) {
             return tagNameSets.put(metricName, tagNames);
@@ -589,16 +596,6 @@ class MetricStore implements FunctionalCounterRegistry {
         checkOrStoreMetadata(metadata);
         allMetadata.put(metadata.getName(), metadata);
         return metadata;
-    }
-
-    private void ensureTagNamesConsistent(MetricID existingID, MetricID newID) {
-        Set<String> existingTagNames = existingID.getTags().keySet();
-        Set<String> newTagNames = newID.getTags().keySet();
-        if (!existingTagNames.equals(newTagNames)) {
-            throw new IllegalArgumentException("Inconsistent tag names between two metrics with the same name '"
-                                                       + existingID.getName() + "'; previously-registered tag names: "
-                                               + existingTagNames + ", proposed tag names: " + newTagNames);
-        }
     }
 
     private void ensureConsistentMetricTypes(HelidonMetric existingMetric,

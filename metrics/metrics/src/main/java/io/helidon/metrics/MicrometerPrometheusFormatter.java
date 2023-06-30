@@ -167,7 +167,7 @@ public class MicrometerPrometheusFormatter {
                             Meter.Id meterId = meter.getId();
                             String meterScope = meterId.getTag(MetricsProgrammaticSettings.instance().scopeTagName());
                             if (Objects.equals(meterScope, scopeName)) {
-                                allUnitsForMetricName.add("_" + meterId.getBaseUnit());
+                                allUnitsForMetricName.add("_" + normalizeUnit(meterId.getBaseUnit()));
                                 allSuffixesForMetricName.addAll(meterNameSuffixes(meterId.getType()));
                             }
                         });
@@ -256,10 +256,14 @@ public class MicrometerPrometheusFormatter {
             result = "m_" + result;
         }
 
-        // Remove non-identifier characters.
-        result = result.replaceAll("[^A-Za-z0-9_]", "");
+        // Replace non-identifier characters.
+        result = result.replaceAll("[^A-Za-z0-9_]", "_");
 
         return result;
+    }
+
+    private static String normalizeUnit(String unit) {
+        return unit == null ? "" : unit;
     }
 
     /**

@@ -20,7 +20,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
+
+import io.helidon.metrics.api.Registry;
+import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -100,34 +102,33 @@ class MetricProducer {
     }
 
     @Produces
-    private Counter produceCounter(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Counted.class,
-                registry::counter, Counter.class);
+    private Counter produceCounter(InjectionPoint ip) {
+        return produceMetric(ip, Counted.class, MetricRegistry::counter, Counter.class);
     }
 
     @Produces
-    private Timer produceTimer(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, Timed.class, registry::timer, Timer.class);
+    private Timer produceTimer(InjectionPoint ip) {
+        return produceMetric(ip, Timed.class, MetricRegistry::timer, Timer.class);
     }
 
     @Produces
-    private Histogram produceHistogram(MetricRegistry registry, InjectionPoint ip) {
-        return produceMetric(registry, ip, null,
-                registry::histogram, Histogram.class);
+    private Histogram produceHistogram(InjectionPoint ip) {
+        return produceMetric(ip, null, MetricRegistry::histogram, Histogram.class);
     }
 
     /**
      * Returns the {@link Gauge} matching the criteria from the injection point.
      *
      * @param <T>      type of the {@code Gauge}
-     * @param registry metric registry
      * @param ip       injection point being resolved
      * @return requested gauge
      */
     @Produces
     @SuppressWarnings("unchecked")
-    private <T extends Number> Gauge<T> produceGauge(MetricRegistry registry, InjectionPoint ip) {
+    private <T extends Number> Gauge<T> produceGauge(InjectionPoint ip) {
         Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
+        String scope = metric.scope();
+        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(scope);
         return (Gauge<T>) registry.getGauges().entrySet().stream()
                 .filter(entry -> entry.getKey().getName().equals(metric.name()))
                 .findFirst()
@@ -142,7 +143,6 @@ class MetricProducer {
      *
      * @param <T> the type of the metric
      * @param <U> the type of the annotation which marks a registration of the metric type
-     * @param registry metric registry to use
      * @param ip the injection point
      * @param annotationClass annotation which represents a declaration of a metric
      * type of metric (if there is no pre-existing one)
@@ -150,12 +150,14 @@ class MetricProducer {
      * @param clazz class for the metric type of interest
      * @return the existing metric (if any), or the newly-created and registered one
      */
-    private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(MetricRegistry registry,
+    private <T extends org.eclipse.microprofile.metrics.Metric, U extends Annotation> T produceMetric(
             InjectionPoint ip, Class<U> annotationClass,
-            BiFunction<Metadata, Tag[], T> registerFn, Class<T> clazz) {
+            RegisterFunction<T> registerFn, Class<T> clazz) {
 
         final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
         final Tag[] tags = tags(metricAnno);
+        final String scope = metricAnno == null ? MetricRegistry.APPLICATION_SCOPE : metricAnno.scope();
+        Registry registry = RegistryFactory.getInstance().getRegistry(scope);
         final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
 
         T result = registry.getMetric(metricID, clazz);
@@ -168,8 +170,14 @@ class MetricProducer {
 
         } else {
             final Metadata newMetadata = newMetadata(ip, metricAnno, clazz);
-            result = registerFn.apply(newMetadata, tags);
+            result = registerFn.apply(registry, newMetadata, tags);
         }
         return result;
+    }
+
+    @FunctionalInterface
+    private interface RegisterFunction<T extends org.eclipse.microprofile.metrics.Metric> {
+
+        T apply(MetricRegistry metricRegistry, Metadata metadata, Tag[] tags);
     }
 }

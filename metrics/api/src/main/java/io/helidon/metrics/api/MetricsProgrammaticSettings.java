@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.ServiceLoader;
+import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -51,6 +52,15 @@ public interface MetricsProgrammaticSettings {
      * @return the app tag name
      */
     String appTagName();
+
+    /**
+     * Returns the reserved tag names (for scope and app).
+     *
+     * @return reserved tag names
+     */
+    default Set<String> reservedTagNames() {
+        return Set.of(scopeTagName(), appTagName());
+    }
 
     /**
      * Internal use class to hold a reference to the singleton.

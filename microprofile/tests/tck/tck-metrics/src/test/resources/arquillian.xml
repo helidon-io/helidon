@@ -32,7 +32,7 @@
         <configuration>
             <!-- to debug - uses target directory to store extracted war -->
             <property name="useRelativePath">true</property>
-            <property name="excludeArchivePattern">.*/microprofile-metrics-tck-\d+\.\d+.*?\.jar.*</property>
+            <property name="excludeArchivePattern">.*?/microprofile-metrics-.*?tck-.*?\d+\.\d+.*?\.jar.*</property>
             <property name="useParentClassloader">false</property>
             <property name="deleteTmp">false</property>
         </configuration>
