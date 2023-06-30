@@ -26,8 +26,7 @@ include::{rootdir}/includes/mp.adoc[]
 
 :jakarta-version: Jakarta EE {version-lib-jakarta-ee}
 :wls-version: 14.1.1.0
-// TODO: Change the link! This is UAT!
-:wls-root-url: https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/{wls-version}
+:wls-root-url: https://docs.oracle.com/en/middleware/standalone/weblogic-server/{wls-version}
 
 :wls-jaxrs-url: {wls-root-url}/restf/develop-restful-service.html#GUID-8C2E2918-B157-49BE-8BCA-125C87E4B3E3
 :wls-jaxrs-link: {wls-jaxrs-url}[Developing and Securing RESTful Web Services for Oracle WebLogic Server]
@@ -186,7 +185,7 @@ To access the WebLogic JMS Server from outside, a client library is required. Th
 emitting messages.
 
 You can obtain the {wls-thin-link} from multiple sources.
-Legacy versions of the thin client can be found in the server/lib directory (`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
+Previous versions of the thin client can be found in the server/lib directory (`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
 
 WARNING: Helidon supports {jakarta-version}. Legacy versions of `javax` based thin T3 client will not work correctly if it is on the Helidon classpath. The legacy thin T3 clients must be used with specialized xref:../../mp/reactivemessaging/weblogic.adoc[WebLogic JMS Connector] to work.
 
@@ -481,11 +480,11 @@ public class HelidonWSEEClient {
 
 === Overview [[SSO-Integration-Overview]]
 
-The WebLogic Server and Helidon integrations can be secured with IDCS over OIDC protocol.
+The WebLogic Server and Helidon integration can be secured with IDCS over the OIDC protocol. The authentication provides:       
 
-* Access the IDCS configured client application deployed on Oracle WebLogic cluster.
-* Access the Helidon REST endpoints configured with IDCS.
-* Access the WebLogic application endpoints from the Helidon REST endpoints.
+* Access to the IDCS configured client application deployed on Oracle WebLogic cluster.
+* Access to the Helidon REST endpoints configured with IDCS.
+* Access to the WebLogic application endpoints from the Helidon REST endpoints.
 
 === Maven Coordinates [[SSO-Integration-Maven-Coordinates]]
 
@@ -509,7 +508,7 @@ To enable IDCS support in Helidon MP, add the Maven dependency to the `pom.xml` 
 
 === Usage [[SSO-Integration-Usage]]
 
-To set up the integration between the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS) see {wls-sso-link}.
+To set up the integration between the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS), see {wls-sso-link}.
 
 Configure Helidon application to use IDCS as an identity manager:
 [source, yaml]
@@ -548,12 +547,11 @@ security:
           identity-uri: ${idcs.url}
 ----
 <1> Configure OCID security provider to work with IDCS.
-<2> Enable redirect to IDCS SSO login page.
-<3> Propagate JWT token obtained from IDCS after login to subsequent JAX-RS calls.
-<4> For which hosts called by JAX-RS client can JWT token be used.
+<2> Enable redirect to the IDCS SSO login page.
+<3> Propagate the JWT token obtained from IDCS after logging in to the subsequent JAX-RS calls.
+<4> Hosts called by the JAX-RS client for which the JWT token can be used.
 
-Helidon will redirect clients accessing protected JAX-RS resources to IDCS login page.
-After the successful login, Helidon negotiates JWT bearer token and maps user's roles to current security context.
+Helidon will redirect the clients accessing the protected JAX-RS resources to the IDCS login page. After a successful login, Helidon negotiates the JWT bearer token and maps the user's roles to the current security context.
 
 [source, java]
 ----
@@ -594,20 +592,14 @@ public class HelidonResource {
 }
 ----
 <1> JWT token negotiated by Helidon with IDCS after successful login.
-<2> JAX-RS resource method accessible only by authenticated users.
-<3> Roles user needs to be authorised to use, roles are provided by idcs-role-mapper.
-<4> JAX-RS client call, JWT token is added automatically when token propagation is configured.
+<2> JAX-RS resource method accessible only by the authenticated users.
+<3> Roles a user needs to be authorized to use; roles are provided by idcs-role-mapper.
+<4> JAX-RS client call. The JWT token is added automatically when token propagation is configured.
 
-While JWT token can be directly injected and used in your JAX-RS resource for subsequent calls to Weblogic IDCS protected resources,
-with properly configured outbound token propagation token can be propagated automatically.
+While the JWT token can be injected directly and used in the JAX-RS resource for subsequent calls to the WebLogic IDCS protected resources, with proper configuration of the outbound token propagation, the token can be propagated automatically.
 
 === References [[SSO-Integration-References]]
 
 * xref:../../mp/security/providers.adoc[Security Providers]
 * xref:../../mp/security/providers.adoc#OIDC-Provider[OIDC Provider]
 * {wls-sso-link}
-
-
-
-
-
