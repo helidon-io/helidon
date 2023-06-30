@@ -23,7 +23,11 @@
 :microprofile-bundle: false
 :rootdir: {docdir}/../..
 
+
 include::{rootdir}/includes/mp.adoc[]
+
+:jakarta-version: Jakarta EE {version-lib-jakarta-ee}
+
 
 == Contents
 
@@ -34,17 +38,20 @@ include::{rootdir}/includes/mp.adoc[]
 
 == Overview
 
-Connecting streams to WebLogic JMS with Reactive Messaging couldn't be easier.
-This connector extends Helidon JMS connector with special handling for WebLogic T3 thin client.
+WebLogic JMS Connector extends Helidon JMS connector with special handling for legacy WebLogic T3 thin clients.
+Legacy versions of thin client can be found in server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
 
-Connecting to WebLogic JMS connection factories requires proprietary T3 thin client library which can be obtained from
-WebLogic installation.
+Helidon supports {jakarta-version}. Legacy versions of `javax` based thin T3 client will not work correctly when added to the classpath.
+Legacy thin T3 clients must be loaded from a filesystem location specified by the `thin-jar` property.
 
-WARNING: Avoid placing `wlthint3client.jar` on Helidon classpath, client library location needs to be
-configured and loaded by Helidon messaging connector.
+WARNING: Do not place legacy `wlthint3client.jar` on the Helidon classpath. The client library location needs to be
+configured and loaded by the Helidon messaging connector.
 
-WARNING: Don't forget to start your Helidon app with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow
-wlthint3client use reflection.
+WARNING: When using the legacy WebLogic T3 thin clients, make sure to start the Helidon application with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow reflection with the legacy wlthint3client.
+
+Updated versions of thin T3 clients that are compatible with modern Jakarta runtimes can be downloaded from {osdc-link} as `wlthint3client.jakarta`. However, Jakarta based thin clients can be placed on the Helidon classpath and used with this specialized connector or
+the xref:../../mp/reactivemessaging/jms.adoc[JMS connector]
+After the download, the thin T3 client artefact needs to be installed in the Maven repository accessible from the application build.
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -62,38 +69,33 @@ Connector name: `helidon-weblogic-jms`
 
 .Attributes
 |===
-|`jms-factory` | JNDI name of the JMS factory configured in WebLogic
-|`url` | t3, t3s or http address of WebLogic server
-|`thin-jar` | Filepath to the WebLogic thin T3 client jar (`wlthint3client.jar`), can be usually found within WebLogic installation
+|`jms-factory` | The JNDI name of the JMS factory configured in WebLogic.
+|`url` | t3, t3s, or http address of WebLogic Server.
+|`thin-jar` | Filepath to the WebLogic thin T3 client jar (`wlthint3client.jar`); this path can be usually found within the  WebLogic Server installation.
 `WL_HOME/server/lib/wlthint3client.jar`
-|`principal` | WebLogic initial context principal(user)
-|`credentials` | WebLogic initial context credential(password)
-|`type` | Possible values are: `queue`, `topic`. Default value is: `topic`
-|`destination` | Queue or topic name in WebLogic CDI Syntax(CDI stands for Create Destination Identifier)
+|`principal` | The WebLogic initial context principal (user).
+|`credentials` | The WebLogic initial context credential (password)
+|`type` | The possible values are: `queue`, `topic`. Default value is: `topic`
+|`destination` |The queue or topic name in WebLogic CDI (Create Destination Identifier) Syntax.
 |`jndi.destination` | JNDI destination identifier. When no such JNDI destination is found, falls back to `destination` with CDI syntax.
-|`acknowledge-mode` |Possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client’s receipt of a message,
+|`acknowledge-mode` | The possible values are: `AUTO_ACKNOWLEDGE`- session automatically acknowledges a client’s receipt of a message,
 `CLIENT_ACKNOWLEDGE` - receipt of a message is acknowledged only when `Message.ack()` is called manually,
 `DUPS_OK_ACKNOWLEDGE` - session lazily acknowledges the delivery of messages. Default value: `AUTO_ACKNOWLEDGE`
 |`transacted` | Indicates whether the session will use a local transaction. Default value: `false`
-|`message-selector` | JMS API message selector expression based on a subset of the SQL92.
-Expression can only access headers and properties, not the payload.
-|`client-id` | Client identifier for JMS connection.
-|`client-id` | Client identifier for JMS connection.
+|`message-selector` | The JMS API message selector expression based on a subset of the SQL92. Expression can access only headers and properties, not the payload.
+|`client-id` | The client identifier for JMS connection.
 |`durable` | True for creating durable consumer (only for topic). Default value: `false`
-|`subscriber-name` | Subscriber name for durable consumer used to identify subscription.
-|`non-local` | If true then any messages published to the topic using this session's connection,
-or any other connection with the same client identifier,
-will not be added to the durable subscription. Default value: `false`
+|`subscriber-name` | The subscriber name for the durable consumer used to identify subscription.
+|`non-local` | If `true` then any message that is published to the topic using this session's connection or any other connection with the same client identifier, will not be added to the durable subscription. Default value: `false`
 |`named-factory` | Select in case factory is injected as a named bean or configured with name.
-|`poll-timeout` | Timeout for polling for next message in every poll cycle in millis. Default value: `50`
-|`period-executions` | Period for executing poll cycles in millis. Default value: `100`
-|`session-group-id` | When multiple channels share same `session-group-id`, they share same JMS session and same JDBC connection as well.
-|`producer.unit-of-order` | All messages from same unit of order will be processed sequentially in the order they were created.
+|`poll-timeout` | The timeout interval (in millis) for polling for the next message in every poll cycle. Default value: `50`
+|`period-executions` | The period for executing poll cycles in millis. Default value: `100`
+|`session-group-id` | When multiple channels share the same `session-group-id`, they also share the same JMS session and JDBC connection.
+|`producer.unit-of-order` | All messages from the same unit of order will be processed sequentially in the order they were created.
 |===
 
-Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory
-from WebLogic. Notice the destination property which is used to define queue with
-https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915[WebLogic CDI Syntax](CDI stands for Create Destination Identifier).
+Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory from WebLogic. Notice the destination property which is used to define the queue with
+https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915[WebLogic CDI Syntax].
 
 [source,yaml]
 .Example config:
@@ -119,12 +121,12 @@ mp:
         jndi.destination: jms/TestQueue
 ----
 
-When configuring destination with WebLogic CDI, the following syntax needs to be applied:
+When configuring destination with WebLogic CDI, apply the following syntax:
 
 .Non-Distributed Destinations
 `jms-server-name/jms-module-name!destination-name`
 
-In our example we are replacing jms-server-name with `.` as we don’t have to look up the server we are connected to.
+In our example, we are replacing jms-server-name with `.` as we don’t have to look up the server we are connected to.
 
 .Uniform Distributed Destinations (UDDs)
 `jms-server-name/jms-module-name!jms-server-name@udd-name`

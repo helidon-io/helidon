@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -29,24 +29,25 @@ ifndef::rootdir[:rootdir: {docdir}/../..]
 - <<Deserialization Setup, Deserialization Setup>>
 - <<System Property Configuration, System Property Configuration>>
 - <<Programmatic Configuration, Programmatic Configuration>>
+- <<JEP-290 Pattern Syntax, JEP-290 Pattern Syntax>>
+- <<Troubleshooting, Troubleshooting>>
 
 == Overview
 
-link:https://openjdk.org/jeps/290[JEP-290] brought support for deserialization filters to Java programming language.
-Such filtering allows us to control which classes may be deserialized using Java serialization.
+link:https://openjdk.org/jeps/290[JEP-290] brought support for deserialization filters to Java programming language. Such filtering allows you to control the classes that need to be deserialized using Java serialization.
 
 == Deserialization Setup
 
-Helidon default settings forbids any deserialization except for patterns defined in a `pattern`
-property of any `{metainf}` on classpath. The patterns are semicolon delimited strings, such as `io.myapp.&#42;&#42;;java.util.HashMap` (any subpackage of `io.myapp` and class `java.util.HashMap`).
-Helidon will *always* add a deny-all filter pattern to the end of the pattern string (to make sure we exclude any unspecified class - we only operate on whitelists)
+Helidon default settings forbid any deserialization except for patterns defined in a `pattern`
+property of any `{metainf}` on classpath. The patterns are semicolon delimited strings such as `io.myapp.&#42;&#42;;java.util.HashMap` (any subpackage of `io.myapp` and class `java.util.HashMap`).
+Helidon will *always* add a deny-all filter pattern to the end of the pattern string (to ensure we exclude any unspecified class - we only operate on whitelists)
 
-These defaults can be modified either through system properties, or programmatically.
+These defaults can be modified either through system properties or programmatically.
 
 == System Property Configuration
 The following system properties can be used to control deserialization in Helidon:
 
-.System properties
+.System Properties
 [cols="3,3,5a"]
 
 |===
@@ -54,30 +55,30 @@ The following system properties can be used to control deserialization in Helido
 
 |`helidon.serialFilter.pattern` |`!&#42;` |Filter pattern to use, deny all is always added
 |`helidon.serialFilter.ignoreFiles` |`false` |Whether to ignore files `{metainf}` in libraries on the classpath
-|`helidon.serialFilter.failure.action` |`FAIL` |Action to do when the configuration of global filter exists and is not consistent with our security expectations (e.g. contains a pattern to include all).
+|`helidon.serialFilter.failure.action` |`FAIL` |Action to do when the configuration of global filter exists and is not consistent with security expectations (for example, contains a pattern to include all)
 
 Options:
 
-- `FAIL` - throw an exception to terminate startup
-- `WARN` - log a warning
-- `IGNORE` - ignore this and silently continue
+- `FAIL` - Throw an exception to terminate startup.
+- `WARN` - Log a warning.
+- `IGNORE` - Ignore this and continue silently.
 
 |`helidon.serialFilter.missing.action` |`CONFIGURE` |Action to do when there is no global configuration.
 
 Options:
 
-- `CONFIGURE` - configure Helidon defaults
-- `FAIL` - throw an exception to terminate startup
-- `WARN` - log a warning
-- `IGNORE` - ignore this and silently continue
+- `CONFIGURE` - Configure the Helidon defaults.
+- `FAIL` - Throw an exception to terminate startup.
+- `WARN` - Log a warning.
+- `IGNORE` - Ignore this and continue silently.
 
 |`helidon.serialFilter.trace` |`NONE` |Tracing configuration for deserialization. Controls what information (if any) will be logged to a logger `io.helidon.common.SerializationConfig.TracingObjectInputFilter` in `INFO` log level.
 
 Options:
 
-- `NONE` - do not trace
-- `BASIC` - trace only classes, and only once per class
-- `FULL` - trace all deserialization filter requests
+- `NONE` - Do not trace.
+- `BASIC` - Trace only classes, and only once per class.
+- `FULL` - Trace all deserialization filter requests.
 
 |===
 
@@ -86,7 +87,7 @@ Options:
 Custom `SerializationConfig` may be registered, but it *must* be done before Helidon server is started.
 
 [source,java]
-.Configure custom Helidon serialization config
+.Configure Custom Helidon Serialization Config
 ----
 SerializationConfig.builder()
   .traceSerialization(SerializationConfig.TraceOption.BASIC) <1>
@@ -96,8 +97,62 @@ SerializationConfig.builder()
   .build()
   .configure();                                              <5>
 ----
-<1> Trace first instance of each class that is deserialized
-<2> Configure a single class filter pattern (only allows deserialization of class `MyType`
-<3> Ignore files defined in {metainf}
-<4> In case there is an existing global serialization configuration on JDK, ignore it and continue (global filter cannot be reconfigured)
-<5> Configure this serialization config as the default for this JVM
+<1> Trace first instance of each class that is deserialized.
+<2> Configure a single class filter pattern (allows only deserialization of class `MyType`).
+<3> Ignore files defined in {metainf}.
+<4> In case there is an existing global serialization configuration on JDK, ignore it and continue (global filter cannot be reconfigured).
+<5> Configure this serialization config as the default for this JVM.
+
+== JEP-290 Pattern Syntax
+Serialization patterns are fully qualified class names or package names with wildcards delimited with semicolon`;`
+
+.Pattern Syntax
+- Package name ending with `.*` - All classes in the package.
+- Package name ending with `.**` - All classes in the package and subpackages.
+- FQDN ending with `*` - Standard wildcard, matches all classes with the prefix.
+- FQDN matches exact class
+- Patterns starting with `!` - NOT, rejects pattern if matched.
+- `<MODULE_NAME>/<FQDN>` - When pattern contains `/`, name before it marks the module name.
+
+
+[source, shell]
+.Example of `META-INF/helidon/serial-config.properties` Content
+----
+pattern=java.util.**;!java.util.ArrayList;my.package.*
+----
+
+[source, shell]
+.Example of Pattern Supplied as a System Property
+----
+java -Dhelidon.serialFilter.pattern="java.util.**;!java.util.ArrayList;my.package.*" -jar my-app.jar
+----
+
+== Troubleshooting
+The Helidon serialization config filter doesn't trace the actual rejected classes by default.
+The logs will show only `InvalidClassException` with the message `filter status: REJECTED`.
+
+[code, java]
+.Default Reject Message
+----
+java.io.InvalidClassException: filter status: REJECTED
+----
+
+To find out which class has been actually rejected, set the `helidon.serialFilter.trace` system property to either `basic` or `full`.
+
+[code, shell]
+.Running Helidon Application in Basic Trace Mode
+----
+java -Dhelidon.serialFilter.trace=basic -jar ./target/custom-mp.jar
+----
+
+Each accepted or rejected class is logged only once with the `basic` trace filter setting.
+
+[code, shell]
+.Logs With Basic Filter Trace
+----
+...
+ALLOWED class: class java.util.LinkedList, arrayLength: -1, depth: 2, references: 3, streamBytes: 84
+REJECTED class: class java.util.ArrayList, arrayLength: -1, depth: 2, references: 3, streamBytes: 90
+----
+
+You can compose proper serialization filter pattern with the list of REJECTED classes.

@@ -54,6 +54,7 @@ endif::[]
 :version-lib-microprofile-tracing: 3.0
 
 // jakarta specifications
+:version-lib-jakarta-ee: 9.1
 :version-lib-jakarta-cdi: 3.0
 :version-lib-jakarta-websockets-api: 2.0
 :version-lib-jakarta-bean-validation: 2.0
