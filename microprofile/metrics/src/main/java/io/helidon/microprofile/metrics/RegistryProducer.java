@@ -19,9 +19,12 @@ package io.helidon.microprofile.metrics;
 import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
@@ -37,6 +40,14 @@ final class RegistryProducer {
     }
 
     @Produces
+    @Default
+    public static org.eclipse.microprofile.metrics.MetricRegistry getScopedRegistry(InjectionPoint injectionPoint) {
+        RegistryScope scope = injectionPoint.getAnnotated().getAnnotation(RegistryScope.class);
+        return scope == null
+                ? getApplicationRegistry()
+                : RegistryFactory.getInstance().getRegistry(scope.scope());
+    }
+
     public static org.eclipse.microprofile.metrics.MetricRegistry getDefaultRegistry() {
         return getApplicationRegistry();
     }
