@@ -312,7 +312,7 @@ class ServerListener implements ListenerContext {
         if (!tls.enabled()) {
             throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
         }
-        tls.reload(tls);
+        this.tls.reload(tls);
     }
 
     private void debugTls(String serverChannelId, Tls tls) {
