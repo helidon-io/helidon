@@ -62,7 +62,7 @@ class NoOpMetricImpl extends AbstractMetric implements NoOpMetric {
         }
     }
 
-    static abstract class NoOpGaugeImpl<N extends Number> extends NoOpMetricImpl implements Gauge<N> {
+    abstract static class NoOpGaugeImpl<N extends Number> extends NoOpMetricImpl implements Gauge<N> {
 
         static <N extends Number> NoOpGaugeImpl<N> create(String registryType,
                                                           Metadata metadata,

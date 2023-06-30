@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 
