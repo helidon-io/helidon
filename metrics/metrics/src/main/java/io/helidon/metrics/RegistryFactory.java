@@ -19,6 +19,7 @@ package io.helidon.metrics;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -75,6 +76,17 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
         metricsSettingsAccess.lock();
         try {
             operation.run();
+        } finally {
+            metricsSettingsAccess.unlock();
+        }
+    }
+
+    private <T> T accessMetricsSettings(Callable<T> callable) {
+        metricsSettingsAccess.lock();
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         } finally {
             metricsSettingsAccess.unlock();
         }
@@ -137,9 +149,6 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
     }
 
     Registry getARegistry(String scope) {
-        if (Registry.BASE_SCOPE.equals(scope)) {
-            ensureBase();
-        }
         return registries.get(scope);
     }
 
@@ -151,10 +160,10 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      */
     @Override
     public io.helidon.metrics.api.Registry getRegistry(String scope) {
-        if (Registry.BASE_SCOPE.equals(scope)) {
-            ensureBase();
-        }
-        return registries.computeIfAbsent(scope, s -> Registry.create(s, metricsSettings.registrySettings(s)));
+        return accessMetricsSettings(() -> registries.computeIfAbsent(scope, s ->
+                s.equals(Registry.BASE_SCOPE)
+                        ? BaseRegistry.create(metricsSettings)
+                        : Registry.create(s, metricsSettings.registrySettings(s))));
     }
 
     @Override
@@ -204,21 +213,20 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     @Override
     public void start() {
+        /*
+            Primarily for successive tests (e.g., in the TCK) which might share the same VM, delete each metric individually
+            (which will trickle down into the delegate meter registry) and also clear out the collection of registries.
+         */
+        registries.values()
+                .forEach(r -> r.getMetrics()
+                        .forEach((id, m) -> r.remove(id)));
+        registries.clear();
         PeriodicExecutor.start();
     }
 
     @Override
     public void stop() {
         PeriodicExecutor.stop();
-    }
-
-    private void ensureBase() {
-        if (null == registries.get(Registry.BASE_SCOPE)) {
-            accessMetricsSettings(() -> {
-                Registry registry = BaseRegistry.create(metricsSettings);
-                registries.put(Registry.BASE_SCOPE, registry);
-            });
-        }
     }
 }
 

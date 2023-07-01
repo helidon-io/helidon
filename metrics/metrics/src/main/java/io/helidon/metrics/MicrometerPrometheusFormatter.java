@@ -65,13 +65,13 @@ public class MicrometerPrometheusFormatter {
 
     private final String scopeTagName;
     private final Iterable<String> scopeSelection;
-    private final Iterable<String> meterSelection;
+    private final Iterable<String> meterNameSelection;
     private final MediaType resultMediaType;
 
     private MicrometerPrometheusFormatter(Builder builder) {
         scopeTagName = builder.scopeTagName;
         scopeSelection = builder.scopeSelection;
-        meterSelection = builder.meterNameSelection;
+        meterNameSelection = builder.meterNameSelection;
         resultMediaType = builder.resultMediaType;
     }
 
@@ -82,28 +82,7 @@ public class MicrometerPrometheusFormatter {
      * @return filtered Prometheus output
      */
     public Optional<String> filteredOutput() {
-        return formattedOutput(prometheusMeterRegistry(),
-                               resultMediaType,
-                               scopeTagName,
-                               scopeSelection,
-                               meterSelection);
-    }
-
-    /**
-     * Retrieves the Prometheus-format report from the specified registry, according to the specified media type,
-     * filtered by the specified scope and meter name, and returns the filtered Prometheus-format output.
-     *
-     * @param prometheusMeterRegistry registry to query
-     * @param resultMediaType media type which controls the exact output format
-     * @param scopeSelection scope to select; null if no scope selection required
-     * @param meterNameSelection meter name to select; null if no meter name selection required
-     * @return filtered output
-     */
-    Optional<String> formattedOutput(PrometheusMeterRegistry prometheusMeterRegistry,
-                                  MediaType resultMediaType,
-                                  String scopeTagName,
-                                  Iterable<String> scopeSelection,
-                                  Iterable<String> meterNameSelection) {
+        PrometheusMeterRegistry prometheusMeterRegistry = prometheusMeterRegistry();
         Set<String> meterNamesOfInterest = meterNamesOfInterest(prometheusMeterRegistry,
                                                                           scopeSelection,
                                                                           meterNameSelection);

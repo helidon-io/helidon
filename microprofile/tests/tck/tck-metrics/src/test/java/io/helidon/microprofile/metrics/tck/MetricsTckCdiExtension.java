@@ -15,6 +15,8 @@
  */
 package io.helidon.microprofile.metrics.tck;
 
+import io.helidon.metrics.api.RegistryFactory;
+
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.Extension;
@@ -22,6 +24,7 @@ import jakarta.enterprise.inject.spi.Extension;
 public class MetricsTckCdiExtension implements Extension {
 
     void before(@Observes BeforeBeanDiscovery discovery) {
+        RegistryFactory.getInstance().start();
         discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
     }
 }
