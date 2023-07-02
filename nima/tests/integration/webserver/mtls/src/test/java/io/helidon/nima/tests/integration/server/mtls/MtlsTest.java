@@ -154,7 +154,6 @@ class MtlsTest {
     }
 
     @Test
-    @Disabled
     void testTlsReload() {
         Http1ClientResponse response = client.method(Http.Method.GET)
                 .uri("/serverCert")
