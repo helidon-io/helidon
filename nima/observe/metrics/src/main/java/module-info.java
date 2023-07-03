@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+
 /**
  * Metrics endpoint for Níma WebServer.
  */
+@Feature(value = "Metrics",
+         description = "Metrics support",
+         in = HelidonFlavor.NIMA)
 module io.helidon.nima.observe.metrics {
     requires transitive io.helidon.nima.observe;
     requires io.helidon.nima.webserver;
@@ -26,6 +32,7 @@ module io.helidon.nima.observe.metrics {
     requires io.helidon.metrics.api;
     requires io.helidon.metrics.serviceapi;
     requires io.helidon.common.context;
+    requires io.helidon.common.features.api;
 
     exports io.helidon.nima.observe.metrics;
 

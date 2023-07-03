@@ -17,8 +17,10 @@
 package io.helidon.metrics;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -208,6 +210,18 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     @Override
     public Iterable<String> scopes() {
+
+        /*
+        If a caller invokes this method before we have created a base registry on-demand,
+        then we should artificially include "base" in the scopes. If the caller then asks for the
+        base registry, the getRegistry method will create it on demand.
+         */
+        if (!registries.containsKey(Registry.BASE_SCOPE)
+                && metricsSettings.baseMetricsSettings().isEnabled()) {
+            Set<String> augmentedScopes = new HashSet(registries.keySet());
+            augmentedScopes.add(Registry.BASE_SCOPE);
+            return augmentedScopes;
+        }
         return registries.keySet();
     }
 
