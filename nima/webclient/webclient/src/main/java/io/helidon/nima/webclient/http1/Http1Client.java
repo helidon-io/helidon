@@ -111,7 +111,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
                                                    .build());
             }
 
-            return new Http1ClientImpl(configBuilder.build());
+            return new Http1ClientImpl(configBuilder.build(), cookieManager());
         }
 
         @Override

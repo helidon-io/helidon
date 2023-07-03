@@ -16,6 +16,8 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
@@ -45,6 +47,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.WebClientCookieManager;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
@@ -60,6 +63,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final Http1ClientConfig clientConfig;
     private final MediaContext mediaContext;
     private final Map<String, String> properties;
+    private final WebClientCookieManager cookieManager;
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private boolean followRedirects;
@@ -77,7 +81,8 @@ class ClientRequestImpl implements Http1ClientRequest {
                       Http.Method method,
                       UriHelper helper,
                       UriQueryWriteable query,
-                      Map<String, String> properties) {
+                      Map<String, String> properties,
+                      WebClientCookieManager cookieManager) {
         this.method = method;
         this.uri = helper;
         this.properties = new HashMap<>(properties);
@@ -93,6 +98,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
         this.explicitHeaders = WritableHeaders.create(clientConfig.defaultHeaders());
+        this.cookieManager = cookieManager;
     }
 
     //Copy constructor for redirection purposes
@@ -101,7 +107,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                               UriHelper helper,
                               UriQueryWriteable query,
                               Map<String, String> properties) {
-        this(request.clientConfig, method, helper, query, properties);
+        this(request.clientConfig, method, helper, query, properties, request.cookieManager);
         this.followRedirects = request.followRedirects;
         this.maxRedirects = request.maxRedirects;
         this.tls = request.tls;
@@ -393,44 +399,54 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         ClientRequestHeaders headers = ClientRequestHeaders.create(explicitHeaders);
 
-        WebClientServiceRequest serviceRequest = new ServiceRequestImpl(uri,
-                                                                        method,
-                                                                        Http.Version.V1_1,
-                                                                        query,
-                                                                        UriFragment.empty(),
-                                                                        headers,
-                                                                        Contexts.context().orElseGet(Context::create),
-                                                                        requestId,
-                                                                        whenComplete,
-                                                                        whenSent,
-                                                                        properties);
+        try {
+            // include any stored cookies in request
+            cookieManager.get(uri, headers);
 
-        WebClientService.Chain last = callChain;
+            WebClientServiceRequest serviceRequest = new ServiceRequestImpl(uri,
+                    method,
+                    Http.Version.V1_1,
+                    query,
+                    UriFragment.empty(),
+                    headers,
+                    Contexts.context().orElseGet(Context::create),
+                    requestId,
+                    whenComplete,
+                    whenSent,
+                    properties);
 
-        List<WebClientService> services = clientConfig.services();
-        ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
-        while (serviceIterator.hasPrevious()) {
-            last = new ServiceChainImpl(last, serviceIterator.previous());
+            WebClientService.Chain last = callChain;
+
+            List<WebClientService> services = clientConfig.services();
+            ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
+            while (serviceIterator.hasPrevious()) {
+                last = new ServiceChainImpl(last, serviceIterator.previous());
+            }
+
+            WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);
+
+            // store any cookies received in response
+            cookieManager.put(uri, serviceResponse.headers());
+
+            CompletableFuture<Void> complete = new CompletableFuture<>();
+            complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
+                    .exceptionally(throwable -> {
+                        serviceResponse.whenComplete().completeExceptionally(throwable);
+                        return null;
+                    });
+
+            return new ClientResponseImpl(serviceResponse.status(),
+                    serviceResponse.serviceRequest().headers(),
+                    serviceResponse.headers(),
+                    serviceResponse.connection(),
+                    serviceResponse.reader(),
+                    mediaContext,
+                    clientConfig.mediaTypeParserMode(),
+                    uri,
+                    complete);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-
-        WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);
-
-        CompletableFuture<Void> complete = new CompletableFuture<>();
-        complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
-                .exceptionally(throwable -> {
-                    serviceResponse.whenComplete().completeExceptionally(throwable);
-                    return null;
-                });
-
-        return new ClientResponseImpl(serviceResponse.status(),
-                                      serviceResponse.serviceRequest().headers(),
-                                      serviceResponse.headers(),
-                                      serviceResponse.connection(),
-                                      serviceResponse.reader(),
-                                      mediaContext,
-                                      clientConfig.mediaTypeParserMode(),
-                                      uri,
-                                      complete);
     }
 
     private String resolvePathParams(String path) {

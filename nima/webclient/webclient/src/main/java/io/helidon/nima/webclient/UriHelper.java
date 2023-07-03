@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import io.helidon.common.uri.UriEncoding;
@@ -96,12 +97,16 @@ public class UriHelper {
     }
 
     /**
-     * Convert instance to {@link java.net.URI}.
+     * Convert instance to {@link java.net.URI}. Does not include query or fragment.
      *
      * @return the converted URI
      */
     public URI toUri() {
-        return URI.create(toString());
+        try {
+            return new URI(scheme, authority, (path.startsWith("/") ? "" : "/") + path, null, null);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

@@ -93,4 +93,16 @@ class UriHelperTest {
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("https"));
     }
+
+    @Test
+    void testToUri() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        UriHelper helper = UriHelper.create(URI.create("http://localhost:8080/loom/quick"), query);
+        URI uri = helper.toUri();
+        assertThat(uri.getAuthority(), is("localhost:8080"));
+        assertThat(uri.getHost(), is("localhost"));
+        assertThat(uri.getPath(), is("/loom/quick"));
+        assertThat(uri.getPort(), is(8080));
+        assertThat(uri.getScheme(), is("http"));
+    }
 }

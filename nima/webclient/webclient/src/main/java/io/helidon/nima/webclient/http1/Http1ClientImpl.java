@@ -27,14 +27,16 @@ import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.LoomClient;
 import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.WebClientCookieManager;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webclient.spi.WebClientServiceProvider;
 
 class Http1ClientImpl extends LoomClient implements Http1Client {
     private static final Tls EMPTY_TLS = Tls.builder().build();
     private final Http1ClientConfig clientConfig;
+    private final WebClientCookieManager cookieManager;
 
-    Http1ClientImpl(Http1ClientConfig clientConfig) {
+    Http1ClientImpl(Http1ClientConfig clientConfig, WebClientCookieManager cookieManager) {
         super(Http1Client.builder()
                       .update(it -> clientConfig.baseUri().ifPresent(it::baseUri))
                       .update(it -> clientConfig.tls().ifPresent(it::tls))
@@ -47,6 +49,7 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
                 .update(it -> services(clientConfig).forEach(it::addService)) // add all configured services
                 .update(it -> it.tls(it.tls().orElse(EMPTY_TLS)))
                 .build();
+        this.cookieManager = cookieManager;
     }
 
     @Override
@@ -54,7 +57,7 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         UriQueryWriteable query = UriQueryWriteable.create();
         UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
 
-        return new ClientRequestImpl(clientConfig, method, helper, query, properties());
+        return new ClientRequestImpl(clientConfig, method, helper, query, properties(), cookieManager);
     }
 
     Http1ClientConfig clientConfig() {
