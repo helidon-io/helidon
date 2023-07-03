@@ -191,6 +191,11 @@ public final class Http {
          */
         public static final Method PATCH = new Method("PATCH", true);
 
+        /**
+         * The HTTP CONNECT method starts two-way communications with the requested resource. It can be used to open a tunnel.
+         */
+        public static final Method CONNECT = new Method("CONNECT", true);
+
         static {
             // THIS MUST BE AFTER THE LAST CONSTANT
             MethodHelper.methodsDone();

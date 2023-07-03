@@ -26,6 +26,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -43,15 +44,16 @@ class ConnectionCache {
 
     static ClientConnection connection(Http1ClientConfig clientConfig,
                                        Tls tls,
+                                       Proxy proxy,
                                        UriHelper uri,
                                        ClientRequestHeaders headers,
                                        boolean defaultKeepAlive) {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : null;
         if (keepAlive) {
-            return keepAliveConnection(clientConfig, effectiveTls, uri);
+            return keepAliveConnection(clientConfig, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(clientConfig, effectiveTls, uri);
+            return oneOffConnection(clientConfig, effectiveTls, uri, proxy);
         }
     }
 
@@ -72,13 +74,14 @@ class ConnectionCache {
 
     private static ClientConnection keepAliveConnection(Http1ClientConfig clientConfig,
                                                         Tls tls,
-                                                        UriHelper uri) {
-        // todo add proxy to the key
+                                                        UriHelper uri,
+                                                        Proxy proxy) {
         KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(),
                                                      uri.authority(),
                                                      tls,
                                                      clientConfig.socketOptions().connectTimeout(),
-                                                     clientConfig.socketOptions().readTimeout());
+                                                     clientConfig.socketOptions().readTimeout(),
+                                                     proxy);
 
         var connectionQueue = CHANNEL_CACHE.computeIfAbsent(keepAliveKey,
                                                             it -> new LinkedBlockingDeque<>(clientConfig.connectionQueueSize()));
@@ -95,7 +98,8 @@ class ConnectionCache {
                                                                      uri.port(),
                                                                      tls,
                                                                      clientConfig.dnsResolver(),
-                                                                     clientConfig.dnsAddressLookup()))
+                                                                     clientConfig.dnsAddressLookup(),
+                                                                     proxy))
                     .connect();
         } else {
             if (LOGGER.isLoggable(DEBUG)) {
@@ -109,16 +113,19 @@ class ConnectionCache {
 
     private static ClientConnection oneOffConnection(Http1ClientConfig clientConfig,
                                                      Tls tls,
-                                                     UriHelper uri) {
+                                                     UriHelper uri,
+                                                     Proxy proxy) {
         return new Http1ClientConnection(clientConfig.socketOptions(), new ConnectionKey(uri.scheme(),
                                                                                          uri.host(),
                                                                                          uri.port(),
                                                                                          tls,
                                                                                          clientConfig.dnsResolver(),
-                                                                                         clientConfig.dnsAddressLookup()))
+                                                                                         clientConfig.dnsAddressLookup(),
+                                                                                         proxy))
                 .connect();
     }
 
-    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig, Duration connectTimeout, Duration readTimeout) {
+    private record KeepAliveKey(String scheme, String authority, Tls tlsConfig, Duration connectTimeout,
+            Duration readTimeout, Proxy proxy) {
     }
 }

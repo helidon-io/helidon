@@ -25,11 +25,7 @@
     </parent>
 
     <artifactId>helidon-nima-tests-integration-webclient</artifactId>
-    <name>Helidon Níma Tests Integration WebClient</name>
-
-    <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-    </properties>
+    <name>Helidon Níma Tests Integration Webclient</name>
 
     <dependencies>
         <dependency>
@@ -44,11 +40,6 @@
         <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-http-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

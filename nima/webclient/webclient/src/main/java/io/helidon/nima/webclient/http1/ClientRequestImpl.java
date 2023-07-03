@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -42,6 +43,7 @@ import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
@@ -67,6 +69,7 @@ class ClientRequestImpl implements Http1ClientRequest {
     private String uriTemplate;
     private ClientConnection connection;
     private UriFragment fragment = UriFragment.empty();
+    private Proxy proxy;
     private boolean skipUriEncoding = false;
     private boolean keepAlive;
 
@@ -208,6 +211,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                          clientConfig,
                                                                          connection,
                                                                          tls,
+                                                                         proxy,
                                                                          whenSent,
                                                                          whenComplete,
                                                                          streamHandler);
@@ -337,6 +341,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                    clientConfig,
                                                                    connection,
                                                                    tls,
+                                                                   proxy,
                                                                    whenSent,
                                                                    whenComplete,
                                                                    entity);
@@ -357,6 +362,12 @@ class ClientRequestImpl implements Http1ClientRequest {
     @Override
     public UriQuery uriQuery() {
         return UriQuery.create(resolvedUri());
+    }
+
+    @Override
+    public Http1ClientRequest proxy(Proxy proxy) {
+        this.proxy = Objects.requireNonNull(proxy);
+        return this;
     }
 
     Duration readTimeout() {

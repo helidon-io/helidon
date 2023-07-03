@@ -49,6 +49,10 @@
             <artifactId>helidon-nima-common-tls</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.http.media</groupId>
             <artifactId>helidon-nima-http-media</artifactId>
         </dependency>

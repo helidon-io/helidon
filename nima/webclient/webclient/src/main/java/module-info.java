@@ -42,13 +42,15 @@ module io.helidon.nima.webclient {
     // @Builder - validator is a runtime dependency
     requires io.helidon.builder.api;
 
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common.http;
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.uri;
     requires transitive io.helidon.nima.common.tls;
-    requires transitive io.helidon.common.socket;
-    requires transitive io.helidon.common.http;
     requires transitive io.helidon.nima.http.encoding;
     requires transitive io.helidon.nima.http.media;
-    requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.config;
 
     exports io.helidon.nima.webclient;

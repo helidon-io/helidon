@@ -42,6 +42,7 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientRequest;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
 
 class ClientRequestImpl implements Http2ClientRequest {
@@ -370,5 +371,10 @@ class ClientRequestImpl implements Http2ClientRequest {
                            "HTTP/2 request contains wrong header, removing: " + httpHeader);
             }
         }
+    }
+
+    @Override
+    public Http2ClientRequest proxy(Proxy proxy) {
+        throw new UnsupportedOperationException("Proxy is not supported in HTTP2");
     }
 }

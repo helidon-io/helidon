@@ -33,6 +33,7 @@ import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.ClientRequest;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 
@@ -46,10 +47,11 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
                               Http1ClientConfig clientConfig,
                               ClientConnection connection,
                               Tls tls,
+                              Proxy proxy,
                               CompletableFuture<WebClientServiceRequest> whenSent,
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               ClientRequest.OutputStreamHandler osHandler) {
-        super(clientConfig, connection, tls, clientRequest.keepAlive());
+        super(clientConfig, connection, tls, proxy, clientRequest.keepAlive());
         this.clientConfig = clientConfig;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;

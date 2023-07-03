@@ -224,6 +224,7 @@ class ClientRequestImplTest {
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
                                                        null,
+                                                       null,
                                                        requestImpl.uri(),
                                                        requestImpl.headers(),
                                                        requestImpl.keepAlive());
@@ -250,6 +251,7 @@ class ClientRequestImplTest {
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connectionList.add(ConnectionCache.connection(requestImpl.clientConfig(),
                                                           null,
+                                                          null,
                                                           requestImpl.uri(),
                                                           requestImpl.headers(),
                                                           requestImpl.keepAlive()));
@@ -270,6 +272,7 @@ class ClientRequestImplTest {
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
             connection = ConnectionCache.connection(requestImpl.clientConfig(),
                                                     null,
+                                                    null,
                                                     requestImpl.uri(),
                                                     requestImpl.headers(),
                                                     requestImpl.keepAlive());
@@ -289,6 +292,7 @@ class ClientRequestImplTest {
         Http1ClientRequest request = injectedHttp1client.put("/test");
         ClientRequestImpl requestImpl = (ClientRequestImpl) request;
         ClientConnection connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
+                                                                    null,
                                                                     null,
                                                                     requestImpl.uri(),
                                                                     requestImpl.headers(),

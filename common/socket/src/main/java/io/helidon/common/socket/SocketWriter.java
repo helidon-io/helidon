@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,16 @@ public abstract class SocketWriter implements DataWriter {
         } else {
             return new SocketWriterAsync(executor, socket, writeQueueLength);
         }
+    }
+
+    /**
+     * Create a new socket writer.
+     *
+     * @param socket           socket to write to
+     * @return a new socket writer
+     */
+    public static SocketWriter create(HelidonSocket socket) {
+        return new SocketWriterDirect(socket);
     }
 
     @Override

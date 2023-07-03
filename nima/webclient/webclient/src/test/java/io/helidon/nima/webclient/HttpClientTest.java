@@ -180,6 +180,11 @@ class HttpClientTest {
         }
 
         @Override
+        public FakeHttpClientRequest proxy(Proxy proxy) {
+            return null;
+        }
+
+        @Override
         public FakeHttpClientRequest skipUriEncoding() {
             return null;
         }
