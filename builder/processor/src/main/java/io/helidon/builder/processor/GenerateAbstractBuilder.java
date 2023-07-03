@@ -1175,7 +1175,7 @@ final class GenerateAbstractBuilder {
 
         String prefix = SOURCE_SPACING.repeat(6);
         if (toStringFields.isEmpty()) {
-            pw.println("{}\"");
+            pw.println("{};\"");
         } else {
             pw.println("{\"");
             pw.println(toStringFields.stream()
