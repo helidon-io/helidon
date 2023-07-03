@@ -18,6 +18,7 @@ import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 import io.helidon.dbclient.spi.DbClientProvider;
+import io.helidon.dbclient.spi.DbClientServiceProvider;
 
 /**
  * Helidon DB Client.
@@ -36,11 +37,14 @@ module io.helidon.dbclient {
 
     requires java.logging;
     requires transitive io.helidon.config;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.common.context;
     requires transitive io.helidon.common.mapper;
 
     exports io.helidon.dbclient;
     exports io.helidon.dbclient.spi;
 
     uses DbClientProvider;
+    uses DbClientServiceProvider;
 
 }

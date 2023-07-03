@@ -22,6 +22,7 @@ import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
+import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.common.CommonClientContext;
 
@@ -41,21 +42,42 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     @Override
     public DbStatementQuery createNamedQuery(String statementName, String statement) {
         return JdbcTransactionStatementQuery.create(
-                StatementContext.create(statementName, statement, context(), connectionPool()),
+                StatementContext.create(statementName, statement, DbStatementType.QUERY, context(), connectionPool()),
                 transactionContext);
     }
 
     @Override
     public DbStatementGet createNamedGet(String statementName, String statement) {
         return JdbcTransactionStatementGet.create(
-                StatementContext.create(statementName, statement, context(), connectionPool()),
+                StatementContext.create(statementName, statement, DbStatementType.GET, context(), connectionPool()),
                 transactionContext);
     }
 
     @Override
     public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
         return JdbcTransactionStatementDml.create(
-                StatementContext.create(statementName, statement, context(), connectionPool()),
+                StatementContext.create(statementName, statement, DbStatementType.DML, context(), connectionPool()),
+                transactionContext);
+    }
+
+    @Override
+    public DbStatementDml createNamedInsert(String statementName, String statement) {
+        return JdbcTransactionStatementDml.create(
+                StatementContext.create(statementName, statement, DbStatementType.INSERT, context(), connectionPool()),
+                transactionContext);
+    }
+
+    @Override
+    public DbStatementDml createNamedUpdate(String statementName, String statement) {
+        return JdbcTransactionStatementDml.create(
+                StatementContext.create(statementName, statement, DbStatementType.UPDATE, context(), connectionPool()),
+                transactionContext);
+    }
+
+    @Override
+    public DbStatementDml createNamedDelete(String statementName, String statement) {
+        return JdbcTransactionStatementDml.create(
+                StatementContext.create(statementName, statement, DbStatementType.DELETE, context(), connectionPool()),
                 transactionContext);
     }
 

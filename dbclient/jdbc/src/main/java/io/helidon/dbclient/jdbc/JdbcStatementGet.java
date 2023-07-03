@@ -34,6 +34,10 @@ class JdbcStatementGet extends JdbcStatement<DbStatementGet> implements DbStatem
     @Override
     @SuppressWarnings("unused")
     public Optional<DbRow> execute() {
+        // Run interceptors before statement execution
+        JdbcClientServiceContext serrviceContext = prepare().createServiceContext();
+        context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
+        // Execute the statement
         try (Connection connection = context().connectionPool().connection();
                 Statement statement = prepare().createStatement(connection);
                 ResultSet rs = prepare().executeQuery()) {

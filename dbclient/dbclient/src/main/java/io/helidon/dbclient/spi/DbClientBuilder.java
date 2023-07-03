@@ -20,6 +20,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbStatements;
 
@@ -106,5 +107,15 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
      * @return updated builder instance
      */
     T mapperManager(MapperManager manager);
+
+    /**
+     * Add an interceptor.
+     * This allows to add implementation of tracing, metrics, logging etc. without the need to hard-code these into
+     * the base.
+     *
+     * @param clientService interceptor instance
+     * @return updated builder instance
+     */
+    T addService(DbClientService clientService);
 
 }

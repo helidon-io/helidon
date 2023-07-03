@@ -34,6 +34,10 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
 
     @Override
     public Stream<DbRow> execute() {
+        // Run interceptors before statement execution
+        JdbcClientServiceContext serrviceContext = prepare().createServiceContext();
+        context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
+        // Execute the statement
         Connection connection = context().connectionPool().connection();
         Statement statement;
         try {

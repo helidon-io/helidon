@@ -24,18 +24,19 @@ import java.util.List;
 
 import io.helidon.dbclient.DbIndexedParameterException;
 
-class StatementIndexedParams implements JdbcStatement.Builder {
+class StatementIndexedParams extends JdbcStatement.Params {
 
-    // List of parameters to be used in the query execution
-    private final List<ParameterValueHandler> parameters;
     private final StatementContext context;
     private PreparedStatement statement;
+    // Parameters values set by user.
+    // Each supported value type has its own handler to use proper PreparedStatement set method for its type.
+    private List<ParameterValueHandler> parameters;
 
 
     private StatementIndexedParams(StatementContext context) {
-        this.parameters = new LinkedList<>();
         this.context = context;
         this.statement = null;
+        this.parameters = new LinkedList<>();
     }
 
     void addParam(ParameterValueHandler handler) {
@@ -44,23 +45,8 @@ class StatementIndexedParams implements JdbcStatement.Builder {
 
     // Create statement and store it in this instance for execution
     @Override
-    public PreparedStatement createStatement(Connection connection) throws SQLException {
+    PreparedStatement createStatement(Connection connection) throws SQLException {
         statement = connection.prepareStatement(context.statement());
-        return statement;
-    }
-
-    @Override
-    public long executeUpdate() throws SQLException {
-        return prepareStatement(statement).executeUpdate();
-    }
-
-    @Override
-    public ResultSet executeQuery() throws SQLException {
-        return prepareStatement(statement).executeQuery();
-    }
-
-    // Set PreparedStatement parameters before statement is executed.
-    PreparedStatement prepareStatement(PreparedStatement statement) {
         // Index starts from 1
         int i = 1;
         for (ParameterValueHandler handler : parameters) {
@@ -75,18 +61,44 @@ class StatementIndexedParams implements JdbcStatement.Builder {
     }
 
     @Override
-    public StatementIndexedParams indexed() {
+    long executeUpdate() throws SQLException {
+        return statement.executeUpdate();
+    }
+
+    @Override
+    ResultSet executeQuery() throws SQLException {
+        return statement.executeQuery();
+    }
+
+    @Override
+    StatementIndexedParams indexed() {
         return this;
     }
 
     @Override
-    public StatementNamedParams named() {
+    StatementNamedParams named() {
         throw new IllegalStateException("Cannot set named parameters when indexed were already chosen");
     }
 
     @Override
-    public State state() {
+    State state() {
         return State.INDEXED;
+    }
+
+    // Create interceptor context
+    @Override
+    JdbcClientServiceContext.Indexed createServiceContext() {
+        return new JdbcClientServiceContext.Indexed(context, this);
+    }
+
+    // Return parameters as list for interceptor
+    List<Object> parametersAsList() {
+        return parameters.stream().map(handler -> handler.rawValue()).toList();
+    }
+
+    // Update parameters from interceptor
+    void parametersFromList(List<Object> parametersList) {
+        parameters = parametersList.stream().map(value -> ParameterValueHandler.handlerOf(value)).toList();
     }
 
     static StatementIndexedParams create(StatementContext context) {

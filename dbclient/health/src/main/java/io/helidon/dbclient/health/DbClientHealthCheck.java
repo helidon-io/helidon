@@ -15,17 +15,17 @@
  */
 package io.helidon.dbclient.health;
 
-import io.helidon.config.Config;
-import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.DbRow;
-import io.helidon.health.HealthCheck;
-import io.helidon.health.HealthCheckResponse;
-
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+
+import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbRow;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
 
 /**
  * Database health check.

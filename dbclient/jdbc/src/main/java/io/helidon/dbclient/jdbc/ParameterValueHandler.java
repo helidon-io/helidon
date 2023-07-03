@@ -16,6 +16,7 @@
 package io.helidon.dbclient.jdbc;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
@@ -26,6 +27,8 @@ interface ParameterValueHandler {
 
     // String representation of the value for logger and exception messages.
     String valueToString();
+
+    Object rawValue();
 
     // Common code for Objects.
     // Primitive types are stored directly in their own records.
@@ -44,6 +47,11 @@ interface ParameterValueHandler {
         @Override
         public String valueToString() {
             return value.toString();
+        }
+
+        @Override
+        public Object rawValue() {
+            return value;
         }
 
     }
@@ -74,8 +82,7 @@ interface ParameterValueHandler {
 
     }
 
-    record
-    BooleanHandler(boolean value) implements ParameterValueHandler {
+    record BooleanHandler(boolean value) implements ParameterValueHandler {
 
         @Override
         public void set(PreparedStatement statement, int index) throws SQLException {
@@ -86,10 +93,15 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Boolean.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Boolean.valueOf(value);
+        }
+
     }
 
-    record
-    ByteHandler(byte value) implements ParameterValueHandler {
+    record ByteHandler(byte value) implements ParameterValueHandler {
 
         @Override
         public void set(PreparedStatement statement, int index) throws SQLException {
@@ -100,10 +112,15 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Byte.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Byte.valueOf(value);
+        }
+
     }
 
-    record
-    ShortHandler(short value) implements ParameterValueHandler {
+    record ShortHandler(short value) implements ParameterValueHandler {
 
         @Override
         public void set(PreparedStatement statement, int index) throws SQLException {
@@ -114,10 +131,15 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Short.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Short.valueOf(value);
+        }
+
     }
 
-    record
-    IntHandler(int value) implements ParameterValueHandler {
+    record IntHandler(int value) implements ParameterValueHandler {
 
         @Override
         public void set(PreparedStatement statement, int index) throws SQLException {
@@ -128,10 +150,15 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Integer.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Integer.valueOf(value);
+        }
+
     }
 
-    record
-    LongHandler(long value) implements ParameterValueHandler {
+    record LongHandler(long value) implements ParameterValueHandler {
 
         @Override
         public void set(PreparedStatement statement, int index) throws SQLException {
@@ -142,10 +169,15 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Long.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Long.valueOf(value);
+        }
+
     }
 
-    record
-    FloatHandler(float value) implements ParameterValueHandler {
+    record FloatHandler(float value) implements ParameterValueHandler {
 
         @Override
         public void set(PreparedStatement statement, int index) throws SQLException {
@@ -156,6 +188,12 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Float.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Float.valueOf(value);
+        }
+
     }
 
     record
@@ -170,6 +208,12 @@ interface ParameterValueHandler {
         public String valueToString() {
             return Double.toString(value);
         }
+
+        @Override
+        public Object rawValue() {
+            return Double.valueOf(value);
+        }
+
     }
 
     final class BigDecimalHandler extends AbstractHandler<BigDecimal> {
@@ -196,6 +240,42 @@ interface ParameterValueHandler {
             statement.setBytes(index, value());
         }
 
+    }
+
+    static ParameterValueHandler handlerOf(Object value) {
+        if (value instanceof Number) {
+            if (value instanceof Byte) {
+                return new ByteHandler((Byte) value);
+            }
+            if (value instanceof Short) {
+                return new ShortHandler((Short) value);
+            }
+            if (value instanceof Integer) {
+                return new IntHandler((Integer) value);
+            }
+            if (value instanceof Long) {
+                return new LongHandler((Long) value);
+            }
+            if (value instanceof Float) {
+                return new FloatHandler((Float) value);
+            }
+            if (value instanceof Double) {
+                return new DoubleHandler((Double) value);
+            }
+            if (value instanceof BigInteger) {
+                return new BigDecimalHandler(new BigDecimal((BigInteger) value));
+            }
+            if (value instanceof BigDecimal) {
+                return new BigDecimalHandler((BigDecimal) value);
+            }
+        }
+        if (value instanceof String) {
+            return new StringHandler((String) value);
+        }
+        if (value instanceof byte[]) {
+            return new BytesHandler((byte[]) value);
+        }
+        return new ObjectHandler(value);
     }
 
 }

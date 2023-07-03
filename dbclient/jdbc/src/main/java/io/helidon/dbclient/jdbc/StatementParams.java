@@ -21,14 +21,14 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.function.Consumer;
 
-class StatementParams implements JdbcStatement.Builder {
+class StatementParams extends JdbcStatement.Params {
 
     private final StatementContext context;
-    private final Consumer<JdbcStatement.Builder> update;
+    private final Consumer<JdbcStatement.Params> update;
 
     private Statement statement;
 
-    StatementParams(StatementContext context, Consumer<JdbcStatement.Builder> update) {
+    StatementParams(StatementContext context, Consumer<JdbcStatement.Params> update) {
         this.context = context;
         this.update = update;
         this.statement = null;
@@ -72,6 +72,12 @@ class StatementParams implements JdbcStatement.Builder {
     @Override
     public State state() {
         return State.INIT;
+    }
+
+    // Create interceptor context
+    @Override
+    JdbcClientServiceContext.NoParams createServiceContext() {
+        return new JdbcClientServiceContext.NoParams(context, this);
     }
 
 }

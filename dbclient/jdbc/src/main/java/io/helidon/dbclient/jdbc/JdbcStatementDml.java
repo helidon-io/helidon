@@ -30,6 +30,10 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml> implements DbStatem
 
     @Override
     public long execute() {
+        // Run interceptors before statement execution
+        JdbcClientServiceContext serrviceContext = prepare().createServiceContext();
+        context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
+        // Execute the statement
         try (Connection connection = context().connectionPool().connection();
                 Statement statement = prepare().createStatement(connection)) {
             return (long) prepare().executeUpdate();

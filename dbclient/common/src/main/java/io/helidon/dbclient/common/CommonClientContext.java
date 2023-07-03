@@ -15,7 +15,10 @@
  */
 package io.helidon.dbclient.common;
 
+import java.util.List;
+
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatements;
 
@@ -29,14 +32,14 @@ public class CommonClientContext {
 
     private final DbMapperManager dbMapperManager;
     private final MapperManager mapperManager;
-    //private final List<DbClientService> clientServices;
+    private final List<DbClientService> clientServices;
     private final DbStatements statements;
     private final String dbType;
 
     private CommonClientContext(Builder builder) {
         this.dbMapperManager = builder.dbMapperManager;
         this.mapperManager = builder.mapperManager;
-//        this.clientServices = builder.clientServices;
+        this.clientServices = builder.clientServices;
         this.statements = builder.statements;
         this.dbType = builder.dbType;
     }
@@ -69,6 +72,15 @@ public class CommonClientContext {
     }
 
     /**
+     * Configured client services (interceptors).
+     *
+     * @return client services
+     */
+    public List<DbClientService> clientServices() {
+        return clientServices;
+    }
+
+    /**
      * Type of this database provider (such as jdbc:mysql, mongoDB etc.).
      *
      * @return name of the database provider
@@ -81,18 +93,19 @@ public class CommonClientContext {
      * Create Helidon database client context.
      *
      * @param statements      configured statements
+     * @param clientServices  configured client services (interceptors)
      * @param dbMapperManager configured DB Mapper manager
      * @param mapperManager   configured mapper manager
      * @param dbType          type of this database provider
      * @return database client context instance
      */
     public static CommonClientContext create(DbStatements statements,
-                                             /*List<DbClientService> clientServices,*/
+                                             List<DbClientService> clientServices,
                                              DbMapperManager dbMapperManager,
                                              MapperManager mapperManager,
                                              String dbType) {
         return builder().statements(statements)
-//                .clientServices(clientServices)
+                .clientServices(clientServices)
                 .dbMapperManager(dbMapperManager)
                 .mapperManager(mapperManager)
                 .dbType(dbType)
@@ -115,7 +128,7 @@ public class CommonClientContext {
 
         private DbMapperManager dbMapperManager;
         private MapperManager mapperManager;
-        //private List<DbClientService> clientServices;
+        private List<DbClientService> clientServices;
         private DbStatements statements;
         private String dbType;
 
@@ -152,16 +165,16 @@ public class CommonClientContext {
             return this;
         }
 
-//        /**
-//         * Configure the client services to use.
-//         *
-//         * @param clientServices client service list
-//         * @return updated builder instance
-//         */
-//        public Builder clientServices(List<DbClientService> clientServices) {
-//            this.clientServices = clientServices;
-//            return me;
-//        }
+        /**
+         * Configure the client services to use.
+         *
+         * @param clientServices client service list
+         * @return updated builder instance
+         */
+        public Builder clientServices(List<DbClientService> clientServices) {
+            this.clientServices = clientServices;
+            return this;
+        }
 
         /**
          * Configure the db statements to use.

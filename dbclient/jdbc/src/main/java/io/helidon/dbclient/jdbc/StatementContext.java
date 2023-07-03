@@ -17,6 +17,7 @@ package io.helidon.dbclient.jdbc;
 
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.dbclient.DbMapperManager;
+import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbStatements;
 import io.helidon.dbclient.common.CommonClientContext;
 
@@ -24,18 +25,20 @@ import io.helidon.dbclient.common.CommonClientContext;
  * JDBC statement context.
  */
 class StatementContext {
-
-    private final String statementName;
-    private final String statement;
+    private final DbStatementType dbStatementType;
     private final CommonClientContext clientContext;
     private final JdbcConnectionPool connectionPool;
+    private String statementName;
+    private String statement;
 
     private StatementContext(String statementName,
                              String statement,
+                             DbStatementType dbStatementType,
                              CommonClientContext context,
                              JdbcConnectionPool connectionPool) {
         this.statementName = statementName;
         this.statement = statement;
+        this.dbStatementType = dbStatementType;
         this.clientContext = context;
         this.connectionPool = connectionPool;
     }
@@ -46,6 +49,10 @@ class StatementContext {
 
     String statement() {
         return statement;
+    }
+
+    DbStatementType dbStatementType() {
+        return dbStatementType;
     }
 
     CommonClientContext clientContext() {
@@ -72,11 +79,22 @@ class StatementContext {
         return clientContext.dbType();
     }
 
+    // Update statement String from interceptor
+    void statement(String statement) {
+        this.statement = statement;
+    }
+
+    // Update statement name from interceptor
+    void statementName(String statementName) {
+        this.statementName = statementName;
+    }
+
     static StatementContext create(String statementName,
                                    String statement,
+                                   DbStatementType dbStatementType,
                                    CommonClientContext clientContext,
                                    JdbcConnectionPool connectionPool) {
-        return new StatementContext(statementName, statement, clientContext, connectionPool);
+        return new StatementContext(statementName, statement, dbStatementType, clientContext, connectionPool);
     }
 
 }

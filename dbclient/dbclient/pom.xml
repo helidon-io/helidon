@@ -37,6 +37,10 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-mapper</artifactId>
         </dependency>
         <dependency>

@@ -15,11 +15,14 @@
  */
 package io.helidon.dbclient.common;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
+import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatements;
@@ -43,11 +46,13 @@ public abstract class CommonClientBuilder<T extends CommonClientBuilder<T>>
     private DbStatements statements;
     private MapperManager mapperManager;
     private DbMapperManager dbMapperManager;
+    private final List<DbClientService> clientServices;
 
     /**
      * Creates an instance of {@link CommonClientBuilder}.
      */
     protected CommonClientBuilder() {
+        this.clientServices = new LinkedList<>();
     }
 
     @Override
@@ -127,6 +132,12 @@ public abstract class CommonClientBuilder<T extends CommonClientBuilder<T>>
         return identity();
     }
 
+    @Override
+    public T addService(DbClientService clientService) {
+        clientServices.add(clientService);
+        return identity();
+    }
+
     /**
      * Get database URL.
      *
@@ -163,9 +174,15 @@ public abstract class CommonClientBuilder<T extends CommonClientBuilder<T>>
         return statements;
     }
 
-//    List<DbClientService> clientServices() {
-//        return List.copyOf(clientServices);
-//    }
+    /**
+     * Get configured client services (interceptors).
+     * List of services is converted to unmodifiable List.
+     *
+     * @return client services
+     */
+    public List<DbClientService> clientServices() {
+        return List.copyOf(clientServices);
+    }
 
     /**
      * Get {@link io.helidon.common.mapper.Mapper} manager.

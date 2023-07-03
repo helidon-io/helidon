@@ -16,11 +16,16 @@
 package io.helidon.dbclient;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.ServiceLoader;
+import java.util.function.Supplier;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbClientProvider;
+import io.helidon.dbclient.spi.DbClientServiceProvider;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
@@ -156,6 +161,8 @@ public interface DbClient {
         // DbClient configuration
         private Config config = Config.empty();
 
+        private final HelidonServiceLoader.Builder<DbClientServiceProvider> clientServiceProviders = HelidonServiceLoader.builder(
+                ServiceLoader.load(DbClientServiceProvider.class));
 
         /**
          * Create an instance of Helidon database handler builder.
@@ -174,18 +181,17 @@ public interface DbClient {
         @Override
         public DbClient build() {
             // add client services from service loader
-//            Config servicesConfig = config.get("services");
-//            List<DbClientServiceProvider> providers = clientServiceProviders.build().asList();
-//            for (DbClientServiceProvider provider : providers) {
-//                Config providerConfig = servicesConfig.get(provider.configKey());
-//                if (!providerConfig.exists()) {
-//                    // this client service is on classpath, yet there is no configuration for it, so it is ignored
-//                    continue;
-//                }
-//
-//                provider.create(providerConfig)
-//                        .forEach(this::addService);
-//            }
+            Config servicesConfig = config.get("services");
+            List<DbClientServiceProvider> providers = clientServiceProviders.build().asList();
+            for (DbClientServiceProvider provider : providers) {
+                Config providerConfig = servicesConfig.get(provider.configKey());
+                if (!providerConfig.exists()) {
+                    // this client service is on classpath, yet there is no configuration for it, so it is ignored
+                    continue;
+                }
+                provider.create(providerConfig)
+                        .forEach(this::addService);
+            }
 
             return clientBuilder.build();
         }
@@ -235,6 +241,28 @@ public interface DbClient {
          */
         public Builder mapperManager(MapperManager manager) {
             clientBuilder.mapperManager(manager);
+            return this;
+        }
+
+        /**
+         * Add a client service.
+         *
+         * @param clientService clientService to apply
+         * @return updated builder instance
+         */
+        public Builder addService(DbClientService clientService) {
+            clientBuilder.addService(clientService);
+            return this;
+        }
+
+        /**
+         * Add a client service.
+         *
+         * @param clientServiceSupplier supplier of client service
+         * @return updated builder instance
+         */
+        public Builder addService(Supplier<? extends DbClientService> clientServiceSupplier) {
+            clientBuilder.addService(clientServiceSupplier.get());
             return this;
         }
 

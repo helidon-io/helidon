@@ -22,34 +22,30 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import io.helidon.dbclient.DbNamedParameterException;
 
 /**
  * Extends JDBC {@link PreparedStatement} with named parameters support.
  */
-class StatementNamedParams implements JdbcStatement.Builder {
+class StatementNamedParams extends JdbcStatement.Params {
 
     /** Local logger instance. */
     private static final System.Logger LOGGER = System.getLogger(StatementNamedParams.class.getName());
 
     // JDBC execution context bound with statement.
     private final StatementContext context;
-    // Use PreparedStatement as delegate.
-    private final String convertedStatement;
-    // Parameter names in the same order as in the statement String.
-    private final List<String> namesOrder;
+    private PreparedStatement statement;
     // Parameters values set by user.
     // Each supported value type has its own handler to use proper PreparedStatement set method for its type.
-    private final Map<String, ParameterValueHandler> parameters = new HashMap<>();
-    private PreparedStatement statement;
+    private Map<String, ParameterValueHandler> parameters;
 
     // Instance shall be always created by factory method.
-    private StatementNamedParams(StatementContext context, String convertedStatement, List<String> namesOrder) {
+    private StatementNamedParams(StatementContext context) {
         this.context = context;
-        this.convertedStatement = convertedStatement;
-        this.namesOrder = namesOrder;
         this.statement = null;
+        parameters = new HashMap<>();
     }
 
     void addParam(String name, ParameterValueHandler handler) {
@@ -58,23 +54,11 @@ class StatementNamedParams implements JdbcStatement.Builder {
 
     // Create statement and store it in this instance for execution
     @Override
-    public PreparedStatement createStatement(Connection connection) throws SQLException {
-        statement = connection.prepareStatement(convertedStatement);
-        return statement;
-    }
-
-    @Override
-    public long executeUpdate() throws SQLException {
-        return prepareStatement(statement).executeUpdate();
-    }
-
-    @Override
-    public ResultSet executeQuery() throws SQLException {
-        return prepareStatement(statement).executeQuery();
-    }
-
-    // Set PreparedStatement parameters before statement is executed.
-    PreparedStatement prepareStatement(PreparedStatement statement) throws SQLException {
+    PreparedStatement createStatement(Connection connection) throws SQLException {
+        NamedStatementParser parser = new NamedStatementParser(context.statement());
+        String jdbcStatement = parser.convert();
+        statement = connection.prepareStatement(jdbcStatement);
+        List<String> namesOrder = parser.namesOrder();
         // Index starts from 1
         int i = 1;
         // Walk through query parameters names order list
@@ -87,9 +71,9 @@ class StatementNamedParams implements JdbcStatement.Builder {
                     throw new DbNamedParameterException("Failed to set named parameter", name, context.statement(), ex);
                 }
                 LOGGER.log(System.Logger.Level.DEBUG,
-                           String.format("Mapped parameter %d: %s -> %s", i, name, handler.valueToString()));
+                        String.format("Mapped parameter %d: %s -> %s", i, name, handler.valueToString()));
                 i++;
-            // Throw an exception when some parameter name was not set.
+                // Throw an exception when some parameter name was not set.
             } else {
                 throw new DbNamedParameterException(
                         String.format("Missing named parameter %s from the statement", name), name, context.statement());
@@ -99,18 +83,45 @@ class StatementNamedParams implements JdbcStatement.Builder {
     }
 
     @Override
-    public StatementIndexedParams indexed() {
+    long executeUpdate() throws SQLException {
+        return statement.executeUpdate();
+    }
+
+    @Override
+    ResultSet executeQuery() throws SQLException {
+        return statement.executeQuery();
+    }
+
+    @Override
+    StatementIndexedParams indexed() {
         throw new IllegalStateException("Cannot set indexed parameters when named were already chosen");
     }
 
     @Override
-    public StatementNamedParams named() {
+    StatementNamedParams named() {
         return this;
     }
 
     @Override
-    public State state() {
+    State state() {
         return State.NAMED;
+    }
+
+    // Create interceptor context
+    @Override
+    JdbcClientServiceContext.Named createServiceContext() {
+        return new JdbcClientServiceContext.Named(context, this);
+    }
+
+    // Return parameters as list for interceptor
+    Map<String, Object> parametersAsMap() {
+        return parameters.entrySet().stream().collect(
+                Collectors.toMap(e -> e.getKey(), e -> e.getValue().rawValue()));
+    }
+
+    void parametersFromMap(Map<String, Object> parametersMap) {
+        parameters = parametersMap.entrySet().stream().collect(
+                Collectors.toMap(e -> e.getKey(), e -> ParameterValueHandler.handlerOf(e.getValue())));
     }
 
     /**
@@ -120,12 +131,7 @@ class StatementNamedParams implements JdbcStatement.Builder {
      * @return new instance of JDBC {@link PreparedStatement} with named parameters support
      */
     static StatementNamedParams create(StatementContext context) {
-        NamedStatementParser parser = new NamedStatementParser(context.statement());
-        String jdbcStatement = parser.convert();
-        LOGGER.log(System.Logger.Level.DEBUG, () -> String.format("Converted statement: %s", jdbcStatement));
-        return new StatementNamedParams(context,
-                                        jdbcStatement,
-                                        parser.namesOrder());
+        return new StatementNamedParams(context);
     }
 
 }

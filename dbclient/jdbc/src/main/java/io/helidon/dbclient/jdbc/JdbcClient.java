@@ -29,6 +29,7 @@ class JdbcClient extends CommonClient implements DbClient {
 
     JdbcClient(JdbcClientBuilder builder) {
         super(CommonClientContext.create(builder.statements(),
+                                         builder.clientServices(),
                                          builder.dbMapperManager(),
                                          builder.mapperManager(),
                                          builder.connectionPool().dbType()));
@@ -54,6 +55,9 @@ class JdbcClient extends CommonClient implements DbClient {
     public <C> C unwrap(Class<C> cls) {
         if (Connection.class.isAssignableFrom(cls)) {
             return cls.cast(connectionPool.connection());
+        // JdbcClient and CommonClient unwraps are used in tests.
+        } else if (JdbcClient.class.isAssignableFrom(cls) || CommonClient.class.isAssignableFrom(cls)) {
+            return cls.cast(this);
         } else {
             throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
         }

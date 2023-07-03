@@ -35,7 +35,7 @@ abstract class JdbcStatement<S extends DbStatement<S>> extends CommonStatement<S
     // Statement preparation handler.
     // Instance is initialized to PrepareInitial instance (parameter type was not chosen yet).
     // It's updated to PrepareIndex or PrepareName depending on 1st parameter being set to the statement.
-    private Builder params;
+    private Params params;
 
     JdbcStatement(StatementContext context) {
         super(context.clientContext());
@@ -204,15 +204,15 @@ abstract class JdbcStatement<S extends DbStatement<S>> extends CommonStatement<S
     }
 
     // Current statement preparation handler.
-    Builder prepare() {
+    Params prepare() {
         return params;
     }
 
     // Callback method passed to StatementParams Builder instance.
     // This method is called from PrepareInitial instance to update Builder instance to the next state.
     // This next state handles only indexed or named parameters.
-    private void updatePrepare(Builder prepare) {
-        if (this.params.state() != Builder.State.INIT) {
+    private void updatePrepare(Params prepare) {
+        if (this.params.state() != Params.State.INIT) {
             throw new IllegalStateException("Cannot update statement preparation method when method was already chosen.");
         }
         this.params = prepare;
@@ -226,19 +226,21 @@ abstract class JdbcStatement<S extends DbStatement<S>> extends CommonStatement<S
     // Each subsequent parameter must be of the same type (indexed or named).
 
     // Builder interface to prepare statement for execution and execute it
-    interface Builder {
+    abstract static class Params {
 
-        StatementIndexedParams indexed();
+        abstract StatementIndexedParams indexed();
 
-        StatementNamedParams named();
+        abstract StatementNamedParams named();
 
-        Statement createStatement(Connection connection) throws SQLException;
+        abstract Statement createStatement(Connection connection) throws SQLException;
 
-        long executeUpdate() throws SQLException;
+        abstract long executeUpdate() throws SQLException;
 
-        ResultSet executeQuery() throws SQLException;
+        abstract ResultSet executeQuery() throws SQLException;
 
-        Builder.State state();
+        abstract Params.State state();
+
+        abstract JdbcClientServiceContext createServiceContext();
 
         // Parameters preparation state
         enum State {
