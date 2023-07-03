@@ -51,7 +51,7 @@ class MyDerivedConfigBeanTest {
     void testIt() {
         MyDerivedConfigBean cfg = MyDerivedConfigBean.builder().setName("test").build();
         assertThat(cfg.toString(),
-                   equalTo("MyDerivedConfigBean{}MyConfigBean{name=test,enabled=false,port=8080}"));
+                   equalTo("MyDerivedConfigBean{};MyConfigBean{name=test,enabled=false,port=8080}"));
     }
 
 }

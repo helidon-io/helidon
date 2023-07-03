@@ -19,6 +19,8 @@ package io.helidon.builder.test;
 import java.net.URI;
 
 import io.helidon.builder.test.testsubjects.ChildInterfaceIsABuilder;
+import io.helidon.builder.test.testsubjects.tostring.Child;
+import io.helidon.builder.test.testsubjects.tostring.EmptyChild;
 
 import org.junit.jupiter.api.Test;
 
@@ -82,6 +84,20 @@ class ParentParentChildTest {
 
         assertThat(val.overrideMe(), equalTo("pwd".toCharArray()));
         assertThat(val.maybeOverrideMe(), optionalEmpty());
+    }
+
+    @Test
+    void testEmptyChildToString() {
+        EmptyChild t = EmptyChild.builder().build();
+
+        assertThat(t.toString(), is("EmptyChild{};EmptyParent{};"));
+    }
+
+    @Test
+    void testChildToString() {
+        Child t = Child.builder().name("myName").build();
+
+        assertThat(t.toString(), is("Child{};Parent{name=myName}"));
     }
 
 }
