@@ -24,6 +24,36 @@
 :feature-name: Oracle WebLogic Server Integration
 :rootdir: {docdir}/../..
 
+:wls-version: 14.1.1.0
+:wls-root-url: https://docs.oracle.com/en/middleware/standalone/weblogic-server/{wls-version}
+
+:wls-jaxrs-url: {wls-root-url}/restf/develop-restful-service.html#GUID-8C2E2918-B157-49BE-8BCA-125C87E4B3E3
+:wls-jaxrs-link: {wls-jaxrs-url}[Developing and Securing RESTful Web Services for Oracle WebLogic Server]
+
+:wls-jaxrs-client-url: {wls-root-url}/restf/develop-restful-client.html#GUID-F50F4FB3-8A25-439F-8554-484F1C58315C
+:wls-jaxrs-client-link: {wls-jaxrs-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
+
+:wls-jms-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-8E1A4C48-D7C9-4599-B0C1-89E1FEA823B2
+:wls-jms-link: {wls-jms-url}[Integrating WebLogic JMS with Helidon]
+
+:wls-thin-url: {wls-root-url}/saclt/wlthint3client.html#GUID-D352B8F0-1B9D-43E8-A675-BBFE7E4DE1E9
+:wls-thin-link: {wls-thin-url}[Weblogic thin T3 client]
+
+:wls-soap-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-web-services-helidon.html#GUID-DA893D15-13CB-49AF-AD5B-43FD716618BB
+:wls-soap-link: {wls-soap-url}[Integrating Oracle WebLogic Server Web Services with Helidon]
+
+:wls-sso-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-D54EE368-0D7F-4DBB-9279-CC5BDDB76725
+:wls-sso-link: {wls-sso-url}[Integrating Oracle WebLogic Cluster and Helidon Applications for SSO on OCI Using IDCS]
+
+:wls-xa-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-microtx.html#GUID-81107BDE-7A99-421B-883D-AAAC12692E26
+:wls-xa-link: {wls-sso-url}[Integrating XA Global Transactions Between WebLogic Server and Helidon Using MicroTx]
+
+:jersey-url: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest
+:jersey-link: {jersey-url}[Eclipse Jersey]
+
+:micro-tx-url: https://www.oracle.com/database/transaction-manager-for-microservices
+:micro-tx-link: {micro-tx-url}[MicroTx]
+
 == Contents
 
 - <<Overview, Overview>>
@@ -31,99 +61,95 @@
 - <<JMS Integration, JMS Integration>>
 - <<Web Services Integration, Web Services Integration>>
 - <<Single Sign-On on OCI Integration, Single Sign-On on OCI Integration>>
-- <<MicroTx Integration, MicroTx Integration>>
+- <<XA Transactions Integration, XA-Transactions-Integration>>
+
 
 == Overview
 
-The Oracle WebLogic Server and Helidon integration enables interaction between a Helidon microservice application and an application installed on Oracle WebLogic Server, which is deployed in a Kubernetes cluster managed by the WebLogic Kubernetes Operator (WKO). 
+The Oracle WebLogic Server (WebLogic Server) and Helidon integration enables interaction between a Helidon microservice application and an application installed on WebLogic Server.
 
-[IMPORTANT]
-====
-You can implement this integration on any supported platform.
-====
+The following integrations are explained in this document:
 
-The following integrations are available for your use:
+* The REST integration allows WebLogic Server applications and Helidon microservices to communicate through RESTful Web Service invocations.
+* The JMS integration allows Helidon microservices to publish and consume messages from WebLogic JMS Server.
+* The WebLogic Web Services integration allows Helidon microservices to interact with WebLogic Server applications through SOAP (Simple Object Access Protocol) Web Service calls from Helidon to WebLogic Server.
+* The WebLogic Server and Helidon integration allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
+* XA Transactions Integration with {micro-tx-link} allows participating in XA transactions to both Helidon and WebLogic Server applications.
 
-* The Oracle WebLogic Server REST integration allows Oracle WebLogic Server applications and Helidon microservices to communicate through RESTful web service invocations, in one or both directions.
-* The Oracle WebLogic Server JMS integration allows Oracle WebLogic Server applications and Helidon microservices to communicate through messaging, in one or both directions.
-* The Oracle WebLogic Server Web Services integration allows Helidon microservices to interact with Oracle WebLogic Server applications through SOAP (Simple Object Access Protocol) web service calls from Helidon to Oracle WebLogic Server.
-* The Oracle WebLogic Server and Helidon integration for SSO allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
-* The Oracle WebLogic Server and Helidon using MicroTx enables easy coordination of XA global or distributed transactions initiated by Helidon, spanning applications and data sources on Oracle WebLogic Server and Helidon.
+Integration between Helidon and WebLogic Server is possible over numerous protocols, most notably RESTful Web Services,
+SOAP Web Services, and JMS. Both Helidon and WebLogic Server support Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
 
 == REST Services Integration [[REST-Services]]
 
 - <<REST-Services-Overview, Overview>>
-- <<REST-Services-Maven-Coordinates, Maven Coordinates>>
-- <<REST-Services-Usage, Usage>>
+- <<REST-Server, JAX-RS Server>>
+- <<REST-Client, JAX-RS Client>>
 - <<REST-Services-References, References>>
 
 === Overview [[REST-Services-Overview]]
-The REST services integration with Helidon enables bidirectional REST calls between Helidon and Oracle WebLogic Server. The Oracle WebLogic Server applications and Helidon microservices communicate through RESTful Web Service invocations, in one or both directions.
 
-=== Maven Coordinates [[REST-Services-Maven-Coordinates]]
+The REST services integration with Helidon enables bidirectional REST calls between Helidon and WebLogic Server. RESTful integration between WebLogic Server and Helidon MP is easy to develop and maintain because
+both runtimes support JAX-RS for serving and calling the RESTful resources. With the Jakarta EE support, you can create the same RESTful resource or client, which will work in both environments.
 
-To enable Oracle WebLogic Server REST Integration, add the following dependencies to your project’s `pom.xml` file:
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.microprofile.bundles</groupId>
-    <artifactId>helidon-microprofile</artifactId>
-</dependency>
-<dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
-    <version>2.5.5</version>
-</dependency>
-<dependency>
-    <groupId>io.helidon.media</groupId>
-    <artifactId>helidon-media-jackson</artifactId>
-    <version>2.5.5</version>
-</dependency>
-<dependency>
-    <groupId>io.helidon.microprofile.rest-client</groupId>
-    <artifactId>helidon-microprofile-rest-client</artifactId>
-    <version>2.5.5</version>
-</dependency>
-----
-
-=== Usage [[REST-Services-Usage]]
-
-After you add the dependencies, you can build the Helidon client and invoke the Oracle WebLogic Web Service by compiling the Helidon client using Maven.
-
-[source,shell]
-----
-mvn clean package -DskipTests=true
-----
-For information about developing the REST Service using JAX-RS and Helidon API, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-server-rest-services-helidon.html#GUID-AB8F2DC5-840B-40E7-89B4-7FDAD8035C88[Integrating WebLogic REST Services with Helidon 2.x].
-
-After you have compiled, start the Helidon server using the following command:
-
-[source,shell]
-----
-java -jar ./target/helidon-test.jar
-----
-Start the Helidon server to access the REST service running in Oracle WebLogic Server by using the Helidon URL. The URL will  use the name and port number of the host where the Helidon microservice application is running.
+=== JAX-RS Server [[REST-Server]]
+The JAX-RS resource is a simple bean with annotated methods representing routes and HTTP methods under a specific path. Annotated methods are invoked when a particular REST endpoint is called. All the mapping and routing are done by the actual implementation of the JAX-RS standard according to the JAX-RS annotations.
 
 [source,java]
+.JAX-RS Example Resource
 ----
-http://<HELIDON_HOST>:<HELIDON_PORT>/client/<handler>
+@Path("/greet")//<1>
+public class GreetResource {
+
+    @Path("/hello")
+    @GET //<2>
+    @Produces(MediaType.TEXT_PLAIN) //<3>
+    public Response getHello() {
+        return Response.ok("Hello World!") //<4>
+                       .build();
+    }
+}
 ----
-To test the application, send a request from the Helidon endpoint using one of the following:
+<1> Path of the resource.
+<2> HTTP method.
+<3> Expected response content type.
+<4> Returns the text payload with status 200.
 
-* A Java client
-* A browser
-* Postman 
+JAX-RS is a very powerful tool where you can register your message body writers, readers, filters, or exception mappers.
+In both Helidon and WebLogic Server, {jersey-link} is used as the JAX-RS implementation.
 
-You should receive a response from the REST service deployed in Oracle WebLogic Server. For example, you should receive the following response when you initiate the `getHelidonClientToWlsRestText` handler:
+For information about creating and deploying the JAX-RS RESTful resources in Helidon, see  xref:mp/jaxrs/05_jaxrs-applications.adoc[JAX-RS applications.]
+
+For information about developing and deploying the JAX-RS resources on WebLogic Server, see the {wls-jaxrs-link} documentation.
+
+=== JAX-RS Client [[REST-Client]]
+
+JAX-RS provides a convenient client API for calling the RESTful resources. The client enables you to prepare and execute the RESTful request call with a simple builder pattern API.
 
 [source,java]
+.JAX-RS Client Example
 ----
-Hi there!
+Client client = ClientBuilder.newClient();
+String res = client
+    .target("http://localhost:8080") //<1>
+    .path("/greet") //<2>
+    .request("text/plain") // <3>
+    .get(String.class); // <4> <5>
 ----
+<1> Creates a new WebTarget with the default root URL.
+<2> Prepares the request to a particular context path.
+<3> Sets the expected response content type.
+<4> Executes the GET request and blocks until the response is received.
+<5> Parameter sets the expected response payload type, available body readers are used for parsing to the correct response payload type.
+
+Again, you can register your own message body writers, readers, filters, or exception mappers.
+
+For information about developing and deploying JAX-RS clients on WebLogic Server, see the {wls-jaxrs-client-link} documentation.
 
 === References [[REST-Services-References]]
-https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart]
+* xref:mp/introduction/02_microprofile.adoc[Helidon MP Tutorial]
+* xref:mp/guides/02_quickstart.adoc[Helidon MP Quickstart]
+* {wls-jaxrs-link}
+* {jersey-link}
 
 == JMS Integration [[JMS-Integration]]
 
@@ -133,87 +159,108 @@ https://helidon.io/docs/v2/#/mp/guides/02_quickstart[Helidon MP Quickstart]
 - <<JMS-Integration-References, References>>
 
 === Overview [[JMS-Integration-Overview]]
+WebLogic Server provides Java Message Service (JMS) and acts as a messaging broker that is accessible even from outside the cluster.
+To access the WebLogic JMS Server from outside, a client library is required. The Helidon JMS connector for reactive messaging can be configured to use the {wls-thin-link} for either consuming or
+emitting messages.
 
-The integration of the Oracle WebLogic Server Java Message Service (JMS) with Helidon enables Oracle WebLogic Server applications and Helidon microservices to communicate through messaging, in one or both directions.
+You can obtain the {wls-thin-link} in the server/lib directory (`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
+
+[source, shell]
+.Example of Installing the Thin T3 Client Artifact to the Local Maven Repository
+----
+mvn install:install-file \
+-Dfile=<JAR_FILE_PATH>/wlthint3client.jar \
+-DgroupId=wlthint3client \
+-DartifactId=wlthint3client \
+-Dversion=1.0
+----
 
 === Maven Coordinates [[JMS-Integration-Maven-Coordinates]]
 
-To enable Oracle WebLogic Server JMS  with Helidon, add the following dependencies to your project’s `pom.xml` file:
+To enable WebLogic Server JMS integration with Helidon, add the following dependencies to your project’s `pom.xml` file:
 
-*Dependency for Reactive Messaging*
-
-[source,xml] 
+[source,xml]
+.Dependencies for Reactive Messaging with the Thin T3 Client
 ----
 <dependency>
    <groupId>io.helidon.microprofile.messaging</groupId>
-   <artifactId>helidon-microprofile-messaging</artifactId>
+   <artifactId>helidon-microprofile-messaging</artifactId> <1>
 </dependency>
-----
-*Dependency for JMS Connector*
-
-[source,xml]
-----
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
-    <artifactId>helidon-messaging-jms</artifactId>
+    <artifactId>helidon-messaging-jms</artifactId> <2>
 </dependency>
-----
-*Dependency for Messaging Health*
-
-[source,xml]
-----
-<dependency>
-    <groupId>io.helidon.microprofile.messaging</groupId>
-    <artifactId>helidon-microprofile-messaging-health</artifactId>
-</dependency>
-----
-
-*Dependencies for the WLS Thin Client JAR File*
-
-Helidon 2.x supports the javax thin client JAR file `wlthint3client`. This file is created when you install WebLogic Server and it is located in the `WL_HOME\server\lib` directory of your WebLogic Server installation.
-
-Add this file as part of the Maven compilation/runtime dependencies, as shown below:
-
-[source,xml]
-----
 <dependency>
     <groupId>wlthint3client</groupId>
-    <artifactId>wlthint3client</artifactId>
+    <artifactId>wlthint3client</artifactId> <3>
     <version>1.0</version>
 </dependency>
 ----
+<1> Dependency for Reactive Messaging.
+<2> Dependency for the JMS connector.
+<3> Dependency for the manually installed WLS thin client.
 
-[NOTE]
-====
-Ensure that the values for `groupId`, `artifactId`, and `version` are identical to the values used in the `mvn install:install-file` command. 
-====
-
-Use the following Maven command to add the javax thin client to the Maven repository:
-
-[source,shell]
-----
-mvn install:install-file -Dfile=<WLS_ORACLE_HOME>/wlserver/server/lib/wlthint3client.jar -DgroupId=wlthint3client -DartifactId=wlthint3client -Dversion=1.0
-----
 
 === Usage [[JMS-Integration-Usage]]
 
-After adding the Maven dependencies, configure the Helidon JMS connector including the JMS environment properties and the JMS resources such as the connection factory, destination, and destination type.
+After adding the Maven dependencies, configure the Helidon JMS connector, including the JMS environment properties and the JMS resources, such as the connection factory, destination, and destination type.
 
-After you have configured the Helidon JMS connector, add the Java code to send and receive messages to and from Oracle WebLogic Server.
+The following example shows the `helidon-jms` connector configuration in the `application.yaml` configuration file.
 
-Sample script to consume a message from the JMS channel:
-
-[source,java]
+[source, yaml]
+.Example of the Messaging Configuration with JMS Connector and the Thin T3 Client
 ----
-    @Incoming("from-wls-q")
-    public void receive(String msg) {
-        System.out.println("Process JMS message as per business logic"+msg);
-    }
+wls-username: weblogic
+wls-password: welcome1
+wls-admin-url: t3://localhost:7001 #<1>
+wls-cluster-url: t3://localhost:7003,localhost:7005,localhost:7007 #<2>
+
+mp:
+  messaging:
+    connector:
+      helidon-jms:
+        jndi:
+           jms-factory: qcf #<3>
+           env-properties: #<4>
+              java.naming.factory.initial: weblogic.jndi.WLInitialContextFactory
+              java.naming.provider.url: ${wls-admin-url}
+              java.naming.security.principal: ${wls-username}
+              java.naming.security.credentials: ${wls-password}
+
+    incoming:
+      from-wls-q:
+        connector: helidon-jms
+        jndi.destination: queuejndi #<5>
+        type: queue
+
+    outgoing:
+      to-wls-q:
+        connector: helidon-jms
+        jndi.destination: queuejndi #<5>
+        type: queue
+----
+<1> Admin server t3 connection URL.
+<2> Example of the WebLogic Cluster t3 connection URL.
+<3> Connection factory name.
+<4> JMS environment properties to lookup resources.
+<5> Destination with `jndi.` prefix is evaluated as JNDI name, simple `destination` is evaluated as a CDI syntax.
+
+For information about reactive messaging configuration, see xref:mp/reactivemessaging/01_introduction.adoc#_configuration[Reactive Messaging Configuration].
+
+After you have configured the Helidon JMS connector,
+you can use xref:mp/reactivemessaging/01_introduction.adoc[Helidon Reactive Messaging] for consuming and sending messages.
+
+[source, java]
+.Consuming Messages from WebLogic JMS Server
+----
+@Incoming("from-wls-q")
+public void receive(String msg) {
+    System.out.println("Process JMS message as per business logic" + msg);
+}
 ----
 
-Sample script to produce a message to the JMS channel:
-
-[source,java]
+[source, java]
+.Producing Messages to WebLogic JMS Server
 ----
 @Outgoing("to-wls-q")
 public PublisherBuilder<String> produceToJms() {
@@ -221,64 +268,13 @@ public PublisherBuilder<String> produceToJms() {
 }
 ----
 
-For more information about this integration, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-5E28DBC5-6CB3-49E1-B1A7-BF30191AE8AB[Integrating WebLogic JMS with Helidon 2.x]
-
-=== Example [[JMS-Integration-Examples]]
-
-The following example shows the helidon-jms connector configurations added to the `application.yaml` file.
-
-[source,java]
-----
-# User-defined properties
-wls-username: weblogic
-wls-password: welcome1
-# WLS Admin server t3 connection URL
-wls-admin-url: t3://localhost:7001
-# WLS Cluster t3 connection URL
-wls-cluster-url: t3://localhost:7003,localhost:7005,localhost:7007
- 
-mp:
-  messaging:
-    connector:
-      helidon-jms:
-        jndi:
-           #Default connection factory name. This can be overridden in individual resource configurations
-           jms-factory: qcf
-           #JMS environment properties to lookup resources
-           env-properties:
-              java.naming.factory.initial: weblogic.jndi.WLInitialContextFactory
-              java.naming.provider.url: ${wls-admin-url}
-              java.naming.security.principal: ${wls-username}
-              java.naming.security.credentials: ${wls-password}
- 
-    # Add all consumer resources-related configurations below incoming 
-    incoming:
-      #Identifier "from-wls-q" is used with @Incoming annotation
-      from-wls-q:
-        #Connector Name as specific in connector section. It is predefined
-        connector: helidon-jms
-        #JMS Destination Name in JNDI format
-        jndi.destination: queuejndi
-        #JMS Destination Type
-        type: queue
-        #JMS Connection Factory 
-        jndi.jms-factory: qcf
- 
-    # Add all producer resources-related configurations below outgoing 
-    outgoing:
-      #Identifier "to-wls-q" is used with @Outgoing annotation
-      to-wls-q:
-        connector: helidon-jms
-        jndi.destination: queuejndi
-        type: queue
-        jndi.jms-factory: qcf
-----
+For more information about setting up the JMS integration between Helidon and WebLogic Server, see {wls-jms-link}.
 
 === References [[JMS-Integration-References]]
 
-* https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/oracle-weblogic-server-helidon-integration.html#GUID-F7E4D3C2-6FE3-4C6E-B69B-805667B78312[Integrating Oracle WebLogic Server with Helidon]
-
-* https://helidon.io/docs/v2/#/mp/reactivemessaging/05_jms[JMS Connector]
+* xref:mp/reactivemessaging/01_introduction.adoc[Reactive Messaging]
+* xref:mp/reactivemessaging/05_jms.adoc[JMS Connector]
+* {wls-jms-link}
 
 == Web Services Integration [[Web-Services-Integration]]
 
@@ -290,13 +286,24 @@ mp:
 
 === Overview [[Web-Services-Integration-Overview]]
 
-Helion MP and WebLogic Server Web Services integration enables the Helidon microservice application to communicate with the WebLogic Web Service deployed in Oracle WebLogic Server.
+Helidon MP and WebLogic Server Web Services integration enables the Helidon microservice application to communicate with the WebLogic Web Service deployed in WebLogic Server.
 
 === Maven Coordinates [[Web-Services-Integration-Maven-Coordinates]]
 
-Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file as part of the Maven dependencies. You can find this file in the `WL_HOME\server\lib` directory of your WebLogic Server installation.
+You can obtain the {wls-thin-link} in the server/lib directory (`WL_HOME/server/lib/com.oracle.webservices.wls.jaxws-wlswss-client.jar`) of any WebLogic Server installation.
 
-[source,xml]
+[source, shell]
+.Example of Installing the Client Artifact to the Local Maven Repository
+----
+mvn install:install-file \
+-Dfile=<JAR_FILE_PATH>/com.oracle.webservices.wls.jaxws-wlswss-client.jar \
+-DgroupId=com.oracle.webservices.wls.jaxws-wlswss-client \
+-DartifactId=com.oracle.webservices.wls.jaxws-wlswss-client \
+-Dversion=1.0
+----
+
+Add the installed `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client artifact, as part of the Maven dependencies:
+[source, xml]
 ----
 <dependency>
     <groupId>com.oracle.webservices.wls.jaxws-wlswss-client</groupId>
@@ -307,56 +314,112 @@ Add the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client file as part
 
 === Usage [[Web-Services-Integration-Usage]]
 
-Use the `clientgen` WebLogic web services Ant task by using the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier, to generate the *jakarta* based client artifacts that client applications use to invoke the WebLogic web services. Add a call to the `clientgen` Ant task, as shown in the following example:
+Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier,
+to generate the client artifacts that client applications use to invoke the WebLogic Web Services from the  `target/generated-sources` folder.
 
-[source,java]
+Add the `maven-antrun-plugin` plug-in to execute the `clientgen` Ant task during the `generate-sources` build phase:
+[source, xml]
 ----
-<target>
-    <path id="lib.clientgen.id">  
-        <pathelement path="${jaxws.client.jar}"/>  
-    </path> 
- 
-    <taskdef name="clientgen" classname="weblogic.wsee.tools.anttasks.ClientGenTask" classpathref="lib.clientgen.id"/>
-    <clientgen wsdl="${remote.wsdl.location}" wsdlLocation="${remote.wsdl.location}"
-       destDir="${project.basedir}/target/classes" packageName="examples.webservices.simple_client"
-       type="JAXWS" copyWsdl="true" />
-</target>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-antrun-plugin</artifactId>
+    <version>3.1.0</version>
+    <executions>
+        <execution>
+            <id>ws-client-gen</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>run</goal>
+            </goals>
+            <configuration>
+                <target>
+                    <property name="wsdl-file">file://${basedir}/DynamicWSImplService.wsdl</property>
+                    <property name="compile_classpath"
+                              refid="maven.compile.classpath"/> <1>
+                    <taskdef name="clientgen"
+                             classname="weblogic.wsee.tools.anttasks.ClientGenTask"
+                             classpath="${compile_classpath}"/>
+                    <clientgen wsdl="${wsdl-file}"
+                               wsdlLocation="${wsdl-file}"
+                               destDir="${project.build.directory}/generated-sources" <2>
+                               packageName="com.example.wlssoap" <3>
+                               generateRuntimeCatalog="false"
+                               type="JAXWS"
+                               copyWsdl="false"/>
+                </target>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+<1> Look for the `weblogic.wsee.tools.anttasks.ClientGenTask` on the project compile path.
+<2> Folder for the generated client classes; should be added as a source folder.
+<3> Name of the package for the new client classes.
+
+Use `build-helper-maven-plugin` to add `/target/generated-sources` with generated client classes as an additional directory with sources.
+[source, xml]
 ----
 
-For more information about this integration, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-server-web-services-helidon.html#GUID-518E5494-94EF-430A-A147-1343E318331F[Integrating WebLogic Web Services with Helidon 2.x]
+<plugin>
+    <groupId>org.codehaus.mojo</groupId>
+    <artifactId>build-helper-maven-plugin</artifactId>
+    <version>3.3.0</version>
+    <executions>
+        <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+                <goal>add-source</goal>
+            </goals>
+            <configuration>
+                <sources>
+                    <source>${pom.basedir}/target/generated-sources</source>
+                </sources>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+Because the client classes are generating to the folder recognized by Maven as additional sources, client classes can
+be used directly from Oracle's business code.
 
 === Example [[Web-Services-Integration-Example]]
 
-You can create the RESTful web service to invoke the WebLogic Web Service, as shown in the example below:
-
-[source,java]
+You can create the RESTful Web Service to invoke the WebLogic Web Service with the generated client classes, as shown in the following example:
+[source, java]
 ----
-@Path("/helidonclient")
+@Path("/helidon-client")
 @ApplicationScoped
 public class HelidonWSEEClient {
- 
-    private JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
- 
+
+    @Inject
+    @ConfigProperty(name = "remote.wsdl.location")
+    private String remoteWsdlLocation;
+
     @GET
     @Path("/getWLSWebserviceResult/subtract/{y}/from/{x}")
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject invokeWLSWebservice(@PathParam("x") int x, @PathParam("y") int y) {
- 
-        String wsdlLocation = System.getProperty("remote.wsdl.location");
-        DynamicWSImplService testService = new DynamicWSImplService();
+    public JsonObject invokeWLSWebservice(@PathParam("x") int x,
+                                          @PathParam("y") int y) {
+        DynamicWSImplService testService = new DynamicWSImplService(); //<1>
         DynamicWSImpl testPort = testService.getDynamicWSImplPort();
-        BindingProvider binding = (BindingProvider) testPort;
-        binding.getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, wsdlLocation);
-        int response = testPort.subtract(x,y);
- 
-        return JSON.createObjectBuilder().add("wsresponse", response).build();
-   }
+        ((BindingProvider) testPort).getRequestContext()
+                .put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, remoteWsdlLocation); //<2>
+
+        int response = testPort.subtract(x,y);//<3>
+
+        return Json.createObjectBuilder().add("ws-response", response).build();
+    }
 }
 ----
+<1> Generates the client classes used from the business code.
+<2> Overrides the JAX-WS URL from the WSDL document used for generating the  client classes.
+<3> Calls the actual JAX-WS operation.
 
 === References [[Web-Services-Integration-References]]
 
-* https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-server-web-services-helidon.html#GUID-DA893D15-13CB-49AF-AD5B-43FD716618BB[Integrating Oracle WebLogic Server Web Services with Helidon]
+* {wls-soap-link}
 
 == Single Sign-On on OCI Integration [[SSO-Integration]]
 
@@ -367,250 +430,206 @@ public class HelidonWSEEClient {
 
 === Overview [[SSO-Integration-Overview]]
 
-The Oracle WebLogic Server and Helidon integration on OKE enables SSO authentication to: 
+The WebLogic Server and Helidon integration can be secured with IDCS over the OIDC protocol. The authentication provides:
 
-* Access the IDCS configured client application deployed on Oracle WebLogic cluster.
-* Access the Helidon REST endpoints configured with IDCS.
-* Access the WebLogic application endpoints from the Helidon REST endpoints.
+* Access to the IDCS configured client application deployed on Oracle WebLogic cluster.
+* Access to the Helidon REST endpoints configured with IDCS.
+* Access to the WebLogic application endpoints from the Helidon REST endpoints.
 
 === Maven Coordinates [[SSO-Integration-Maven-Coordinates]]
 
-To enable this integration, add the Maven dependency to the `pom.xml` file, as shown in the following example:
+To enable IDCS support in Helidon MP, add the Maven dependency to the `pom.xml` file, as shown in the following example:
 
-[source,xml]
+[source, xml]
 ----
 <dependency>
-  <groupId>io.helidon.microprofile</groupId>
-   <artifactId>helidon-microprofile-security</artifactId>
+    <groupId>io.helidon.microprofile.jwt</groupId>
+    <artifactId>helidon-microprofile-jwt-auth</artifactId>
 </dependency>
 <dependency>
-  <groupId>io.helidon.microprofile</groupId>
-  <artifactId>helidon-microprofile-oidc</artifactId>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-oidc</artifactId>
+</dependency>
+<dependency>
+    <groupId>io.helidon.security.providers</groupId>
+    <artifactId>helidon-security-providers-idcs-mapper</artifactId>
 </dependency>
 ----
 
 === Usage [[SSO-Integration-Usage]]
 
-To set up the integration, you should integrate the WebLogic cluster applications and the Helidon 3.x application with Oracle Identity Cloud Service (IDCS). 
+To set up the integration between the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS), see {wls-sso-link}.
 
-For more information about these integrations, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-574DD9C0-537C-4B57-8B61-48A3D4350548[Integrating Oracle WebLogic Cluster and Helidon 2.x for SSO].
-
-Then, access the WebLogic cluster application endpoint from the Helidon REST endpoints by adding the following snippet in the Helidon source code:
-
-[source,java]
+Configure Helidon application to use IDCS as an identity manager:
+[source, yaml]
 ----
+idcs:
+  url: ${IDCS_URI}:443
+  client-id: "${IDCS_CLIENT_ID}"
+  client-secret: "${IDCS_CLIENT_SECRET}"
+
+wls:
+  service:
+    url: http://localhost:7001/wls-service
+
+security:
+  providers:
+    - abac:
+    - oidc:
+        server-type: "idcs" <1>
+        client-id: ${idcs.client-id}
+        client-secret: ${idcs.client-secret}
+        redirect: true <2>
+        identity-uri: ${idcs.url}
+        frontend-uri: "http://localhost:${server.port}"
+        logout-enabled: true
+        post-logout-uri: /
+        propagate: true <3>
+        outbound:
+          - name: "propagate-token"
+            hosts: [ "localhost" ] <4>
+
+    - idcs-role-mapper:
+        multitenant: false
+        oidc-config:
+          client-id: ${idcs.client-id}
+          client-secret: ${idcs.client-secret}
+          identity-uri: ${idcs.url}
+----
+<1> Configure OCID security provider to work with IDCS.
+<2> Enable redirect to the IDCS SSO login page.
+<3> Propagate the JWT token obtained from IDCS after logging in to the subsequent JAX-RS calls.
+<4> Hosts called by the JAX-RS client for which the JWT token can be used.
+
+Helidon will redirect the clients accessing the protected JAX-RS resources to the IDCS login page. After a successful login, Helidon negotiates the JWT bearer token and maps the user's roles to the current security context.
+
+[source, java]
+----
+@Path("/helidon")
+@ApplicationScoped
 @Authenticated
-@GET
-@Produces (MediaType.APPLICATION_JSON)
-  public JsonObject getDefaultMessage() {
-	// Get access token using WebLogic application registered at IDCS client id and secret.
-	// Use token to access to WebLogic application SSO endpoints
-  }
+public class HelidonResource {
+
+    @Inject
+    @ConfigProperty(name = "wls.service.url")
+    private URI wlsServiceUri;
+
+    @Inject
+    private JsonWebToken jwt; <1>
+
+    @Authenticated <2>
+    @GET
+    @RolesAllowed({"secret_role"}) <3>
+    @Produces(MediaType.APPLICATION_JSON)
+    public JsonObject getDefaultMessage(@Context SecurityContext secCtx) {
+        var user = secCtx.userName();
+        var isInRole = secCtx.isUserInRole("secret_role"); <3>
+        var bearerToken = jwt.getRawToken(); // Manually access raw bearer token
+
+        // Bearer token is propagated automatically no manual action is needed with JAX-RS client
+        JsonObject response = ClientBuilder.newClient()
+                .target(wlsServiceUri) <4>
+                .request()
+                .buildGet()
+                .invoke(JsonObject.class);
+
+        return Json.createObjectBuilder()
+                .add("user", user)
+                .add("is_secret_role", isInRole)
+                .add("wls-response", response)
+                .build();
+    }
+}
 ----
+<1> JWT token negotiated by Helidon with IDCS after successful login.
+<2> JAX-RS resource method accessible only by the authenticated users.
+<3> Roles a user needs to be authorized to use; roles are provided by idcs-role-mapper.
+<4> JAX-RS client call. The JWT token is added automatically when token propagation is configured.
 
-Use the IDCS *Client ID* and *Client Secret* of the WebLogic cluster application to obtain the access token to access the WebLogic cluster application SSO points.
-
-The following is a sample of the code snippet in Java:
-
-[source,java]
-----
-Map<String, String> parameters = new HashMap<>();
- parameters.put("grant_type", "client_credentials");
- parameters.put("client_id", WLS_IDCS_CLIENT_ID);
- parameters.put("client_secret", WLS_IDCS_CLIENT_SECRET);
- parameters.put("scope", WLS_QUOTE_APP_SCOPE+" "+WLS_PIPELINE_APP_SCOPE+" "+WLS_INSIGHT_APP_SCOPE+" "+WLS_REPORT_APP_SCOPE); 
- String CREDSTR = WLS_IDCS_CLIENT_ID + ":" + WLS_IDCS_CLIENT_SECRET;  
- String encoded = Base64.getEncoder().encodeToString((CREDSTR).getBytes());
- String form = parameters.keySet().stream().map(key -> key + "=" + URLEncoder.encode(parameters.get(key), StandardCharsets.UTF_8)).collect(Collectors.joining("&"));
- try {
-     HttpClient client = HttpClient.newHttpClient();
-     HttpRequest request = HttpRequest.newBuilder().uri(URI.create(WLS_TOKEN_SERVICE_URL)).headers("Content-Type", "application/x-www-form-urlencoded","response_type","code").POST(BodyPublishers.ofString(form)).build();
-     HttpResponse<?> response = client.send(request, BodyHandlers.ofString());
-     JSONObject jObject = new JSONObject(response.body().toString());
-     token=jObject.getString("access_token");
- } catch ( Exception e) {
-     e.printStackTrace();
- }
- return token;
-----
-
-Access the Helidon SSO REST endpoint to verify the integration between Helidon 2.x application and the WebLogic cluster application. After a successful SSO authentication at the Helidon REST endpoint, you will be able to access the WebLogic cluster application.
+While the JWT token can be injected directly and used in the JAX-RS resource for subsequent calls to the WebLogic IDCS protected resources, with proper configuration of the outbound token propagation, the token can be propagated automatically.
 
 === References [[SSO-Integration-References]]
 
-* https://helidon.io/docs/v2/#/mp/security/02_providers[Security Providers]
-* https://helidon.io/docs/v2/#/mp/security/02_providers#_oidc_provider[OIDC Provider]
-* https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-and-helidon-sso-oci.html#GUID-D54EE368-0D7F-4DBB-9279-CC5BDDB76725[Integrating Oracle WebLogic Cluster and Helidon Applications for SSO on OCI Using IDCS]
-
-== MicroTx Integration [[MicroTx-Integration]]
-
-- <<MicroTx-Integration-Overview, Overview>>
-- <<MicroTx-Integration-Maven-Coordinates, Maven Coordinates>>
-- <<MicroTx-Integration-Usage, Usage>>
-** <<Building and Deploying the Helidon Teller Application, Building and Deploying the Helidon Teller Application>>
-** <<Building and Deploying the Helidon Participant Application, Building and Deploying the Helidon Participant Application>>
-- <<MicroTx-Integration-References, References>>
+* xref:mp/security/02_providers.adoc[Security Providers]
+* xref:mp/security/02_providers.adoc#OIDC-Provider[OIDC Provider]
+* {wls-sso-link}
 
 
-=== Overview [[MicroTx-Integration-Overview]]
+== XA Transactions Integration [[XA-Transactions-Integration]]
 
-Oracle Transaction Manager for Microservices (MicroTx) Free ensures consistency of XA transactions across Oracle WebLogic Server applications, Helidon microservices, and the JDBC resources deployed in both Helidon and Oracle WebLogic Server.
+- <<XA-Integration-Overview, Overview>>
+- <<XA-Integration-Maven-Coordinates, Maven Coordinates>>
+- <<XA-Integration-Usage, Usage>>
+- <<XA-Integration-References, References>>
 
-At this time, the integration with MicroTx Free is offered for evaluation purposes only.
 
-MicroTX ensures consistency of XA transactions using the following distributed applications as an example.
+=== Overview [[XA-Integration-Overview]]
+XA (eXtended Architecture) is a specification for distributed transactions leveraging 2PC (two-phase) commit approach.
+Helidon and Oracle WebLogic Server applications can participate in same XA transactions thanks to
+the {micro-tx-url}[MicroTx (Oracle Transaction Manager for Microservices)].
+MicroTx ensures consistency of XA transactions across Oracle WebLogic Server applications,
+Helidon microservices, and the JDBC resources deployed in both Helidon and Oracle WebLogic Server.
 
-* Helidon Teller application (transaction initiator)
-* Helidon Application (participant application)
-* WebLogic Server (participant application)
-* MicroTx Transaction Coordinator
+[NOTE]
+====
+At this time MicroTx Free is offered for evaluation purposes only.
+====
 
-=== Maven Coordinates [[MicroTx-Integration-Maven-Coordinates]]
+=== Maven Coordinates [[XA-Integration-Maven-Coordinates]]
 
-Add the following Maven dependency to the `pom.xml` file, as shown in the following example:
+Add the following Maven dependencies to the `pom.xml` file, as shown in the following example:
 
 [source,xml]
 ----
+<!-- MicroTx -->
 <dependency>
      <groupId>com.oracle.tmm.jta</groupId>
      <artifactId>TmmLib</artifactId>
      <version>22.3.2</version>
 </dependency>
+<!-- Oracle UCP --> <1>
+<dependency>
+    <groupId>com.oracle.database.jdbc</groupId>
+    <artifactId>ojdbc8</artifactId>
+    <version>21.3.0.0</version>
+</dependency>
+<dependency>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
+</dependency>
 ----
+<1> Dependencies needed for XA with Oracle UCP
 
-This dependency is used to refer to the OTMM library that is installed using the following command:
-
-[source,shell] 
-----
-mvn install:install-file -Dfile=<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-22.3.2.jar -DpomFile=<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-weblogic-22.3.2.pom
-----
-
-=== Usage [[MicroTx-Integration-Usage]]
-
-The XA transaction is initiated by the Helidon Teller Application, and then distributed to other Helidon and WebLogic Server applications (the participant applications in the transaction).
-
-For information about deploying the MicroTx application WAR file, WebLogic Server JAX-RS web application, and the MicroTx Coordinator Service, see https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-server-microtx.html#GUID-37A6BA37-5D54-4E25-93C2-4FF5D6E88D30[Integrating WebLogic Server, Helidon, and MicroTx Applications and Services].
-
-==== Building and Deploying the Helidon Teller Application
-
-Download the image for MicroTx Free from https://container-registry.oracle.com/[Oracle Container Registry] and add the `TmmLib` library to the local Maven repository. This library is available in the `<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/` location.
-
-Install the OTMM library to the local Maven repository using the following command:
+This dependency is used to refer to the MicroTx library that is installed using the following command:
 
 [source,shell]
 ----
-mvn install:install-file -Dfile=<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-22.3.2.jar -DpomFile=<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-weblogic-22.3.2.pom
+mvn install:install-file -Dfile=<MICRO_TX_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-22.3.2.jar \
+-DpomFile=<MICRO_TX_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-weblogic-22.3.2.pom
 ----
 
-Create the Docker image for the Helidon Teller Application and deploy it in the Kubernetes cluster.
+=== Usage [[XA-Integration-Usage]]
 
-===== Creating the Docker Image
+MicroTx library looks for `tmm.properties`  configuration file on the application classpath.
 
-In the MicroTx binaries, the Helidon Teller Application samples are available in the `<OTMM_BINARIES_EXTRACTED_PATH>/samples/xa/java/weblogic/teller` location.
-
-Update the `application.yaml` file available in the <OTMM_BINARIES_EXTRACTED_PATH>/samples/xa/java/weblogic/teller/src/main/resources location. In this file, specify the endpoint URLs of the Helidon Teller Application along with the authentication details, if any.
-
-[source,yaml]
+[source,properties]
 ----
-helidonServiceEndpoint: http://<HELIDON_APP_K8S_SERVICE_NAME>:<HELIDON_APP_K8S_SERVICE_PORT>/<HELIDON_APP_CONTEXT_PATH>
-weblogicServiceEndpoint: http://<WEBLOGIC_APP_K8S_SERVICE_NAME>:<WEBLOGIC_APP_K8S_SERVICE_PORT>/<WEBLOGIC_APP_CONTEXT_PATH>
-Weblogic:
-  BasicAuth:
-    UserName: <wls_username>
-    Password: <wls_password>
-----
-
-For example:
-
-[source,yaml]
-----
-helidonServiceEndpoint: http://microtx-helidon.helidon-ns.svc.cluster.local:8084/mtxhelidon
-weblogicServiceEndpoint: http://wls-domain-cluster-cluster-1.wls-domain-ns.svc.cluster.local:8001/mtxwls
-Weblogic:
-  BasicAuth:
-    UserName: <wls_username>
-    Password: <wls_password>
-----
-Update the `tmm.properties` file available in the `<OTMM_BINARIES_EXTRACTED_PATH>/samples/xa/java/weblogic/teller/src/main/resources` location.
-
-[source,java]
-
-----
-### oracle.tmm.TcsUrl value refers to the MicroTx coordinator URL
-oracle.tmm.TcsUrl = http(s)://<OTMM_K8S_SERVICE_NAME>:<OTMM_SERVICE_PORT>/api/v1
+oracle.tmm.TcsUrl = http(s)://<MICRO_TX_K8S_SERVICE_NAME>:<MICRO_TX_SERVICE_PORT>/api/v1 <1>
 oracle.tmm.TcsConnPoolSize = 15
-### oracle.tmm.CallbackUrl refers to the Helidon Teller Application call-back URL along with the context path
-oracle.tmm.CallbackUrl = http://<HELIDON_TELLER_APP_K8s_SERVICE_NAME>:<HELIDON_TELLER_APP_K8s_SERVICE_NAME>/<HELIDON_TELLER_APP_CONTEXTPATH>
- 
-## Transaction Timeout Out value in milli seconds
+oracle.tmm.CallbackUrl = http://<HELIDON_APP_K8s_SERVICE_NAME>:<HELIDON_APP_K8s_SERVICE_NAME>/<HELIDON_APP_CONTEXTPATH> <2>
 oracle.tmm.TransactionTimeout = 60000
- 
 oracle.tmm.PropagateTraceHeaders = false
+oracle.tmm.xa.Rmid = HELIDON-TX-RM-ID-FOR-MICROTX-TESTS <3>
 ----
+<1> MicroTx coordinator URL
+<2> Refers to the Helidon Teller Application call-back URL along with context path
+<3> Resource Manager(RM) Unique Id. Make sure to replace the id value with the RM used in the application
 
-Create the Docker image for the Helidon Teller Application, upload the image to the Docker registry, and then deploy the application in the Kubernetes cluster.
+Each property can be overridden by its upper case snake case environment variable variant, example:
+`ORACLE_TMM_TCS_URL="https://microtx-service.local/api/v1"`;
 
-=== Sample Scripts
 
-*Sample script to initate the transactions in the teller application:*
-
-If your application only initiates the transaction and does not participate in the transaction, add the following lines to your application code:
-
-[source,java]
-----
-UserTransaction ut = new oracle.tmm.jta.TrmUserTransaction();
-ut.begin();
-... // Implement the business logic to begin a transaction.
-----
-
-If your application initiates the transaction and participates in it, add the following lines to your application code:
-
-[source,java]
-----
-UserTransaction ut = new oracle.tmm.jta.TrmUserTransaction();
-ut.begin(true);
-... // Implement the business logic to begin a transaction.
-----
-
-*Sample script to commit and rollback the transaction:*
-
-To commit a transaction:
-
-[source,java]
-----
-ut.commit();
-----
-
-To rollback a transaction:
-
-[source,java]
-----
-ut.rollback();
-----
-
-==== Building and Deploying the Helidon Participant Application
-
-Obtain the image for MicroTx Free from https://container-registry.oracle.com/[Oracle Container Registry] and add the 'TmmLib' library to the local Maven repository. This library is available in the '<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/' location.
-
-Install the OTMM library to the local Maven repository using the following command:
-
-[source,shell]
-----
-mvn install:install-file -Dfile=<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-22.3.2.jar -DpomFile=<OTMM_BINARIES_EXTRACTED_PATH>/lib/java/TmmLib-weblogic-22.3.2.pom
-----
-
-Create the Docker image for the Helidon Participant Application and deploy it in the Kubernetes cluster.
-
-===== Creating the Docker Image
-
-In the MicroTx binaries, the Helidon Participant Application samples are available in the `<OTMM_BINARIES_EXTRACTED_PATH>/samples/xa/java/weblogic/helidon-app` location.
-
-Update the `application.yaml` file available in the `<OTMM_BINARIES_EXTRACTED_PATH>/samples/xa/java/weblogic/helidon-app/src/main/resources` location. In this file, specify the database XA connection details of the Helidon Participant Application.
-
-[NOTE]
-====
-In this `application.yaml` file, the local data source, orcl, is referred in the application code. If you want to use a different data source, you should also change the name in the application code.
-====
+Configure XA UCP datasource with xref:mp/extensions/02_cdi_datasource-ucp.adoc[Helidon UCP CDI extension].
 
 [source,yaml]
 ----
@@ -625,65 +644,64 @@ oracle:
           password: <db-password>
 ----
 
-Update the `tmm.properties' file available in the `<OTMM_BINARIES_EXTRACTED_PATH>/samples/xa/java/weblogic/helidon-app/src/main/resources` location.
+XA capable datasource needs to be registered with MicroTx.
 
 [source,java]
 ----
-### oracle.tmm.TcsUrl value the MicroTx coordinator URL
-oracle.tmm.TcsUrl = http(s)://<OTMM_K8S_SERVICE_NAME>:<OTMM_SERVICE_PORT>/api/v1
-oracle.tmm.TcsConnPoolSize = 15
-### oracle.tmm.CallbackUrl refers to the Helidon Teller Application call-back URL along with context path
-oracle.tmm.CallbackUrl = http://<HELIDON_PARTICIPANT_APP_K8s_SERVICE_NAME>:<HELIDON_PARTICIPANT_APP_K8s_SERVICE_PORT>/<HELIDON_PARTICIPANT_APP_CONTEXTPATH>
-##RM Id
-oracle.tmm.xa.<rmid> = HELIDON-TX-RM-ID-FOR-MICROTX-TESTS
+@ApplicationScoped
+public class MicroTxInitBean {
+
+    @Inject
+    @Named("localOrcl")
+    private XADataSource localOrclDataSource;
+
+    private void init(@Observes @Initialized(ApplicationScoped.class) Object event) {
+        TrmConfig.initXaDataSource(localOrclDataSource); <1>
+    }
+}
 ----
+<1> Datasource's initialization with MicroTx after CDI container start.
 
-Create the Docker image for the Helidon Participant Application, upload the image to the Docker registry, and then deploy the application in the Kubernetes cluster.
-
-=== Sample Scripts
-
-Add the following line of code after you have initialized the `XADatasource` object:
-
-[source,java]
-----
-oracle.tmm.jta.TrmConfig.initXaDataSource((XADataSource)xaDs);
-----
-
-Add the following code in the participant application to inject the connection object that is created by the MicroTx client library:
+MicroTx will use it for obtaining XA capable connections.
 
 [source,java]
 ----
 @Inject
-@TrmSQLConnection 
-private Connection connection;
-----
+@TrmSQLConnection
+private Connection connection; <1>
 
-Add the following lines in the code of the participant service so that the service uses the injected connection object whenever the participant service performs a DML operation:
-
-[source,java]
-----
-Statement stmt1 = connection.createStatement();
-stmt1.execute(query);
-stmt1.close();
-----
-
-[NOTE]
-====
-Add the `org.glassfish.jersey.server.ResourceConfig` subclass to create the Application Path and scan all the resource classes annotated with `@Provider` and `@Path`. This subclass is required to register the MicroTx filter classes, callback resources, and connection factory classes.
-
-[source,java]
-----
-package com.oracle.mtm.sample.resource;
-
-import org.glassfish.jersey.server.ResourceConfig;
-import javax.ws.rs.ApplicationPath;
- @ApplicationPath("/helidonapplication")
-public class HelidonApplication extends ResourceConfig {
-
+@POST
+@Consumes(MediaType.APPLICATION_JSON)
+@Produces(MediaType.APPLICATION_JSON)
+public Response transfer(Transfer transfer){
+    UserTransaction ut = new oracle.tmm.jta.TrmUserTransaction(); <2>
+    try{
+        ut.begin(true); <3>
+        // business logic
+        PreparedStatement statement = connection.prepareStatement("UPDATE fee SET amount=amount+? where account_id=?");
+        statement.setDouble(1, transfer.getTransferFee());
+        statement.setString(2, transfer.getFrom());
+        if(statement.executeUpdate() <= 0){
+            ut.rollback(); <4>
+            return Response.status(500, "Fee deposit failed").build();
+        }
+        ut.commit(); <5>
+        return Response.ok(transfer).build();
+    } catch (Exception e){
+        ut.rollback(); <4>
+        return Response.status(500, "Fee deposit failed").build();
+    }
 }
 ----
-====
+<1> Inject XA capable connection managed by MicroTx
+<2> Initialize TrmUserTransaction to demarcate transaction boundaries in the application code.
+<3> If your application only initiates the transaction and does not participate in the transaction, begin with false.
+<4> Rollback transaction.
+<5> Commit transaction.
 
-=== References [[MicroTx-Integration-References]]
 
-https://docs-uat.us.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wlshe/integrating-oracle-weblogic-server-microtx.html#GUID-81107BDE-7A99-421B-883D-AAAC12692E26[Integrating XA Global Transactions Between WebLogic Server and Helidon Using MicroTx]
+=== References [[XA-Integration-References]]
+
+* xref:mp/extensions/02_cdi_datasource-ucp.adoc[Oracle UCP extension]
+* {micro-tx-link}
+* {wls-xa-link}
