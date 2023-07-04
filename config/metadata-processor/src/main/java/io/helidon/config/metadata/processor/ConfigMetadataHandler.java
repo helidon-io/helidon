@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ class ConfigMetadataHandler {
     private final Map<String, ConfiguredType> newOptions = new HashMap<>();
     // map of module name to list of classes that belong to it
     private final Map<String, List<String>> moduleTypes = new HashMap<>();
-
+    private final Set<Element> classesToHandle = new LinkedHashSet<>();
     /*
      * Compiler utilities for annotation processing
      */
@@ -249,9 +250,10 @@ class ConfigMetadataHandler {
     }
 
     private boolean doProcess(RoundEnvironment roundEnv) {
+        // we need to collect all types for processing
+        classesToHandle.addAll(roundEnv.getElementsAnnotatedWith(configuredElement));
         if (roundEnv.processingOver()) {
-            Set<? extends Element> classes = roundEnv.getElementsAnnotatedWith(configuredElement);
-            for (Element aClass : classes) {
+            for (Element aClass : classesToHandle) {
                 processClass(aClass);
             }
 
