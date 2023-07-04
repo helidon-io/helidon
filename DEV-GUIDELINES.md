@@ -55,13 +55,13 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
 1. **Everything that can be done using config, must be possible using programmatic approach through builders**
     1. Exceptions:
         1. CDI components configured from a CDI Extension
-1. Everything that can be done using builders should be possible also using configuration, 
+2. Everything that can be done using builders should be possible also using configuration, 
         except for cases that would mandate usage of reflection 
         (such an exception may be configuration of Routing in WebServer - nevertheless we still may support 
             it (emphasis on "may" rather than "should"), or configuration of security for Jersey resources)
-2. When accepting config as a parameter, we should expect the config is located on the node that contains our configuration
+3. When accepting config as a parameter, we should expect the config is located on the node that contains our configuration
     (such as in ServerConfiguration in WebServer)
-3. Config keys:
+4. Config keys:
     1. Use lower case words separated by dashes 
         (e.g. "token-endpoint-uri", NOT "tokenEndpointUri")
     2. May be nested in a tree structure (e.g. outbound-token.name, outbound-token.algorithm)
@@ -70,9 +70,9 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
         2. Default: component has a well defined and documented default value for such a property
         3. Optional: component behaves in a well defined and documented manner if such a property is not 
             configured (e.g. a component may expect tracing endpoint - if not defined, tracing may be disabled)         
-        
+5. We have introduced `helidon-builder` module, that provides capability to generate builders that support both programmatic and configuration approach. See [helidon-builder](builder/README.md) for more details about modules, and [helidon-builder-api](builder/api/README.md) for explanation of APIs and naming rules
 
-Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig.java)
+Example: [io.helidon.nima.faulttolerance.RetryConfigBlueprint](nima/fault-tolerance/fault-tolerance/src/main/java/io/helidon/nima/faulttolerance/RetryConfigBlueprint.java)
 
 # Getters and Setters
 1. We do not use the verb, e.g. when a property "port" exists, the following methods are used:  
@@ -105,12 +105,12 @@ Example: [io.helidon.security.providers.oidc.common.OidcConfig](security/provide
     2. May have:
         1. method _public static Builder builder(?)_ - builder with mandatory or very commonly used parameters
             - there should be a very small number of "builder(*)" methods - up to two per class
-        1. Factory method _public static FooBar create()_ that is implemented as "return builder().build()"
-        2. Factory method _public static create(io.helidon.config.Config config)_ that is implemented as 
+        2. Factory method _public static FooBar create()_ that is implemented as "return builder().build()"
+        3. Factory method _public static create(io.helidon.config.Config config)_ that is implemented as 
             "return builder().config(config).build()"
-        2. Other factory methods that build specific (predefined) instances, such as "fail(String cause)", 
+        4. Other factory methods that build specific (predefined) instances, such as "fail(String cause)", 
             "success(Subject subject)" etc. - **these methods MUST use builder to build the instance internally**
-        3. An internal class named "Builder" that is building instances of the containing class
+        5. An internal class named "Builder" that is building instances of the containing class
             1. it is allowed to have the builder as a top level class, in such a case the name must reflect the class it is 
                 building (e.g. FooBarBuilder) 
 3. Builder class

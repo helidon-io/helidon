@@ -121,3 +121,28 @@ security-providers:
 ```
 
 The generated code will read all nodes under `providers` and map them to an instance.
+
+## Naming rules
+
+Part of the naming rules is constant, part depends on whether we use two or three types, as mentioned above.
+
+### Blueprint name
+Blueprint MUST be package local, and MUST be named with a `Blueprint` suffix. The part of the name before the suffix will be the prototype name.
+
+### Blueprint -> Prototype
+For cases, where the `Prototype` is the target desired type (such as `TypeName`, `Keys`), the prototype name is a name of the type we represent (no suffixes, prefixes etc.).
+
+Example: `TypeName` would have the following structure (as can be seen in the [builder/tests/common-types](../tests/common-types)):
+
+- `TypeNameBlueprint` - the definition of the type
+- `TypeName` - the generated type to be used as an API
+
+### Blueprint -> Prototype -> Runtime type
+For cases, where the `Prototype` serves as a configuration object of a runtime type (such as `WebServerConfig`, `RetryConfig`),
+the prototype name has a `Config` suffix, and the runtime type is a name of the type we represent.
+
+Example: `Retry` would have the following structure (can be seen in Fault Tolerance):
+
+- `RetryConfigBlueprint` - the definition of the config
+- `RetryConfig` - the prototype 
+- `Retry` - the runtime type
