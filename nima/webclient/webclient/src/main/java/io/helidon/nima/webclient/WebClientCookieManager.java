@@ -72,6 +72,14 @@ public class WebClientCookieManager extends CookieManager {
         throw new UnsupportedOperationException("Not implemented, use put(URI, ClientResponseHeaders)");
     }
 
+    /**
+     * See {@link #get}.
+     *
+     * @param uri the uri
+     * @param requestHeaders client request headers
+     * @return requret headers
+     * @throws IOException if an I/O error occurs
+     */
     public ClientRequestHeaders get(UriHelper uri, ClientRequestHeaders requestHeaders) throws IOException {
         if (acceptCookies) {
             Map<String, List<String>> cookieMap = super.get(uri.toUri(), Collections.emptyMap());
@@ -86,6 +94,13 @@ public class WebClientCookieManager extends CookieManager {
         return requestHeaders;
     }
 
+    /**
+     * See {@link #put}.
+     *
+     * @param uri the uri
+     * @param headers client response headers
+     * @throws IOException if an I/O error occurs
+     */
     public void put(UriHelper uri, ClientResponseHeaders headers) throws IOException {
         if (acceptCookies) {
             Map<String, List<String>> cookies = null;

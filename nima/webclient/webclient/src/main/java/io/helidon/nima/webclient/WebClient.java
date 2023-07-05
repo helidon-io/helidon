@@ -34,7 +34,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.http1.Http1;
 import io.helidon.nima.webclient.http1.Http1Client;
