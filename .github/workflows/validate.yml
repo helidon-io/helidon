@@ -12,9 +12,11 @@ on:
   workflow_call:
 
 env:
-  JAVA_VERSION: '11'
-  JAVA_DISTRO: 'temurin'
+  JAVA_VERSION: '17'
+  JAVA_DISTRO: 'oracle'
   MAVEN_HTTP_ARGS: '-Dmaven.wagon.httpconnectionManager.ttlSeconds=60 -Dmaven.wagon.http.retryHandler.count=3'
+  # Needed to build archetypes with Java 17
+  MAVEN_OPTS: '--add-opens java.base/java.util=ALL-UNNAMED'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
