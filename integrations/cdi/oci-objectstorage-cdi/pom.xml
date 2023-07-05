@@ -58,6 +58,23 @@
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-objectstorage</artifactId>
             <scope>compile</scope>
+            <exclusions>
+                <!-- For dependency convergence. Defer to versions from jersey-apache-connector -->
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- For dependency convergence. To make sure we use Jersey version of org.apache.httpcomponents:httpclient and httpcore -->
+        <dependency>
+            <groupId>org.glassfish.jersey.connectors</groupId>
+            <artifactId>jersey-apache-connector</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
