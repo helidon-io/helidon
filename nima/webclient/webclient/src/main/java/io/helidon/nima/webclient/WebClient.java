@@ -132,7 +132,9 @@ public interface WebClient {
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirect);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
-            config.get("cookies").asNodeList().ifPresent(this::cookies);
+            if (config.get("cookies").exists()) {
+                cookies(config.get("cookies"));
+            }
             config.get("headers").asList(Http.HeaderValue.class).ifPresent(list -> list.forEach(this::header));
             config.get("tls")
                     .map(Tls::create)
@@ -458,16 +460,13 @@ public interface WebClient {
             return this.mediaTypeParserMode;
         }
 
-        private void cookies(List<Config> cookies) {
-            if (!cookies.isEmpty()) {
-                Config config = cookies.get(0);
-                config.get("automatic-store-enabled").asBoolean().ifPresent(this::enableAutomaticCookieStore);
-                Config map = config.get("default-cookies");
-                map.asNodeList()
-                        .ifPresent(headers -> headers
-                                .forEach(header -> defaultCookie(header.get("name").asString().get(),
-                                        header.get("value").asString().get())));
-            }
+        private void cookies(Config cookies) {
+            cookies.get("automatic-store-enabled").asBoolean().ifPresent(this::enableAutomaticCookieStore);
+            Config map = cookies.get("default-cookies");
+            map.asNodeList()
+                    .ifPresent(headers -> headers
+                            .forEach(header -> defaultCookie(header.get("name").asString().get(),
+                                    header.get("value").asString().get())));
         }
 
         Tls tls() {
