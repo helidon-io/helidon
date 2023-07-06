@@ -40,10 +40,10 @@ Helidon Injection is an optional feature in Helidon that provides service regist
 
 Helidon Injection's minimalist, compile-time generated dependency injection (DI) framework and compile-time source code generation has a number of advantages, including:
 
-* pre-runtime validation of the dependency injection model
-* visibility into your application by providing "less magic" - understandability and debug-ability of your application
-* deterministic behavior (instead of depending on reflection and classpath ordering, etc.)
-* performance improvements since binding the model at compile-time is more efficient than computing it at runtime. 
+* enables declarative, Inversion of Control-style programming
+* offers visibility into your application by providing "less magic" - understandability and debug-ability of your application
+* provides deterministic behavior (instead of depending on reflection and classpath ordering, etc.)
+* optimizes performance improvements since binding the model at compile-time is more efficient than computing it at runtime. 
 
 
 
@@ -62,11 +62,7 @@ To enable Helidon Injection, add the following dependencies to your project's `p
     <artifactId>helidon-inject-api</artifactId>
     <version>${helidon.version}</version>
 </dependency>
-<dependency>
-    <groupId>io.helidon.inject</groupId>
-    <artifactId>helidon-inject-types</artifactId>
-    <version>${helidon.version}</version>
-</dependency>
+
 ----
 
 == Usage
