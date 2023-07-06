@@ -180,7 +180,7 @@ final class ModuleInfoDescriptorSupport {
                     comments = new ArrayList<>();
                 }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             ToolsException te;
             if (line != null) {
                 e = new ToolsException("Failed to parse line: " + line, e);

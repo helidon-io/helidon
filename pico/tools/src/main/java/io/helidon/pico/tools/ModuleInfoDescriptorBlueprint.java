@@ -109,14 +109,15 @@ interface ModuleInfoDescriptorBlueprint {
     List<String> unhandledLines();
 
     /**
-     * Any throwable/errors that were encountered during parsing.
+     * Any throwable/error that were encountered during parsing.
      *
      * @return optionally any error encountered during parsing
      */
     Optional<Throwable> error();
 
     /**
-     * Returns {@code true} if there were no cases of {@link #unhandledLines()} or {@link #error()}'s encountered.
+     * Returns {@code true} if last parsing operation was successful (i.e., if there were no instances of
+     * {@link #unhandledLines()} or {@link #error()}'s encountered).
      *
      * @return true if any parsing of the given module-info descriptor appears to be full and complete
      */
