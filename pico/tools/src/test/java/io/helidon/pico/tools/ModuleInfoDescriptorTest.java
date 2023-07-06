@@ -147,6 +147,12 @@ class ModuleInfoDescriptorTest {
     @Test
     void innerCommentsNotSupported() {
         String moduleInfo = "module test {\nprovides /* inner comment */ cn;\n}";
+        ToolsException te = assertThrows(ToolsException.class,
+                                         () -> ModuleInfoDescriptor
+                                                 .create(moduleInfo, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, true));
+        assertThat(te.getMessage(),
+                   equalTo("Unable to load or parse module-info: module test {\nprovides /* inner comment */ cn;\n}"));
+
         ModuleInfoDescriptor descriptor = ModuleInfoDescriptor.create(moduleInfo);
         assertThat(descriptor.handled(),
                    is(false));
@@ -172,6 +178,13 @@ class ModuleInfoDescriptorTest {
                 + "        in = {HelidonFlavor.NIMA, HelidonFlavor.SE}\n"
                 + ")\n"
                 + "module io.helidon.config {\n}\n";
+        ToolsException te = assertThrows(ToolsException.class,
+                                         () -> ModuleInfoDescriptor
+                                                 .create(moduleInfo, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, true));
+        assertThat(te.getCause().getMessage(),
+                   equalTo("Failed to parse line: @Feature(value = \"Config\", description = \"Configuration module\", "
+                                   + "in = {HelidonFlavor.NIMA, HelidonFlavor.SE}"));
+
         ModuleInfoDescriptor descriptor = ModuleInfoDescriptor.create(moduleInfo);
         assertThat(descriptor.handled(),
                    is(false));

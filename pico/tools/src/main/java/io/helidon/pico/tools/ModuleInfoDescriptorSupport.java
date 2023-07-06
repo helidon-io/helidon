@@ -187,6 +187,9 @@ final class ModuleInfoDescriptorSupport {
                 descriptor.addUnhandledLine(line);
             }
             te = new ToolsException("Unable to load or parse module-info: " + moduleInfo, e);
+            if (strict) {
+                throw te;
+            }
             descriptor.error(te);
         }
 
