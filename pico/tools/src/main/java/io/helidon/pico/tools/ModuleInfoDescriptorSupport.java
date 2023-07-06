@@ -60,7 +60,7 @@ final class ModuleInfoDescriptorSupport {
                                        ModuleInfoOrdering ordering) {
         try {
             String moduleInfo = Files.readString(path);
-            return create(moduleInfo, ordering);
+            return create(moduleInfo, ordering, false);
         } catch (IOException e) {
             throw new ToolsException("Unable to load: " + path, e);
         }
@@ -75,7 +75,7 @@ final class ModuleInfoDescriptorSupport {
      */
     @Prototype.FactoryMethod
     static ModuleInfoDescriptor create(String moduleInfo) {
-        return create(moduleInfo, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS);
+        return create(moduleInfo, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, false);
     }
 
     /**
@@ -83,12 +83,14 @@ final class ModuleInfoDescriptorSupport {
      *
      * @param moduleInfo    the source
      * @param ordering      the ordering to apply
+     * @param strict        when set to true, parsing must pass fully and completely (i.e., {@link ModuleInfoDescriptor#handled()} ()} must be true)
      * @return the module-info descriptor
      * @throws io.helidon.pico.tools.ToolsException if there is any exception encountered
      */
     @Prototype.FactoryMethod
     static ModuleInfoDescriptor create(String moduleInfo,
-                                       ModuleInfoOrdering ordering) {
+                                       ModuleInfoOrdering ordering,
+                                       boolean strict) {
         ModuleInfoDescriptor.Builder descriptor = ModuleInfoDescriptor.builder();
 
         String clean = moduleInfo;
@@ -98,9 +100,6 @@ final class ModuleInfoDescriptorSupport {
         } else {
             clean = moduleInfo.replaceAll("/\\*[^*]*(?:\\*(?!/)[^*]*)*\\*/|//.*", "");
         }
-
-        // remove annotations
-        clean = cleanModuleAnnotations(clean);
 
         boolean firstLine = true;
         Map<String, TypeName> importAliases = new LinkedHashMap<>();
@@ -158,7 +157,19 @@ final class ModuleInfoDescriptorSupport {
                     }
                     descriptor.addItem(provides.build());
                 } else if (line.startsWith("opens ")) {
-                    // follow up issue
+                    ModuleInfoItem.Builder opens = ModuleInfoItem.builder()
+                            .opens(true)
+                            .target(resolve(split[1], importAliases))
+                            .precomments((comments != null) ? comments : List.of());
+                    if (split.length < 3) {
+                        throw new ToolsException("Unable to process module-info's use of: " + line);
+                    }
+                    if (split[2].equals("to")) {
+                        for (int i = 3; i < split.length; i++) {
+                            opens.addWithOrTo(cleanLine(split[i]));
+                        }
+                    }
+                    descriptor.addItem(opens.build());
                 } else if (line.equals("}")) {
                     break;
                 } else {
@@ -169,14 +180,14 @@ final class ModuleInfoDescriptorSupport {
                     comments = new ArrayList<>();
                 }
             }
-        } catch (ToolsException e) {
-            throw e;
         } catch (Exception e) {
+            ToolsException te;
             if (line != null) {
-                throw new ToolsException("Failed on line: " + line + ";\n"
-                                                 + "unable to load or parse module-info: " + moduleInfo, e);
+                e = new ToolsException("Failed to parse line: " + line, e);
+                descriptor.addUnhandledLine(line);
             }
-            throw new ToolsException("Unable to load or parse module-info: " + moduleInfo, e);
+            te = new ToolsException("Unable to load or parse module-info: " + moduleInfo, e);
+            descriptor.error(te);
         }
 
         return descriptor.build();
@@ -207,7 +218,7 @@ final class ModuleInfoDescriptorSupport {
                                        ModuleInfoOrdering ordering) {
         try {
             String moduleInfo = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            return create(moduleInfo, ordering);
+            return create(moduleInfo, ordering, false);
         } catch (IOException e) {
             throw new ToolsException("Unable to load from stream", e);
         }
@@ -234,43 +245,6 @@ final class ModuleInfoDescriptorSupport {
                 .isStaticUsed(isStatic)
                 .target(moduleName)
                 .build();
-    }
-
-    private static String cleanModuleAnnotations(String moduleText) {
-        StringBuilder response = new StringBuilder();
-
-        try (BufferedReader br = new BufferedReader(new StringReader(moduleText))) {
-            boolean inModule = false;
-            String line;
-            while ((line = br.readLine()) != null) {
-                if (inModule) {
-                    response.append(line).append("\n");
-                    continue;
-                }
-                String trimmed = line.trim();
-                if (trimmed.startsWith("/*")) {
-                    // beginning of comments
-                    response.append(line).append("\n");
-                } else if (trimmed.startsWith("*")) {
-                    // comment line
-                    response.append(line).append("\n");
-                } else if (trimmed.startsWith("import ")) {
-                    // import line
-                    response.append(line).append("\n");
-                } else if (trimmed.startsWith("module")) {
-                    // now just add the rest (we do not cover annotations within module text)
-                    inModule = true;
-                    response.append(line).append("\n");
-                } else if (trimmed.isBlank()) {
-                    // empty line
-                    response.append("\n");
-                }
-            }
-        } catch (IOException ignored) {
-            // ignored, we cannot get an exception when closing string reader
-        }
-
-        return response.toString();
     }
 
     private static String cleanLine(String line) {

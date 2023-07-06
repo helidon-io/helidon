@@ -25,6 +25,7 @@ import io.helidon.pico.api.ExternalContracts;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -146,16 +147,47 @@ class ModuleInfoDescriptorTest {
     @Test
     void innerCommentsNotSupported() {
         String moduleInfo = "module test {\nprovides /* inner comment */ cn;\n}";
-        ToolsException te = assertThrows(ToolsException.class, () -> ModuleInfoDescriptor.create(moduleInfo));
-        assertThat(te.getMessage(),
-                   equalTo("Unable to parse lines that have inner comments: 'provides /* inner comment */ cn'"));
+        ModuleInfoDescriptor descriptor = ModuleInfoDescriptor.create(moduleInfo);
+        assertThat(descriptor.handled(),
+                   is(false));
+        assertThat(descriptor.unhandledLines(),
+                   contains("module test {"));
+        assertThat(descriptor.error().orElseThrow().getMessage(),
+                   equalTo("Unable to load or parse module-info: module test {\nprovides /* inner comment */ cn;\n}"));
+    }
+
+    // filed https://github.com/helidon-io/helidon/issues/5697
+    @Test
+    void annotationsNotSupported() {
+        String moduleInfo = "import io.helidon.common.features.api.Feature;\n"
+                + "import io.helidon.common.features.api.HelidonFlavor;\n"
+                + "\n"
+                + "/**\n"
+                + " * Helidon SE Config module.\n"
+                + " *\n"
+                + " * @see io.helidon.config\n"
+                + " */\n"
+                + "@Feature(value = \"Config\",\n"
+                + "        description = \"Configuration module\",\n"
+                + "        in = {HelidonFlavor.NIMA, HelidonFlavor.SE}\n"
+                + ")\n"
+                + "module io.helidon.config {\n}\n";
+        ModuleInfoDescriptor descriptor = ModuleInfoDescriptor.create(moduleInfo);
+        assertThat(descriptor.handled(),
+                   is(false));
+        assertThat(descriptor.unhandledLines(),
+                   contains("@Feature(value = \"Config\", description = \"Configuration module\", in = {HelidonFlavor"
+                                   + ".NIMA, HelidonFlavor.SE}"));
+        assertThat(descriptor.error().orElseThrow().getCause().getMessage(),
+                   equalTo("Failed to parse line: @Feature(value = \"Config\", description = \"Configuration module\", "
+                                   + "in = {HelidonFlavor.NIMA, HelidonFlavor.SE}"));
     }
 
     @Test
     void loadCreateAndSave() throws Exception {
         ModuleInfoDescriptor descriptor = ModuleInfoDescriptor
                 .create(CommonUtils.loadStringFromResource("testsubjects/m0._java_"),
-                        ModuleInfoOrdering.NATURAL);
+                        ModuleInfoOrdering.NATURAL, true);
         assertThat(descriptor.contents(false),
                    equalTo("module io.helidon.pico {\n"
                                    + "    requires transitive io.helidon.pico.api;\n"
@@ -167,10 +199,12 @@ class ModuleInfoDescriptorTest {
                                    + ".DefaultPicoServices;\n"
                                    + "    uses io.helidon.pico.api.ModuleComponent;\n"
                                    + "    uses io.helidon.pico.api.Application;\n"
+                                   + "    opens io.helidon.config to weld.core.impl,\n"
+                                   + "            io.helidon.microprofile.cdi;\n"
                                    + "}"));
 
         String contents = CommonUtils.loadStringFromFile("target/test-classes/testsubjects/m0._java_").trim();
-        descriptor = ModuleInfoDescriptor.create(contents, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS);
+        descriptor = ModuleInfoDescriptor.create(contents, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, true);
         assertThat(descriptor.contents(false),
                    equalTo(contents));
 
@@ -182,7 +216,7 @@ class ModuleInfoDescriptorTest {
             String contents2 = CommonUtils.loadStringFromFile("target/test-classes/testsubjects/m0._java_").trim();
             assertThat(contents, equalTo(contents2));
             ModuleInfoDescriptor descriptor2 =
-                    ModuleInfoDescriptor.create(contents, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS);
+                    ModuleInfoDescriptor.create(contents, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, true);
             assertThat(descriptor, equalTo(descriptor2));
         } finally {
             if (tempFile != null) {
@@ -195,18 +229,26 @@ class ModuleInfoDescriptorTest {
     void mergeCreate() {
         ModuleInfoDescriptor descriptor = ModuleInfoDescriptor
                 .create(CommonUtils.loadStringFromResource("testsubjects/m0._java_"),
-                        ModuleInfoOrdering.NATURAL);
+                        ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, true);
         assertThat(descriptor.contents(false),
                    equalTo("module io.helidon.pico {\n"
+                                   + "\n"
                                    + "    requires transitive io.helidon.pico.api;\n"
                                    + "    requires static com.fasterxml.jackson.annotation;\n"
                                    + "    requires static lombok;\n"
                                    + "    requires io.helidon.common;\n"
+                                   + "\n"
                                    + "    exports io.helidon.pico.spi.impl;\n"
-                                   + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl"
-                                   + ".DefaultPicoServices;\n"
+                                   + "\n"
+                                   + "    provides io.helidon.pico.api.PicoServices with io.helidon.pico.spi.impl.DefaultPicoServices;\n"
+                                   + "\n"
                                    + "    uses io.helidon.pico.api.ModuleComponent;\n"
                                    + "    uses io.helidon.pico.api.Application;\n"
+                                   + "\n"
+                                   + "    // needed when running with modules - to make private methods accessible\n"
+                                   + "    // another comment with a semicolon;\n"
+                                   + "    opens io.helidon.config to weld.core.impl,\n"
+                                   + "            io.helidon.microprofile.cdi;\n"
                                    + "}"));
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> descriptor.mergeCreate(descriptor));
         assertThat(e.getMessage(), equalTo("can't merge with self"));

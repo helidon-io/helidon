@@ -1,4 +1,4 @@
-// @io.helidon.common.Generated(value = "io.helidon.pico.tools.ModuleInfoDescriptor", trigger = "io.helidon.pico.tools.ModuleInfoDescriptor")
+// @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
 module io.helidon.pico.tests.pico/test {
     exports io.helidon.pico.tests.pico;
     // Pico module - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")

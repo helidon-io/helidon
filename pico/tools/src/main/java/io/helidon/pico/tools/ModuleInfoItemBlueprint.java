@@ -175,6 +175,11 @@ interface ModuleInfoItemBlueprint {
             assert (!isStaticUsed());
             assert (!exports());
             builder.append("opens ");
+            if (!withOrTo().isEmpty()) {
+                builder.append(Objects.requireNonNull(target()));
+                builder.append(" to ").append(String.join(",\n\t\t\t", withOrToSorted()));
+                return builder.toString();
+            }
             handled = true;
         }
         if (requires()) {
