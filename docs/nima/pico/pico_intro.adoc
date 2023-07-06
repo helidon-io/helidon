@@ -16,9 +16,9 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Pico
-:description: about Helidon Pico
-:keywords: helidon, java, microservices, fluent builder, virtual threads
+= Helidon Injection
+:description: about Helidon Injection
+:keywords: helidon, java, injection framework, microservices, fluent builder, virtual threads
 
 
 
@@ -36,9 +36,9 @@
 
 == Overview
 
-Helidon Pico is an optional feature in Helidon that provides service registry, a lifecycle engine and extensibility for customized code generation. Foundationally, Pico provides a way to develop declarative code using standard Javax/Jakarta annotation types (not Helidon-specific). The Helidon Pico framework provides a mix of declarative and programmatic ways to build your application. 
+Helidon Injection is an optional feature in Helidon that provides service registry, a lifecycle engine and extensibility for customized code generation. Foundationally, Helidon Injection provides a way to develop declarative code using standard Javax/Jakarta annotation types (not Helidon-specific). The Helidon Injection Framework provides a mix of declarative and programmatic ways to build your application. 
 
-Pico's minimalist, compile-time generated dependency injection (DI) framework and compile-time source code generation has a number of advantages, including:
+Helidon Injection's minimalist, compile-time generated dependency injection (DI) framework and compile-time source code generation has a number of advantages, including:
 
 * pre-runtime validation of the dependency injection model
 * visibility into your application by providing "less magic" - understandability and debug-ability of your application
@@ -51,29 +51,29 @@ Pico's minimalist, compile-time generated dependency injection (DI) framework an
 
 == Maven Coordinates
 
-To enable Pico, add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
+To enable Helidon Injection, add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
 
-.Pico dependencies
+.Helidon Injection dependencies
 [source,java]
 
 ----
 <dependency>
-    <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-api</artifactId>
+    <groupId>io.helidon.inject</groupId>
+    <artifactId>helidon-inject-api</artifactId>
     <version>${helidon.version}</version>
 </dependency>
 <dependency>
-    <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-types</artifactId>
+    <groupId>io.helidon.inject</groupId>
+    <artifactId>helidon-inject-types</artifactId>
     <version>${helidon.version}</version>
 </dependency>
 ----
 
 == Usage
 
-These are the basic steps to help you get started with using Helidon Pico. 
+These are the basic steps to help you get started with using Helidon Injection. 
 
-NOTE: The Pico examples [link] provide detailed instructions for using Helidon Pico. 
+NOTE: The Injection examples [link] provide detailed instructions for using Helidon Helidon Injection. 
 
 *Step 1: Update your pom.xml file*
 
@@ -84,8 +84,8 @@ Put the following dependencies in your `pom.xml` or `gradle.build` file:
 [source,java]
 ----
     
-    <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-processor</artifactId>
+    <groupId>io.helidon.inject</groupId>
+    <artifactId>helidon-inject-processor</artifactId>
     <version>${helidon.version}</version>
 ----
 
@@ -94,8 +94,8 @@ Put the following dependencies in your `pom.xml` or `gradle.build` file:
 ----
 
   <dependency>
-    <groupId>io.helidon.pico</groupId>
-    <artifactId>helidon-pico-services</artifactId>
+    <groupId>io.helidon.inject</groupId>
+    <artifactId>helidon-inject-services</artifactId>
     <version>${helidon.version}</version>
   </dependency>
 ----
@@ -107,11 +107,11 @@ Write your application using w/ standard jakarta.inject.* and jakarta.annotation
 
 *Step 3: Build and run*
 
-In a DI-based framework, the frameworks "owns" the creation of services in accordance with the Scope each service is declared as. You therefore need to get things started by creating demand for the initial service(s) instead of ever calling new directly in your application code. Generally speaking, there are two such ways to get things started at runtime:
+In a DI-based framework, the framework "owns" the creation of services in accordance with the Scope each service is declared as. You therefore need to get things started by creating demand for the initial service(s) instead of ever calling new directly in your application code. Generally speaking, there are two such ways to get things started at runtime:
 
     * If you know the class you want to create then look it up directly using the Services SPI. Here is a sample excerpt from the book example:
 
-        Services services = PicoServices.realizedServices();
+        Services services = InjectionServices.realizedServices();
         // query
         ServiceProvider<MyService> serviceProvider = services.lookupFirst(MyService.class);
         // lazily activate
@@ -129,7 +129,7 @@ In a DI-based framework, the frameworks "owns" the creation of services in accor
     
 
 
-NOTE: Whenever list-based injection is used in Pico, all services matching the injection criteria will be in the injected (and immutable) list. The list will always be in order according to the Weight annotation value, ranking from the highest weight to the lowest weight. If services are not weighted explicitly, then a default weight is assigned. If the weight is the same for two services, then the secondary ordering will be based on the FN class name of the service types. **If the ordering of the list of services is important, remember to use the Weight and/or RunLevel annotations to establish the priority / weighted ordering, and startup ordering.**
+NOTE: Whenever list-based injection is used in Helidon Injection, all services matching the injection criteria will be in the injected (and immutable) list. The list will always be in order according to the Weight annotation value, ranking from the highest weight to the lowest weight. If services are not weighted explicitly, then a default weight is assigned. If the weight is the same for two services, then the secondary ordering will be based on the FN class name of the service types. **If the ordering of the list of services is important, remember to use the Weight and/or RunLevel annotations to establish the priority / weighted ordering, and startup ordering.**
 
 
 
@@ -138,35 +138,35 @@ NOTE: Whenever list-based injection is used in Pico, all services matching the i
 
 == API
 
-The Pico framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Pico. If you are already familiar with `jakarta.inject` and `jakarta.annotation`, then you are ready to go. 
+The Helidon Injection Framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Helidon Injection. If you are already familiar with `jakarta.inject` and `jakarta.annotation`, then you are ready to go. 
 
 
 
 === Maven Coordinates
 
-.Pico API pom.xml
+.Helidon Injection API pom.xml
 [source, java]
 ----
- <artifactId>helidon-pico-api</artifactId>
- <name>Helidon Pico API</name>
+ <artifactId>helidon-inject-api</artifactId>
+ <name>Helidon Injection API</name>
 ----
 
 
 === Types
 
-The Pico API provides types that are generally useful at compile time to assign special meaning to the type. In this way it also helps with readability and intentions of the code itself.
+The Helidon Injection API provides types that are generally useful at compile time to assign special meaning to the type. In this way it also helps with readability and intentions of the code itself.
 
-.Pico types pom.xml
+.Helidon Injection types pom.xml
 [source, java]
 ----
- <artifactId>helidon-pico-types</artifactId>
- <name>Helidon Pico Types</name>
+ <artifactId>helidon-inject-types</artifactId>
+ <name>Helidon Injection Types</name>
 ----
 
 
- * {@link io.helidon.pico.api.Contract} - signifies that the type can be used for lookup in the service registry.
- * {@link io.helidon.pico.api.ExternalContracts} - same as Contract, but applied to the implementation class instead.
- * {@link io.helidon.pico.api.RunLevel} - ascribes meaning for when the service should start.
+ * {@link io.helidon.inject.api.Contract} - signifies that the type can be used for lookup in the service registry.
+ * {@link io.helidon.inject.api.ExternalContracts} - same as Contract, but applied to the implementation class instead.
+ * {@link io.helidon.inject.api.RunLevel} - ascribes meaning for when the service should start.
 
 
 
@@ -175,17 +175,27 @@ The Pico API provides types that are generally useful at compile time to assign 
 
 == Configuration
 
-Configuration can be achieved through Pico Config-Driven Services. This add-on is based on Helidon's configuration subsystem, and adds support for  _config-driven services_ using the `@ConfiguredBy` annotation. 
+Configuration can be achieved through Helidon Injection Config-Driven Services. This add-on is based on Helidon's configuration subsystem, and adds support for  _config-driven services_ using the `@ConfiguredBy` annotation. 
 
-When applied to a target service interface, the `@ConfiguredBy` annotation will allow you to use a higher level aggregation for application configuration, and then allow the configuration to drive activation of services in the Pico Framework.
+When applied to a target service interface, the `@ConfiguredBy` annotation will allow you to use a higher level aggregation for application configuration, and then allow the configuration to drive activation of services in the Helidon Injection Framework.
 
-NOTE: You can use Pico Config-Driven Services in combination with the Helidon configuration subsystem. 
+NOTE: You can use Helidon Injection Config-Driven Services in combination with the Helidon configuration subsystem. 
 
-There are a few additional caveats to understand about `ConfiguredBy` and its supporting infrastructure.
+It is important that you review understand the following when using `ConfiguredBy` and its supporting infrastructure:
 
 * `@ConfigBean Builder` is used to aggregate configuration attributes to this higher-level, application-centric configuration beans.
 
-* The Pico Framework needs to be started with the supporting configdriven modules in order for configuration to drive service activation.
+* The new `io.helidon.common.config.GlobalConfig` class can be used to set global configuration to be used by Helidon components. The configuration must be set as the first thing, before Helidon components
+are invoked, or Helidon main class is called.
+
+* If no configuration is set, the usual `Config.create()` is used to obtain configuration either from default sources, or using meta configuration.
+
+* The Helidon Injection Framework needs to be started with the supporting configdriven modules in order for configuration to drive service activation.
+
+* ConfigSource interface is now marked as a `@Contract` for Helidon Injection
+
+* `ConfigProducer` is a new `@Singleton` service that combines the discovered ConfigSource from Helidon Injection, with the discovered configuration (from GlobalConfig) and creates a new config (unless an explicit config instance is set using GlobalConfig - in such a case it is used AS-IS).
+This means that when `io.helidon.common.Config` is injected into any service using Helidon Injection, this combined config instance will be provided.
 
 
 
