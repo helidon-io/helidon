@@ -3,9 +3,6 @@ module io.helidon.pico.tests.pico/test {
     exports io.helidon.pico.tests.pico;
     // Pico module - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
     provides io.helidon.pico.api.ModuleComponent with io.helidon.pico.tests.pico.Pico$$TestModule;
-    // Pico external contract usage - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
-    uses io.helidon.pico.tests.pico.stacking.Intercepted;
-    uses io.helidon.pico.tests.pico.stacking.InterceptedImpl;
     // Pico services - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ActivatorCreatorDefault", trigger = "io.helidon.pico.tools.ActivatorCreatorDefault")
     requires transitive io.helidon.pico.runtime;
     // Pico application - @io.helidon.common.Generated(value = "io.helidon.pico.tools.ApplicationCreatorDefault", trigger = "io.helidon.pico.tools.ApplicationCreatorDefault")
