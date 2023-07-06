@@ -326,12 +326,12 @@ public class CodeGenFiler {
             }
             return Optional.of(Path.of(javaSrc.toUri()));
         } catch (FilerException x) {
-            messager.log("Failed to write java file: " + x);
+            messager.error("Failed to write java file: " + x, x);
+            throw new RuntimeException(x);
         } catch (Exception x) {
-            messager.warn("Failed to write java file: " + x, x);
+            messager.error("Failed to write java file: " + x, x);
+            throw new RuntimeException(x);
         }
-
-        return Optional.empty();
     }
 
     /**
