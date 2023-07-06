@@ -51,7 +51,7 @@ Helidon Injection's minimalist, compile-time generated dependency injection (DI)
 
 == Maven Coordinates
 
-To enable Helidon Injection, add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
+To enable Helidon Injection, add the following dependency to your project's `pom.xml` (see Managing Dependencies).
 
 .Helidon Injection dependencies
 [source,java]
