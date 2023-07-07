@@ -67,11 +67,11 @@ class ClientRequestImplTest {
     private static final long NO_CONTENT_LENGTH = -1L;
 
     private final String baseURI;
-    private final Http1Client injectedHttp1client;
+    private final Http1ClientImpl http1Client;
 
     ClientRequestImplTest(WebServer webServer, Http1Client client) {
         baseURI = "http://localhost:" + webServer.port();
-        injectedHttp1client = client;
+        http1Client = (Http1ClientImpl) client;
     }
 
     @SetUpRoute
@@ -205,13 +205,13 @@ class ClientRequestImplTest {
     void testHeadMethod() {
         String path = "/test";
         assertThrows(IllegalArgumentException.class, () ->
-                injectedHttp1client.head(path).submit("Foo Bar"));
+                http1Client.head(path).submit("Foo Bar"));
         assertThrows(IllegalArgumentException.class, () ->
-                injectedHttp1client.head(path).outputStream(it -> {
+                http1Client.head(path).outputStream(it -> {
                     it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
                     it.close();
                 }));
-        injectedHttp1client.head(path).request();
+        http1Client.head(path).request();
     }
 
     @Test
@@ -219,10 +219,10 @@ class ClientRequestImplTest {
         ClientConnection connectionNow = null;
         ClientConnection connectionPrior = null;
         for (int i = 0; i < 5; ++i) {
-            Http1ClientRequest request = injectedHttp1client.put("/test");
+            Http1ClientRequest request = http1Client.put("/test");
             // connection will be dequeued if queue is not empty
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-            connectionNow = ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
+            connectionNow = ConnectionCache.connection(http1Client,
                                                        null,
                                                        null,
                                                        requestImpl.uri(),
@@ -241,15 +241,15 @@ class ClientRequestImplTest {
 
     @Test
     void testConnectionQueueSizeLimit() {
-        int connectionQueueSize = ((Http1ClientImpl) injectedHttp1client).clientConfig().connectionQueueSize();
+        int connectionQueueSize = http1Client.clientConfig().connectionQueueSize();
 
         List<ClientConnection> connectionList = new ArrayList<ClientConnection>();
         List<Http1ClientResponse> responseList = new ArrayList<Http1ClientResponse>();
         // create connections beyond the queue size limit
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
-            Http1ClientRequest request = injectedHttp1client.put("/test");
+            Http1ClientRequest request = http1Client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-            connectionList.add(ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
+            connectionList.add(ConnectionCache.connection(http1Client,
                                                           null,
                                                           null,
                                                           requestImpl.uri(),
@@ -268,9 +268,9 @@ class ClientRequestImplTest {
         ClientConnection connection = null;
         Http1ClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
-            Http1ClientRequest request = injectedHttp1client.put("/test");
+            Http1ClientRequest request = http1Client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-            connection = ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
+            connection = ConnectionCache.connection(http1Client,
                                                     null,
                                                     null,
                                                     requestImpl.uri(),
@@ -289,9 +289,9 @@ class ClientRequestImplTest {
 
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
-        Http1ClientRequest request = injectedHttp1client.put("/test");
+        Http1ClientRequest request = http1Client.put("/test");
         ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-        ClientConnection connectionNow = ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
+        ClientConnection connectionNow = ConnectionCache.connection(http1Client,
                                                                     null,
                                                                     null,
                                                                     requestImpl.uri(),
@@ -305,13 +305,13 @@ class ClientRequestImplTest {
 
     @Test
     void testRedirect() {
-        try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
+        try (Http1ClientResponse response = http1Client.put("/redirect")
                 .followRedirects(false)
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.FOUND_302));
         }
 
-        try (Http1ClientResponse response = injectedHttp1client.put("/redirect")
+        try (Http1ClientResponse response = http1Client.put("/redirect")
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.lastEndpointUri().getPath(), is("/afterRedirect"));
@@ -321,13 +321,13 @@ class ClientRequestImplTest {
 
     @Test
     void testRedirectKeepMethod() {
-        try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
+        try (Http1ClientResponse response = http1Client.put("/redirectKeepMethod")
                 .followRedirects(false)
                 .submit("Test entity")) {
             assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
         }
 
-        try (Http1ClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
+        try (Http1ClientResponse response = http1Client.put("/redirectKeepMethod")
                 .submit("Test entity")) {
             assertThat(response.lastEndpointUri().getPath(), is("/afterRedirect"));
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
@@ -337,14 +337,14 @@ class ClientRequestImplTest {
     @Test
     void testReadTimeoutPerRequest() {
         String testEntity = "Test entity";
-        try (Http1ClientResponse response = injectedHttp1client.put("/delayedEndpoint")
+        try (Http1ClientResponse response = http1Client.put("/delayedEndpoint")
                 .submit(testEntity)) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is(testEntity));
         }
 
         UncheckedIOException ste = assertThrows(UncheckedIOException.class,
-                                                () -> injectedHttp1client.put("/delayedEndpoint")
+                                                () -> http1Client.put("/delayedEndpoint")
                                                         .readTimeout(Duration.ofMillis(1))
                                                         .submit(testEntity));
         assertThat(ste.getCause(), instanceOf(SocketTimeoutException.class));
@@ -461,7 +461,7 @@ class ClientRequestImplTest {
     }
 
     private Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
-        return injectedHttp1client.method(method).uri(uriPath);
+        return http1Client.method(method).uri(uriPath);
     }
 
     private static Http1ClientResponse getHttp1ClientResponseFromOutputStream(Http1ClientRequest request,

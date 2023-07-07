@@ -41,12 +41,10 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.Method;
 import io.helidon.common.http.Http.Status;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.Proxy.ProxyType;
@@ -158,9 +156,6 @@ class Http1ClientConnection implements ClientConnection {
         uriHelper.scheme("http");
         uriHelper.host(proxyAddress.getHostName());
         uriHelper.port(proxyAddress.getPort());
-        Http1ClientConfig clientConfig = Http1ClientConfig.builder().mediaContext(MediaContext.create())
-                .socketOptions(options).dnsResolver(connectionKey.dnsResolver())
-                .dnsAddressLookup(connectionKey.dnsAddressLookup()).defaultHeaders(WritableHeaders.create()).build();
         ClientRequestImpl httpClient = new ClientRequestImpl(client,
                 Method.CONNECT, uriHelper, UriQueryWriteable.create(), Collections.emptyMap());
         httpClient.connection(proxyConnection);
