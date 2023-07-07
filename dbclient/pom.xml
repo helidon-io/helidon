@@ -35,6 +35,7 @@
         <module>common</module>
         <module>jdbc</module>
         <module>tracing</module>
+        <module>metrics</module>
         <module>health</module>
     </modules>
 

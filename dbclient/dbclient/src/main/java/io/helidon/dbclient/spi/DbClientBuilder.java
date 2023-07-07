@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbStatements;
 
 /**
@@ -107,6 +108,14 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
      * @return updated builder instance
      */
     T mapperManager(MapperManager manager);
+
+    /**
+     * Mapper manager of all configured {@link DbMapper mappers}.
+     *
+     * @param manager mapper manager
+     * @return updated builder instance
+     */
+    T dbMapperManager(DbMapperManager manager);
 
     /**
      * Add an interceptor.

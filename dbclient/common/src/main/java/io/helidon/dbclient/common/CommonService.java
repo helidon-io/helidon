@@ -42,7 +42,7 @@ public abstract class CommonService implements DbClientService {
      *
      * @param builder builder to configure predicate to use
      */
-    protected CommonService(CommonServiceBuilder<?> builder) {
+    protected CommonService(CommonServiceBuilder<?, ?> builder) {
         this.predicate = builder.predicate();
     }
 
@@ -68,8 +68,9 @@ public abstract class CommonService implements DbClientService {
      * A base class for builders of {@link CommonService}.
      *
      * @param <B> type of the builder extending this class
+     * @param <T> Type of the built {@link CommonService} instance
      */
-    public abstract static class CommonServiceBuilder<B extends CommonServiceBuilder<B>> implements Builder<B, CommonService> {
+    public abstract static class CommonServiceBuilder<B extends CommonServiceBuilder<B, T>, T extends CommonService> implements Builder<B, T> {
         private static final Predicate<DbClientServiceContext> YES = it -> true;
         private static final Predicate<DbClientServiceContext> NO = it -> false;
 

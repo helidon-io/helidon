@@ -121,7 +121,7 @@ public class DbClientTracing extends CommonService {
     /**
      * Fluent API builder for {@link DbClientTracing}.
      */
-    public static class Builder extends CommonServiceBuilder<Builder> {
+    public static class Builder extends CommonServiceBuilder<Builder, DbClientTracing> {
 
         private Builder() {
         }

@@ -127,6 +127,12 @@ public abstract class CommonClientBuilder<T extends CommonClientBuilder<T>>
     }
 
     @Override
+    public T dbMapperManager(DbMapperManager manager) {
+        this.dbMapperManager = manager;
+        return identity();
+    }
+
+    @Override
     public T addMapperProvider(DbMapperProvider provider) {
         this.dbMapperBuilder.addMapperProvider(provider);
         return identity();
