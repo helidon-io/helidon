@@ -18,6 +18,7 @@ package io.helidon.dbclient.jdbc;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.dbclient.DbClient;
@@ -56,6 +57,16 @@ public class DbClientBuilderTest {
         }
 
         @Override
+        public CompletionStage<Void> statementFuture() {
+            return null;
+        }
+
+        @Override
+        public CompletionStage<Long> resultFuture() {
+            return null;
+        }
+
+        @Override
         public Optional<List<Object>> indexedParameters() {
             return Optional.empty();
         }
@@ -88,6 +99,16 @@ public class DbClientBuilderTest {
         @Override
         public DbClientServiceContext statementName(String newName) {
             return this;
+        }
+
+        @Override
+        public DbClientServiceContext statementFuture(CompletionStage<Void> statementFuture) {
+            return null;
+        }
+
+        @Override
+        public DbClientServiceContext resultFuture(CompletionStage<Long> queryFuture) {
+            return null;
         }
 
         @Override

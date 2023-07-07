@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -35,8 +36,12 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
     @Override
     public Stream<DbRow> execute() {
         // Run interceptors before statement execution
-        JdbcClientServiceContext serrviceContext = prepare().createServiceContext();
-        context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
+        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
+        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
+        JdbcClientServiceContext serviceContext = prepare().createServiceContext()
+                .statementFuture(statementFuture)
+                .resultFuture(queryFuture);
+        context().clientContext().clientServices().forEach(service -> service.statement(serviceContext));
         // Execute the statement
         Connection connection = context().connectionPool().connection();
         Statement statement;
@@ -49,13 +54,15 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
         ResultSet rs;
         try {
             rs = prepare().executeQuery();
+            statementFuture.complete(null);
         } catch (SQLException ex) {
             closeStatement(statement, context().statement());
             closeConnection(connection, context().statement());
             throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
         }
-        return StreamSupport.stream(new JdbcRow.DbRowSpliterator(rs, context(), context().statement()), false)
-                .onClose(new CloseResources(connection, statement, rs, context().statement()));
+        JdbcRow.DbRowSpliterator iterator = new JdbcRow.DbRowSpliterator(rs, context(), context().statement());
+        return StreamSupport.stream(iterator, false)
+                .onClose(new CloseResources(connection, statement, rs, context().statement(), iterator, queryFuture));
     }
 
     // Close Connection and wrap any SQLException with DbStatementException
@@ -92,9 +99,15 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
     }
 
 
-    private record CloseResources(Connection connection, Statement statement, ResultSet rs, String statementString) implements Runnable {
+    private record CloseResources(Connection connection,
+                                  Statement statement,
+                                  ResultSet rs,
+                                  String statementString,
+                                  JdbcRow.DbRowSpliterator iterator,
+                                  CompletableFuture<Long> queryFuture) implements Runnable {
         @Override
         public void run() throws DbStatementException {
+            queryFuture.complete(iterator.count());
             try {
                 closeResultSet(rs, statementString);
             } finally {

@@ -18,6 +18,7 @@ package io.helidon.dbclient.jdbc;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.concurrent.CompletableFuture;
 
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementException;
@@ -31,12 +32,20 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml> implements DbStatem
     @Override
     public long execute() {
         // Run interceptors before statement execution
-        JdbcClientServiceContext serrviceContext = prepare().createServiceContext();
+        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
+        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
+        JdbcClientServiceContext serrviceContext = prepare().createServiceContext()
+                .statementFuture(statementFuture)
+                .resultFuture(queryFuture);
         context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
         // Execute the statement
         try (Connection connection = context().connectionPool().connection();
                 Statement statement = prepare().createStatement(connection)) {
-            return (long) prepare().executeUpdate();
+            long result = prepare().executeUpdate();
+            // Complete interceptor futures
+            statementFuture.complete(null);
+            queryFuture.complete(result);
+            return result;
         } catch (SQLException ex) {
             throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
         }

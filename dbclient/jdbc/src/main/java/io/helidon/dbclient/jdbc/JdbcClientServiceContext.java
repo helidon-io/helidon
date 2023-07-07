@@ -18,6 +18,7 @@ package io.helidon.dbclient.jdbc;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.dbclient.DbClientServiceContext;
@@ -27,6 +28,8 @@ abstract class JdbcClientServiceContext implements DbClientServiceContext {
 
     private final StatementContext statementContext;
     private Context context;
+    private CompletionStage<Void> statementFuture;
+    private CompletionStage<Long> queryFuture;
 
     private JdbcClientServiceContext(StatementContext statementContext) {
         this.statementContext = statementContext;
@@ -66,6 +69,28 @@ abstract class JdbcClientServiceContext implements DbClientServiceContext {
     @Override
     public JdbcClientServiceContext statementName(String statementName) {
         statementContext.statementName(statementName);
+        return this;
+    }
+
+    @Override
+    public CompletionStage<Void> statementFuture() {
+        return statementFuture;
+    }
+
+    @Override
+    public CompletionStage<Long> resultFuture() {
+        return queryFuture;
+    }
+
+    @Override
+    public JdbcClientServiceContext statementFuture(CompletionStage<Void> statementFuture) {
+        this.statementFuture = statementFuture;
+        return this;
+    }
+
+    @Override
+    public JdbcClientServiceContext resultFuture(CompletionStage<Long> resultFuture) {
+        this.queryFuture = resultFuture;
         return this;
     }
 

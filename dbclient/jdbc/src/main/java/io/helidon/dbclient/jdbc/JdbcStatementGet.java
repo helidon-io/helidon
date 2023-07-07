@@ -20,6 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementException;
@@ -35,17 +36,25 @@ class JdbcStatementGet extends JdbcStatement<DbStatementGet> implements DbStatem
     @SuppressWarnings("unused")
     public Optional<DbRow> execute() {
         // Run interceptors before statement execution
-        JdbcClientServiceContext serrviceContext = prepare().createServiceContext();
-        context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
+        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
+        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
+        JdbcClientServiceContext serviceContext = prepare().createServiceContext()
+                .statementFuture(statementFuture)
+                .resultFuture(queryFuture);
+        context().clientContext().clientServices().forEach(service -> service.statement(serviceContext));
         // Execute the statement
         try (Connection connection = context().connectionPool().connection();
                 Statement statement = prepare().createStatement(connection);
                 ResultSet rs = prepare().executeQuery()) {
+            statementFuture.complete(null);
             if (rs.next()) {
-                return Optional.of(JdbcRow.create(rs,
+                Optional<DbRow> result =  Optional.of(JdbcRow.create(rs,
                                                   context().dbMapperManager(),
                                                   context().mapperManager()));
+                queryFuture.complete(1L);
+                return result;
             } else {
+                queryFuture.complete(0L);
                 return Optional.empty();
             }
         } catch (SQLException ex) {

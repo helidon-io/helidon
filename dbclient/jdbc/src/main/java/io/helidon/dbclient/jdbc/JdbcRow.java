@@ -62,12 +62,14 @@ class JdbcRow extends CommonRow {
         private final ResultSet rs;
         private final StatementContext context;
         private final String statementString;
+        private long count;
 
         DbRowSpliterator(ResultSet rs, StatementContext context, String statementString) {
             super(Long.MAX_VALUE, Spliterator.ORDERED);
             this.rs = rs;
             this.context = context;
             this.statementString = statementString;
+            this.count = 0L;
         }
 
         @Override
@@ -77,6 +79,7 @@ class JdbcRow extends CommonRow {
                     action.accept(create(rs,
                                          context.dbMapperManager(),
                                          context.mapperManager()));
+                    count++;
                     return true;
                 } else {
                     return false;
@@ -86,6 +89,10 @@ class JdbcRow extends CommonRow {
                                                statementString,
                                                ex);
             }
+        }
+
+        long count() {
+            return count;
         }
 
     }

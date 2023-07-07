@@ -18,6 +18,7 @@ package io.helidon.dbclient;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 
@@ -58,20 +59,20 @@ public interface DbClientServiceContext {
      */
     String statement();
 
-//    /**
-//     * A stage that is completed once the statement finishes execution.
-//     *
-//     * @return statement future
-//     */
-//    CompletionStage<Void> statementFuture();
-//
-//    /**
-//     * A stage that is completed once the results were fully read. The number returns either the number of modified
-//     * records or the number of records actually read.
-//     *
-//     * @return stage that completes once all query results were processed.
-//     */
-//    CompletionStage<Long> resultFuture();
+    /**
+     * A stage that is completed once the statement finishes execution.
+     *
+     * @return statement future
+     */
+    CompletionStage<Void> statementFuture();
+
+    /**
+     * A stage that is completed once the results were fully read. The number returns either the number of modified
+     * records or the number of records actually read.
+     *
+     * @return stage that completes once all query results were processed.
+     */
+    CompletionStage<Long> resultFuture();
 
     /**
      * Indexed parameters (if used).
@@ -123,21 +124,21 @@ public interface DbClientServiceContext {
      */
     DbClientServiceContext statementName(String newName);
 
-//    /**
-//     * Set a new future to mark completion of the statement.
-//     *
-//     * @param statementFuture future
-//     * @return updated interceptor context
-//     */
-//    DbClientServiceContext statementFuture(CompletionStage<Void> statementFuture);
-//
-//    /**
-//     * Set a new future to mark completion of the result (e.g. query or number of modified records).
-//     *
-//     * @param queryFuture future
-//     * @return updated interceptor context
-//     */
-//    DbClientServiceContext resultFuture(CompletionStage<Long> queryFuture);
+    /**
+     * Set a new future to mark completion of the statement.
+     *
+     * @param statementFuture future
+     * @return updated interceptor context
+     */
+    DbClientServiceContext statementFuture(CompletionStage<Void> statementFuture);
+
+    /**
+     * Set a new future to mark completion of the result (e.g. query or number of modified records).
+     *
+     * @param queryFuture future
+     * @return updated interceptor context
+     */
+    DbClientServiceContext resultFuture(CompletionStage<Long> queryFuture);
 
     /**
      * Set a new statement with indexed parameters to be used.
