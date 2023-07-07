@@ -87,6 +87,8 @@ public class GreetService implements Service {
                 .get("/redirect", this::redirect)
                 .get("/redirectPath", this::redirectPath)
                 .get("/redirect/infinite", this::redirectInfinite)
+                .put("/redirect/temporary", this::redirectTemporary)
+                .put("/redirect/permanent", this::redirectPermanent)
                 .post("/form", this::form)
                 .post("/form/content", this::formContent)
                 .post("/contentLength", this::contentLength)
@@ -185,6 +187,16 @@ public class GreetService implements Service {
     private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
         response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/redirect/infinite");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
+    }
+
+    private void redirectTemporary(ServerRequest serverRequest, ServerResponse response) {
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greeting");
+        response.status(Http.Status.TEMPORARY_REDIRECT_307).send();
+    }
+
+    private void redirectPermanent(ServerRequest serverRequest, ServerResponse response) {
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greeting");
+        response.status(Http.Status.PERMANENT_REDIRECT_308).send();
     }
 
     private void form(ServerRequest req, ServerResponse res) {

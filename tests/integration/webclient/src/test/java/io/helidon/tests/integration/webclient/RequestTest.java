@@ -148,6 +148,48 @@ public class RequestTest extends TestParent {
     }
 
     @Test
+    public void testTemporaryRedirect() throws Exception {
+        webClient.put()
+                .path("/redirect/temporary")
+                .submit(JSON_NEW_GREETING)
+                .thenAccept(response -> assertThat(response.status().code(), is(204)))
+                .thenCompose(nothing -> webClient.get()
+                        .request(JsonObject.class))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hola World!")))
+                .thenCompose(nothing -> webClient.put()
+                        .path("/greeting")
+                        .submit(JSON_OLD_GREETING))
+                .thenAccept(response -> assertThat(response.status().code(), is(204)))
+                .exceptionally(throwable -> {
+                    fail(throwable);
+                    return null;
+                })
+                .toCompletableFuture()
+                .get();
+    }
+
+    @Test
+    public void testPermanentRedirect() throws Exception {
+        webClient.put()
+                .path("/redirect/permanent")
+                .submit(JSON_NEW_GREETING)
+                .thenAccept(response -> assertThat(response.status().code(), is(204)))
+                .thenCompose(nothing -> webClient.get()
+                        .request(JsonObject.class))
+                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hola World!")))
+                .thenCompose(nothing -> webClient.put()
+                        .path("/greeting")
+                        .submit(JSON_OLD_GREETING))
+                .thenAccept(response -> assertThat(response.status().code(), is(204)))
+                .exceptionally(throwable -> {
+                    fail(throwable);
+                    return null;
+                })
+                .toCompletableFuture()
+                .get();
+    }
+
+    @Test
     public void testEntityNotHandled() {
         try {
             webClient.get()
