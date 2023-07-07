@@ -53,7 +53,7 @@ public interface ServiceInjectionPlanBinder {
         * It is assumed that the caller of this is aware of the proper cardinality for each injection point.
         *
         * @param id                 the injection point identity
-        * @param serviceProviders   the list of service providers to bind to this identity.
+        * @param serviceProviders   the list of service providers to bind to this identity
         * @return the binder builder
         */
         Binder bindMany(String id,
