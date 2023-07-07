@@ -55,7 +55,16 @@ public class WebClientCookieManager extends CookieManager {
         this.acceptCookies = acceptCookies;
     }
 
-    static WebClientCookieManager create(CookiePolicy cookiePolicy,
+    /**
+     * Create a cookie manager.
+     *
+     * @param cookiePolicy policy to accept cookies
+     * @param cookieStore storage for cookies
+     * @param defaultCookies default cookies to send
+     * @param acceptCookies flag to handler acceptance of cookies
+     * @return new cookie manager
+     */
+    public static WebClientCookieManager create(CookiePolicy cookiePolicy,
                                          CookieStore cookieStore,
                                          Map<String, String> defaultCookies,
                                          boolean acceptCookies) {

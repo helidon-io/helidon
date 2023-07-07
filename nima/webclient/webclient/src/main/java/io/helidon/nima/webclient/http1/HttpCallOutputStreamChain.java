@@ -38,21 +38,21 @@ import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 
 class HttpCallOutputStreamChain extends HttpCallChainBase {
-    private final Http1ClientConfig clientConfig;
+    private final Http1ClientImpl client;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final ClientRequest.OutputStreamHandler osHandler;
 
     HttpCallOutputStreamChain(ClientRequestImpl clientRequest,
-                              Http1ClientConfig clientConfig,
+                              Http1ClientImpl client,
                               ClientConnection connection,
                               Tls tls,
                               Proxy proxy,
                               CompletableFuture<WebClientServiceRequest> whenSent,
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               ClientRequest.OutputStreamHandler osHandler) {
-        super(clientConfig, connection, tls, proxy, clientRequest.keepAlive());
-        this.clientConfig = clientConfig;
+        super(client, connection, tls, proxy, clientRequest.keepAlive());
+        this.client = client;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;
         this.osHandler = osHandler;
@@ -70,7 +70,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
                                                                             reader,
                                                                             writeBuffer,
                                                                             headers,
-                                                                            clientConfig,
+                                                                            client.clientConfig(),
                                                                             serviceRequest,
                                                                             whenSent);
 
@@ -84,7 +84,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, clientConfig.maxStatusLineLength());
+        Http.Status responseStatus = Http1StatusParser.readStatus(reader, client.clientConfig().maxStatusLineLength());
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return WebClientServiceResponse.builder()

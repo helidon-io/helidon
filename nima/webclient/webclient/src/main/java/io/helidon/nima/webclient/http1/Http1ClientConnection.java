@@ -44,7 +44,6 @@ import io.helidon.common.http.Http.Status;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
-import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.http.media.MediaContext;
@@ -62,6 +61,7 @@ class Http1ClientConnection implements ClientConnection {
     private static final long QUEUE_TIMEOUT = 10;
     private static final TimeUnit QUEUE_TIMEOUT_TIME_UNIT = TimeUnit.MILLISECONDS;
 
+    private final Http1ClientImpl client;
     private final LinkedBlockingDeque<Http1ClientConnection> connectionQueue;
     private final ConnectionKey connectionKey;
     private final io.helidon.common.socket.SocketOptions options;
@@ -72,14 +72,15 @@ class Http1ClientConnection implements ClientConnection {
     private DataReader reader;
     private DataWriter writer;
 
-    Http1ClientConnection(SocketOptions options, ConnectionKey connectionKey) {
-        this(options, null, connectionKey);
+    Http1ClientConnection(Http1ClientImpl client, ConnectionKey connectionKey) {
+        this(client, null, connectionKey);
     }
 
-    Http1ClientConnection(SocketOptions options,
+    Http1ClientConnection(Http1ClientImpl client,
                           LinkedBlockingDeque<Http1ClientConnection> connectionQueue,
                           ConnectionKey connectionKey) {
-        this.options = options;
+        this.client = client;
+        this.options = client.socketOptions();
         this.connectionQueue = connectionQueue;
         this.keepAlive = (connectionQueue != null);
         this.connectionKey = connectionKey;
@@ -141,7 +142,7 @@ class Http1ClientConnection implements ClientConnection {
     }
 
     private Http1ClientConnection proxyConnection(InetSocketAddress proxyAddress) {
-        return new Http1ClientConnection(options, new ConnectionKey("http",
+        return new Http1ClientConnection(client, new ConnectionKey("http",
                 proxyAddress.getHostName(),
                 proxyAddress.getPort(),
                 null,
@@ -160,7 +161,7 @@ class Http1ClientConnection implements ClientConnection {
         Http1ClientConfig clientConfig = Http1ClientConfig.builder().mediaContext(MediaContext.create())
                 .socketOptions(options).dnsResolver(connectionKey.dnsResolver())
                 .dnsAddressLookup(connectionKey.dnsAddressLookup()).defaultHeaders(WritableHeaders.create()).build();
-        ClientRequestImpl httpClient = new ClientRequestImpl(clientConfig,
+        ClientRequestImpl httpClient = new ClientRequestImpl(client,
                 Method.CONNECT, uriHelper, UriQueryWriteable.create(), Collections.emptyMap());
         httpClient.connection(proxyConnection);
         httpClient.header(Header.HOST, hostPort);

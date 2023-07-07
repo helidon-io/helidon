@@ -47,7 +47,6 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
-import io.helidon.nima.webclient.WebClientCookieManager;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
@@ -63,7 +62,6 @@ class ClientRequestImpl implements Http1ClientRequest {
     private final Http1ClientConfig clientConfig;
     private final MediaContext mediaContext;
     private final Map<String, String> properties;
-    private final WebClientCookieManager cookieManager;
 
     private WritableHeaders<?> explicitHeaders = WritableHeaders.create();
     private boolean followRedirects;
@@ -76,19 +74,20 @@ class ClientRequestImpl implements Http1ClientRequest {
     private Proxy proxy;
     private boolean skipUriEncoding = false;
     private boolean keepAlive;
+    private Http1ClientImpl client;
 
-    ClientRequestImpl(Http1ClientConfig clientConfig,
+    ClientRequestImpl(Http1ClientImpl client,
                       Http.Method method,
                       UriHelper helper,
                       UriQueryWriteable query,
-                      Map<String, String> properties,
-                      WebClientCookieManager cookieManager) {
+                      Map<String, String> properties) {
+        this.client = client;
         this.method = method;
         this.uri = helper;
         this.properties = new HashMap<>(properties);
+        this.clientConfig = client.clientConfig();
         this.readTimeout = clientConfig.socketOptions().readTimeout();
 
-        this.clientConfig = clientConfig;
         this.mediaContext = clientConfig.mediaContext();
         this.followRedirects = clientConfig.followRedirects();
         this.maxRedirects = clientConfig.maxRedirects();
@@ -98,7 +97,6 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         this.requestId = "http1-client-" + COUNTER.getAndIncrement();
         this.explicitHeaders = WritableHeaders.create(clientConfig.defaultHeaders());
-        this.cookieManager = cookieManager;
     }
 
     //Copy constructor for redirection purposes
@@ -107,11 +105,15 @@ class ClientRequestImpl implements Http1ClientRequest {
                               UriHelper helper,
                               UriQueryWriteable query,
                               Map<String, String> properties) {
-        this(request.clientConfig, method, helper, query, properties, request.cookieManager);
+        this(request.client, method, helper, query, properties);
         this.followRedirects = request.followRedirects;
         this.maxRedirects = request.maxRedirects;
         this.tls = request.tls;
         this.connection = request.connection;
+    }
+
+    Http1ClientImpl client() {
+        return client;
     }
 
     @Override
@@ -214,7 +216,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientService.Chain callChain = new HttpCallOutputStreamChain(this,
-                                                                         clientConfig,
+                                                                         client,
                                                                          connection,
                                                                          tls,
                                                                          proxy,
@@ -349,7 +351,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientService.Chain callChain = new HttpCallEntityChain(this,
-                                                                   clientConfig,
+                                                                   client,
                                                                    connection,
                                                                    tls,
                                                                    proxy,
@@ -401,7 +403,7 @@ class ClientRequestImpl implements Http1ClientRequest {
 
         try {
             // include any stored cookies in request
-            cookieManager.get(uri, headers);
+            client.cookieManager().get(uri, headers);
 
             WebClientServiceRequest serviceRequest = new ServiceRequestImpl(uri,
                     method,
@@ -426,7 +428,7 @@ class ClientRequestImpl implements Http1ClientRequest {
             WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);
 
             // store any cookies received in response
-            cookieManager.put(uri, serviceResponse.headers());
+            client.cookieManager().put(uri, serviceResponse.headers());
 
             CompletableFuture<Void> complete = new CompletableFuture<>();
             complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))

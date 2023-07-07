@@ -16,7 +16,10 @@
 
 package io.helidon.nima.webclient;
 
+import java.net.CookiePolicy;
+import java.net.CookieStore;
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
@@ -100,4 +103,32 @@ public interface ClientConfig {
     @ConfiguredOption("STRICT")
     ParserMode mediaTypeParserMode();
 
+    /**
+     * Whether automatic cookie store is enabled or not.
+     *
+     * @return status of cookie store
+     */
+    @ConfiguredOption("false")
+    boolean enableAutomaticCookieStore();
+
+    /**
+     * Current cookie policy for this client.
+     *
+     * @return the cookie policy
+     */
+    Optional<CookiePolicy> cookiePolicy();
+
+    /**
+     * Map of default cookies to include in all requests if cookies enabled.
+     *
+     * @return map of default cookies
+     */
+    Map<String, String> defaultCookies();
+
+    /**
+     * The cookie store where cookies are kept.
+     *
+     * @return cookie store
+     */
+    Optional<CookieStore> cookieStore();
 }

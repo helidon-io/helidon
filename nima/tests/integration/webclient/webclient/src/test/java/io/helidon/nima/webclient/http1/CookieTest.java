@@ -16,10 +16,11 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.util.Map;
+
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -48,10 +49,9 @@ class CookieTest {
      */
     @BeforeAll
     static void setUp() {
-        client = WebClient.builder()
+        client = Http1Client.builder()
                 .enableAutomaticCookieStore(true)
-                .defaultCookie("flavor3", "strawberry")
-                .defaultCookie("flavor4", "raspberry")
+                .defaultCookies(Map.of("flavor3", "strawberry", "flavor4", "raspberry"))
                 .build();
     }
 

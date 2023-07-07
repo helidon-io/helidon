@@ -16,8 +16,6 @@
 
 package io.helidon.nima.webclient;
 
-import java.net.CookiePolicy;
-import java.net.CookieStore;
 import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
@@ -80,16 +78,11 @@ public interface WebClient {
         private DnsResolver dnsResolver;
         private DnsAddressLookup dnsAddressLookup;
         private boolean followRedirect;
-        private boolean enableAutomaticCookieStore;
         private int maxRedirect;
         private WritableHeaders<?> defaultHeaders = WritableHeaders.create();
         private ParserMode mediaTypeParserMode = ParserMode.STRICT;
         private Map<String, String> properties = new HashMap<>();
         private Config config;
-        private WebClientCookieManager cookieManager;
-        private CookiePolicy cookiePolicy;
-        private CookieStore cookieStore;
-        private final Map<String, String> defaultCookies = new HashMap<>();
 
         /**
          * Common builder base for all the client builder.
@@ -109,10 +102,6 @@ public interface WebClient {
             if (channelOptions == null) {
                 channelOptions = channelOptionsBuilder.build();
             }
-            cookieManager = WebClientCookieManager.create(cookiePolicy,
-                    cookieStore,
-                    defaultCookies,
-                    enableAutomaticCookieStore);
             return doBuild();
         }
 
@@ -131,12 +120,10 @@ public interface WebClient {
             config.get("follow-redirects").asBoolean().ifPresent(this::followRedirect);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
-            if (config.get("cookies").exists()) {
-                cookies(config.get("cookies"));
-            }
-            config.get("headers").asList(Http.HeaderValue.class).ifPresent(list -> list.forEach(this::header));
+            config.get("headers").asList(Http.HeaderValue.class)
+                    .ifPresent(list -> list.forEach(headerValue -> this.header(headerValue)));
             config.get("tls")
-                    .map(Tls::create)
+                    .map(tlsConfig -> Tls.create(tlsConfig))
                     .ifPresent(this::tls);
             return identity();
         }
@@ -365,51 +352,6 @@ public interface WebClient {
         }
 
         /**
-         * Enable automatic cookie store.
-         *
-         * @param enableAutomaticCookieStore cookie store flag
-         * @return updated builder
-         */
-        public B enableAutomaticCookieStore(boolean enableAutomaticCookieStore) {
-            this.enableAutomaticCookieStore = enableAutomaticCookieStore;
-            return identity();
-        }
-
-        /**
-         * Sets new {@link CookiePolicy}.
-         *
-         * @param cookiePolicy cookie policy
-         * @return updated builder instance
-         */
-        public B cookiePolicy(CookiePolicy cookiePolicy) {
-            this.cookiePolicy = cookiePolicy;
-            return identity();
-        }
-
-        /**
-         * Adds default cookie to every request.
-         *
-         * @param key   cookie name
-         * @param value cookie value
-         * @return updated builder instance
-         */
-        public B defaultCookie(String key, String value) {
-            defaultCookies.put(key, value);
-            return identity();
-        }
-
-        /**
-         * Sets new instance of {@link CookieStore} with default cookies.
-         *
-         * @param cookieStore cookie store
-         * @return updated builder instance
-         */
-        public B cookieStore(CookieStore cookieStore) {
-            this.cookieStore = cookieStore;
-            return identity();
-        }
-
-        /**
          * Remove header with the selected name from the default headers.
          *
          * @param name header name
@@ -459,15 +401,6 @@ public interface WebClient {
             return this.mediaTypeParserMode;
         }
 
-        private void cookies(Config cookies) {
-            cookies.get("automatic-store-enabled").asBoolean().ifPresent(this::enableAutomaticCookieStore);
-            Config map = cookies.get("default-cookies");
-            map.asNodeList()
-                    .ifPresent(headers -> headers
-                            .forEach(header -> defaultCookie(header.get("name").asString().get(),
-                                    header.get("value").asString().get())));
-        }
-
         Tls tls() {
             return tls;
         }
@@ -498,10 +431,6 @@ public interface WebClient {
 
         Map<String, String> properties() {
             return properties;
-        }
-
-        protected WebClientCookieManager cookieManager() {
-            return cookieManager;
         }
     }
 }

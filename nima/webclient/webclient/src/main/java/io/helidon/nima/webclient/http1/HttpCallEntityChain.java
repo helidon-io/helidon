@@ -36,22 +36,22 @@ import io.helidon.nima.webclient.WebClientServiceResponse;
 class HttpCallEntityChain extends HttpCallChainBase {
 
     private final ClientRequestImpl request;
-    private final Http1ClientConfig clientConfig;
+    private final Http1ClientImpl client;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Object entity;
 
     HttpCallEntityChain(ClientRequestImpl request,
-                        Http1ClientConfig clientConfig,
+                        Http1ClientImpl client,
                         ClientConnection connection,
                         Tls tls,
                         Proxy proxy,
                         CompletableFuture<WebClientServiceRequest> whenSent,
                         CompletableFuture<WebClientServiceResponse> whenComplete,
                         Object entity) {
-        super(clientConfig, connection, tls, proxy, request.keepAlive());
+        super(client, connection, tls, proxy, request.keepAlive());
         this.request = request;
-        this.clientConfig = clientConfig;
+        this.client = client;
         this.whenSent = whenSent;
         this.whenComplete = whenComplete;
         this.entity = entity;
@@ -74,7 +74,7 @@ class HttpCallEntityChain extends HttpCallChainBase {
 
         headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, entityBytes.length));
 
-        writeHeaders(headers, writeBuffer, clientConfig.validateHeaders());
+        writeHeaders(headers, writeBuffer, client.clientConfig().validateHeaders());
         // we have completed writing the headers
         whenSent.complete(serviceRequest);
 
@@ -83,7 +83,7 @@ class HttpCallEntityChain extends HttpCallChainBase {
         }
         writer.write(writeBuffer);
 
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, clientConfig.maxStatusLineLength());
+        Http.Status responseStatus = Http1StatusParser.readStatus(reader, client.clientConfig().maxStatusLineLength());
         ClientResponseHeaders responseHeaders = readHeaders(reader);
 
         return WebClientServiceResponse.builder()
@@ -101,7 +101,7 @@ class HttpCallEntityChain extends HttpCallChainBase {
             return (byte[]) entity;
         }
         GenericType<Object> genericType = GenericType.create(entity);
-        EntityWriter<Object> writer = clientConfig.mediaContext().writer(genericType, headers);
+        EntityWriter<Object> writer = client.clientConfig().mediaContext().writer(genericType, headers);
 
         // todo this should use output stream of client, but that would require delaying header write
         // to first byte written

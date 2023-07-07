@@ -222,7 +222,7 @@ class ClientRequestImplTest {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             // connection will be dequeued if queue is not empty
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-            connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
+            connectionNow = ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
                                                        null,
                                                        null,
                                                        requestImpl.uri(),
@@ -249,7 +249,7 @@ class ClientRequestImplTest {
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-            connectionList.add(ConnectionCache.connection(requestImpl.clientConfig(),
+            connectionList.add(ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
                                                           null,
                                                           null,
                                                           requestImpl.uri(),
@@ -270,7 +270,7 @@ class ClientRequestImplTest {
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             Http1ClientRequest request = injectedHttp1client.put("/test");
             ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-            connection = ConnectionCache.connection(requestImpl.clientConfig(),
+            connection = ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
                                                     null,
                                                     null,
                                                     requestImpl.uri(),
@@ -291,7 +291,7 @@ class ClientRequestImplTest {
         response.close();
         Http1ClientRequest request = injectedHttp1client.put("/test");
         ClientRequestImpl requestImpl = (ClientRequestImpl) request;
-        ClientConnection connectionNow = ConnectionCache.connection(requestImpl.clientConfig(),
+        ClientConnection connectionNow = ConnectionCache.connection((Http1ClientImpl) injectedHttp1client,
                                                                     null,
                                                                     null,
                                                                     requestImpl.uri(),

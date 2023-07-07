@@ -25,6 +25,7 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.webclient.ClientConfig;
 import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.UriHelper;
@@ -42,7 +43,7 @@ class ConnectionCache {
     private ConnectionCache() {
     }
 
-    static ClientConnection connection(Http1ClientConfig clientConfig,
+    static ClientConnection connection(Http1ClientImpl client,
                                        Tls tls,
                                        Proxy proxy,
                                        UriHelper uri,
@@ -51,9 +52,9 @@ class ConnectionCache {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : null;
         if (keepAlive) {
-            return keepAliveConnection(clientConfig, effectiveTls, uri, proxy);
+            return keepAliveConnection(client, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(clientConfig, effectiveTls, uri, proxy);
+            return oneOffConnection(client, effectiveTls, uri, proxy);
         }
     }
 
@@ -72,10 +73,12 @@ class ConnectionCache {
         return false;
     }
 
-    private static ClientConnection keepAliveConnection(Http1ClientConfig clientConfig,
+    private static ClientConnection keepAliveConnection(Http1ClientImpl client,
                                                         Tls tls,
                                                         UriHelper uri,
                                                         Proxy proxy) {
+        Http1ClientConfig clientConfig = client.clientConfig();
+
         KeepAliveKey keepAliveKey = new KeepAliveKey(uri.scheme(),
                                                      uri.authority(),
                                                      tls,
@@ -91,7 +94,7 @@ class ConnectionCache {
         }
 
         if (connection == null) {
-            connection = new Http1ClientConnection(clientConfig.socketOptions(),
+            connection = new Http1ClientConnection(client,
                                                    connectionQueue,
                                                    new ConnectionKey(uri.scheme(),
                                                                      uri.host(),
@@ -111,17 +114,18 @@ class ConnectionCache {
         return connection;
     }
 
-    private static ClientConnection oneOffConnection(Http1ClientConfig clientConfig,
+    private static ClientConnection oneOffConnection(Http1ClientImpl client,
                                                      Tls tls,
                                                      UriHelper uri,
                                                      Proxy proxy) {
-        return new Http1ClientConnection(clientConfig.socketOptions(), new ConnectionKey(uri.scheme(),
-                                                                                         uri.host(),
-                                                                                         uri.port(),
-                                                                                         tls,
-                                                                                         clientConfig.dnsResolver(),
-                                                                                         clientConfig.dnsAddressLookup(),
-                                                                                         proxy))
+        ClientConfig clientConfig = client.clientConfig();
+        return new Http1ClientConnection(client, new ConnectionKey(uri.scheme(),
+                                                                   uri.host(),
+                                                                   uri.port(),
+                                                                   tls,
+                                                                   clientConfig.dnsResolver(),
+                                                                   clientConfig.dnsAddressLookup(),
+                                                                   proxy))
                 .connect();
     }
 

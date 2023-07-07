@@ -16,8 +16,11 @@
 
 package io.helidon.nima.webclient.http1;
 
+import java.net.CookiePolicy;
+import java.net.CookieStore;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
@@ -35,6 +38,7 @@ import io.helidon.nima.webclient.DefaultDnsResolverProvider;
 import io.helidon.nima.webclient.DnsAddressLookup;
 import io.helidon.nima.webclient.HttpClient;
 import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.WebClientCookieManager;
 import io.helidon.nima.webclient.spi.DnsResolver;
 import io.helidon.nima.webclient.spi.DnsResolverProvider;
 import io.helidon.nima.webclient.spi.WebClientService;
@@ -111,7 +115,13 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
                                                    .build());
             }
 
-            return new Http1ClientImpl(configBuilder.build(), cookieManager());
+            WebClientCookieManager cookieManager = WebClientCookieManager.create(
+                    configBuilder.cookiePolicy().orElse(null),
+                    configBuilder.cookieStore().orElse(null),
+                    configBuilder.defaultCookies(),
+                    configBuilder.enableAutomaticCookieStore());
+
+            return new Http1ClientImpl(configBuilder.build(), cookieManager);
         }
 
         @Override
@@ -311,6 +321,49 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
             return this;
         }
 
+        /**
+         * Enable automatic cookie store.
+         *
+         * @param enableAutomaticCookieStore cookie store flag
+         * @return updated builder
+         */
+        public Http1ClientBuilder enableAutomaticCookieStore(boolean enableAutomaticCookieStore) {
+            configBuilder.enableAutomaticCookieStore(enableAutomaticCookieStore);
+            return this;
+        }
+
+        /**
+         * Sets new {@link CookiePolicy}.
+         *
+         * @param cookiePolicy cookie policy
+         * @return updated builder instance
+         */
+        public Http1ClientBuilder cookiePolicy(CookiePolicy cookiePolicy) {
+            configBuilder.cookiePolicy(cookiePolicy);
+            return this;
+        }
+
+        /**
+         * Adds default cookies to every request.
+         *
+         * @param cookies cookie map
+         * @return updated builder instance
+         */
+        public Http1ClientBuilder defaultCookies(Map<String, String> cookies) {
+            configBuilder.defaultCookies(cookies);
+            return this;
+        }
+
+        /**
+         * Sets new instance of {@link CookieStore} with default cookies.
+         *
+         * @param cookieStore cookie store
+         * @return updated builder instance
+         */
+        public Http1ClientBuilder cookieStore(CookieStore cookieStore) {
+            configBuilder.cookieStore(cookieStore);
+            return this;
+        }
     }
 
 }

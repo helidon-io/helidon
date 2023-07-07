@@ -38,11 +38,11 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
 
     Http1ClientImpl(Http1ClientConfig clientConfig, WebClientCookieManager cookieManager) {
         super(Http1Client.builder()
-                      .update(it -> clientConfig.baseUri().ifPresent(it::baseUri))
-                      .update(it -> clientConfig.tls().ifPresent(it::tls))
-                      .channelOptions(clientConfig.socketOptions())
-                      .dnsResolver(clientConfig.dnsResolver())
-                      .dnsAddressLookup(clientConfig.dnsAddressLookup()));
+                .update(it -> clientConfig.baseUri().ifPresent(it::baseUri))
+                .update(it -> clientConfig.tls().ifPresent(it::tls))
+                .channelOptions(clientConfig.socketOptions())
+                .dnsResolver(clientConfig.dnsResolver())
+                .dnsAddressLookup(clientConfig.dnsAddressLookup()));
 
         this.clientConfig = Http1ClientConfig.builder(clientConfig)
                 .services(List.of()) // reset services to empty list
@@ -57,11 +57,15 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         UriQueryWriteable query = UriQueryWriteable.create();
         UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
 
-        return new ClientRequestImpl(clientConfig, method, helper, query, properties(), cookieManager);
+        return new ClientRequestImpl(this, method, helper, query, properties());
     }
 
     Http1ClientConfig clientConfig() {
         return clientConfig;
+    }
+
+    WebClientCookieManager cookieManager() {
+        return cookieManager;
     }
 
     private static List<WebClientService> services(Http1ClientConfig clientConfig) {
@@ -69,12 +73,12 @@ class Http1ClientImpl extends LoomClient implements Http1Client {
         List<WebClientService> services = new ArrayList<>(clientConfig.services());
 
         services.addAll(HelidonServiceLoader
-                                .builder(ServiceLoader.load(WebClientServiceProvider.class))
-                                .useSystemServiceLoader(clientConfig.servicesUseServiceLoader())
-                                .build()
-                                .stream()
-                                .map(it -> it.create(empty))
-                                .toList());
+                .builder(ServiceLoader.load(WebClientServiceProvider.class))
+                .useSystemServiceLoader(clientConfig.servicesUseServiceLoader())
+                .build()
+                .stream()
+                .map(it -> it.create(empty))
+                .toList());
 
         return services;
     }

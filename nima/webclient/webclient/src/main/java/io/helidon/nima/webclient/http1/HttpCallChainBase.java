@@ -36,18 +36,18 @@ import io.helidon.nima.webclient.spi.WebClientService;
 
 abstract class HttpCallChainBase implements WebClientService.Chain {
     private final BufferData writeBuffer = BufferData.growing(128);
-    private final Http1ClientConfig clientConfig;
+    private final Http1ClientImpl client;
     private final ClientConnection connection;
     private final Tls tls;
     private final Proxy proxy;
     private final boolean keepAlive;
 
-    HttpCallChainBase(Http1ClientConfig clientConfig,
+    HttpCallChainBase(Http1ClientImpl client,
                       ClientConnection connection,
                       Tls tls,
                       Proxy proxy,
                       boolean keepAlive) {
-        this.clientConfig = clientConfig;
+        this.client = client;
         this.connection = connection;
         this.tls = tls;
         this.proxy = proxy;
@@ -92,7 +92,8 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
         // TODO When proxy is implemented, change default value of Http1ClientConfig.relativeUris to false
         //  and below conditional statement to:
         //  proxy == Proxy.noProxy() || proxy.noProxyPredicate().apply(finalUri) || clientConfig.relativeUris
-        String schemeHostPort = clientConfig.relativeUris() ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
+        String schemeHostPort = client.clientConfig().relativeUris()
+                ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
         nonEntityData.writeAscii(request.method().text()
                                          + " "
                                          + schemeHostPort
@@ -101,6 +102,7 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     }
 
     ClientResponseHeaders readHeaders(DataReader reader) {
+        Http1ClientConfig clientConfig = client.clientConfig();
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader,
                                                                      clientConfig.maxHeaderSize(),
                                                                      clientConfig.validateHeaders());
@@ -109,7 +111,7 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
-        return ConnectionCache.connection(clientConfig,
+        return ConnectionCache.connection(client,
                                           tls,
                                           proxy,
                                           request.uri(),
