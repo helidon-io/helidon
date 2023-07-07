@@ -15,7 +15,7 @@
  */
 package io.helidon.dbclient.metrics;
 
-import io.helidon.dbclient.common.CommonService;
+import io.helidon.dbclient.DbClientServiceBase;
 
 /**
  * Utility class to obtain various types of metrics to register
@@ -40,7 +40,7 @@ public class DbClientMetrics {
      * @return a new counter builder
      * @see org.eclipse.microprofile.metrics.Counter
      */
-    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends CommonService> counter() {
+    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends DbClientServiceBase> counter() {
         return MetricCounter.builder();
     }
 
@@ -51,7 +51,7 @@ public class DbClientMetrics {
      * @return a new meter builder
      * @see org.eclipse.microprofile.metrics.Meter
      */
-    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends CommonService> meter() {
+    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends DbClientServiceBase> meter() {
         return MetricMeter.builder();
     }
 
@@ -62,7 +62,7 @@ public class DbClientMetrics {
      * @return a new timer builder
      * @see org.eclipse.microprofile.metrics.Timer
      */
-    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends CommonService> timer() {
+    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends DbClientServiceBase> timer() {
         return MetricTimer.builder();
     }
 

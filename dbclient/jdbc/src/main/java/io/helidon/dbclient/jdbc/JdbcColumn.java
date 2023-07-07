@@ -21,17 +21,20 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.dbclient.common.CommonColumn;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbColumnBase;
 
-class JdbcColumn extends CommonColumn {
+/**
+ * JDBC implementation of {@link io.helidon.dbclient.DbColumn}.
+ */
+class JdbcColumn extends DbColumnBase {
 
-    /** Local logger instance. */
     private static final System.Logger LOGGER = System.getLogger(JdbcColumn.class.getName());
 
     private final MetaData metaData;
 
     private JdbcColumn(Object value, MetaData metaData, MapperManager mapperManager) {
-        super(value, mapperManager);
+        super(value, mapperManager, DbClient.MAPPING_QUALIFIER);
         this.metaData = metaData;
     }
 
@@ -60,9 +63,9 @@ class JdbcColumn extends CommonColumn {
     /**
      * Create JDBC database column.
      *
-     * @param rs {@link ResultSet} with cursor set to row to be processed
+     * @param rs       {@link ResultSet} with cursor set to row to be processed
      * @param metaData column metadata
-     * @param index {@link java.sql.ResultSet} column index (starting from 1)
+     * @param index    {@link java.sql.ResultSet} column index (starting from 1)
      * @return column metadata
      * @throws SQLException if a database access error occurs or this method is called on a closed result set
      */
@@ -70,10 +73,12 @@ class JdbcColumn extends CommonColumn {
         return new JdbcColumn(
                 rs.getObject(index),
                 metaData,
-                mapperManager
-        );
+                mapperManager);
     }
 
+    /**
+     * JDBC column metadata.
+     */
     static final class MetaData {
 
         private final String name;
@@ -102,25 +107,25 @@ class JdbcColumn extends CommonColumn {
          * Create JDBC database column metadata.
          *
          * @param metaData meta data from {@link java.sql.ResultSet}
-         * @param index {@link java.sql.ResultSet} column index (starting from 1)
+         * @param index    {@link java.sql.ResultSet} column index (starting from 1)
          * @return column metadata
          * @throws SQLException if a database access error occurs or this method is called on a closed result set
          */
-        static MetaData create(ResultSetMetaData metaData, int index) throws SQLException  {
+        static MetaData create(ResultSetMetaData metaData, int index) throws SQLException {
             return new MetaData(metaData.getColumnLabel(index),
-                                metaData.getColumnTypeName(index),
-                                classByName(metaData.getColumnClassName(index)));
+                    metaData.getColumnTypeName(index),
+                    classByName(metaData.getColumnClassName(index)));
         }
 
-        private static Class<?> classByName(String columnClassName) {
-            if (columnClassName == null) {
+
+        private static Class<?> classByName(String className) {
+            if (className == null) {
                 return null;
             }
             try {
-                return Class.forName(columnClassName);
-            } catch (ClassNotFoundException e) {
-                LOGGER.log(Level.DEBUG,
-                           String.format("Class %s for column type was not found", columnClassName));
+                return Class.forName(className);
+            } catch (ClassNotFoundException ex) {
+                LOGGER.log(Level.DEBUG, "Unable to find column class: " + className, ex);
                 return null;
             }
         }

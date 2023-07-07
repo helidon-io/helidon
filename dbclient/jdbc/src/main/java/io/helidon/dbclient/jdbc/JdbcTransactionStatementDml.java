@@ -15,31 +15,39 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
-import io.helidon.dbclient.DbStatementException;
+import io.helidon.dbclient.DbStatementType;
 
+/**
+ * JDBC implementation of {@link DbStatementDml} with transaction support.
+ */
 class JdbcTransactionStatementDml extends JdbcTransactionStatement<DbStatementDml> implements DbStatementDml {
 
-    private JdbcTransactionStatementDml(StatementContext context, TransactionContext transactionContext) {
-        super(context, transactionContext);
+    private final DbStatementType type;
+
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool     connection pool
+     * @param context            context
+     * @param transactionContext transaction context
+     */
+    JdbcTransactionStatementDml(JdbcConnectionPool connectionPool,
+                                DbExecuteContext context,
+                                TransactionContext transactionContext,
+                                DbStatementType type) {
+        super(connectionPool, context, transactionContext);
+        this.type = type;
+    }
+
+    @Override
+    public DbStatementType statementType() {
+        return type;
     }
 
     @Override
     public long execute() {
-        Connection connection = transactionContext().connection();
-        try (Statement statement = prepare().createStatement(connection)) {
-            return (long) prepare().executeUpdate();
-        } catch (SQLException ex) {
-            throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
-        }
+        return doExecute((future, context) -> JdbcStatementDml.doExecute(this, future, context));
     }
-
-    static JdbcTransactionStatementDml create(StatementContext context, TransactionContext transactionContext) {
-        return new JdbcTransactionStatementDml(context, transactionContext);
-    }
-
 }

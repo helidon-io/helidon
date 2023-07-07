@@ -17,10 +17,10 @@ package io.helidon.dbclient.tracing;
 
 import java.util.Map;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
-import io.helidon.config.Config;
+import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.common.CommonService;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfigUtil;
 
@@ -34,7 +34,7 @@ import io.opentracing.util.GlobalTracer;
  * Tracing interceptor.
  * This interceptor is added through Java Service loader.
  */
-public class DbClientTracing extends CommonService {
+public class DbClientTracing extends DbClientServiceBase {
 
     private DbClientTracing(Builder builder) {
         super(builder);
@@ -76,7 +76,7 @@ public class DbClientTracing extends CommonService {
         }
 
         Context context = serviceContext.context();
-        Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
+        @SuppressWarnings("resource") Tracer tracer = context.get(Tracer.class).orElseGet(GlobalTracer::get);
 
         // now if span context is missing, we build a span without a parent
         Tracer.SpanBuilder spanBuilder = tracer.buildSpan(serviceContext.statementName());
@@ -121,7 +121,7 @@ public class DbClientTracing extends CommonService {
     /**
      * Fluent API builder for {@link DbClientTracing}.
      */
-    public static class Builder extends CommonServiceBuilder<Builder, DbClientTracing> {
+    public static class Builder extends BuilderBase<Builder, DbClientTracing> {
 
         private Builder() {
         }
@@ -130,7 +130,5 @@ public class DbClientTracing extends CommonService {
         public DbClientTracing build() {
             return new DbClientTracing(this);
         }
-
     }
-
 }

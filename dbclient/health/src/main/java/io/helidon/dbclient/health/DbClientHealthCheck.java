@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.health.HealthCheck;
@@ -376,7 +376,7 @@ public abstract class DbClientHealthCheck implements HealthCheck {
             config.get(CONFIG_TYPE)
                     .as(String.class)
                     .ifPresent(type -> {
-                        HelathCheckStMtType stmtType = HelathCheckStMtType.nameToType(type);
+                        HealthCheckStMtType stmtType = HealthCheckStMtType.nameToType(type);
                         if (stmtType == null) {
                             throw new HealthCheckBuilderException(
                                     String.format("Unknown statement type: %s", type));

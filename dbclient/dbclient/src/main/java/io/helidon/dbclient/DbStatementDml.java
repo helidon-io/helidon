@@ -24,8 +24,7 @@ public interface DbStatementDml extends DbStatement<DbStatementDml> {
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.
      *
-     * @return The result of this statement, never blocking.
+     * @return The result of this statement.
      */
     long execute();
-
 }

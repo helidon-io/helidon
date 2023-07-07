@@ -29,7 +29,9 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  * Default implementation of the DbMapperManager.
  */
 class DbMapperManagerImpl implements DbMapperManager {
+
     public static final String ERROR_NO_MAPPER_FOUND = "Failed to find DB mapper.";
+
     private final List<DbMapperProvider> providers;
     private final Map<Class<?>, DbMapper<?>> byClass = new ConcurrentHashMap<>();
     private final Map<GenericType<?>, DbMapper<?>> byType = new ConcurrentHashMap<>();
@@ -40,38 +42,35 @@ class DbMapperManagerImpl implements DbMapperManager {
 
     @Override
     public <T> T read(DbRow row, Class<T> expectedType) {
-        return executeMapping(() -> findMapper(expectedType, false)
-                                      .read(row),
-                              row,
-                              TYPE_DB_ROW,
-                              GenericType.create(expectedType));
+        return executeMapping(() -> findMapper(expectedType, false).read(row),
+                row,
+                TYPE_DB_ROW,
+                GenericType.create(expectedType));
     }
 
     @Override
     public <T> T read(DbRow row, GenericType<T> expectedType) {
-        return executeMapping(() -> findMapper(expectedType, false)
-                                      .read(row),
-                              row,
-                              TYPE_DB_ROW,
-                              expectedType);
+        return executeMapping(() -> findMapper(expectedType, false).read(row),
+                row,
+                TYPE_DB_ROW,
+                expectedType);
     }
 
     @Override
     public <T> Map<String, ?> toNamedParameters(T value, Class<T> valueClass) {
-        return executeMapping(() -> findMapper(valueClass, false)
-                                      .toNamedParameters(value),
-                              value,
-                              GenericType.create(valueClass),
-                              TYPE_NAMED_PARAMS);
+        return executeMapping(() -> findMapper(valueClass, false).toNamedParameters(value),
+                value,
+                GenericType.create(valueClass),
+                TYPE_NAMED_PARAMS);
     }
 
     @Override
     public <T> List<?> toIndexedParameters(T value, Class<T> valueClass) {
         return executeMapping(() -> findMapper(valueClass, false)
-                                      .toIndexedParameters(value),
-                              value,
-                              GenericType.create(valueClass),
-                              TYPE_INDEXED_PARAMS);
+                        .toIndexedParameters(value),
+                value,
+                GenericType.create(valueClass),
+                TYPE_INDEXED_PARAMS);
     }
 
     private <T> T executeMapping(Supplier<T> mapping, Object source, GenericType<?> sourceType, GenericType<?> targetType) {
@@ -127,9 +126,9 @@ class DbMapperManagerImpl implements DbMapperManager {
                                                    Throwable throwable) {
 
         throw new MapperException(sourceType,
-                                  targetType,
-                                  "Failed to map source of class '" + source.getClass().getName() + "'",
-                                  throwable);
+                targetType,
+                "Failed to map source of class '" + source.getClass().getName() + "'",
+                throwable);
     }
 
     private static <T> DbMapper<T> notFoundMapper(GenericType<T> type) {

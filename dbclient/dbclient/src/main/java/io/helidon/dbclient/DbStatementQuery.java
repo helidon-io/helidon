@@ -19,18 +19,13 @@ import java.util.stream.Stream;
 
 /**
  * Database query statement.
- * <p><b>Important:</b> Method {@link #execute()} returns {@link Stream} of {@link DbRow}. This {@link Stream}
- * must be always closed because it holds database resources ({@code java.sql.Connection}, {@code java.sql.Statement}
- * and {@code java.sql.ResultSet}).
  */
 public interface DbStatementQuery extends DbStatement<DbStatementQuery> {
 
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.
-     * <p>Returned {@link Stream} of {@link DbRow} must be always closed because it holds database resources.
      *
      * @return The result of this statement, never blocking.
      */
     Stream<DbRow> execute();
-
 }

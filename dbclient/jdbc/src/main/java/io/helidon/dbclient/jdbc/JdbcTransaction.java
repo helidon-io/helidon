@@ -15,70 +15,89 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
+import io.helidon.dbclient.DbClientContext;
 import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
-import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.DbTransaction;
-import io.helidon.dbclient.common.CommonClientContext;
 
+import static io.helidon.dbclient.DbStatementType.DELETE;
+import static io.helidon.dbclient.DbStatementType.DML;
+import static io.helidon.dbclient.DbStatementType.INSERT;
+import static io.helidon.dbclient.DbStatementType.UPDATE;
+
+/**
+ * JDBC implementation of {@link DbTransaction}.
+ */
 class JdbcTransaction extends JdbcExecute implements DbTransaction {
-
-    /** Local logger instance. */
-    private static final System.Logger LOGGER = System.getLogger(JdbcTransaction.class.getName());
 
     private final TransactionContext transactionContext;
 
-
-    private JdbcTransaction(CommonClientContext context, JdbcConnectionPool connectionPool) {
+    /**
+     * Create a new instance.
+     *
+     * @param context        context
+     * @param connectionPool connection pool
+     */
+    JdbcTransaction(DbClientContext context, JdbcConnectionPool connectionPool) {
         super(context, connectionPool);
-        this.transactionContext = new TransactionContext(this::createConnection);
+        this.transactionContext = new TransactionContext(connectionPool::connection);
     }
 
     @Override
-    public DbStatementQuery createNamedQuery(String statementName, String statement) {
-        return JdbcTransactionStatementQuery.create(
-                StatementContext.create(statementName, statement, DbStatementType.QUERY, context(), connectionPool()),
+    public DbStatementQuery createNamedQuery(String stmtName, String stmt) {
+        return new JdbcTransactionStatementQuery(
+                connectionPool(),
+                DbExecuteContext.create(stmtName, stmt, context()),
                 transactionContext);
     }
 
     @Override
     public DbStatementGet createNamedGet(String statementName, String statement) {
-        return JdbcTransactionStatementGet.create(
-                StatementContext.create(statementName, statement, DbStatementType.GET, context(), connectionPool()),
+        return new JdbcTransactionStatementGet(
+                connectionPool(),
+                DbExecuteContext.create(statementName, statement, context()),
                 transactionContext);
     }
 
     @Override
     public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
-        return JdbcTransactionStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.DML, context(), connectionPool()),
-                transactionContext);
+        return new JdbcTransactionStatementDml(
+                connectionPool(),
+                DbExecuteContext.create(statementName, statement, context()),
+                transactionContext,
+                DML);
     }
 
     @Override
     public DbStatementDml createNamedInsert(String statementName, String statement) {
-        return JdbcTransactionStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.INSERT, context(), connectionPool()),
-                transactionContext);
+        return new JdbcTransactionStatementDml(
+                connectionPool(),
+                DbExecuteContext.create(statementName, statement, context()),
+                transactionContext,
+                INSERT);
     }
 
     @Override
-    public DbStatementDml createNamedUpdate(String statementName, String statement) {
-        return JdbcTransactionStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.UPDATE, context(), connectionPool()),
-                transactionContext);
+    public DbStatementDml createNamedUpdate(String stmtName, String stmt) {
+        return new JdbcTransactionStatementDml(
+                connectionPool(),
+                DbExecuteContext.create(stmtName, stmt, context()),
+                transactionContext,
+                UPDATE);
     }
 
     @Override
     public DbStatementDml createNamedDelete(String statementName, String statement) {
-        return JdbcTransactionStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.DELETE, context(), connectionPool()),
-                transactionContext);
+        return new JdbcTransactionStatementDml(
+                connectionPool(),
+                DbExecuteContext.create(statementName, statement, context()),
+                transactionContext,
+                DELETE);
     }
 
     @Override
@@ -98,21 +117,4 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
             throw new DbClientException("Failed to rollback transaction", ex);
         }
     }
-
-    // Connection factory for TransactionContext
-    /**
-     * Create new database connection.
-     * Returns new connection from {@link JdbcConnectionPool}. This connection must be closed
-     * at the end of the transaction.
-     *
-     * @return database connection
-     */
-    private Connection createConnection() {
-        return connectionPool().connection();
-    }
-
-    static JdbcTransaction create(CommonClientContext context, JdbcConnectionPool connectionPool) {
-        return new JdbcTransaction(context, connectionPool);
-    }
-
 }

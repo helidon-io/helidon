@@ -19,6 +19,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.dbclient.jdbc.JdbcClientProvider;
 import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 import io.helidon.dbclient.spi.DbClientProvider;
+import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
  * Helidon JDBC DB Client.
@@ -30,7 +31,6 @@ import io.helidon.dbclient.spi.DbClientProvider;
 )
 @Aot(description = "Tested with Helidon Oracle and H2 drivers (see examples)")
 module io.helidon.dbclient.jdbc {
-
     requires static io.helidon.common.features.api;
 
     requires java.sql;
@@ -38,7 +38,6 @@ module io.helidon.dbclient.jdbc {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.dbclient;
-    requires transitive io.helidon.dbclient.common;
 
     exports io.helidon.dbclient.jdbc;
     exports io.helidon.dbclient.jdbc.spi;

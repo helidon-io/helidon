@@ -20,9 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 import io.helidon.common.LazyValue;
+import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.CommonService;
 import io.helidon.metrics.api.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -34,7 +34,7 @@ import org.eclipse.microprofile.metrics.MetricType;
 /**
  * Common ancestor for Helidon DB metrics.
  */
-abstract class MetricService<T extends Metric> extends CommonService {
+abstract class MetricService<T extends Metric> extends DbClientServiceBase {
     private final Metadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
@@ -44,6 +44,11 @@ abstract class MetricService<T extends Metric> extends CommonService {
     private final boolean measureErrors;
     private final boolean measureSuccess;
 
+    /**
+     * Create a new instance.
+     *
+     * @param builder builder
+     */
     protected MetricService(MetricBuilderBase<?, ?> builder) {
         super(builder);
 
@@ -65,6 +70,11 @@ abstract class MetricService<T extends Metric> extends CommonService {
         this.description = tmpDescription;
     }
 
+    /**
+     * Get the default name prefix.
+     *
+     * @return default name prefix
+     */
     protected abstract String defaultNamePrefix();
 
     @Override
@@ -88,15 +98,45 @@ abstract class MetricService<T extends Metric> extends CommonService {
         return context;
     }
 
+    /**
+     * Indicate if errors are measured.
+     *
+     * @return {@code true} if errors are measured
+     */
     protected boolean measureErrors() {
         return measureErrors;
     }
 
+    /**
+     * Indicate if success is measured.
+     *
+     * @return {@code true} if success is measured
+     */
     protected boolean measureSuccess() {
         return measureSuccess;
     }
 
-    protected abstract void executeMetric(T metric, CompletionStage<Void> aFuture);
+    /**
+     * Execute the given metric.
+     *
+     * @param metric metric to execute
+     * @param future future
+     */
+    protected abstract void executeMetric(T metric, CompletionStage<Void> future);
+
+    /**
+     * Get the metric type.
+     *
+     * @return metric type
+     */
     protected abstract MetricType metricType();
+
+    /**
+     * Create a new metric.
+     *
+     * @param registry registry
+     * @param meta     metadata
+     * @return metric
+     */
     protected abstract T metric(MetricRegistry registry, Metadata meta);
 }

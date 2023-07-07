@@ -18,17 +18,22 @@ package io.helidon.dbclient.jdbc;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Spliterator;
+import java.sql.Statement;
 import java.util.Spliterators;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import io.helidon.common.mapper.MapperManager;
+import io.helidon.dbclient.DbContext;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbMapperManager;
 import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbRowBase;
 import io.helidon.dbclient.DbStatementException;
-import io.helidon.dbclient.common.CommonRow;
 
-class JdbcRow extends CommonRow {
+/**
+ * JDBC {@link io.helidon.dbclient.DbRow} implementation.
+ */
+class JdbcRow extends DbRowBase {
 
     private JdbcRow(JdbcColumn[] columns, DbMapperManager dbMapperManager) {
         super(columns, dbMapperManager);
@@ -43,7 +48,7 @@ class JdbcRow extends CommonRow {
      * @return updated builder instance.
      * @throws SQLException if a database access error occurs or this method is called on a closed result set
      */
-    static JdbcRow create(ResultSet rs, DbMapperManager dbMapperManager, MapperManager mapperManager) throws SQLException {
+    static JdbcRow create(ResultSet rs, DbContext context) throws SQLException {
         ResultSetMetaData rsMetaData = rs.getMetaData();
         int columnCount = rsMetaData.getColumnCount();
         JdbcColumn.MetaData[] metaData = new JdbcColumn.MetaData[columnCount];
@@ -52,23 +57,39 @@ class JdbcRow extends CommonRow {
         }
         JdbcColumn[] columns = new JdbcColumn[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            columns[i] = JdbcColumn.create(rs, metaData[i], mapperManager, i + 1);
+            columns[i] = JdbcColumn.create(rs, metaData[i], context.mapperManager(), i + 1);
         }
-        return new JdbcRow(columns, dbMapperManager);
+        return new JdbcRow(columns, context.dbMapperManager());
     }
 
-    static final class DbRowSpliterator extends Spliterators.AbstractSpliterator<DbRow> {
+    /**
+     * {@link java.util.Spliterator} implementation that supports {@link DbRow}.
+     */
+    static final class Spliterator extends Spliterators.AbstractSpliterator<DbRow> {
 
         private final ResultSet rs;
-        private final StatementContext context;
-        private final String statementString;
+        private final Statement statement;
+        private final DbExecuteContext context;
+        private final CompletableFuture<Long> queryFuture;
         private long count;
 
-        DbRowSpliterator(ResultSet rs, StatementContext context, String statementString) {
-            super(Long.MAX_VALUE, Spliterator.ORDERED);
+        /**
+         * Create a new instance.
+         *
+         * @param rs          result set
+         * @param statement   statement
+         * @param context     execution context
+         * @param queryFuture query future
+         */
+        Spliterator(ResultSet rs,
+                    Statement statement,
+                    DbExecuteContext context,
+                    CompletableFuture<Long> queryFuture) {
+            super(Long.MAX_VALUE, java.util.Spliterator.ORDERED);
             this.rs = rs;
             this.context = context;
-            this.statementString = statementString;
+            this.statement = statement;
+            this.queryFuture = queryFuture;
             this.count = 0L;
         }
 
@@ -76,9 +97,7 @@ class JdbcRow extends CommonRow {
         public boolean tryAdvance(Consumer<? super DbRow> action) {
             try {
                 if (rs.next()) {
-                    action.accept(create(rs,
-                                         context.dbMapperManager(),
-                                         context.mapperManager()));
+                    action.accept(create(rs, context));
                     count++;
                     return true;
                 } else {
@@ -86,15 +105,28 @@ class JdbcRow extends CommonRow {
                 }
             } catch (SQLException ex) {
                 throw new DbStatementException("Failed to retrieve next row from ResultSet",
-                                               statementString,
-                                               ex);
+                        context.statement(),
+                        ex);
             }
         }
 
-        long count() {
-            return count;
+        /**
+         * Close the query.
+         */
+        void close() {
+            try {
+                queryFuture.complete(count);
+                rs.close();
+            } catch (SQLException ex) {
+                throw new DbStatementException("Failed to close ResultSet", context.statement(), ex);
+            } finally {
+                try {
+                    statement.close();
+                } catch (SQLException ex) {
+                    throw new DbStatementException("Failed to close Statement", context.statement(), ex);
+                }
+            }
         }
 
     }
-
 }

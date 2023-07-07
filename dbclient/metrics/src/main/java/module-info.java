@@ -23,15 +23,14 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
  * Helidon DB Client Metrics.
  */
 @Feature(value = "Metrics",
-         description = "Database client metrics support",
-         in = HelidonFlavor.SE,
-         path = {"DbClient", "Metrics"}
+        description = "Database client metrics support",
+        in = HelidonFlavor.SE,
+        path = {"DbClient", "Metrics"}
 )
 module io.helidon.dbclient.metrics {
 
     requires static io.helidon.common.features.api;
-    requires io.helidon.dbclient;
-    requires io.helidon.dbclient.common;
+    requires transitive io.helidon.dbclient;
     requires io.helidon.metrics.api;
 
     exports io.helidon.dbclient.metrics;

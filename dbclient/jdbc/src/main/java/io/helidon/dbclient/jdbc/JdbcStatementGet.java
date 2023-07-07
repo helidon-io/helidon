@@ -15,55 +15,70 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementException;
 import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.DbStatementType;
 
+/**
+ * JDBC implementation of {@link DbStatementGet}.
+ */
 class JdbcStatementGet extends JdbcStatement<DbStatementGet> implements DbStatementGet {
 
-    private JdbcStatementGet(StatementContext context) {
-        super(context);
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool connection pool
+     * @param context        execution context
+     */
+    JdbcStatementGet(JdbcConnectionPool connectionPool, DbExecuteContext context) {
+        super(connectionPool, context);
     }
 
     @Override
-    @SuppressWarnings("unused")
+    public DbStatementType statementType() {
+        return DbStatementType.GET;
+    }
+
+    @Override
     public Optional<DbRow> execute() {
-        // Run interceptors before statement execution
-        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
-        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
-        JdbcClientServiceContext serviceContext = prepare().createServiceContext()
-                .statementFuture(statementFuture)
-                .resultFuture(queryFuture);
-        context().clientContext().clientServices().forEach(service -> service.statement(serviceContext));
-        // Execute the statement
-        try (Connection connection = context().connectionPool().connection();
-                Statement statement = prepare().createStatement(connection);
-                ResultSet rs = prepare().executeQuery()) {
-            statementFuture.complete(null);
+        return doExecute((future, context) -> doExecute(this, future, context));
+    }
+
+    /**
+     * Execute the given statement.
+     *
+     * @param dbStmt  db statement
+     * @param future  query future
+     * @param context service context
+     * @return query result
+     */
+    static Optional<DbRow> doExecute(JdbcStatement<? extends DbStatementGet> dbStmt,
+                                     CompletableFuture<Long> future,
+                                     DbClientServiceContext context) {
+
+        try (PreparedStatement statement = dbStmt.prepareStatement(context);
+             ResultSet rs = statement.executeQuery()) {
             if (rs.next()) {
-                Optional<DbRow> result =  Optional.of(JdbcRow.create(rs,
-                                                  context().dbMapperManager(),
-                                                  context().mapperManager()));
-                queryFuture.complete(1L);
+                Optional<DbRow> result = Optional.of(JdbcRow.create(rs, dbStmt.context()));
+                future.complete(1L);
                 return result;
             } else {
-                queryFuture.complete(0L);
+                future.complete(0L);
                 return Optional.empty();
             }
         } catch (SQLException ex) {
-            throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
+            throw new DbStatementException("Failed to execute Statement", dbStmt.context().statement(), ex);
+        } finally {
+            dbStmt.closeConnection();
         }
     }
-
-    static JdbcStatementGet create(StatementContext context) {
-        return new JdbcStatementGet(context);
-    }
-
 }

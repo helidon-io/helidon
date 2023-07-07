@@ -33,5 +33,4 @@ public class JdbcClientProvider implements DbClientProvider {
     public JdbcClientBuilder builder() {
         return new JdbcClientBuilder();
     }
-
 }

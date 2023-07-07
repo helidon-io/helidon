@@ -17,7 +17,7 @@ package io.helidon.dbclient.spi;
 
 import java.util.Collection;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClientService;
 
 /**
@@ -28,9 +28,9 @@ public interface DbClientServiceProvider {
     /**
      * The configuration key expected in config.
      * If the key exists, the builder looks into
-     * {@code global}, {@code named}, and {@code typed} subkeys
+     * {@code global}, {@code named}, and {@code typed} sub keys
      * to configure appropriate instances.
-     * Method {@link #create(io.helidon.config.Config)} is called for each
+     * Method {@link #create(Config)} is called for each
      * configuration as follows:
      * <ul>
      *     <li>{@code global}: the configuration key is used to get a new instance</li>

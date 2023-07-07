@@ -18,8 +18,8 @@ package io.helidon.dbclient.metrics;
 import java.util.function.BiFunction;
 
 import io.helidon.config.Config;
+import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.CommonService;
 
 import org.eclipse.microprofile.metrics.Metadata;
 
@@ -27,10 +27,10 @@ import org.eclipse.microprofile.metrics.Metadata;
  * A metric builder used as a base for Helidon DB metrics.
  *
  * @param <B> type of the builder extending this class
- * @param <T> Type of the built {@link CommonService} instance
+ * @param <T> Type of the built {@link DbClientServiceBase} instance
  */
-abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends CommonService>
-        extends CommonService.CommonServiceBuilder<B, T> {
+abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends DbClientServiceBase>
+        extends DbClientServiceBase.BuilderBase<B, T> {
 
     private Metadata meta;
     private BiFunction<String, DbStatementType, String> nameFormat;
@@ -46,7 +46,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
      */
     public B name(String metricName) {
         nameFormat = (s, s2) -> metricName;
-        return me();
+        return identity();
     }
 
     /**
@@ -57,16 +57,16 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
      */
     public B metadata(Metadata meta) {
         this.meta = meta;
-        return me();
+        return identity();
     }
 
     /**
      * Configure a name format.
      * <p>The format can use up to two parameters - first is the {@link io.helidon.dbclient.DbStatementType}
-     *  as a string, second is the statement name.
+     * as a string, second is the statement name.
      *
      * @param format format string expecting zero to two parameters that can be processed by
-     *          {@link String#format(String, Object...)}
+     *               {@link String#format(String, Object...)}
      * @return updated builder instance
      */
     public B nameFormat(String format) {
@@ -82,7 +82,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
      */
     public B nameFormat(BiFunction<String, DbStatementType, String> function) {
         this.nameFormat = function;
-        return me();
+        return identity();
     }
 
     /**
@@ -93,7 +93,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
      */
     public B errors(boolean measureErrors) {
         this.measureErrors = measureErrors;
-        return me();
+        return identity();
     }
 
     /**
@@ -104,7 +104,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
      */
     public B success(boolean measureSuccess) {
         this.measureSuccess = measureSuccess;
-        return me();
+        return identity();
     }
 
     /**
@@ -115,7 +115,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
      */
     public B description(String description) {
         this.description = description;
-        return me();
+        return identity();
     }
 
     /**
@@ -160,30 +160,50 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Co
         config.get("success").asBoolean().ifPresent(this::success);
         config.get("name-format").asString().ifPresent(this::nameFormat);
         config.get("description").asString().ifPresent(this::description);
-        return me();
+        return identity();
     }
 
+    /**
+     * Get the description.
+     *
+     * @return description
+     */
     String description() {
         return description;
     }
 
-    @SuppressWarnings("unchecked")
-    B me() {
-        return (B) this;
-    }
-
+    /**
+     * Get the metadata.
+     *
+     * @return metadata
+     */
     Metadata meta() {
         return meta;
     }
 
+    /**
+     * Get the name format function.
+     *
+     * @return function
+     */
     BiFunction<String, DbStatementType, String> nameFormat() {
         return nameFormat;
     }
 
+    /**
+     * Indicate if errors are measured.
+     *
+     * @return {@code true} if errors are measured
+     */
     boolean errors() {
         return measureErrors;
     }
 
+    /**
+     * Indicate if success is measured.
+     *
+     * @return {@code true} if success is measured
+     */
     boolean success() {
         return measureSuccess;
     }

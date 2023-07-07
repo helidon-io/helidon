@@ -26,8 +26,6 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <groupId>io.helidon.tests.integration.db-client</groupId>
     <artifactId>helidon-tests-integration-db-client-common</artifactId>
     <name>Integration Tests: DB Client Common</name>
 
@@ -46,7 +44,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-common</artifactId>
+            <artifactId>helidon-dbclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>

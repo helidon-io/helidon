@@ -28,5 +28,4 @@ public interface HikariCpExtension {
      * @param poolConfig client configuration instance
      */
     void configure(HikariConfig poolConfig);
-
 }

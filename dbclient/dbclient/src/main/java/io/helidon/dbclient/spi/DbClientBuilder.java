@@ -17,8 +17,8 @@ package io.helidon.dbclient.spi;
 
 import io.helidon.common.Builder;
 import io.helidon.common.GenericType;
+import io.helidon.common.config.Config;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.DbMapper;
@@ -49,7 +49,7 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
     T url(String url);
 
     /**
-     * Set database connection user name.
+     * Set database connection username.
      *
      * @param username database connection user name
      * @return database provider builder
@@ -57,7 +57,7 @@ public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T
     T username(String username);
 
     /**
-     * Set database connection p¨assword.
+     * Set database connection password.
      *
      * @param password database connection password
      * @return database provider builder

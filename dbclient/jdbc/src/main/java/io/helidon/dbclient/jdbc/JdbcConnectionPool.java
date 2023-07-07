@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
@@ -167,21 +167,15 @@ interface JdbcConnectionPool {
             Map<String, String> poolConfig = config.detach().asMap().get();
             poolConfig.forEach((key, value) -> {
                 switch (key) {
-                case URL:
-                    url(value);
-                    break;
-                case USERNAME:
-                    username(value);
-                    break;
-                case PASSWORD:
-                    password(value);
-                    break;
-                default:
-                    if (!key.startsWith(HELIDON_RESERVED_CONFIG_KEY + ".")) {
-                        // all other properties are sent to the pool
-                        properties.setProperty(key, value);
+                    case URL -> url(value);
+                    case USERNAME -> username(value);
+                    case PASSWORD -> password(value);
+                    default -> {
+                        if (!key.startsWith(HELIDON_RESERVED_CONFIG_KEY + ".")) {
+                            // all other properties are sent to the pool
+                            properties.setProperty(key, value);
+                        }
                     }
-
                 }
             });
             this.extensionsConfig = config.get(HELIDON_RESERVED_CONFIG_KEY);

@@ -50,14 +50,30 @@ final class DbClientProviderLoader {
         throw new UnsupportedOperationException("Instances of DbClientProviderLoader are not allowed");
     }
 
+    /**
+     * Get the first provider.
+     *
+     * @return first provider
+     */
     static DbClientProvider first() {
         return FIRST;
     }
 
+    /**
+     * Lookup a provider by name.
+     *
+     * @param name provider name
+     * @return optional provider
+     */
     static Optional<DbClientProvider> get(String name) {
         return Optional.ofNullable(PROVIDERS.get(name));
     }
 
+    /**
+     * Get the discovered provider names.
+     *
+     * @return provider names
+     */
     static String[] names() {
         return NAMES;
     }

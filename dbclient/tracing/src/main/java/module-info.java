@@ -30,8 +30,7 @@ import io.helidon.dbclient.tracing.DbClientTracingProvider;
 module io.helidon.dbclient.tracing {
 
     requires static io.helidon.common.features.api;
-    requires io.helidon.dbclient;
-    requires io.helidon.dbclient.common;
+    requires transitive io.helidon.dbclient;
     requires io.helidon.tracing.config;
 
     requires io.opentracing.api;

@@ -15,44 +15,64 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementException;
+import io.helidon.dbclient.DbStatementType;
 
+/**
+ * JDBC implementation of {@link DbStatementDml}.
+ */
 class JdbcStatementDml extends JdbcStatement<DbStatementDml> implements DbStatementDml {
 
-    private JdbcStatementDml(StatementContext context) {
-        super(context);
+    private final DbStatementType type;
+
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool connection pool
+     * @param context        execution context
+     */
+    JdbcStatementDml(JdbcConnectionPool connectionPool, DbStatementType type, DbExecuteContext context) {
+        super(connectionPool, context);
+        this.type = type;
+    }
+
+    @Override
+    public DbStatementType statementType() {
+        return type;
     }
 
     @Override
     public long execute() {
-        // Run interceptors before statement execution
-        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
-        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
-        JdbcClientServiceContext serrviceContext = prepare().createServiceContext()
-                .statementFuture(statementFuture)
-                .resultFuture(queryFuture);
-        context().clientContext().clientServices().forEach(service -> service.statement(serrviceContext));
-        // Execute the statement
-        try (Connection connection = context().connectionPool().connection();
-                Statement statement = prepare().createStatement(connection)) {
-            long result = prepare().executeUpdate();
-            // Complete interceptor futures
-            statementFuture.complete(null);
-            queryFuture.complete(result);
+        return doExecute((future, context) -> doExecute(this, future, context));
+    }
+
+    /**
+     * Execute the given statement.
+     *
+     * @param dbStmt  db statement
+     * @param future  query future
+     * @param context service context
+     * @return query result
+     */
+    static long doExecute(JdbcStatement<? extends DbStatementDml> dbStmt,
+                          CompletableFuture<Long> future,
+                          DbClientServiceContext context) {
+
+        try (PreparedStatement statement = dbStmt.prepareStatement(context)) {
+            long result = statement.executeUpdate();
+            future.complete(result);
             return result;
         } catch (SQLException ex) {
-            throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
+            throw new DbStatementException("Failed to execute statement", dbStmt.context().statement(), ex);
+        } finally {
+            dbStmt.closeConnection();
         }
     }
-
-    static JdbcStatementDml create(StatementContext context) {
-        return new JdbcStatementDml(context);
-    }
-
 }

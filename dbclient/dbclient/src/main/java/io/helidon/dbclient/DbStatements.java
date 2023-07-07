@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * Configuration of statements to be used by database provider.

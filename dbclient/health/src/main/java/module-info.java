@@ -29,7 +29,7 @@ module io.helidon.dbclient.health {
 
     requires static io.helidon.common.features.api;
 
-    requires io.helidon.dbclient;
+    requires transitive io.helidon.dbclient;
     requires io.helidon.health;
 
     exports io.helidon.dbclient.health;

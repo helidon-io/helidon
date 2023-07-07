@@ -15,41 +15,38 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.Optional;
 
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbStatementException;
 import io.helidon.dbclient.DbStatementGet;
+import io.helidon.dbclient.DbStatementType;
 
+/**
+ * JDBC implementation of {@link DbStatementGet} with transaction support.
+ */
 class JdbcTransactionStatementGet extends JdbcTransactionStatement<DbStatementGet> implements DbStatementGet {
 
-    private JdbcTransactionStatementGet(StatementContext context, TransactionContext transactionContext) {
-        super(context, transactionContext);
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool     connection pool
+     * @param context            context
+     * @param transactionContext transaction context
+     */
+    JdbcTransactionStatementGet(JdbcConnectionPool connectionPool,
+                                DbExecuteContext context,
+                                TransactionContext transactionContext) {
+        super(connectionPool, context, transactionContext);
+    }
+
+    @Override
+    public DbStatementType statementType() {
+        return DbStatementType.GET;
     }
 
     @Override
     public Optional<DbRow> execute() {
-        Connection connection = transactionContext().connection();
-        try (Statement statement = prepare().createStatement(connection);
-                ResultSet rs = prepare().executeQuery()) {
-            if (rs.next()) {
-                return Optional.of(JdbcRow.create(rs,
-                                                  context().dbMapperManager(),
-                                                  context().mapperManager()));
-            } else {
-                return Optional.empty();
-            }
-        } catch (SQLException ex) {
-            throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
-        }
+        return doExecute((future, context) -> JdbcStatementGet.doExecute(this, future, context));
     }
-
-    static JdbcTransactionStatementGet create(StatementContext context, TransactionContext transactionContext) {
-        return new JdbcTransactionStatementGet(context, transactionContext);
-    }
-
 }

@@ -42,10 +42,10 @@ final class MetricTimer extends MetricService<Timer> {
     }
 
     @Override
-    protected void executeMetric(Timer metric, CompletionStage<Void> aFuture) {
+    protected void executeMetric(Timer metric, CompletionStage<Void> future) {
         long started = System.nanoTime();
 
-        aFuture
+        future
                 .thenAccept(nothing -> {
                     if (measureSuccess()) {
                         update(metric, started);
@@ -88,6 +88,5 @@ final class MetricTimer extends MetricService<Timer> {
         public MetricTimer build() {
             return new MetricTimer(this);
         }
-
     }
 }

@@ -15,57 +15,39 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
-import io.helidon.dbclient.DbStatementException;
 import io.helidon.dbclient.DbStatementQuery;
+import io.helidon.dbclient.DbStatementType;
 
+/**
+ * JDBC implementation of {@link DbStatementQuery} with transaction support.
+ */
 class JdbcTransactionStatementQuery extends JdbcTransactionStatement<DbStatementQuery> implements DbStatementQuery {
 
-    private JdbcTransactionStatementQuery(StatementContext context, TransactionContext transactionContext) {
-        super(context, transactionContext);
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool     connection pool
+     * @param context            context
+     * @param transactionContext transaction context
+     */
+    JdbcTransactionStatementQuery(JdbcConnectionPool connectionPool,
+                                  DbExecuteContext context,
+                                  TransactionContext transactionContext) {
+
+        super(connectionPool, context, transactionContext);
+    }
+
+    @Override
+    public DbStatementType statementType() {
+        return DbStatementType.QUERY;
     }
 
     @Override
     public Stream<DbRow> execute() {
-        Connection connection = transactionContext().connection();
-        Statement statement;
-        try {
-            statement = prepare().createStatement(connection);
-        } catch (SQLException ex) {
-            throw new DbStatementException("Failed to create Statement", context().statement(), ex);
-        }
-        ResultSet rs;
-        try {
-            rs = prepare().executeQuery();
-        } catch (SQLException ex) {
-            JdbcStatementQuery.closeStatement(statement, context().statement());
-            throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
-        }
-        return StreamSupport.stream(new JdbcRow.DbRowSpliterator(rs, context(), context().statement()), false)
-                .onClose(new CloseResources(statement, rs, context().statement()));
+        return doExecute((future, context) -> JdbcStatementQuery.doExecute(this, future, context));
     }
-
-    static JdbcTransactionStatementQuery create(StatementContext context, TransactionContext transactionContext) {
-        return new JdbcTransactionStatementQuery(context, transactionContext);
-    }
-
-    private record CloseResources(Statement statement, ResultSet rs, String statementString) implements Runnable {
-        @Override
-        public void run() throws DbStatementException {
-            try {
-                JdbcStatementQuery.closeResultSet(rs, statementString);
-            } finally {
-                JdbcStatementQuery.closeStatement(statement, statementString);
-            }
-        }
-
-    }
-
 }

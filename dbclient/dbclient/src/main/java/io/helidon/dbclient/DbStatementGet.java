@@ -18,15 +18,14 @@ package io.helidon.dbclient;
 import java.util.Optional;
 
 /**
- * Database statement that queries the database and returns a single row if present, or an empty optional.
+ * Database statement that queries the database and returns an optional row.
  */
 public interface DbStatementGet extends DbStatement<DbStatementGet> {
 
     /**
      * Execute this statement using the parameters configured with {@code params} and {@code addParams} methods.
      *
-     * @return The result of this statement, never blocking.
+     * @return The result of this statement.
      */
     Optional<DbRow> execute();
-
 }

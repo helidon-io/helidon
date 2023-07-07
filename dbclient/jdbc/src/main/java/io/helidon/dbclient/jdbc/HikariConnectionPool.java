@@ -27,11 +27,8 @@ import com.zaxxer.hikari.HikariDataSource;
 /**
  * Hikari Connection Pool integration.
  */
-class HikariConnectionPool implements JdbcConnectionPool {
-    /** Hikari Connection Pool instance. */
+public class HikariConnectionPool implements JdbcConnectionPool {
     private final HikariDataSource dataSource;
-
-    /** The type of this database. */
     private final String dbType;
 
     HikariConnectionPool(Builder builder, String dbType, List<HikariCpExtension> extensions) {

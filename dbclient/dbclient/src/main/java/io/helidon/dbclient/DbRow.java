@@ -77,7 +77,7 @@ public interface DbRow {
      * Mapper for target class is provided as an argument.
      *
      * @param <T>    type of the returned value
-     * @param mapper method to create an target class instance from {@link DbRow}
+     * @param mapper method to create a target class instance from {@link DbRow}
      * @return instance of requested class containing this database row
      */
     <T> T as(Function<DbRow, T> mapper);

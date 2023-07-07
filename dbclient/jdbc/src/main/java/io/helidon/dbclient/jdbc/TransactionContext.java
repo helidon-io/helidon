@@ -20,9 +20,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.function.Supplier;
 
+/**
+ * Transaction context.
+ */
 class TransactionContext {
 
-    /** Local logger instance. */
     private static final System.Logger LOGGER = System.getLogger(TransactionContext.class.getName());
 
     // Connection holding the database transaction.
@@ -34,81 +36,89 @@ class TransactionContext {
 
     private final Supplier<Connection> connectionFactory;
 
+    /**
+     * Create a new instance.
+     *
+     * @param connectionFactory connection factory
+     */
     TransactionContext(Supplier<Connection> connectionFactory) {
         this.connection = null;
         this.state = State.INIT;
         this.connectionFactory = connectionFactory;
     }
 
+    /**
+     * Get the connection.
+     *
+     * @return connection
+     */
     Connection connection() {
         switch (state) {
-        case INIT:
-            connection = connectionFactory.get();
-            state = State.ACTIVE;
-            return connection;
-        case ACTIVE:
-            return connection;
-        case COMMIT:
-            throw new IllegalStateException("Transaction was already commit");
-        case ROLLBACK:
-            throw new IllegalStateException("Transaction was already rolled back");
-        default:
-            throw new IllegalStateException("Unknown transaction state");
+            case INIT -> {
+                connection = connectionFactory.get();
+                state = State.ACTIVE;
+                return connection;
+            }
+            case ACTIVE -> {
+                return connection;
+            }
+            case COMMIT -> throw new IllegalStateException("Transaction was already committed");
+            case ROLLBACK -> throw new IllegalStateException("Transaction was already rolled back");
+            default -> throw new IllegalStateException("Unknown transaction state");
         }
     }
 
-    // Move internal state to commit and close connection.
+    /**
+     * Commit and close the connection.
+     *
+     * @throws SQLException if an error occurred while calling {@link Connection#commit()} or {@link Connection#close()}
+     */
     void commit() throws SQLException {
         switch (state) {
             // Commit with no statement being executed.
-            case INIT:
+            case INIT -> {
                 state = State.COMMIT;
                 LOGGER.log(Level.WARNING, "Transaction commit with no statement being executed.");
-                break;
+            }
             // Commit active transaction.
-            case ACTIVE:
+            case ACTIVE -> {
                 state = State.COMMIT;
                 try {
                     connection.commit();
                 } finally {
                     connection.close();
                 }
-                break;
-            // Illegal states for commit
-            case COMMIT:
-                throw new IllegalStateException("Transaction was already commit");
-            case ROLLBACK:
-                throw new IllegalStateException("Transaction was already rolled back");
-            default:
-                throw new IllegalStateException("Unknown transaction state");
+            }
+            case COMMIT -> throw new IllegalStateException("Transaction was already committed");
+            case ROLLBACK -> throw new IllegalStateException("Transaction was already rolled back");
+            default -> throw new IllegalStateException("Unknown transaction state");
         }
     }
 
-    // Move internal state to rollback and close connection.
+    /**
+     * Rollback and close the connection.
+     *
+     * @throws SQLException if an error occurred while calling {@link Connection#rollback()} or {@link Connection#close()}
+     */
     void rollback() throws SQLException {
-
         switch (state) {
-        // Rollback with no statement being executed.
-        case INIT:
-            state = State.ROLLBACK;
-            LOGGER.log(Level.WARNING, "Transaction rollback with no statement being executed.");
-            break;
-        // Rollback active transaction.
-        case ACTIVE:
-            state = State.ROLLBACK;
-            try {
-                connection.rollback();
-            } finally {
-                connection.close();
+            // Rollback with no statement being executed.
+            case INIT -> {
+                state = State.ROLLBACK;
+                LOGGER.log(Level.WARNING, "Transaction rollback with no statement being executed.");
             }
-            break;
-        // Illegal states for rollback
-        case COMMIT:
-            throw new IllegalStateException("Transaction was already commit");
-        case ROLLBACK:
-            throw new IllegalStateException("Transaction was already rolled back");
-        default:
-            throw new IllegalStateException("Unknown transaction state");
+            // Rollback active transaction.
+            case ACTIVE -> {
+                state = State.ROLLBACK;
+                try {
+                    connection.rollback();
+                } finally {
+                    connection.close();
+                }
+            }
+            case COMMIT -> throw new IllegalStateException("Transaction was already committed");
+            case ROLLBACK -> throw new IllegalStateException("Transaction was already rolled back");
+            default -> throw new IllegalStateException("Unknown transaction state");
         }
     }
 
@@ -116,13 +126,21 @@ class TransactionContext {
      * Internal transaction states.
      */
     private enum State {
-        /** Transaction was not started yet (waiting for 1st statement). */
+        /**
+         * Transaction was not started yet (waiting for 1st statement).
+         */
         INIT,
-        /** Transaction is being executed. */
+        /**
+         * Transaction is being executed.
+         */
         ACTIVE,
-        /** Transaction was commited. */
+        /**
+         * Transaction was committed.
+         */
         COMMIT,
-        /** Transaction was rolled back. */
+        /**
+         * Transaction was rolled back.
+         */
         ROLLBACK
     }
 

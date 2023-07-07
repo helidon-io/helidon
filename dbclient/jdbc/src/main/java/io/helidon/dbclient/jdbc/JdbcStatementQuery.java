@@ -15,110 +15,68 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementException;
 import io.helidon.dbclient.DbStatementQuery;
+import io.helidon.dbclient.DbStatementType;
 
+/**
+ * JDBC implementation of {@link DbStatementDml}.
+ */
 class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbStatementQuery {
 
-    private JdbcStatementQuery(StatementContext context) {
-        super(context);
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool connection pool
+     * @param context        context
+     */
+    JdbcStatementQuery(JdbcConnectionPool connectionPool, DbExecuteContext context) {
+        super(connectionPool, context);
+    }
+
+    @Override
+    public DbStatementType statementType() {
+        return DbStatementType.GET;
     }
 
     @Override
     public Stream<DbRow> execute() {
-        // Run interceptors before statement execution
-        CompletableFuture<Void> statementFuture = new CompletableFuture<>();
-        CompletableFuture<Long> queryFuture = new CompletableFuture<>();
-        JdbcClientServiceContext serviceContext = prepare().createServiceContext()
-                .statementFuture(statementFuture)
-                .resultFuture(queryFuture);
-        context().clientContext().clientServices().forEach(service -> service.statement(serviceContext));
-        // Execute the statement
-        Connection connection = context().connectionPool().connection();
-        Statement statement;
+        return doExecute((future, context) -> doExecute(this, future, context));
+    }
+
+    /**
+     * Execute the given statement.
+     *
+     * @param dbStmt  db statement
+     * @param future  query future
+     * @param context service context
+     * @return query result
+     */
+    static Stream<DbRow> doExecute(JdbcStatement<? extends DbStatementQuery> dbStmt,
+                                   CompletableFuture<Long> future,
+                                   DbClientServiceContext context) {
+
+        PreparedStatement statement;
         try {
-            statement = prepare().createStatement(connection);
+            statement = dbStmt.prepareStatement(context);
+            ResultSet rs = statement.executeQuery();
+            JdbcRow.Spliterator spliterator = new JdbcRow.Spliterator(rs, statement, dbStmt.context(), future);
+            return StreamSupport.stream(spliterator, false)
+                    .onClose(spliterator::close);
         } catch (SQLException ex) {
-            closeConnection(connection, context().statement());
-            throw new DbStatementException("Failed to create Statement", context().statement(), ex);
-        }
-        ResultSet rs;
-        try {
-            rs = prepare().executeQuery();
-            statementFuture.complete(null);
-        } catch (SQLException ex) {
-            closeStatement(statement, context().statement());
-            closeConnection(connection, context().statement());
-            throw new DbStatementException("Failed to execute Statement", context().statement(), ex);
-        }
-        JdbcRow.DbRowSpliterator iterator = new JdbcRow.DbRowSpliterator(rs, context(), context().statement());
-        return StreamSupport.stream(iterator, false)
-                .onClose(new CloseResources(connection, statement, rs, context().statement(), iterator, queryFuture));
-    }
-
-    // Close Connection and wrap any SQLException with DbStatementException
-    private static void closeConnection(Connection connection, String statementString) {
-        try {
-            connection.close();
-        } catch (SQLException ex) {
-            throw new DbStatementException("Failed to close connection", statementString, ex);
+            dbStmt.closeConnection();
+            throw new DbStatementException("Failed to create Statement", dbStmt.context().statement(), ex);
         }
     }
-
-    // Close Statement and wrap any SQLException with DbStatementException
-    static void closeStatement(Statement statement, String statementString) {
-        if (statement != null) {
-            try {
-                statement.close();
-            } catch (SQLException ex) {
-                throw new DbStatementException("Failed to close Statement", statementString, ex);
-            }
-        }
-    }
-
-    // Close ResultSet and wrap any SQLException with DbStatementException
-    static void closeResultSet(ResultSet rs, String statementString) {
-        try {
-            rs.close();
-        } catch (SQLException ex) {
-            throw new DbStatementException("Failed to close ResultSet", statementString, ex);
-        }
-    }
-
-    static JdbcStatementQuery create(StatementContext context) {
-        return new JdbcStatementQuery(context);
-    }
-
-
-    private record CloseResources(Connection connection,
-                                  Statement statement,
-                                  ResultSet rs,
-                                  String statementString,
-                                  JdbcRow.DbRowSpliterator iterator,
-                                  CompletableFuture<Long> queryFuture) implements Runnable {
-        @Override
-        public void run() throws DbStatementException {
-            queryFuture.complete(iterator.count());
-            try {
-                closeResultSet(rs, statementString);
-            } finally {
-                try {
-                    closeStatement(statement, statementString);
-                } finally {
-                    closeConnection(connection, statementString);
-                }
-            }
-        }
-
-    }
-
 }

@@ -17,56 +17,73 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.Connection;
 
+import io.helidon.dbclient.DbClientContext;
+import io.helidon.dbclient.DbExecuteBase;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
-import io.helidon.dbclient.DbStatementType;
-import io.helidon.dbclient.common.CommonClientContext;
-import io.helidon.dbclient.common.CommonExecute;
 
-class JdbcExecute extends CommonExecute {
+import static io.helidon.dbclient.DbStatementType.DELETE;
+import static io.helidon.dbclient.DbStatementType.DML;
+import static io.helidon.dbclient.DbStatementType.INSERT;
+import static io.helidon.dbclient.DbStatementType.UPDATE;
+
+/**
+ * JDBC implementation of {@link io.helidon.dbclient.DbExecute}.
+ */
+class JdbcExecute extends DbExecuteBase {
 
     private final JdbcConnectionPool connectionPool;
 
-    JdbcExecute(CommonClientContext context, JdbcConnectionPool connectionPool) {
+    /**
+     * Create a new instance.
+     *
+     * @param context        context
+     * @param connectionPool connection pool
+     */
+    JdbcExecute(DbClientContext context, JdbcConnectionPool connectionPool) {
         super(context);
         this.connectionPool = connectionPool;
     }
 
-    @Override
-    public DbStatementQuery createNamedQuery(String statementName, String statement) {
-        return JdbcStatementQuery.create(
-                StatementContext.create(statementName, statement, DbStatementType.QUERY, context(), connectionPool));
+    /**
+     * Get the connection pool.
+     *
+     * @return connection pool
+     */
+    JdbcConnectionPool connectionPool() {
+        return connectionPool;
     }
 
     @Override
-    public DbStatementGet createNamedGet(String statementName, String statement) {
-        return JdbcStatementGet.create(
-                StatementContext.create(statementName, statement, DbStatementType.GET, context(), connectionPool));
+    public DbStatementQuery createNamedQuery(String stmtName, String stmt) {
+        return new JdbcStatementQuery(connectionPool, DbExecuteContext.create(stmtName, stmt, context()));
     }
 
     @Override
-    public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
-        return JdbcStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.DML, context(), connectionPool));
+    public DbStatementGet createNamedGet(String stmtName, String stmt) {
+        return new JdbcStatementGet(connectionPool, DbExecuteContext.create(stmtName, stmt, context()));
     }
 
     @Override
-    public DbStatementDml createNamedInsert(String statementName, String statement) {
-        return JdbcStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.INSERT, context(), connectionPool));
+    public DbStatementDml createNamedDmlStatement(String stmtName, String stmt) {
+        return new JdbcStatementDml(connectionPool, DML, DbExecuteContext.create(stmtName, stmt, context()));
     }
 
     @Override
-    public DbStatementDml createNamedUpdate(String statementName, String statement) {
-        return JdbcStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.UPDATE, context(), connectionPool));
+    public DbStatementDml createNamedInsert(String stmtName, String stmt) {
+        return new JdbcStatementDml(connectionPool, INSERT, DbExecuteContext.create(stmtName, stmt, context()));
     }
 
     @Override
-    public DbStatementDml createNamedDelete(String statementName, String statement) {
-        return JdbcStatementDml.create(
-                StatementContext.create(statementName, statement, DbStatementType.DELETE, context(), connectionPool));
+    public DbStatementDml createNamedUpdate(String stmtName, String stmt) {
+        return new JdbcStatementDml(connectionPool, UPDATE, DbExecuteContext.create(stmtName, stmt, context()));
+    }
+
+    @Override
+    public DbStatementDml createNamedDelete(String stmtName, String stmt) {
+        return new JdbcStatementDml(connectionPool, DELETE, DbExecuteContext.create(stmtName, stmt, context()));
     }
 
     @Override
@@ -76,14 +93,6 @@ class JdbcExecute extends CommonExecute {
         } else {
             throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
         }
-    }
-
-    JdbcConnectionPool connectionPool() {
-        return connectionPool;
-    }
-
-    static JdbcExecute create(CommonClientContext context, JdbcConnectionPool connectionPool) {
-        return new JdbcExecute(context, connectionPool);
     }
 
 }

@@ -32,11 +32,10 @@
 
     <modules>
         <module>dbclient</module>
-        <module>common</module>
         <module>jdbc</module>
+        <module>mongodb</module>
         <module>tracing</module>
         <module>metrics</module>
         <module>health</module>
     </modules>
-
 </project>

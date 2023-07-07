@@ -41,8 +41,8 @@ final class MetricMeter extends MetricService<Meter> {
     }
 
     @Override
-    protected void executeMetric(Meter metric, CompletionStage<Void> aFuture) {
-        aFuture
+    protected void executeMetric(Meter metric, CompletionStage<Void> future) {
+        future
                 .thenAccept(nothing -> {
                     if (measureSuccess()) {
                         metric.mark();
@@ -80,7 +80,5 @@ final class MetricMeter extends MetricService<Meter> {
         public MetricMeter build() {
             return new MetricMeter(this);
         }
-
     }
-
 }

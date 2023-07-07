@@ -21,8 +21,8 @@ import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.common.mapper.MapperManager;
-import io.helidon.config.Config;
 import io.helidon.dbclient.spi.DbClientBuilder;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
@@ -199,7 +199,7 @@ public interface DbClient {
         /**
          * Use database connection configuration from configuration file.
          *
-         * @param config {@link io.helidon.config.Config} instance with database connection attributes
+         * @param config {@link Config} instance with database connection attributes
          * @return database provider builder
          */
         public Builder config(Config config) {

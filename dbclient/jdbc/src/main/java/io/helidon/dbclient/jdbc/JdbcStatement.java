@@ -15,243 +15,171 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.lang.System.Logger.Level;
 import java.sql.Connection;
-import java.sql.ResultSet;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbExecuteContext;
+import io.helidon.dbclient.DbIndexedStatementParameters;
+import io.helidon.dbclient.DbNamedStatementParameters;
 import io.helidon.dbclient.DbStatement;
-import io.helidon.dbclient.common.CommonStatement;
+import io.helidon.dbclient.DbStatementBase;
+import io.helidon.dbclient.DbStatementParameters;
 
-abstract class JdbcStatement<S extends DbStatement<S>> extends CommonStatement<S> {
+/**
+ * JDBC statement base implementation.
+ *
+ * @param <S> type of subclass
+ */
+public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatementBase<S> {
 
-    // JDBC statement execution context
-    private final StatementContext context;
+    private static final System.Logger LOGGER = System.getLogger(JdbcStatement.class.getName());
 
-    // Statement preparation handler.
-    // Instance is initialized to PrepareInitial instance (parameter type was not chosen yet).
-    // It's updated to PrepareIndex or PrepareName depending on 1st parameter being set to the statement.
-    private Params params;
+    private final JdbcConnectionPool connectionPool;
+    private Connection connection;
 
-    JdbcStatement(StatementContext context) {
-        super(context.clientContext());
-        this.context = context;
-        this.params = new StatementParams(context, this::updatePrepare);
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool connection pool
+     * @param context        context
+     */
+    JdbcStatement(JdbcConnectionPool connectionPool, DbExecuteContext context) {
+        super(context);
+        this.connectionPool = connectionPool;
     }
 
-    @Override
-    public S params(List<?> parameters) {
-        parameters.forEach(this::addParam);
-        return identity();
-    }
-
-    @Override
-    public S params(Map<String, ?> parameters) {
-        parameters.forEach(this::addParam);
-        return identity();
-    }
-
-    @Override
-    public S addParam(Object parameter) {
-        params.indexed().addParam(new ParameterValueHandler.ObjectHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(boolean parameter) {
-        params.indexed().addParam(new ParameterValueHandler.BooleanHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String parameter) {
-        params.indexed().addParam(new ParameterValueHandler.StringHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(byte parameter) {
-        params.indexed().addParam(new ParameterValueHandler.ByteHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(short parameter) {
-        params.indexed().addParam(new ParameterValueHandler.ShortHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(int parameter) {
-        params.indexed().addParam(new ParameterValueHandler.IntHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(long parameter) {
-        params.indexed().addParam(new ParameterValueHandler.LongHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(float parameter) {
-        params.indexed().addParam(new ParameterValueHandler.FloatHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(double parameter) {
-        params.indexed().addParam(new ParameterValueHandler.DoubleHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(BigInteger parameter) {
-        params.indexed().addParam(new ParameterValueHandler.BigDecimalHandler(new BigDecimal(parameter)));
-        return identity();
-    }
-
-    @Override
-    public S addParam(BigDecimal parameter) {
-        params.indexed().addParam(new ParameterValueHandler.BigDecimalHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(byte[] parameter) {
-        params.indexed().addParam(new ParameterValueHandler.BytesHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, Object parameter) {
-        params.named().addParam(name, new ParameterValueHandler.ObjectHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, boolean parameter) {
-        params.named().addParam(name, new ParameterValueHandler.BooleanHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, String parameter) {
-        params.named().addParam(name, new ParameterValueHandler.StringHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, byte parameter) {
-        params.named().addParam(name, new ParameterValueHandler.ByteHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, short parameter) {
-        params.named().addParam(name, new ParameterValueHandler.ShortHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, int parameter) {
-        params.named().addParam(name, new ParameterValueHandler.IntHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, long parameter) {
-        params.named().addParam(name, new ParameterValueHandler.LongHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, float parameter) {
-        params.named().addParam(name, new ParameterValueHandler.FloatHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, double parameter) {
-        params.named().addParam(name, new ParameterValueHandler.DoubleHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, BigInteger parameter) {
-        params.named().addParam(name, new ParameterValueHandler.BigDecimalHandler(new BigDecimal(parameter)));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, BigDecimal parameter) {
-        params.named().addParam(name, new ParameterValueHandler.BigDecimalHandler(parameter));
-        return identity();
-    }
-
-    @Override
-    public S addParam(String name, byte[] parameter) {
-        params.named().addParam(name, new ParameterValueHandler.BytesHandler(parameter));
-        return identity();
-    }
-
-    StatementContext context() {
-        return context;
-    }
-
-    // Current statement preparation handler.
-    Params prepare() {
-        return params;
-    }
-
-    // Callback method passed to StatementParams Builder instance.
-    // This method is called from PrepareInitial instance to update Builder instance to the next state.
-    // This next state handles only indexed or named parameters.
-    private void updatePrepare(Params prepare) {
-        if (this.params.state() != Params.State.INIT) {
-            throw new IllegalStateException("Cannot update statement preparation method when method was already chosen.");
+    /**
+     * Close the connection.
+     */
+    void closeConnection() {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            LOGGER.log(Level.WARNING, String.format("Could not close connection: %s", e.getMessage()), e);
         }
-        this.params = prepare;
     }
 
-    // Internal JDBC statement parameters preparation handlers
-    //
-    // Parameters type is initialized with 1st statement parameter being set
-    // * as StatementIndexedParams for indexed parameter
-    // * as StatementNamedParams for named parameter.
-    // Each subsequent parameter must be of the same type (indexed or named).
-
-    // Builder interface to prepare statement for execution and execute it
-    abstract static class Params {
-
-        abstract StatementIndexedParams indexed();
-
-        abstract StatementNamedParams named();
-
-        abstract Statement createStatement(Connection connection) throws SQLException;
-
-        abstract long executeUpdate() throws SQLException;
-
-        abstract ResultSet executeQuery() throws SQLException;
-
-        abstract Params.State state();
-
-        abstract JdbcClientServiceContext createServiceContext();
-
-        // Parameters preparation state
-        enum State {
-            // Initial state: parameters type was not chosen yet
-            INIT,
-            // Indexed parameters
-            INDEXED,
-            // Named parameters
-            NAMED
+    /**
+     * Create the {@link PreparedStatement}.
+     *
+     * @param serviceContext client service context
+     * @return PreparedStatement
+     */
+    protected PreparedStatement prepareStatement(DbClientServiceContext serviceContext) {
+        String stmtName = serviceContext.statementName();
+        String stmt = serviceContext.statement();
+        DbStatementParameters stmtParams = serviceContext.statementParameters();
+        LOGGER.log(Level.DEBUG, () -> String.format("Building SQL statement: %s", stmt));
+        if (stmtParams instanceof DbIndexedStatementParameters indexed) {
+            List<Object> params = indexed.parameters();
+            return prepareIndexedStatement(stmtName, stmt, params);
+        } else if (stmtParams instanceof DbNamedStatementParameters named) {
+            Map<String, Object> params = named.parameters();
+            return prepareNamedStatement(stmtName, stmt, params);
         }
-
+        return prepareStatement(stmtName, stmt);
     }
 
+    /**
+     * Create the {@link PreparedStatement}.
+     *
+     * @param stmtName statement name
+     * @param stmt     statement text
+     * @return statement
+     */
+    protected PreparedStatement prepareStatement(String stmtName, String stmt) {
+        try {
+            connection = connectionPool.connection();
+            return connection.prepareStatement(stmt);
+        } catch (SQLException e) {
+            throw new DbClientException(String.format("Failed to prepare statement: %s", stmtName), e);
+        }
+    }
+
+    private PreparedStatement prepareNamedStatement(String stmtName, String stmt, Map<String, Object> parameters) {
+        PreparedStatement preparedStatement = null;
+        try {
+            // Parameters names must be replaced with ? and names occurrence order must be stored.
+            NamedStatementParser parser = new NamedStatementParser(stmt);
+            String convertedStmt = parser.convert();
+            LOGGER.log(Level.TRACE, () -> String.format("Converted statement: %s", convertedStmt));
+            preparedStatement = prepareStatement(stmtName, convertedStmt);
+            List<String> namesOrder = parser.namesOrder();
+            // Set parameters into prepared statement
+            int i = 1;
+            for (String name : namesOrder) {
+                if (parameters.containsKey(name)) {
+                    Object value = parameters.get(name);
+                    LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
+                    preparedStatement.setObject(i, value);
+                    i++;
+                } else {
+                    throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
+                }
+            }
+            return preparedStatement;
+        } catch (SQLException e) {
+            closePreparedStatement(preparedStatement);
+            throw new DbClientException("Failed to prepare statement with named parameters: " + stmtName, e);
+        }
+    }
+
+    private PreparedStatement prepareIndexedStatement(String stmtName, String stmt, List<Object> parameters) {
+        PreparedStatement preparedStatement = null;
+        try {
+            preparedStatement = prepareStatement(stmtName, stmt);
+            int i = 1; // JDBC set position parameter starts from 1.
+            for (Object value : parameters) {
+                LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
+                preparedStatement.setObject(i, value);
+                // increase value for next iteration
+                i++;
+            }
+            return preparedStatement;
+        } catch (SQLException e) {
+            closePreparedStatement(preparedStatement);
+            throw new DbClientException(String.format("Failed to prepare statement with indexed params: %s", stmtName), e);
+        }
+    }
+
+    private void closePreparedStatement(PreparedStatement preparedStatement) {
+        if (preparedStatement != null) {
+            try {
+                preparedStatement.close();
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, String.format("Could not close PreparedStatement: %s", e.getMessage()), e);
+            }
+        }
+    }
+
+    private static String namedStatementErrorMessage(List<String> names, Map<String, Object> parameters) {
+        // Parameters in query missing in parameters Map
+        List<String> notInParams = new ArrayList<>(names.size());
+        for (String name : names) {
+            if (!parameters.containsKey(name)) {
+                notInParams.add(name);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("Query parameters missing in Map: ");
+        boolean first = true;
+        for (String name : notInParams) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(name);
+        }
+        return sb.toString();
+    }
 }

@@ -232,7 +232,7 @@ public interface DbExecute {
      *
      * @param statementName the name of the configuration node with statement
      * @param parameters    query parameters to set
-     * @return number of rows updateed into the database
+     * @return number of rows updated into the database
      */
     default long namedUpdate(String statementName, Object... parameters) {
         return createNamedUpdate(statementName).params(parameters).execute();
@@ -243,7 +243,7 @@ public interface DbExecute {
      *
      * @param statement  the update statement to be executed
      * @param parameters query parameters to set
-     * @return number of rows updateed into the database
+     * @return number of rows updated into the database
      */
     default long update(String statement, Object... parameters) {
         return createUpdate(statement).params(parameters).execute();
@@ -265,7 +265,7 @@ public interface DbExecute {
     }
 
     /**
-     * Create andelete statement using a named statement.
+     * Create a delete statement using a named statement.
      *
      * @param statementName the name of the statement
      * @return database statement that can delete data

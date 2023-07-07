@@ -15,17 +15,17 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.common.CommonClientBuilder;
+import io.helidon.dbclient.DbClientBuilderBase;
 import io.helidon.dbclient.spi.DbClientBuilder;
 
 /**
  * Fluent API builder for {@link JdbcClientBuilder} that implements
  * the {@link DbClientBuilder} from Helidon DB API.
  */
-final class JdbcClientBuilder
-        extends CommonClientBuilder<JdbcClientBuilder>
+public final class JdbcClientBuilder
+        extends DbClientBuilderBase<JdbcClientBuilder>
         implements DbClientBuilder<JdbcClientBuilder> {
 
     private JdbcConnectionPool connectionPool;
@@ -42,9 +42,7 @@ final class JdbcClientBuilder
     @Override
     public JdbcClientBuilder config(Config config) {
         super.config(config);
-        config.get("connection")
-                .detach()
-                .ifExists(cfg -> connectionPool(JdbcConnectionPool.create(cfg)));
+        config.get("connection").detach().map(JdbcConnectionPool::create).ifPresent(this::connectionPool);
         return this;
     }
 
@@ -59,6 +57,11 @@ final class JdbcClientBuilder
         return this;
     }
 
+    /**
+     * Get the connection pool.
+     *
+     * @return connection pool
+     */
     JdbcConnectionPool connectionPool() {
         return connectionPool;
     }

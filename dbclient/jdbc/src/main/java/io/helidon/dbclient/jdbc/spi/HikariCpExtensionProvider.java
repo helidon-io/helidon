@@ -17,7 +17,7 @@ package io.helidon.dbclient.jdbc.spi;
 
 import java.util.ServiceLoader;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.jdbc.HikariCpExtension;
 
 /**

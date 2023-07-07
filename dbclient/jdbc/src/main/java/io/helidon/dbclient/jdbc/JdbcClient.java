@@ -18,32 +18,40 @@ package io.helidon.dbclient.jdbc;
 import java.sql.Connection;
 
 import io.helidon.dbclient.DbClient;
-import io.helidon.dbclient.common.CommonClient;
-import io.helidon.dbclient.common.CommonClientContext;
+import io.helidon.dbclient.DbClientBase;
+import io.helidon.dbclient.DbClientContext;
 
 /**
  * Helidon DB implementation for JDBC drivers.
  */
-class JdbcClient extends CommonClient implements DbClient {
+class JdbcClient extends DbClientBase implements DbClient {
+
     private final JdbcConnectionPool connectionPool;
 
+    /**
+     * Create a new instance.
+     *
+     * @param builder builder
+     */
     JdbcClient(JdbcClientBuilder builder) {
-        super(CommonClientContext.create(builder.statements(),
-                                         builder.clientServices(),
-                                         builder.dbMapperManager(),
-                                         builder.mapperManager(),
-                                         builder.connectionPool().dbType()));
+        super(DbClientContext.builder()
+                .statements(builder.statements())
+                .dbMapperManager(builder.dbMapperManager())
+                .mapperManager(builder.mapperManager())
+                .clientServices(builder.clientServices())
+                .dbType(builder.connectionPool().dbType())
+                .build());
         connectionPool = builder.connectionPool();
     }
 
     @Override
     public JdbcExecute execute() {
-        return JdbcExecute.create(context(), connectionPool);
+        return new JdbcExecute(context(), connectionPool);
     }
 
     @Override
     public JdbcTransaction transaction() {
-        return JdbcTransaction.create(context(), connectionPool);
+        return new JdbcTransaction(context(), connectionPool);
     }
 
     @Override
@@ -55,12 +63,11 @@ class JdbcClient extends CommonClient implements DbClient {
     public <C> C unwrap(Class<C> cls) {
         if (Connection.class.isAssignableFrom(cls)) {
             return cls.cast(connectionPool.connection());
-        // JdbcClient and CommonClient unwraps are used in tests.
-        } else if (JdbcClient.class.isAssignableFrom(cls) || CommonClient.class.isAssignableFrom(cls)) {
+            // JdbcClient and CommonClient unwraps are used in tests.
+        } else if (JdbcClient.class.isAssignableFrom(cls) || DbClientBase.class.isAssignableFrom(cls)) {
             return cls.cast(this);
         } else {
             throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
         }
     }
-
 }

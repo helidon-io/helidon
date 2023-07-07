@@ -23,19 +23,14 @@ import java.util.Map;
 
 /**
  * Database statement that can process parameters.
- * Method {@code execute()} processes the statement and returns appropriate response.
- * <p>
- * All methods are blocking.
  * <p>
  * Once parameters are set using one of the {@code params} methods, all other methods throw an
  * {@link IllegalStateException}.
  * <p>
  * Once a parameter is added using {@link #addParam(Object)} or {@link #addParam(String, Object)}, all other
  * {@code params} methods throw an {@link IllegalStateException}.
- * <p>
- * Once {@code execute()} is called, all methods would throw an {@link IllegalStateException}.
  *
- * @param <D> type of the descendant of this class
+ * @param <D> Type of the descendant of this class
  */
 public interface DbStatement<D extends DbStatement<D>> {
 
@@ -301,5 +296,4 @@ public interface DbStatement<D extends DbStatement<D>> {
      * @return updated db statement
      */
     D addParam(String name, byte[] parameter);
-
 }

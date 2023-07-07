@@ -26,8 +26,6 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <groupId>io.helidon.tests.integration.db-client</groupId>
     <artifactId>helidon-tests-integration-db-client-jdbc</artifactId>
     <name>Integration Tests: DB Client JDBC</name>
 
@@ -42,7 +40,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-common</artifactId>
+            <artifactId>helidon-dbclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
@@ -123,7 +121,7 @@
                             </includes>
                         </configuration>
                     </execution>
-                    <!-- Run ingegration tests. -->
+                    <!-- Run integration tests. -->
                     <execution>
                         <id>test</id>
                         <phase>integration-test</phase>

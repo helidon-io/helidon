@@ -120,7 +120,7 @@
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0-RC1</version.lib.microprofile-lra-api>
         <version.lib.microstream>05.00.02-MS-GA</version.lib.microstream>
-        <version.lib.mongodb.reactivestreams>1.11.0</version.lib.mongodb.reactivestreams>
+        <version.lib.mongodb>4.9.1</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
@@ -608,8 +608,8 @@
             <!-- DB Client related -->
             <dependency>
                 <groupId>org.mongodb</groupId>
-                <artifactId>mongodb-driver-reactivestreams</artifactId>
-                <version>${version.lib.mongodb.reactivestreams}</version>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${version.lib.mongodb}</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.messaging</groupId>

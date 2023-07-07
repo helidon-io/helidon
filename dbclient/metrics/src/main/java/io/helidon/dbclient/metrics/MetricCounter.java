@@ -41,8 +41,8 @@ final class MetricCounter extends MetricService<Counter> {
     }
 
     @Override
-    protected void executeMetric(Counter metric, CompletionStage<Void> aFuture) {
-        aFuture.thenRun(() -> {
+    protected void executeMetric(Counter metric, CompletionStage<Void> future) {
+        future.thenRun(() -> {
             if (measureSuccess()) {
                 metric.inc();
             }
@@ -78,7 +78,5 @@ final class MetricCounter extends MetricService<Counter> {
         public MetricCounter build() {
             return new MetricCounter(this);
         }
-
     }
-
 }

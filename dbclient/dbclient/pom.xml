@@ -32,8 +32,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -48,6 +48,15 @@
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
 </project>

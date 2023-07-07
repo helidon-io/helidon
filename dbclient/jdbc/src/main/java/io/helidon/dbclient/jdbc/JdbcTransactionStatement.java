@@ -15,19 +15,43 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import io.helidon.dbclient.DbStatement;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
-class JdbcTransactionStatement<S extends DbStatement<S>> extends JdbcStatement<S> {
+import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.DbExecuteContext;
+import io.helidon.dbclient.DbStatement;
+/**
+ * JDBC transactional statement base implementation.
+ *
+ * @param <S> type of subclass
+ */
+abstract class JdbcTransactionStatement<S extends DbStatement<S>> extends JdbcStatement<S> {
 
     private final TransactionContext transactionContext;
 
-    JdbcTransactionStatement(StatementContext context, TransactionContext transactionContext) {
-        super(context);
+    /**
+     * Create a new instance.
+     *
+     * @param connectionPool     connection pool
+     * @param context            context
+     * @param transactionContext transaction context
+     */
+    protected JdbcTransactionStatement(JdbcConnectionPool connectionPool,
+                             DbExecuteContext context,
+                             TransactionContext transactionContext) {
+        super(connectionPool, context);
         this.transactionContext = transactionContext;
     }
 
-    TransactionContext transactionContext() {
-        return transactionContext;
+    @Override
+    protected PreparedStatement prepareStatement(String stmtName, String stmt) {
+        try {
+            Connection connection = transactionContext.connection();
+            return connection.prepareStatement(stmt);
+        } catch (SQLException e) {
+            throw new DbClientException(String.format("Failed to prepare statement: %s", stmtName), e);
+        }
     }
-
 }

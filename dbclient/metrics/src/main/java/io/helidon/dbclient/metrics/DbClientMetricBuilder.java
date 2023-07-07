@@ -15,14 +15,14 @@
  */
 package io.helidon.dbclient.metrics;
 
-import io.helidon.dbclient.common.CommonService;
+import io.helidon.dbclient.DbClientServiceBase;
 
 /**
  * DB Client metric builder.
  *
  * @param <B> type of the builder extending this class
- * @param <T> Type of the built {@link CommonService} instance
+ * @param <T> Type of the built {@link DbClientServiceBase} instance
  */
-public abstract class DbClientMetricBuilder<B extends DbClientMetricBuilder<B, T>, T extends CommonService>
+public abstract class DbClientMetricBuilder<B extends DbClientMetricBuilder<B, T>, T extends DbClientServiceBase>
         extends MetricBuilderBase<B, T> {
 }

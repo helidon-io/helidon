@@ -15,29 +15,34 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementType;
 
 abstract class JdbcClientServiceContext implements DbClientServiceContext {
 
-    private final StatementContext statementContext;
+    private final DbExecuteContext execContext;
+    private final DbStatementType stmtType;
+    private final CompletionStage<Void> stmtFuture;
+    private final CompletionStage<Long> queryFuture;
     private Context context;
-    private CompletionStage<Void> statementFuture;
-    private CompletionStage<Long> queryFuture;
+    private String statementName;
 
-    private JdbcClientServiceContext(StatementContext statementContext) {
-        this.statementContext = statementContext;
-    }
+    JdbcClientServiceContext(Context context,
+                             DbExecuteContext execContext,
+                             DbStatementType stmtType,
+                             CompletionStage<Void> stmtFuture,
+                             CompletionStage<Long> queryFuture) {
 
-    @Override
-    public String dbType() {
-        return statementContext.dbType();
+        this.context = context;
+        this.execContext = execContext;
+        this.stmtType = stmtType;
+        this.stmtFuture = stmtFuture;
+        this.queryFuture = queryFuture;
+        this.statementName = execContext.statementName();
     }
 
     @Override
@@ -45,19 +50,33 @@ abstract class JdbcClientServiceContext implements DbClientServiceContext {
         return context;
     }
 
+    /**
+     * Get the execution context.
+     *
+     * @return execution context
+     */
+    public DbExecuteContext execContext() {
+        return execContext;
+    }
+
     @Override
     public String statement() {
-        return statementContext.statement();
+        return execContext.statement();
     }
 
     @Override
     public String statementName() {
-        return statementContext.statementName();
+        return statementName;
     }
 
     @Override
     public DbStatementType statementType() {
-        return statementContext.dbStatementType();
+        return stmtType;
+    }
+
+    @Override
+    public String dbType() {
+        return execContext.dbType();
     }
 
     @Override
@@ -67,198 +86,18 @@ abstract class JdbcClientServiceContext implements DbClientServiceContext {
     }
 
     @Override
-    public JdbcClientServiceContext statementName(String statementName) {
-        statementContext.statementName(statementName);
+    public JdbcClientServiceContext statementName(String name) {
+        this.statementName = name;
         return this;
     }
 
     @Override
     public CompletionStage<Void> statementFuture() {
-        return statementFuture;
+        return stmtFuture;
     }
 
     @Override
     public CompletionStage<Long> resultFuture() {
         return queryFuture;
     }
-
-    @Override
-    public JdbcClientServiceContext statementFuture(CompletionStage<Void> statementFuture) {
-        this.statementFuture = statementFuture;
-        return this;
-    }
-
-    @Override
-    public JdbcClientServiceContext resultFuture(CompletionStage<Long> resultFuture) {
-        this.queryFuture = resultFuture;
-        return this;
-    }
-
-    StatementContext statementContext() {
-        return statementContext;
-    }
-
-    static final class Indexed extends JdbcClientServiceContext {
-
-        private final StatementIndexedParams params;
-
-        Indexed(StatementContext statementContext, StatementIndexedParams params) {
-            super(statementContext);
-            this.params = params;
-        }
-
-        @Override
-        public  boolean isIndexed() {
-            return true;
-        }
-
-        @Override
-        public  boolean isNamed() {
-            return false;
-        }
-
-        @Override
-        public Optional<List<Object>> indexedParameters() {
-            return Optional.of(params.parametersAsList());
-        }
-
-        @Override
-        public Optional<Map<String, Object>> namedParameters() {
-            throw new IllegalStateException("Named parameters are not available for statement with indexed parameters");
-        }
-
-        @Override
-        public JdbcClientServiceContext statement(String statement, List<Object> indexedParams) {
-            statementContext().statement(statement);
-            params.parametersFromList(indexedParams);
-            return this;
-        }
-
-        @Override
-        public DbClientServiceContext parameters(List<Object> indexedParams) {
-            params.parametersFromList(indexedParams);
-            return this;
-        }
-
-        @Override
-        public DbClientServiceContext statement(String statement, Map<String, Object> namedParams) {
-            throw new IllegalStateException("Named parameters are not available for statement with indexed parameters");
-        }
-
-        @Override
-        public DbClientServiceContext parameters(Map<String, Object> namedParameters) {
-            throw new IllegalStateException("Named parameters are not available for statement with indexed parameters");
-        }
-
-    }
-
-    static final class Named extends JdbcClientServiceContext {
-
-        private final StatementNamedParams params;
-
-        Named(StatementContext statementContext, StatementNamedParams params) {
-            super(statementContext);
-            this.params = params;
-        }
-
-        @Override
-        public  boolean isNamed() {
-            return true;
-        }
-
-        @Override
-        public  boolean isIndexed() {
-            return false;
-        }
-
-
-        @Override
-        public Optional<Map<String, Object>> namedParameters() {
-            return Optional.of(params.parametersAsMap());
-        }
-
-        @Override
-        public Optional<List<Object>> indexedParameters() {
-            throw new IllegalStateException("Indexed parameters are not available for statement with named parameters");
-        }
-
-        @Override
-        public JdbcClientServiceContext statement(String statement, Map<String, Object> namedParams) {
-            statementContext().statement(statement);
-            params.parametersFromMap(namedParams);
-            return this;
-        }
-
-        @Override
-        public DbClientServiceContext parameters(Map<String, Object> namedParams) {
-            params.parametersFromMap(namedParams);
-            return this;
-        }
-
-        @Override
-        public DbClientServiceContext statement(String statement, List<Object> indexedParams) {
-            throw new IllegalStateException("Indexed parameters are not available for statement with named parameters");
-        }
-
-        @Override
-        public DbClientServiceContext parameters(List<Object> indexedParams) {
-            throw new IllegalStateException("Indexed parameters are not available for statement with named parameters");
-        }
-
-    }
-
-    // No parameters were set in the statement so it's not known whether it's indexed or named
-    // FIXME: It may be possible to allow setting parameters and choosing parameters type. But it's not implemented yet.
-    static final class NoParams extends JdbcClientServiceContext {
-
-        private final StatementParams params;
-
-        NoParams(StatementContext statementContext, StatementParams params) {
-            super(statementContext);
-            this.params = params;
-        }
-
-        @Override
-        public  boolean isNamed() {
-            return false;
-        }
-
-        @Override
-        public  boolean isIndexed() {
-            return false;
-        }
-
-
-        @Override
-        public Optional<Map<String, Object>> namedParameters() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<List<Object>> indexedParameters() {
-            return Optional.empty();
-        }
-
-        @Override
-        public JdbcClientServiceContext statement(String statement, Map<String, Object> namedParams) {
-            throw new IllegalStateException("Named parameters are not available for statement with no parameters");
-        }
-
-        @Override
-        public DbClientServiceContext parameters(Map<String, Object> namedParams) {
-            throw new IllegalStateException("Named parameters are not available for statement with no parameters");
-        }
-
-        @Override
-        public DbClientServiceContext statement(String statement, List<Object> indexedParams) {
-            throw new IllegalStateException("Indexed parameters are not available for statement with no parameters");
-        }
-
-        @Override
-        public DbClientServiceContext parameters(List<Object> indexedParams) {
-            throw new IllegalStateException("Indexed parameters are not available for statement with no parameters");
-        }
-
-    }
-
 }

@@ -32,7 +32,7 @@ public interface DbClientService {
      * This method is called before the statement execution starts.
      *
      * @param context interceptor context
-     * @return single that completes when this service is finished
+     * @return updated interceptor context
      */
     DbClientServiceContext statement(DbClientServiceContext context);
 

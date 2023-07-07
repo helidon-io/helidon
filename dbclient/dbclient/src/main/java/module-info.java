@@ -17,6 +17,7 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
+import io.helidon.dbclient.DbMapperProvider;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
 
@@ -32,19 +33,22 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
          path = "DbClient"
 )
 module io.helidon.dbclient {
-
     requires static io.helidon.common.features.api;
 
     requires java.logging;
-    requires transitive io.helidon.config;
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common.config;
     requires transitive io.helidon.common.mapper;
+    requires java.sql;
 
     exports io.helidon.dbclient;
     exports io.helidon.dbclient.spi;
 
     uses DbClientProvider;
     uses DbClientServiceProvider;
+    uses DbMapperProvider;
+
+    provides io.helidon.common.mapper.spi.MapperProvider with DbMapperProvider;
 
 }
