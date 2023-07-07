@@ -107,7 +107,7 @@ class FlowControlTest {
                         .route(Http2Route.route(GET, "/flow-control", (req, res) -> {
                             res.send(EXPECTED);
                         }))
-                ).port(8080);
+                );
     }
 
     @AfterAll
