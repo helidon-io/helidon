@@ -31,7 +31,10 @@
 :wls-jaxrs-link: {wls-jaxrs-url}[Developing and Securing RESTful Web Services for Oracle WebLogic Server]
 
 :wls-jaxrs-client-url: {wls-root-url}/restf/develop-restful-client.html#GUID-F50F4FB3-8A25-439F-8554-484F1C58315C
-:wls-jaxrs-client-link: {wls-jaxrs-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
+:wls-jaxrs-client-link: {wls-jaxrs-client-url}[Developing RESTful Web Service Clients for Oracle WebLogic Server]
+
+:wls-rest-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-rest-services-helidon.html#GUID-C0998615-9272-4242-9BBB-C3AF0E6F6454
+:wls-rest-link: {wls-rest-url}[Integrating WebLogic Server REST Services with Helidon]
 
 :wls-jms-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-jms-helidon.html#GUID-8E1A4C48-D7C9-4599-B0C1-89E1FEA823B2
 :wls-jms-link: {wls-jms-url}[Integrating WebLogic JMS with Helidon]
@@ -46,13 +49,16 @@
 :wls-sso-link: {wls-sso-url}[Integrating Oracle WebLogic Cluster and Helidon Applications for SSO on OCI Using IDCS]
 
 :wls-xa-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-microtx.html#GUID-81107BDE-7A99-421B-883D-AAAC12692E26
-:wls-xa-link: {wls-sso-url}[Integrating XA Global Transactions Between WebLogic Server and Helidon Using MicroTx]
+:wls-xa-link: {wls-xa-url}[Integrating XA Global Transactions Between WebLogic Server and Helidon Using MicroTx]
 
 :jersey-url: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest
 :jersey-link: {jersey-url}[Eclipse Jersey]
 
 :micro-tx-url: https://www.oracle.com/database/transaction-manager-for-microservices
 :micro-tx-link: {micro-tx-url}[MicroTx]
+
+:micro-tx-download-url: {wls-root-url}/wlshe/integrating-oracle-weblogic-server-microtx.html#GUID-859579FB-B025-4E95-9F89-A1190DFCB793
+:microtx-tx-download-link: {micro-tx-download-url}[Prerequisites]
 
 == Contents
 
@@ -61,7 +67,7 @@
 - <<JMS Integration, JMS Integration>>
 - <<Web Services Integration, Web Services Integration>>
 - <<Single Sign-On on OCI Integration, Single Sign-On on OCI Integration>>
-- <<XA Transactions Integration, XA-Transactions-Integration>>
+- <<XA Transactions Integration, XA-Transactions Integration>>
 
 
 == Overview
@@ -70,11 +76,11 @@ The Oracle WebLogic Server (WebLogic Server) and Helidon integration enables int
 
 The following integrations are explained in this document:
 
-* The REST integration allows WebLogic Server applications and Helidon microservices to communicate through RESTful Web Service invocations.
+* The REST services integration allows WebLogic Server applications and Helidon microservices to communicate through RESTful Web Service invocations.
 * The JMS integration allows Helidon microservices to publish and consume messages from WebLogic JMS Server.
 * The WebLogic Web Services integration allows Helidon microservices to interact with WebLogic Server applications through SOAP (Simple Object Access Protocol) Web Service calls from Helidon to WebLogic Server.
-* The WebLogic Server and Helidon integration allows communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
-* XA Transactions Integration with {micro-tx-link} allows participating in XA transactions to both Helidon and WebLogic Server applications.
+* The WebLogic Server and Helidon integration allows secure communication between a WebLogic cluster-hosted application and a Helidon microservice application by implementing Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
+* XA Transactions integration with {micro-tx-link} allows Helidon and WebLogic Server applications to participate in a two-phase commit.
 
 Integration between Helidon and WebLogic Server is possible over numerous protocols, most notably RESTful Web Services,
 SOAP Web Services, and JMS. Both Helidon and WebLogic Server support Single Sign-on (SSO) authentication using Oracle Identity Cloud Service (IDCS).
@@ -103,7 +109,8 @@ public class GreetResource {
     @Path("/hello")
     @GET //<2>
     @Produces(MediaType.TEXT_PLAIN) //<3>
-    public Response getHello() {
+    public Response getHello
+    () {
         return Response.ok("Hello World!") //<4>
                        .build();
     }
@@ -150,6 +157,7 @@ For information about developing and deploying JAX-RS clients on WebLogic Server
 * xref:mp/guides/02_quickstart.adoc[Helidon MP Quickstart]
 * {wls-jaxrs-link}
 * {jersey-link}
+* {wls-rest-link}
 
 == JMS Integration [[JMS-Integration]]
 
@@ -242,8 +250,8 @@ mp:
 <1> Admin server t3 connection URL.
 <2> Example of the WebLogic Cluster t3 connection URL.
 <3> Connection factory name.
-<4> JMS environment properties to lookup resources.
-<5> Destination with `jndi.` prefix is evaluated as JNDI name, simple `destination` is evaluated as a CDI syntax.
+<4> JMS environment properties to look up resources.
+<5> Destination with the `jndi.` prefix is evaluated as the JNDI name, simple `destination` is evaluated as a CDI syntax.
 
 For information about reactive messaging configuration, see xref:mp/reactivemessaging/01_introduction.adoc#_configuration[Reactive Messaging Configuration].
 
@@ -314,8 +322,7 @@ Add the installed `com.oracle.webservices.wls.jaxws-wlswss-client.jar` client ar
 
 === Usage [[Web-Services-Integration-Usage]]
 
-Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier,
-to generate the client artifacts that client applications use to invoke the WebLogic Web Services from the  `target/generated-sources` folder.
+Use the `clientgen` WebLogic Web Services Ant task from the `com.oracle.webservices.wls.jaxws-wlswss-client.jar` file, installed earlier to generate the client artifacts that client applications use to invoke the WebLogic Web Services from the  `target/generated-sources` folder.
 
 Add the `maven-antrun-plugin` plug-in to execute the `clientgen` Ant task during the `generate-sources` build phase:
 [source, xml]
@@ -356,10 +363,9 @@ Add the `maven-antrun-plugin` plug-in to execute the `clientgen` Ant task during
 <2> Folder for the generated client classes; should be added as a source folder.
 <3> Name of the package for the new client classes.
 
-Use `build-helper-maven-plugin` to add `/target/generated-sources` with generated client classes as an additional directory with sources.
+Use the `build-helper-maven-plugin` plug-in to add `/target/generated-sources` with the generated client classes as an additional directory with sources.
 [source, xml]
 ----
-
 <plugin>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>build-helper-maven-plugin</artifactId>
@@ -382,7 +388,7 @@ Use `build-helper-maven-plugin` to add `/target/generated-sources` with generate
 ----
 
 Because the client classes are generating to the folder recognized by Maven as additional sources, client classes can
-be used directly from Oracle's business code.
+be used directly from your business code.
 
 === Example [[Web-Services-Integration-Example]]
 
@@ -432,13 +438,13 @@ public class HelidonWSEEClient {
 
 The WebLogic Server and Helidon integration can be secured with IDCS over the OIDC protocol. The authentication provides:
 
-* Access to the IDCS configured client application deployed on Oracle WebLogic cluster.
+* Access to the IDCS configured client application deployed in the WebLogic cluster.
 * Access to the Helidon REST endpoints configured with IDCS.
 * Access to the WebLogic application endpoints from the Helidon REST endpoints.
 
 === Maven Coordinates [[SSO-Integration-Maven-Coordinates]]
 
-To enable IDCS support in Helidon MP, add the Maven dependency to the `pom.xml` file, as shown in the following example:
+To enable IDCS support in Helidon MP, add the Maven dependency to the `pom.xml` file as shown in the following example:
 
 [source, xml]
 ----
@@ -460,7 +466,8 @@ To enable IDCS support in Helidon MP, add the Maven dependency to the `pom.xml` 
 
 To set up the integration between the WebLogic cluster applications and the Helidon application with Oracle Identity Cloud Service (IDCS), see {wls-sso-link}.
 
-Configure Helidon application to use IDCS as an identity manager:
+Configure the Helidon application to use IDCS as an identity manager:
+
 [source, yaml]
 ----
 idcs:
@@ -496,7 +503,7 @@ security:
           client-secret: ${idcs.client-secret}
           identity-uri: ${idcs.url}
 ----
-<1> Configure OCID security provider to work with IDCS.
+<1> Configure the OCID security provider to work with IDCS.
 <2> Enable redirect to the IDCS SSO login page.
 <3> Propagate the JWT token obtained from IDCS after logging in to the subsequent JAX-RS calls.
 <4> Hosts called by the JAX-RS client for which the JWT token can be used.
@@ -564,16 +571,15 @@ While the JWT token can be injected directly and used in the JAX-RS resource for
 
 
 === Overview [[XA-Integration-Overview]]
-XA (eXtended Architecture) is a specification for distributed transactions leveraging 2PC (two-phase) commit approach.
-Helidon and Oracle WebLogic Server applications can participate in same XA transactions thanks to
-the {micro-tx-url}[MicroTx (Oracle Transaction Manager for Microservices)].
-MicroTx ensures consistency of XA transactions across Oracle WebLogic Server applications,
-Helidon microservices, and the JDBC resources deployed in both Helidon and Oracle WebLogic Server.
+XA (eXtended Architecture) is a specification for distributed transactions. Helidon and WebLogic Server applications can participate in a single XA transaction, thanks to {micro-tx-url}[MicroTx (Oracle Transaction Manager for Microservices)].
+MicroTx ensures consistency of XA transactions across WebLogic Server applications, Helidon microservices, and the JDBC resources deployed in both Helidon and WebLogic Server.
 
 [NOTE]
 ====
-At this time MicroTx Free is offered for evaluation purposes only.
+At this time, MicroTx Free is offered for evaluation purposes only.
 ====
+
+For information about downloading MicroTx, see {microtx-tx-download-link}.
 
 === Maven Coordinates [[XA-Integration-Maven-Coordinates]]
 
@@ -610,7 +616,7 @@ mvn install:install-file -Dfile=<MICRO_TX_BINARIES_EXTRACTED_PATH>/lib/java/TmmL
 
 === Usage [[XA-Integration-Usage]]
 
-MicroTx library looks for `tmm.properties`  configuration file on the application classpath.
+The MicroTx library looks for the `tmm.properties`  configuration file on the application classpath.
 
 [source,properties]
 ----
@@ -621,13 +627,12 @@ oracle.tmm.TransactionTimeout = 60000
 oracle.tmm.PropagateTraceHeaders = false
 oracle.tmm.xa.Rmid = HELIDON-TX-RM-ID-FOR-MICROTX-TESTS <3>
 ----
-<1> MicroTx coordinator URL
-<2> Refers to the Helidon Teller Application call-back URL along with context path
-<3> Resource Manager(RM) Unique Id. Make sure to replace the id value with the RM used in the application
+<1> The MicroTx coordinator URL.
+<2> Refers to the Helidon Teller Application call-back URL along with the context path.
+<3> The Unique Id of the Resource Manager(RM). Make sure to replace the id value with the RM used in the application.
 
-Each property can be overridden by its upper case snake case environment variable variant, example:
+Each property can be overridden by its upper case snake case environment variable variant. For example:
 `ORACLE_TMM_TCS_URL="https://microtx-service.local/api/v1"`;
-
 
 Configure XA UCP datasource with xref:mp/extensions/02_cdi_datasource-ucp.adoc[Helidon UCP CDI extension].
 
@@ -644,7 +649,7 @@ oracle:
           password: <db-password>
 ----
 
-XA capable datasource needs to be registered with MicroTx.
+Register the XA capable datasource with MicroTx.
 
 [source,java]
 ----
@@ -660,9 +665,9 @@ public class MicroTxInitBean {
     }
 }
 ----
-<1> Datasource's initialization with MicroTx after CDI container start.
+<1> Registers the XA data source with MicroTx at CDI container startup time.
 
-MicroTx will use it for obtaining XA capable connections.
+MicroTx will use it for obtaining the XA capable connections.
 
 [source,java]
 ----
@@ -693,11 +698,11 @@ public Response transfer(Transfer transfer){
     }
 }
 ----
-<1> Inject XA capable connection managed by MicroTx
-<2> Initialize TrmUserTransaction to demarcate transaction boundaries in the application code.
+<1> Injects the XA capable connection managed by MicroTx.
+<2> Initializes `TrmUserTransaction` to demarcate transaction boundaries in the application code.
 <3> If your application only initiates the transaction and does not participate in the transaction, begin with false.
-<4> Rollback transaction.
-<5> Commit transaction.
+<4> Rolls back the transaction.
+<5> Commits the transaction.
 
 
 === References [[XA-Integration-References]]
