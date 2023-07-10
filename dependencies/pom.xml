@@ -56,8 +56,8 @@
         <version.lib.graphql-java>18.6</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>18.3</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
-        <version.lib.grpc>1.54.1</version.lib.grpc>
-        <version.lib.guava>31.1-jre</version.lib.guava>
+        <version.lib.grpc>1.56.0</version.lib.grpc>
+        <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.1.212</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.3.1</version.lib.handlebars>
@@ -65,8 +65,7 @@
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <!-- This is the BOM version for Jackson Databind 2.13.4.2 -->
-        <version.lib.jackson>2.13.4.20221013</version.lib.jackson>
+        <version.lib.jackson>2.15.2</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.1.1</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>4.0.1</version.lib.jakarta.cdi-api>
@@ -125,7 +124,7 @@
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.neo4j>4.4.11</version.lib.neo4j>
-        <version.lib.netty>4.1.86.Final</version.lib.netty>
+        <version.lib.netty>4.1.94.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.8.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
@@ -999,6 +998,15 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${version.lib.kafka}</version>
+                <!-- Snip transitive dependency on Snappy (which should be optional anyways). -->
+                <!-- This can be removed once kafka-clients is upgraded -->
+                <!-- to 3.4.2 or newer. See https://issues.apache.org/jira/browse/KAFKA-15096 -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.xerial.snappy</groupId>
+                        <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.glassfish.jersey.media</groupId>
@@ -1111,7 +1119,7 @@
             <!-- Neo4j -->
             <dependency>
                 <groupId>org.neo4j.driver</groupId>
-                <artifactId>neo4j-java-driver</artifactId>
+                <artifactId>neo4j-java-driver-slim</artifactId>
                 <version>${version.lib.neo4j}</version>
             </dependency>
             <!-- Cron utils -->
