@@ -258,25 +258,6 @@ public abstract class AbstractCreator {
         }
 
         Set<TypeName> allExternalContracts = toAllContracts(externalContracts);
-        for (TypeName cn : allExternalContracts) {
-            String packageName = cn.packageName();
-            if (!needToDeclarePackageUsage(packageName)) {
-                continue;
-            }
-
-            ModuleInfoItem.Builder itemBuilder = ModuleInfoItem.builder()
-                    .uses(true)
-                    .target(cn.name());
-            if (hasValue(preComment)) {
-                itemBuilder.addPrecomment(preComment);
-            }
-
-            boolean added = ModuleInfoUtil.addIfAbsent(descriptorBuilder, cn.name(), itemBuilder);
-            if (added) {
-                preComment = "";
-            }
-        }
-
         if (!isTestModule && (contracts != null)) {
             preComment = "    // Pico contract usage - " + generatedAnno;
             for (Map.Entry<TypeName, Set<TypeName>> e : contracts.entrySet()) {

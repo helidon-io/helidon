@@ -11,4 +11,9 @@ module io.helidon.pico {
 
     uses io.helidon.pico.api.ModuleComponent;
     uses io.helidon.pico.api.Application;
+
+    // needed when running with modules - to make private methods accessible
+    // another comment with a semicolon;
+    opens io.helidon.config to weld.core.impl,
+            io.helidon.microprofile.cdi;
 }

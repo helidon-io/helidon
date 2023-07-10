@@ -101,6 +101,31 @@ interface ModuleInfoDescriptorBlueprint {
     List<ModuleInfoItem> items();
 
     /**
+     * The items that were not handled (due to parsing outages, etc.).
+     *
+     * @return the list of unhandled lines
+     */
+    @Prototype.Singular
+    List<String> unhandledLines();
+
+    /**
+     * Any throwable/error that were encountered during parsing.
+     *
+     * @return optionally any error encountered during parsing
+     */
+    Optional<Throwable> error();
+
+    /**
+     * Returns {@code true} if last parsing operation was successful (i.e., if there were no instances of
+     * {@link #unhandledLines()} or {@link #error()}'s encountered).
+     *
+     * @return true if any parsing of the given module-info descriptor appears to be full and complete
+     */
+    default boolean handled() {
+        return error().isEmpty() && unhandledLines().isEmpty();
+    }
+
+    /**
      * Returns true if the name currently set is the same as the {@link #DEFAULT_MODULE_NAME}.
      *
      * @return true if the current name is the default name
@@ -218,8 +243,12 @@ interface ModuleInfoDescriptorBlueprint {
         descriptionComment().ifPresent(it -> subst.put("description", it));
         subst.put("hasdescription", descriptionComment().isPresent());
         String template = helper.safeLoadTemplate(templateName(), ModuleUtils.SERVICE_PROVIDER_MODULE_INFO_HBS);
-        String contents = helper.applySubstitutions(template, subst, true).trim();
-        return CommonUtils.trimLines(contents);
+        String contents = helper.applySubstitutions(template, subst, true);
+        contents = CommonUtils.trimLines(contents);
+        if (!wantAnnotation) {
+            contents = contents.replace("\t", "    ");
+        }
+        return contents;
     }
 
 }
