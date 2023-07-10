@@ -36,6 +36,8 @@
         <module>mongodb</module>
         <module>tracing</module>
         <module>metrics</module>
+        <module>metrics-jdbc</module>
         <module>health</module>
+        <module>jsonp</module>
     </modules>
 </project>

@@ -1,0 +1,10 @@
+[
+    {
+        "name": "com.codahale.metrics.MetricRegistry",
+        "allDeclaredConstructors": true,
+        "allDeclaredMethods": true,
+        "allPublicMethods": true,
+        "allDeclaredFields": true,
+        "allPublicFields": true
+    }
+]

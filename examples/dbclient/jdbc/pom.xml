@@ -54,18 +54,18 @@
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-metrics</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.dbclient</groupId>-->
-<!--            <artifactId>helidon-dbclient-metrics-jdbc</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-health</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.dbclient</groupId>-->
-<!--            <artifactId>helidon-dbclient-jsonp</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jsonp</artifactId>
+        </dependency>
 <!--
         <dependency>
             <groupId>mysql</groupId>

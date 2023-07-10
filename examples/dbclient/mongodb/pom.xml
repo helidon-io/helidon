@@ -58,10 +58,10 @@
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-health</artifactId>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>io.helidon.dbclient</groupId>-->
-<!--            <artifactId>helidon-dbclient-jsonp</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jsonp</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.nima.webserver</groupId>
             <artifactId>helidon-nima-webserver</artifactId>
