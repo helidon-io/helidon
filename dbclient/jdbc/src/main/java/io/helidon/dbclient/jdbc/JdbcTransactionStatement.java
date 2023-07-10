@@ -15,11 +15,8 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
-import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatement;
 
@@ -40,19 +37,14 @@ abstract class JdbcTransactionStatement<S extends DbStatement<S>> extends JdbcSt
      * @param transactionContext transaction context
      */
     protected JdbcTransactionStatement(JdbcConnectionPool connectionPool,
-                             DbExecuteContext context,
-                             TransactionContext transactionContext) {
+                                       DbExecuteContext context,
+                                       TransactionContext transactionContext) {
         super(connectionPool, context);
         this.transactionContext = transactionContext;
     }
 
     @Override
     protected PreparedStatement prepareStatement(String stmtName, String stmt) {
-        try {
-            Connection connection = transactionContext.connection();
-            return connection.prepareStatement(stmt);
-        } catch (SQLException e) {
-            throw new DbClientException(String.format("Failed to prepare statement: %s", stmtName), e);
-        }
+        return prepareStatement(transactionContext.connection(), stmtName, stmt);
     }
 }

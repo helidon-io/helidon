@@ -34,10 +34,8 @@ import static java.util.Objects.requireNonNull;
  * MongoDB driver handler.
  */
 public class MongoDbClient extends DbClientBase implements DbClient {
-    private final MongoDbClientConfig config;
     private final MongoClient client;
     private final MongoDatabase db;
-    private final ConnectionString connectionString;
 
     /**
      * Creates an instance of MongoDB driver handler.
@@ -52,10 +50,27 @@ public class MongoDbClient extends DbClientBase implements DbClient {
                 .clientServices(builder.clientServices())
                 .dbType(MongoDbClientProvider.DB_TYPE)
                 .build());
-        this.config = builder.dbConfig();
-        this.connectionString = new ConnectionString(config.url());
-        this.client = initMongoClient();
-        this.db = initMongoDatabase();
+
+        MongoDbClientConfig config = builder.dbConfig();
+        ConnectionString connectionString = new ConnectionString(config.url());
+
+        MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder()
+                .applyConnectionString(connectionString);
+
+        String dbName = connectionString.getDatabase();
+        if ((config.username() != null) || (config.password() != null)) {
+            String credDb = (config.credDb() == null) ? connectionString.getDatabase() : config.credDb();
+
+            MongoCredential credentials = MongoCredential.createCredential(
+                    config.username(),
+                    requireNonNull(credDb),
+                    config.password().toCharArray());
+
+            settingsBuilder.credential(credentials);
+        }
+
+        this.client = MongoClients.create(settingsBuilder.build());
+        this.db = client.getDatabase(dbName != null ? dbName : "admin");
     }
 
     /**
@@ -76,8 +91,6 @@ public class MongoDbClient extends DbClientBase implements DbClient {
                 .dbType(MongoDbClientProvider.DB_TYPE)
                 .build());
 
-        this.config = builder.dbConfig();
-        this.connectionString = config != null ? new ConnectionString(config.url()) : null;
         this.client = client;
         this.db = db;
     }
@@ -108,30 +121,5 @@ public class MongoDbClient extends DbClientBase implements DbClient {
         throw new UnsupportedOperationException(String.format(
                 "Class %s is not supported for unwrap",
                 cls.getName()));
-    }
-
-    /**
-     * Constructor helper to build MongoDB client from provided configuration.
-     */
-    private MongoClient initMongoClient() {
-        MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder()
-                .applyConnectionString(connectionString);
-
-        if ((config.username() != null) || (config.password() != null)) {
-            String credDb = (config.credDb() == null) ? connectionString.getDatabase() : config.credDb();
-
-            MongoCredential credentials = MongoCredential.createCredential(
-                    config.username(),
-                    requireNonNull(credDb),
-                    config.password().toCharArray());
-
-            settingsBuilder.credential(credentials);
-        }
-
-        return MongoClients.create(settingsBuilder.build());
-    }
-
-    private MongoDatabase initMongoDatabase() {
-        return client.getDatabase(requireNonNull(connectionString.getDatabase()));
     }
 }

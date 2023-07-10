@@ -37,6 +37,15 @@ public final class MongoDbClientBuilder
     MongoDbClientBuilder() {
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @return new MongoDB client builder
+     */
+    public static MongoDbClientBuilder create() {
+        return new MongoDbClientBuilder();
+    }
+
     @Override
     public DbClient build() {
         if (null == dbConfig) {

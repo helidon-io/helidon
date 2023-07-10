@@ -35,15 +35,6 @@ public class DbExecuteContext implements DbContext {
     }
 
     /**
-     * Get the client context.
-     *
-     * @return client context
-     */
-    public DbClientContext clientContext() {
-        return clientContext;
-    }
-
-    /**
      * Get the execution statement name.
      *
      * @return statement name
@@ -119,7 +110,6 @@ public class DbExecuteContext implements DbContext {
         private String statementName;
         private String statement;
         private DbClientContext clientContext;
-        private List<DbClientService> clientServices;
 
         /**
          * Set the execution statement.
