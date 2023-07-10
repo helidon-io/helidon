@@ -49,7 +49,6 @@
         <module>openapi</module>
         <module>openapi-tools</module>
         <module>security</module>
-        <module>todo-app</module>
         <module>translator-app</module>
         <module>webserver</module>
         <module>integrations</module>
