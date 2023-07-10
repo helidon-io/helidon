@@ -312,8 +312,8 @@ public class CodeGenFiler {
         }
 
         if (FILER_WRITE_ONCE_PER_TYPE && !FILER_TYPES_FILED.add(typeName)) {
-            messager.debug(typeName + ": already processed");
-            return Optional.empty();
+            ToolsException te = new ToolsException("Attempt to reprocess: " + typeName);
+            messager.error(te.getMessage(), te);
         }
 
         messager.debug("Writing " + typeName);
@@ -325,12 +325,10 @@ public class CodeGenFiler {
                 os.write(body);
             }
             return Optional.of(Path.of(javaSrc.toUri()));
-        } catch (FilerException x) {
-            messager.error("Failed to write java file: " + x, x);
-            throw new RuntimeException(x);
         } catch (Exception x) {
-            messager.error("Failed to write java file: " + x, x);
-            throw new RuntimeException(x);
+            ToolsException te = new ToolsException("Failed to write java file: " + typeName, x);
+            messager.error(te.getMessage(), te);
+            throw te;
         }
     }
 

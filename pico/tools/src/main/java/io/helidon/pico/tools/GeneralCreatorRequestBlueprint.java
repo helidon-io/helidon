@@ -52,7 +52,7 @@ interface GeneralCreatorRequestBlueprint extends GeneralCodeGenNamesBlueprint {
     Optional<CompilerOptions> compilerOptions();
 
     /**
-     * The target fully qualified class name for the service implementation to be built or analyzed.
+     * The complete list of service type names belonging to the {@link io.helidon.pico.api.ModuleComponent}.
      * <p>
      * Assumptions:
      * <ul>
@@ -60,9 +60,16 @@ interface GeneralCreatorRequestBlueprint extends GeneralCodeGenNamesBlueprint {
      * compile time).
      * </ul>
      *
-     * @return the collection of service type names to generate
+     * @return the complete list of service type names
      */
     List<TypeName> serviceTypeNames();
+
+    /**
+     * The complete list of service type names that should be code generated into {@link io.helidon.pico.api.Activator}'s.
+     *
+     * @return the complete list of service type names to code generated
+     */
+    List<TypeName> generatedServiceTypeNames();
 
     /**
      * Should exceptions be thrown, or else captured in the response under {@link ActivatorCreatorResponse#error()}.
