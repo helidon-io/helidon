@@ -39,6 +39,7 @@ public final class MongoDbColumn extends DbColumnBase {
 
     @Override
     public Class<?> javaType() {
+        Object value = rawValue();
         return (null == value) ? String.class : value.getClass();
     }
 

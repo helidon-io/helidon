@@ -37,8 +37,7 @@ import java.util.stream.Stream;
  *     (or with no parameters at all)</li>
  * </ol>
  * The first three methods return a statement that can have parameters configured (and other details modified).
- * The last two methods directly execute the statement and provide appropriate response for future processing.
- * All the methods are non-blocking.
+ * The last two methods directly execute the statement.
  */
 public interface DbExecute {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,16 @@
 package io.helidon.examples.dbclient.mongo;
 
 import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.metrics.DbClientMetrics;
+import io.helidon.dbclient.tracing.DbClientTracing;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbStatementType;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
-import io.helidon.reactive.dbclient.tracing.DbClientTracing;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.tracing.TracingFeature;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
 /**
@@ -47,49 +45,39 @@ public final class MongoDbExampleMain {
      *
      * @param args command line arguments.
      */
-    public static void main(final String[] args) {
+    public static void main(String[] args) {
         startServer();
     }
 
     /**
      * Start the server.
      *
-     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
+     * @return the created {@link WebServer} instance
      */
     static WebServer startServer() {
 
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
+        // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
 
-        WebServer server = WebServer.builder(createRouting(config))
+        WebServer server = WebServer.builder()
+                .routing(routing -> routing(routing, config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create("mongo-db").build())
-                .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(JsonbSupport.create())
-                .build();
+                .build()
+                .start();
 
-        // Start the server and print some info.
-        server.start().thenAccept(ws -> {
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/");
-        });
-
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
         return server;
     }
 
     /**
-     * Creates new {@link io.helidon.reactive.webserver.Routing}.
+     * Setup routing.
      *
      * @param config configuration of this server
-     * @return routing configured with JSON support, a health check, and a service
      */
-    private static Routing createRouting(Config config) {
+    private static void routing(HttpRouting.Builder routing, Config config) {
         Config dbConfig = config.get("db");
 
         DbClient dbClient = DbClient.builder(dbConfig)
@@ -97,25 +85,15 @@ public final class MongoDbExampleMain {
                 .addService(DbClientMetrics.counter().statementNames("select-all", "select-one"))
                 // add an interceptor to statement type(s)
                 .addService(DbClientMetrics.timer()
-                                    .statementTypes(DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT))
+                        .statementTypes(DbStatementType.DELETE, DbStatementType.UPDATE, DbStatementType.INSERT))
                 // add an interceptor to all statements
                 .addService(DbClientTracing.create())
                 .build();
 
-        HealthSupport health = HealthSupport.builder()
-                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
-                .build();
+        Tracer tracer = TracerBuilder.create("mongo-db").build();
 
-        return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/db", new PokemonService(dbClient))
-                .build();
+        routing.register("/db", new PokemonService(dbClient))
+                .addFeature(TracingFeature.create(tracer))
+                .addFeature(ObserveFeature.create());
     }
-
-    private static IllegalStateException noConfigError(String key) {
-        return new IllegalStateException("Attempting to create a Pokemon service with no configuration"
-                                                 + ", config key: " + key);
-    }
-
 }

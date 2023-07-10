@@ -34,6 +34,15 @@ public final class JdbcClientBuilder
         super();
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @return new JDBC client builder
+     */
+    public static JdbcClientBuilder create() {
+        return new JdbcClientBuilder();
+    }
+
     @Override
     public DbClient build() {
         return new JdbcClient(this);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,31 +18,26 @@ package io.helidon.examples.dbclient.pokemons;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.dbclient.DbClient;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.tracing.TracerBuilder;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * Simple Hello World rest application.
  */
 public final class PokemonMain {
 
-    /** MongoDB configuration. Default configuration file {@code appliaction.yaml} contains JDBC configuration. */
+    /**
+     * MongoDB configuration. Default configuration file {@code application.yaml} contains JDBC configuration.
+     */
     private static final String MONGO_CFG = "mongo.yaml";
 
-    /** Whether MongoDB support is selected. */
+    /**
+     * Whether MongoDB support is selected.
+     */
     private static boolean mongo;
-
-    static boolean isMongo() {
-        return mongo;
-    }
 
     /**
      * Cannot be instantiated.
@@ -56,7 +51,7 @@ public final class PokemonMain {
      * @param args Command line arguments. Run with MongoDB support when 1st argument is mongo, run with JDBC support otherwise.
      */
     public static void main(final String[] args) {
-        if (args != null && args.length > 0 && args[0] != null && "mongo".equals(args[0].toLowerCase())) {
+        if (args != null && args.length > 0 && args[0] != null && "mongo".equalsIgnoreCase(args[0])) {
             System.out.println("MongoDB database selected");
             mongo = true;
         } else {
@@ -66,64 +61,40 @@ public final class PokemonMain {
         startServer();
     }
 
-    /**
-     * Start the server.
-     *
-     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
-     */
-    static WebServer startServer() {
+    private static void startServer() {
 
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
-        Config config = isMongo() ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
+        // By default, this will pick up application.yaml from the classpath
+        Config config = mongo ? Config.create(ConfigSources.classpath(MONGO_CFG)) : Config.create();
 
-        // Prepare routing for the server
-        Routing routing = createRouting(config);
 
-        WebServer server = WebServer.builder(routing)
-                .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(JsonbSupport.create())
-                .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")).build())
-                .build();
+        // load logging configuration
+        LogConfig.configureRuntime();
 
-        // Start the server and print some info.
-        server.start()
-                .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
+        WebServer server = WebServer.builder()
+                .routing(routing -> PokemonMain.routing(routing, config))
+                .build()
+                .start();
 
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown()
-                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-
-        return server;
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
     }
 
     /**
-     * Creates new {@link io.helidon.reactive.webserver.Routing}.
-     *
-     * @param config configuration of this server
-     * @return routing configured with JSON support, a health check, and a service
+     * Updates HTTP Routing.
      */
-    private static Routing createRouting(Config config) {
+    static void routing(HttpRouting.Builder routing, Config config) {
         Config dbConfig = config.get("db");
 
         // Client services are added through a service loader - see mongoDB example for explicit services
         DbClient dbClient = DbClient.builder(dbConfig)
                 .build();
-        // Some relational databases do not support DML statement as ping so using query which works for all of them
-        HealthSupport health = HealthSupport.builder()
-                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
-                .build();
 
         // Initialize database schema
-        InitializeDb.init(dbClient);
+        InitializeDb.init(dbClient, !mongo);
 
-        return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/db", new PokemonService(dbClient))
-                .build();
+        routing.register("/db", new PokemonService(dbClient))
+                .addFeature(ObserveFeature.create());
     }
 }

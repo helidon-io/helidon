@@ -66,7 +66,7 @@ public interface DbClient {
 
     /**
      * Unwrap database client internals.
-     * Only database connection is supported. Any operations based on this connection are <b>blocking</b>.
+     * Only database connection is supported.
      * <p>When {@code java.sql.Connection} is requested for JDBC provider, this connection must be closed
      * by user code using {@code close()} method on returned {@code Connection} instance.
      *
