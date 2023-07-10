@@ -348,15 +348,15 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
             List<?> ipUnqualified = e.getValue().unqualifiedProviders();
             boolean resolved = false;
             try {
-                if (ipQualified.isEmpty()) {
+                if (ipInfo.listWrapped()) {
+                    line.append(".bindMany(");
+                } else if (ipQualified.isEmpty()) {
                     if (!ipUnqualified.isEmpty()) {
                         resolved = true;
                         line.append(".resolvedBind(");
                     } else {
                         line.append(".bindVoid(");
                     }
-                } else if (ipInfo.listWrapped()) {
-                    line.append(".bindMany(");
                 } else {
                     line.append(".bind(");
                 }

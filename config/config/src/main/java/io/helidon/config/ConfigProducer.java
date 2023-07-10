@@ -26,9 +26,6 @@ import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.pico.api.ExternalContracts;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceProvider;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
@@ -40,13 +37,7 @@ class ConfigProducer implements Config {
     private final Config config;
 
     @Inject
-    ConfigProducer() {
-        // this should be moved to constructor injection when we support zero length lists for injection
-        List<ServiceProvider<?>> serviceProviders = PicoServices.realizedServices()
-                .lookupAll(ServiceInfoCriteria
-                                   .builder()
-                                   .addContractImplemented(ConfigSource.class).build(), false);
-
+    ConfigProducer(List<Provider<ConfigSource>> serviceProviders) {
         if (GlobalConfig.configured()) {
             config = GlobalConfig.config();
         } else {

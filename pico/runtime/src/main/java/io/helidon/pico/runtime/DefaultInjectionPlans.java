@@ -407,6 +407,11 @@ class DefaultInjectionPlans {
     }
 
     private static boolean allowNullableInjectionPoint(InjectionPointInfo ipInfo) {
+        if (ipInfo.listWrapped()) {
+            // allow empty lists to be injected
+            return true;
+        }
+
         ServiceInfoCriteria missingServiceInfo = ipInfo.dependencyToServiceInfo();
         Set<TypeName> contractsNeeded = missingServiceInfo.contractsImplemented();
         return (1 == contractsNeeded.size() && contractsNeeded.contains(INTERCEPTOR));
