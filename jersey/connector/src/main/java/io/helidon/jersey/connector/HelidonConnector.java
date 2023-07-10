@@ -16,12 +16,17 @@
 
 package io.helidon.jersey.connector;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLContext;
 
@@ -29,6 +34,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.webclient.WebClient;
@@ -37,17 +43,25 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.client.ClientRequest;
 import org.glassfish.jersey.client.ClientResponse;
 import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
 
+import static org.glassfish.jersey.client.ClientProperties.CONNECT_TIMEOUT;
+import static org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS;
+import static org.glassfish.jersey.client.ClientProperties.OUTBOUND_CONTENT_LENGTH_BUFFER;
+import static org.glassfish.jersey.client.ClientProperties.READ_TIMEOUT;
+import static org.glassfish.jersey.client.ClientProperties.getValue;
+
 class HelidonConnector implements Connector {
+    static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
+
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
 
@@ -62,12 +76,10 @@ class HelidonConnector implements Connector {
         this.client = client;
         Map<String, Object> properties = config.getProperties();
         httpClient = WebClient.builder(Http1.PROTOCOL)
-                .connectTimeout(Duration.ofMillis(
-                        ClientProperties.getValue(properties, ClientProperties.CONNECT_TIMEOUT, 10000)))
-                .readTimeout(Duration.ofMillis(
-                        ClientProperties.getValue(properties, ClientProperties.READ_TIMEOUT, 10000)))
-                .followRedirect(
-                        ClientProperties.getValue(properties, ClientProperties.FOLLOW_REDIRECTS, true))
+                .config(helidonConfig(config).orElse(Config.empty()))
+                .connectTimeout(Duration.ofMillis(getValue(properties, CONNECT_TIMEOUT, 10000)))
+                .readTimeout(Duration.ofMillis(getValue(properties, READ_TIMEOUT, 10000)))
+                .followRedirect(getValue(properties, FOLLOW_REDIRECTS, true))
                 .build();
     }
 
@@ -105,7 +117,7 @@ class HelidonConnector implements Connector {
         httpRequest.tls(Tls.builder().sslContext(sslContext).build());
 
         // redirects
-        httpRequest.followRedirects(request.resolveProperty(ClientProperties.FOLLOW_REDIRECTS, true));
+        httpRequest.followRedirects(request.resolveProperty(FOLLOW_REDIRECTS, true));
 
         // copy properties
         for (String name : request.getConfiguration().getPropertyNames()) {
@@ -179,10 +191,22 @@ class HelidonConnector implements Connector {
         Http1ClientRequest httpRequest = mapRequest(request);
 
         if (request.hasEntity()) {
-            httpResponse = httpRequest.outputStream(os -> {
-                request.setStreamProvider(length -> os);
-                request.writeEntity();      // ask Jersey to write entity to WebClient stream
-            });
+            // if following redirects we need to buffer entity for WebClient
+            if (httpRequest.followRedirects()) {
+                int bufferSize = request.resolveProperty(OUTBOUND_CONTENT_LENGTH_BUFFER, 8 * 1024);
+                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize)) {
+                    request.setStreamProvider(contentLength -> baos);
+                    ((ProcessingRunnable) request::writeEntity).run();
+                    httpResponse = httpRequest.submit(baos.toByteArray());
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            } else {
+                httpResponse = httpRequest.outputStream(os -> {
+                    request.setStreamProvider(length -> os);
+                    request.writeEntity();
+                });
+            }
         } else {
             httpResponse = httpRequest.request();
         }
@@ -215,5 +239,38 @@ class HelidonConnector implements Connector {
 
     @Override
     public void close() {
+    }
+
+    /**
+     * Returns the Helidon Connector configuration, if available.
+     *
+     * @param configuration from Jakarta REST
+     * @return an optional config
+     */
+    static Optional<Config> helidonConfig(Configuration configuration) {
+        Object helidonConfig = configuration.getProperty(HelidonProperties.CONFIG);
+        if (helidonConfig != null) {
+            if (!(helidonConfig instanceof Config)) {
+                LOGGER.warning(String.format("Ignoring Helidon Connector config at '%s'",
+                        HelidonProperties.CONFIG));
+            } else {
+                return Optional.of((Config) helidonConfig);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @FunctionalInterface
+    private interface ProcessingRunnable extends Runnable {
+        void runOrThrow() throws IOException;
+
+        @Override
+        default void run() {
+            try {
+                runOrThrow();
+            } catch (IOException e) {
+                throw new ProcessingException("Error writing entity:", e);
+            }
+        }
     }
 }

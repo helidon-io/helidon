@@ -283,6 +283,10 @@ class ClientRequestImpl implements Http1ClientRequest {
         return keepAlive;
     }
 
+    public boolean followRedirects() {
+        return followRedirects;
+    }
+
     @Override
     public ClientRequestHeaders headers() {
         return ClientRequestHeaders.create(explicitHeaders);
