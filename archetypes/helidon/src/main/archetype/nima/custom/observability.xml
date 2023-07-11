@@ -27,7 +27,7 @@
             <list key="Main-routing">
                 <value template="mustache"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
-                                               .useSystemServices(false)
+                                               .useSystemServices(true)
                                                {{#Observe-feature-builder}}
                                                {{.}}
                                                {{/Observe-feature-builder}}
@@ -49,6 +49,10 @@
                 <map if="${metrics}">
                     <value key="groupId">io.helidon.nima.observe</value>
                     <value key="artifactId">helidon-nima-observe-metrics</value>
+                </map>
+                <map if="${metrics}">
+                    <value key="groupId">io.helidon.metrics</value>
+                    <value key="artifactId">helidon-metrics</value>
                 </map>
                 <map if="${tracing}">
                     <value key="groupId">io.helidon.nima.webserver</value>
@@ -87,13 +91,10 @@
             </list>
             <list key="Observe-feature-builder">
                 <value if="${health}"><![CDATA[                                               .addProvider(HealthObserveProvider.create(HealthFeature.builder()
-                                               .useSystemServices(false)
                                                .addCheck(HeapMemoryHealthCheck.create())
                                                .addCheck(DiskSpaceHealthCheck.create())
                                                .addCheck(DeadlockHealthCheck.create())
                                                .build()))
-]]></value>
-                <value if="${metrics}"><![CDATA[               .addProvider(MetricsObserveProvider.create(MetricsFeature.create()))
 ]]></value>
             </list>
             <list key="Main-routing-builder" if="${tracing}">
@@ -138,6 +139,14 @@ private static class TracedHandler implements Handler {
     void testHealthObserver() {
         try (Http1ClientResponse response = client.get("/observe/health").request()) {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+        }
+    }
+]]></value>
+                <value if="${metrics}"><![CDATA[
+    @Test
+    void testMetricsObserver() {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
         }
     }
 ]]></value>

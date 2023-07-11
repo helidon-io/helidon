@@ -9,6 +9,7 @@ import io.helidon.nima.faulttolerance.Async;
 import io.helidon.nima.faulttolerance.Bulkhead;
 import io.helidon.nima.faulttolerance.CircuitBreaker;
 import io.helidon.nima.faulttolerance.Fallback;
+import io.helidon.nima.faulttolerance.FallbackConfig;
 import io.helidon.nima.faulttolerance.Retry;
 import io.helidon.nima.faulttolerance.Timeout;
 import io.helidon.nima.webserver.http.HttpRules;
@@ -27,7 +28,7 @@ public class FtService implements HttpService {
 
     FtService() {
         this.async = Async.create();
-        this.fallback = Fallback.create(this::fallback);
+        this.fallback = Fallback.create(FallbackConfig.<String>builder().fallback(this::fallback).build());
         this.bulkhead = Bulkhead.builder()
                 .queueLength(1)
                 .limit(1)
