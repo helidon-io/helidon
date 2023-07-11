@@ -67,7 +67,7 @@ curl -i http://localhost:8080/pets/s
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
+            <groupId>io.helidon.integrations.db</groupId>
             <artifactId>ucp</artifactId>
             <scope>runtime</scope>
         </dependency>
@@ -112,7 +112,7 @@ curl -i http://localhost:8080/pets/s
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
+            <groupId>io.helidon.integrations.db</groupId>
             <artifactId>ucp</artifactId>
             <scope>runtime</scope>
         </dependency>

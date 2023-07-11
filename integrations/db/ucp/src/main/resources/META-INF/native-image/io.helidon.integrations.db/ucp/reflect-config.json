@@ -1,0 +1,10 @@
+[
+  {
+    "name": "oracle.ucp.jdbc.PoolDataSourceImpl",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  }
+]

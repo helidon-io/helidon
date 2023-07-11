@@ -47,7 +47,7 @@
             <artifactId>ojdbc</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.oracle.database.jdbc</groupId>
+            <groupId>io.helidon.integrations.db</groupId>
             <artifactId>ucp</artifactId>
         </dependency>
         <dependency>

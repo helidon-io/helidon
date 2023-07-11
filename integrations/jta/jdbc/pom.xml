@@ -64,14 +64,14 @@
         </dependency>
 
         <dependency>
-            <groupId>com.h2database</groupId>
+            <groupId>io.helidon.integrations.db</groupId>
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>hikaricp</artifactId>
             <scope>test</scope>
         </dependency>
 

@@ -34,6 +34,7 @@ INSERT INTO GREETING (FIRSTPART, SECONDPART) VALUES ('Jack', 'The Ripper')
 ```
 
 
-1. Comment out `ojdbc` and uncomment `h2` in `pom.xml`
-2. Comment out `org.hibernate.dialect.Oracle10gDialect"` and uncomment `org.hibernate.dialect.H2Dialect` in `persistence.xml`
-3. Comment out all oracle driver properties and uncomment all h2 driver properties in `microprofile-config.properties`
+1. Change `ojdbc` to `h2` for `io.helidon.integrations.db` in `pom.xml`
+2. Change `helidon-integrations-cdi-datasource-ucp` to `helidon-integrations-cdi-datasource-hiakricp` for `io.helidon.integrations.cdi` in `pom.xml`
+3. Comment out `org.hibernate.dialect.Oracle10gDialect"` and uncomment `org.hibernate.dialect.H2Dialect` in `persistence.xml`
+4. Comment out all oracle driver properties and uncomment all h2 driver properties in `microprofile-config.properties`

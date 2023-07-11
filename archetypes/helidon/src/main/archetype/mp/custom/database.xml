@@ -350,7 +350,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                             <value key="scope">runtime</value>
                                         </map>
                                         <map>
-                                            <value key="groupId">com.oracle.database.jdbc</value>
+                                            <value key="groupId">io.helidon.integrations.db</value>
                                             <value key="artifactId">ucp</value>
                                             <value key="scope">runtime</value>
                                         </map>
@@ -439,7 +439,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                 <value key="artifactId">jakarta.xml.bind-api</value>
                             </map>
                             <map>
-                                <value key="groupId">com.h2database</value>
+                                <value key="groupId">io.helidon.integrations.db</value>
                                 <value key="artifactId">h2</value>
                             </map>
                             <map>

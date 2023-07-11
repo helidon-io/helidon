@@ -44,8 +44,8 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
+            <groupId>io.helidon.integrations.db</groupId>
+            <artifactId>hikaricp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
