@@ -190,12 +190,12 @@ public class GreetService implements Service {
     }
 
     private void redirectTemporary(ServerRequest serverRequest, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greeting");
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/greeting");
         response.status(Http.Status.TEMPORARY_REDIRECT_307).send();
     }
 
     private void redirectPermanent(ServerRequest serverRequest, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greeting");
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/greeting");
         response.status(Http.Status.PERMANENT_REDIRECT_308).send();
     }
 
