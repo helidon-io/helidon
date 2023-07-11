@@ -64,7 +64,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
     private static final Map<TypeName, Set<CustomAnnotationTemplateCreator>> PRODUCERS_BY_ANNOTATION = new ConcurrentHashMap<>();
     private static final Set<String> ALL_ANNO_TYPES_HANDLED = new CopyOnWriteArraySet<>();
     private static final List<CustomAnnotationTemplateCreator> PRODUCERS = initialize();
-    private static final Set<TypeName> alreadyProcessed = new CopyOnWriteArraySet<>();
+    private static final Set<TypeName> ALREADY_PROCESSED = new CopyOnWriteArraySet<>();
 
     /**
      * Service loader based constructor.
@@ -111,7 +111,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                            RoundEnvironment roundEnv) {
         try {
             if (roundEnv.processingOver()) {
-                alreadyProcessed.clear();
+                ALREADY_PROCESSED.clear();
             } else {
                 for (String annoType : getSupportedAnnotationTypes()) {
                     TypeName annoName = TypeName.create(annoType);
@@ -186,7 +186,7 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         AbstractFilerMessager filer = AbstractFilerMessager.createAnnotationBasedFiler(processingEnv, utils());
         CodeGenFiler codegen = CodeGenFiler.create(filer);
         response.generatedSourceCode().forEach((typeName, srcBody) -> {
-            if (alreadyProcessed.add(typeName)) {
+            if (ALREADY_PROCESSED.add(typeName)) {
                 codegen.codegenJavaFilerOut(typeName, srcBody);
             }
         });
