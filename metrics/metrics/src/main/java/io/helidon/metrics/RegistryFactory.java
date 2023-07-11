@@ -17,10 +17,8 @@
 package io.helidon.metrics;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -60,7 +58,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @param appRegistry application registry to provide from the factory
      * @param vendorRegistry vendor registry to provide from the factory
      */
-    protected RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
+    private RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
         this.metricsSettings = metricsSettings;
         prometheusConfig = new HelidonPrometheusConfig(metricsSettings);
         metricFactory = HelidonMicrometerMetricFactory.create(Metrics.globalRegistry);
@@ -73,27 +71,6 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
              Registry.create(Registry.APPLICATION_SCOPE, metricsSettings.registrySettings(Registry.APPLICATION_SCOPE)),
              Registry.create(Registry.VENDOR_SCOPE, metricsSettings.registrySettings(Registry.VENDOR_SCOPE)));
     }
-
-    private void accessMetricsSettings(Runnable operation) {
-        metricsSettingsAccess.lock();
-        try {
-            operation.run();
-        } finally {
-            metricsSettingsAccess.unlock();
-        }
-    }
-
-    private <T> T accessMetricsSettings(Callable<T> callable) {
-        metricsSettingsAccess.lock();
-        try {
-            return callable.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            metricsSettingsAccess.unlock();
-        }
-    }
-
 
     /**
      * Create a new factory with default configuration, with pre-filled
@@ -210,23 +187,20 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
 
     @Override
     public Iterable<String> scopes() {
-
-        /*
-        If a caller invokes this method before we have created a base registry on-demand,
-        then we should artificially include "base" in the scopes. If the caller then asks for the
-        base registry, the getRegistry method will create it on demand.
-         */
-        if (!registries.containsKey(Registry.BASE_SCOPE)
-                && metricsSettings.baseMetricsSettings().isEnabled()) {
-            Set<String> augmentedScopes = new HashSet(registries.keySet());
-            augmentedScopes.add(Registry.BASE_SCOPE);
-            return augmentedScopes;
+        if (!registries.containsKey(Registry.BASE_SCOPE)) {
+            accessMetricsSettings(() -> registries.computeIfAbsent(Registry.BASE_SCOPE,
+                                                                   key -> BaseRegistry.create(metricsSettings)));
         }
         return registries.keySet();
     }
 
     @Override
     public void start() {
+        PeriodicExecutor.start();
+    }
+
+    @Override
+    public void stop() {
         /*
             Primarily for successive tests (e.g., in the TCK) which might share the same VM, delete each metric individually
             (which will trickle down into the delegate meter registry) and also clear out the collection of registries.
@@ -235,12 +209,27 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
                 .forEach(r -> r.getMetrics()
                         .forEach((id, m) -> r.remove(id)));
         registries.clear();
-        PeriodicExecutor.start();
+        PeriodicExecutor.stop();
     }
 
-    @Override
-    public void stop() {
-        PeriodicExecutor.stop();
+    private void accessMetricsSettings(Runnable operation) {
+        metricsSettingsAccess.lock();
+        try {
+            operation.run();
+        } finally {
+            metricsSettingsAccess.unlock();
+        }
+    }
+
+    private <T> T accessMetricsSettings(Callable<T> callable) {
+        metricsSettingsAccess.lock();
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            metricsSettingsAccess.unlock();
+        }
     }
 }
 

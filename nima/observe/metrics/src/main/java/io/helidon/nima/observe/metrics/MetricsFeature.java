@@ -186,10 +186,13 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     private void getAll(ServerRequest req, ServerResponse res) {
-        getAll(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
+        getMatching(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
     }
 
-    private void getAll(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection, Iterable<String> nameSelection) {
+    private void getMatching(ServerRequest req,
+                             ServerResponse res,
+                             Iterable<String> scopeSelection,
+                             Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
         res.header(Http.HeaderValues.CACHE_NO_CACHE);
         if (mediaType == null) {
@@ -231,10 +234,6 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     private void setUpEndpoints(HttpRules rules) {
-        Registry base = registryFactory.getRegistry(Registry.BASE_SCOPE);
-        Registry vendor = registryFactory.getRegistry(Registry.VENDOR_SCOPE);
-        Registry app = registryFactory.getRegistry(Registry.APPLICATION_SCOPE);
-
         // routing to root of metrics
         // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
         // selection should use query parameters instead of paths.
@@ -245,11 +244,15 @@ public class MetricsFeature extends HelidonFeatureSupport {
         // As of Helidon 4, users should use /metrics?scope=xyz instead of /metrics/xyz, and
         // /metrics/?scope=xyz&name=abc instead of /metrics/xyz/abc. These routings are kept
         // temporarily for backward compatibility.
-        Stream.of(app, base, vendor)
+
+        Stream.of(Registry.APPLICATION_SCOPE,
+                  Registry.BASE_SCOPE,
+                  Registry.VENDOR_SCOPE)
+                .map(registryFactory::getRegistry)
                 .forEach(registry -> {
                     String type = registry.scope();
 
-                    rules.get("/" + type, (req, res) -> getAll(req, res, Set.of(type), Set.of()))
+                    rules.get("/" + type, (req, res) -> getMatching(req, res, Set.of(type), Set.of()))
                             .get("/" + type + "/{metric}", (req, res) -> getByName(req, res, Set.of(type))) // should use ?scope=
                             .options("/" + type, this::rejectOptions)
                             .options("/" + type + "/{metric}", this::rejectOptions);
@@ -258,7 +261,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private void getByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
         String metricName = req.path().pathParameters().value("metric");
-        getAll(req, res, scopeSelection, Set.of(metricName));
+        getMatching(req, res, scopeSelection, Set.of(metricName));
     }
 
     private void postRequestProcessing(PostRequestMetricsSupport prms,
