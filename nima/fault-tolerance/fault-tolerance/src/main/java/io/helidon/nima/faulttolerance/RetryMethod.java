@@ -16,7 +16,7 @@
 
 package io.helidon.nima.faulttolerance;
 
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * A generated service to support retries without resorting to Class.forName() for exception types.

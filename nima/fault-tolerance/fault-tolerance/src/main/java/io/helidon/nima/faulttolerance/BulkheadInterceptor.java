@@ -19,8 +19,8 @@ package io.helidon.nima.faulttolerance;
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.InjectionServices;
 
 import jakarta.inject.Singleton;
 
@@ -29,7 +29,7 @@ import jakarta.inject.Singleton;
 @Singleton
 class BulkheadInterceptor extends InterceptorBase<Bulkhead> {
     BulkheadInterceptor() {
-        super(PicoServices.realizedServices(), Bulkhead.class, FaultTolerance.Bulkhead.class);
+        super(InjectionServices.realizedServices(), Bulkhead.class, FaultTolerance.Bulkhead.class);
     }
 
     @Override

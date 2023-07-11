@@ -49,9 +49,9 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Startable;
-import io.helidon.pico.configdriven.api.ConfigDriven;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Startable;
+import io.helidon.inject.configdriven.api.ConfigDriven;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;
@@ -116,7 +116,7 @@ class LoomServer implements WebServer, Startable {
         listeners = Map.copyOf(listenerMap);
     }
 
-    // based on Pico services
+    // based on Injection services
     @Inject
     LoomServer(WebServerConfig serverConfig, List<ServiceProvider<HttpFeature>> features) {
         this(addFeatures(serverConfig, features));

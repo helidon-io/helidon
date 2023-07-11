@@ -6,10 +6,10 @@ import com.oracle.bmc.objectstorage.ObjectStorageClient;
 import com.oracle.bmc.objectstorage.ObjectStorageClient.Builder;
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ExternalContracts;
-import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.ExternalContracts;
+import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.ServiceInfoBasics;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @io.helidon.common.Generated(value = "io.helidon.integrations.oci.sdk.processor.OciInjectionProcessorObserver", trigger = "com.oracle.bmc.objectstorage.ObjectStorage")
 @Singleton
-@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 @ExternalContracts(com.oracle.bmc.objectstorage.ObjectStorage.class)
 class ObjectStorage$$Oci$$Client implements InjectionPointProvider<ObjectStorageClient> {
     private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;

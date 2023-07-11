@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
 import io.helidon.nima.http.processor.HttpEndpointCreator;
 import io.helidon.nima.http.processor.HttpMethodCreator;
 
@@ -21,13 +22,13 @@ import io.helidon.nima.http.processor.HttpMethodCreator;
  * Annotation processor that generates HTTP Endpoints.
  */
 module io.helidon.nima.http.processor {
-    requires io.helidon.pico.api;
-    requires io.helidon.pico.tools;
-    requires io.helidon.pico.processor;
+    requires io.helidon.inject.api;
+    requires io.helidon.inject.tools;
+    requires io.helidon.inject.processor;
     requires java.compiler;
 
     exports io.helidon.nima.http.processor;
 
-    provides io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator
+    provides CustomAnnotationTemplateCreator
             with HttpEndpointCreator, HttpMethodCreator;
 }

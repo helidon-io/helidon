@@ -30,20 +30,20 @@ module io.helidon.nima.faulttolerance {
     requires io.helidon.common.types;
     requires io.helidon.common.configurable;
     requires io.helidon.config;
-    requires io.helidon.pico.api;
+    requires io.helidon.inject.api;
     requires io.helidon.builder.api;
 
     requires static jakarta.inject;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
-    requires static io.helidon.pico.configdriven.api;
+    requires static io.helidon.inject.configdriven.api;
     // needed to compile generated types
-    requires static io.helidon.pico.configdriven.runtime;
-    requires static io.helidon.pico.runtime;
+    requires static io.helidon.inject.configdriven.runtime;
+    requires static io.helidon.inject.runtime;
 
 
     exports io.helidon.nima.faulttolerance;
 
-    // pico module
-    provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.faulttolerance.Pico$$Module;
+    // inject module
+    provides io.helidon.inject.api.ModuleComponent with io.helidon.nima.faulttolerance.Injection$$Module;
 }

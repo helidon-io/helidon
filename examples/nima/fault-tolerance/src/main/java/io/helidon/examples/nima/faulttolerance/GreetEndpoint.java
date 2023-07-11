@@ -20,8 +20,8 @@ import java.time.temporal.ChronoUnit;
 
 import io.helidon.common.http.Endpoint;
 import io.helidon.common.http.Http;
+import io.helidon.inject.api.InjectionException;
 import io.helidon.nima.faulttolerance.FaultTolerance;
-import io.helidon.pico.api.PicoException;
 
 import jakarta.inject.Singleton;
 
@@ -48,7 +48,7 @@ class GreetEndpoint {
     @Endpoint.GET
     @Endpoint.Path("/{name}")
     @FaultTolerance.Retry(name = "someName", calls = 2, delayTime = 1, timeUnit = ChronoUnit.SECONDS, overallTimeout = 10,
-                          applyOn = PicoException.class, skipOn = {OutOfMemoryError.class, StackOverflowError.class})
+                          applyOn = InjectionException.class, skipOn = {OutOfMemoryError.class, StackOverflowError.class})
     @FaultTolerance.Fallback("greetNamedFallback")
     @FaultTolerance.CircuitBreaker
     @FaultTolerance.Bulkhead(name = "bulkhead-it")
@@ -56,7 +56,7 @@ class GreetEndpoint {
                       @Endpoint.QueryParam(value = "throw", defaultValue = "false") String shouldThrow,
                       @Endpoint.HeaderParam(Http.Header.HOST_STRING) String hostHeader) {
         if ("true".equalsIgnoreCase(shouldThrow)) {
-            throw new PicoException("Failed on purpose");
+            throw new InjectionException("Failed on purpose");
         }
         return greeting + " " + name + "! Requested host: " + hostHeader;
     }

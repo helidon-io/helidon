@@ -209,8 +209,8 @@ class OciConfigTest {
 
     static MapConfigSource.Builder basicTestingConfigSource() {
         return ConfigSources.create(
-                Map.of("pico.permits-dynamic", "true",
-                       "pico.activation-logs", "true"
+                Map.of("inject.permits-dynamic", "true",
+                       "inject.activation-logs", "true"
                 ), "config-basic");
     }
 

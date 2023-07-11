@@ -24,7 +24,7 @@ import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.NodeConfigSource;
-import io.helidon.pico.api.ExternalContracts;
+import io.helidon.inject.api.ExternalContracts;
 
 import jakarta.inject.Singleton;
 

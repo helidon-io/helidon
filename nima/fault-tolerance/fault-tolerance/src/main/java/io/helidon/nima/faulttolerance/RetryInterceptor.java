@@ -18,8 +18,8 @@ package io.helidon.nima.faulttolerance;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.InjectionServices;
 
 import jakarta.inject.Singleton;
 
@@ -28,7 +28,7 @@ import jakarta.inject.Singleton;
 @Singleton
 class RetryInterceptor extends InterceptorBase<Retry> {
     RetryInterceptor() {
-        super(PicoServices.realizedServices(), Retry.class, FaultTolerance.Retry.class);
+        super(InjectionServices.realizedServices(), Retry.class, FaultTolerance.Retry.class);
     }
 
     @Override

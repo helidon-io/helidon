@@ -22,10 +22,10 @@ import {{classname}}Client;
 import {{classname}}Client{{dot}}Builder;
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ExternalContracts;
-import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.ExternalContracts;
+import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.ServiceInfoBasics;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -35,7 +35,7 @@ import java.util.Optional;
 
 {{{generatedanno}}}
 @Singleton
-@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 @ExternalContracts({{classname}}.class)
 class {{simpleclassname}}$$Oci$$Client implements InjectionPointProvider<{{simpleclassname}}Client> {
     private final InjectionPointProvider<AbstractAuthenticationDetailsProvider> authProvider;

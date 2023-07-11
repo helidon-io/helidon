@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.nima.webserver.ServerLifecycle;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * Can be registered with {@link io.helidon.nima.webserver.http.HttpRouting.Builder#addFeature(java.util.function.Supplier)}.

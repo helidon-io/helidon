@@ -18,30 +18,30 @@ package io.helidon.integrations.oci.sdk.runtime;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
-import io.helidon.pico.api.AccessModifier;
-import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.ElementKind;
-import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.PicoServiceProviderException;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.Qualifier;
-import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Services;
+import io.helidon.inject.api.AccessModifier;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.ElementKind;
+import io.helidon.inject.api.InjectionPointInfo;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.InjectionServiceProviderException;
+import io.helidon.inject.api.Qualifier;
+import io.helidon.inject.api.ServiceInfoCriteria;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Services;
 
 import com.oracle.bmc.Region;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
-import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
-import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
+import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
+import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciRegionProviderTest {
-    PicoServices picoServices;
+    InjectionServices injectionServices;
     Services services;
 
     @AfterAll
@@ -51,8 +51,8 @@ class OciRegionProviderTest {
 
     void resetWith(Config config) {
         resetAll();
-        this.picoServices = testableServices(config);
-        this.services = picoServices.services();
+        this.injectionServices = testableServices(config);
+        this.services = injectionServices.services();
     }
 
     @Test
@@ -63,9 +63,9 @@ class OciRegionProviderTest {
                 OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
         resetWith(config);
 
-        ServiceProvider<Region> regionProvider = PicoServices.realizedServices()
+        ServiceProvider<Region> regionProvider = InjectionServices.realizedServices()
                 .lookupFirst(Region.class, false).orElseThrow();
-        assertThrows(PicoServiceProviderException.class,
+        assertThrows(InjectionServiceProviderException.class,
                      regionProvider::get);
 
         TypeName regionType = TypeName.create(Region.class);

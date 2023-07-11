@@ -20,9 +20,9 @@ import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.testing.PicoTestingSupport;
+import io.helidon.inject.api.Bootstrap;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
@@ -37,18 +37,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ConfigProducerTest {
     @AfterEach
     void reset() {
-        PicoTestingSupport.resetAll();
+        InjectionTestingSupport.resetAll();
     }
 
     @Test
     @Order(0) // this must be first, as once we set global config, this method will always fail
     void testConfig() {
-        PicoServices.globalBootstrap(Bootstrap.builder()
+        InjectionServices.globalBootstrap(Bootstrap.builder()
                                              .config(GlobalConfig.config())
                                              .build());
 
         // value should be overridden using our custom config source
-        Config config = PicoServices.realizedServices()
+        Config config = InjectionServices.realizedServices()
                 .lookup(Config.class)
                 .get();
 
@@ -61,11 +61,11 @@ class ConfigProducerTest {
         // value should use the config as we provided it
         GlobalConfig.config(io.helidon.config.Config::create, true);
 
-        PicoServices.globalBootstrap(Bootstrap.builder()
+        InjectionServices.globalBootstrap(Bootstrap.builder()
                                              .config(GlobalConfig.config())
                                              .build());
 
-        Config config = PicoServices.realizedServices()
+        Config config = InjectionServices.realizedServices()
                 .lookup(Config.class)
                 .get();
 

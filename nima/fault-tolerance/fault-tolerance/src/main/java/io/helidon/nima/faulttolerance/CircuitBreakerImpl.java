@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.pico.configdriven.api.ConfigDriven;
+import io.helidon.inject.configdriven.api.ConfigDriven;
 
 import jakarta.inject.Inject;
 

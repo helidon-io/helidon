@@ -23,7 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.inject.api.ServiceInfoBasics;
 
 import com.oracle.bmc.Region;
 import jakarta.inject.Singleton;
@@ -33,7 +33,7 @@ import jakarta.inject.Singleton;
  * available, will also perform a secondary check on {@link Region#getRegionFromImds()} to ensure it returns a non-null value.
  */
 @Singleton
-@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciAvailabilityDefault implements OciAvailability {
 
     @Override

@@ -54,5 +54,5 @@ server2:
   media-context:
   content-encoding:
 
-pico:
+inject:
   permits-dynamic: true

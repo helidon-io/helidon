@@ -42,20 +42,23 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.processor.ProcessingEvent;
-import io.helidon.pico.processor.spi.PicoAnnotationProcessorObserver;
-import io.helidon.pico.tools.TemplateHelper;
-import io.helidon.pico.tools.ToolsException;
-import io.helidon.pico.tools.TypeNames;
+import io.helidon.inject.api.Activator;
+import io.helidon.inject.api.ModuleComponent;
+import io.helidon.inject.processor.InjectionAnnotationProcessor;
+import io.helidon.inject.processor.ProcessingEvent;
+import io.helidon.inject.processor.spi.InjectionAnnotationProcessorObserver;
+import io.helidon.inject.tools.TemplateHelper;
+import io.helidon.inject.tools.ToolsException;
+import io.helidon.inject.tools.TypeNames;
 
-import static io.helidon.pico.processor.GeneralProcessorUtils.isProviderType;
+import static io.helidon.inject.processor.GeneralProcessorUtils.isProviderType;
 import static java.util.function.Predicate.not;
 
 /**
- * This processor is an implementation of {@link PicoAnnotationProcessorObserver}. When on the APT classpath, it will monitor
- * {@link io.helidon.pico.processor.PicoAnnotationProcessor} for all injection points that are
+ * This processor is an implementation of {@link InjectionAnnotationProcessorObserver}. When on the APT classpath, it will monitor
+ * {@link InjectionAnnotationProcessor} for all injection points that are
  * using the {@code OCI SDK Services} and translate those injection points into code-generated
- * {@link io.helidon.pico.api.Activator}s, {@link io.helidon.pico.api.ModuleComponent}, etc. for those services / components.
+ * {@link Activator}s, {@link ModuleComponent}, etc. for those services / components.
  * This process will therefore make the {@code OCI SDK} set of services injectable by your (non-MP-based) Helidon application, and
  * be tailored to exactly what is actually used by your application from the SDK.
  * <p>
@@ -84,7 +87,7 @@ import static java.util.function.Predicate.not;
  *     not be processed.</li>
  * </ul>
  */
-public class OciInjectionProcessorObserver implements PicoAnnotationProcessorObserver {
+public class OciInjectionProcessorObserver implements InjectionAnnotationProcessorObserver {
     static final String OCI_ROOT_PACKAGE_NAME_PREFIX = "com.oracle.bmc.";
 
     // all generated sources will have this package prefix

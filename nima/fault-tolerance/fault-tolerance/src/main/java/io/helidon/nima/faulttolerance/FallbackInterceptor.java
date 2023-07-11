@@ -22,10 +22,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.InvocationContext;
-import io.helidon.pico.api.PicoException;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.InvocationContext;
+import io.helidon.inject.api.InjectionException;
 
 import jakarta.inject.Singleton;
 
@@ -35,7 +35,7 @@ import jakarta.inject.Singleton;
 @Singleton
 class FallbackInterceptor extends InterceptorBase<Fallback> {
     FallbackInterceptor() {
-        super(PicoServices.realizedServices(), Fallback.class, FaultTolerance.Fallback.class);
+        super(InjectionServices.realizedServices(), Fallback.class, FaultTolerance.Fallback.class);
     }
 
     @Override
@@ -76,7 +76,7 @@ class FallbackInterceptor extends InterceptorBase<Fallback> {
 
         @Override
         public Object fallback(Object service, Throwable throwable, Object... arguments) {
-            throw new PicoException("Could not find a service that implements fallback method for: "
+            throw new InjectionException("Could not find a service that implements fallback method for: "
                                             + cacheRecord);
         }
 

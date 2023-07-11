@@ -98,13 +98,13 @@ backend:
                   - "tracing.adoc"
                   - "webclient.adoc"
               - type: "MENU"
-                title: "Pico"
-                dir: "pico"
+                title: "Injection"
+                dir: "inject"
                 glyph:
                   type: "icon"
-                  value: "explore" 
+                  value: "explore"
                 sources:
-                  - "pico_intro.adoc"
+                  - "injection_intro.adoc"
               - type: "MENU"
                 title: "Config"
                 dir: "config"
@@ -174,7 +174,7 @@ backend:
                 sources:
                   - "oci.adoc"
                   - "hcv.adoc"
-                  - "neo4j.adoc"                                                     
+                  - "neo4j.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -325,13 +325,13 @@ backend:
                 source: "aot.adoc"
                 glyph:
                   type: "icon"
-                  value: "save"             
+                  value: "save"
               - type: "PAGE"
                 title: "GraphQL Server"
                 source: "graphql.adoc"
                 glyph:
                   type: "icon"
-                  value: "graphic_eq"                                   
+                  value: "graphic_eq"
               - type: "MENU"
                 title: "gRPC"
                 dir: "grpc"
@@ -357,7 +357,7 @@ backend:
                   - "oci.adoc"
                   - "hcv.adoc"
                   - "jedis.adoc"
-                  - "neo4j.adoc"                                                           
+                  - "neo4j.adoc"
               - type: "MENU"
                 title: "JAX-RS/Jersey"
                 dir: "jaxrs"
@@ -373,13 +373,13 @@ backend:
                 source: "jwt.adoc"
                 glyph:
                   type: "icon"
-                  value: "verified_user"    
+                  value: "verified_user"
               - type: "PAGE"
                 title: "Long Running Actions (LRA)"
                 source: "lra.adoc"
                 glyph:
                   type: "icon"
-                  value: "pending_actions"                 
+                  value: "pending_actions"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"
@@ -400,7 +400,7 @@ backend:
                 sources:
                   - "openapi.adoc"
                   - "openapi-generator.adoc"
-                  - "openapi-ui.adoc"                                    
+                  - "openapi-ui.adoc"
               - type: "PAGE"
                 title: "Persistence"
                 source: "persistence.adoc"
@@ -440,7 +440,7 @@ backend:
                 source: "scheduling.adoc"
                 glyph:
                   type: "icon"
-                  value: "access_alarm"                                                     
+                  value: "access_alarm"
               - type: "MENU"
                 title: "Security"
                 dir: "security"
@@ -457,7 +457,7 @@ backend:
                 source: "server.adoc"
                 glyph:
                   type: "icon"
-                  value: "settings_ethernet"                  
+                  value: "settings_ethernet"
               - type: "MENU"
                 title: "Testing"
                 glyph:
@@ -477,7 +477,7 @@ backend:
                 source: "websocket.adoc"
                 glyph:
                   type: "icon"
-                  value: "sync_alt"      
+                  value: "sync_alt"
           - type: "GROUP"
             title: "Helidon SE"
             dir: "se"
@@ -580,7 +580,7 @@ backend:
                 sources:
                   - "oci.adoc"
                   - "hcv.adoc"
-                  - "neo4j.adoc"                                                     
+                  - "neo4j.adoc"
               - type: "MENU"
                 title: "Metrics"
                 dir: "metrics"

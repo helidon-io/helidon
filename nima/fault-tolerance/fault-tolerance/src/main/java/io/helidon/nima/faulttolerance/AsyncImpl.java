@@ -23,10 +23,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.Qualifier;
-import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceProvider;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.Qualifier;
+import io.helidon.inject.api.ServiceInfoCriteria;
+import io.helidon.inject.api.ServiceProvider;
 
 import jakarta.inject.Inject;
 
@@ -101,11 +101,11 @@ class AsyncImpl implements Async {
 
     private static Optional<ExecutorService> executorService(String name) {
         var qualifier = Qualifier.createNamed(name);
-        return PicoServices.realizedServices().lookupFirst(ExecutorService.class,
-                                                           ServiceInfoCriteria.builder()
+        return InjectionServices.realizedServices().lookupFirst(ExecutorService.class,
+                                                                ServiceInfoCriteria.builder()
                                                                    .addQualifier(qualifier)
                                                                    .build(),
-                                                           false)
+                                                                false)
                 .map(ServiceProvider::get);
     }
 }

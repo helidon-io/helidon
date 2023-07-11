@@ -23,12 +23,12 @@ import java.util.Set;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
-import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.PicoServiceProviderException;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.Qualifier;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Services;
+import io.helidon.inject.api.InjectionPointInfo;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.InjectionServiceProviderException;
+import io.helidon.inject.api.Qualifier;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Services;
 
 import com.oracle.bmc.Region;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
@@ -38,8 +38,8 @@ import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.pico.testing.PicoTestingSupport.resetAll;
-import static io.helidon.pico.testing.PicoTestingSupport.testableServices;
+import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
+import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciAuthenticationDetailsProviderTest {
 
-    PicoServices picoServices;
+    InjectionServices injectionServices;
     Services services;
 
     @AfterAll
@@ -59,8 +59,8 @@ class OciAuthenticationDetailsProviderTest {
 
     void resetWith(Config config) {
         resetAll();
-        this.picoServices = testableServices(config);
-        this.services = picoServices.services();
+        this.injectionServices = testableServices(config);
+        this.services = injectionServices.services();
     }
 
     @Test
@@ -159,7 +159,7 @@ class OciAuthenticationDetailsProviderTest {
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
                 services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
 
-        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, authServiceProvider::get);
+        InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, authServiceProvider::get);
         assertThat(e.getCause().getMessage(),
                    equalTo("No instances of com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider available for use. " +
                            "Verify your configuration named: oci"));
@@ -176,7 +176,7 @@ class OciAuthenticationDetailsProviderTest {
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
                 services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
 
-        PicoServiceProviderException e = assertThrows(PicoServiceProviderException.class, authServiceProvider::get);
+        InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, authServiceProvider::get);
         assertThat(e.getCause().getClass(),
                    equalTo(UncheckedIOException.class));
     }

@@ -20,7 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * Bulkhead protects a resource that cannot serve unlimited parallel

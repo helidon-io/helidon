@@ -24,7 +24,7 @@ final class Templates {
     }
 
     static String loadTemplate(String name) {
-        String path = "templates/pico/nima/" + name;
+        String path = "templates/inject/nima/" + name;
         try {
             InputStream in = Templates.class.getClassLoader().getResourceAsStream(path);
             if (in == null) {

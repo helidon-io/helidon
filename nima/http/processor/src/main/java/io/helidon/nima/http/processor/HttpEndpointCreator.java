@@ -24,14 +24,14 @@ import java.util.Set;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
-import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.GenericTemplateCreatorRequest;
-import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
+import io.helidon.inject.tools.CustomAnnotationTemplateRequest;
+import io.helidon.inject.tools.CustomAnnotationTemplateResponse;
+import io.helidon.inject.tools.GenericTemplateCreatorRequest;
+import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * Annotation processor that generates a service for each class annotated with {@value #PATH_ANNOTATION} annotation.
- * Service provider implementation of a {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}.
+ * Service provider implementation of a {@link CustomAnnotationTemplateCreator}.
  */
 public class HttpEndpointCreator extends HttpCreatorBase implements CustomAnnotationTemplateCreator {
     private static final System.Logger LOGGER = System.getLogger(HttpEndpointCreator.class.getName());

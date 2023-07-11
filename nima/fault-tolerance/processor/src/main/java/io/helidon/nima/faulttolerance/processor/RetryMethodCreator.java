@@ -30,16 +30,16 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.tools.CustomAnnotationTemplateRequest;
-import io.helidon.pico.tools.CustomAnnotationTemplateResponse;
-import io.helidon.pico.tools.GenericTemplateCreator;
-import io.helidon.pico.tools.GenericTemplateCreatorRequest;
-import io.helidon.pico.tools.ToolsException;
-import io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator;
+import io.helidon.inject.tools.CustomAnnotationTemplateRequest;
+import io.helidon.inject.tools.CustomAnnotationTemplateResponse;
+import io.helidon.inject.tools.GenericTemplateCreator;
+import io.helidon.inject.tools.GenericTemplateCreatorRequest;
+import io.helidon.inject.tools.ToolsException;
+import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * Annotation processor that generates a service for each method annotated with retry annotation.
- * Service provider implementation of a {@link io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator}.
+ * Service provider implementation of a {@link CustomAnnotationTemplateCreator}.
  */
 public class RetryMethodCreator extends FtMethodCreatorBase implements CustomAnnotationTemplateCreator {
     private static final String RETRY_ANNOTATION = "io.helidon.nima.faulttolerance.FaultTolerance.Retry";

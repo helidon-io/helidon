@@ -27,13 +27,13 @@ import java.util.function.Predicate;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.Interceptor;
-import io.helidon.pico.api.InvocationContext;
-import io.helidon.pico.api.PicoException;
-import io.helidon.pico.api.Qualifier;
-import io.helidon.pico.api.ServiceInfoCriteria;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Services;
+import io.helidon.inject.api.Interceptor;
+import io.helidon.inject.api.InvocationContext;
+import io.helidon.inject.api.InjectionException;
+import io.helidon.inject.api.Qualifier;
+import io.helidon.inject.api.ServiceInfoCriteria;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Services;
 
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 abstract class InterceptorBase<T> implements Interceptor {
@@ -95,7 +95,7 @@ abstract class InterceptorBase<T> implements Interceptor {
                 .stream()
                 .filter(it -> annotationTypeName.equals(it.typeName()))
                 .findFirst()
-                .orElseThrow(() -> new PicoException("Interceptor triggered for a method not annotated with "
+                .orElseThrow(() -> new InjectionException("Interceptor triggered for a method not annotated with "
                                                              + annotationTypeName));
 
         String name = ftAnnotation.getValue("name")

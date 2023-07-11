@@ -19,10 +19,11 @@ package io.helidon.integrations.oci.sdk.runtime;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.inject.api.InjectionPointInfo;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.ServiceInfoBasics;
 
 import com.oracle.bmc.Region;
 import jakarta.inject.Singleton;
@@ -30,10 +31,10 @@ import jakarta.inject.Singleton;
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.toNamedProfile;
 
 /**
- * Can optionally be used to return a {@link Region} appropriate for the {@link io.helidon.pico.api.InjectionPointInfo} context.
+ * Can optionally be used to return a {@link Region} appropriate for the {@link InjectionPointInfo} context.
  */
 @Singleton
-@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciRegionProvider implements InjectionPointProvider<Region> {
 
     OciRegionProvider() {
@@ -42,7 +43,7 @@ class OciRegionProvider implements InjectionPointProvider<Region> {
     @Override
     public Region get() {
         return first(ContextualServiceQuery.builder()
-                             .serviceInfoCriteria(PicoServices.EMPTY_CRITERIA)
+                             .serviceInfoCriteria(InjectionServices.EMPTY_CRITERIA)
                              .expected(false)
                              .build())
                 .orElseThrow();

@@ -23,9 +23,9 @@ import java.util.function.Predicate;
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.Interceptor;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.Interceptor;
+import io.helidon.inject.api.InjectionServices;
 
 import jakarta.inject.Singleton;
 
@@ -34,7 +34,7 @@ import jakarta.inject.Singleton;
 @Singleton
 class AsyncInterceptor extends InterceptorBase<Async> implements Interceptor {
     AsyncInterceptor() {
-        super(PicoServices.realizedServices(), Async.class, FaultTolerance.Async.class);
+        super(InjectionServices.realizedServices(), Async.class, FaultTolerance.Async.class);
     }
 
     @Override

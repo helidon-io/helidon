@@ -114,8 +114,8 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>io.helidon.pico</groupId>
-                <artifactId>helidon-pico-maven-plugin</artifactId>
+                <groupId>io.helidon.inject</groupId>
+                <artifactId>helidon-inject-maven-plugin</artifactId>
                 <version>${helidon.version}</version>
                 <executions>
                     <execution>
