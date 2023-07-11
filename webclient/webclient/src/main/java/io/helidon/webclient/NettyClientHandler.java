@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -67,6 +68,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
      * Instance of the publisher used to handle response.
      */
     static final AttributeKey<BufferedEmittingPublisher> PUBLISHER = AttributeKey.valueOf("publisher");
+    static final AttributeKey<Flow.Publisher<DataChunk>> REQUEST_ENTITY = AttributeKey.valueOf("requestEntity");
 
     private static final List<HttpInterceptor> HTTP_INTERCEPTORS = new ArrayList<>();
 
@@ -144,13 +146,14 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
                                                      clientResponse.headers().toMap());
 
+            Flow.Publisher<DataChunk> entity = channel.attr(REQUEST_ENTITY).get();
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     boolean continueAfter = !interceptor.continueAfterInterception();
                     if (continueAfter) {
                         responseCloser.close().thenAccept(future -> LOGGER.finest(() -> "Response closed due to redirection"));
                     }
-                    interceptor.handleInterception(response, clientRequest, channel.attr(RESULT).get());
+                    interceptor.handleInterception(response, clientRequest, channel.attr(RESULT).get(), entity);
                     if (continueAfter) {
                         return;
                     }

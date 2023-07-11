@@ -103,6 +103,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
     static final AttributeKey<WebClientResponse> RESPONSE = AttributeKey.valueOf("response");
     static final AttributeKey<ConnectionIdent> CONNECTION_IDENT = AttributeKey.valueOf("connectionIdent");
     static final AttributeKey<Long> REQUEST_ID = AttributeKey.valueOf("requestID");
+    static final AttributeKey<Flow.Publisher<DataChunk>> REQUEST_ENTITY = AttributeKey.valueOf("requestEntity");
 
     /**
      * Whether the channel will be closed and keep-alive caching should not be applied.
@@ -616,6 +617,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                 channelFuture.channel().attr(WILL_CLOSE).set(!keepAlive);
                 channelFuture.channel().attr(RESULT).set(result);
                 channelFuture.channel().attr(REQUEST_ID).set(requestId);
+                channelFuture.channel().attr(REQUEST_ENTITY).set(requestEntity);
                 Throwable cause = future.cause();
                 if (null == cause) {
                     RequestContentSubscriber requestContentSubscriber = new RequestContentSubscriber(request,

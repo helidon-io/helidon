@@ -16,7 +16,9 @@
 package io.helidon.webclient;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 
+import io.helidon.common.http.DataChunk;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -34,7 +36,8 @@ interface HttpInterceptor {
      */
     void handleInterception(HttpResponse httpResponse,
                             WebClientRequestImpl clientRequest,
-                            CompletableFuture<WebClientResponse> responseFuture);
+                            CompletableFuture<WebClientResponse> responseFuture,
+                            Flow.Publisher<DataChunk> entity);
 
     /**
      * If run of the response processing should continue after interception is handled by interceptor.

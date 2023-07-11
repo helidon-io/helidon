@@ -18,10 +18,13 @@ package io.helidon.webclient;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.logging.Logger;
 
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 
+import io.helidon.common.reactive.Single;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -35,7 +38,8 @@ class RedirectInterceptor implements HttpInterceptor {
     @Override
     public void handleInterception(HttpResponse httpResponse,
                                    WebClientRequestImpl clientRequest,
-                                   CompletableFuture<WebClientResponse> responseFuture) {
+                                   CompletableFuture<WebClientResponse> responseFuture,
+                                   Flow.Publisher<DataChunk> entity) {
         if (httpResponse.headers().contains(Http.Header.LOCATION)) {
             long requestId = clientRequest.configuration().requestId();
             String newUri = httpResponse.headers().get(Http.Header.LOCATION);
@@ -59,14 +63,26 @@ class RedirectInterceptor implements HttpInterceptor {
             } else {
                 requestBuilder.uri(newUri);
             }
-            CompletionStage<WebClientResponse> redirectResponse = requestBuilder.request();
-            redirectResponse.whenComplete((clResponse, throwable) -> {
-                if (throwable == null) {
-                    responseFuture.complete(clResponse);
-                } else {
-                    responseFuture.completeExceptionally(throwable);
-                }
-            });
+            if (entity == null) {
+                CompletionStage<WebClientResponse> redirectResponse = requestBuilder.request();
+                redirectResponse.whenComplete((clResponse, throwable) -> {
+                    if (throwable == null) {
+                        responseFuture.complete(clResponse);
+                    } else {
+                        responseFuture.completeExceptionally(throwable);
+                    }
+                });
+            } else {
+                CompletionStage<WebClientResponse> redirectResponse = requestBuilder.submit(entity);
+                redirectResponse.whenComplete((clResponse, throwable) -> {
+                    if (throwable == null) {
+                        responseFuture.complete(clResponse);
+                    } else {
+                        responseFuture.completeExceptionally(throwable);
+                    }
+                });
+            }
+
         } else {
             throw new WebClientException("There is no " + Http.Header.LOCATION + " header present in response! "
                                                  + "It is not clear where to redirect.");
