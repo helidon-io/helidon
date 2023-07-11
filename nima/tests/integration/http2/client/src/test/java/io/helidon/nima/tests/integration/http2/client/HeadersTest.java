@@ -21,7 +21,7 @@ import io.helidon.common.http.Http;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Http2Settings;

@@ -41,9 +41,9 @@ import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.cors.CorsSupport;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -370,20 +370,20 @@ public final class OidcFeature implements HttpFeature {
     private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
         TenantConfig tenantConfig = tenant.tenantConfig();
 
-        Http1Client webClient = tenant.appWebClient();
+        WebClient webClient = tenant.appWebClient();
 
         Parameters.Builder form = Parameters.builder("oidc-form-params")
                 .add("grant_type", "authorization_code")
                 .add("code", code)
                 .add("redirect_uri", redirectUri(req, tenantName));
 
-        Http1ClientRequest post = webClient.post()
+        HttpClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
                 .header(Http.HeaderValues.ACCEPT_JSON);
 
         OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
 
-        try (Http1ClientResponse response = post.submit(form.build())) {
+        try (HttpClientResponse response = post.submit(form.build())) {
             if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);

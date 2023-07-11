@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Objects;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.DefaultDnsResolverProvider;
-import io.helidon.nima.webclient.DnsAddressLookup;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.DefaultDnsResolverProvider;
+import io.helidon.nima.webclient.api.DnsAddressLookup;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.websocket.WsListener;
 
 /**

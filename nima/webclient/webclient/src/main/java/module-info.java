@@ -14,58 +14,10 @@
  * limitations under the License.
  */
 
-import io.helidon.common.features.api.Feature;
-import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.nima.webclient.DefaultDnsResolverProvider;
-import io.helidon.nima.webclient.NoDnsResolverProvider;
-import io.helidon.nima.webclient.RoundRobinDnsResolverProvider;
-import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
-import io.helidon.nima.webclient.spi.DnsResolverProvider;
-
 /**
  * WebClient API and HTTP/1.1 implementation.
  */
-@Feature(value = "Web Client",
-         description = "Web Client",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
-         path = "Web Client"
-)
 module io.helidon.nima.webclient {
-    // @Feature
-    requires static io.helidon.common.features.api;
-    // @ConfiguredOption etc
-    requires static io.helidon.config.metadata;
-    // @Generated
-    requires static jakarta.annotation;
-
-    // @Builder - validator is a runtime dependency
-    requires io.helidon.builder.api;
-
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.http;
-    requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.common.socket;
-    requires transitive io.helidon.common.uri;
-    requires transitive io.helidon.nima.common.tls;
-    requires transitive io.helidon.nima.http.encoding;
-    requires transitive io.helidon.nima.http.media;
-    requires transitive io.helidon.common.config;
-
-    exports io.helidon.nima.webclient;
-    exports io.helidon.nima.webclient.spi;
-    exports io.helidon.nima.webclient.http.spi;
-
-    /*
-     This module exposes two packages, as we (want to) have cyclic dependency.
-     The WebClient should support HTTP/1.1 out of the box and to have it in API, we must have the
-     implementation available. The HTTP/1.1 client then implements the WebClient API...
-     */
-    exports io.helidon.nima.webclient.http1;
-
-    uses DnsResolverProvider;
-    uses SourceHandlerProvider;
-    uses io.helidon.nima.webclient.spi.WebClientServiceProvider;
-    provides DnsResolverProvider with RoundRobinDnsResolverProvider, DefaultDnsResolverProvider, NoDnsResolverProvider;
+    requires transitive io.helidon.nima.webclient.api;
+    requires transitive io.helidon.nima.webclient.http1;
 }

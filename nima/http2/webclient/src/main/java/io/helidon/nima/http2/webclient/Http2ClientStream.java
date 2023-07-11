@@ -49,7 +49,7 @@ import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.StreamFlowControl;
 import io.helidon.nima.http2.WindowSize;
-import io.helidon.nima.webclient.ClientResponseEntity;
+import io.helidon.nima.webclient.api.ClientResponseEntity;
 
 import static java.lang.System.Logger.Level.DEBUG;
 

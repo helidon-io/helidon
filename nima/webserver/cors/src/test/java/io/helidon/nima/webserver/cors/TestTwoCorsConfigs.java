@@ -17,7 +17,7 @@ package io.helidon.nima.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ class TestTwoCorsConfigs extends AbstractCorsTest {
 
     @Test
     void test1PreFlightAllowedOriginOtherGreeting() {
-        ClientResponse response = runTest1PreFlightAllowedOrigin();
+        HttpClientResponse response = runTest1PreFlightAllowedOrigin();
 
         Http.Status status = response.status();
         assertThat(status.code(), is(Http.Status.FORBIDDEN_403.code()));

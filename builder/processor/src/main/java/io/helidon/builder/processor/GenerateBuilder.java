@@ -70,7 +70,12 @@ final class GenerateBuilder {
         pw.println("> {");
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
-        pw.println("private Builder() {");
+        if (typeContext.blueprintData().builderPublic()) {
+            pw.println("private Builder() {");
+        } else {
+            // package private to allow instantiation
+            pw.println("Builder() {");
+        }
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
         pw.println("}");

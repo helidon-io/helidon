@@ -31,7 +31,7 @@ public class Http1ProtocolConfigProvider implements ProtocolConfigProvider<Http1
 
     @Override
     public String configKey() {
-        return "http_1_1";
+        return Http1ConnectionProvider.CONFIG_NAME;
     }
 
     @Override

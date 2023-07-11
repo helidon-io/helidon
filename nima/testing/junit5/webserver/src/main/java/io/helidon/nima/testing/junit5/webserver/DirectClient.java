@@ -22,10 +22,17 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Optional;
 
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.nima.webclient.api.ClientRequest;
+import io.helidon.nima.webclient.api.ClientRequestConfig;
+import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -55,11 +62,16 @@ public class DirectClient implements Http1Client {
      */
     public DirectClient(HttpRouting routing) {
         this.routing = routing;
-        this.httpClient = WebClient.builder()
+        this.httpClient = Http1Client.builder()
                 .baseUri(URI.create("unit://helidon-unit:65000"))
                 .build();
         this.router = Router.builder().addRouting(routing).build();
         this.router.beforeStart();
+    }
+
+    @Override
+    public Http1ClientConfig prototype() {
+        return Http1ClientConfig.create();
     }
 
     @Override

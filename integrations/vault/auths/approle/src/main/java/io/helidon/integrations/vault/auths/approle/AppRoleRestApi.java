@@ -24,6 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
+import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 
 class AppRoleRestApi extends VaultRestApi {
@@ -50,11 +51,11 @@ class AppRoleRestApi extends VaultRestApi {
     }
 
     @Override
-    protected Http1ClientRequest updateRequestBuilderCommon(Http1ClientRequest requestBuilder,
-                                                            String path,
-                                                            ApiRequest<?> request,
-                                                            Http.Method method,
-                                                            String requestId) {
+    protected HttpClientRequest updateRequestBuilderCommon(HttpClientRequest requestBuilder,
+                                                           String path,
+                                                           ApiRequest<?> request,
+                                                           Http.Method method,
+                                                           String requestId) {
         VaultTokenBase currentToken = this.currentToken.get();
 
         if (currentToken != null) {

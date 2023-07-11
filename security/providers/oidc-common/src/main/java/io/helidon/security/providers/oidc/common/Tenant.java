@@ -22,7 +22,8 @@ import java.util.Base64;
 
 import io.helidon.common.Errors;
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.WebClientConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -42,7 +43,7 @@ public final class Tenant {
     private final String authorizationEndpointUri;
     private final URI logoutEndpointUri;
     private final String issuer;
-    private final Http1Client appWebClient;
+    private final WebClient appWebClient;
     private final JwkKeys signJwk;
     private final URI introspectUri;
 
@@ -51,7 +52,7 @@ public final class Tenant {
                    URI authorizationEndpointUri,
                    URI logoutEndpointUri,
                    String issuer,
-                   Http1Client appWebClient,
+                   WebClient appWebClient,
                    JwkKeys signJwk,
                    URI introspectUri) {
         this.tenantConfig = tenantConfig;
@@ -72,7 +73,7 @@ public final class Tenant {
      * @return new instance with resolved OIDC metadata
      */
     public static Tenant create(OidcConfig oidcConfig, TenantConfig tenantConfig) {
-        Http1Client webClient = oidcConfig.generalWebClient();
+        WebClient webClient = oidcConfig.generalWebClient();
 
         Errors.Collector collector = Errors.collector();
 
@@ -104,7 +105,7 @@ public final class Tenant {
                 .orElse(null);
 
         collector.collect().checkValid();
-        Http1Client.Http1ClientBuilder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
+        WebClientConfig.Builder webClientBuilder = oidcConfig.webClientBuilderSupplier().get();
 
         if (tenantConfig.tokenEndpointAuthentication() == OidcConfig.ClientAuthentication.CLIENT_SECRET_BASIC) {
 
@@ -125,10 +126,10 @@ public final class Tenant {
             //This is workaround for missing Níma client security. This adds Authorization header to be used in every request.
             byte[] byteArray = (tenantConfig.clientId() + ":" + tenantConfig.clientSecret()).getBytes(StandardCharsets.UTF_8);
             String base64 = Base64.getEncoder().encodeToString(byteArray);
-            webClientBuilder.header(Http.Header.create(Http.Header.AUTHORIZATION, "Basic " + base64));
+            webClientBuilder.addHeader(Http.Header.AUTHORIZATION, "Basic " + base64);
         }
 
-        Http1Client appWebClient = webClientBuilder.build();
+        WebClient appWebClient = webClientBuilder.build();
 
         JwkKeys signJwk = tenantConfig.tenantSignJwk().orElseGet(() -> {
             if (tenantConfig.validateJwtWithJwk()) {
@@ -148,7 +149,7 @@ public final class Tenant {
                         return JwkKeys.builder()
                                 .json(webClient.get()
                                               .uri(jwkUri)
-                                              .request(JsonObject.class))
+                                              .requestEntity(JsonObject.class))
                                 .build();
                     }
                 }
@@ -222,7 +223,7 @@ public final class Tenant {
      *
      * @return client for communicating with OIDC identity server
      */
-    public Http1Client appWebClient() {
+    public WebClient appWebClient() {
         return appWebClient;
     }
 

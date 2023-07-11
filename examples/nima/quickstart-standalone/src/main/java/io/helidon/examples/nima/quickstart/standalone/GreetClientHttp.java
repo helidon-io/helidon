@@ -17,7 +17,7 @@
 package io.helidon.examples.nima.quickstart.standalone;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 
 /**

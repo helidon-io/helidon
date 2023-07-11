@@ -89,10 +89,10 @@ public class TokenVaultAuth implements VaultAuth {
                            .webClientBuilder(builder -> {
                                builder.config(vaultBuilder.config().get("webclient"))
                                       .baseUri(address + "/v1")
-                                      .header(VAULT_TOKEN_HEADER_NAME, token);
+                                      .addHeader(VAULT_TOKEN_HEADER_NAME, token);
                                Optional.ofNullable(baseNamespace)
                                        .or(vaultBuilder::baseNamespace)
-                                       .ifPresent(ns -> builder.header(VAULT_NAMESPACE_HEADER_NAME, ns));
+                                       .ifPresent(ns -> builder.addHeader(VAULT_NAMESPACE_HEADER_NAME, ns));
                                vaultBuilder.webClientUpdater().accept(builder);
                            })
                            .faultTolerance(vaultBuilder.ftHandler())

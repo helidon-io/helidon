@@ -15,7 +15,7 @@
  */
 
 import io.helidon.nima.sse.webclient.SseSourceHandlerProvider;
-import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
+import io.helidon.nima.webclient.spi.SourceHandlerProvider;
 
 /**
  * Nima SSE webclient package.

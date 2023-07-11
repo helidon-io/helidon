@@ -19,7 +19,7 @@ package io.helidon.examples.nima.echo;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;

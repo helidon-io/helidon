@@ -16,19 +16,13 @@
 
 package io.helidon.nima.tests.integration.server;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 

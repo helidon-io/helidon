@@ -17,13 +17,11 @@ package io.helidon.nima.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
-import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_CREDENTIALS;
@@ -242,7 +240,7 @@ abstract class AbstractCorsTest extends CorsRouting {
         request.header(ORIGIN, "http://foo.bar");
         request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
-        try (ClientResponse response = request.submit("")) {
+        try (HttpClientResponse response = request.submit("")) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "*"));
@@ -257,7 +255,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
         request.header(ORIGIN, "http://foo.bar");
 
-        try (ClientResponse response = request.submit("")) {
+        try (HttpClientResponse response = request.submit("")) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
@@ -272,14 +270,14 @@ abstract class AbstractCorsTest extends CorsRouting {
 
         request.header(ORIGIN, "http://foo.bar");
 
-        try (ClientResponse response = request.request()) {
+        try (HttpClientResponse response = request.request()) {
 
             assertThat(response.status(), is(not(Http.Status.OK_200)));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_ORIGIN));
         }
     }
 
-    ClientResponse runTest1PreFlightAllowedOrigin() {
+    HttpClientResponse runTest1PreFlightAllowedOrigin() {
         Http1ClientRequest request = client().method(Http.Method.OPTIONS)
                 .uri(TestUtil.path(contextRoot(), SERVICE_1));
 

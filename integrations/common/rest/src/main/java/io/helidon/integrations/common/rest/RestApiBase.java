@@ -34,10 +34,10 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
 import io.helidon.nima.faulttolerance.FtHandler;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 import io.opentracing.SpanContext;
 import jakarta.json.JsonBuilderFactory;
@@ -52,7 +52,7 @@ import jakarta.json.JsonWriterFactory;
  */
 public abstract class RestApiBase implements RestApi {
     private static final Logger LOGGER = Logger.getLogger(RestApiBase.class.getName());
-    private final Http1Client webClient;
+    private final WebClient webClient;
     private final FtHandler ftHandler;
     private final JsonBuilderFactory jsonBuilderFactory;
     private final JsonReaderFactory jsonReaderFactory;
@@ -80,7 +80,7 @@ public abstract class RestApiBase implements RestApi {
         String requestId = requestId(request);
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " no entity expected.");
 
-        Http1ClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
+        HttpClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
         return handleResponse(path, request, method, requestId, response, responseBuilder);
     }
 
@@ -93,9 +93,9 @@ public abstract class RestApiBase implements RestApi {
         String requestId = requestId(request);
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " JSON entity expected.");
 
-        Supplier<Http1ClientResponse> responseSupplier = responseSupplier(method, path, request, requestId);
+        Supplier<HttpClientResponse> responseSupplier = responseSupplier(method, path, request, requestId);
 
-        Http1ClientResponse response = ftHandler.invoke(responseSupplier);
+        HttpClientResponse response = ftHandler.invoke(responseSupplier);
         return handleJsonResponse(path, request, method, requestId, response, responseBuilder);
     }
 
@@ -110,11 +110,11 @@ public abstract class RestApiBase implements RestApi {
 
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " with bytes request");
 
-        Http1ClientRequest request = webClient.method(method).path(path);
+        HttpClientRequest request = webClient.method(method).path(path);
         addHeaders(request, apiRequest.headers());
         addQueryParams(request, apiRequest.queryParams());
 
-        Supplier<Http1ClientResponse> responseSupplier = requestBytesPayload(
+        Supplier<HttpClientResponse> responseSupplier = requestBytesPayload(
                 path,
                 apiRequest,
                 method,
@@ -122,7 +122,7 @@ public abstract class RestApiBase implements RestApi {
                 request,
                 is);
 
-        Http1ClientResponse response = ftHandler.invoke(responseSupplier);
+        HttpClientResponse response = ftHandler.invoke(responseSupplier);
         return handleResponse(path, apiRequest, method, requestId, response, responseBuilder);
     }
 
@@ -137,7 +137,7 @@ public abstract class RestApiBase implements RestApi {
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " with publisher response");
 
         request.responseMediaType(request.responseMediaType().orElse(MediaTypes.WILDCARD));
-        Http1ClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
+        HttpClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
         return handleEntityResponse(path, request, method, requestId, response, responseBuilder);
     }
 
@@ -153,8 +153,8 @@ public abstract class RestApiBase implements RestApi {
 
         request.responseMediaType(request.responseMediaType().orElse(MediaTypes.WILDCARD));
 
-        Supplier<Http1ClientResponse> responseSupplier = responseSupplier(method, path, request, requestId);
-        Http1ClientResponse response = ftHandler.invoke(responseSupplier);
+        Supplier<HttpClientResponse> responseSupplier = responseSupplier(method, path, request, requestId);
+        HttpClientResponse response = ftHandler.invoke(responseSupplier);
         return handleBytesResponse(path, request, method, requestId, response, responseBuilder);
     }
 
@@ -168,7 +168,7 @@ public abstract class RestApiBase implements RestApi {
 
         LOGGER.finest(() -> requestId + ": Invoking " + method + " on path " + path + " with optional response");
 
-        Http1ClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
+        HttpClientResponse response = ftHandler.invoke(responseSupplier(method, path, request, requestId));
         return handleOptionalJsonResponse(path, request, method, requestId, response, responseBuilder);
     }
 
@@ -182,17 +182,17 @@ public abstract class RestApiBase implements RestApi {
      * @param requestId request ID to use for this request
      * @return supplier of response that is used with fault tolerance
      */
-    protected Supplier<Http1ClientResponse> responseSupplier(Method method,
+    protected Supplier<HttpClientResponse> responseSupplier(Method method,
                                                              String path,
                                                              ApiRequest<?> request,
                                                              String requestId) {
 
-        Http1ClientRequest requestBuilder = webClient.method(method).path(path);
+        HttpClientRequest requestBuilder = webClient.method(method).path(path);
         addHeaders(requestBuilder, request.headers());
         addQueryParams(requestBuilder, request.queryParams());
         Optional<JsonObject> payload = request.toJson(jsonBuilderFactory);
 
-        Supplier<Http1ClientResponse> responseSupplier;
+        Supplier<HttpClientResponse> responseSupplier;
 
         // now let's update the request
         if (payload.isPresent()) {
@@ -209,7 +209,7 @@ public abstract class RestApiBase implements RestApi {
      * @param request     client request
      * @param queryParams query parameters
      */
-    protected void addQueryParams(Http1ClientRequest request, Map<String, List<String>> queryParams) {
+    protected void addQueryParams(HttpClientRequest request, Map<String, List<String>> queryParams) {
         queryParams.forEach((name, values) -> {
             if (values.size() == 1) {
                 request.queryParam(name, values.iterator().next());
@@ -225,10 +225,9 @@ public abstract class RestApiBase implements RestApi {
      * @param request client request
      * @param headers headers to add
      */
-    protected void addHeaders(Http1ClientRequest request, Map<String, List<String>> headers) {
+    protected void addHeaders(HttpClientRequest request, Map<String, List<String>> headers) {
         request.headers(clientHeaders -> {
             headers.forEach((key, value) -> clientHeaders.set(Http.Header.create(key), value));
-            return clientHeaders;
         });
     }
 
@@ -253,7 +252,7 @@ public abstract class RestApiBase implements RestApi {
             ApiRequest<?> request,
             Method method,
             String requestId,
-            Http1ClientResponse response,
+            HttpClientResponse response,
             BuilderBase<?, T, byte[], R> responseBuilder) {
 
         ResponseState statusKind = responseState(path, request, method, requestId, response);
@@ -296,7 +295,7 @@ public abstract class RestApiBase implements RestApi {
             ApiRequest<?> request,
             Method method,
             String requestId,
-            Http1ClientResponse response,
+            HttpClientResponse response,
             BuilderBase<?, T, InputStream, R> responseBuilder) {
 
         ResponseState statusKind = responseState(path, request, method, requestId, response);
@@ -396,7 +395,7 @@ public abstract class RestApiBase implements RestApi {
             ApiRequest<?> request,
             Method method,
             String requestId,
-            Http1ClientResponse response,
+            HttpClientResponse response,
             BuilderBase<?, T, JsonObject, R> responseBuilder) {
 
         ResponseState statusKind = responseState(path, request, method, requestId, response);
@@ -439,7 +438,7 @@ public abstract class RestApiBase implements RestApi {
                                   ApiRequest<?> request,
                                   Method method,
                                   String requestId,
-                                  Http1ClientResponse response,
+                                  HttpClientResponse response,
                                   ResponseBuilder<?, T, ?> responseBuilder) {
         return responseBuilder.headers(response.headers())
                               .status(response.status())
@@ -466,7 +465,7 @@ public abstract class RestApiBase implements RestApi {
                                    ApiRequest<?> request,
                                    Method method,
                                    String requestId,
-                                   Http1ClientResponse response,
+                                   HttpClientResponse response,
                                    JsonObject json,
                                    ResponseBuilder<?, T, JsonObject> responseBuilder) {
         return responseBuilder.headers(response.headers())
@@ -494,7 +493,7 @@ public abstract class RestApiBase implements RestApi {
             ApiRequest<?> request,
             Method method,
             String requestId,
-            Http1ClientResponse response,
+            HttpClientResponse response,
             ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder) {
 
         Http.Status status = response.status();
@@ -528,7 +527,7 @@ public abstract class RestApiBase implements RestApi {
                                                        ApiRequest<?> request,
                                                        Method method,
                                                        String requestId,
-                                                       Http1ClientResponse response,
+                                                       HttpClientResponse response,
                                                        ApiResponse.Builder<?, T> responseBuilder) {
         Http.Status status = response.status();
 
@@ -558,7 +557,7 @@ public abstract class RestApiBase implements RestApi {
                                              ApiRequest<?> request,
                                              Method method,
                                              String requestId,
-                                             Http1ClientResponse response) {
+                                             HttpClientResponse response) {
         if (response.headers().contentLength().orElse(-1L) == 0) {
             // explicitly no content
             return readError(path, request, method, requestId, response);
@@ -593,7 +592,7 @@ public abstract class RestApiBase implements RestApi {
                                                      ApiRequest<?> request,
                                                      Method method,
                                                      String requestId,
-                                                     ClientResponse response,
+                                                     HttpClientResponse response,
                                                      Throwable throwable) {
         return RestException.builder()
                             .cause(throwable)
@@ -621,7 +620,7 @@ public abstract class RestApiBase implements RestApi {
                                          ApiRequest<?> request,
                                          Method method,
                                          String requestId,
-                                         ClientResponse response,
+                                         HttpClientResponse response,
                                          String entity) {
         LOGGER.finest(() -> requestId + ": request failed for path " + path + ", error response: " + entity);
 
@@ -648,7 +647,7 @@ public abstract class RestApiBase implements RestApi {
                                          ApiRequest<?> request,
                                          Method method,
                                          String requestId,
-                                         ClientResponse response) {
+                                         HttpClientResponse response) {
         LOGGER.finest(() -> requestId + ": request failed for path " + path);
 
         return RestException.builder()
@@ -675,7 +674,7 @@ public abstract class RestApiBase implements RestApi {
                                          ApiRequest<?> request,
                                          Method method,
                                          String requestId,
-                                         Http1ClientResponse response,
+                                         HttpClientResponse response,
                                          JsonObject errorObject) {
         LOGGER.finest(() -> requestId + ": request failed for path " + path + ", error object: " + errorObject);
         return RestException.builder()
@@ -704,7 +703,7 @@ public abstract class RestApiBase implements RestApi {
                                                            ApiRequest<?> request,
                                                            Method method,
                                                            String requestId,
-                                                           Http1ClientResponse response,
+                                                           HttpClientResponse response,
                                                            ApiResponse.Builder<?, T> responseBuilder) {
         return responseBuilder.headers(response.headers())
                               .status(response.status())
@@ -721,20 +720,20 @@ public abstract class RestApiBase implements RestApi {
      * @param request        API request
      * @param method         HTTP method
      * @param requestId      ID of this request
-     * @param requestBuilder {@link Http1ClientRequest} request builder
+     * @param requestBuilder {@link HttpClientRequest} request builder
      * @param jsonObject     JSON object that should be sent as a request entity
      * @return supplier of a client response
      */
-    protected Supplier<Http1ClientResponse> requestJsonPayload(String path,
+    protected Supplier<HttpClientResponse> requestJsonPayload(String path,
                                                                ApiRequest<?> request,
                                                                Method method,
                                                                String requestId,
-                                                               Http1ClientRequest requestBuilder,
+                                                               HttpClientRequest requestBuilder,
                                                                JsonObject jsonObject) {
         AtomicBoolean updated = new AtomicBoolean();
         return () -> {
             // we should only update request builder once - if a retry is done, it should not be reset
-            Http1ClientRequest clientRequest = requestBuilder;
+            HttpClientRequest clientRequest = requestBuilder;
             if (updated.compareAndSet(false, true)) {
                 MediaType mediaType = request.responseMediaType().orElse(MediaTypes.APPLICATION_JSON);
                 clientRequest.accept(mediaType).contentType(mediaType);
@@ -758,20 +757,20 @@ public abstract class RestApiBase implements RestApi {
      * @param request        API request
      * @param method         HTTP method
      * @param requestId      ID of this request
-     * @param requestBuilder {@link Http1ClientRequest} request builder
+     * @param requestBuilder {@link HttpClientRequest} request builder
      * @param is             entity input stream
      * @return supplier of a client response
      */
-    protected Supplier<Http1ClientResponse> requestBytesPayload(String path,
+    protected Supplier<HttpClientResponse> requestBytesPayload(String path,
                                                                 ApiRequest<?> request,
                                                                 Method method,
                                                                 String requestId,
-                                                                Http1ClientRequest requestBuilder,
+                                                                HttpClientRequest requestBuilder,
                                                                 InputStream is) {
         AtomicBoolean updated = new AtomicBoolean();
         return () -> {
             // we should only update request builder once - if a retry is done, it should not be reset
-            Http1ClientRequest clientRequest = requestBuilder;
+            HttpClientRequest clientRequest = requestBuilder;
             if (updated.compareAndSet(false, true)) {
                 Optional<MediaType> mediaType = request.responseMediaType();
                 clientRequest.accept(mediaType.orElse(MediaTypes.APPLICATION_JSON))
@@ -790,18 +789,18 @@ public abstract class RestApiBase implements RestApi {
      * @param request        API request
      * @param method         HTTP method
      * @param requestId      ID of this request
-     * @param requestBuilder {@link Http1ClientRequest} request builder
+     * @param requestBuilder {@link HttpClientRequest} request builder
      * @return supplier of a client response
      */
-    protected Supplier<Http1ClientResponse> requestPayload(String path,
+    protected Supplier<HttpClientResponse> requestPayload(String path,
                                                            ApiRequest<?> request,
                                                            Method method,
                                                            String requestId,
-                                                           Http1ClientRequest requestBuilder) {
+                                                           HttpClientRequest requestBuilder) {
         AtomicBoolean updated = new AtomicBoolean();
         return () -> {
             // we should only update request builder once - if a retry is done, it should not be reset
-            Http1ClientRequest clientRequest = requestBuilder;
+            HttpClientRequest clientRequest = requestBuilder;
             if (updated.compareAndSet(false, true)) {
                 clientRequest = updateRequestBuilder(requestBuilder, path, request, method, requestId);
             }
@@ -820,7 +819,7 @@ public abstract class RestApiBase implements RestApi {
      * @param requestId      request ID
      * @return updated builder
      */
-    protected Http1ClientRequest updateRequestBuilder(Http1ClientRequest requestBuilder,
+    protected HttpClientRequest updateRequestBuilder(HttpClientRequest requestBuilder,
                                                       String path,
                                                       ApiRequest<?> request,
                                                       Method method,
@@ -839,7 +838,7 @@ public abstract class RestApiBase implements RestApi {
      * @param requestId      request ID
      * @return updated builder
      */
-    protected Http1ClientRequest updateRequestBuilderBytesPayload(Http1ClientRequest requestBuilder,
+    protected HttpClientRequest updateRequestBuilderBytesPayload(HttpClientRequest requestBuilder,
                                                                   String path,
                                                                   ApiRequest<?> request,
                                                                   Method method,
@@ -860,7 +859,7 @@ public abstract class RestApiBase implements RestApi {
      * @return updated builder
      */
     @SuppressWarnings("unused")
-    protected Http1ClientRequest updateRequestBuilder(Http1ClientRequest requestBuilder,
+    protected HttpClientRequest updateRequestBuilder(HttpClientRequest requestBuilder,
                                                       String path,
                                                       ApiRequest<?> request,
                                                       Method method,
@@ -880,7 +879,7 @@ public abstract class RestApiBase implements RestApi {
      * @return updated builder
      */
     @SuppressWarnings("unused")
-    protected Http1ClientRequest updateRequestBuilderCommon(Http1ClientRequest requestBuilder,
+    protected HttpClientRequest updateRequestBuilderCommon(HttpClientRequest requestBuilder,
                                                             String path,
                                                             ApiRequest<?> request,
                                                             Method method,
@@ -914,7 +913,7 @@ public abstract class RestApiBase implements RestApi {
      * @return web client
      */
     @SuppressWarnings("unused")
-    protected Http1Client webClient() {
+    protected WebClient webClient() {
         return webClient;
     }
 
@@ -965,7 +964,7 @@ public abstract class RestApiBase implements RestApi {
                                         ApiRequest<?> request,
                                         Method method,
                                         String requestId,
-                                        Http1ClientResponse response) {
+                                        HttpClientResponse response) {
 
         Http.Status status = response.status();
         boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)

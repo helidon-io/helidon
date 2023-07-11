@@ -32,7 +32,10 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.WebClientConfig;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -350,8 +353,8 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
-    private final Http1Client webClient;
-    private final Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier;
+    private final WebClient webClient;
+    private final Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
     private final LazyValue<Tenant> defaultTenant;
     private final boolean useParam;
     private final String paramName;
@@ -679,7 +682,7 @@ public final class OidcConfig extends TenantConfigImpl {
      *
      * @return client for general use.
      */
-    public Http1Client generalWebClient() {
+    public WebClient generalWebClient() {
         return webClient;
     }
 
@@ -688,7 +691,7 @@ public final class OidcConfig extends TenantConfigImpl {
      *
      * @return client for communicating with OIDC identity server
      */
-    public Http1Client appWebClient() {
+    public WebClient appWebClient() {
         return defaultTenant.get().appWebClient();
     }
 
@@ -764,7 +767,7 @@ public final class OidcConfig extends TenantConfigImpl {
         return defaultTenant.get().introspectUri();
     }
 
-    Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier() {
+    Supplier<WebClientConfig.Builder> webClientBuilderSupplier() {
         return webClientBuilderSupplier;
     }
 
@@ -863,8 +866,8 @@ public final class OidcConfig extends TenantConfigImpl {
         private String proxyHost;
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
         private int proxyPort = DEFAULT_PROXY_PORT;
-        private Http1Client webClient;
-        private Supplier<Http1Client.Http1ClientBuilder> webClientBuilderSupplier;
+        private WebClient webClient;
+        private Supplier<WebClientConfig.Builder> webClientBuilderSupplier;
         private String paramName = DEFAULT_PARAM_NAME;
         private String tenantParamName = DEFAULT_TENANT_PARAM_NAME;
         private boolean useHeader = DEFAULT_HEADER_USE;

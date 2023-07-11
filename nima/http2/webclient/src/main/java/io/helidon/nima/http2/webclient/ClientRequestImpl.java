@@ -40,10 +40,10 @@ import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.webclient.ClientConnection;
-import io.helidon.nima.webclient.ClientRequest;
-import io.helidon.nima.webclient.Proxy;
-import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.api.ClientConnection;
+import io.helidon.nima.webclient.api.ClientRequest;
+import io.helidon.nima.webclient.api.Proxy;
+import io.helidon.nima.webclient.api.ClientUri;
 
 class ClientRequestImpl implements Http2ClientRequest {
     static final HeaderValue USER_AGENT_HEADER = Header.create(Header.USER_AGENT, "Helidon Nima " + Version.VERSION);
@@ -52,7 +52,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     private final Http2ClientImpl client;
     private final ExecutorService executor;
     private final Http.Method method;
-    private final UriHelper uri;
+    private final ClientUri uri;
     private final UriQueryWriteable query;
     private final int initialWindowSize;
     private final int maxFrameSize;
@@ -75,7 +75,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     ClientRequestImpl(Http2ClientImpl client,
                       ExecutorService executor,
                       Http.Method method,
-                      UriHelper helper,
+                      ClientUri helper,
                       Tls tls,
                       UriQueryWriteable query) {
         this.client = client;
@@ -286,7 +286,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         throw new UnsupportedOperationException("Not supported in HTTP2 yet");
     }
 
-    UriHelper uriHelper() {
+    ClientUri uriHelper() {
         return uri;
     }
 
@@ -328,7 +328,7 @@ class ClientRequestImpl implements Http2ClientRequest {
         }
     }
 
-    private Http2ClientStream newStream(UriHelper uri) {
+    private Http2ClientStream newStream(ClientUri uri) {
         try {
             ConnectionKey connectionKey = new ConnectionKey(method,
                                                             uri.scheme(),
@@ -356,7 +356,7 @@ class ClientRequestImpl implements Http2ClientRequest {
                                                      flowControlTimeout,
                                                      timeout));
         } catch (UpgradeRedirectException e) {
-            return newStream(UriHelper.create(URI.create(e.redirectUri()), UriQueryWriteable.create()));
+            return newStream(ClientUri.create(URI.create(e.redirectUri()), UriQueryWriteable.create()));
         }
     }
 

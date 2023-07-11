@@ -23,7 +23,7 @@ import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -106,7 +106,7 @@ class ConfiguredLimitsTest {
         int pathLength = size - 15;
         String path = "/" + "m".repeat(pathLength);
 
-        try (ClientResponse response = client.get(path)
+        try (HttpClientResponse response = client.get(path)
                 .request()) {
             if (success) {
                 assertThat("Initial line of size " + size + " should have passed",

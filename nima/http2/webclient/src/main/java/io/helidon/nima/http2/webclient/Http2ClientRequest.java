@@ -18,7 +18,7 @@ package io.helidon.nima.http2.webclient;
 
 import java.time.Duration;
 
-import io.helidon.nima.webclient.ClientRequest;
+import io.helidon.nima.webclient.api.ClientRequest;
 
 /**
  * Request of HTTP/2 client.

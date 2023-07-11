@@ -16,10 +16,10 @@
 
 package io.helidon.nima.http2.webclient;
 
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 
 /**
  * Response of HTTP/2 client.
  */
-public interface Http2ClientResponse extends ClientResponse {
+public interface Http2ClientResponse extends HttpClientResponse {
 }

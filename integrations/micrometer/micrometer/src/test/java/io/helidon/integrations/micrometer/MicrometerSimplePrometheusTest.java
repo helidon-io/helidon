@@ -27,7 +27,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -77,7 +77,7 @@ public class MicrometerSimplePrometheusTest {
     void prepTest() {
         registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         initSomeMetrics();
-        webClient = WebClient.builder()
+        webClient = Http1Client.builder()
                 .baseUri("http://localhost:" + webServer.port())
                 .get();
     }

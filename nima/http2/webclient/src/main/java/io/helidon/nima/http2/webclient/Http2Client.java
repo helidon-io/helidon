@@ -17,10 +17,10 @@
 package io.helidon.nima.http2.webclient;
 
 import io.helidon.nima.http2.WindowSize;
-import io.helidon.nima.webclient.DefaultDnsResolverProvider;
-import io.helidon.nima.webclient.DnsAddressLookup;
-import io.helidon.nima.webclient.HttpClient;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.DefaultDnsResolverProvider;
+import io.helidon.nima.webclient.api.DnsAddressLookup;
+import io.helidon.nima.webclient.api.HttpClient;
+import io.helidon.nima.webclient.api.WebClient;
 
 /**
  * HTTP2 client.

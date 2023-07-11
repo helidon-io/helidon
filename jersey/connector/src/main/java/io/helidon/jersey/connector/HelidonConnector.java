@@ -38,8 +38,6 @@ import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.webclient.Proxy;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -81,7 +79,7 @@ class HelidonConnector implements Connector {
 
         // create underlying HTTP client
         Map<String, Object> properties = config.getProperties();
-        Http1Client.Http1ClientBuilder builder = WebClient.builder(Http1.PROTOCOL);
+        var builder = Http1Client.builder();
 
         // use config for client
         builder.config(helidonConfig(config).orElse(Config.empty()));
@@ -198,7 +196,7 @@ class HelidonConnector implements Connector {
         }
 
         // last URI, possibly after redirections
-        response.setResolvedRequestUri(httpResponse.lastEndpointUri());
+        response.setResolvedRequestUri(httpResponse.lastEndpointUri().toUri());
 
         // handle entity
         ReadableEntity entity = httpResponse.entity();

@@ -18,7 +18,7 @@ package io.helidon.examples.nima.tracing;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.http2.webserver.Http2Route;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.tracing.WebClientTracing;
 import io.helidon.nima.webserver.WebServer;

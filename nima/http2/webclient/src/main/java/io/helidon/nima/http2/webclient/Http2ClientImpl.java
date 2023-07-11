@@ -19,7 +19,7 @@ package io.helidon.nima.http2.webclient;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.LoomClient;
-import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.api.ClientUri;
 
 class Http2ClientImpl extends LoomClient implements Http2Client {
 
@@ -41,7 +41,7 @@ class Http2ClientImpl extends LoomClient implements Http2Client {
     @Override
     public Http2ClientRequest method(Http.Method method) {
         UriQueryWriteable query = UriQueryWriteable.create();
-        UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
+        ClientUri helper = (uri() == null) ? ClientUri.create() : ClientUri.create(uri(), query);
 
         return new ClientRequestImpl(this, executor(), method, helper, tls(), query);
     }

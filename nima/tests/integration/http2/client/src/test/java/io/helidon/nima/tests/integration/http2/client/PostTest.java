@@ -31,7 +31,7 @@ import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;

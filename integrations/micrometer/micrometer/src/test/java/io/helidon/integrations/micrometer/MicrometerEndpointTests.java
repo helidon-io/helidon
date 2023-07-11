@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServer;
 
 import org.hamcrest.MatcherAssert;

@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
@@ -102,7 +102,7 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
     }
 
     private Http1Client httpClient(WebServer server, String socketName) {
-        return WebClient.builder()
+        return Http1Client.builder()
                 .baseUri("http://localhost:" + server.port(socketName))
                 .build();
     }

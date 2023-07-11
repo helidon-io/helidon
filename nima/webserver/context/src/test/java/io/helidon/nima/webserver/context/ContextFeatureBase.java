@@ -50,11 +50,13 @@ abstract class ContextFeatureBase {
     @Test
     void testContext() {
         String response = client.get()
-                .request(String.class);
+                .request(String.class)
+                .entity();
         assertThat(response, is("fixed-value"));
         // make sure the second request gets the same value (to make sure we do not change value in parent)
         response = client.get()
-                .request(String.class);
+                .request(String.class)
+                .entity();
         assertThat(response, is("fixed-value"));
     }
 

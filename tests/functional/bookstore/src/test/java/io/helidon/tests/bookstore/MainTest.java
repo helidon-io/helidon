@@ -33,8 +33,8 @@ import java.util.Queue;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.ClientResponse;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 
 import com.oracle.bedrock.runtime.Application;
@@ -291,7 +291,7 @@ class MainTest {
                     .request(JsonArray.class);
             assertThat("Number of books", bookArray.size(), is(numberOfBooks));
 
-            ClientResponse response = webClient
+            HttpClientResponse response = webClient
                     .post("/books")
                     .submit(json);
             assertThat("HTTP response POST", response.status(), is(Http.Status.OK_200));
@@ -392,7 +392,7 @@ class MainTest {
                     .baseUri(application.getBaseUrl().toURI())
                     .build();
 
-            ClientResponse response = webClient.get()
+            HttpClientResponse response = webClient.get()
                     .path("/badurl")
                     .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .request();

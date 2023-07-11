@@ -26,9 +26,9 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webclient.UriHelper;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -121,7 +121,7 @@ public class WebClientTracing implements WebClientService {
     }
 
     private String composeName(String method, WebClientServiceRequest request) {
-        UriHelper uri = request.uri();
+        ClientUri uri = request.uri();
         return method
                 + "-"
                 + uri.pathWithQueryAndFragment(UriQuery.empty(), UriFragment.empty());

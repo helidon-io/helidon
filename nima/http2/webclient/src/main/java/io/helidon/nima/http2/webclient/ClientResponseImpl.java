@@ -23,15 +23,15 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.api.ClientUri;
 
 class ClientResponseImpl implements Http2ClientResponse {
     private final Http.Status responseStatus;
     private final ClientResponseHeaders responseHeaders;
-    private final UriHelper lastEndpointUri;
+    private final ClientUri lastEndpointUri;
     private Http2ClientStream stream;
 
-    ClientResponseImpl(Http2Headers headers, Http2ClientStream stream, UriHelper lastEndpointUri) {
+    ClientResponseImpl(Http2Headers headers, Http2ClientStream stream, ClientUri lastEndpointUri) {
         this.responseStatus = headers.status();
         this.responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
         this.stream = stream;

@@ -28,7 +28,7 @@ import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
 import io.helidon.nima.faulttolerance.FaultTolerance;
 import io.helidon.nima.faulttolerance.FtHandler;
-import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
+import io.helidon.nima.webclient.api.WebClientConfig;
 
 /**
  * Main entry point to Vault operations.
@@ -128,7 +128,7 @@ public interface Vault {
         private String address;
         private String token;
         private String baseNamespace;
-        private Consumer<Http1ClientBuilder> webClientUpdater = it -> {};
+        private Consumer<WebClientConfig.Builder> webClientUpdater = it -> {};
 
         private Builder() {
         }
@@ -205,14 +205,14 @@ public interface Vault {
         }
 
         /**
-         * A consumer that updates {@link Http1ClientBuilder}.
+         * A consumer that updates {@link io.helidon.nima.webclient.api.WebClientConfig.Builder}.
          * The consumer may be invoked multiple times, for example when a Vault authentication
          * must use an un-authenticated Vault to authenticate.
          *
          * @param updater update the web client builder
          * @return updated builder instance
          */
-        public Builder updateWebClient(Consumer<Http1ClientBuilder> updater) {
+        public Builder updateWebClient(Consumer<WebClientConfig.Builder> updater) {
             this.webClientUpdater = updater;
             return this;
         }
@@ -304,7 +304,7 @@ public interface Vault {
          *
          * @return web client updater
          */
-        public Consumer<Http1ClientBuilder> webClientUpdater() {
+        public Consumer<WebClientConfig.Builder> webClientUpdater() {
             return webClientUpdater;
         }
     }

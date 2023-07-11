@@ -32,6 +32,37 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     }
 
     @Override
+    public UriQueryWriteable from(UriQuery uriQuery) {
+        if (uriQuery instanceof UriQueryWriteableImpl impl) {
+            impl.rawQueryParams.forEach((key, value) -> {
+                rawQueryParams.computeIfAbsent(key, it -> new ArrayList<>())
+                        .addAll(value);
+            });
+            impl.decodedQueryParams.forEach((key, value) -> {
+                decodedQueryParams.computeIfAbsent(key, it -> new ArrayList<>())
+                        .addAll(value);
+            });
+        } else {
+            for (String name : uriQuery.names()) {
+                List<String> raw = uriQuery.getAllRaw(name);
+                rawQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
+                        .addAll(raw);
+                List<String> decoded = uriQuery.all(name);
+                decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
+                        .addAll(raw);
+            }
+        }
+
+        return this;
+    }
+
+    @Override
+    public void clear() {
+        this.rawQueryParams.clear();
+        this.decodedQueryParams.clear();
+    }
+
+    @Override
     public String rawValue() {
         StringBuilder sb = new StringBuilder();
 

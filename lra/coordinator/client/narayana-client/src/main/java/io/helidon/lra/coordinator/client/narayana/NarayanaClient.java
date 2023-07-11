@@ -21,7 +21,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
@@ -37,10 +36,9 @@ import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.nima.faulttolerance.Retry;
 import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
@@ -103,7 +101,7 @@ public class NarayanaClient implements CoordinatorClient {
                 .orElse(coordinatorUriSupplier.get());
 
         return retry.invoke(() -> {
-            Http1ClientRequest req = prepareWebClient(baseUri)
+            HttpClientRequest req = prepareWebClient(baseUri)
                     .post()
                     .path("start")
                     .headers(copyHeaders(headers)) // header propagation
@@ -111,7 +109,7 @@ public class NarayanaClient implements CoordinatorClient {
                     .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeout))
                     .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString());
 
-            try (Http1ClientResponse res = req.request()) {
+            try (HttpClientResponse res = req.request()) {
                 Http.Status status = res.status();
                 if (status.code() != 201) {
                     throw connectionError("Unexpected response " + status + " from coordinator "
@@ -203,7 +201,6 @@ public class NarayanaClient implements CoordinatorClient {
                     .headers(h -> {
                         h.add(Http.Header.createCached(HEADER_LINK, links)); // links are expected either in header
                         headers.toMap().forEach((name, value) -> h.set(Http.Header.create(name), value)); // header propagation
-                        return h;
                     });
 
             try (var res = req.submit(links)) {
@@ -282,10 +279,10 @@ public class NarayanaClient implements CoordinatorClient {
         });
     }
 
-    private Http1Client prepareWebClient(URI uri) {
+    private WebClient prepareWebClient(URI uri) {
         return WebClient.builder()
                 .baseUri(uri)
-                .channelOptions(SocketOptions.builder()
+                .socketOptions(SocketOptions.builder()
                         .connectTimeout(coordinatorTimeout)
                         .readTimeout(coordinatorTimeout)
                         .build())
@@ -332,10 +329,9 @@ public class NarayanaClient implements CoordinatorClient {
                 .collect(Collectors.joining(","));
     }
 
-    private Function<ClientRequestHeaders, WritableHeaders<?>> copyHeaders(PropagatedHeaders headers) {
+    private Consumer<ClientRequestHeaders> copyHeaders(PropagatedHeaders headers) {
         return wcHeaders -> {
             headers.toMap().forEach((key, value) -> wcHeaders.set(Http.Header.create(key), value));
-            return wcHeaders;
         };
     }
 

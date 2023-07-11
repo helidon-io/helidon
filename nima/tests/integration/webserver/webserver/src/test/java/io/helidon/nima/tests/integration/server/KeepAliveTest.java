@@ -24,7 +24,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -73,7 +73,7 @@ class KeepAliveTest {
 
     @RepeatedTest(100)
     void sendWithKeepAlive() {
-        try (ClientResponse response = testCall(webClient, true, "/plain", 200)) {
+        try (HttpClientResponse response = testCall(webClient, true, "/plain", 200)) {
             assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
 
@@ -81,7 +81,7 @@ class KeepAliveTest {
 
     @RepeatedTest(100)
     void sendWithoutKeepAlive() {
-        try (ClientResponse response = testCall(webClient, false, "/plain", 200)) {
+        try (HttpClientResponse response = testCall(webClient, false, "/plain", 200)) {
             assertThat(response.headers(), not(hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE)));
         }
     }
@@ -89,15 +89,15 @@ class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithKeepAliveExpectKeepAlive() {
         // we attempt to fully consume request entity, if succeeded, we keep connection keep-alive
-        try (ClientResponse response = testCall(webClient, true, "/close", 500)) {
+        try (HttpClientResponse response = testCall(webClient, true, "/close", 500)) {
             assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
 
-    private static ClientResponse testCall(Http1Client client,
-                                           boolean keepAlive,
-                                           String path,
-                                           int expectedStatus) {
+    private static HttpClientResponse testCall(Http1Client client,
+                                               boolean keepAlive,
+                                               String path,
+                                               int expectedStatus) {
 
         Http1ClientRequest request = client.method(Http.Method.PUT)
                 .uri(path);

@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;

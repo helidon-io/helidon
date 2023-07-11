@@ -18,13 +18,13 @@ package io.helidon.nima.webclient.http1;
 
 import java.util.Optional;
 
+import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.ParserMode;
-import io.helidon.nima.webclient.ClientResponse;
-import io.helidon.nima.webclient.HttpClient;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
@@ -59,13 +59,13 @@ class HeadersTest {
     // Verify that invalid content type is present in response headers and is accessible
     @Test
     public void testInvalidContentType() {
-        HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()
+        WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + server.port() + "/test")
                 .build();
-        try (ClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Http.Method.GET)
                 .path("/invalidContentType")
                 .request()) {
-            Headers h = res.headers();
+            ClientResponseHeaders h = res.headers();
             Http.HeaderValue contentType = h.get(Http.Header.CONTENT_TYPE);
             assertThat(res.status(), is(Http.Status.OK_200));
             assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_VALUE));
@@ -75,10 +75,10 @@ class HeadersTest {
     // Verify that "Content-Type: text" header parsing fails in strict mode
     @Test
     public void testInvalidTextContentTypeStrict() {
-        HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()
+        WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + server.port() + "/test")
                 .build();
-        ClientResponse res = client.method(Http.Method.GET)
+        HttpClientResponse res = client.method(Http.Method.GET)
                 .path("/invalidTextContentType")
                 .request();
         assertThat(res.status(), is(Http.Status.OK_200));
@@ -98,11 +98,11 @@ class HeadersTest {
     // Verify that "Content-Type: text" header parsing returns text/plain in relaxed mode
     @Test
     public void testInvalidTextContentTypeRelaxed() {
-        HttpClient<Http1ClientRequest, Http1ClientResponse> client = WebClient.builder()
+        WebClient client = WebClient.builder()
                 .baseUri("http://localhost:" + server.port() + "/test")
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
-        ClientResponse res = client.method(Http.Method.GET)
+        HttpClientResponse res = client.method(Http.Method.GET)
                 .path("/invalidTextContentType")
                 .request();
         assertThat(res.status(), is(Http.Status.OK_200));

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.nima.testing.junit5.webserver.spi.DirectJunitExtension;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -37,21 +38,32 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
  */
 public class Http1DirectJunitExtension implements DirectJunitExtension {
     private final Map<String, DirectClient> clients = new HashMap<>();
+    private final Map<String, DirectWebClient> webClients = new HashMap<>();
 
     @Override
     public void afterAll(ExtensionContext context) {
         clients.values().forEach(DirectClient::close);
+        webClients.values().forEach(DirectWebClient::close);
     }
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        clients.values().forEach(client -> client.clientTlsPrincipal(null)
-                .clientTlsCertificates(null)
-                .clientHost("helidon-unit")
-                .clientPort(65000)
-                .serverHost("helidon-unit-server")
-                .serverPort(8080)
-        );
+        clients.values()
+                .forEach(client -> client.clientTlsPrincipal(null)
+                        .clientTlsCertificates(null)
+                        .clientHost("helidon-unit")
+                        .clientPort(65000)
+                        .serverHost("helidon-unit-server")
+                        .serverPort(8080)
+                );
+        webClients.values()
+                .forEach(client -> client.clientTlsPrincipal(null)
+                        .clientTlsCertificates(null)
+                        .clientHost("helidon-unit")
+                        .clientPort(65000)
+                        .serverHost("helidon-unit-server")
+                        .serverPort(8080)
+                );
     }
 
     @Override
@@ -59,7 +71,13 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             throws ParameterResolutionException {
 
         Class<?> paramType = parameterContext.getParameter().getType();
-        if (DirectClient.class.equals(paramType) || Http1Client.class.equals(paramType)) {
+        if (DirectClient.class.equals(paramType)) {
+            return true;
+        }
+        if (Http1Client.class.equals(paramType)) {
+            return true;
+        }
+        if (WebClient.class.equals(paramType)) {
             return true;
         }
 
@@ -88,6 +106,25 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             }
             return directClient;
         }
+        if (WebClient.class.equals(paramType)) {
+            String socketName = Junit5Util.socketName(parameterContext.getParameter());
+            WebClient directClient = webClients.get(socketName);
+
+            if (directClient == null) {
+                if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
+                    throw new IllegalStateException("There is no default routing specified. Please add static method "
+                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
+                                                            + " or HttpRules");
+                } else {
+                    throw new IllegalStateException("There is no default routing specified for socket \"" + socketName + "\"."
+                                                            + " Please add static method "
+                                                            + "annotated with @SetUpRoute that accepts HttpRouting.Builder,"
+                                                            + " or HttpRules, and add @Socket(\"" + socketName + "\") "
+                                                            + "annotation to the parameter");
+                }
+            }
+            return directClient;
+        }
 
         throw new ParameterResolutionException("Cannot resolve parameter: " + parameterContext);
     }
@@ -95,16 +132,18 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
     @Override
     public Optional<ParamHandler<?>> setUpRouteParamHandler(Class<?> type) {
         if (HttpRouting.Builder.class.equals(type) || HttpRules.class.equals(type)) {
-            return Optional.of(new RoutingParamHandler(clients));
+            return Optional.of(new RoutingParamHandler(clients, webClients));
         }
         return Optional.empty();
     }
 
     private static final class RoutingParamHandler implements DirectJunitExtension.ParamHandler<HttpRouting.Builder> {
         private final Map<String, DirectClient> clients;
+        private final Map<String, DirectWebClient> webClients;
 
-        private RoutingParamHandler(Map<String, DirectClient> clients) {
+        private RoutingParamHandler(Map<String, DirectClient> clients, Map<String, DirectWebClient> webClients) {
             this.clients = clients;
+            this.webClients = webClients;
         }
 
         @Override
@@ -114,7 +153,20 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
 
         @Override
         public void handle(Method method, String socketName, HttpRouting.Builder value) {
-            if (clients.putIfAbsent(socketName, new DirectClient(value.build())) != null) {
+            HttpRouting routing = value.build();
+
+            if (clients.putIfAbsent(socketName, new DirectClient(routing)) != null) {
+                throw new IllegalStateException("Method "
+                                                        + method
+                                                        + " defines WebSocket routing for socket \""
+                                                        + socketName
+                                                        + "\""
+                                                        + " that is already defined for class \""
+                                                        + method.getDeclaringClass().getName()
+                                                        + "\".");
+            }
+
+            if (webClients.putIfAbsent(socketName, new DirectWebClient(routing)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method
                                                         + " defines WebSocket routing for socket \""

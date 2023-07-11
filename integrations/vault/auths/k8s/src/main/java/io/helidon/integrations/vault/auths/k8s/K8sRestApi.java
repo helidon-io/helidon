@@ -23,7 +23,7 @@ import io.helidon.common.http.Http;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.api.HttpClientRequest;
 
 class K8sRestApi extends VaultRestApi {
 
@@ -47,7 +47,7 @@ class K8sRestApi extends VaultRestApi {
     }
 
     @Override
-    protected Http1ClientRequest updateRequestBuilderCommon(Http1ClientRequest requestBuilder,
+    protected HttpClientRequest updateRequestBuilderCommon(HttpClientRequest requestBuilder,
                                                             String path,
                                                             ApiRequest<?> request,
                                                             Http.Method method,
