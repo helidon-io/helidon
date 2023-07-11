@@ -77,6 +77,7 @@ enum HeaderEnum implements Http.HeaderName {
     LINK("Link"),
     LOCATION("Location"),
     PRAGMA("Pragma"),
+    PROXY_CONNECTION("Proxy-Connection"),
     PUBLIC_KEY_PINS("Public-Key-Pins"),
     RETRY_AFTER("Retry-After"),
     SERVER("Server"),

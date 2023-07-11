@@ -157,6 +157,14 @@ class Http1ClientConnection implements ClientConnection {
         uriHelper.scheme("http");
         uriHelper.host(proxyAddress.getHostName());
         uriHelper.port(proxyAddress.getPort());
+        /*
+         * Example:
+         * CONNECT www.youtube.com:443 HTTP/1.1
+         * User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:108.0) Gecko/20100101 Firefox/108.0
+         * Proxy-Connection: keep-alive
+         * Connection: keep-alive
+         * Host: www.youtube.com:443
+         */
         Http1ClientConfig clientConfig = Http1ClientConfig.builder().mediaContext(MediaContext.create())
                 .socketOptions(options).dnsResolver(connectionKey.dnsResolver())
                 .dnsAddressLookup(connectionKey.dnsAddressLookup()).defaultHeaders(WritableHeaders.create()).build();
@@ -164,7 +172,10 @@ class Http1ClientConnection implements ClientConnection {
                 Method.CONNECT, uriHelper, UriQueryWriteable.create(), Collections.emptyMap());
         httpClient.connection(proxyConnection);
         httpClient.header(Header.HOST, hostPort);
-        httpClient.header(Header.ACCEPT, "*/*");
+        if (keepAlive) {
+            httpClient.header(Header.CONNECTION, "keep-alive");
+            httpClient.header(Header.PROXY_CONNECTION, "keep-alive");
+        }
         Http1ClientResponse response  = httpClient.request();
 
         // Re-use socket

@@ -1333,6 +1333,13 @@ public final class Http {
          */
         public static final HeaderName PRAGMA = HeaderEnum.PRAGMA;
         /**
+         * The {@code Proxy-Connection} header name.
+         * Implemented as a misunderstanding of the HTTP specifications. Common because of mistakes in
+         * implementations of early HTTP versions. Has exactly the same functionality as standard
+         * Connection field. Must not be used with HTTP/2.
+         */
+        public static final HeaderName PROXY_CONNECTION = HeaderEnum.PROXY_CONNECTION;
+        /**
          * The {@code Public-Key-Pins} header name.
          * HTTP Public Key Pinning, announces hash of website's authentic TLS certificate.
          */
