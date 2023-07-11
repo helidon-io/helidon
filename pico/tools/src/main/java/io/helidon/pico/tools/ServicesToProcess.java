@@ -61,6 +61,7 @@ public class ServicesToProcess implements Resettable {
     private static final List<Runnable> RUNNABLES_TO_CALL_WHEN_DONE = new ArrayList<>();
 
     private final Set<TypeName> servicesTypeNames = new LinkedHashSet<>();
+    private final Set<TypeName> servicesTypeNameToCodeGen = new LinkedHashSet<>();
     private final Set<String> requiredModules = new TreeSet<>();
     private final Map<TypeName, Set<TypeName>> servicesToContracts = new LinkedHashMap<>();
     private final Map<TypeName, Set<TypeName>> servicesToExternalContracts = new LinkedHashMap<>();
@@ -172,6 +173,7 @@ public class ServicesToProcess implements Resettable {
     @Override
     public boolean reset(boolean ignoredDeep) {
         servicesTypeNames.clear();
+        servicesTypeNameToCodeGen.clear();
         requiredModules.clear();
         servicesToContracts.clear();
         servicesToExternalContracts.clear();
@@ -649,6 +651,27 @@ public class ServicesToProcess implements Resettable {
         ArrayList<TypeName> result = new ArrayList<>(servicesTypeNames);
         Collections.sort(result);
         return result;
+    }
+
+    /**
+     * Fetches the set of known service type names being code generated in this batch.
+     *
+     * @return the list of known service type names being code generated
+     */
+    public List<TypeName> generatedServiceTypeNames() {
+        ArrayList<TypeName> result = new ArrayList<>(servicesTypeNameToCodeGen);
+        Collections.sort(result);
+        return result;
+    }
+
+    /**
+     * Sets the service type names being code generated in this batch.
+     *
+     * @param coll the collection of services to be code generated
+     */
+    public void generatedServiceTypeNames(Collection<TypeName> coll) {
+        this.servicesTypeNameToCodeGen.clear();
+        this.servicesTypeNameToCodeGen.addAll(coll);
     }
 
     /**

@@ -87,6 +87,7 @@ class ApplicationCreatorDefaultTest extends AbstractBaseCreator {
                 .filer(filer)
                 .messager(directFiler)
                 .serviceTypeNames(serviceTypeNames)
+                .generatedServiceTypeNames(serviceTypeNames)
                 .build();
 
         ApplicationCreatorResponse res = creator.createApplication(req);

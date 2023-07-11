@@ -59,6 +59,7 @@ class ActivatorCreatorDefaultTest extends AbstractBaseCreator {
         ActivatorCreatorCodeGen codeGen = ActivatorCreatorCodeGen.builder().build();
         ActivatorCreatorRequest req = ActivatorCreatorRequest.builder()
                 .serviceTypeNames(List.of(TypeName.create(HelloPicoWorldImpl.class)))
+                .generatedServiceTypeNames(List.of(TypeName.create(HelloPicoWorldImpl.class)))
                 .codeGen(codeGen)
                 .codeGenPaths(codeGenPaths)
                 .configOptions(ActivatorCreatorConfigOptions.builder().build())
@@ -70,6 +71,7 @@ class ActivatorCreatorDefaultTest extends AbstractBaseCreator {
 
         ActivatorCreatorRequest req2 = ActivatorCreatorRequest.builder()
                 .serviceTypeNames(Collections.singletonList(TypeName.create(HelloPicoWorldImpl.class)))
+                .generatedServiceTypeNames(Collections.singletonList(TypeName.create(HelloPicoWorldImpl.class)))
                 .codeGenPaths(CodeGenPaths.builder().build())
                 .throwIfError(Boolean.FALSE)
                 .codeGen(codeGen)

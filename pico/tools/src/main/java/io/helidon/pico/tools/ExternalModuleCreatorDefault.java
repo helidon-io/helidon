@@ -127,7 +127,8 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
             ActivatorCreatorCodeGen activatorCreatorCodeGen = ActivatorCreatorDefault
                     .createActivatorCreatorCodeGen(services).orElseThrow();
             ActivatorCreatorRequest activatorCreatorRequest = ActivatorCreatorDefault
-                    .createActivatorCreatorRequest(services, activatorCreatorCodeGen,
+                    .createActivatorCreatorRequest(services,
+                                                   activatorCreatorCodeGen,
                                                    req.activatorCreatorConfigOptions(),
                                                    req.filer(),
                                                    req.throwIfError());

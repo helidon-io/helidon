@@ -328,6 +328,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
                     .filer(codeGenFiler)
                     .configOptions(configOptions)
                     .serviceTypeNames(List.copyOf(serviceTypeNames))
+                    .generatedServiceTypeNames(List.copyOf(serviceTypeNames))
                     .codeGenPaths(codeGenPaths)
                     .compilerOptions(compilerOptions)
                     .throwIfError(isFailOnError())

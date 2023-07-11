@@ -230,6 +230,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         CodeGenPaths codeGenPaths = createCodeGenPaths(servicesToProcess);
         return ActivatorCreatorRequest.builder()
                 .serviceTypeNames(servicesToProcess.serviceTypeNames())
+                .generatedServiceTypeNames(servicesToProcess.generatedServiceTypeNames())
                 .codeGen(codeGen)
                 .codeGenPaths(codeGenPaths)
                 .filer(filer)
@@ -344,7 +345,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         List<TypeName> activatorTypeNames = new ArrayList<>();
         Set<TypeName> activatorTypeNamesPutInModule = new TreeSet<>(req.codeGen().allModuleActivatorTypeNames());
         Map<TypeName, ActivatorCodeGenDetail> activatorDetails = new LinkedHashMap<>();
-        for (TypeName serviceTypeName : req.serviceTypeNames()) {
+        for (TypeName serviceTypeName : req.generatedServiceTypeNames()) {
             try {
                 ActivatorCodeGenDetail activatorDetail = createActivatorCodeGenDetail(req, serviceTypeName, scan);
                 Object prev = activatorDetails.put(serviceTypeName, activatorDetail);

@@ -117,6 +117,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
             TypeName.create(TypeNames.JAKARTA_APPLICATION_SCOPED)
     );
     private static boolean disableBaseProcessing;
+    private final Set<TypeName> alreadyProcessed = new LinkedHashSet<>();
     private final Set<TypedElementInfo> allElementsOfInterestInThisModule = new LinkedHashSet<>();
     private final Map<TypeName, TypeInfo> typeInfoToCreateActivatorsForInThisModule = new LinkedHashMap<>();
     private ProcessingTracker tracker;
@@ -162,8 +163,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
 
     @Override
     public final boolean process(Set<? extends TypeElement> annotations,
-                           RoundEnvironment roundEnv) {
-
+                                 RoundEnvironment roundEnv) {
         Thread thread = Thread.currentThread();
         ClassLoader previousClassloader = thread.getContextClassLoader();
         thread.setContextClassLoader(PicoAnnotationProcessor.class.getClassLoader());
@@ -177,7 +177,8 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
     }
 
-    protected boolean doProcess(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    protected boolean doProcess(Set<? extends TypeElement> annotations,
+                                RoundEnvironment roundEnv) {
         utils().roundEnv(roundEnv);
 
         if (disableBaseProcessing && getClass() == PicoAnnotationProcessor.class) {
@@ -185,7 +186,6 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
         }
 
         ServicesToProcess.onBeginProcessing(utils(), getSupportedAnnotationTypes(), roundEnv);
-        //        ServicesToProcess.addOnDoneRunnable(CreatorHandler.reporting());
 
         try {
             // build the model
@@ -198,15 +198,18 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                                                  allElementsOfInterestInThisModule);
 
             // optionally intercept and validate the model
-            Set<TypeInfo> filtered = interceptorAndValidate(typeInfoToCreateActivatorsForInThisModule.values());
+            Set<TypeInfo> filtered = new LinkedHashSet<>(typeInfoToCreateActivatorsForInThisModule.values());
+            filtered = interceptAndValidate(filtered);
 
             // code generate the model
-            if (!filtered.isEmpty()) {
-                ServicesToProcess services = toServicesToProcess(filtered, allElementsOfInterestInThisModule);
-                doFiler(services);
-            }
+            ServicesToProcess services = toServicesToProcess(filtered, allElementsOfInterestInThisModule);
+            doFiler(services);
 
             notifyObservers();
+
+            if (roundEnv.processingOver()) {
+                alreadyProcessed.clear();
+            }
 
             return MAYBE_ANNOTATIONS_CLAIMED_BY_THIS_PROCESSOR;
         } catch (Throwable t) {
@@ -348,7 +351,7 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
      * @param typesToCreateActivatorsFor the map of types to process (where key is the proposed generated name)
      * @return the (possibly revised) set of types to process
      */
-    protected Set<TypeInfo> interceptorAndValidate(Collection<TypeInfo> typesToCreateActivatorsFor) {
+    protected Set<TypeInfo> interceptAndValidate(Collection<TypeInfo> typesToCreateActivatorsFor) {
         return new LinkedHashSet<>(Objects.requireNonNull(typesToCreateActivatorsFor));
     }
 
@@ -663,6 +666,9 @@ public class PicoAnnotationProcessor extends BaseAnnotationProcessor {
                 throw new ToolsException("Error while processing: " + service.typeName(), t);
             }
         });
+        typesNamesToCodeGenerate.removeAll(alreadyProcessed);
+        services.generatedServiceTypeNames(typesNamesToCodeGenerate);
+        alreadyProcessed.addAll(typesNamesToCodeGenerate);
 
         return services;
     }
