@@ -50,7 +50,13 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml> implements DbStatem
 
     @Override
     public long execute() {
-        return doExecute((future, context) -> doExecute(this, future, context));
+        return doExecute((future, context) -> {
+            try {
+                return doExecute(this, future, context);
+            } finally {
+                closeConnection();
+            }
+        });
     }
 
     /**
@@ -71,8 +77,6 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml> implements DbStatem
             return result;
         } catch (SQLException ex) {
             throw new DbStatementException("Failed to execute statement", dbStmt.context().statement(), ex);
-        } finally {
-            dbStmt.closeConnection();
         }
     }
 }

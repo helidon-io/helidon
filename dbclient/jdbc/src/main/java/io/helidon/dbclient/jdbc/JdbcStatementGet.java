@@ -50,7 +50,13 @@ class JdbcStatementGet extends JdbcStatement<DbStatementGet> implements DbStatem
 
     @Override
     public Optional<DbRow> execute() {
-        return doExecute((future, context) -> doExecute(this, future, context));
+        return doExecute((future, context) -> {
+            try {
+                return doExecute(this, future, context);
+            } finally {
+                closeConnection();
+            }
+        });
     }
 
     /**
@@ -77,8 +83,6 @@ class JdbcStatementGet extends JdbcStatement<DbStatementGet> implements DbStatem
             }
         } catch (SQLException ex) {
             throw new DbStatementException("Failed to execute Statement", dbStmt.context().statement(), ex);
-        } finally {
-            dbStmt.closeConnection();
         }
     }
 }

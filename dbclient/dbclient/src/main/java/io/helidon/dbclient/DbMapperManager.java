@@ -33,10 +33,10 @@ public interface DbMapperManager {
     GenericType<DbRow> TYPE_DB_ROW = GenericType.create(DbRow.class);
 
     /** Generic type for the {@link java.util.Map} of String to value pairs for named parameters. */
-    GenericType<Map<String, ?>> TYPE_NAMED_PARAMS = new GenericType<Map<String, ?>>() { };
+    GenericType<Map<String, ?>> TYPE_NAMED_PARAMS = new GenericType<>() {};
 
     /** Generic type for the {@link java.util.List} of indexed parameters. */
-    GenericType<List<?>> TYPE_INDEXED_PARAMS = new GenericType<List<?>>() { };
+    GenericType<List<?>> TYPE_INDEXED_PARAMS = new GenericType<>() {};
 
     /**
      * Create a fluent API builder to configure the mapper manager.

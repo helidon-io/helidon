@@ -17,9 +17,10 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
-import io.helidon.dbclient.DbMapperProvider;
+import io.helidon.dbclient.DbMapperProviderImpl;
 import io.helidon.dbclient.spi.DbClientProvider;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
+import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
  * Helidon DB Client.
@@ -49,6 +50,6 @@ module io.helidon.dbclient {
     uses DbClientServiceProvider;
     uses DbMapperProvider;
 
-    provides io.helidon.common.mapper.spi.MapperProvider with DbMapperProvider;
+    provides io.helidon.common.mapper.spi.MapperProvider with DbMapperProviderImpl;
 
 }

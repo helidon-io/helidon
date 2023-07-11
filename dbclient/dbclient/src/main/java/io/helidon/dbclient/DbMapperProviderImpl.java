@@ -35,13 +35,14 @@ import io.helidon.common.mapper.spi.MapperProvider;
 /**
  * Java {@link ServiceLoader} service to get database types mappers.
  */
-public class DbMapperProvider implements MapperProvider  {
+public class DbMapperProviderImpl implements MapperProvider  {
 
     /**
      * Mappers index {@code [Class<SOURCE>, Class<TARGET>] -> Mapper<SOURCE, TARGET>}.
      */
     private static final Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> MAPPERS = initMappers();
 
+    @SuppressWarnings("Java9CollectionFactory")
     private static Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> initMappers() {
         // All mappers index
         Map<Class<?>, Map<Class<?>, Mapper<?, ?>>> mappers = new HashMap<>(3);
@@ -66,11 +67,11 @@ public class DbMapperProvider implements MapperProvider  {
         //   - Mapper for java.sql.Timestamp to java.util.Calendar
         sqlTimestampMap.put(
                 Calendar.class,
-                DbMapperProvider::sqlTimestampToGregorianCalendar);
+                DbMapperProviderImpl::sqlTimestampToGregorianCalendar);
         //   - Mapper for java.sql.Timestamp to java.util.GregorianCalendar
         sqlTimestampMap.put(
                 GregorianCalendar.class,
-                DbMapperProvider::sqlTimestampToGregorianCalendar);
+                DbMapperProviderImpl::sqlTimestampToGregorianCalendar);
         mappers.put(
                 Timestamp.class,
                 Collections.unmodifiableMap(sqlTimestampMap));
