@@ -78,7 +78,6 @@ public class TimeoutTest extends AbstractTest {
     }
 
     @Test
-    @Disabled
     public void testFast() {
         Response r = target("test").request().get();
         assertThat(r.getStatus(), is(200));
@@ -86,7 +85,6 @@ public class TimeoutTest extends AbstractTest {
     }
 
     @Test
-    @Disabled
     public void testSlow() {
         try {
             target("test/timeout").property(ClientProperties.READ_TIMEOUT, 1_000).request().get();
@@ -97,7 +95,6 @@ public class TimeoutTest extends AbstractTest {
     }
 
     @Test
-    @Disabled
     public void testTimeoutInRequest() {
         try {
             target("test/timeout").request().property(ClientProperties.READ_TIMEOUT, 1_000).get();

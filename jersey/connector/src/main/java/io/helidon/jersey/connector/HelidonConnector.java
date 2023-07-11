@@ -62,6 +62,8 @@ import static org.glassfish.jersey.client.ClientProperties.getValue;
 class HelidonConnector implements Connector {
     static final Logger LOGGER = Logger.getLogger(HelidonConnector.class.getName());
 
+    private static final int DEFAULT_TIMEOUT = 10000;
+
     private static final String HELIDON_VERSION = "Helidon/" + Version.VERSION + " (java "
             + PropertiesHelper.getSystemProperty("java.runtime.version") + ")";
 
@@ -74,13 +76,25 @@ class HelidonConnector implements Connector {
 
     HelidonConnector(Client client, Configuration config) {
         this.client = client;
+
+        // create underlying HTTP client
         Map<String, Object> properties = config.getProperties();
-        httpClient = WebClient.builder(Http1.PROTOCOL)
-                .config(helidonConfig(config).orElse(Config.empty()))
-                .connectTimeout(Duration.ofMillis(getValue(properties, CONNECT_TIMEOUT, 10000)))
-                .readTimeout(Duration.ofMillis(getValue(properties, READ_TIMEOUT, 10000)))
-                .followRedirect(getValue(properties, FOLLOW_REDIRECTS, true))
-                .build();
+        Http1Client.Http1ClientBuilder builder = WebClient.builder(Http1.PROTOCOL);
+
+        // use config for client
+        builder.config(helidonConfig(config).orElse(Config.empty()));
+
+        // possibly override config with properties
+        if (properties.containsKey(CONNECT_TIMEOUT)) {
+            builder.connectTimeout(Duration.ofMillis(getValue(properties, CONNECT_TIMEOUT, DEFAULT_TIMEOUT)));
+        }
+        if (properties.containsKey(READ_TIMEOUT)) {
+            builder.readTimeout(Duration.ofMillis(getValue(properties, READ_TIMEOUT, DEFAULT_TIMEOUT)));
+        }
+        if (properties.containsKey(FOLLOW_REDIRECTS)) {
+            builder.followRedirect(getValue(properties, FOLLOW_REDIRECTS, true));
+        }
+        httpClient = builder.build();
     }
 
     /**
@@ -116,8 +130,13 @@ class HelidonConnector implements Connector {
         SSLContext sslContext = client.getSslContext();
         httpRequest.tls(Tls.builder().sslContext(sslContext).build());
 
-        // redirects
-        httpRequest.followRedirects(request.resolveProperty(FOLLOW_REDIRECTS, true));
+        // request config
+        if (request.hasProperty(FOLLOW_REDIRECTS)) {
+            httpRequest.followRedirects(request.resolveProperty(FOLLOW_REDIRECTS, true));
+        }
+        if (request.hasProperty(READ_TIMEOUT)) {
+            httpRequest.readTimeout(Duration.ofMillis(request.resolveProperty(READ_TIMEOUT, DEFAULT_TIMEOUT)));
+        }
 
         // copy properties
         for (String name : request.getConfiguration().getPropertyNames()) {
@@ -239,6 +258,10 @@ class HelidonConnector implements Connector {
 
     @Override
     public void close() {
+    }
+
+    Http1Client client() {
+        return httpClient;
     }
 
     /**
