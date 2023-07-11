@@ -28,7 +28,10 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
-public class ConfigTest {
+/**
+ * Tests {@link HelidonConnector} configuration.
+ */
+class ConfigTest {
 
     private static Config config;
 
