@@ -20,40 +20,40 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbTransaction;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.model.Type;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
 
-import jakarta.json.JsonObject;
-
 import static io.helidon.tests.integration.dbclient.appl.model.Type.TYPES;
+import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
 
 /**
  * Web resource to test set of basic DbClient inserts in transaction.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class TransactionInsertService extends AbstractService {
 
     private static final System.Logger LOGGER = System.getLogger(TransactionInsertService.class.getName());
 
     // Internal functional interface used to implement testing code.
     // Method call: apply(srcPokemon, updatedPokemon)
-    private interface TestFunction extends Function<Pokemon, Single<Long>> {}
+    private interface TestFunction extends Function<Pokemon, Long> {
+    }
 
     public TransactionInsertService(final DbClient dbClient, final Map<String, String> statements) {
         super(dbClient, statements);
     }
 
     @Override
-    public void update(Routing.Rules rules) {
-        rules
-                .get("/testCreateNamedInsertStrStrNamedArgs", this::testCreateNamedInsertStrStrNamedArgs)
+    public void routing(HttpRules rules) {
+        rules.get("/testCreateNamedInsertStrStrNamedArgs", this::testCreateNamedInsertStrStrNamedArgs)
                 .get("/testCreateNamedInsertStrNamedArgs", this::testCreateNamedInsertStrNamedArgs)
                 .get("/testCreateNamedInsertStrOrderArgs", this::testCreateNamedInsertStrOrderArgs)
                 .get("/testCreateInsertNamedArgs", this::testCreateInsertNamedArgs)
@@ -70,268 +70,301 @@ public class TransactionInsertService extends AbstractService {
     }
 
     // Common test execution code
-    private JsonObject executeTest(
-            final ServerRequest request,
-            final ServerResponse response,
-            final String testName,
-            final String pokemonName,
-            final List<Type> pokemonTypes,
-            final TestFunction test) {
+    private void executeTest(ServerRequest request,
+                             ServerResponse response,
+                             String testName,
+                             String pokemonName,
+                             List<Type> pokemonTypes,
+                             TestFunction test) {
+
         LOGGER.log(Level.DEBUG, () -> String.format("Running SimpleInsertService.%s on server", testName));
         try {
             String idStr = param(request, QUERY_ID_PARAM);
             int id = Integer.parseInt(idStr);
             Pokemon pokemon = new Pokemon(id, pokemonName, pokemonTypes);
-            test.apply(pokemon)
-                    .thenAccept(
-                            result -> response.send(
-                                    AppResponse.okStatus(pokemon.toJsonObject())))
-                    .exceptionally(t -> {
-                        response.send(AppResponse.exceptionStatus(t));
-                        return null;
-                    });
+            test.apply(pokemon);
+            response.send(okStatus(pokemon.toJsonObject()));
         } catch (RemoteTestException | NumberFormatException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Error in SimpleInsertService.%s on server", testName));
             response.send(AppResponse.exceptionStatus(ex));
         }
-        return null;
     }
 
     // Verify {@code createNamedInsert(String, String)} API method with named parameters.
-    private JsonObject testCreateNamedInsertStrStrNamedArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateNamedInsertStrStrNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testCreateNamedInsertStrStrNamedArgs",
                 "Bounsweet",
                 Pokemon.typesList(TYPES.get(12)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createNamedInsert("insert-bulbasaur", statement("insert-pokemon-named-arg"))
-                                .addParam("id", pokemon.getId())
-                                .addParam("name", pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createNamedInsert("insert-bulbasaur", statement("insert-pokemon-named-arg"))
+                            .addParam("id", pokemon.getId())
+                            .addParam("name", pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createNamedInsert(String)} API method with named parameters.
-    private JsonObject testCreateNamedInsertStrNamedArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateNamedInsertStrNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testCreateNamedInsertStrNamedArgs",
                 "Steenee",
                 Pokemon.typesList(TYPES.get(12)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createNamedInsert("insert-pokemon-named-arg")
-                                .addParam("id", pokemon.getId())
-                                .addParam("name", pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createNamedInsert("insert-pokemon-named-arg")
+                            .addParam("id", pokemon.getId())
+                            .addParam("name", pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createNamedInsert(String)} API method with ordered parameters.
-    private JsonObject testCreateNamedInsertStrOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateNamedInsertStrOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testCreateNamedInsertStrOrderArgs",
                 "Tsareena",
                 Pokemon.typesList(TYPES.get(12)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createNamedInsert("insert-pokemon-order-arg")
-                                .addParam(pokemon.getId())
-                                .addParam(pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createNamedInsert("insert-pokemon-order-arg")
+                            .addParam(pokemon.getId())
+                            .addParam(pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createInsert(String)} API method with named parameters.
-    private JsonObject testCreateInsertNamedArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateInsertNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testCreateInsertNamedArgs",
                 "Fennekin",
                 Pokemon.typesList(TYPES.get(10)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createInsert(statement("insert-pokemon-named-arg"))
-                                .addParam("id", pokemon.getId())
-                                .addParam("name", pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createInsert(statement("insert-pokemon-named-arg"))
+                            .addParam("id", pokemon.getId())
+                            .addParam("name", pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createInsert(String)} API method with ordered parameters.
-    private JsonObject testCreateInsertOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateInsertOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testCreateInsertOrderArgs",
                 "Braixen",
                 Pokemon.typesList(TYPES.get(10)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createInsert(statement("insert-pokemon-order-arg"))
-                                .addParam(pokemon.getId())
-                                .addParam(pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createInsert(statement("insert-pokemon-order-arg"))
+                            .addParam(pokemon.getId())
+                            .addParam(pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code namedInsert(String)} API method with ordered parameters passed directly to the {@code insert} method.
-    private JsonObject testNamedInsertOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testNamedInsertOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Delphox",
                 Pokemon.typesList(TYPES.get(10), TYPES.get(14)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .namedInsert(
-                                        "insert-pokemon-order-arg",
-                                        pokemon.getId(),
-                                        pokemon.getName())
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .namedInsert("insert-pokemon-order-arg",
+                                    pokemon.getId(),
+                                    pokemon.getName());
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code insert(String)} API method with ordered parameters passed directly to the {@code insert} method.
-    private JsonObject testInsertOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testInsertOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testInsertOrderArgs",
                 "Bouffalant",
                 Pokemon.typesList(TYPES.get(1)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .insert(statement("insert-pokemon-order-arg"),
-                                        pokemon.getId(),
-                                        pokemon.getName())
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .insert(statement("insert-pokemon-order-arg"),
+                                    pokemon.getId(),
+                                    pokemon.getName());
+                    tx.commit();
+                    return count;
+                });
     }
 
     // DML insert
 
     // Verify {@code createNamedDmlStatement(String, String)} API method with insert with named parameters.
-    private JsonObject testCreateNamedDmlWithInsertStrStrNamedArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateNamedDmlWithInsertStrStrNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Roggenrola",
                 Pokemon.typesList(TYPES.get(6)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createNamedDmlStatement("insert-torchic", statement("insert-pokemon-named-arg"))
-                                .addParam("id", pokemon.getId())
-                                .addParam("name", pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createNamedDmlStatement("insert-torchic", statement("insert-pokemon-named-arg"))
+                            .addParam("id", pokemon.getId())
+                            .addParam("name", pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createNamedDmlStatement(String)} API method with insert with named parameters.
-    private JsonObject testCreateNamedDmlWithInsertStrNamedArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateNamedDmlWithInsertStrNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Boldore",
                 Pokemon.typesList(TYPES.get(6)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createNamedDmlStatement("insert-pokemon-named-arg")
-                                .addParam("id", pokemon.getId())
-                                .addParam("name", pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createNamedDmlStatement("insert-pokemon-named-arg")
+                            .addParam("id", pokemon.getId())
+                            .addParam("name", pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createNamedDmlStatement(String)} API method with insert with ordered parameters.
-    private JsonObject testCreateNamedDmlWithInsertStrOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateNamedDmlWithInsertStrOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Gigalith",
                 Pokemon.typesList(TYPES.get(6)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createNamedDmlStatement("insert-pokemon-order-arg")
-                                .addParam(pokemon.getId())
-                                .addParam(pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createNamedDmlStatement("insert-pokemon-order-arg")
+                            .addParam(pokemon.getId())
+                            .addParam(pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createDmlStatement(String)} API method with insert with named parameters.
-    private JsonObject testCreateDmlWithInsertNamedArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateDmlWithInsertNamedArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Wurmple",
                 Pokemon.typesList(TYPES.get(7)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createDmlStatement(statement("insert-pokemon-named-arg"))
-                                .addParam("id", pokemon.getId())
-                                .addParam("name", pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createDmlStatement(statement("insert-pokemon-named-arg"))
+                            .addParam("id", pokemon.getId())
+                            .addParam("name", pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code createDmlStatement(String)} API method with insert with ordered parameters.
-    private JsonObject testCreateDmlWithInsertOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testCreateDmlWithInsertOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Silcoon",
                 Pokemon.typesList(TYPES.get(7)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .createDmlStatement(statement("insert-pokemon-order-arg"))
-                                .addParam(pokemon.getId())
-                                .addParam(pokemon.getName())
-                                .execute()
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .createDmlStatement(statement("insert-pokemon-order-arg"))
+                            .addParam(pokemon.getId())
+                            .addParam(pokemon.getName())
+                            .execute();
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code namedDml(String)} API method with insert with ordered parameters passed directly
-    private JsonObject testNamedDmlWithInsertOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testNamedDmlWithInsertOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Cascoon",
                 Pokemon.typesList(TYPES.get(7)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .namedDml("insert-pokemon-order-arg",
-                                        pokemon.getId(),
-                                        pokemon.getName())
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .namedDml("insert-pokemon-order-arg",
+                                    pokemon.getId(),
+                                    pokemon.getName());
+                    tx.commit();
+                    return count;
+                });
     }
 
     // Verify {@code dml(String)} API method with insert with ordered parameters passed directly
-    private JsonObject testDmlWithInsertOrderArgs(final ServerRequest request, final ServerResponse response) {
-        return executeTest(
+    private void testDmlWithInsertOrderArgs(ServerRequest request, ServerResponse response) {
+        executeTest(
                 request,
                 response,
                 "testNamedInsertOrderArgs",
                 "Beautifly",
                 Pokemon.typesList(TYPES.get(3), TYPES.get(7)),
-                (pokemon) -> dbClient().inTransaction(
-                        exec -> exec
-                                .dml(statement("insert-pokemon-order-arg"),
-                                        pokemon.getId(),
-                                        pokemon.getName())
-                ));
+                (pokemon) -> {
+                    DbTransaction tx = dbClient().transaction();
+                    long count = tx
+                            .dml(statement("insert-pokemon-order-arg"),
+                                    pokemon.getId(),
+                                    pokemon.getName());
+                    tx.commit();
+                    return count;
+                });
     }
-
 }

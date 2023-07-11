@@ -16,23 +16,22 @@
 package io.helidon.tests.integration.dbclient.appl.tools;
 
 import io.helidon.common.http.HttpMediaType;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
  * Web resource to terminate web server.
  */
-public class ExitService implements Service {
+public class ExitService implements HttpService {
 
     private WebServer server;
 
     @Override
-    public void update(Routing.Rules rules) {
-        rules
-                .get("/", this::exit);
+    public void routing(HttpRules rules) {
+        rules.get("/", this::exit);
     }
 
     public void setServer(WebServer server) {

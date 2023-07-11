@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.appl.tools;
 
-import java.lang.System.Logger.Level;
+import io.helidon.nima.webserver.WebServer;
 
-import io.helidon.reactive.webserver.WebServer;
+import java.lang.System.Logger.Level;
 
 /**
  * Exits JPA MP application after short delay.
@@ -51,7 +51,7 @@ public class ExitThread implements Runnable {
         } catch (InterruptedException ie) {
             LOGGER.log(Level.WARNING, String.format("Thread was interrupted: %s", ie.getMessage()), ie);
         } finally {
-            server.shutdown();
+            server.stop();
         }
     }
 

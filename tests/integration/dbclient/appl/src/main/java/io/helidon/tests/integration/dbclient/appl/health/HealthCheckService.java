@@ -21,11 +21,11 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
@@ -57,7 +57,7 @@ public class HealthCheckService extends AbstractService {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
                 .get("/testHealthCheck", this::testHealthCheck)
                 .get("/testHealthCheckWithName", this::testHealthCheckWithName)

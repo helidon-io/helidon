@@ -39,13 +39,16 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class CheckIT {
 
-    /** Local logger instance. */
     private static final System.Logger LOGGER = System.getLogger(CheckIT.class.getName());
 
-    /** Test configuration. */
+    /**
+     * Test configuration.
+     */
     public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
 
-    /** Timeout in seconds to wait for database to come up. */
+    /**
+     * Timeout in seconds to wait for database to come up.
+     */
     private static final int TIMEOUT = 60;
 
     /**

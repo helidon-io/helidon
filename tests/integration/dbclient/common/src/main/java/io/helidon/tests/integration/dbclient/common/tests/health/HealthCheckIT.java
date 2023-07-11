@@ -20,7 +20,7 @@ import java.lang.System.Logger.Level;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
+import io.helidon.dbclient.health.DbClientHealthCheck;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

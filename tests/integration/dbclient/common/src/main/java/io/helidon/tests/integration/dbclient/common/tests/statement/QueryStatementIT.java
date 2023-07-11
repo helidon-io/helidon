@@ -19,9 +19,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Multi;
-import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.utils.RangePoJo;
 
@@ -39,10 +39,10 @@ public class QueryStatementIT extends AbstractIT {
      */
     @Test
     public void testQueryArrayParams() {
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-order-arg")
                 .params(1, 7)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }
@@ -55,10 +55,10 @@ public class QueryStatementIT extends AbstractIT {
         List<Integer> params = new ArrayList<>(2);
         params.add(1);
         params.add(7);
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-order-arg")
                 .params(params)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }
@@ -71,10 +71,10 @@ public class QueryStatementIT extends AbstractIT {
         Map<String, Integer> params = new HashMap<>(2);
         params.put("idmin", 1);
         params.put("idmax", 7);
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-named-arg")
                 .params(params)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }
@@ -84,11 +84,11 @@ public class QueryStatementIT extends AbstractIT {
      */
     @Test
     public void testQueryOrderParam() {
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-order-arg")
                 .addParam(1)
                 .addParam(7)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }
@@ -98,11 +98,11 @@ public class QueryStatementIT extends AbstractIT {
      */
     @Test
     public void testQueryNamedParam() {
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-named-arg")
                 .addParam("idmin", 1)
                 .addParam("idmax", 7)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }
@@ -113,10 +113,10 @@ public class QueryStatementIT extends AbstractIT {
     @Test
     public void testQueryMappedNamedParam() {
         RangePoJo range = new RangePoJo(1, 7);
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-named-arg")
                 .namedParam(range)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }
@@ -127,10 +127,10 @@ public class QueryStatementIT extends AbstractIT {
     @Test
     public void testQueryMappedOrderParam() {
         RangePoJo range = new RangePoJo(1, 7);
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
+        Stream<DbRow> rows = DB_CLIENT.execute()
                 .createNamedQuery("select-pokemons-idrng-order-arg")
                 .indexedParam(range)
-                .execute());
+                .execute();
 
         verifyPokemonsIdRange(rows, 1, 7);
     }

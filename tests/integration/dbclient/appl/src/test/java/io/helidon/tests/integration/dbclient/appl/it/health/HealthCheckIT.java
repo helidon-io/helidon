@@ -17,6 +17,7 @@ package io.helidon.tests.integration.dbclient.appl.it.health;
 
 import java.lang.System.Logger.Level;
 
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.tests.integration.dbclient.appl.it.LogData;
 import io.helidon.tests.integration.dbclient.appl.tools.QueryParams;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
@@ -24,7 +25,6 @@ import io.helidon.tests.integration.tools.client.TestClient;
 import io.helidon.tests.integration.tools.client.TestServiceClient;
 
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;

@@ -15,11 +15,10 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.interceptor;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbClientService;
-import io.helidon.reactive.dbclient.DbClientServiceContext;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbClientService;
+import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
@@ -42,9 +41,9 @@ public class InterceptorIT {
         }
 
         @Override
-        public Single<DbClientServiceContext> statement(DbClientServiceContext context) {
+        public DbClientServiceContext statement(DbClientServiceContext context) {
             this.called = true;
-            return Single.just(context);
+            return context;
         }
 
         private boolean called() {
@@ -60,17 +59,15 @@ public class InterceptorIT {
 
     /**
      * Check that statement interceptor was called before statement execution.
-     *
      */
     @Test
     public void testStatementInterceptor() {
         TestClientService interceptor = new TestClientService();
         DbClient dbClient = initDbClient(interceptor);
-        dbClient.execute(exec -> exec
+        dbClient.execute()
                 .createNamedQuery("select-pokemon-named-arg")
                 .addParam("name", POKEMONS.get(6).getName())
-                .execute());
-
+                .execute();
         assertThat(interceptor.called(), equalTo(true));
     }
 

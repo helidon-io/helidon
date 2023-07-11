@@ -20,17 +20,15 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbClientService;
-import io.helidon.reactive.dbclient.DbStatementType;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbClientService;
+import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.dbclient.metrics.DbClientMetrics;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.health.HealthObserveProvider;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.tests.integration.dbclient.appl.health.HealthCheckService;
 import io.helidon.tests.integration.dbclient.appl.interceptor.InterceptorService;
 import io.helidon.tests.integration.dbclient.appl.mapping.MapperService;
@@ -58,88 +56,77 @@ public class ApplMain {
 
     private static final System.Logger LOGGER = System.getLogger(ApplMain.class.getName());
 
-    private static final String CONFIG_PROPERTY_NAME="app.config";
+    private static final String CONFIG_PROPERTY_NAME = "app.config";
 
-    private static final String DEFAULT_CONFIG_FILE="test.yaml";
+    private static final String DEFAULT_CONFIG_FILE = "test.yaml";
 
     private static void startServer(String configFile) {
 
-        final Config config = Config.create(ConfigSources.classpath(configFile));
-        final Config dbConfig = config.get("db");
+        Config config = Config.create(ConfigSources.classpath(configFile));
+        Config dbConfig = config.get("db");
 
         // Client services are added through a service loader - see mongoDB example for explicit services
-        final DbClient dbClient = DbClient.builder(dbConfig)
-                .addService(DbClientMetrics.counter()
-                                    .statementNames("select-pokemon-named-arg", "select-pokemon-order-arg", "insert-pokemon"))
-                .addService(DbClientMetrics.timer()
-                                    .statementTypes(DbStatementType.GET))
+        DbClient dbClient = DbClient.builder(dbConfig)
+                .addService(DbClientMetrics.counter().statementNames(
+                        "select-pokemon-named-arg",
+                        "select-pokemon-order-arg", "insert-pokemon"))
+                .addService(DbClientMetrics.timer().statementTypes(DbStatementType.GET))
                 .build();
-        final HealthSupport health = HealthSupport.builder()
-                .add(DbClientHealthCheck
-                        .builder(dbClient)
-                        //.dml()
+
+        HealthFeature health = HealthFeature.builder()
+                .addCheck(DbClientHealthCheck.builder(dbClient)
                         .statementName("ping")
                         .build())
                 .build();
+        ObserveFeature observe = ObserveFeature.create(HealthObserveProvider.create(health));
 
-        final Map<String, String> statements = dbConfig
-                .get("statements")
+        Map<String, String> statements = dbConfig.get("statements")
                 .detach()
                 .asMap()
                 .get();
 
-        final ExitService exitResource = new ExitService();
+        ExitService exitResource = new ExitService();
 
-        final DbClientService interceptorTestService = new InterceptorService.TestClientService();
-
-        final Routing routing = Routing.builder()
-                .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register(health)                   // Health at "/health"
-                .register("/Init", new InitService(dbClient, dbConfig))
-                .register("/Exit", exitResource)
-                .register("/Verify", new VerifyService(dbClient, config))
-                .register("/SimpleGet", new SimpleGetService(dbClient, statements))
-                .register("/SimpleQuery", new SimpleQueryService(dbClient, statements))
-                .register("/SimpleUpdate", new SimpleUpdateService(dbClient, statements))
-                .register("/SimpleInsert", new SimpleInsertService(dbClient, statements))
-                .register("/SimpleDelete", new SimpleDeleteService(dbClient, statements))
-                .register("/TransactionGet", new TransactionGetService(dbClient, statements))
-                .register("/TransactionQueries", new TransactionQueriesService(dbClient, statements))
-                .register("/TransactionUpdate", new TransactionUpdateService(dbClient, statements))
-                .register("/TransactionInsert", new TransactionInsertService(dbClient, statements))
-                .register("/TransactionDelete", new TransactionDeleteService(dbClient, statements))
-                .register("/DmlStatement", new DmlStatementService(dbClient, statements))
-                .register("/GetStatement", new GetStatementService(dbClient, statements))
-                .register("/QueryStatement", new QueryStatementService(dbClient, statements))
-                .register("/FlowControl", new FlowControlService(dbClient, statements))
-                .register("/Mapper", new MapperService(dbClient, statements))
-                .register("/Interceptor", new InterceptorService(
-                        DbClient.builder(dbConfig)
-                                .addService(interceptorTestService).build(),
-                        statements,
-                        interceptorTestService))
-                .register("/HealthCheck", new HealthCheckService(dbClient, dbConfig, statements))
-                .build();
+        DbClientService interceptorTestService = new InterceptorService.TestClientService();
 
         // Prepare routing for the server
-        final WebServer.Builder serverBuilder = WebServer.builder(routing)
-                // Get webserver config from the "server" section of application.yaml
-                .config(config.get("server"));
-
-        final WebServer server = serverBuilder
-                .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(JsonbSupport.create())
-                .build();
+        WebServer server =
+                WebServer.builder()
+                        .routing(routing -> routing
+                                .addFeature(observe)
+                                .register("/Init", new InitService(dbClient, dbConfig))
+                                .register("/Exit", exitResource)
+                                .register("/Verify", new VerifyService(dbClient, config))
+                                .register("/SimpleGet", new SimpleGetService(dbClient, statements))
+                                .register("/SimpleQuery", new SimpleQueryService(dbClient, statements))
+                                .register("/SimpleUpdate", new SimpleUpdateService(dbClient, statements))
+                                .register("/SimpleInsert", new SimpleInsertService(dbClient, statements))
+                                .register("/SimpleDelete", new SimpleDeleteService(dbClient, statements))
+                                .register("/TransactionGet", new TransactionGetService(dbClient, statements))
+                                .register("/TransactionQueries", new TransactionQueriesService(dbClient, statements))
+                                .register("/TransactionUpdate", new TransactionUpdateService(dbClient, statements))
+                                .register("/TransactionInsert", new TransactionInsertService(dbClient, statements))
+                                .register("/TransactionDelete", new TransactionDeleteService(dbClient, statements))
+                                .register("/DmlStatement", new DmlStatementService(dbClient, statements))
+                                .register("/GetStatement", new GetStatementService(dbClient, statements))
+                                .register("/QueryStatement", new QueryStatementService(dbClient, statements))
+                                .register("/FlowControl", new FlowControlService(dbClient, statements))
+                                .register("/Mapper", new MapperService(dbClient, statements))
+                                .register("/Interceptor", new InterceptorService(
+                                        DbClient.builder(dbConfig)
+                                                .addService(interceptorTestService).build(),
+                                        statements,
+                                        interceptorTestService))
+                                .register("/HealthCheck", new HealthCheckService(dbClient, dbConfig, statements)))
+                        // Get webserver config from the "server" section of application.yaml
+                        .config(config.get("server"))
+                        .build()
+                        .start();
 
         exitResource.setServer(server);
 
         // Start the server and print some info.
-        server.start()
-                .thenAccept(ws -> System.out.println("WEB server is up! http://localhost:" + ws.port() + "/"));
-
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown()
-                .thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
 
     }
 

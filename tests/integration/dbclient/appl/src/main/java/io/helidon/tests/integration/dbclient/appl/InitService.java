@@ -16,32 +16,30 @@
 package io.helidon.tests.integration.dbclient.appl;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbExecute;
+import io.helidon.dbclient.DbTransaction;
+import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.model.Type;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObjectBuilder;
 
-import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
 
 /**
  * Web resource for tests initialization services.
  */
-public class InitService implements Service {
+public class InitService implements HttpService {
 
     private final DbClient dbClient;
 
@@ -59,7 +57,7 @@ public class InitService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
                 .get("/setup", this::setup)
                 .get("/testPing", this::testHealthCheck)
@@ -70,17 +68,7 @@ public class InitService implements Service {
                 .get("/testInitPokemonTypes", this::testInitPokemonTypes);
     }
 
-    public static void sendDmlResponse(ServerResponse response, Supplier<CompletableFuture<Long>> test) {
-        test.get()
-                .thenAccept(result -> response.send(okStatus(Json.createValue(result))))
-                .exceptionally(t -> {
-                    response.send(exceptionStatus(t));
-                    return null;
-                });
-    }
-
     // Setup tests.
-    @SuppressWarnings("null")
     private void setup(ServerRequest request, ServerResponse response) {
         Config cfgPingDml = dbConfig.get("test.ping-dml");
         boolean pingDml = cfgPingDml.exists() ? cfgPingDml.asBoolean().get() : true;
@@ -92,8 +80,8 @@ public class InitService implements Service {
     // Database HealthCheck to make sure that database is alive.
     private void testHealthCheck(ServerRequest request, ServerResponse response) {
         HealthCheck check = DbClientHealthCheck.create(
-                                dbClient,
-                                dbConfig.get("health-check"));
+                dbClient,
+                dbConfig.get("health-check"));
         HealthCheckResponse checkResponse = check.call();
         HealthCheckResponse.Status checkState = checkResponse.status();
         JsonObjectBuilder data = Json.createObjectBuilder();
@@ -103,81 +91,69 @@ public class InitService implements Service {
 
     // Drop database schema (tables)
     private void testDropSchema(ServerRequest request, ServerResponse response) {
-        sendDmlResponse(response,
-                () -> dbClient.execute(
-                        exec -> exec
-                                .namedDml("drop-poketypes")
-                                .flatMapSingle(result -> exec.namedDml("drop-pokemons"))
-                                .flatMapSingle(result -> exec.namedDml("drop-types"))
-                ).toCompletableFuture());
+        DbExecute exec = dbClient.execute();
+        long count = 0;
+        count += exec.namedDml("drop-poketypes");
+        count += exec.namedDml("drop-pokemons");
+        count += exec.namedDml("drop-types");
+        response.send(okStatus(Json.createValue(count)));
     }
 
     // Initialize database schema (tables)
     private void testInitSchema(final ServerRequest request, final ServerResponse response) {
-        sendDmlResponse(response,
-                () -> dbClient.execute(
-                        exec -> exec
-                                .namedDml("create-types")
-                                .flatMapSingle(result -> exec.namedDml("create-pokemons"))
-                                .flatMapSingle(result -> exec.namedDml("create-poketypes"))
-                ).toCompletableFuture());
+        DbExecute exec = dbClient.execute();
+        long count = 0;
+        count += exec.namedDml("create-types");
+        count += exec.namedDml("create-pokemons");
+        count += exec.namedDml("create-poketypes");
+        response.send(okStatus(Json.createValue(count)));
     }
 
-    // Initialize pokemon types list
-    private void testInitTypes(final ServerRequest request, final ServerResponse response) {
-        sendDmlResponse(response,
-                () -> dbClient.inTransaction(tx -> {
-                    Single<Long> stage = null;
-                    for (Map.Entry<Integer, Type> entry : Type.TYPES.entrySet()) {
-                        if (stage == null) {
-                            stage = tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
-                        } else {
-                            stage = stage.flatMapSingle(result -> tx.namedDml(
-                                    "insert-type", entry.getKey(), entry.getValue().getName()));
-                        }
-                    }
-                    return stage;
-                }
-                ).toCompletableFuture());
+    // Initialize Pokémon types list
+    private void testInitTypes(ServerRequest request, ServerResponse response) {
+        DbTransaction tx = dbClient.transaction();
+        long count = -1;
+        for (Map.Entry<Integer, Type> entry : Type.TYPES.entrySet()) {
+            if (count < 0) {
+                count = tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
+            } else {
+                count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
+            }
+        }
+        tx.commit();
+        response.send(okStatus(Json.createValue(count)));
     }
 
     // Initialize pokemons
-    private void testInitPokemons(final ServerRequest request, final ServerResponse response) {
-        sendDmlResponse(response,
-                () -> dbClient.inTransaction(tx -> {
-                    Single<Long> stage = null;
-                    for (Map.Entry<Integer, Pokemon> entry : Pokemon.POKEMONS.entrySet()) {
-                        if (stage == null) {
-                            stage = tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
-                        } else {
-                            stage = stage.flatMapSingle(result -> tx.namedDml(
-                                    "insert-pokemon", entry.getKey(), entry.getValue().getName()));
-                        }
-                    }
-                    return stage;
-                }
-                ).toCompletableFuture());
+    private void testInitPokemons(ServerRequest request, ServerResponse response) {
+        DbTransaction tx = dbClient.transaction();
+        long count = -1;
+        for (Map.Entry<Integer, Type> entry : Type.TYPES.entrySet()) {
+            if (count < 0) {
+                count = tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
+            } else {
+                count += tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
+            }
+        }
+        tx.commit();
+        response.send(okStatus(Json.createValue(count)));
     }
 
-    // Initialize pokemon types relation
-    private void testInitPokemonTypes(final ServerRequest request, final ServerResponse response) {
-        sendDmlResponse(response,
-                () -> dbClient.inTransaction(tx -> {
-                    Single<Long> stage = null;
-                    for (Map.Entry<Integer, Pokemon> entry : Pokemon.POKEMONS.entrySet()) {
-                        Pokemon pokemon = entry.getValue();
-                        for (Type type : pokemon.getTypes()) {
-                            if (stage == null) {
-                                stage = tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
-                            } else {
-                                stage = stage.flatMapSingle(result -> tx.namedDml(
-                                        "insert-poketype", pokemon.getId(), type.getId()));
-                            }
-                        }
-                    }
-                    return stage;
+    // Initialize Pokémon types relation
+    private void testInitPokemonTypes(ServerRequest request, ServerResponse response) {
+        DbTransaction tx = dbClient.transaction();
+        long count = -1;
+        for (Map.Entry<Integer, Pokemon> entry : Pokemon.POKEMONS.entrySet()) {
+            Pokemon pokemon = entry.getValue();
+            for (Type type : pokemon.getTypes()) {
+                if (count < 0) {
+                    count = tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
+                } else {
+                    count += tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
                 }
-                ).toCompletableFuture());
+            }
+        }
+        tx.commit();
+        response.send(okStatus(Json.createValue(count)));
     }
-
 }

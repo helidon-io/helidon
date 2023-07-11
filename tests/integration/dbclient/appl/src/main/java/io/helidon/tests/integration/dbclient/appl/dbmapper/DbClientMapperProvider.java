@@ -17,8 +17,8 @@ package io.helidon.tests.integration.dbclient.appl.dbmapper;
 
 import java.util.Optional;
 
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.spi.DbMapperProvider;
+import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.spi.DbMapperProvider;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.dbclient.appl.model.RangePoJo;
 

@@ -19,12 +19,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbExecute;
+import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -48,50 +47,39 @@ public class InitIT extends AbstractIT {
      * @param dbClient Helidon database client
      */
     private static void initData(DbClient dbClient) {
-        // Init pokemon types
-        dbClient.execute(tx -> {
-            Single<Long> stage = null;
-            for (Map.Entry<Integer, Type> entry : TYPES.entrySet()) {
-                if (stage == null) {
-                    stage = tx.namedInsert("insert-type", entry.getKey(), entry.getValue().getName());
-                } else {
-                    stage = stage.flatMapSingle(result -> tx.namedInsert(
-                            "insert-type", entry.getKey(), entry.getValue().getName()));
-                }
+        // Init Pokémon types
+        DbExecute exec = dbClient.execute();
+        long count = -1;
+        for (Map.Entry<Integer, Type> entry : TYPES.entrySet()) {
+            if (count < 0) {
+                count = dbClient.execute().namedInsert("insert-type", entry.getKey(), entry.getValue().getName());
+            } else {
+                count += exec.namedInsert("insert-type", entry.getKey(), entry.getValue().getName());
             }
-            return stage;
-        }).await();
+        }
 
-        // Init pokemons
-        dbClient.execute(tx -> {
-            Single<Long> stage = null;
-            for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
-                if (stage == null) {
-                    stage = tx.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
-                } else {
-                    stage = stage.flatMapSingle(result -> tx.namedInsert(
-                            "insert-pokemon", entry.getKey(), entry.getValue().getName()));
-                }
+        // Init Pokémon
+        count = -1;
+        for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
+            if (count < 0) {
+                count = exec.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
+            } else {
+                count += exec.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
             }
-            return stage;
-        }).await();
+        }
 
-        // Init pokemon to type relation
-        dbClient.execute(tx -> {
-            Single<Long> stage = null;
-            for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
-                Pokemon pokemon = entry.getValue();
-                for (Type type : pokemon.getTypes()) {
-                    if (stage == null) {
-                        stage = tx.namedInsert("insert-poketype", pokemon.getId(), type.getId());
-                    } else {
-                        stage = stage.flatMapSingle(result -> tx.namedInsert(
-                                "insert-poketype", pokemon.getId(), type.getId()));
-                    }
+        // Init Pokémon to type relation
+        count = -1;
+        for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
+            Pokemon pokemon = entry.getValue();
+            for (Type type : pokemon.getTypes()) {
+                if (count < 0) {
+                    count = exec.namedInsert("insert-poketype", pokemon.getId(), type.getId());
+                } else {
+                    count += exec.namedInsert("insert-poketype", pokemon.getId(), type.getId());
                 }
             }
-            return stage;
-        }).await();
+        }
     }
 
     /**
@@ -103,16 +91,14 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized pokemon types.
-     *
+     * Verify that database contains properly initialized Pokémon types.
      */
     @Test
     public void testListTypes() {
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-types"));
+        Stream<DbRow> rows = DB_CLIENT.execute().namedQuery("select-types");
 
         assertThat(rows, notNullValue());
-        List<DbRow> rowsList = rows.collectList().await(5, TimeUnit.SECONDS);
+        List<DbRow> rowsList = rows.toList();
         assertThat(rowsList, not(empty()));
         Set<Integer> ids = new HashSet<>(TYPES.keySet());
         for (DbRow row : rowsList) {
@@ -125,16 +111,14 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized pokemons.
-     *
+     * Verify that database contains properly initialized Pokémon.
      */
     @Test
     public void testListPokemons() {
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons"));
+        Stream<DbRow> rows = DB_CLIENT.execute().namedQuery("select-pokemons");
 
         assertThat(rows, notNullValue());
-        List<DbRow> rowsList = rows.collectList().await();
+        List<DbRow> rowsList = rows.toList();
         assertThat(rowsList, not(empty()));
         Set<Integer> ids = new HashSet<>(POKEMONS.keySet());
         for (DbRow row : rowsList) {
@@ -147,15 +131,14 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized pokemon types relation.
-     *
+     * Verify that database contains properly initialized Pokémon types relation.
      */
     @Test
     public void testListPokemonTypes() {
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons"));
+        DbExecute exec = DB_CLIENT.execute();
+        Stream<DbRow> rows = exec.namedQuery("select-pokemons");
         assertThat(rows, notNullValue());
-        List<DbRow> rowsList = rows.collectList().await();
+        List<DbRow> rowsList = rows.toList();
         assertThat(rowsList, not(empty()));
 
         for (DbRow row : rowsList) {
@@ -163,10 +146,9 @@ public class InitIT extends AbstractIT {
             String pokemonName = row.column(2).as(String.class);
             Pokemon pokemon = POKEMONS.get(pokemonId);
             assertThat(pokemonName, POKEMONS.get(pokemonId).getName().equals(pokemonName));
-            Multi<DbRow> typeRows = DB_CLIENT.execute(exec -> exec
-                    .namedQuery("select-poketypes", pokemonId));
+            Stream<DbRow> typeRows = exec.namedQuery("select-poketypes", pokemonId);
 
-            List<DbRow> typeRowsList = typeRows.collectList().await();
+            List<DbRow> typeRowsList = typeRows.toList();
             assertThat(typeRowsList.size(), equalTo(pokemon.getTypes().size()));
             for (DbRow typeRow : typeRowsList) {
                 Integer typeId = typeRow.column(2).as(Integer.class);

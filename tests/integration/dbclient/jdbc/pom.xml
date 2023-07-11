@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-jdbc</artifactId>
-    <name>Integration Tests: Reactive DB Client JDBC</name>
+    <name>Integration Tests: DB Client JDBC</name>
 
     <properties>
     </properties>
@@ -52,8 +52,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -31,33 +30,36 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 /**
  * Test set of basic JDBC updates.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class SimpleUpdateIT extends AbstractIT {
 
-    /** Local logger instance. */
+    /**
+     * Local logger instance.
+     */
     private static final System.Logger LOGGER = System.getLogger(SimpleUpdateIT.class.getName());
 
-    /** Maximum Pokemon ID. */
+    /**
+     * Maximum Pokemon ID.
+     */
     private static final int BASE_ID = LAST_POKEMON_ID + 20;
 
-    /** Map of pokemons for update tests. */
+    /**
+     * Map of Pokémon for update tests.
+     */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 
-    private static void addPokemon(Pokemon pokemon) throws ExecutionException, InterruptedException {
+    private static void addPokemon(Pokemon pokemon) {
         POKEMONS.put(pokemon.getId(), pokemon);
-        Long result = DB_CLIENT.execute(exec -> exec
-                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+        long result = DB_CLIENT.execute()
+                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName());
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Initialize tests of basic JDBC updates.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void setup() throws ExecutionException, InterruptedException {
+    public static void setup() {
         try {
             int curId = BASE_ID;
             addPokemon(new Pokemon(++curId, "Spearow", TYPES.get(1), TYPES.get(3))); // BASE_ID+1
@@ -75,119 +77,95 @@ public class SimpleUpdateIT extends AbstractIT {
 
     /**
      * Verify {@code createNamedUpdate(String, String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedUpdateStrStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+1);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+1, "Fearow", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateNamedUpdateStrStrNamedArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 1);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 1, "Fearow", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
                 .createNamedUpdate("update-spearow", UPDATE_POKEMON_NAMED_ARG)
-                .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId())
+                .execute();
         verifyUpdatePokemon(result, updatedPokemon);
     }
 
     /**
      * Verify {@code createNamedUpdate(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedUpdateStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+2);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+2, "Spearow", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateNamedUpdateStrNamedArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 2);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 2, "Spearow", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
                 .createNamedUpdate("update-pokemon-named-arg")
-                .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId())
+                .execute();
         verifyUpdatePokemon(result, updatedPokemon);
     }
 
     /**
      * Verify {@code createNamedUpdate(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedUpdateStrOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+3);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+3, "Arbok", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateNamedUpdateStrOrderArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 3);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 3, "Arbok", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
                 .createNamedUpdate("update-pokemon-order-arg")
-                .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
-        ).toCompletableFuture().get();
+                .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId())
+                .execute();
         verifyUpdatePokemon(result, updatedPokemon);
     }
 
     /**
      * Verify {@code createUpdate(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateUpdateNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+4);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+4, "Ekans", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateUpdateNamedArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 4);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 4, "Ekans", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
                 .createUpdate(UPDATE_POKEMON_NAMED_ARG)
-                .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId()).execute()
-        ).toCompletableFuture().get();
+                .addParam("name", updatedPokemon.getName()).addParam("id", updatedPokemon.getId())
+                .execute();
         verifyUpdatePokemon(result, updatedPokemon);
     }
 
     /**
      * Verify {@code createUpdate(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateUpdateOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+5);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+5, "Diglett", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateUpdateOrderArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 5);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 5, "Diglett", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
                 .createUpdate(UPDATE_POKEMON_ORDER_ARG)
-                .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId()).execute()
-        ).toCompletableFuture().get();
+                .addParam(updatedPokemon.getName()).addParam(updatedPokemon.getId())
+                .execute();
         verifyUpdatePokemon(result, updatedPokemon);
     }
 
     /**
      * Verify {@code namedUpdate(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testNamedUpdateNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+6);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+6, "Sandshrew", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
-                .namedUpdate("update-pokemon-order-arg", updatedPokemon.getName(), updatedPokemon.getId())
-        ).toCompletableFuture().get();
+    public void testNamedUpdateNamedArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 6);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 6, "Sandshrew", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
+                .namedUpdate("update-pokemon-order-arg", updatedPokemon.getName(), updatedPokemon.getId());
         verifyUpdatePokemon(result, updatedPokemon);
     }
 
     /**
      * Verify {@code update(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testUpdateOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon srcPokemon = POKEMONS.get(BASE_ID+7);
-        Pokemon updatedPokemon = new Pokemon(BASE_ID+7, "Sandslash", srcPokemon.getTypesArray());
-        Long result = DB_CLIENT.execute(exec -> exec
-                .update(UPDATE_POKEMON_ORDER_ARG, updatedPokemon.getName(), updatedPokemon.getId())
-        ).toCompletableFuture().get();
+    public void testUpdateOrderArgs() {
+        Pokemon srcPokemon = POKEMONS.get(BASE_ID + 7);
+        Pokemon updatedPokemon = new Pokemon(BASE_ID + 7, "Sandslash", srcPokemon.getTypesArray());
+        long result = DB_CLIENT.execute()
+                .update(UPDATE_POKEMON_ORDER_ARG, updatedPokemon.getName(), updatedPokemon.getId());
         verifyUpdatePokemon(result, updatedPokemon);
     }
-
 }

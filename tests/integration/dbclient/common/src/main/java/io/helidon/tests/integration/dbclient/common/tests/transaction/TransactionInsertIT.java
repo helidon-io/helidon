@@ -15,8 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
-import java.util.concurrent.ExecutionException;
-
+import io.helidon.dbclient.DbTransaction;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
 import org.junit.jupiter.api.Test;
@@ -26,119 +25,107 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyIns
 /**
  * Test set of basic JDBC inserts in transaction.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class TransactionInsertIT extends AbstractIT {
 
-    /** Maximum Pokemon ID. */
+    /**
+     * Maximum Pokemon ID.
+     */
     private static final int BASE_ID = LAST_POKEMON_ID + 210;
 
     /**
      * Verify {@code createNamedInsert(String, String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedInsertStrStrNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+1, "Sentret", TYPES.get(1));
-        Long result = DB_CLIENT.inTransaction(tx -> tx
+    public void testCreateNamedInsertStrStrNamedArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 1, "Sentret", TYPES.get(1));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
                 .createNamedInsert("insert-bulbasaur", INSERT_POKEMON_NAMED_ARG)
-                .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute();
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Verify {@code createNamedInsert(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedInsertStrNamedArgs() throws ExecutionException, InterruptedException {
-       Pokemon pokemon = new Pokemon(BASE_ID+2, "Furret", TYPES.get(1));
-       Long result = DB_CLIENT.inTransaction(tx -> tx
+    public void testCreateNamedInsertStrNamedArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 2, "Furret", TYPES.get(1));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
                 .createNamedInsert("insert-pokemon-named-arg")
-                .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute();
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Verify {@code createNamedInsert(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedInsertStrOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+3, "Chinchou", TYPES.get(11), TYPES.get(13));
-       Long result = DB_CLIENT.inTransaction(tx -> tx
+    public void testCreateNamedInsertStrOrderArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 3, "Chinchou", TYPES.get(11), TYPES.get(13));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
                 .createNamedInsert("insert-pokemon-order-arg")
-                .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam(pokemon.getId()).addParam(pokemon.getName()).execute();
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Verify {@code createInsert(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateInsertNamedArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+4, "Lanturn", TYPES.get(11), TYPES.get(13));
-       Long result = DB_CLIENT.inTransaction(tx -> tx
+    public void testCreateInsertNamedArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 4, "Lanturn", TYPES.get(11), TYPES.get(13));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
                 .createInsert(INSERT_POKEMON_NAMED_ARG)
-                .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam("id", pokemon.getId()).addParam("name", pokemon.getName()).execute();
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Verify {@code createInsert(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateInsertOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+5, "Swinub", TYPES.get(5), TYPES.get(15));
-       Long result = DB_CLIENT.inTransaction(tx -> tx
+    public void testCreateInsertOrderArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 5, "Swinub", TYPES.get(5), TYPES.get(15));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
                 .createInsert(INSERT_POKEMON_ORDER_ARG)
-                .addParam(pokemon.getId()).addParam(pokemon.getName()).execute()
-        ).toCompletableFuture().get();
+                .addParam(pokemon.getId()).addParam(pokemon.getName()).execute();
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Verify {@code namedInsert(String)} API method with ordered parameters passed directly to the {@code insert} method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testNamedInsertOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+6, "Piloswine", TYPES.get(5), TYPES.get(15));
-        Long result = DB_CLIENT.inTransaction(tx -> tx
-                .namedInsert("insert-pokemon-order-arg", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+    public void testNamedInsertOrderArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 6, "Piloswine", TYPES.get(5), TYPES.get(15));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
+                .namedInsert("insert-pokemon-order-arg", pokemon.getId(), pokemon.getName());
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Verify {@code insert(String)} API method with ordered parameters passed directly to the {@code insert} method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testInsertOrderArgs() throws ExecutionException, InterruptedException {
-        Pokemon pokemon = new Pokemon(BASE_ID+7, "Mamoswine", TYPES.get(5), TYPES.get(15));
-       Long result = DB_CLIENT.inTransaction(tx -> tx
-                .insert(INSERT_POKEMON_ORDER_ARG, pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+    public void testInsertOrderArgs() {
+        Pokemon pokemon = new Pokemon(BASE_ID + 7, "Mamoswine", TYPES.get(5), TYPES.get(15));
+        DbTransaction tx = DB_CLIENT.transaction();
+        long result = tx
+                .insert(INSERT_POKEMON_ORDER_ARG, pokemon.getId(), pokemon.getName());
+        tx.commit();
         verifyInsertPokemon(result, pokemon);
     }
-
 }

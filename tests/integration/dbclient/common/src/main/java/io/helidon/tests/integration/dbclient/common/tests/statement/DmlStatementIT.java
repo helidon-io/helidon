@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -33,22 +32,22 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyUpd
 /**
  * Test DbStatementDml methods.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class DmlStatementIT extends AbstractIT {
 
-    /** Local logger instance. */
+    /**
+     * Local logger instance.
+     */
     private static final System.Logger LOGGER = System.getLogger(DmlStatementIT.class.getName());
 
-    /** Maximum Pokemon ID. */
+    /**
+     * Maximum Pokemon ID.
+     */
     private static final int BASE_ID = LAST_POKEMON_ID + 100;
 
-    /** Map of pokemons for DbStatementDml methods tests. */
-    private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
-
     private static void addPokemon(Pokemon pokemon) {
-        POKEMONS.put(pokemon.getId(), pokemon);
-        Long result = DB_CLIENT.execute(exec -> exec
-                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName()))
-                .await();
+        long result = DB_CLIENT.execute()
+                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName());
         verifyInsertPokemon(result, pokemon);
     }
 
@@ -73,129 +72,100 @@ public class DmlStatementIT extends AbstractIT {
 
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlArrayParams() throws ExecutionException, InterruptedException {
+    public void testDmlArrayParams() {
         Pokemon pokemon = new Pokemon(BASE_ID, "Luxio", TYPES.get(13));
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-order-arg")
                 .params(pokemon.getName(), pokemon.getId())
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
 
     /**
      * Verify {@code params(List<?>)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlListParams() throws ExecutionException, InterruptedException {
+    public void testDmlListParams() {
         Pokemon pokemon = new Pokemon(BASE_ID + 1, "Luxray", TYPES.get(13));
         List<Object> params = new ArrayList<>(2);
         params.add(pokemon.getName());
         params.add(pokemon.getId());
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-order-arg")
                 .params(params)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
 
     /**
      * Verify {@code params(Map<?>)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlMapParams() throws ExecutionException, InterruptedException {
+    public void testDmlMapParams() {
         Pokemon pokemon = new Pokemon(BASE_ID + 2, "Shinx", TYPES.get(13));
         Map<String, Object> params = new HashMap<>(2);
         params.put("name", pokemon.getName());
         params.put("id", pokemon.getId());
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-named-arg")
                 .params(params)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
 
     /**
      * Verify {@code addParam(Object parameter)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlOrderParam() throws ExecutionException, InterruptedException {
+    public void testDmlOrderParam() {
         Pokemon pokemon = new Pokemon(BASE_ID + 3, "Kricketune", TYPES.get(7));
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-order-arg")
                 .addParam(pokemon.getName())
                 .addParam(pokemon.getId())
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
 
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlNamedParam() throws ExecutionException, InterruptedException {
+    public void testDmlNamedParam() {
         Pokemon pokemon = new Pokemon(BASE_ID + 4, "Kricketot", TYPES.get(7));
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-named-arg")
                 .addParam("name", pokemon.getName())
                 .addParam("id", pokemon.getId())
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
 
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlMappedNamedParam() throws ExecutionException, InterruptedException {
+    public void testDmlMappedNamedParam() {
         Pokemon pokemon = new Pokemon(BASE_ID + 5, "Chatot", TYPES.get(1), TYPES.get(3));
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-named-arg")
                 .namedParam(pokemon)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
 
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDmlMappedOrderParam() throws ExecutionException, InterruptedException {
+    public void testDmlMappedOrderParam() {
         Pokemon pokemon = new Pokemon(BASE_ID + 6, "Phione", TYPES.get(11));
-        Long result = DB_CLIENT.execute(exec -> exec
+        long result = DB_CLIENT.execute()
                 .createNamedDmlStatement("update-pokemon-order-arg")
                 .indexedParam(pokemon)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyUpdatePokemon(result, pokemon);
     }
-
 }

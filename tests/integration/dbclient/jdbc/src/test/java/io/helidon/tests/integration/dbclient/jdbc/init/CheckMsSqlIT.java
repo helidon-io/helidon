@@ -38,14 +38,20 @@ import static org.junit.jupiter.api.Assertions.fail;
  * First test class being executed after database startup.
  */
 public class CheckMsSqlIT {
-    
-    /** Local logger instance. */
+
+    /**
+     * Local logger instance.
+     */
     private static final System.Logger LOGGER = System.getLogger(CheckIT.class.getName());
 
-    /** Timeout in seconds to wait for database to come up. */
+    /**
+     * Timeout in seconds to wait for database to come up.
+     */
     private static final int TIMEOUT = 60;
 
-    /** Database connection. */
+    /**
+     * Database connection.
+     */
     private static Connection conn = null;
 
     /**
@@ -105,42 +111,48 @@ public class CheckMsSqlIT {
                 LOGGER.log(Level.INFO, () -> String.format("Executed EXEC statement. %d records modified.", dbCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not configure database:", ex);
-            } try {
+            }
+            try {
                 Statement stmt = conn.createStatement();
                 final int dbCount = stmt.executeUpdate("RECONFIGURE");
                 LOGGER.log(Level.INFO, () -> String.format("Executed RECONFIGURE statement. %d records modified.", dbCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not reconfigure database:", ex);
-            } try {
+            }
+            try {
                 Statement stmt = conn.createStatement();
                 final int dbCount = stmt.executeUpdate(String.format("CREATE DATABASE %s CONTAINMENT = PARTIAL", database));
                 LOGGER.log(Level.INFO, () -> String.format("Executed CREATE DATABASE statement. %d records modified.", dbCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not create database:", ex);
-            } try {
+            }
+            try {
                 Statement stmt = conn.createStatement();
                 final int useCount = stmt.executeUpdate(String.format("USE %s", database));
                 LOGGER.log(Level.INFO, () -> String.format("Executed USE statement. %d records modified.", useCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not use database:", ex);
-            } try {
+            }
+            try {
                 Statement stmt = conn.createStatement();//"CREATE USER ? WITH PASSWORD = ?");
                 final int userCount = stmt.executeUpdate(String.format("CREATE USER %s WITH PASSWORD = '%s'", username, password));
                 LOGGER.log(Level.INFO, () -> String.format("Executed CREATE USER statement. %d records modified.", userCount));
             } catch (SQLException ex) {
                 LOGGER.log(Level.WARNING, "Could not create database user:", ex);
-            } try {
+            }
+            try {
                 Statement stmt = conn.createStatement();//"CREATE USER ? WITH PASSWORD = ?");
                 final int userCount = stmt.executeUpdate(String.format("GRANT ALL TO %s", username));
                 LOGGER.log(Level.INFO, () -> String.format("Executed GRANT statement. %d records modified.", userCount));
             } catch (SQLException ex) {
-                LOGGER.log(Level.WARNING, "Could not grant database privilegs to user:", ex);
-            } try {
+                LOGGER.log(Level.WARNING, "Could not grant database privileges to user:", ex);
+            }
+            try {
                 Statement stmt = conn.createStatement();//"CREATE USER ? WITH PASSWORD = ?");
                 final int userCount = stmt.executeUpdate(String.format("GRANT CONTROL ON SCHEMA::dbo TO %s", username));
                 LOGGER.log(Level.INFO, () -> String.format("Executed GRANT statement. %d records modified.", userCount));
             } catch (SQLException ex) {
-                LOGGER.log(Level.WARNING, "Could not grant database privilegs to user:", ex);
+                LOGGER.log(Level.WARNING, "Could not grant database privileges to user:", ex);
             }
         }
 
@@ -166,7 +178,7 @@ public class CheckMsSqlIT {
         }
         DbInit init = new DbInit();
         CheckIT.CONFIG.get("db.connection").ifExists(init);
-        
+
     }
 
     /**
@@ -186,7 +198,7 @@ public class CheckMsSqlIT {
             }
         }
     }
-    
+
     /**
      * Simple test to verify that DML query execution works.
      * Used before running database schema initialization.

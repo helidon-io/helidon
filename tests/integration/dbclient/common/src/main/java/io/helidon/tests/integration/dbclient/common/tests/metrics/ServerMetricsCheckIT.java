@@ -22,18 +22,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
 
-import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbRow;
-import io.helidon.reactive.dbclient.DbStatementType;
-import io.helidon.reactive.dbclient.metrics.DbClientMetrics;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbStatementType;
+import io.helidon.dbclient.metrics.DbClientMetrics;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Pokemon;
 
@@ -58,22 +54,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Verify metrics check in web server environment.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class ServerMetricsCheckIT {
 
-    /** Local logger instance. */
+    /**
+     * Local logger instance.
+     */
     private static final System.Logger LOGGER = System.getLogger(ServerMetricsCheckIT.class.getName());
 
-    /** Maximum Pokemon ID. */
+    /**
+     * Maximum Pokemon ID.
+     */
     private static final int BASE_ID = LAST_POKEMON_ID + 300;
 
     private static DbClient DB_CLIENT;
     private static WebServer SERVER;
     private static String URL;
 
-    private static Routing createRouting() {
-        return Routing.builder()
-                .register(MetricsSupport.create()) // Metrics at "/metrics"
-                .build();
+    private static void routing(HttpRouting.Builder routing) {
+        routing.addFeature(ObserveFeature.create());
     }
 
     /**
@@ -86,42 +85,35 @@ public class ServerMetricsCheckIT {
         return DbClient.builder(dbConfig)
                 // add an interceptor to named statement(s)
                 .addService(DbClientMetrics.counter()
-                                    .statementNames("select-pokemons", "insert-pokemon"))
+                        .statementNames("select-pokemons", "insert-pokemon"))
                 // add an interceptor to statement type(s)
                 .addService(DbClientMetrics.timer()
-                                    .statementTypes(DbStatementType.INSERT))
+                        .statementTypes(DbStatementType.INSERT))
                 .build();
     }
 
     /**
      * Start Helidon Web Server with DB Client metrics support.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void startup() throws InterruptedException, ExecutionException {
+    public static void startup() {
         DB_CLIENT = initDbClient();
-        final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
-        final CompletionStage<WebServer> serverFuture = server.start();
-        serverFuture.thenAccept(srv -> {
-            LOGGER.log(Level.DEBUG, () -> String
-                    .format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
-            URL = String.format("http://localhost:%d", srv.port());
-        });
-        SERVER = serverFuture.toCompletableFuture().get();
+        SERVER = WebServer.builder()
+                .routing(ServerMetricsCheckIT::routing)
+                .config(CONFIG.get("server"))
+                .build()
+                .start();
+        URL = "http://localhost:" + SERVER.port();
+        System.out.println("WEB server is running at " + URL);
     }
 
     /**
      * Stop Helidon Web Server with DB Client metrics support.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @AfterAll
-    public static void shutdown() throws InterruptedException, ExecutionException {
+    public static void shutdown() {
         if (null != SERVER) {
-            SERVER.shutdown().toCompletableFuture().get();
+            SERVER.stop();
         }
     }
 
@@ -130,7 +122,7 @@ public class ServerMetricsCheckIT {
      *
      * @param url server health status URL
      * @return server health status response (JSON)
-     * @throws IOException if an I/O error occurs when sending or receiving HTTP request
+     * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
      * @throws InterruptedException if the current thread was interrupted
      */
     private static String get(String url) throws IOException, InterruptedException {
@@ -147,20 +139,21 @@ public class ServerMetricsCheckIT {
      * Read and check DB Client metrics from Helidon Web Server.
      *
      * @throws InterruptedException if the current thread was interrupted
-     * @throws IOException if an I/O error occurs when sending or receiving HTTP request
+     * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
      */
     @Test
     public void testHttpMetrics() throws IOException, InterruptedException {
         // Call select-pokemons to trigger it
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons"));
 
-        rows.collectList().await();
+        DB_CLIENT.execute()
+                .namedQuery("select-pokemons")
+                .forEach(p -> {
+                });
+
         // Call insert-pokemon to trigger it
         Pokemon pokemon = new Pokemon(BASE_ID + 1, "Lickitung", TYPES.get(1));
-        DB_CLIENT.execute(exec -> exec
-                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).await();
+        DB_CLIENT.execute()
+                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName());
         // Read and process metrics response
         String response = get(URL + "/metrics/application");
         LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));

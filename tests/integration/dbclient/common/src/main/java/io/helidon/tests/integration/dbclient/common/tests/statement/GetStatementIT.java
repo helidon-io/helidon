@@ -20,9 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 
-import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.utils.RangePoJo;
 
 import org.junit.jupiter.api.Test;
@@ -37,17 +36,13 @@ public class GetStatementIT {
 
     /**
      * Verify {@code params(Object... parameters)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetArrayParams() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+    public void testGetArrayParams() {
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-order-arg")
                 .params(1, 3)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyPokemonsIdRange(maybeRow, 1, 3);
     }
 
@@ -59,11 +54,10 @@ public class GetStatementIT {
         List<Integer> params = new ArrayList<>(2);
         params.add(2);
         params.add(4);
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-order-arg")
                 .params(params)
-                .execute())
-                .await();
+                .execute();
 
         verifyPokemonsIdRange(maybeRow, 2, 4);
     }
@@ -76,11 +70,10 @@ public class GetStatementIT {
         Map<String, Integer> params = new HashMap<>(2);
         params.put("idmin", 3);
         params.put("idmax", 5);
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-named-arg")
                 .params(params)
-                .execute())
-                .await();
+                .execute();
 
         verifyPokemonsIdRange(maybeRow, 3, 5);
     }
@@ -90,64 +83,50 @@ public class GetStatementIT {
      */
     @Test
     public void testGetOrderParam() {
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-order-arg")
                 .addParam(4)
                 .addParam(6)
-                .execute())
-                .await();
-
+                .execute();
         verifyPokemonsIdRange(maybeRow, 4, 6);
     }
 
     /**
      * Verify {@code addParam(String name, Object parameter)} parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetNamedParam() throws ExecutionException, InterruptedException {
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+    public void testGetNamedParam() {
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-named-arg")
                 .addParam("idmin", 5)
                 .addParam("idmax", 7)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyPokemonsIdRange(maybeRow, 5, 7);
     }
 
     /**
      * Verify {@code namedParam(Object parameters)} mapped parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetMappedNamedParam() throws ExecutionException, InterruptedException {
+    public void testGetMappedNamedParam() {
         RangePoJo range = new RangePoJo(0, 2);
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-named-arg")
                 .namedParam(range)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyPokemonsIdRange(maybeRow, 0, 2);
     }
 
     /**
      * Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testGetMappedOrderParam() throws ExecutionException, InterruptedException {
+    public void testGetMappedOrderParam() {
         RangePoJo range = new RangePoJo(6, 8);
-        Optional<DbRow> maybeRow = DB_CLIENT.execute(exec -> exec
+        Optional<DbRow> maybeRow = DB_CLIENT.execute()
                 .createNamedGet("select-pokemons-idrng-order-arg")
                 .indexedParam(range)
-                .execute()
-        ).toCompletableFuture().get();
+                .execute();
         verifyPokemonsIdRange(maybeRow, 6, 8);
     }
 

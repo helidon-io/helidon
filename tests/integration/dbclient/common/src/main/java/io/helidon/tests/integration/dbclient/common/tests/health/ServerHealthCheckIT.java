@@ -22,16 +22,16 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
-import io.helidon.common.reactive.Multi;
+import io.helidon.dbclient.DbRow;
 import io.helidon.health.HealthCheck;
-import io.helidon.reactive.dbclient.DbRow;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.observe.health.HealthFeature;
+import io.helidon.nima.observe.health.HealthObserveProvider;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -54,48 +54,42 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ServerHealthCheckIT {
 
-    /** Local logger instance. */
     private static final System.Logger LOGGER = System.getLogger(ServerHealthCheckIT.class.getName());
+    private static final Consumer<DbRow> EMPTY_CONSUMER = it -> {};
 
     private static WebServer SERVER;
     private static String URL;
 
-    private static Routing createRouting() {
+    private static void routing(HttpRouting.Builder routing) {
         HealthCheck check = DbClientHealthCheck.create(DB_CLIENT, CONFIG.get("db.health-check"));
-        final HealthSupport health = HealthSupport.builder()
-                .add(check)
+        HealthFeature health = HealthFeature.builder()
+                .addCheck(check)
                 .build();
-        return Routing.builder()
-                .register(health) // Health at "/health"
+        ObserveFeature observe = ObserveFeature.builder()
+                .addProvider(HealthObserveProvider.create(health))
                 .build();
+        routing.addFeature(observe);
     }
 
     /**
      * Start Helidon Web Server with DB Client health check support.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void startup() throws InterruptedException, ExecutionException {
-        final WebServer server = WebServer.create(createRouting(), CONFIG.get("server"));
-        final CompletionStage<WebServer> serverFuture = server.start();
-        serverFuture.thenAccept(srv -> {
-            LOGGER.log(Level.DEBUG, () -> String.format("WEB server is running at http://%s:%d", srv.configuration().bindAddress(), srv.port()));
-            URL = String.format("http://localhost:%d", srv.port());
-        });
-        SERVER = serverFuture.toCompletableFuture().get();
+    public static void startup() {
+        SERVER = WebServer.builder()
+                .routing(ServerHealthCheckIT::routing)
+                .config(CONFIG.get("server"))
+                .build();
+        URL = "http://localhost:" + SERVER.port();
+        System.out.println("WEB server is running at " + URL);
     }
 
     /**
      * Stop Helidon Web Server with DB Client health check support.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @AfterAll
-    public static void shutdown() throws InterruptedException, ExecutionException {
-        SERVER.shutdown().toCompletableFuture().get();
+    public static void shutdown() {
+        SERVER.stop();
     }
 
     /**
@@ -103,7 +97,7 @@ public class ServerHealthCheckIT {
      *
      * @param url server health status URL
      * @return server health status response (JSON)
-     * @throws IOException if an I/O error occurs when sending or receiving HTTP request
+     * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
      * @throws InterruptedException if the current thread was interrupted
      */
     private static String get(String url) throws IOException, InterruptedException {
@@ -120,15 +114,15 @@ public class ServerHealthCheckIT {
      * Read and check DB Client health status from Helidon Web Server.
      *
      * @throws InterruptedException if the current thread was interrupted
-     * @throws IOException if an I/O error occurs when sending or receiving HTTP request
+     * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
      */
     @Test
     public void testHttpHealth() throws IOException, InterruptedException {
         // Call select-pokemons to warm up server
-        Multi<DbRow> rows = DB_CLIENT.execute(exec -> exec
-                .namedQuery("select-pokemons"));
+        DB_CLIENT.execute()
+                .namedQuery("select-pokemons")
+                .forEach(EMPTY_CONSUMER);
 
-        rows.collectList().await();
         // Read and process health check response
         String response = get(URL + "/health");
         LOGGER.log(Level.DEBUG, () -> String.format("RESPONSE: %s", response));

@@ -17,15 +17,12 @@ package io.helidon.tests.integration.dbclient.appl.interceptor;
 
 import java.util.Map;
 
-import io.helidon.common.reactive.Multi;
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbClientService;
-import io.helidon.reactive.dbclient.DbClientServiceContext;
-import io.helidon.reactive.dbclient.DbRow;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbClientService;
+import io.helidon.dbclient.DbClientServiceContext;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
 import io.helidon.tests.integration.tools.service.AppResponse;
@@ -47,8 +44,8 @@ public class InterceptorService extends AbstractService {
     /**
      * Creates an instance of web resource to verify services handling.
      *
-     * @param dbClient DbClient instance
-     * @param statements statements from configuration file
+     * @param dbClient    DbClient instance
+     * @param statements  statements from configuration file
      * @param interceptor DbClientService interceptor instance used in test
      */
     public InterceptorService(DbClient dbClient, Map<String, String> statements, DbClientService interceptor) {
@@ -68,10 +65,10 @@ public class InterceptorService extends AbstractService {
         }
 
         @Override
-        public Single<DbClientServiceContext> statement(DbClientServiceContext context) {
+        public DbClientServiceContext statement(DbClientServiceContext context) {
             this.called = true;
             this.context = context;
-            return Single.just(context);
+            return context;
         }
 
         private boolean called() {
@@ -81,31 +78,21 @@ public class InterceptorService extends AbstractService {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
-        rules
-                .get("/testStatementInterceptor", this::testStatementInterceptor);
+    public void routing(HttpRules rules) {
+        rules.get("/testStatementInterceptor", this::testStatementInterceptor);
     }
 
     // Check that statement interceptor was called before statement execution.
     private void testStatementInterceptor(ServerRequest request, ServerResponse response) {
-        Multi<DbRow> rows = dbClient().execute(exec -> exec
-                .createNamedQuery("select-pokemon-named-arg")
+        JsonArrayBuilder jab = dbClient().execute().createNamedQuery("select-pokemon-named-arg")
                 .addParam("name", Pokemon.POKEMONS.get(6).getName())
-                .execute());
-        final JsonArrayBuilder jab = Json.createArrayBuilder();
-        rows
-                .forEach(row -> jab.add(row.as(JsonObject.class)))
-                .onComplete(() -> {
-                    if (((TestClientService) interceptor).called()) {
-                        response.send(AppResponse.okStatus(jab.build()));
-                    } else {
-                        response.send(exceptionStatus(new RemoteTestException("Interceptor service was not called")));
-                    }
-                })
-                .exceptionally(t -> {
-                    response.send(exceptionStatus(t));
-                    return null;
-                });
+                .execute()
+                .map(row -> row.as(JsonObject.class))
+                .collect(Json::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::addAll);
+        if (((TestClientService) interceptor).called()) {
+            response.send(AppResponse.okStatus(jab.build()));
+        } else {
+            response.send(exceptionStatus(new RemoteTestException("Interceptor service was not called")));
+        }
     }
-
 }

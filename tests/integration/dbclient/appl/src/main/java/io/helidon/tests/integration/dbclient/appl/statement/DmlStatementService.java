@@ -16,25 +16,22 @@
 package io.helidon.tests.integration.dbclient.appl.statement;
 
 import java.lang.System.Logger.Level;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.dbclient.DbClient;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.appl.AbstractService;
 import io.helidon.tests.integration.dbclient.appl.model.Pokemon;
-import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
 
 import jakarta.json.Json;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
+import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
 
 /**
  * Web resource to test DbStatementDml methods.
@@ -45,16 +42,16 @@ public class DmlStatementService extends AbstractService {
 
     // Internal functional interface used to implement testing code.
     // Method call: apply(srcPokemon, updatedPokemon)
-    private interface TestFunction extends Function<Pokemon, Single<Long>> {}
+    private interface TestFunction extends Function<Pokemon, Long> {
+    }
 
     public DmlStatementService(DbClient dbClient, Map<String, String> statements) {
         super(dbClient, statements);
     }
 
     @Override
-    public void update(Routing.Rules rules) {
-        rules
-                .get("/testDmlArrayParams", this::testDmlArrayParams)
+    public void routing(HttpRules rules) {
+        rules.get("/testDmlArrayParams", this::testDmlArrayParams)
                 .get("/testDmlListParams", this::testDmlListParams)
                 .get("/testDmlMapParams", this::testDmlMapParams)
                 .get("/testDmlOrderParam", this::testDmlOrderParam)
@@ -71,14 +68,8 @@ public class DmlStatementService extends AbstractService {
             int id = Integer.parseInt(idStr);
             Pokemon srcPokemon = Pokemon.POKEMONS.get(id);
             Pokemon updatedPokemon = new Pokemon(id, name, srcPokemon.getTypesArray());
-            test.apply(updatedPokemon)
-                    .thenAccept(
-                            result -> response.send(
-                                    AppResponse.okStatus(Json.createValue(result))))
-                    .exceptionally(t -> {
-                        response.send(exceptionStatus(t));
-                        return null;
-                    });
+            long count = test.apply(updatedPokemon);
+            response.send(okStatus(Json.createValue(count)));
         } catch (RemoteTestException | NumberFormatException ex) {
             LOGGER.log(Level.WARNING, String.format("Error in SimpleUpdateService.%s on server", testName), ex);
             response.send(exceptionStatus(ex));
@@ -88,90 +79,66 @@ public class DmlStatementService extends AbstractService {
     // Verify {@code params(Object... parameters)} parameters setting method.
     private void testDmlArrayParams(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlArrayParams",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> exec
-                                    .createNamedDmlStatement("update-pokemon-order-arg")
-                                    .params(updatedPokemon.getName(), updatedPokemon.getId())
-                                    .execute()
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-order-arg")
+                        .params(pokemon.getName(), pokemon.getId())
+                        .execute());
     }
 
     // Verify {@code params(List<?>)} parameters setting method.
     private void testDmlListParams(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlListParams",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> {
-                                List<Object> params = new ArrayList<>(2);
-                                params.add(updatedPokemon.getName());
-                                params.add(updatedPokemon.getId());
-                                return exec
-                                        .createNamedDmlStatement("update-pokemon-order-arg")
-                                        .params(params)
-                                        .execute();
-                            }
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-order-arg")
+                        .params(List.of(pokemon.getName(), pokemon.getId()))
+                        .execute());
     }
 
     // Verify {@code params(Map<?>)} parameters setting method.
     private void testDmlMapParams(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlMapParams",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> {
-                                Map<String, Object> params = new HashMap<>(2);
-                                params.put("name", updatedPokemon.getName());
-                                params.put("id", updatedPokemon.getId());
-                                return exec
-                                        .createNamedDmlStatement("update-pokemon-named-arg")
-                                        .params(params)
-                                        .execute();
-                            }
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-named-arg")
+                        .params(Map.of("name", pokemon.getName(), "id", pokemon.getId()))
+                        .execute());
     }
 
     // Verify {@code addParam(Object parameter)} parameters setting method.
     private void testDmlOrderParam(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlOrderParam",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> exec
-                                    .createNamedDmlStatement("update-pokemon-order-arg")
-                                    .addParam(updatedPokemon.getName())
-                                    .addParam(updatedPokemon.getId())
-                                    .execute()
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-order-arg")
+                        .addParam(pokemon.getName())
+                        .addParam(pokemon.getId())
+                        .execute());
     }
 
     // Verify {@code addParam(String name, Object parameter)} parameters setting method.
     private void testDmlNamedParam(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlNamedParam",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> exec
-                                    .createNamedDmlStatement("update-pokemon-named-arg")
-                                    .addParam("name", updatedPokemon.getName())
-                                    .addParam("id", updatedPokemon.getId())
-                                    .execute()
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-named-arg")
+                        .addParam("name", pokemon.getName())
+                        .addParam("id", pokemon.getId())
+                        .execute());
     }
 
     // Verify {@code namedParam(Object parameters)} mapped parameters setting method.
     private void testDmlMappedNamedParam(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlMappedNamedParam",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> exec
-                                    .createNamedDmlStatement("update-pokemon-named-arg")
-                                    .namedParam(updatedPokemon)
-                                    .execute()
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-named-arg")
+                        .namedParam(pokemon)
+                        .execute());
     }
 
     // Verify {@code indexedParam(Object parameters)} mapped parameters setting method.
     private void testDmlMappedOrderParam(ServerRequest request, ServerResponse response) {
         executeTest(request, response, "testDmlMappedOrderParam",
-                    (updatedPokemon) -> dbClient().execute(
-                            exec -> exec
-                                    .createNamedDmlStatement("update-pokemon-order-arg")
-                                    .indexedParam(updatedPokemon)
-                                    .execute()
-                    ));
+                (pokemon) -> dbClient().execute()
+                        .createNamedDmlStatement("update-pokemon-order-arg")
+                        .indexedParam(pokemon)
+                        .execute());
     }
 
 }

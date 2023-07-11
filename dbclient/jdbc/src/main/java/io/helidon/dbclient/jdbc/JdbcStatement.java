@@ -103,8 +103,9 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
     /**
      * Create the {@link PreparedStatement}.
      *
-     * @param stmtName statement name
-     * @param stmt     statement text
+     * @param connection connection
+     * @param stmtName   statement name
+     * @param stmt       statement text
      * @return statement
      */
     protected PreparedStatement prepareStatement(Connection connection, String stmtName, String stmt) {

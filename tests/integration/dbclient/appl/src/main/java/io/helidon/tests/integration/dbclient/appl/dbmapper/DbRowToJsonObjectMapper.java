@@ -24,9 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import io.helidon.reactive.dbclient.DbColumn;
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.dbclient.DbColumn;
+import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.DbRow;
 
 import jakarta.json.Json;
 import jakarta.json.JsonNumber;

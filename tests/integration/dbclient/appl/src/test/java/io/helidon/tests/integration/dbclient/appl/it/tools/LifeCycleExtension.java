@@ -19,10 +19,9 @@ import java.lang.System.Logger.Level;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.time.Duration;
 
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.tests.integration.dbclient.appl.ApplMain;
 import io.helidon.tests.integration.dbclient.appl.it.ApplInitIT;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
@@ -36,14 +35,11 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
 
     private static final System.Logger LOGGER = System.getLogger(LifeCycleExtension.class.getName());
 
-    /* Thread sleep time in miliseconds while waiting for database or appserver to come up. */
+    /* Thread sleep time in milliseconds while waiting for database or appserver to come up. */
     private static final int SLEEP_MILIS = 250;
 
     /* Startup timeout in seconds for both database and web server. */
     private static final int TIMEOUT = 60;
-
-    // Await duration for the response
-    private static final Duration AWAIT_DURATION = Duration.ofMinutes(1);
 
     // Application config file retrieved from "app.config" property
     private final String appConfigProperty;
@@ -109,7 +105,7 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
 
     @Override
     protected String[] processRunnerArgs() {
-        return new String[] {appConfigProperty};
+        return new String[]{appConfigProperty};
     }
 
     @SuppressWarnings({"SleepWhileInLoop", "BusyWait"})
@@ -151,24 +147,19 @@ public class LifeCycleExtension extends TestsLifeCycleExtension {
      * Shutdown test application
      */
     public void shutdown() {
-        WebClient testClient = WebClient
-                .builder()
+        Http1Client testClient = Http1Client.builder()
                 .baseUri(String.format("http://localhost:%d", HelidonProcessRunner.HTTP_PORT))
                 .build();
-        WebClientResponse response = testClient
-                .get()
+        try (Http1ClientResponse response = testClient.get()
                 .path("/Exit")
-                .submit()
-                .await(AWAIT_DURATION);
-        LOGGER.log(Level.INFO, () -> String.format(
-                "Status: %s",
-                response.status()));
-        LOGGER.log(Level.INFO, () -> String.format(
-                "Response: %s",
-                response
-                        .content()
-                        .as(String.class)
-                        .await(AWAIT_DURATION)));
+                .request()) {
+            LOGGER.log(Level.INFO, () -> String.format(
+                    "Status: %s",
+                    response.status()));
+            LOGGER.log(Level.INFO, () -> String.format(
+                    "Response: %s",
+                    response.entity().as(String.class)));
+        }
     }
 
     // Close database connection.

@@ -23,9 +23,9 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.DbRow;
 
 /**
  * Common testing code.

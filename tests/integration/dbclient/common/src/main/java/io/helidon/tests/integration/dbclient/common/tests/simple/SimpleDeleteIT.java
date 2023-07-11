@@ -18,7 +18,6 @@ package io.helidon.tests.integration.dbclient.common.tests.simple;
 import java.lang.System.Logger.Level;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.tests.integration.dbclient.common.AbstractIT;
 
@@ -31,33 +30,36 @@ import static io.helidon.tests.integration.dbclient.common.utils.Utils.verifyIns
 /**
  * Test set of basic JDBC delete calls.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class SimpleDeleteIT extends AbstractIT {
 
-    /** Local logger instance. */
+    /**
+     * Local logger instance.
+     */
     private static final System.Logger LOGGER = System.getLogger(SimpleDeleteIT.class.getName());
 
-    /** Maximum Pokemon ID. */
+    /**
+     * Maximum Pokemon ID.
+     */
     private static final int BASE_ID = LAST_POKEMON_ID + 30;
 
-    /** Map of pokemons for update tests. */
+    /**
+     * Map of Pokémon for update tests.
+     */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 
-    private static void addPokemon(Pokemon pokemon) throws ExecutionException, InterruptedException {
+    private static void addPokemon(Pokemon pokemon) {
         POKEMONS.put(pokemon.getId(), pokemon);
-        Long result = DB_CLIENT.execute(exec -> exec
-                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName())
-        ).toCompletableFuture().get();
+        long result = DB_CLIENT.execute()
+                .namedInsert("insert-pokemon", pokemon.getId(), pokemon.getName());
         verifyInsertPokemon(result, pokemon);
     }
 
     /**
      * Initialize tests of basic JDBC deletes.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @BeforeAll
-    public static void setup() throws ExecutionException, InterruptedException {
+    public static void setup() {
         try {
             int curId = BASE_ID;
             addPokemon(new Pokemon(++curId, "Rayquaza", TYPES.get(3), TYPES.get(16))); // BASE_ID+1
@@ -76,105 +78,77 @@ public class SimpleDeleteIT extends AbstractIT {
 
     /**
      * Verify {@code createNamedDelete(String, String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedDeleteStrStrOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateNamedDeleteStrStrOrderArgs() {
+        long result = DB_CLIENT.execute()
                 .createNamedDelete("delete-rayquaza", DELETE_POKEMON_ORDER_ARG)
-                .addParam(POKEMONS.get(BASE_ID+1).getId()).execute()
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+1));
+                .addParam(POKEMONS.get(BASE_ID + 1).getId()).execute();
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 1));
     }
 
     /**
      * Verify {@code createNamedDelete(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedDeleteStrNamedArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateNamedDeleteStrNamedArgs() {
+        long result = DB_CLIENT.execute()
                 .createNamedDelete("delete-pokemon-named-arg")
-                .addParam("id", POKEMONS.get(BASE_ID+2).getId()).execute()
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+2));
+                .addParam("id", POKEMONS.get(BASE_ID + 2).getId()).execute();
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 2));
     }
 
     /**
      * Verify {@code createNamedDelete(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateNamedDeleteStrOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateNamedDeleteStrOrderArgs() {
+        long result = DB_CLIENT.execute()
                 .createNamedDelete("delete-pokemon-order-arg")
-                .addParam(POKEMONS.get(BASE_ID+3).getId()).execute()
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+3));
+                .addParam(POKEMONS.get(BASE_ID + 3).getId()).execute();
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 3));
     }
 
     /**
      * Verify {@code createDelete(String)} API method with named parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateDeleteNamedArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateDeleteNamedArgs() {
+        long result = DB_CLIENT.execute()
                 .createDelete(DELETE_POKEMON_NAMED_ARG)
-                .addParam("id", POKEMONS.get(BASE_ID+4).getId()).execute()
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+4));
+                .addParam("id", POKEMONS.get(BASE_ID + 4).getId()).execute();
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 4));
     }
 
     /**
      * Verify {@code createDelete(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testCreateDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
+    public void testCreateDeleteOrderArgs() {
+        long result = DB_CLIENT.execute()
                 .createDelete(DELETE_POKEMON_ORDER_ARG)
-                .addParam(POKEMONS.get(BASE_ID+5).getId()).execute()
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+5));
+                .addParam(POKEMONS.get(BASE_ID + 5).getId()).execute();
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 5));
     }
 
     /**
      * Verify {@code namedDelete(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testNamedDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
-                .namedDelete("delete-pokemon-order-arg", POKEMONS.get(BASE_ID+6).getId())
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+6));
+    public void testNamedDeleteOrderArgs() {
+        long result = DB_CLIENT.execute()
+                .namedDelete("delete-pokemon-order-arg", POKEMONS.get(BASE_ID + 6).getId());
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 6));
     }
 
     /**
      * Verify {@code delete(String)} API method with ordered parameters.
-     *
-     * @throws ExecutionException when database query failed
-     * @throws InterruptedException if the current thread was interrupted
      */
     @Test
-    public void testDeleteOrderArgs() throws ExecutionException, InterruptedException {
-        Long result = DB_CLIENT.execute(exec -> exec
-                .delete(DELETE_POKEMON_ORDER_ARG, POKEMONS.get(BASE_ID+7).getId())
-        ).toCompletableFuture().get();
-        verifyDeletePokemon(result, POKEMONS.get(BASE_ID+7));
+    public void testDeleteOrderArgs() {
+        long result = DB_CLIENT.execute()
+                .delete(DELETE_POKEMON_ORDER_ARG, POKEMONS.get(BASE_ID + 7).getId());
+        verifyDeletePokemon(result, POKEMONS.get(BASE_ID + 7));
     }
 
 }

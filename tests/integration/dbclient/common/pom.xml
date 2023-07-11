@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-common</artifactId>
-    <name>Integration Tests: Reactive DB Client Common</name>
+    <name>Integration Tests: DB Client Common</name>
 
     <dependencies>
         <dependency>
@@ -45,24 +45,12 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.metrics</groupId>
-            <artifactId>helidon-reactive-metrics</artifactId>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-health</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.health</groupId>
-            <artifactId>helidon-reactive-health</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient-health</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient-metrics</artifactId>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
@@ -75,6 +63,18 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-metrics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
         </dependency>
     </dependencies>
 

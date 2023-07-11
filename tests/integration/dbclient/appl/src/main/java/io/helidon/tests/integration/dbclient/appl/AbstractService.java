@@ -16,25 +16,32 @@
 package io.helidon.tests.integration.dbclient.appl;
 
 import java.util.Map;
-import java.util.Optional;
 
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.dbclient.DbClient;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
 
 /**
  * Common web service code for testing application.
  */
-public abstract class AbstractService implements Service {
+public abstract class AbstractService implements HttpService {
 
-    /** Query parameter for name of Pokemon, Type, etc.  */
+    /**
+     * Query parameter for name of Pokemon, Type, etc.
+     */
     public static final String QUERY_NAME_PARAM = "name";
-    /** Query parameter for ID of Pokemon, Type, etc.  */
+    /**
+     * Query parameter for ID of Pokemon, Type, etc.
+     */
     public static final String QUERY_ID_PARAM = "id";
-    /** Query parameter for beginning of ID range.  */
+    /**
+     * Query parameter for beginning of ID range.
+     */
     public static final String QUERY_FROM_ID_PARAM = "fromid";
-    /** Query parameter for end of ID range.  */
+    /**
+     * Query parameter for end of ID range.
+     */
     public static final String QUERY_TO_ID_PARAM = "toid";
 
     private final DbClient dbClient;
@@ -44,7 +51,7 @@ public abstract class AbstractService implements Service {
     /**
      * Creates an instance of common web service code for testing application.
      *
-     * @param dbClient DbClient instance
+     * @param dbClient   DbClient instance
      * @param statements statements from configuration file
      */
     public AbstractService(DbClient dbClient, Map<String, String> statements) {
@@ -75,17 +82,13 @@ public abstract class AbstractService implements Service {
      * Retrieve HTTP query parameter value from request.
      *
      * @param request HTTP request context
-     * @param name query parameter name
+     * @param name    query parameter name
      * @return query parameter value
      * @throws RemoteTestException when no parameter with given name exists in request
      */
     public static String param(ServerRequest request, String name) {
-        Optional<String> maybeParam = request.queryParams().first(name);
-        if (maybeParam.isPresent()) {
-            return maybeParam.get();
-        } else {
-            throw new RemoteTestException(String.format("Query parameter %s is missing.", name));
-        }
+        return request.query().first(name)
+                      .orElseThrow(() -> new RemoteTestException(String.format("Query parameter %s is missing.", name)));
     }
 
 }

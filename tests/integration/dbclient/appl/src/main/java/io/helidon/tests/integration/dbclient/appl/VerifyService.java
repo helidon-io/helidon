@@ -18,12 +18,12 @@ package io.helidon.tests.integration.dbclient.appl;
 import java.lang.System.Logger.Level;
 
 import io.helidon.config.Config;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
-import io.helidon.tests.integration.tools.service.AppResponse;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbExecute;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
 
 import jakarta.json.Json;
@@ -33,10 +33,12 @@ import jakarta.json.JsonObjectBuilder;
 
 import static io.helidon.tests.integration.dbclient.appl.AbstractService.QUERY_ID_PARAM;
 import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
+import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
+
 /**
  * Web resource for test data verification.
  */
-public class VerifyService  implements Service {
+public class VerifyService implements HttpService {
 
     private static final System.Logger LOGGER = System.getLogger(VerifyService.class.getName());
 
@@ -49,48 +51,33 @@ public class VerifyService  implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
-        rules
-                .get("/getPokemonById", this::getPokemonById)
-                .get("/getDatabaseType", this::getDatabaseType)
-                .get("/getConfigParam", this::getConfigParam);
+    public void routing(HttpRules rules) {
+        rules.get("/getPokemonById", this::getPokemonById)
+             .get("/getDatabaseType", this::getDatabaseType)
+             .get("/getConfigParam", this::getConfigParam);
     }
 
-    // Get Pokemon by ID and return its data.
+    // Get Pokémon by ID and return its data.
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         try {
+            DbExecute exec = dbClient.execute();
             String idStr = AbstractService.param(request, QUERY_ID_PARAM);
             int id = Integer.parseInt(idStr);
-            JsonObjectBuilder pokemonBuilder = Json.createObjectBuilder();
-            dbClient.execute(
-                    exec -> exec
-                            .namedGet("get-pokemon-by-id", id))
-                    .thenAccept(
-                            data -> data.ifPresentOrElse(
-                                    row -> {
-                                        JsonArrayBuilder typesBuilder = Json.createArrayBuilder();
-                                        pokemonBuilder.add("name", row.column("name").as(String.class));
-                                        pokemonBuilder.add("id", row.column("id").as(Integer.class));
-                                        dbClient.execute(
-                                                exec -> exec
-                                                        .namedQuery("get-pokemon-types", id))
-                                                .forEach(
-                                                        typeRow -> typesBuilder.add(typeRow.as(JsonObject.class)))
-                                                .onComplete(() -> {
-                                                    pokemonBuilder.add("types", typesBuilder.build());
-                                                    response.send(AppResponse.okStatus(pokemonBuilder.build()));
-                                                })
-                                                .exceptionally(t -> {
-                                                    response.send(exceptionStatus(t));
-                                                    return null;
-                                                });
-                                    },
-                                    () -> response.send(
-                                            AppResponse.okStatus(JsonObject.EMPTY_JSON_OBJECT))))
-                    .exceptionally(t -> {
-                        response.send(exceptionStatus(t));
-                        return null;
-                    });
+            JsonObject jsonObject =
+                    exec.namedGet("get-pokemon-by-id", id)
+                        .map(row -> Json.createObjectBuilder()
+                                        .add("name", row.column("name").as(String.class))
+                                        .add("id", row.column("id").as(Integer.class))
+                                        .add("types", exec.namedQuery("get-pokemon-types", id)
+                                                          .map(typeRow -> typeRow.as(JsonObject.class))
+                                                          .collect(
+                                                                  Json::createArrayBuilder,
+                                                                  JsonArrayBuilder::add,
+                                                                  JsonArrayBuilder::add)
+                                                          .build())
+                                        .build())
+                        .orElse(JsonObject.EMPTY_JSON_OBJECT);
+            response.send(okStatus(jsonObject));
         } catch (RemoteTestException ex) {
             response.send(exceptionStatus(ex));
         }
@@ -100,7 +87,7 @@ public class VerifyService  implements Service {
     private void getDatabaseType(ServerRequest request, ServerResponse response) {
         JsonObjectBuilder job = Json.createObjectBuilder();
         job.add("type", dbClient.dbType());
-        response.send(AppResponse.okStatus(job.build()));
+        response.send(okStatus(job.build()));
     }
 
     // Get server configuration parameter.
@@ -110,21 +97,21 @@ public class VerifyService  implements Service {
             name = AbstractService.param(request, AbstractService.QUERY_NAME_PARAM);
         } catch (RemoteTestException ex) {
             LOGGER.log(Level.WARNING,
-                       String.format(
-                               "Error in VerifyService.getConfigParam on server: %s",
-                               ex.getMessage()),
-                       ex);
+                    String.format(
+                            "Error in VerifyService.getConfigParam on server: %s",
+                            ex.getMessage()),
+                    ex);
             response.send(exceptionStatus(ex));
             return;
         }
         Config node = config.get(name);
         JsonObjectBuilder job = Json.createObjectBuilder();
         if (!node.exists()) {
-            response.send(AppResponse.okStatus(job.build()));
+            response.send(okStatus(job.build()));
             return;
         }
         job.add("config", node.as(String.class).get());
-        response.send(AppResponse.okStatus(job.build()));
+        response.send(okStatus(job.build()));
     }
 
 }
