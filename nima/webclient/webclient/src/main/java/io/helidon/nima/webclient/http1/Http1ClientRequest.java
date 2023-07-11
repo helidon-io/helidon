@@ -56,4 +56,11 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest, Ht
      * @return {@link UriQuery}
      */
     UriQuery uriQuery();
+
+    /**
+     * Whether to follow redirects or not.
+     *
+     * @return {@code true} if redirects are followed
+     */
+    boolean followRedirects();
 }
