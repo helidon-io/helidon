@@ -32,7 +32,6 @@ module io.helidon.integrations.vault.secrets.transit {
 
     requires jakarta.json;
 
-    requires io.helidon.integrations.common.rest;
     requires transitive io.helidon.integrations.vault;
     requires io.helidon.http;
     requires transitive io.helidon.security;

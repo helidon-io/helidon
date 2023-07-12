@@ -31,7 +31,6 @@ module io.helidon.integrations.vault.secrets.database {
     requires java.logging;
 
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.integrations.common.rest;
 
     exports io.helidon.integrations.vault.secrets.database;
 
