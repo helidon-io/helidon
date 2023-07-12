@@ -44,7 +44,7 @@ module io.helidon.messaging.connectors.jms {
     requires io.helidon.common.reactive;
     requires io.helidon.common.configurable;
     requires io.helidon.messaging.jms.shim;
-    requires io.helidon.messaging;
+    requires transitive io.helidon.messaging;
     requires microprofile.config.api;
     requires java.naming;
     requires javax.jms.api;
