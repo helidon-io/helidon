@@ -409,7 +409,7 @@ public interface WebClient {
             return baseUri;
         }
 
-        Config config() {
+        protected Config config() {
             return config;
         }
 

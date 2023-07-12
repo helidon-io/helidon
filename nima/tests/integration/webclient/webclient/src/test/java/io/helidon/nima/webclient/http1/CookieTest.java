@@ -30,7 +30,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -77,18 +76,26 @@ class CookieTest {
 
     private static void getHandler(ServerRequest req, ServerResponse res) {
         Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
-        assertThat(cookies.allValues(), hasItem("flavor3=strawberry"));
-        assertThat(cookies.allValues(), hasItem("flavor4=raspberry"));
-        res.header(Http.Header.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
-        res.send("ok");
+        if (cookies.allValues().size() == 2
+                && cookies.allValues().contains("flavor3=strawberry")
+                && cookies.allValues().contains("flavor4=raspberry")) {
+            res.header(Http.Header.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
+            res.status(Http.Status.OK_200).send();
+        } else {
+            res.status(Http.Status.BAD_REQUEST_400).send();
+        }
     }
 
     private static void putHandler(ServerRequest req, ServerResponse res) {
         Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
-        assertThat(cookies.allValues(), hasItem("flavor1=chocolate"));
-        assertThat(cookies.allValues(), hasItem("flavor2=vanilla"));
-        assertThat(cookies.allValues(), hasItem("flavor3=strawberry"));
-        assertThat(cookies.allValues(), hasItem("flavor4=raspberry"));
-        res.send("ok");
+        if (cookies.allValues().size() == 4
+                && cookies.allValues().contains("flavor1=chocolate")
+                && cookies.allValues().contains("flavor2=vanilla")
+                && cookies.allValues().contains("flavor3=strawberry")
+                && cookies.allValues().contains("flavor4=raspberry")) {
+            res.status(Http.Status.OK_200).send();
+        } else {
+            res.status(Http.Status.BAD_REQUEST_400).send();
+        }
     }
 }

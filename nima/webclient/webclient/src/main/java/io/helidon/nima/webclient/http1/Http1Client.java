@@ -19,6 +19,7 @@ package io.helidon.nima.webclient.http1;
 import java.net.CookiePolicy;
 import java.net.CookieStore;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -113,6 +114,23 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
             if (mediaContextBuilder != null) {
                 configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext())
                                                    .build());
+            }
+
+            // cookies configuration
+            Config config = config();
+            if (config != null && config.get("cookies").exists()) {
+                Config cookies = config.get("cookies");
+                cookies.get("automatic-store-enabled").asBoolean().ifPresent(configBuilder::enableAutomaticCookieStore);
+                Config defaultCookies = cookies.get("default-cookies");
+                if (defaultCookies.exists()) {
+                    Map<String, String> cookieMap = new HashMap<>();
+                    defaultCookies.asNodeList()
+                            .ifPresent(list -> list.forEach(
+                                    c -> cookieMap.put(
+                                            c.get("name").asString().get(),
+                                            c.get("value").asString().get())));
+                    configBuilder.defaultCookies(cookieMap);
+                }
             }
 
             WebClientCookieManager cookieManager = WebClientCookieManager.create(
