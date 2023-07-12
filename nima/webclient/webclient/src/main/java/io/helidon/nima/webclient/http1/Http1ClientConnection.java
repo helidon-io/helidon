@@ -180,7 +180,7 @@ class Http1ClientConnection implements ClientConnection {
 
         // Re-use socket
         this.socket = proxyConnection.socket;
-        // Note that Http1StatusParser fails parsing HTTP/1.0 and some proxies will return that.
+
         return response.status().code();
     }
 
@@ -194,6 +194,7 @@ class Http1ClientConnection implements ClientConnection {
             socket = new Socket();
             socket.setSoTimeout((int) options.readTimeout().toMillis());
             options.configureSocket(socket);
+            channelId = createChannelId(socket);
             InetSocketAddress remoteAddress = inetSocketAddress();
             strategy = ConnectionStrategy.get(this, remoteAddress);
             strategy.connect(this, remoteAddress);
@@ -207,7 +208,6 @@ class Http1ClientConnection implements ClientConnection {
                                             socket.getLocalAddress(),
                                             Thread.currentThread().getName()));
         }
-        this.channelId = createChannelId(socket);
         this.reader = new DataReader(helidonSocket);
         this.writer = new DataWriter() {
             @Override

@@ -24,14 +24,14 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.Http;
 
 /**
- * Parser of HTTP/1.1 response status.
+ * Parser of HTTP/1.0 or HTTP/1.1 response status.
  */
 public final class Http1StatusParser {
     private Http1StatusParser() {
     }
 
     /**
-     * Read the status line from HTTP/1.1 response.
+     * Read the status line from HTTP/1.0 or HTTP/1.1 response.
      *
      * @param reader    data reader to obtain bytes from
      * @param maxLength maximal number of bytes that can be processed before end of line is reached
@@ -73,15 +73,15 @@ public final class Http1StatusParser {
         reader.skip(1); // space
         newLine -= space;
         newLine--;
-        if (!protocolVersion.equals("1.1")) {
-            throw new IllegalStateException("HTTP response did not contain correct status line. Version is not 1.1: \n"
+        if (!protocolVersion.equals("1.0") && !protocolVersion.equals("1.1")) {
+            throw new IllegalStateException("HTTP response did not contain correct status line. Version is not 1.0 or 1.1: \n"
                                                     + BufferData.create(protocolVersion.getBytes(StandardCharsets.US_ASCII))
                     .debugDataHex());
         }
-        // HTTP/1.1 200 OK
+        // HTTP/1.0 or HTTP/1.1 200 OK
         space = reader.findOrNewLine(Bytes.SPACE_BYTE, newLine);
         if (space == newLine) {
-            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: HTTP/1.1\n"
+            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line: HTTP/1.0 or HTTP/1.1\n"
                                                     + reader.readBuffer(newLine).debugDataHex());
         }
         String code = reader.readAsciiString(space);
@@ -94,7 +94,7 @@ public final class Http1StatusParser {
         try {
             return Http.Status.create(Integer.parseInt(code), phrase);
         } catch (NumberFormatException e) {
-            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line HTTP/1.1 \n"
+            throw new IllegalStateException("HTTP Response did not contain HTTP status line. Line HTTP/1.0 or HTTP/1.1 \n"
                                                     + BufferData.create(code.getBytes(StandardCharsets.US_ASCII)) + "\n"
                                                     + BufferData.create(phrase.getBytes(StandardCharsets.US_ASCII)));
         }
