@@ -35,7 +35,7 @@
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
         <model>
             <list key="Main-routing-builder">
-                <value><![CDATA[               .get("/simple-greet", (req, res) -> res.send("Hello World!"))]]></value>
+                <value><![CDATA[.get("/simple-greet", (req, res) -> res.send("Hello World!"))]]></value>
             </list>
             <list key="Abstract-tests">
                 <value><![CDATA[

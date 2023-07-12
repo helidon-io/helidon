@@ -90,22 +90,19 @@
                 <value>static io.helidon.common.http.Http.Method.GET</value>
             </list>
             <list key="Observe-feature-builder">
-                <value if="${health}"><![CDATA[                                               .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                <value if="${health}"><![CDATA[.addProvider(HealthObserveProvider.create(HealthFeature.builder()
                                                .addCheck(HeapMemoryHealthCheck.create())
                                                .addCheck(DiskSpaceHealthCheck.create())
                                                .addCheck(DeadlockHealthCheck.create())
-                                               .build()))
-]]></value>
+                                               .build()))]]></value>
             </list>
             <list key="Main-routing-builder" if="${tracing}">
-                <value if="${tracing}"><![CDATA[               .addFeature(TracingFeature.create(tracer))
-                    .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
-                    .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))
-]]></value>
+                <value if="${tracing}"><![CDATA[.addFeature(TracingFeature.create(tracer))
+                .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
+                .route(Http2Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/2 route")))]]></value>
             </list>
             <list key="Main-routing" if="${tracing}">
-                <value><![CDATA[        Tracer tracer = TracerBuilder.create("nima")
-                    .build();
+                <value><![CDATA[Tracer tracer = TracerBuilder.create("nima").build();
 ]]></value>
             </list>
             <list key="Main-content" if="${tracing}">
