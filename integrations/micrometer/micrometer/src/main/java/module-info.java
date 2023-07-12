@@ -32,17 +32,17 @@ module io.helidon.integrations.micrometer {
 
     requires java.logging;
 
-    requires static jakarta.annotation;
+    requires jakarta.annotation;
 
     requires io.helidon.config;
-    requires io.helidon.http;
-    requires io.helidon.servicecommon;
+    requires transitive io.helidon.http;
+    requires transitive io.helidon.servicecommon;
     requires io.helidon.webserver.cors;
 
     requires static io.helidon.config.metadata;
 
-    requires micrometer.core;
-    requires micrometer.registry.prometheus;
+    requires transitive micrometer.core;
+    requires transitive micrometer.registry.prometheus;
     requires simpleclient;
 
     exports io.helidon.integrations.micrometer;
