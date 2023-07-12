@@ -20,7 +20,7 @@
 module io.helidon.integrations.vault.auths.common {
     requires io.helidon.http;
     requires jakarta.json;
-    requires io.helidon.integrations.common.rest;
+    requires transitive io.helidon.integrations.common.rest;
     requires transitive io.helidon.integrations.vault;
     requires io.helidon.webclient;
 
