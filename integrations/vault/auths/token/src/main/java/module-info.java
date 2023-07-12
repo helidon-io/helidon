@@ -29,7 +29,7 @@ module io.helidon.integrations.vault.auths.token {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.integrations.common.rest;
+    requires transitive io.helidon.integrations.common.rest;
     requires io.helidon.integrations.vault.auths.common;
     requires io.helidon.http;
     requires io.helidon.webclient;
