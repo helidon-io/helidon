@@ -32,7 +32,7 @@ module io.helidon.logging.log4j {
 
     requires io.helidon.common.context;
     requires org.apache.logging.log4j;
-    requires io.helidon.logging.common;
+    requires transitive io.helidon.logging.common;
 
     exports io.helidon.logging.log4j;
 

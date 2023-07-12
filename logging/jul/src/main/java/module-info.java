@@ -22,7 +22,7 @@ module io.helidon.logging.jul {
 
     requires io.helidon.common;
     requires io.helidon.common.context;
-    requires io.helidon.logging.common;
+    requires transitive io.helidon.logging.common;
 
     exports  io.helidon.logging.jul;
 

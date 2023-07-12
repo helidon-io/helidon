@@ -21,7 +21,7 @@ import io.helidon.logging.slf4j.Slf4jProvider;
  */
 module io.helidon.logging.slf4j {
     requires io.helidon.common.context;
-    requires io.helidon.logging.common;
+    requires transitive io.helidon.logging.common;
 
     requires org.slf4j;
 
