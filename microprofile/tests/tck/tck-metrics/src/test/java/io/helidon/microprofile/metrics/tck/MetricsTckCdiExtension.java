@@ -19,12 +19,16 @@ import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
 
 public class MetricsTckCdiExtension implements Extension {
 
     void before(@Observes BeforeBeanDiscovery discovery) {
-        RegistryFactory.getInstance().start();
         discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
+    }
+
+    void after(@Observes BeforeShutdown shutdown) {
+        RegistryFactory.getInstance().stop();
     }
 }
