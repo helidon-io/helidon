@@ -30,10 +30,10 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.micrometer.cdi {
     requires static io.helidon.common.features.api;
 
-    requires static jakarta.annotation;
+    requires jakarta.annotation;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
+    requires jakarta.cdi;
+    requires jakarta.inject;
 
     requires io.helidon.http;
     requires io.helidon.microprofile.servicecommon;
@@ -42,7 +42,7 @@ module io.helidon.integrations.micrometer.cdi {
     requires io.helidon.microprofile.server;
     requires io.helidon.integrations.micrometer;
 
-    requires micrometer.core;
+    requires transitive micrometer.core;
     requires simpleclient;
 
     exports io.helidon.integrations.micrometer.cdi;
