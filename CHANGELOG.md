@@ -9,6 +9,22 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.2]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- WebServer: Response should not be chunked if there is no entity [6916](https://github.com/helidon-io/helidon/pull/6916)
+- WebServer: Avoid reflecting back user data coming from exception messages. [6981](https://github.com/helidon-io/helidon/pull/6981)
+- Dependencies: Upgrade graphql to 18.6 [6975](https://github.com/helidon-io/helidon/pull/6975) [6939](https://github.com/helidon-io/helidon/pull/6939)
+- Dependencies: Upgrade jackson to 2.15.2 [7126](https://github.com/helidon-io/helidon/pull/7126)
+- Dependencies: Upgrade netty, grpc, guava, snappy-java and use slim neo4j driver [7085](https://github.com/helidon-io/helidon/pull/7085)
+- Dependencies: Upgrade to Jersey 2.40 [7150](https://github.com/helidon-io/helidon/pull/7150)
+- Docs: wls-helidon integration for 2.x [6946](https://github.com/helidon-io/helidon/pull/6946)
+- Test: CipherSuiteTest intermittent failure [6948](https://github.com/helidon-io/helidon/pull/6948)
+- Test: Use Hamcrest assertions instead of JUnit in  integrations/cdi/jpa-cdi- [5252](https://github.com/helidon-io/helidon/pull/5252)
+
 ## [2.6.1]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2130,6 +2146,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.2]: https://github.com/oracle/helidon/compare/2.6.1...2.6.2
 [2.6.1]: https://github.com/oracle/helidon/compare/2.6.0...2.6.1
 [2.6.0]: https://github.com/oracle/helidon/compare/2.5.6...2.6.0
 [2.5.6]: https://github.com/oracle/helidon/compare/2.5.5...2.5.6
