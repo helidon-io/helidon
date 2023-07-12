@@ -146,7 +146,9 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
             requestConfiguration.cookieManager().put(requestConfiguration.requestURI(),
                                                      clientResponse.headers().toMap());
 
+            // Set entity to channel if further forwarding is required
             Flow.Publisher<DataChunk> entity = channel.attr(REQUEST_ENTITY).get();
+
             for (HttpInterceptor interceptor : HTTP_INTERCEPTORS) {
                 if (interceptor.shouldIntercept(response.status(), requestConfiguration)) {
                     boolean continueAfter = !interceptor.continueAfterInterception();
@@ -159,6 +161,8 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     }
                 }
             }
+            // Clean up entity from channel
+            channel.attr(REQUEST_ENTITY).set(null);
 
             WebClientServiceResponse clientServiceResponse =
                     new WebClientServiceResponseImpl(requestConfiguration.context().get(),

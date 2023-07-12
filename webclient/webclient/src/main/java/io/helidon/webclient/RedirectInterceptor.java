@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 
-import io.helidon.common.reactive.Single;
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -63,25 +62,16 @@ class RedirectInterceptor implements HttpInterceptor {
             } else {
                 requestBuilder.uri(newUri);
             }
-            if (entity == null) {
-                CompletionStage<WebClientResponse> redirectResponse = requestBuilder.request();
-                redirectResponse.whenComplete((clResponse, throwable) -> {
-                    if (throwable == null) {
-                        responseFuture.complete(clResponse);
-                    } else {
-                        responseFuture.completeExceptionally(throwable);
-                    }
-                });
-            } else {
-                CompletionStage<WebClientResponse> redirectResponse = requestBuilder.submit(entity);
-                redirectResponse.whenComplete((clResponse, throwable) -> {
-                    if (throwable == null) {
-                        responseFuture.complete(clResponse);
-                    } else {
-                        responseFuture.completeExceptionally(throwable);
-                    }
-                });
-            }
+            CompletionStage<WebClientResponse> redirectResponse =
+                    entity == null ? requestBuilder.request() : requestBuilder.submit(entity);
+
+            redirectResponse.whenComplete((clResponse, throwable) -> {
+                if (throwable == null) {
+                    responseFuture.complete(clResponse);
+                } else {
+                    responseFuture.completeExceptionally(throwable);
+                }
+            });
 
         } else {
             throw new WebClientException("There is no " + Http.Header.LOCATION + " header present in response! "

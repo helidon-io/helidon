@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
 
 import io.helidon.common.http.DataChunk;
+
 import io.netty.handler.codec.http.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 
@@ -33,6 +34,7 @@ interface HttpInterceptor {
      * @param httpResponse   HTTP response
      * @param clientRequest  HTTP request
      * @param responseFuture completable future of the current response
+     * @param entity         Entity for further forwarding if required
      */
     void handleInterception(HttpResponse httpResponse,
                             WebClientRequestImpl clientRequest,
