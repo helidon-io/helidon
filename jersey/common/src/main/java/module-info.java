@@ -24,7 +24,7 @@ module io.helidon.jersey.common {
     requires io.helidon.common;
 
     requires jakarta.ws.rs;
-    requires jersey.common;
+    requires transitive jersey.common;
     requires jersey.server;
 
     exports io.helidon.jersey.common;
