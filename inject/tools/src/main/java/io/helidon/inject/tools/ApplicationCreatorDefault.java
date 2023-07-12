@@ -42,7 +42,7 @@ import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.Services;
 import io.helidon.inject.runtime.AbstractServiceProvider;
-import io.helidon.inject.runtime.HeldionInjectionPlan;
+import io.helidon.inject.runtime.HelidonInjectionPlan;
 import io.helidon.inject.runtime.ServiceBinderDefault;
 import io.helidon.inject.tools.spi.ApplicationCreator;
 
@@ -341,8 +341,8 @@ public class ApplicationCreatorDefault extends AbstractCreator implements Applic
         }
 
         List<String> plan = new ArrayList<>(deps.allDependencies().size());
-        Map<String, HeldionInjectionPlan> injectionPlan = asp.getOrCreateInjectionPlan(false);
-        for (Map.Entry<String, HeldionInjectionPlan> e : injectionPlan.entrySet()) {
+        Map<String, HelidonInjectionPlan> injectionPlan = asp.getOrCreateInjectionPlan(false);
+        for (Map.Entry<String, HelidonInjectionPlan> e : injectionPlan.entrySet()) {
             StringBuilder line = new StringBuilder();
             InjectionPointInfo ipInfo = e.getValue().injectionPointInfo();
             List<? extends ServiceProvider<?>> ipQualified = e.getValue().injectionPointQualifiedServiceProviders();

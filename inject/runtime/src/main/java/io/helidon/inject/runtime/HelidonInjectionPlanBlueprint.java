@@ -29,7 +29,7 @@ import io.helidon.inject.spi.InjectionPlan;
  * loaded.
  */
 @Prototype.Blueprint
-interface HeldionInjectionPlanBlueprint extends InjectionPlan {
+interface HelidonInjectionPlanBlueprint extends InjectionPlan {
 
     /**
      * The list of services/providers that are unqualified to satisfy the given injection point but were considered.

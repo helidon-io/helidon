@@ -87,7 +87,7 @@ public abstract class AbstractServiceProvider<T>
     private ActivationLog log;
     private ServiceInfo serviceInfo;
     private DependenciesInfo dependencies;
-    private Map<String, HeldionInjectionPlan> injectionPlan;
+    private Map<String, HelidonInjectionPlan> injectionPlan;
     private ServiceProvider<?> interceptor;
     private boolean thisIsAnInterceptor;
 
@@ -496,7 +496,7 @@ public abstract class AbstractServiceProvider<T>
                                      }
                                  }));
 
-        ConcurrentHashMap<String, HeldionInjectionPlan> injectionPlan = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, HelidonInjectionPlan> injectionPlan = new ConcurrentHashMap<>();
         AbstractServiceProvider<T> self = AbstractServiceProvider.this;
         ServiceInjectionPlanBinder.Binder result = new ServiceInjectionPlanBinder.Binder() {
             private InjectionPointInfo ipInfo;
@@ -504,7 +504,7 @@ public abstract class AbstractServiceProvider<T>
             @Override
             public ServiceInjectionPlanBinder.Binder bind(String id,
                                                           ServiceProvider<?> serviceProvider) {
-                HeldionInjectionPlan plan = createBuilder(id)
+                HelidonInjectionPlan plan = createBuilder(id)
                         .injectionPointQualifiedServiceProviders(List.of(bind(serviceProvider)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
@@ -515,7 +515,7 @@ public abstract class AbstractServiceProvider<T>
             @Override
             public ServiceInjectionPlanBinder.Binder bindMany(String id,
                                                               ServiceProvider<?>... serviceProviders) {
-                HeldionInjectionPlan plan = createBuilder(id)
+                HelidonInjectionPlan plan = createBuilder(id)
                         .injectionPointQualifiedServiceProviders(bind(Arrays.asList(serviceProviders)))
                         .build();
                 Object prev = injectionPlan.put(id, plan);
@@ -541,7 +541,7 @@ public abstract class AbstractServiceProvider<T>
                             .dependencyToServiceInfo(serviceInfo);
                     Object resolved = Objects.requireNonNull(
                             resolver.resolve(ipInfo, requiredInjectionServices(), AbstractServiceProvider.this, false));
-                    HeldionInjectionPlan plan = createBuilder(id)
+                    HelidonInjectionPlan plan = createBuilder(id)
                             .unqualifiedProviders(List.of(resolved))
                             .resolved(false)
                             .build();
@@ -585,9 +585,9 @@ public abstract class AbstractServiceProvider<T>
                 return ipInfo;
             }
 
-            private HeldionInjectionPlan.Builder createBuilder(String id) {
+            private HelidonInjectionPlan.Builder createBuilder(String id) {
                 ipInfo = safeGetIpInfo(id);
-                return HeldionInjectionPlan.builder()
+                return HelidonInjectionPlan.builder()
                         .injectionPointInfo(ipInfo)
                         .serviceProvider(self);
             }
@@ -602,7 +602,7 @@ public abstract class AbstractServiceProvider<T>
      * @param resolveIps true if the injection points should also be activated/resolved.
      * @return the injection plan
      */
-    public Map<String, HeldionInjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
+    public Map<String, HelidonInjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
         if (this.injectionPlan != null) {
             return this.injectionPlan;
         }
@@ -611,7 +611,7 @@ public abstract class AbstractServiceProvider<T>
             dependencies(dependencies());
         }
 
-        Map<String, HeldionInjectionPlan> plan = DefaultInjectionPlans
+        Map<String, HelidonInjectionPlan> plan = DefaultInjectionPlans
                 .createInjectionPlans(requiredInjectionServices(), this, dependencies, resolveIps, logger());
         assert (this.injectionPlan == null);
         this.injectionPlan = Objects.requireNonNull(plan);
@@ -1073,7 +1073,7 @@ public abstract class AbstractServiceProvider<T>
         onPhaseEvent(Event.STARTING, this.phase);
     }
 
-    Map<String, Object> resolveDependencies(Map<String, HeldionInjectionPlan> mutablePlans) {
+    Map<String, Object> resolveDependencies(Map<String, HelidonInjectionPlan> mutablePlans) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         Map.copyOf(mutablePlans).forEach((key, value) -> {
@@ -1097,7 +1097,7 @@ public abstract class AbstractServiceProvider<T>
 
             if (value.resolved().isEmpty()) {
                 // update the original plans map to properly reflect the resolved value
-                mutablePlans.put(key, HeldionInjectionPlan.builder(value)
+                mutablePlans.put(key, HelidonInjectionPlan.builder(value)
                         .wasResolved(true)
                         .update(builder -> {
                             if (resolved != null) {
@@ -1220,7 +1220,7 @@ public abstract class AbstractServiceProvider<T>
     private void doGatheringDependencies(LogEntryAndResult logEntryAndResult) {
         startTransitionCurrentActivationPhase(logEntryAndResult, Phase.GATHERING_DEPENDENCIES);
 
-        Map<String, HeldionInjectionPlan> plans = Objects.requireNonNull(getOrCreateInjectionPlan(false));
+        Map<String, HelidonInjectionPlan> plans = Objects.requireNonNull(getOrCreateInjectionPlan(false));
         Map<String, Object> deps = resolveDependencies(plans);
         if (!deps.isEmpty()) {
             logEntryAndResult.activationResult.resolvedDependencies(deps);
@@ -1231,7 +1231,7 @@ public abstract class AbstractServiceProvider<T>
     }
 
     @SuppressWarnings("unchecked")
-    private Object resolveOptional(HeldionInjectionPlan plan,
+    private Object resolveOptional(HelidonInjectionPlan plan,
                                    Object resolved) {
         if (!plan.injectionPointInfo().optionalWrapped() && resolved instanceof Optional) {
             return ((Optional<Object>) resolved).orElse(null);

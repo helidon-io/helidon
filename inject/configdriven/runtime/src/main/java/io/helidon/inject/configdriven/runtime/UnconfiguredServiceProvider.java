@@ -29,7 +29,7 @@ import io.helidon.inject.api.Phase;
 import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.api.ServiceProviderBindable;
 import io.helidon.inject.configdriven.api.NamedInstance;
-import io.helidon.inject.runtime.HeldionInjectionPlan;
+import io.helidon.inject.runtime.HelidonInjectionPlan;
 
 /**
  * Used by root service providers when there are no services that have been configured.
@@ -115,7 +115,7 @@ class UnconfiguredServiceProvider<T, CB> extends ConfigDrivenServiceProviderBase
     }
 
     @Override
-    public Map<String, HeldionInjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
+    public Map<String, HelidonInjectionPlan> getOrCreateInjectionPlan(boolean resolveIps) {
         return super.getOrCreateInjectionPlan(resolveIps);
     }
 

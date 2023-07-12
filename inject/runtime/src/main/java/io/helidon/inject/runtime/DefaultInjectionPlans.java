@@ -64,12 +64,12 @@ class DefaultInjectionPlans {
      * @param logger            the logger to use for any logging
      * @return the injection plan per element identity belonging to the service provider
      */
-    static Map<String, HeldionInjectionPlan> createInjectionPlans(InjectionServices injectionServices,
+    static Map<String, HelidonInjectionPlan> createInjectionPlans(InjectionServices injectionServices,
                                                                   ServiceProvider<?> self,
                                                                   DependenciesInfo dependencies,
                                                                   boolean resolveIps,
                                                                   System.Logger logger) {
-        Map<String, HeldionInjectionPlan> result = new LinkedHashMap<>();
+        Map<String, HelidonInjectionPlan> result = new LinkedHashMap<>();
         if (dependencies.allDependencies().isEmpty()) {
             return result;
         }
@@ -254,7 +254,7 @@ class DefaultInjectionPlans {
 
     @SuppressWarnings("unchecked")
     private static void accumulate(DependencyInfo dep,
-                                   Map<String, HeldionInjectionPlan> result,
+                                   Map<String, HelidonInjectionPlan> result,
                                    InjectionServices injectionServices,
                                    ServiceProvider<?> self,
                                    boolean resolveIps,
@@ -280,7 +280,7 @@ class DefaultInjectionPlans {
                             Object target = (resolved instanceof Optional)
                                     ? ((Optional<?>) resolved).orElse(null) : resolved;
                             if (target != null) {
-                                HeldionInjectionPlan.Builder planBuilder = HeldionInjectionPlan.builder()
+                                HelidonInjectionPlan.Builder planBuilder = HelidonInjectionPlan.builder()
                                         .serviceProvider(self)
                                         .injectionPointInfo(ipInfo)
                                         .injectionPointQualifiedServiceProviders(toIpQualified(target))
@@ -299,7 +299,7 @@ class DefaultInjectionPlans {
                                     }
                                 }
 
-                                HeldionInjectionPlan plan = planBuilder.build();
+                                HelidonInjectionPlan plan = planBuilder.build();
                                 Object prev = result.put(id, plan);
                                 assert (prev == null) : ipInfo;
                             }
@@ -340,7 +340,7 @@ class DefaultInjectionPlans {
                             throw DefaultServices.resolutionBasedInjectionError(
                                     ipInfo.dependencyToServiceInfo());
                         }
-                        HeldionInjectionPlan plan = HeldionInjectionPlan.builder()
+                        HelidonInjectionPlan plan = HelidonInjectionPlan.builder()
                                 .injectionPointInfo(ipInfo)
                                 .injectionPointQualifiedServiceProviders(serviceProviders)
                                 .serviceProvider(self)
