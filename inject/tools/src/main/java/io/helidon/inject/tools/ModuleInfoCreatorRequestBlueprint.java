@@ -24,13 +24,11 @@ import java.util.Set;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.api.ModuleComponent;
 
 /**
  * Used to represent the parameters that feed into the code generation of a module-info file specifically for Injection in that
- * it offers easy ability to add the {@link ModuleComponent} as well as optionally the
- * {@link Application}.
+ * it offers easy ability to add the {@link io.helidon.inject.api.ModuleComponent} as well as optionally the
+ * {@link io.helidon.inject.api.Application}.
  */
 @Prototype.Blueprint
 interface ModuleInfoCreatorRequestBlueprint {
@@ -43,21 +41,21 @@ interface ModuleInfoCreatorRequestBlueprint {
     Optional<String> name();
 
     /**
-     * The {@link ModuleComponent} type name.
+     * The {@link io.helidon.inject.api.ModuleComponent} type name.
      *
      * @return module type name
      */
     TypeName moduleTypeName();
 
     /**
-     * The {@link Application} type name.
+     * The {@link io.helidon.inject.api.Application} type name.
      *
      * @return application type name
      */
     Optional<TypeName> applicationTypeName();
 
     /**
-     * Set to true if the {@link ModuleComponent} should be created.
+     * Set to true if the {@link io.helidon.inject.api.ModuleComponent} should be created.
      *
      * @return true if the Module should be created
      */
@@ -65,7 +63,7 @@ interface ModuleInfoCreatorRequestBlueprint {
     boolean moduleCreated();
 
     /**
-     * Set to true if the {@link Application} should be created.
+     * Set to true if the {@link io.helidon.inject.api.Application} should be created.
      *
      * @return true if the Application should be created
      */

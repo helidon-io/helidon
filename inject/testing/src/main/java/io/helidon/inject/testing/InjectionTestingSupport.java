@@ -25,13 +25,13 @@ import java.util.stream.Collectors;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.inject.api.InjectionServicesConfig;
-import io.helidon.inject.api.ServiceBinder;
-import io.helidon.inject.api.Services;
 import io.helidon.inject.api.Bootstrap;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.InjectionServicesConfig;
 import io.helidon.inject.api.InjectionServicesHolder;
+import io.helidon.inject.api.ServiceBinder;
 import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Services;
 import io.helidon.inject.runtime.ServiceBinderDefault;
 
 /**

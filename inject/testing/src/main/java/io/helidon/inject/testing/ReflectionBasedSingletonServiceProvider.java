@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.ServiceProviderInjectionException;
+import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.PostConstructMethod;
 import io.helidon.inject.api.PreDestroyMethod;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.api.ServiceInfoBasics;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.ServiceProviderInjectionException;
 import io.helidon.inject.runtime.AbstractServiceProvider;
 
 /**

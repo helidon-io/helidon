@@ -18,8 +18,8 @@ package io.helidon.inject.runtime;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.api.Application;
-import io.helidon.inject.api.Phase;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.Phase;
 import io.helidon.inject.api.Qualifier;
 import io.helidon.inject.api.ServiceInfo;
 

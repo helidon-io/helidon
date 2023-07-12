@@ -19,8 +19,8 @@ package io.helidon.inject.maven.plugin;
 import java.io.File;
 
 import io.helidon.inject.api.Application;
-import io.helidon.inject.tools.spi.ApplicationCreator;
 import io.helidon.inject.tools.ApplicationCreatorDefault;
+import io.helidon.inject.tools.spi.ApplicationCreator;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;

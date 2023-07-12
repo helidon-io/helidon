@@ -20,8 +20,8 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.context.Context;
-import io.helidon.nima.common.tls.Tls;
 import io.helidon.inject.api.Contract;
+import io.helidon.nima.common.tls.Tls;
 
 /**
  * Server that opens server sockets and handles requests through routing.

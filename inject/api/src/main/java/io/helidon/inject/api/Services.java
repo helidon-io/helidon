@@ -64,7 +64,7 @@ public interface Services {
      */
     default <T> ServiceProvider<T> lookup(Class<T> type) {
         return lookupFirst(type, true)
-                .orElseThrow(() -> new InjectionException("There are no service providers for service of type " + type.getName()));
+            .orElseThrow(() -> new InjectionException("There are no service providers for service of type " + type.getName()));
     }
 
     /**
@@ -80,7 +80,7 @@ public interface Services {
     default <T> ServiceProvider<T> lookup(Class<T> type,
                                           String name) {
         return lookupFirst(type, name, true)
-                .orElseThrow(() -> new InjectionException("There are no service providers for service of type " + type.getName()));
+            .orElseThrow(() -> new InjectionException("There are no service providers for service of type " + type.getName()));
     }
 
     /**

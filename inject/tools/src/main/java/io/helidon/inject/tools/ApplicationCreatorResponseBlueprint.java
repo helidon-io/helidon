@@ -17,19 +17,17 @@
 package io.helidon.inject.tools;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.tools.spi.ApplicationCreator;
 
 /**
- * Response from {@link ApplicationCreator}.
+ * Response from {@link io.helidon.inject.tools.spi.ApplicationCreator}.
  *
- * @see ApplicationCreator
+ * @see io.helidon.inject.tools.spi.ApplicationCreator
  */
 @Prototype.Blueprint
 public interface ApplicationCreatorResponseBlueprint extends GeneralCreatorResponseBlueprint {
 
     /**
-     * The basic description for the {@link Application} generated.
+     * The basic description for the {@link io.helidon.inject.api.Application} generated.
      *
      * @return describes the application generated (package and class)
      */

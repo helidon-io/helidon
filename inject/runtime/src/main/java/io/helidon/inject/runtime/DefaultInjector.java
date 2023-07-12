@@ -22,10 +22,10 @@ import io.helidon.inject.api.ActivationResult;
 import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.DeActivationRequest;
 import io.helidon.inject.api.DeActivator;
+import io.helidon.inject.api.InjectionException;
 import io.helidon.inject.api.InjectionServiceProviderException;
 import io.helidon.inject.api.Injector;
 import io.helidon.inject.api.InjectorOptions;
-import io.helidon.inject.api.InjectionException;
 import io.helidon.inject.api.ServiceProvider;
 
 /**

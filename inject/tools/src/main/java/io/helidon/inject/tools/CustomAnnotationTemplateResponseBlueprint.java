@@ -21,10 +21,9 @@ import java.util.Map;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
- * The response from {@link CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.
+ * The response from {@link io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator#create(CustomAnnotationTemplateRequest)}.
  */
 @Prototype.Blueprint
 interface CustomAnnotationTemplateResponseBlueprint {

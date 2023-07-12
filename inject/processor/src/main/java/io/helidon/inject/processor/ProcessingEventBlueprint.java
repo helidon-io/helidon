@@ -23,10 +23,9 @@ import javax.annotation.processing.ProcessingEnvironment;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.processor.spi.InjectionAnnotationProcessorObserver;
 
 /**
- * Attributes that can be observed via {@link InjectionAnnotationProcessorObserver}.
+ * Attributes that can be observed via {@link io.helidon.inject.processor.spi.InjectionAnnotationProcessorObserver}.
  */
 @Prototype.Blueprint
 interface ProcessingEventBlueprint {

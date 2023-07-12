@@ -19,21 +19,19 @@ package io.helidon.inject.tools;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.api.ElementKind;
-import io.helidon.inject.api.InterceptedTrigger;
 
 /**
  * Used in the interception model described by {@link InterceptionPlan}. An intercepted
- * element typically refers to a {@link ElementKind#CONSTRUCTOR} or
- * {@link ElementKind#METHOD} that qualifies for interception. If, however,
- * the {@link InterceptedTrigger} is applied on the enclosing service type then all public methods.
+ * element typically refers to a {@link io.helidon.inject.api.ElementKind#CONSTRUCTOR} or
+ * {@link io.helidon.inject.api.ElementKind#METHOD} that qualifies for interception. If, however,
+ * the {@link io.helidon.inject.api.InterceptedTrigger} is applied on the enclosing service type then all public methods.
  * Note that only public methods on Helidon injection-activated services can be intercepted.
  */
 @Prototype.Blueprint
 interface InterceptedElementBlueprint {
 
     /**
-     * The set of {@link InterceptedTrigger} types that apply to this method/element.
+     * The set of {@link io.helidon.inject.api.InterceptedTrigger} types that apply to this method/element.
      *
      * @return the set of intercepted trigger types that apply to this method/element
      */

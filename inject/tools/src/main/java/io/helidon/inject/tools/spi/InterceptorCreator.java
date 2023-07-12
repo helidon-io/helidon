@@ -22,8 +22,8 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
-import io.helidon.inject.api.InterceptedTrigger;
 import io.helidon.inject.api.Contract;
+import io.helidon.inject.api.InterceptedTrigger;
 import io.helidon.inject.api.ServiceInfoBasics;
 import io.helidon.inject.tools.InterceptionPlan;
 import io.helidon.inject.tools.InterceptorCreatorProvider;

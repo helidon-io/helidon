@@ -20,8 +20,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.api.ModuleComponent;
 
 /**
  * General code gen information.
@@ -39,7 +37,7 @@ interface GeneralCodeGenNamesBlueprint {
 
     /**
      * The module name.
-     * This name is used primarily to serve as the codegen name for the {@link ModuleComponent} that is
+     * This name is used primarily to serve as the codegen name for the {@link io.helidon.inject.api.ModuleComponent} that is
      * generated.
      *
      * @return module name
@@ -47,8 +45,8 @@ interface GeneralCodeGenNamesBlueprint {
     Optional<String> moduleName();
 
     /**
-     * The package name to use for the generated {@link ModuleComponent},
-     * {@link Application}, etc.
+     * The package name to use for the generated {@link io.helidon.inject.api.ModuleComponent},
+     * {@link io.helidon.inject.api.Application}, etc.
      * If one is not provided, one will be determined internally.
      *
      * @return the suggested package name, otherwise passing null will delegate package naming to the implementation heuristic

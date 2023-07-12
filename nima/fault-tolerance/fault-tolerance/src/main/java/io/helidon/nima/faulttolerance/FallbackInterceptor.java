@@ -23,9 +23,9 @@ import io.helidon.common.Weight;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.InjectionException;
 import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.InvocationContext;
-import io.helidon.inject.api.InjectionException;
 
 import jakarta.inject.Singleton;
 

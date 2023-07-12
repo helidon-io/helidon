@@ -43,15 +43,15 @@ import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Context;
 import io.helidon.common.features.HelidonFeatures;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Startable;
+import io.helidon.inject.configdriven.api.ConfigDriven;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.inject.api.ServiceProvider;
-import io.helidon.inject.api.Startable;
-import io.helidon.inject.configdriven.api.ConfigDriven;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.inject.Inject;

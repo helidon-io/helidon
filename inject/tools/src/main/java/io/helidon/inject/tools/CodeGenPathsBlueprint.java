@@ -20,11 +20,10 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.tools.spi.ActivatorCreator;
 
 /**
  * Applies only to the output paths that various {@code creators} will use (e.g.,
- * {@link ActivatorCreator}).
+ * {@link io.helidon.inject.tools.spi.ActivatorCreator}).
  */
 @Prototype.Blueprint
 interface CodeGenPathsBlueprint {

@@ -39,7 +39,7 @@ class DefaultInjectionPlanBinder implements ServiceInjectionPlanBinder, ServiceI
         if (binder.isEmpty()) {
             // basically this means this service will not support compile-time injection
             DefaultInjectionServices.LOGGER.log(System.Logger.Level.WARNING,
-                                                "service provider is not capable of being bound to injection points: " + serviceProvider);
+                                "service provider is not capable of being bound to injection points: " + serviceProvider);
             return this;
         } else {
             if (DefaultInjectionServices.LOGGER.isLoggable(System.Logger.Level.DEBUG)) {

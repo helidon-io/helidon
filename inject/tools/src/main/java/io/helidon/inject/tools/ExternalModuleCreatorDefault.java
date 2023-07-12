@@ -76,7 +76,7 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
                                         MethodInfo methodInfo,
                                         System.Logger logger) {
         return InjectionSupported.isSupportedInjectionPoint(logger, serviceTypeName, methodInfo.toString(),
-                                                            TypeTools.isPrivate(methodInfo.getModifiers()), methodInfo.isStatic());
+                                                    TypeTools.isPrivate(methodInfo.getModifiers()), methodInfo.isStatic());
     }
 
     @Override
@@ -313,8 +313,8 @@ public class ExternalModuleCreatorDefault extends AbstractCreator implements Ext
                                                                  FieldInfo fieldInfo) {
         if (TypeTools.hasAnnotation(fieldInfo, TypeNames.JAKARTA_INJECT)) {
             if (!InjectionSupported.isSupportedInjectionPoint(logger(),
-                                                              serviceTypeName, fieldInfo.toString(),
-                                                              TypeTools.isPrivate(fieldInfo.getModifiers()), fieldInfo.isStatic())) {
+                          serviceTypeName, fieldInfo.toString(),
+                          TypeTools.isPrivate(fieldInfo.getModifiers()), fieldInfo.isStatic())) {
                 return continuation;
             }
 

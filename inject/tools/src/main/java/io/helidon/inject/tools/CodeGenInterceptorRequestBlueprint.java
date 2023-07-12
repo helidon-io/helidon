@@ -20,10 +20,9 @@ import java.util.Map;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.tools.spi.ActivatorCreator;
 
 /**
- * Used by {@link ActivatorCreator#codegenInterceptors}.
+ * Used by {@link io.helidon.inject.tools.spi.ActivatorCreator#codegenInterceptors}.
  */
 @Prototype.Blueprint
 interface CodeGenInterceptorRequestBlueprint {

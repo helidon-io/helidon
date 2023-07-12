@@ -49,6 +49,7 @@ import io.helidon.inject.api.Bootstrap;
 import io.helidon.inject.api.CallingContext;
 import io.helidon.inject.api.CallingContextFactory;
 import io.helidon.inject.api.Event;
+import io.helidon.inject.api.InjectionException;
 import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.InjectionServicesConfig;
 import io.helidon.inject.api.Injector;
@@ -56,7 +57,6 @@ import io.helidon.inject.api.InjectorOptions;
 import io.helidon.inject.api.Metrics;
 import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.Phase;
-import io.helidon.inject.api.InjectionException;
 import io.helidon.inject.api.Resettable;
 import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceProvider;
@@ -285,7 +285,8 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
                     + isBinding + ", initializingServicesFinished="
                     + initializingServicesFinished + ")";
             String msg = (initializationCallingContext == null)
-                    ? InjectionExceptions.toErrorMessage(desc) : InjectionExceptions.toErrorMessage(initializationCallingContext, desc);
+                    ? InjectionExceptions.toErrorMessage(desc)
+                    : InjectionExceptions.toErrorMessage(initializationCallingContext, desc);
             throw new InjectionException(msg);
         }
     }

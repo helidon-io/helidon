@@ -365,7 +365,8 @@ public class CodeGenFiler {
         }
 
         if (!newDeltaDescriptor.isUnnamed()) {
-            ModuleUtils.saveAppPackageName(scratchBaseOutputPath, ModuleUtils.normalizedBaseModuleName(newDeltaDescriptor.name()));
+            ModuleUtils.saveAppPackageName(scratchBaseOutputPath,
+                                           ModuleUtils.normalizedBaseModuleName(newDeltaDescriptor.name()));
         }
 
         return filePath;

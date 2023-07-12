@@ -31,17 +31,17 @@ import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ContextualServiceQuery;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.DependencyInfo;
-import io.helidon.inject.api.InjectionServiceProviderException;
-import io.helidon.inject.api.ServiceProviderInjectionException;
 import io.helidon.inject.api.InjectionPointInfo;
 import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.InjectionServiceProviderException;
 import io.helidon.inject.api.InjectionServices;
-import io.helidon.inject.api.Interceptor;
 import io.helidon.inject.api.InjectionServicesConfig;
+import io.helidon.inject.api.Interceptor;
 import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.ServiceProviderBindable;
+import io.helidon.inject.api.ServiceProviderInjectionException;
 import io.helidon.inject.api.ServiceProviderProvider;
 import io.helidon.inject.api.Services;
 import io.helidon.inject.spi.InjectionResolver;
@@ -204,8 +204,8 @@ class DefaultInjectionPlans {
                 } else {
                     throw new ServiceProviderInjectionException("Expected to resolve a service appropriate for "
                                                          + ipInfo.serviceTypeName() + "." + ipInfo.elementName(),
-                                                                DefaultServices.resolutionBasedInjectionError(ipInfo.dependencyToServiceInfo()),
-                                                                self);
+                                                DefaultServices.resolutionBasedInjectionError(ipInfo.dependencyToServiceInfo()),
+                                                self);
                 }
             } else {
                 // "standard" case

@@ -18,10 +18,10 @@ package io.helidon.inject.tools.spi;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.inject.api.Activator;
+import io.helidon.inject.api.Contract;
 import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.Services;
-import io.helidon.inject.api.Contract;
 import io.helidon.inject.tools.ActivatorCreatorProvider;
 import io.helidon.inject.tools.ActivatorCreatorRequest;
 import io.helidon.inject.tools.ActivatorCreatorResponse;

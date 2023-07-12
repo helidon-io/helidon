@@ -24,13 +24,6 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.api.AccessModifier;
-import io.helidon.inject.api.Activator;
-import io.helidon.inject.api.Contract;
-import io.helidon.inject.api.ExternalContracts;
-import io.helidon.inject.api.ModuleComponent;
-import io.helidon.inject.api.PostConstructMethod;
-import io.helidon.inject.api.PreDestroyMethod;
-import io.helidon.inject.api.RunLevel;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.Qualifier;
 
@@ -83,16 +76,16 @@ interface ActivatorCreatorCodeGenBlueprint {
     Map<TypeName, Boolean> serviceTypeIsAbstractTypes();
 
     /**
-     * The {@link Contract}'s associated with each service type.
+     * The {@link io.helidon.inject.api.Contract}'s associated with each service type.
      *
-     * @return the map of service type names to {@link Contract}'s implemented
+     * @return the map of service type names to {@link io.helidon.inject.api.Contract}'s implemented
      */
     Map<TypeName, Set<TypeName>> serviceTypeContracts();
 
     /**
-     * The {@link ExternalContracts} associated with each service type.
+     * The {@link io.helidon.inject.api.ExternalContracts} associated with each service type.
      *
-     * @return the map of service type names to {@link ExternalContracts} implemented
+     * @return the map of service type names to {@link io.helidon.inject.api.ExternalContracts} implemented
      */
     Map<TypeName, Set<TypeName>> serviceTypeExternalContracts();
 
@@ -114,7 +107,7 @@ interface ActivatorCreatorCodeGenBlueprint {
      * The {@code PreDestroy} method name for each service type.
      *
      * @return the map of service type names to PreDestroy method names
-     * @see PreDestroyMethod
+     * @see io.helidon.inject.api.PreDestroyMethod
      */
     Map<TypeName, String> serviceTypePreDestroyMethodNames();
 
@@ -122,7 +115,7 @@ interface ActivatorCreatorCodeGenBlueprint {
      * The {@code PostConstruct} method name for each service type.
      *
      * @return the map of service type names to PostConstruct method names
-     * @see PostConstructMethod
+     * @see io.helidon.inject.api.PostConstructMethod
      */
     Map<TypeName, String> serviceTypePostConstructMethodNames();
 
@@ -134,7 +127,7 @@ interface ActivatorCreatorCodeGenBlueprint {
     Map<TypeName, Double> serviceTypeWeights();
 
     /**
-     * The declared {@link RunLevel} value for each service type.
+     * The declared {@link io.helidon.inject.api.RunLevel} value for each service type.
      *
      * @return the map of service type names to declared run level
      */
@@ -200,8 +193,8 @@ interface ActivatorCreatorCodeGenBlueprint {
     /**
      * Used in conjunction with {@link ActivatorCreatorConfigOptions#moduleCreated()}.
      * If a module is created and this set is
-     * populated then this set will be used to represent all {@link Activator} type names that should be code
-     * generated for this {@link ModuleComponent}.
+     * populated then this set will be used to represent all {@link io.helidon.inject.api.Activator} type names that should be code
+     * generated for this {@link io.helidon.inject.api.ModuleComponent}.
      *
      * @return all module activator type names known for this given module being processed
      */

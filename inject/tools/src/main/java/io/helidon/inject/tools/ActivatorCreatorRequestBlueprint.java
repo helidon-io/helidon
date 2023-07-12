@@ -17,12 +17,10 @@
 package io.helidon.inject.tools;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.api.Activator;
-import io.helidon.inject.tools.spi.ActivatorCreator;
 
 /**
- * Request used in conjunction with {@link ActivatorCreator} to codegen the
- * {@link Activator} source artifacts.
+ * Request used in conjunction with {@link io.helidon.inject.tools.spi.ActivatorCreator} to codegen the
+ * {@link io.helidon.inject.api.Activator} source artifacts.
  */
 @Prototype.Blueprint
 interface ActivatorCreatorRequestBlueprint extends GeneralCreatorRequestBlueprint {

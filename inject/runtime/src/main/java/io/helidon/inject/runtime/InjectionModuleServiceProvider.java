@@ -17,8 +17,8 @@
 package io.helidon.inject.runtime;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.Qualifier;
 import io.helidon.inject.api.ServiceInfo;
 

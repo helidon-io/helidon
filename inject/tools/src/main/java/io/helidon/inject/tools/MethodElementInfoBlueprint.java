@@ -19,7 +19,6 @@ package io.helidon.inject.tools;
 import java.util.List;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.api.ElementKind;
 import io.helidon.inject.api.ElementInfo;
 
 /**
@@ -30,7 +29,7 @@ interface MethodElementInfoBlueprint extends ElementInfo {
 
     /**
      * The list of "throws" that the method throws. Applies only to
-     * {@link ElementKind#METHOD} element types.
+     * {@link io.helidon.inject.api.ElementKind#METHOD} element types.
      *
      * @return the list of throwable types this method may throw
      */

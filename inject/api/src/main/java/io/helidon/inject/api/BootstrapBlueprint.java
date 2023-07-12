@@ -20,19 +20,18 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
-import io.helidon.inject.spi.InjectionServicesProvider;
 
 /**
  * This is the bootstrap needed to provide to {@code Services} initialization.
  *
- * @see InjectionServicesProvider
- * @see InjectionServices#globalBootstrap()
+ * @see io.helidon.inject.spi.InjectionServicesProvider
+ * @see io.helidon.inject.api.InjectionServices#globalBootstrap()
  */
 @Prototype.Blueprint
 interface BootstrapBlueprint {
 
     /**
-     * Provides the base primordial bootstrap configuration to the {@link InjectionServicesProvider}.
+     * Provides the base primordial bootstrap configuration to the {@link io.helidon.inject.spi.InjectionServicesProvider}.
      * The provider will then bootstrap {@link InjectionServices} using this bootstrap instance.
      * then default values will be used accordingly.
      *
@@ -43,7 +42,7 @@ interface BootstrapBlueprint {
     /**
      * In certain conditions Injection services should be initialized but not started (i.e., avoiding calls to {@code PostConstruct}
      * etc.). This can be used in special cases where the normal Injection startup should limit lifecycle up to a given phase. Normally
-     * one should not use this feature - it is mainly used in Injection tooling (e.g., the injection </i>maven-plugin</i>).
+     * one should not use this feature - it is mainly used in Injection tooling (e.g., the injection maven-plugin).
      *
      * @return the phase to stop at during lifecycle
      */

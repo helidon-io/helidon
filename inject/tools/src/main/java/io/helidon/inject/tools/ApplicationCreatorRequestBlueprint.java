@@ -19,10 +19,9 @@ package io.helidon.inject.tools;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.tools.spi.ApplicationCreator;
 
 /**
- * Defines the request that will be passed to the {@link ApplicationCreator} in order to produce the
+ * Defines the request that will be passed to the {@link io.helidon.inject.tools.spi.ApplicationCreator} in order to produce the
  * codegen artifacts.
  */
 @Prototype.Blueprint

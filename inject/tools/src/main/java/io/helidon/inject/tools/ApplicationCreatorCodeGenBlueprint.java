@@ -20,12 +20,11 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.tools.spi.ApplicationCreator;
 
 /**
- * Codegen request options applicable for {@link ApplicationCreator}.
+ * Codegen request options applicable for {@link io.helidon.inject.tools.spi.ApplicationCreator}.
  *
- * @see ApplicationCreator
+ * @see io.helidon.inject.tools.spi.ApplicationCreator
  */
 @Prototype.Blueprint
 interface ApplicationCreatorCodeGenBlueprint {

@@ -44,12 +44,11 @@ import io.helidon.inject.api.DeActivationRequest;
 import io.helidon.inject.api.DeActivator;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.Event;
-import io.helidon.inject.api.InjectionServiceProviderException;
-import io.helidon.inject.api.InjectionServicesConfig;
-import io.helidon.inject.api.ServiceProviderInjectionException;
 import io.helidon.inject.api.InjectionPointInfo;
 import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.InjectionServiceProviderException;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.InjectionServicesConfig;
 import io.helidon.inject.api.Phase;
 import io.helidon.inject.api.PostConstructMethod;
 import io.helidon.inject.api.PreDestroyMethod;
@@ -59,6 +58,7 @@ import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceInjectionPlanBinder;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.ServiceProviderBindable;
+import io.helidon.inject.api.ServiceProviderInjectionException;
 import io.helidon.inject.spi.InjectionResolver;
 
 import jakarta.inject.Provider;
@@ -929,8 +929,10 @@ public abstract class AbstractServiceProvider<T>
      *                            normally should
      */
     protected T createServiceProvider(Map<String, Object> resolvedDeps) {
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("Don't know how to create an instance of " + serviceInfo()
-                                                              + ". Was the Activator generated?", this);
+        ServiceProviderInjectionException e =
+                new ServiceProviderInjectionException("Don't know how to create an instance of " + serviceInfo()
+                                                                                            + ". Was the Activator generated?",
+                                                                                    this);
         activationLog().ifPresent(e::activationLog);
         throw e;
     }
@@ -1026,8 +1028,9 @@ public abstract class AbstractServiceProvider<T>
      * @return the injection exception
      */
     protected ServiceProviderInjectionException expectedQualifiedServiceError(ContextualServiceQuery ctx) {
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("Expected to return a non-null instance for: " + ctx.injectionPointInfo()
-                                                              + "; with criteria matching: " + ctx.serviceInfoCriteria(), this);
+        ServiceProviderInjectionException e = new ServiceProviderInjectionException("Expected to return a non-null instance for: "
+                                                          + ctx.injectionPointInfo()
+                                                          + "; with criteria matching: " + ctx.serviceInfoCriteria(), this);
         activationLog().ifPresent(e::activationLog);
         return e;
     }
@@ -1262,7 +1265,7 @@ public abstract class AbstractServiceProvider<T>
                 doInjectingMethods(target, deps, injections, forServiceType);
             } catch (Throwable t) {
                 throw new ServiceProviderInjectionException("Failed to activate/inject: " + this
-                                                     + "; dependency map was: " + deps, t, this);
+                                                                    + "; dependency map was: " + deps, t, this);
             }
         });
 
@@ -1279,7 +1282,8 @@ public abstract class AbstractServiceProvider<T>
 
     private ServiceProviderInjectionException recursiveActivationInjectionError(ActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("A circular dependency found during activation of " + targetServiceProvider,
+        ServiceProviderInjectionException e =
+                new ServiceProviderInjectionException("A circular dependency found during activation of " + targetServiceProvider,
                                                                                     targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1288,7 +1292,8 @@ public abstract class AbstractServiceProvider<T>
 
     private ServiceProviderInjectionException timedOutActivationInjectionError(ActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("Timed out during activation of " + targetServiceProvider,
+        ServiceProviderInjectionException e =
+                new ServiceProviderInjectionException("Timed out during activation of " + targetServiceProvider,
                                                                                     targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1297,7 +1302,8 @@ public abstract class AbstractServiceProvider<T>
 
     private ServiceProviderInjectionException timedOutDeActivationInjectionError(ActivationLogEntry.Builder entry) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("Timed out during deactivation of " + targetServiceProvider,
+        ServiceProviderInjectionException e =
+                new ServiceProviderInjectionException("Timed out during deactivation of " + targetServiceProvider,
                                                                                     targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
@@ -1307,15 +1313,19 @@ public abstract class AbstractServiceProvider<T>
     private ServiceProviderInjectionException interruptedPreActivationInjectionError(ActivationLogEntry.Builder entry,
                                                                                      Throwable cause) {
         ServiceProvider<?> targetServiceProvider = entry.serviceProvider().orElseThrow();
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("A circular dependency found during activation of " + targetServiceProvider,
-                                                                                    cause, targetServiceProvider);
+        ServiceProviderInjectionException e = new ServiceProviderInjectionException(
+                "A circular dependency found during activation of " + targetServiceProvider,
+                cause,
+                targetServiceProvider);
         activationLog().ifPresent(e::activationLog);
         entry.error(e);
         return e;
     }
 
     private ServiceProviderInjectionException managedServiceInstanceShouldHaveBeenSetException() {
-        ServiceProviderInjectionException e = new ServiceProviderInjectionException("This managed service instance expected to have been set", this);
+        ServiceProviderInjectionException e = new ServiceProviderInjectionException(
+                "This managed service instance expected to have been set",
+                this);
         activationLog().ifPresent(e::activationLog);
         return e;
     }

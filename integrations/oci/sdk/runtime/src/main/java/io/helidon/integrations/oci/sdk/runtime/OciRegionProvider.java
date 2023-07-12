@@ -19,8 +19,8 @@ package io.helidon.integrations.oci.sdk.runtime;
 import java.util.Optional;
 
 import io.helidon.common.Weight;
-import io.helidon.inject.api.InjectionPointInfo;
 import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.InjectionPointInfo;
 import io.helidon.inject.api.InjectionPointProvider;
 import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.ServiceInfoBasics;

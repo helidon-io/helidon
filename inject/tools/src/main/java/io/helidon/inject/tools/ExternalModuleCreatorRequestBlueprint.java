@@ -22,10 +22,9 @@ import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.inject.api.Qualifier;
-import io.helidon.inject.tools.spi.ExternalModuleCreator;
 
 /**
- * The request payload that is used by {@link ExternalModuleCreator}.
+ * The request payload that is used by {@link io.helidon.inject.tools.spi.ExternalModuleCreator}.
  * <p>
  * Note that the thread context classloader should be setup appropriately so that service types can be resolved
  * based upon the packages requested to scan.

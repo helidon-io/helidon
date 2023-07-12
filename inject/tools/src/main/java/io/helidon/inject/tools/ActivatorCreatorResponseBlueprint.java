@@ -22,11 +22,9 @@ import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.ModuleComponent;
-import io.helidon.inject.tools.spi.ActivatorCreator;
 
 /**
- * The result of calling {@link ActivatorCreator} assuming no errors are thrown.
+ * The result of calling {@link io.helidon.inject.tools.spi.ActivatorCreator} assuming no errors are thrown.
  */
 @Prototype.Blueprint
 interface ActivatorCreatorResponseBlueprint extends GeneralCreatorResponseBlueprint {
@@ -47,7 +45,7 @@ interface ActivatorCreatorResponseBlueprint extends GeneralCreatorResponseBluepr
     Map<TypeName, InterceptionPlan> serviceTypeInterceptorPlans();
 
     /**
-     * The activator types placed in the generated {@link ModuleComponent}.
+     * The activator types placed in the generated {@link io.helidon.inject.api.ModuleComponent}.
      *
      * @return the activator type names placed in the module component
      */

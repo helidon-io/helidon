@@ -50,12 +50,12 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.inject.api.AccessModifier;
-import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.Contract;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.ElementKind;
 import io.helidon.inject.api.ExternalContracts;
+import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.Qualifier;
 import io.helidon.inject.api.ServiceInfoBasics;
 import io.helidon.inject.processor.spi.InjectionAnnotationProcessorObserver;
@@ -176,8 +176,8 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
         }
     }
 
-    protected boolean doProcess(Set<? extends TypeElement> annotations,
-                                RoundEnvironment roundEnv) {
+    private boolean doProcess(Set<? extends TypeElement> ignoredAnnotations,
+                              RoundEnvironment roundEnv) {
         utils().roundEnv(roundEnv);
 
         if (disableBaseProcessing && getClass() == InjectionAnnotationProcessor.class) {
@@ -431,6 +431,11 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
         gatherContractsIntoServicesToProcess(services, service);
     }
 
+    /**
+     * The set of annotations that define the service.
+     *
+     * @return the set of annotations that define the service
+     */
     protected Set<TypeName> serviceDefiningAnnotations() {
         return SERVICE_DEFINING_ANNOTATIONS;
     }
@@ -534,7 +539,8 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
         } catch (ServiceConfigurationError e) {
             // see issue #6261 - running inside the IDE?
             // this version will use the thread ctx classloader
-            System.getLogger(InjectionAnnotationProcessorObserver.class.getName()).log(System.Logger.Level.WARNING, e.getMessage(), e);
+            System.getLogger(InjectionAnnotationProcessorObserver.class.getName())
+                    .log(System.Logger.Level.WARNING, e.getMessage(), e);
             return ServiceLoader.load(InjectionAnnotationProcessorObserver.class);
         }
     }
@@ -896,7 +902,8 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
     }
 
     private Path trackerStatePath() {
-        return scratchClassOutputPath(targetClassOutputPath(processingEnv.getFiler())).resolve(ProcessingTracker.DEFAULT_SCRATCH_FILE_NAME);
+        return scratchClassOutputPath(targetClassOutputPath(processingEnv.getFiler()))
+                .resolve(ProcessingTracker.DEFAULT_SCRATCH_FILE_NAME);
     }
 
 }

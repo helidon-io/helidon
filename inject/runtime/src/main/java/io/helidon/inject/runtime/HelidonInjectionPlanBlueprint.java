@@ -19,12 +19,11 @@ package io.helidon.inject.runtime;
 import java.util.List;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.api.Application;
 import io.helidon.inject.spi.InjectionPlan;
 
 /**
  * The injection plan for a given service provider and element belonging to that service provider. This plan can be created during
- * compile-time, and then just loaded from the {@link Application} during Injection bootstrap initialization, or it
+ * compile-time, and then just loaded from the {@link io.helidon.inject.api.Application} during Injection bootstrap initialization, or it
  * can be produced during the same startup processing sequence if the Application was not found, or if it was not permitted to be
  * loaded.
  */

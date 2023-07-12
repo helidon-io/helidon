@@ -35,6 +35,9 @@ import jakarta.inject.Named;
 @Prototype.Blueprint
 @Prototype.CustomMethods(QualifierBlueprint.QualifierMethods.class)
 interface QualifierBlueprint extends Annotation {
+    /**
+     * The type name for {@link ClassNamed}.
+     */
     TypeName CLASS_NAMED = TypeName.create(ClassNamed.class);
 
     /**

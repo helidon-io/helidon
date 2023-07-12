@@ -21,10 +21,9 @@ import java.util.Set;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.tools.spi.ApplicationCreator;
 
 /**
- * Configuration directives and options optionally provided to the {@link ApplicationCreator}.
+ * Configuration directives and options optionally provided to the {@link io.helidon.inject.tools.spi.ApplicationCreator}.
  */
 @Prototype.Blueprint
 interface ApplicationCreatorConfigOptionsBlueprint {

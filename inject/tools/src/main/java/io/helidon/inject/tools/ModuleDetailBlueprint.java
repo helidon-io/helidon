@@ -21,10 +21,9 @@ import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.ModuleComponent;
 
 /**
- * The specifics for a single {@link ModuleComponent} that was codegen'ed.
+ * The specifics for a single {@link io.helidon.inject.api.ModuleComponent} that was codegen'ed.
  *
  * @see ActivatorCreatorResponse#moduleDetail
  */

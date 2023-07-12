@@ -25,11 +25,10 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ServiceInfoBasics;
-import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * The request will be generated internally and then passed to the appropriate
- * {@link CustomAnnotationTemplateCreator} to handle the request.
+ * {@link io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator} to handle the request.
  */
 @Prototype.Blueprint
 interface CustomAnnotationTemplateRequestBlueprint {
@@ -72,7 +71,7 @@ interface CustomAnnotationTemplateRequestBlueprint {
     boolean isElementStatic();
 
     /**
-     * Projects the {@link #enclosingTypeInfo()} as a {@link ServiceInfoBasics} type.
+     * Projects the {@link #enclosingTypeInfo()} as a {@link io.helidon.inject.api.ServiceInfoBasics} type.
      *
      * @return the basic service info of the element being processed
      */

@@ -52,7 +52,7 @@ interface GeneralCreatorRequestBlueprint extends GeneralCodeGenNamesBlueprint {
     Optional<CompilerOptions> compilerOptions();
 
     /**
-     * The complete list of service type names belonging to the {@link io.helidon.pico.api.ModuleComponent}.
+     * The complete list of service type names belonging to the {@link io.helidon.inject.api.ModuleComponent}.
      * <p>
      * Assumptions:
      * <ul>
@@ -65,7 +65,7 @@ interface GeneralCreatorRequestBlueprint extends GeneralCodeGenNamesBlueprint {
     List<TypeName> serviceTypeNames();
 
     /**
-     * The complete list of service type names that should be code generated into {@link io.helidon.pico.api.Activator}'s.
+     * The complete list of service type names that should be code generated into {@link io.helidon.inject.api.Activator}'s.
      *
      * @return the complete list of service type names to code generated
      */

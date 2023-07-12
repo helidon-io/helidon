@@ -18,16 +18,12 @@ package io.helidon.inject.tools;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.api.Application;
-import io.helidon.inject.api.ModuleComponent;
-import io.helidon.inject.api.InjectionServicesConfig;
-import io.helidon.inject.tools.spi.ActivatorCreator;
 
 /**
  * These options are expected to have an affinity match to "permit" properties found within
- * {@link InjectionServicesConfig}. These are used to fine tune the type of code generated.
+ * {@link io.helidon.inject.api.InjectionServicesConfig}. These are used to fine tune the type of code generated.
  *
- * @see ActivatorCreator
+ * @see io.helidon.inject.tools.spi.ActivatorCreator
  */
 @Prototype.Blueprint
 interface ActivatorCreatorConfigOptionsBlueprint {
@@ -46,7 +42,7 @@ interface ActivatorCreatorConfigOptionsBlueprint {
     boolean supportsJsr330InStrictMode();
 
     /**
-     * Should a {@link ModuleComponent} be created during activator creation. The default is true.
+     * Should a {@link io.helidon.inject.api.ModuleComponent} be created during activator creation. The default is true.
      *
      * @return true if the module should be created
      */
@@ -54,7 +50,7 @@ interface ActivatorCreatorConfigOptionsBlueprint {
     boolean moduleCreated();
 
     /**
-     * Should a stub {@link Application} be created during activator creation. The default is false.
+     * Should a stub {@link io.helidon.inject.api.Application} be created during activator creation. The default is false.
      * This feature can opt'ed in by using {@code inject.application.pre.create}. Pre-req requires that this can
      * only be enabled if {@link #moduleCreated()} is also enabled.
      *

@@ -19,12 +19,11 @@ package io.helidon.inject.tools;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.ServiceInfoBasics;
 
 /**
- * The specifics for a single {@link ServiceProvider} that was code generated.
+ * The specifics for a single {@link io.helidon.inject.api.ServiceProvider} that was code generated.
  *
  * @see ActivatorCreatorResponse#serviceTypeDetails()
  */
