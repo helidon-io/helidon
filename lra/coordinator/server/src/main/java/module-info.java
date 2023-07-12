@@ -22,7 +22,7 @@ module io.helidon.lra.coordinator {
     requires microprofile.lra.api;
     requires io.helidon.webclient;
     requires io.helidon.webserver;
-    requires io.helidon.webserver.observe.metrics;
+    requires transitive io.helidon.webserver.observe.metrics;
     requires io.helidon.webserver.observe.health;
     requires io.helidon.http.media.jsonp;
     requires io.helidon.scheduling;
