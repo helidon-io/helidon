@@ -21,7 +21,7 @@ import io.helidon.metrics.api.spi.ExemplarService;
  */
 module io.helidon.metrics.traceexemplar {
 
-    requires io.helidon.metrics;
+    requires transitive io.helidon.metrics;
     requires io.helidon.common.context;
     requires io.helidon.tracing;
 
