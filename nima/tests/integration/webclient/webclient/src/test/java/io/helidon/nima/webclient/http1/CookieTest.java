@@ -16,9 +16,9 @@
 
 package io.helidon.nima.webclient.http1;
 
-import java.util.Map;
-
 import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webserver.WebServer;
@@ -48,9 +48,13 @@ class CookieTest {
      */
     @BeforeAll
     static void setUp() {
+        Config config = Config.builder(
+                    () -> ConfigSources.classpath("application.yaml").build())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
         client = Http1Client.builder()
-                .enableAutomaticCookieStore(true)
-                .defaultCookies(Map.of("flavor3", "strawberry", "flavor4", "raspberry"))
+                .config(config.get("client"))
                 .build();
     }
 
@@ -77,8 +81,8 @@ class CookieTest {
     private static void getHandler(ServerRequest req, ServerResponse res) {
         Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
         if (cookies.allValues().size() == 2
-                && cookies.allValues().contains("flavor3=strawberry")
-                && cookies.allValues().contains("flavor4=raspberry")) {
+                && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
+                && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
             res.header(Http.Header.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
             res.status(Http.Status.OK_200).send();
         } else {
