@@ -31,11 +31,11 @@ import io.helidon.microprofile.metrics.MpMetricsProgrammaticSettings;
 module io.helidon.microprofile.metrics {
     requires static io.helidon.common.features.api;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
+    requires jakarta.cdi;
+    requires jakarta.inject;
+    requires jakarta.annotation;
 
-    requires io.helidon.microprofile.servicecommon;
+    requires transitive io.helidon.microprofile.servicecommon;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.config;
 
