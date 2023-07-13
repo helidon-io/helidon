@@ -232,7 +232,18 @@ release_build(){
 
     # Create and push a git tag
     git tag -f "${FULL_VERSION}"
-    git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    if [ -n "${JENKINS_HOME}" ] ; then
+        # In Jenkins use SSH to access remote
+        local GIT_REMOTE=$(git config --get remote.origin.url | \
+            sed "s,https://\([^/]*\)/,git@\1:,")
+
+        git remote add release "${GIT_REMOTE}" > /dev/null 2>&1 || \
+        git remote set-url release "${GIT_REMOTE}"
+
+        git push --force release refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    else
+        git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+    fi
 }
 
 # Invoke command
