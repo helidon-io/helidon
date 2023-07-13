@@ -31,8 +31,8 @@ import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
 module io.helidon.microprofile.scheduling {
     requires static io.helidon.common.features.api;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires io.helidon.common.configurable;
     requires io.helidon.config;
     requires io.helidon.config.mp;
