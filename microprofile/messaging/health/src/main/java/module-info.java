@@ -20,8 +20,8 @@
 module io.helidon.microprofile.messaging.health {
     requires java.logging;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires io.helidon.microprofile.messaging;
     requires io.helidon.microprofile.health;
     requires microprofile.health.api;
