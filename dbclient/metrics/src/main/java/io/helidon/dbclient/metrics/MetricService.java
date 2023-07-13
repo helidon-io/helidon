@@ -32,7 +32,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * Common ancestor for Helidon DB metrics.
+ * Common ancestor for DbClient metrics.
  */
 abstract class MetricService<T extends Metric> extends DbClientServiceBase {
     private final Metadata meta;

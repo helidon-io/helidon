@@ -7,7 +7,7 @@ run in Java VM and Native Image mode.
 
 Maven configuration contains 3 profiles:
 * **mysql** to select MySQL database.
-* **pgsql** to select PostgreSQL database. Profiles for additional databases can be added.
+* **pgsql** to select PostgresSQL database. Profiles for additional databases can be added.
 * **native-image** (optional) to trigger build and execution of web server in Native Image mode.
 
 To build and run the tests in *Java VM* mode with running MySQL database, execute:

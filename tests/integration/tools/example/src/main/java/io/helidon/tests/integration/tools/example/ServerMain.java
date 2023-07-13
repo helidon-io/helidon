@@ -16,15 +16,14 @@
 package io.helidon.tests.integration.tools.example;
 
 import java.lang.System.Logger.Level;
-import java.time.Duration;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.dbclient.DbClient;
+import io.helidon.nima.webserver.WebServer;
+
+import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
 
 /**
  * Main Class.
@@ -42,7 +41,6 @@ public class ServerMain {
      * @param args command line arguments. 1st argument is configuration file.
      */
     public static void main(String[] args) {
-
         String configFile;
         if (args != null && args.length > 0) {
             configFile = args[0];
@@ -50,43 +48,27 @@ public class ServerMain {
             configFile = DEFAULT_CONFIG_FILE;
         }
         LOGGER.log(Level.INFO, () -> String.format("Configuration file: %s", configFile));
-
         LogConfig.configureRuntime();
         startServer(configFile);
-
     }
 
-    private static WebServer startServer(final String configFile) {
+    private static WebServer startServer(String configFile) {
+        Config config = Config.create(ConfigSources.classpath(configFile));
+        DbClient dbClient = DbClient.builder(config.get("db")).build();
+        LifeCycleService lcService = new LifeCycleService(dbClient);
 
-        final Config config = Config.create(ConfigSources.classpath(configFile));
-        final DbClient dbClient = DbClient.builder(config.get("db"))
-                .build();
-        final LifeCycleService lcResource = new LifeCycleService(dbClient);
-
-        final Routing routing = Routing.builder()
-                .register("/LifeCycle", lcResource)
-                .register("/HelloWorld", new HelloWorldService(dbClient))
-                .build();
-
-        final WebServer server = WebServer.builder()
-                .routing(routing)
+        WebServer server = WebServer.builder()
+                .routing((routing) -> routing
+                        .register("/LifeCycle", lcService)
+                        .register("/HelloWorld", new HelloWorldService(dbClient))
+                        .error(Throwable.class, (req, res, th) -> res.send(exceptionStatus(th))))
                 .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
                 .build();
 
-        // Set server instance to exit resource.
-        lcResource.setServer(server);
-        // Start the server and print some info.
-        server.start()
-                .await(Duration.ofSeconds(10));
+        lcService.setServer(server);
+        server.start();
 
         System.out.println(String.format("WEB server is up! http://localhost:%d/", server.port()));
-
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(
-                () -> System.out.println("WEB server is DOWN. Good bye!"));
-
         return server;
     }
-
 }

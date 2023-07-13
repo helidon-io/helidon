@@ -26,12 +26,11 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-jdbc</artifactId>
     <name>Integration Tests: DB Client JDBC</name>
 
     <properties>
+        <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
     </properties>
 
     <dependencies>
@@ -107,19 +106,20 @@
         </pluginManagement>
 
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <excludes>
+                        <exclude>**/*IT</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
+                    <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                     <parallel>methods</parallel>
                     <threadCount>10</threadCount>
                 </configuration>
@@ -133,12 +133,12 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>io.helidon.tests.integration.dbclient.jdbc.init.CheckIT</include>
-                                <include>io.helidon.tests.integration.dbclient.jdbc.init.InitIT</include>
+                                <include>**/CheckIT</include>
+                                <include>**/InitIT</include>
                             </includes>
                         </configuration>
                     </execution>
-                    <!-- Run ingegration tests. -->
+                    <!-- Run integration tests. -->
                     <execution>
                         <id>test</id>
                         <phase>integration-test</phase>
@@ -170,19 +170,16 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>io.helidon.tests.integration.dbclient.jdbc.destroy.*IT</include>
+                                <include>**/DestroyIT</include>
                             </includes>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
-
     </build>
 
     <profiles>
-
         <profile>
             <id>h2</id>
             <activation>
@@ -208,7 +205,6 @@
                 <dependency>
                     <groupId>com.h2database</groupId>
                     <artifactId>h2</artifactId>
-                    <scope>runtime</scope>
                 </dependency>
             </dependencies>
             <build>
@@ -254,7 +250,10 @@
                                         <argument>-classpath</argument>
                                         <argument>${project.build.directory}/dependency/h2-${version.lib.h2}.jar</argument>
                                         <argument>${mainClassH2}</argument>
+                                        <argument>-web</argument>
+                                        <argument>-webAllowOthers</argument>
                                         <argument>-tcp</argument>
+                                        <argument>-tcpAllowOthers</argument>
                                         <argument>-tcpPassword</argument>
                                         <argument>${db.password}</argument>
                                         <argument>-tcpPort</argument>
@@ -305,7 +304,7 @@
                 <db.database>pokemon</db.database>
                 <db.user>user</db.user>
                 <db.password>password</db.password>
-                <db.roootpw>root</db.roootpw>
+                <db.root-password>root</db.root-password>
             </properties>
             <dependencies>
                 <dependency>
@@ -337,7 +336,7 @@
                                         <env>
                                             <MYSQL_USER>${db.user}</MYSQL_USER>
                                             <MYSQL_PASSWORD>${db.password}</MYSQL_PASSWORD>
-                                            <MYSQL_ROOT_PASSWORD>${db.roootpw}</MYSQL_ROOT_PASSWORD>
+                                            <MYSQL_ROOT_PASSWORD>${db.root-password}</MYSQL_ROOT_PASSWORD>
                                             <MYSQL_DATABASE>${db.database}</MYSQL_DATABASE>
                                         </env>
                                         <hostname>${db.host}</hostname>
@@ -378,7 +377,7 @@
                 <db.database>pokemon</db.database>
                 <db.user>user</db.user>
                 <db.password>password</db.password>
-                <db.roootpw>root</db.roootpw>
+                <db.root-password>root</db.root-password>
             </properties>
             <dependencies>
                 <dependency>
@@ -410,7 +409,7 @@
                                         <env>
                                             <MYSQL_USER>${db.user}</MYSQL_USER>
                                             <MYSQL_PASSWORD>${db.password}</MYSQL_PASSWORD>
-                                            <MYSQL_ROOT_PASSWORD>${db.roootpw}</MYSQL_ROOT_PASSWORD>
+                                            <MYSQL_ROOT_PASSWORD>${db.root-password}</MYSQL_ROOT_PASSWORD>
                                             <MYSQL_DATABASE>${db.database}</MYSQL_DATABASE>
                                         </env>
                                         <hostname>${db.host}</hostname>
@@ -672,5 +671,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>

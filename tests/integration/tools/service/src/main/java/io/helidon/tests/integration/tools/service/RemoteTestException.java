@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,17 @@ public class RemoteTestException extends RuntimeException {
      *
      * @param message detail message
      */
-    public RemoteTestException(final String message) {
+    public RemoteTestException(String message) {
         super(message);
     }
 
+    /**
+     * Creates an instance of remote test exception.
+     *
+     * @param fmt  formatted message
+     * @param args formatted message arguments
+     */
+    public RemoteTestException(String fmt, Object... args) {
+        super(String.format(fmt, args));
+    }
 }

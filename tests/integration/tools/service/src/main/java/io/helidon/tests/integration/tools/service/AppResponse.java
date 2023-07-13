@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ public class AppResponse {
 
     /**
      * Build JSON response with {@code OK} status.
-     * <p>Returned JSON object has following structure:<br>
+     * <p>Returned JSON object has the following structure:<br>
      * <pre> {
      *      "status": "OK",
      *      "data": &lt;data&gt;
@@ -37,8 +37,8 @@ public class AppResponse {
      * @param data attached data JSON value.
      * @return JSON response with OK status and attached data.
      */
-    public static JsonObject okStatus(final JsonValue data) {
-        final JsonObjectBuilder job = Json.createObjectBuilder();
+    public static JsonObject okStatus(JsonValue data) {
+        JsonObjectBuilder job = Json.createObjectBuilder();
         job.add("status", "OK");
         job.add("data", data != null ? data : JsonValue.NULL);
         return job.build();
@@ -46,7 +46,7 @@ public class AppResponse {
 
     /**
      * Build JSON response with {@code exception} status.
-     * <p>Returned JSON object has following structure:<br>
+     * <p>Returned JSON object has the following structure:<br>
      * <pre> {
      *      "status": "exception",
      *      "stacktrace": [
@@ -58,7 +58,7 @@ public class AppResponse {
      *                      "file": "Java class file",
      *                      line": &lt;exception line number in Java class file&gt;,
      *                      "module": "module name",
-     *                      "modVersion": "modukle version",
+     *                      "modVersion": "module version",
      *                      "loader": "classloader name",
      *                      "class": "class name",
      *                      "method": "method name"
@@ -70,14 +70,14 @@ public class AppResponse {
      *      ]
      * }</pre>
      *
-     * @param t {@Link Throwable} to be stored in JSON response
+     * @param th {@link Throwable} to be stored in JSON response
      * @return JSON response with exception status and attached stack trace.
      */
-    public static JsonObject exceptionStatus(final Throwable t) {
-        final JsonObjectBuilder job = Json.createObjectBuilder();
+    public static JsonObject exceptionStatus(Throwable th) {
+        JsonObjectBuilder job = Json.createObjectBuilder();
         job.add("status", "exception");
-        final JsonArrayBuilder jabSt = Json.createArrayBuilder();
-        Throwable current = t;
+        JsonArrayBuilder jabSt = Json.createArrayBuilder();
+        Throwable current = th;
         while (current != null) {
             jabSt.add(buildStackTrace(current));
             current = current.getCause();
@@ -86,22 +86,22 @@ public class AppResponse {
         return job.build();
     }
 
-    private static JsonObject buildStackTrace(final Throwable t) {
+    private static JsonObject buildStackTrace(Throwable t) {
         JsonObjectBuilder jobSt = Json.createObjectBuilder();
         jobSt.add("class", t.getClass().getName());
         jobSt.add("message", t.getMessage());
-        final JsonArrayBuilder jab = Json.createArrayBuilder();
-        final StackTraceElement[] elements = t.getStackTrace();
+        JsonArrayBuilder jab = Json.createArrayBuilder();
+        StackTraceElement[] elements = t.getStackTrace();
         if (elements != null) {
-            for (final StackTraceElement element : elements) {
+            for (StackTraceElement element : elements) {
                 JsonObjectBuilder jobElement = Json.createObjectBuilder();
                 jobElement.add("file", element.getFileName() != null ? Json.createValue(element.getFileName()) : JsonValue.NULL);
                 jobElement.add("line", element.getLineNumber());
                 jobElement.add("module", element.getModuleName() != null ? Json.createValue(element.getModuleName()) : JsonValue.NULL);
                 jobElement.add("modVersion", element.getModuleVersion() != null ? Json.createValue(element.getModuleVersion()) : JsonValue.NULL);
                 jobElement.add("loader", element.getClassLoaderName() != null ? Json.createValue(element.getClassLoaderName()) : JsonValue.NULL);
-                jobElement.add("class", element.getClassName() != null ? Json.createValue(element.getClassName()) : JsonValue.NULL);
-                jobElement.add("method", element.getMethodName() != null ? Json.createValue(element.getMethodName()) : JsonValue.NULL);
+                jobElement.add("class", Json.createValue(element.getClassName()));
+                jobElement.add("method", Json.createValue(element.getMethodName()));
                 jab.add(jobElement.build());
             }
         }

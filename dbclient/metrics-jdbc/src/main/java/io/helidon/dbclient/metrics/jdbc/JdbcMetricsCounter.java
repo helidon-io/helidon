@@ -24,7 +24,7 @@ public class JdbcMetricsCounter implements Counter {
 
     private final com.codahale.metrics.Counter counter;
 
-    JdbcMetricsCounter(final com.codahale.metrics.Counter counter) {
+    JdbcMetricsCounter(com.codahale.metrics.Counter counter) {
         this.counter = counter;
     }
 

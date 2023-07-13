@@ -28,7 +28,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
 /**
  * Base {@link DbClientBuilder} implementation.
  *
- * @param <T> type of subclass
+ * @param <T> type of builder subclass
  */
 public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
         implements DbClientBuilder<T> {
@@ -48,6 +48,21 @@ public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
     protected DbClientBuilderBase() {
         this.clientServices = new LinkedList<>();
     }
+
+    @Override
+    public DbClient build() {
+        if (dbMapperManager == null) {
+            dbMapperManager = dbMapperBuilder.build();
+        }
+        return doBuild();
+    }
+
+    /**
+     * Actual {@link #build()} implementation for {@link DbClient} subclasses.
+     *
+     * @return new client
+     */
+    protected abstract DbClient doBuild();
 
     @Override
     public T config(Config config) {

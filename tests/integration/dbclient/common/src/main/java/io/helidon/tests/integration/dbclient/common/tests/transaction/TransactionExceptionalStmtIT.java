@@ -86,7 +86,7 @@ public class TransactionExceptionalStmtIT {
                     .forEach(EMPTY_CONSUMER);
             tx.commit();
             fail("Execution of query with both named and ordered parameters without passing them shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
@@ -104,7 +104,7 @@ public class TransactionExceptionalStmtIT {
                     .forEach(EMPTY_CONSUMER);
             tx.commit();
             fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
@@ -122,7 +122,7 @@ public class TransactionExceptionalStmtIT {
                     .forEach(EMPTY_CONSUMER);
             tx.commit();
             fail("Execution of query with ordered parameter with passing named parameter value shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }

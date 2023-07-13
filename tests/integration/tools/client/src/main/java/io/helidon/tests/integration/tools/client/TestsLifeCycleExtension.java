@@ -31,7 +31,6 @@ import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
 public abstract class TestsLifeCycleExtension implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
     private static final System.Logger LOGGER = System.getLogger(TestsLifeCycleExtension.class.getName());
-
     private static final String STORE_KEY = TestsLifeCycleExtension.class.getName();
 
     protected HelidonProcessRunner runner;
@@ -44,7 +43,7 @@ public abstract class TestsLifeCycleExtension implements BeforeAllCallback, Exte
      */
     @Override
     public void beforeAll(ExtensionContext ec) {
-        final Object resource = ec.getRoot().getStore(GLOBAL).get(STORE_KEY);
+        Object resource = ec.getRoot().getStore(GLOBAL).get(STORE_KEY);
         if (resource == null) {
             LogConfig.configureRuntime();
             LOGGER.log(Level.TRACE, "Running beforeAll lifecycle method for the first time, invoking setup()");

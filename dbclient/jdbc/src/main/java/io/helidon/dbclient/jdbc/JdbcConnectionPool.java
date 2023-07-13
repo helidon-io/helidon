@@ -32,7 +32,7 @@ import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
  * JDBC connection pool.
  */
 @FunctionalInterface
-interface JdbcConnectionPool {
+public interface JdbcConnectionPool {
 
     /**
      * Create a JDBC connection pool from provided configuration.

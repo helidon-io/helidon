@@ -29,21 +29,25 @@ import io.helidon.common.mapper.MapperException;
 public abstract class DbRowBase implements DbRow {
 
     private final DbMapperManager dbMapperManager;
-    private DbColumnBase[] columns;
+    private final DbColumnBase[] columns;
     private final Map<String, DbColumnBase> namesIndex;
 
     protected DbRowBase(DbColumnBase[] columns, DbMapperManager dbMapperManager) {
         this.columns = columns;
         this.dbMapperManager = dbMapperManager;
         this.namesIndex = new HashMap<>(columns.length);
-        for (int i = 0; i < columns.length; i++) {
-            namesIndex.put(columns[i].name(), columns[i]);
+        for (DbColumnBase column : columns) {
+            namesIndex.put(column.name(), column);
         }
     }
 
     @Override
     public DbColumn column(String name) {
-        return namesIndex.get(name);
+        DbColumn column = namesIndex.get(name);
+        if (column != null) {
+            return column;
+        }
+        throw new DbClientException(String.format("Column with name %s does not exist", name));
     }
 
     @Override

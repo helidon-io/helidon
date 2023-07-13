@@ -26,7 +26,7 @@ public class JdbcMetricsGauge<T> implements Gauge<T> {
 
     private final com.codahale.metrics.Gauge<T> gauge;
 
-    JdbcMetricsGauge(final com.codahale.metrics.Gauge<T> counter) {
+    JdbcMetricsGauge(com.codahale.metrics.Gauge<T> counter) {
         this.gauge = counter;
     }
 

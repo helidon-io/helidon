@@ -52,7 +52,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
 
     @Override
     public Stream<DbRow> execute() {
-        return doExecute((future, context) -> doExecute(this, future, context));
+        return doExecute((future, context) -> doExecute(this, future, context, this::closeConnection));
     }
 
     /**
@@ -61,19 +61,26 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
      * @param dbStmt  db statement
      * @param future  query future
      * @param context service context
+     * @param onClose onClose handler, may be {@code null}
      * @return query result
      */
     static Stream<DbRow> doExecute(JdbcStatement<? extends DbStatementQuery> dbStmt,
                                    CompletableFuture<Long> future,
-                                   DbClientServiceContext context) {
+                                   DbClientServiceContext context,
+                                   Runnable onClose) {
 
         PreparedStatement statement;
         try {
             statement = dbStmt.prepareStatement(context);
             ResultSet rs = statement.executeQuery();
             JdbcRow.Spliterator spliterator = new JdbcRow.Spliterator(rs, statement, dbStmt.context(), future);
-            return StreamSupport.stream(spliterator, false)
-                    .onClose(spliterator::close);
+            return autoClose(StreamSupport.stream(spliterator, false)
+                    .onClose(() -> {
+                        spliterator.close();
+                        if (onClose != null) {
+                            onClose.run();
+                        }
+                    }));
         } catch (SQLException ex) {
             dbStmt.closeConnection();
             throw new DbStatementException("Failed to create Statement", dbStmt.context().statement(), ex);

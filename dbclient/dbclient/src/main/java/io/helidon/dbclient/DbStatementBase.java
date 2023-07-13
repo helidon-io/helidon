@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import static io.helidon.dbclient.DbStatementParameters.UNDEFINED;
 
@@ -83,6 +84,17 @@ public abstract class DbStatementBase<S extends DbStatement<S>> implements DbSta
                 new DbClientServiceContextImpl(context, statementType(), stmtFuture, queryFuture, parameters);
         context().clientServices().forEach(service -> service.statement(serviceContext));
         return function.apply(queryFuture, serviceContext);
+    }
+
+    /**
+     * Decorate the given stream to invoke {@link Stream#close()} on terminal operations.
+     *
+     * @param stream stream to decorate
+     * @param <T>    the type of the stream elements
+     * @return decorated stream
+     */
+    protected static <T> Stream<T> autoClose(Stream<T> stream) {
+        return AutoClosingStream.decorate(stream);
     }
 
     @Override

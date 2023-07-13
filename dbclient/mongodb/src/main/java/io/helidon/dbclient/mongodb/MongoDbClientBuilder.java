@@ -47,7 +47,7 @@ public final class MongoDbClientBuilder
     }
 
     @Override
-    public DbClient build() {
+    public DbClient doBuild() {
         if (null == dbConfig) {
             dbConfig = new MongoDbClientConfig(url(), username(), password(), credDb);
         }

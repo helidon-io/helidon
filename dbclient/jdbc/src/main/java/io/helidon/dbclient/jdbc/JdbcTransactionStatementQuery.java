@@ -48,6 +48,6 @@ class JdbcTransactionStatementQuery extends JdbcTransactionStatement<DbStatement
 
     @Override
     public Stream<DbRow> execute() {
-        return doExecute((future, context) -> JdbcStatementQuery.doExecute(this, future, context));
+        return doExecute((future, context) -> JdbcStatementQuery.doExecute(this, future, context, null));
     }
 }

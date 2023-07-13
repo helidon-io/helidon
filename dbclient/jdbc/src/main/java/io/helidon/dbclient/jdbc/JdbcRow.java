@@ -120,13 +120,16 @@ class JdbcRow extends DbRowBase {
             } catch (SQLException ex) {
                 throw new DbStatementException("Failed to close ResultSet", context.statement(), ex);
             } finally {
-                try {
-                    statement.close();
-                } catch (SQLException ex) {
-                    throw new DbStatementException("Failed to close Statement", context.statement(), ex);
-                }
+                closeStatement();
             }
         }
 
+        private void closeStatement() {
+            try {
+                statement.close();
+            } catch (SQLException ex) {
+                throw new DbStatementException("Failed to close Statement", context.statement(), ex);
+            }
+        }
     }
 }

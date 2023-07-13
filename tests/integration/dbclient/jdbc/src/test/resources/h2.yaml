@@ -65,7 +65,7 @@ db:
     # test DML delete
     delete-pokemon-named-arg: "DELETE FROM Pokemons WHERE id=:id"
     delete-pokemon-order-arg: "DELETE FROM Pokemons WHERE id=?"
-    # Pokemon mapper uses full list of attributes
+    # Pokémon mapper uses full list of attributes
     delete-pokemon-full-named-arg: "DELETE FROM Pokemons WHERE name=:name AND id=:id"
     delete-pokemon-full-order-arg: "DELETE FROM Pokemons WHERE name=? AND id=?"
     # test DbStatementQuery methods

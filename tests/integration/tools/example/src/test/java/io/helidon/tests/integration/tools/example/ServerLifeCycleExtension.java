@@ -45,7 +45,6 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
         nativeImage = Boolean.valueOf(System.getProperty("native.image", "false"));
     }
 
-
     @Override
     public void check() {
         LOGGER.log(Level.INFO, "Running initial test check()");
@@ -107,17 +106,17 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
         };
     }
 
-    // Thread sleep time in miliseconds while waiting for database or appserver to come up.
-    private static final int SLEEP_MILIS = 250;
+    // Thread sleep time in milliseconds while waiting for database or appserver to come up.
+    private static final int SLEEP_MILLIS = 250;
 
     // Startup timeout in seconds for database server.
     private static final int TIMEOUT = 60;
 
-    @SuppressWarnings("SleepWhileInLoop")
+    @SuppressWarnings({"SleepWhileInLoop", "BusyWait"})
     public static void waitForDatabase() {
-        final String dbUser = System.getProperty("db.user");
-        final String dbPassword = System.getProperty("db.password");
-        final String dbUrl = System.getProperty("db.url");
+        String dbUser = System.getProperty("db.user");
+        String dbPassword = System.getProperty("db.password");
+        String dbUrl = System.getProperty("db.url");
         if (dbUser == null) {
             throw new IllegalStateException("Database user name was not set!");
         }
@@ -141,7 +140,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
                     throw new IllegalStateException(String.format("Database is not ready within %d seconds", TIMEOUT));
                 }
                 try {
-                    Thread.sleep(SLEEP_MILIS);
+                    Thread.sleep(SLEEP_MILLIS);
                 } catch (InterruptedException ie) {
                     LOGGER.log(Level.WARNING, () -> String.format("Thread was interrupted: %s", ie.getMessage()), ie);
                 }
@@ -150,7 +149,7 @@ public class ServerLifeCycleExtension extends TestsLifeCycleExtension {
     }
 
     // Close database connection.
-    private static void closeConnection(final Connection connection) {
+    private static void closeConnection(Connection connection) {
         try {
             connection.close();
         } catch (SQLException ex) {

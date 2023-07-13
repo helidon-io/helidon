@@ -32,8 +32,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class DestroyIT {
 
-    private static final Consumer<DbRow> EMPTY_CONSUMER = it -> {};
-
     /**
      * Delete database content.
      *
@@ -68,7 +66,7 @@ public class DestroyIT {
     }
 
     /**
-     * Verify that table Pokemons does not exist.
+     * Verify that table {@code Pokemons} does not exist.
      */
     @Test
     public void testPokemonsDeleted() {
@@ -76,7 +74,7 @@ public class DestroyIT {
     }
 
     /**
-     * Verify that table PokemonTypes does not exist.
+     * Verify that table {@code PokemonTypes} does not exist.
      */
     @Test
     public void testPokemonTypesDeleted() {
@@ -84,6 +82,6 @@ public class DestroyIT {
     }
 
     private void testTableNotExist(String statementName) {
-        DB_CLIENT.execute().namedQuery(statementName).forEach(EMPTY_CONSUMER);
+        DB_CLIENT.execute().namedQuery(statementName).forEach(it -> {});
     }
 }

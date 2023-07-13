@@ -25,7 +25,7 @@ public class JdbcMetricsHistogram implements Histogram {
 
     private final com.codahale.metrics.Histogram histogram;
 
-    JdbcMetricsHistogram(final com.codahale.metrics.Histogram histogram) {
+    JdbcMetricsHistogram(com.codahale.metrics.Histogram histogram) {
         this.histogram = histogram;
     }
 

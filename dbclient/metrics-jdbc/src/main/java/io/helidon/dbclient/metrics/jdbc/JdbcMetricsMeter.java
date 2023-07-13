@@ -24,7 +24,7 @@ public class JdbcMetricsMeter implements Meter {
 
     private final com.codahale.metrics.Meter meter;
 
-    JdbcMetricsMeter(final com.codahale.metrics.Meter meter) {
+    JdbcMetricsMeter(com.codahale.metrics.Meter meter) {
         this.meter = meter;
     }
 

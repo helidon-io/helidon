@@ -29,7 +29,7 @@ public class JdbcMetricsTimer implements Timer {
     private final com.codahale.metrics.Timer meter;
     private long elapsedTimeNanos;
 
-    JdbcMetricsTimer(final com.codahale.metrics.Timer meter) {
+    JdbcMetricsTimer(com.codahale.metrics.Timer meter) {
         this.meter = meter;
     }
 

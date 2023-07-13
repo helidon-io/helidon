@@ -43,7 +43,15 @@
     </properties>
 
     <dependencies>
-       <dependency>
+        <dependency>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>
@@ -52,25 +60,16 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
-            <scope>test</scope>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonb</artifactId>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>parsson</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tests.integration.tools</groupId>
@@ -82,14 +81,6 @@
             <artifactId>helidon-tests-integration-tools-client</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jdk14</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.parsson</groupId>
-            <artifactId>parsson</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -104,14 +95,12 @@
     </dependencies>
 
     <build>
-
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
             </resource>
         </resources>
-
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -131,9 +120,7 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -143,7 +130,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>io.smallrye</groupId>
                 <artifactId>jandex-maven-plugin</artifactId>
@@ -153,7 +139,6 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
@@ -162,9 +147,13 @@
                     <threadCount>10</threadCount>
                     <systemPropertyVariables>
                         <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                        <!--suppress MavenModelInspection -->
                         <app.config>${app.config}</app.config>
+                        <!--suppress MavenModelInspection -->
                         <db.user>${db.user}</db.user>
+                        <!--suppress MavenModelInspection -->
                         <db.password>${db.password}</db.password>
+                        <!--suppress MavenModelInspection -->
                         <db.url>${db.url}</db.url>
                     </systemPropertyVariables>
                 </configuration>
@@ -184,13 +173,10 @@
                     </execution>
                 </executions>
             </plugin>
-
         </plugins>
-
     </build>
 
     <profiles>
-
         <profile>
             <id>native-image</id>
             <build>
@@ -207,7 +193,6 @@
                 </plugins>
             </build>
         </profile>
-
         <profile>
             <id>mysql</id>
             <dependencies>
@@ -223,7 +208,6 @@
                 </dependency>
             </dependencies>
         </profile>
-
         <profile>
             <id>pgsql</id>
             <dependencies>
@@ -239,7 +223,5 @@
                 </dependency>
             </dependencies>
         </profile>
-
     </profiles>
-
 </project>

@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
+import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbColumn;
 import io.helidon.dbclient.DbContext;
 import io.helidon.dbclient.DbMapperManager;
@@ -75,7 +76,11 @@ final class MongoDbRow implements DbRow {
 
     @Override
     public DbColumn column(String name) {
-        return columnsByName.get(name);
+        DbColumn column = columnsByName.get(name);
+        if (column != null) {
+            return column;
+        }
+        throw new DbClientException(String.format("Column with name %s does not exist", name));
     }
 
     @Override

@@ -62,29 +62,17 @@ public class InitIT extends AbstractIT {
     private static void initData(DbClient dbClient) {
         // Init Pokémon types
         DbTransaction tx = dbClient.transaction();
-        long count = -1;
+        long count = 0;
         for (Map.Entry<Integer, Type> entry : TYPES.entrySet()) {
-            if (count < 0) {
-                count = tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
-            } else {
-                count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
-            }
+            count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
         }
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
-            if (count < 0) {
-                count = tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
-            } else {
-                count += tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
-            }
+            count += tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
         }
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
             Pokemon pokemon = entry.getValue();
             for (Type type : pokemon.getTypes()) {
-                if (count < 0) {
-                    count = tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
-                } else {
-                    count += tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
-                }
+                count += tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
             }
         }
         tx.commit();

@@ -27,8 +27,7 @@ public class JdbcMetricsTimerContext implements Timer.Context {
     private final com.codahale.metrics.Timer.Context context;
     private final Function<Long, Long> elapsedTimeUpdater;
 
-    JdbcMetricsTimerContext(final com.codahale.metrics.Timer.Context context,
-                            Function<Long, Long> elapsedTimeUpdater) {
+    JdbcMetricsTimerContext(com.codahale.metrics.Timer.Context context, Function<Long, Long> elapsedTimeUpdater) {
         this.context = context;
         this.elapsedTimeUpdater = elapsedTimeUpdater;
     }

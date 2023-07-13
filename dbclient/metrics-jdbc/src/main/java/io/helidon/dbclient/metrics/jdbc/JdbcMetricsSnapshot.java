@@ -26,7 +26,7 @@ public class JdbcMetricsSnapshot extends Snapshot {
 
     private final com.codahale.metrics.Snapshot snapshot;
 
-    JdbcMetricsSnapshot(final com.codahale.metrics.Snapshot snapshot) {
+    JdbcMetricsSnapshot(com.codahale.metrics.Snapshot snapshot) {
         this.snapshot = snapshot;
     }
 

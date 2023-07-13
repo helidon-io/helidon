@@ -16,7 +16,6 @@
 package io.helidon.tests.integration.dbclient.common.tests.simple;
 
 import java.lang.System.Logger.Level;
-import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 import io.helidon.dbclient.DbClientException;
@@ -63,7 +62,7 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute()
                     .forEach(IGNORE);
             fail("Execution of query with both named and ordered parameters without passing any shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
@@ -81,7 +80,7 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute()
                     .forEach(IGNORE);
             fail("Execution of query with both named and ordered parameters without passing them shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
@@ -98,7 +97,7 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute()
                     .forEach(IGNORE);
             fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }
@@ -115,7 +114,7 @@ public class ExceptionalStmtIT extends AbstractIT {
                     .execute()
                     .forEach(IGNORE);
             fail("Execution of query with ordered parameter with passing named parameter value shall fail.");
-        } catch (DbClientException | CompletionException ex) {
+        } catch (DbClientException ex) {
             LOGGER.log(Level.DEBUG, () -> String.format("Expected exception: %s", ex.getMessage()), ex);
         }
     }

@@ -42,14 +42,14 @@ enum HealthCheckStMtType {
 
     // Converts typeName name from Config to  HealthCheckStMtType instance
     // Returns null when name matches no existing typeName name
-    static HealthCheckStMtType nameToType(final String typeName) {
+    static HealthCheckStMtType nameToType(String typeName) {
         return (NAME_TO_TYPE.get(typeName.toLowerCase()));
     }
 
     // Name of the statement typeName in Config node
     private final String typeName;
 
-    HealthCheckStMtType(final String typeName) {
+    HealthCheckStMtType(String typeName) {
         this.typeName = typeName;
     }
 

@@ -18,6 +18,7 @@ package io.helidon.tests.integration.tools.example;
 import java.lang.System.Logger.Level;
 import java.util.Map;
 
+import io.helidon.common.LazyValue;
 import io.helidon.tests.integration.tools.client.HelidonProcessRunner;
 import io.helidon.tests.integration.tools.client.HelidonTestException;
 import io.helidon.tests.integration.tools.client.TestClient;
@@ -39,16 +40,16 @@ class HelloWorldIT {
 
     private static final System.Logger LOGGER = System.getLogger(HelloWorldIT.class.getName());
 
-    private final TestServiceClient testClient = TestClient.builder()
+    private final LazyValue<TestServiceClient> testClient = LazyValue.create(() -> TestClient.builder()
             .port(HelidonProcessRunner.HTTP_PORT)
             .service("HelloWorld")
-            .build();
+            .build());
 
     // Test sendHelloWorld service
     @Test
     void testHelloWorld() {
         LOGGER.log(Level.DEBUG, () -> "Running testHelloWorld");
-        JsonValue data = testClient.callServiceAndGetData("sendHelloWorld");
+        JsonValue data = testClient.get().callServiceAndGetData("sendHelloWorld");
         String helloWorld = ((JsonString) data).getString();
         LOGGER.log(Level.TRACE, () -> String.format("Response: \"%s\"", helloWorld));
         assertThat(helloWorld, equalTo("Hello World!"));
@@ -59,14 +60,12 @@ class HelloWorldIT {
     void testVerifyHelloPositive() {
         LOGGER.log(Level.DEBUG, "Running testVerifyHelloPositive");
         try {
-            JsonValue data = testClient.callServiceAndGetData(
-                    "verifyHello",
-                    Map.of("value", "Hello World!"));
+            testClient.get().callServiceAndGetData("verifyHello", Map.of("value", "Hello World!"));
         } catch (HelidonTestException te) {
             fail(String.format(
                     "Caught %s: %s",
                     te.getClass().getSimpleName(),
-                    te.getMessage()));
+                    te.getMessage()), te);
         }
     }
 
@@ -75,9 +74,7 @@ class HelloWorldIT {
     void testVerifyHelloNegative() {
         LOGGER.log(Level.DEBUG, "Running testVerifyHelloNegative");
         try {
-            JsonValue data = testClient.callServiceAndGetData(
-                    "verifyHello",
-                    Map.of("value", "Wrong content."));
+            testClient.get().callServiceAndGetData("verifyHello", Map.of("value", "Wrong content."));
             fail("HelidonTestException was not thrown");
         } catch (HelidonTestException te) {
             LOGGER.log(Level.TRACE, () -> String.format(
@@ -89,14 +86,14 @@ class HelloWorldIT {
 
     // Test personalHelloWorld service with name from database
     @Test
-    void testpersonalHelloWorld() {
-        LOGGER.log(Level.DEBUG, "Running testpersonalHelloWorld");
-        JsonValue data = testClient.callServiceAndGetData(
-                "personalHelloWorld",
-                Map.of("nick", "Ash"));
+    void testPersonalHelloWorld() {
+        LOGGER.log(Level.DEBUG, "Running testPersonalHelloWorld");
+        JsonValue data = testClient.get()
+                .callServiceAndGetData(
+                        "personalHelloWorld",
+                        Map.of("nick", "Ash"));
         String greeting = ((JsonString) data).getString();
         LOGGER.log(Level.TRACE, () -> String.format("Response: \"%s\"", greeting));
         assertThat(greeting, containsString("Ash Ketchum"));
     }
-
 }

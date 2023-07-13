@@ -101,7 +101,7 @@
         <version.plugin.eclipselink>2.7.5.1</version.plugin.eclipselink>
         <version.plugin.enforcer>3.3.0</version.plugin.enforcer>
         <version.plugin.exec>1.6.0</version.plugin.exec>
-        <version.plugin.failsafe>3.0.0-M5</version.plugin.failsafe>
+        <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.glassfish-copyright>2.3</version.plugin.glassfish-copyright>
         <version.plugin.helidon-build-tools>3.0.3</version.plugin.helidon-build-tools>
         <version.plugin.hibernate-enhance>${version.lib.hibernate}</version.plugin.hibernate-enhance>

@@ -20,18 +20,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.System.Logger.Level;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import io.netty.util.internal.SocketUtils;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Process runner to start Helidon application.
@@ -41,7 +38,9 @@ public class HelidonProcessRunner {
 
     private static final System.Logger LOGGER = System.getLogger(HelidonProcessRunner.class.getName());
 
-    /** HTTP port of running application. Value is set to {@code -1} before application will be started. */
+    /**
+     * HTTP port of running application. Value is set to {@code -1} before application will be started.
+     */
     public static int HTTP_PORT = -1;
 
     private final AtomicReference<Process> process;
@@ -95,20 +94,14 @@ public class HelidonProcessRunner {
     /**
      * Create process runner with full configuration of modules.
      *
-     * @param execType type of execution
-     * @param moduleName name of the application module (JPMS), used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
-     * @param mainClassModuleName name of the module of the main class (JPMS) - if the same, you can use
-     *          {@link #create(HelidonProcessRunner.ExecType, String, String, String, Runnable, Runnable)},
-     *                            used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
-     * @param mainClass name of the main class to run - if this is MP and you want to use the default
-     *                  {@code io.helidon.microprofile.cdi.Main}, you can use
-     *                  {@link #createMp(HelidonProcessRunner.ExecType, String, String, Runnable, Runnable)},
-     *                  used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
-     * @param finalName final name of the artifact - this is the expected name of the native image and jar file
-     * @param args arguments passed to main method
-     * @param inMemoryStartCommand command to start the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
-     * @param inMemoryStopCommand command to stop the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
-     *
+     * @param execType             type of execution
+     * @param moduleName           name of the application module (JPMS), used for {@link ExecType#MODULE_PATH}
+     * @param mainClassModuleName  name of the module of the main class (JPMS) - used for {@link ExecType#MODULE_PATH}
+     * @param mainClass            name of the main class to run, used for {@link ExecType#MODULE_PATH}
+     * @param finalName            final name of the artifact - this is the expected name of the native image and jar file
+     * @param args                 arguments passed to main method
+     * @param inMemoryStartCommand command to start the server in memory, used for {@link ExecType#IN_MEMORY}
+     * @param inMemoryStopCommand  command to stop the server in memory, used for {@link ExecType#IN_MEMORY}
      * @return a process runner that will start Helidon with the expected exec type when {@link #startApplication()} is called
      */
     public static HelidonProcessRunner create(ExecType execType,
@@ -126,27 +119,17 @@ public class HelidonProcessRunner {
             return new HelidonProcessRunner(new AtomicReference<>(), execType, inMemoryStartCommand, inMemoryStopCommand, port);
         }
 
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.environment().put("SERVER_PORT", String.valueOf(port));
+        ProcessBuilder pb = new ProcessBuilder();
+        pb.environment().put("SERVER_PORT", String.valueOf(port));
 
         switch (execType) {
-        case CLASS_PATH:
-            addClasspathCommand(finalName, args, processBuilder);
-            break;
-        case MODULE_PATH:
-            addModulePathCommand(finalName, moduleName, mainClassModuleName, mainClass, args, processBuilder);
-            break;
-        case NATIVE:
-            addNativeCommand(finalName, args, processBuilder);
-            break;
-        case JLINK_CLASS_PATH:
-            addJlinkCommand(finalName, args, processBuilder);
-            break;
-        case JLINK_MODULE_PATH:
-            addJlinkModuleCommand(finalName, moduleName, mainClassModuleName, mainClass, args, processBuilder);
-            break;
-        default:
-            throw new IllegalArgumentException("Unsupported exec type: " + execType);
+            case CLASS_PATH -> addClasspathCommand(finalName, args, pb);
+            case MODULE_PATH -> addModulePathCommand(finalName, moduleName, mainClassModuleName, mainClass, args, pb);
+            case NATIVE -> addNativeCommand(finalName, args, pb);
+            case JLINK_CLASS_PATH -> addJlinkCommand(finalName, args, pb);
+            case JLINK_MODULE_PATH ->
+                    addJlinkModuleCommand(finalName, moduleName, mainClassModuleName, mainClass, args, pb);
+            default -> throw new IllegalArgumentException("Unsupported exec type: " + execType);
         }
         AtomicReference<Process> process = new AtomicReference<>();
         Runnable startCommand = () -> {
@@ -155,7 +138,7 @@ public class HelidonProcessRunner {
                 Thread stdoutReader = new Thread(() -> logStdout(process));
                 Thread stderrReader = new Thread(() -> logStderr(process));
 
-                process.set(processBuilder.start());
+                process.set(pb.start());
 
                 stdoutReader.start();
                 stderrReader.start();
@@ -180,48 +163,17 @@ public class HelidonProcessRunner {
     }
 
     /**
-     * Create process runner with MicroProfile specific configuration of modules.
-     *
-     * @param execType type of execution
-     * @param moduleName name of the application module (JPMS), used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
-     * @param finalName final name of the artifact - this is the expected name of the native image and jar file
-     * @param args arguments passed to main method
-     * @param inMemoryStartCommand command to start the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
-     * @param inMemoryStopCommand command to stop the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
-     *
-     * @return a process runner that will start Helidon with the expected exec type when {@link #startApplication()} is called
-     */
-    public static HelidonProcessRunner createMp(ExecType execType,
-                                                String moduleName,
-                                                String finalName,
-                                                String[] args,
-                                                Runnable inMemoryStartCommand,
-                                                Runnable inMemoryStopCommand) {
-        return create(execType,
-                      moduleName,
-                      "io.helidon.microprofile.cdi",
-                      "io.helidon.microprofile.cdi.Main",
-                      finalName,
-                      args,
-                      inMemoryStartCommand,
-                      inMemoryStopCommand);
-    }
-
-    /**
      * Create process runner with main class in the application module (JPMS).
      * Both the application module and the module of the main class share the same name.
      *
-     * @param execType type of execution
-     * @param mainClassModuleName name of the application module with the main class (JPMS)
-     * @param mainClass name of the main class to run - if this is MP and you want to use the default
-     *                  {@code io.helidon.microprofile.cdi.Main}, you can use
-     *                  {@link #createMp(HelidonProcessRunner.ExecType, String, String, Runnable, Runnable)},
-     *                  used for {@link HelidonProcessRunner.ExecType#MODULE_PATH}
-     * @param finalName final name of the artifact - this is the expected name of the native image and jar file
-     * @param args arguments passed to main method
-     * @param inMemoryStartCommand command to start the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
-     * @param inMemoryStopCommand command to stop the server in memory, used for {@link HelidonProcessRunner.ExecType#IN_MEMORY}
-     *
+     * @param execType             type of execution
+     * @param mainClassModuleName  name of the application module with the main class (JPMS)
+     * @param mainClass            name of the main class to run - if this is MP and you want to use the default
+     *                             {@code io.helidon.microprofile.cdi.Main}, used for {@link ExecType#MODULE_PATH}
+     * @param finalName            final name of the artifact - this is the expected name of the native image and jar file
+     * @param args                 arguments passed to main method
+     * @param inMemoryStartCommand command to start the server in memory, used for {@link ExecType#IN_MEMORY}
+     * @param inMemoryStopCommand  command to stop the server in memory, used for {@link ExecType#IN_MEMORY}
      * @return a process runner that will start Helidon with the expected exec type when {@link #startApplication()} is called
      */
     public static HelidonProcessRunner create(ExecType execType,
@@ -233,13 +185,13 @@ public class HelidonProcessRunner {
                                               Runnable inMemoryStopCommand) {
 
         return create(execType,
-                      mainClassModuleName,
-                      mainClassModuleName,
-                      mainClass,
-                      finalName,
-                      args,
-                      inMemoryStartCommand,
-                      inMemoryStopCommand);
+                mainClassModuleName,
+                mainClassModuleName,
+                mainClass,
+                finalName,
+                args,
+                inMemoryStartCommand,
+                inMemoryStopCommand);
     }
 
     private static void waitForSocketOpen(Process process, int port) {
@@ -274,9 +226,8 @@ public class HelidonProcessRunner {
     }
 
     private static boolean portOpen(int port) {
-        SocketAddress sa = SocketUtils.socketAddress("localhost", port);
-        try {
-            Socket socket = new Socket();
+        SocketAddress sa = new InetSocketAddress("localhost", port);
+        try (Socket socket = new Socket()) {
             socket.connect(sa, 1000);
             LOGGER.log(Level.TRACE, () -> String.format("Socket localhost:%d is ready", port));
             return true;
@@ -342,13 +293,13 @@ public class HelidonProcessRunner {
                                              String[] args,
                                              ProcessBuilder processBuilder) {
         addModuleCommand("java",
-                         "target",
-                         finalName,
-                         moduleName,
-                         mainClassModuleName,
-                         mainClass,
-                         args,
-                         processBuilder);
+                "target",
+                finalName,
+                moduleName,
+                mainClassModuleName,
+                mainClass,
+                args,
+                processBuilder);
     }
 
     private static void addJlinkModuleCommand(String finalName,
@@ -363,13 +314,13 @@ public class HelidonProcessRunner {
         // this should work - instead of java, we should use the jriDir + "/bin/start" command
         // with a switch such as "--modules"
         addModuleCommand(jriDir + "/bin/java",
-                         jriDir + "/app",
-                         finalName,
-                         moduleName,
-                         mainClassModuleName,
-                         mainClass,
-                         args,
-                         processBuilder);
+                jriDir + "/app",
+                finalName,
+                moduleName,
+                mainClassModuleName,
+                mainClass,
+                args,
+                processBuilder);
     }
 
     private static void addModuleCommand(String java,
@@ -382,6 +333,7 @@ public class HelidonProcessRunner {
                                          ProcessBuilder processBuilder) {
         List<String> command = new ArrayList<>(6);
         command.add(java);
+        command.add("--enable-preview");
         command.add("--module-path");
         command.add(location + "/" + finalName + ".jar" + File.pathSeparator + "target/libs");
         command.add("--module");
@@ -405,13 +357,14 @@ public class HelidonProcessRunner {
         processBuilder.command(
                 buildCommand(args,
                         jriDir + "/bin/java",
+                        "--enable-preview",
                         "-jar",
                         jriDir + "/app/" + finalName + ".jar"));
     }
 
     private static void addClasspathCommand(String finalName, String[] args, ProcessBuilder processBuilder) {
         processBuilder.command(
-                buildCommand(args, "java", "-jar", "target/" + finalName + ".jar"));
+                buildCommand(args, "java", "--enable-preview", "-jar", "target/" + finalName + ".jar"));
     }
 
     private static void addNativeCommand(String finalName, String[] args, ProcessBuilder processBuilder) {
@@ -420,11 +373,11 @@ public class HelidonProcessRunner {
                 buildCommand(args, "target/" + finalName));
     }
 
-    private static List<String> buildCommand(final String[] args, final String ...command) {
+    private static List<String> buildCommand(String[] args, String... command) {
         return buildCommand(args, Arrays.asList(command));
     }
 
-    private static List<String> buildCommand(final String[] args, final List<String> command) {
+    private static List<String> buildCommand(String[] args, List<String> command) {
         final List<String> commandList = new LinkedList<>(command);
         if (args != null) {
             commandList.addAll(Arrays.asList(args));
@@ -461,6 +414,24 @@ public class HelidonProcessRunner {
         @Override
         public String toString() {
             return name;
+        }
+
+        private static final Map<String, ExecType> NAMES = Arrays.stream(ExecType.values())
+                .collect(Collectors.toMap(ExecType::toString, Function.identity()));
+
+        /**
+         * Get an exec type by name.
+         *
+         * @param name name
+         * @return ExecType
+         * @throws IllegalArgumentException if no exec type is found
+         */
+        public static ExecType of(String name) {
+            ExecType execType = NAMES.get(name.toLowerCase());
+            if (execType != null) {
+                return execType;
+            }
+            throw new IllegalArgumentException("Unknown execType: " + name);
         }
     }
 }

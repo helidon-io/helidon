@@ -44,7 +44,7 @@ public final class JdbcClientBuilder
     }
 
     @Override
-    public DbClient build() {
+    public DbClient doBuild() {
         return new JdbcClient(this);
     }
 
