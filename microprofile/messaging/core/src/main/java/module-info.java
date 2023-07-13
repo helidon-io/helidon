@@ -34,8 +34,8 @@ module io.helidon.microprofile.messaging {
 
     requires java.logging;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires io.helidon.config;
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.config;
