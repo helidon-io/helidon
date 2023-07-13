@@ -36,7 +36,7 @@ module io.helidon.microprofile.config {
     requires io.helidon.config;
     requires transitive microprofile.config.api;
     requires io.helidon.config.mp;
-    requires jakarta.annotation;
+    requires transitive jakarta.annotation;
 
     exports io.helidon.microprofile.config;
 
