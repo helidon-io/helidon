@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.integrations.cdi.jpa.chirp;
+package io.helidon.integrations.cdi.jpa.chirp2;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,8 +27,6 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -62,7 +60,6 @@ public class Microblog implements Serializable {
         name = "ID",
         updatable = false
     )
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     private Integer id;
 
@@ -103,8 +100,9 @@ public class Microblog implements Serializable {
         super();
     }
 
-    public Microblog(final Author author, final String name) {
+    public Microblog(int id, Author author, String name) {
         super();
+        this.id = id;
         this.author = Objects.requireNonNull(author);
         this.name = Objects.requireNonNull(name);
     }

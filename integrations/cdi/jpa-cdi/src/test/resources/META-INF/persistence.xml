@@ -92,4 +92,26 @@
         </properties>
     </persistence-unit>
 
+    <persistence-unit name="chirp2" transaction-type="JTA">
+        <description>A persistence unit to support the Chirp2 series of unit tests.</description>
+        <jta-data-source>chirp2</jta-data-source>
+        <class>io.helidon.integrations.cdi.jpa.chirp2.Author</class>
+        <class>io.helidon.integrations.cdi.jpa.chirp2.Chirp</class>
+        <class>io.helidon.integrations.cdi.jpa.chirp2.Microblog</class>
+        <properties>
+            <property name="eclipselink.deploy-on-startup" value="true"/>
+            <property name="eclipselink.jdbc.native-sql" value="true"/>
+            <property name="eclipselink.logging.logger" value="JavaLogger"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+            <property name="eclipselink.target-database" value="org.eclipse.persistence.platform.database.H2Platform"/>
+            <property name="eclipselink.target-server" value="io.helidon.integrations.cdi.eclipselink.CDISEPlatform"/>
+            <property name="eclipselink.weaving" value="false"/>
+
+            <property name="hibernate.dialect" value="org.hibernate.dialect.H2Dialect"/>
+            <property name="hibernate.hbm2ddl.auto" value="none"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
+        </properties>
+    </persistence-unit>
+
 </persistence>
