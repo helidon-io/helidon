@@ -32,7 +32,7 @@ module io.helidon.tracing.jersey.client {
     requires java.logging;
     requires jakarta.annotation;
 
-    requires jakarta.ws.rs;
+    requires transitive jakarta.ws.rs;
     requires jersey.client;
     requires jersey.common;
 
