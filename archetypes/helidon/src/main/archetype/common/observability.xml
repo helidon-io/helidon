@@ -37,7 +37,7 @@
                                 description="Expose metrics using the MicroProfile API">
                             <output>
                                 <model>
-                                    <list key="readme-sections">
+                                    <list key="readme-sections" if="${flavor} == 'mp'">
                                         <value><![CDATA[
 ## Try metrics
 

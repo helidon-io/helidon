@@ -66,7 +66,7 @@
                         </model>
                     </output>
                 </option>
-                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities">
+                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities" if="${flavor} != 'nima'">
                     <output>
                         <templates engine="mustache" transformations="mustache,packaged">
                             <directory>files</directory>
