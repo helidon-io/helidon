@@ -43,6 +43,11 @@ public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
 
     /**
+     * For internal usage when there is a connection to the proxy server.
+     * Specifies that the connection must not be cached.
+     */
+    public static final Proxy TUNNELING = new Proxy(builder().type(ProxyType.NONE));
+    /**
      * No proxy instance.
      */
     private static final Proxy NO_PROXY = new Proxy(builder().type(ProxyType.NONE));

@@ -23,6 +23,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
+import io.helidon.nima.webclient.ClientConnection;
 import io.helidon.nima.webclient.UriHelper;
 
 class ClientResponseImpl implements Http2ClientResponse {
@@ -56,6 +57,11 @@ class ClientResponseImpl implements Http2ClientResponse {
     @Override
     public URI lastEndpointUri() {
         return lastEndpointUri.toUri();
+    }
+
+    @Override
+    public ClientConnection connection() {
+        throw new UnsupportedOperationException("Not supported");
     }
 
     @Override

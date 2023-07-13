@@ -100,4 +100,12 @@ public interface ClientResponse extends AutoCloseable {
      */
     @Override
     void close();
+
+    /**
+     * Return the current response connection.
+     * This is necessary for proxies because they need to re-use the same connection.
+     *
+     * @return the connection of the request
+     */
+    ClientConnection connection();
 }

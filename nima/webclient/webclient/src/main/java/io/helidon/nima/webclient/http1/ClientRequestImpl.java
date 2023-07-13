@@ -450,4 +450,5 @@ class ClientRequestImpl implements Http1ClientRequest {
             throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
         }
     }
+
 }

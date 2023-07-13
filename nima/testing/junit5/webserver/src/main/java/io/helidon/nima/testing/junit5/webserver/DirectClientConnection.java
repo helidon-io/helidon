@@ -16,6 +16,7 @@
 
 package io.helidon.nima.testing.junit5.webserver;
 
+import java.net.Socket;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -88,6 +89,11 @@ class DirectClientConnection implements ClientConnection {
         //NOOP
     }
 
+    @Override
+    public Socket socket() {
+        throw new UnsupportedOperationException("Socket does not exist in direct connection");
+    }
+
     private DataWriter writer(ArrayBlockingQueue<byte[]> queue) {
         return new DataWriter() {
             @Override
@@ -153,4 +159,5 @@ class DirectClientConnection implements ClientConnection {
                     }
                 });
     }
+
 }

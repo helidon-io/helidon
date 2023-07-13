@@ -147,6 +147,11 @@ class ClientResponseImpl implements Http1ClientResponse {
     }
 
     @Override
+    public ClientConnection connection() {
+        return connection;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public <T extends Source<?>> void source(GenericType<T> sourceType, T source) {
         for (SourceHandlerProvider p : SOURCE_HANDLERS) {

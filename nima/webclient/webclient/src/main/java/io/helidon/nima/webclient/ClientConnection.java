@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webclient;
 
+import java.net.Socket;
 import java.time.Duration;
 
 import io.helidon.common.buffers.DataReader;
@@ -63,4 +64,11 @@ public interface ClientConnection {
      * @param readTimeout connection read timeout
      */
     void readTimeout(Duration readTimeout);
+
+    /**
+     * Socket of the connection.
+     *
+     * @return socket of the connection
+     */
+    Socket socket();
 }

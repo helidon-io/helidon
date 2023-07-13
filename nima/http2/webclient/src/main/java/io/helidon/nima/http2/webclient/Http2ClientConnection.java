@@ -64,6 +64,7 @@ import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.WindowSize;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -312,7 +313,7 @@ class Http2ClientConnection {
 
     private void doConnect() throws IOException {
         boolean useTls = "https".equals(connectionKey.scheme()) && connectionKey.tls() != null;
-
+        Proxy proxy = connectionKey.proxy();
         SSLSocket sslSocket = useTls ? connectionKey.tls().createSocket("h2") : null;
         socket = sslSocket == null ? new Socket() : sslSocket;
 

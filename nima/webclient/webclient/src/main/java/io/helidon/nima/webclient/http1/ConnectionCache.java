@@ -48,12 +48,17 @@ class ConnectionCache {
                                        UriHelper uri,
                                        ClientRequestHeaders headers,
                                        boolean defaultKeepAlive) {
-        boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : null;
-        if (keepAlive) {
-            return keepAliveConnection(clientConfig, effectiveTls, uri, proxy);
-        } else {
+        if (proxy == Proxy.TUNNELING) {
+            // This connection could be keep alive, but we don't want to cache it
             return oneOffConnection(clientConfig, effectiveTls, uri, proxy);
+        } else {
+            boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
+            if (keepAlive) {
+                return keepAliveConnection(clientConfig, effectiveTls, uri, proxy);
+            } else {
+                return oneOffConnection(clientConfig, effectiveTls, uri, proxy);
+            }
         }
     }
 

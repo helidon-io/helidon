@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient.http1;
 
 import java.io.OutputStream;
+import java.net.Socket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -526,6 +527,11 @@ class ClientRequestImplTest {
         @Override
         public void readTimeout(Duration readTimeout) {
             //NOOP
+        }
+
+        @Override
+        public Socket socket() {
+            return null;
         }
 
         // This will be used for testing the element of Prologue

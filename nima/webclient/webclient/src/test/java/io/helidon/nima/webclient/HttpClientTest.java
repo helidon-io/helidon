@@ -198,5 +198,6 @@ class HttpClientTest {
         public FakeHttpClientRequest keepAlive(boolean keepAlive) {
             return this;
         }
+
     }
 }

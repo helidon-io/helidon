@@ -22,6 +22,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -68,6 +69,7 @@ class ClientRequestImpl implements Http2ClientRequest {
     private int requestPrefetch = 0;
     private int maxRedirects;
     private ClientConnection explicitConnection;
+    private Proxy proxy;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
     private UriFragment fragment = UriFragment.empty();
@@ -337,7 +339,8 @@ class ClientRequestImpl implements Http2ClientRequest {
                                                             priorKnowledge,
                                                             tls,
                                                             client.dnsResolver(),
-                                                            client.dnsAddressLookup());
+                                                            client.dnsAddressLookup(),
+                                                            proxy);
 
             // this statement locks all threads - must not do anything complicated (just create a new instance)
             return CHANNEL_CACHE.computeIfAbsent(connectionKey,
@@ -375,6 +378,8 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     @Override
     public Http2ClientRequest proxy(Proxy proxy) {
-        throw new UnsupportedOperationException("Proxy is not supported in HTTP2");
+        this.proxy = Objects.requireNonNull(proxy);
+        return this;
     }
+
 }

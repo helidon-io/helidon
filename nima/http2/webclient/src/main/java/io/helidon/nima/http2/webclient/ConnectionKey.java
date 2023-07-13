@@ -19,8 +19,9 @@ package io.helidon.nima.http2.webclient;
 import io.helidon.common.http.Http;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.DnsAddressLookup;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 record ConnectionKey(Http.Method method, String scheme, String host, int port, boolean priorKnowledge, Tls tls,
-                     DnsResolver dnsResolver, DnsAddressLookup dnsAddressLookup) {
+                     DnsResolver dnsResolver, DnsAddressLookup dnsAddressLookup, Proxy proxy) {
 }
