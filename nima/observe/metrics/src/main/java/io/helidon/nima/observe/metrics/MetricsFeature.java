@@ -182,6 +182,11 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     @Override
+    protected void context(String context) {
+        super.context(context);
+    }
+
+    @Override
     protected void postSetup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
         configureVendorMetrics(defaultRouting);
     }
@@ -356,7 +361,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
 
         private Builder() {
-            super("/metrics");
+            super("metrics");
         }
 
         @Override

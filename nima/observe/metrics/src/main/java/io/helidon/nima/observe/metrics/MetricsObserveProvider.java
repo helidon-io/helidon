@@ -82,6 +82,8 @@ public class MetricsObserveProvider implements ObserveProvider {
                 : explicitService;
 
         if (observer.enabled()) {
+            // when created as part of observer, we need to use component path
+            observer.context(componentPath);
             routing.addFeature(observer);
         } else {
             String finalPath = componentPath + (componentPath.endsWith("/") ? "*" : "/*");
