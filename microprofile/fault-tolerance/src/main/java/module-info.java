@@ -45,7 +45,7 @@ module io.helidon.microprofile.faulttolerance {
 
     requires microprofile.config.api;
     requires microprofile.metrics.api;
-    requires microprofile.fault.tolerance.api;
+    requires transitive microprofile.fault.tolerance.api;
 
     requires jersey.weld2.se;
     requires weld.api;
