@@ -37,6 +37,7 @@ import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.ReadableEntity;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -73,6 +74,7 @@ class HelidonConnector implements Connector {
 
     private final Client client;
     private final Http1Client httpClient;
+    private Proxy proxy;
 
     HelidonConnector(Client client, Configuration config) {
         this.client = client;
@@ -83,6 +85,9 @@ class HelidonConnector implements Connector {
 
         // use config for client
         builder.config(helidonConfig(config).orElse(Config.empty()));
+
+        // proxy support
+        proxy = ProxyBuilder.createProxy(config).orElse(Proxy.noProxy());
 
         // possibly override config with properties
         if (properties.containsKey(CONNECT_TIMEOUT)) {
@@ -104,9 +109,14 @@ class HelidonConnector implements Connector {
      * @return the mapped request
      */
     private Http1ClientRequest mapRequest(ClientRequest request) {
+        // possibly override proxy in request
+        Proxy requestProxy = ProxyBuilder.createProxy(request).orElse(proxy);
+
+        // create WebClient request
         URI uri = request.getUri();
         Http1ClientRequest httpRequest = httpClient
                 .method(Http.Method.create(request.getMethod()))
+                .proxy(requestProxy)
                 .uri(uri);
 
         // map query parameters
@@ -262,6 +272,10 @@ class HelidonConnector implements Connector {
 
     Http1Client client() {
         return httpClient;
+    }
+
+    Proxy proxy() {
+        return proxy;
     }
 
     /**

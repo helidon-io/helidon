@@ -321,6 +321,24 @@ public class Proxy {
     }
 
     /**
+     * Returns the port.
+     *
+     * @return proxy port
+     */
+    public int port() {
+        return port;
+    }
+
+    /**
+     * Returns the host.
+     *
+     * @return proxy host
+     */
+    public String host() {
+        return host;
+    }
+
+    /**
      * Returns an Optional with the username.
      * @return the username
      */
