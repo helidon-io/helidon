@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.tools.ToolsException;
+import io.helidon.inject.tools.ToolsException;
 
 import com.oracle.bmc.objectstorage.ObjectStorage;
 import com.oracle.bmc.streaming.Stream;
@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 class OciInjectionProcessorObserverTest {
 
     @Test
-    void generatedPicoArtifactsForTypicalOciServices() {
+    void generatedInjectionArtifactsForTypicalOciServices() {
         TypeName ociServiceType = TypeName.create(ObjectStorage.class);
 
         TypeName generatedOciServiceClientTypeName = OciInjectionProcessorObserver.toGeneratedServiceClientTypeName(ociServiceType);

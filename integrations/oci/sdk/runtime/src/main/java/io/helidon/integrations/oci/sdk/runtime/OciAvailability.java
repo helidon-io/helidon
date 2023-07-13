@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * Provides a convenient contract for checking whether the current runtime environment is running on/inside an OCI compute node.

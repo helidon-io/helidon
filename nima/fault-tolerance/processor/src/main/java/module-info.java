@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
+import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
+
 /**
  * Annotation processor that generates HTTP Endpoints.
  */
 module io.helidon.nima.faulttolerance.processor {
-    requires io.helidon.pico.api;
-    requires io.helidon.pico.tools;
-    requires io.helidon.pico.processor;
+    requires io.helidon.inject.api;
+    requires io.helidon.inject.tools;
+    requires io.helidon.inject.processor;
     requires java.compiler;
 
     exports io.helidon.nima.faulttolerance.processor;
-    opens templates.pico.nima;
+    opens templates.inject.nima;
 
-    provides io.helidon.pico.tools.spi.CustomAnnotationTemplateCreator
+    provides CustomAnnotationTemplateCreator
             with io.helidon.nima.faulttolerance.processor.FallbackMethodCreator,
                     io.helidon.nima.faulttolerance.processor.RetryMethodCreator,
                     io.helidon.nima.faulttolerance.processor.CircuitBreakerMethodCreator;

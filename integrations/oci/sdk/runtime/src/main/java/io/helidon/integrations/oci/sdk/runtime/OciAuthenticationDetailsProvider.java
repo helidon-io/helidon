@@ -28,10 +28,10 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
-import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.InjectionPointInfo;
-import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.InjectionPointInfo;
+import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.ServiceInfoBasics;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.Region;
@@ -54,7 +54,7 @@ import static io.helidon.common.types.Annotations.findFirst;
  * @see OciConfig
  */
 @Singleton
-@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 

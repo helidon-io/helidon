@@ -25,7 +25,7 @@ import io.helidon.common.config.ConfigException;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.pico.api.ExternalContracts;
+import io.helidon.inject.api.ExternalContracts;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;

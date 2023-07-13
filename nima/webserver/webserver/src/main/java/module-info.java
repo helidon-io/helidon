@@ -47,14 +47,14 @@ module io.helidon.nima.webserver {
     requires io.helidon.common.uri;
 
     requires static io.helidon.config.metadata;
-    requires static io.helidon.pico.configdriven.runtime;
+    requires static io.helidon.inject.configdriven.runtime;
     requires static jakarta.inject;
     // to compile @Generated
     requires static java.compiler;
 
-    // needed to compile pico generated classes
-    requires io.helidon.pico.api;
-    requires static io.helidon.pico.runtime;
+    // needed to compile injection generated classes
+    requires io.helidon.inject.api;
+    requires static io.helidon.inject.runtime;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -75,5 +75,5 @@ module io.helidon.nima.webserver {
     provides io.helidon.nima.webserver.spi.ProtocolConfigProvider
             with io.helidon.nima.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider with io.helidon.nima.webserver.http1.Http1ConnectionProvider;
-    provides io.helidon.pico.api.ModuleComponent with io.helidon.nima.webserver.Pico$$Module;
+    provides io.helidon.inject.api.ModuleComponent with io.helidon.nima.webserver.Injection$$Module;
 }

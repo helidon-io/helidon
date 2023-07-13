@@ -20,12 +20,13 @@ import java.util.Collection;
 import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
-import io.helidon.pico.tools.spi.ModuleComponentNamer;
+import io.helidon.inject.api.ModuleComponent;
+import io.helidon.inject.tools.spi.ModuleComponentNamer;
 
 import static java.util.function.Predicate.not;
 
 /**
- * Avoids using any OCI SDK package name(s) as the {@link io.helidon.pico.api.ModuleComponent} name that is code-generated.
+ * Avoids using any OCI SDK package name(s) as the {@link ModuleComponent} name that is code-generated.
  */
 public class OciModuleComponentNamer implements ModuleComponentNamer {
 

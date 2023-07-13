@@ -27,8 +27,8 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 
 /**
- * This service will be part of Níma on Pico module.
- * It may use pico to get config sources exposed through pico.
+ * This service will be part of Níma on Injection module.
+ * It may use Injection to get config sources exposed through pico.
  */
 @Singleton
 @Named("platform-executor")

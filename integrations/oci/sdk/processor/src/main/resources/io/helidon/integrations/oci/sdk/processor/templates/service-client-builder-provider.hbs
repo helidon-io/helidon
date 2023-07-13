@@ -23,9 +23,9 @@ import {{classname}}Client{{dot}}Builder;{{#if usesRegion}}
 import com.oracle.bmc.Region;{{/if}}
 
 import io.helidon.common.Weight;
-import io.helidon.pico.api.ContextualServiceQuery;
-import io.helidon.pico.api.InjectionPointProvider;
-import io.helidon.pico.api.ServiceInfoBasics;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.InjectionPointProvider;
+import io.helidon.inject.api.ServiceInfoBasics;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -35,7 +35,7 @@ import java.util.Optional;
 
 {{{generatedanno}}}
 @Singleton
-@Weight(ServiceInfoBasics.DEFAULT_PICO_WEIGHT)
+@Weight(ServiceInfoBasics.DEFAULT_INJECT_WEIGHT)
 class {{simpleclassname}}$$Oci$$ClientBuilder implements InjectionPointProvider<{{simpleclassname}}Client{{dot}}Builder> {
 {{#if usesRegion}}    private final InjectionPointProvider<Region> regionProvider;
 

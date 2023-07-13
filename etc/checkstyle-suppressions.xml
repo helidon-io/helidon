@@ -95,14 +95,14 @@
     <suppress files="builder/builder-config/src/main/java/io/helidon/builder/config/spi/ConfigProvider.java"
             checks="MethodName"/>
 
-    <!-- pico tests need to violate to check different user scenarios -->
+    <!-- injection tests need to violate to check different user scenarios -->
     <suppress files="builder/tests/"
             checks=".*"/>
-    <suppress files="pico/tests/"
+    <suppress files="inject/tests/"
             checks=".*"/>
-    <suppress files="pico/configdriven/tests/"
+    <suppress files="inject/configdriven/tests/"
             checks=".*"/>
-    <suppress files="examples/pico/"
+    <suppress files="examples/inject/"
             checks=".*"/>
     <suppress files="integrations/oci/sdk/tests/"
             checks=".*"/>

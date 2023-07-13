@@ -20,7 +20,7 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * {@link Source} of configuration.

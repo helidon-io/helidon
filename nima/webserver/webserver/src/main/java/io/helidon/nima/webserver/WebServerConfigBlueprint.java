@@ -24,7 +24,7 @@ import io.helidon.common.context.Context;
 import io.helidon.config.ConfigException;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.configdriven.api.ConfigBean;
+import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * WebServer configuration bean.

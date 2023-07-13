@@ -22,7 +22,7 @@ import java.util.Optional;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.configdriven.api.ConfigBean;
+import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * {@link io.helidon.nima.faulttolerance.Bulkhead} configuration bean.

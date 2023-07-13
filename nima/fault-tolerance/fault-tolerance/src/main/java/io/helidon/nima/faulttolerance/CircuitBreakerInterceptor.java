@@ -18,8 +18,8 @@ package io.helidon.nima.faulttolerance;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.InjectionServices;
 
 import jakarta.inject.Singleton;
 
@@ -28,7 +28,7 @@ import jakarta.inject.Singleton;
 @Singleton
 class CircuitBreakerInterceptor extends InterceptorBase<CircuitBreaker> {
     CircuitBreakerInterceptor() {
-        super(PicoServices.realizedServices(), CircuitBreaker.class, FaultTolerance.CircuitBreaker.class);
+        super(InjectionServices.realizedServices(), CircuitBreaker.class, FaultTolerance.CircuitBreaker.class);
     }
 
     @Override

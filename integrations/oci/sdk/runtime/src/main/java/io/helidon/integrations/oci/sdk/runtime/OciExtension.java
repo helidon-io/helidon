@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
-import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.Bootstrap;
+import io.helidon.inject.api.InjectionServices;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
@@ -58,7 +58,7 @@ import static java.util.function.Predicate.not;
  * <h2>Basic Usage</h2>
  *
  * To use this extension, make sure it is on your project's runtime
- * classpath. Also be sure the <em>helidon-pico-integrations-oci-processor</em> is
+ * classpath. Also be sure the <em>helidon-integrations-oci-processor</em> is
  * on your APT/compile-time classpath. To {@linkplain jakarta.inject.Inject inject} a service
  * interface named
  * <code>com.oracle.bmc.</code><strong><code>cloudexample</code></strong><code>.CloudExample</code>
@@ -78,11 +78,11 @@ import static java.util.function.Predicate.not;
  * create service client builder and asynchronous service client
  * builder instances by invoking the {@code static} {@code builder()}
  * method that is present on all OCI service client classes, and will then
- * provide those instances as regular pico services.  The resulting service client or
+ * provide those instances as regular Injection/Injectable services.  The resulting service client or
  * asynchronous service client will be built by that builder's {@link
  * com.oracle.bmc.common.ClientBuilderBase#build(AbstractAuthenticationDetailsProvider)
  * build(AbstractAuthenticationDetailsProvider)} method and will
- * itself be provided as a pico service instance.</p>
+ * itself be provided as a service instance.</p>
  *
  * <p>A user may wish to customize this builder so that the resulting
  * service client or asynchronous service client reflects the
@@ -127,7 +127,7 @@ public final class OciExtension {
      * @return the bootstrap oci config bean
      */
     public static OciConfig ociConfig() {
-        Optional<Bootstrap> bootstrap = PicoServices.globalBootstrap();
+        Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
         if (bootstrap.isEmpty()) {
             LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();

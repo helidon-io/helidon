@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.pico.configdriven.api.ConfigBean;
+import io.helidon.inject.configdriven.api.ConfigBean;
 
 @Prototype.Blueprint(builderInterceptor = CircuitBreakerConfigBlueprint.BuilderInterceptor.class)
 @Configured(prefix = "fault-tolerance.circuit-breakers", root = true)

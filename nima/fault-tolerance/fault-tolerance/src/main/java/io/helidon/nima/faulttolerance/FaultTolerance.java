@@ -32,7 +32,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.pico.api.InterceptedTrigger;
+import io.helidon.inject.api.InterceptedTrigger;
 
 import static java.lang.System.Logger.Level.ERROR;
 

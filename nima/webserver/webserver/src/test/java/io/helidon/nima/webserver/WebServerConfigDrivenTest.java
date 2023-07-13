@@ -17,12 +17,12 @@
 package io.helidon.nima.webserver;
 
 import io.helidon.config.Config;
-import io.helidon.pico.api.Bootstrap;
-import io.helidon.pico.api.Phase;
-import io.helidon.pico.api.PicoServices;
-import io.helidon.pico.api.ServiceProvider;
-import io.helidon.pico.api.Services;
-import io.helidon.pico.testing.PicoTestingSupport;
+import io.helidon.inject.api.Bootstrap;
+import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.Phase;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Services;
+import io.helidon.inject.testing.InjectionTestingSupport;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
@@ -38,8 +38,8 @@ class WebServerConfigDrivenTest {
     @AfterEach
     public void reset() {
         if (!NORMAL_PRODUCTION_PATH) {
-            // requires 'pico.permits-dynamic=true' to be able to reset
-            PicoTestingSupport.resetAll();
+            // requires 'inject.permits-dynamic=true' to be able to reset
+            InjectionTestingSupport.resetAll();
         }
     }
 
@@ -49,17 +49,17 @@ class WebServerConfigDrivenTest {
         Config config = Config.create();
 
         if (NORMAL_PRODUCTION_PATH) {
-            // bootstrap Pico with our config tree when it initializes
-            PicoServices.globalBootstrap(Bootstrap.builder().config(config).build());
+            // bootstrap Injection with our config tree when it initializes
+            InjectionServices.globalBootstrap(Bootstrap.builder().config(config).build());
         }
 
-        // initialize Pico, and drive all activations based upon what has been configured
+        // initialize Injection, and drive all activations based upon what has been configured
         Services services;
         if (NORMAL_PRODUCTION_PATH) {
-            services = PicoServices.realizedServices();
+            services = InjectionServices.realizedServices();
         } else {
-            PicoServices picoServices = PicoTestingSupport.testableServices(config);
-            services = picoServices.services();
+            InjectionServices injectionServices = InjectionTestingSupport.testableServices(config);
+            services = injectionServices.services();
         }
 
         ServiceProvider<WebServer> webServerSp = services.lookupFirst(WebServer.class);

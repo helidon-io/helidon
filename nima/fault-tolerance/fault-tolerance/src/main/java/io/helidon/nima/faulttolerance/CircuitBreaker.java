@@ -19,7 +19,7 @@ package io.helidon.nima.faulttolerance;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application

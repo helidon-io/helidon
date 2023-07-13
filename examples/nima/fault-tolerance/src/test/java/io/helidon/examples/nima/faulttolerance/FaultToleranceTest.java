@@ -22,11 +22,10 @@ import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.InjectionServices;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -41,7 +40,7 @@ class FaultToleranceTest {
     @BeforeAll
     static void init() {
         Main.main(new String[0]);
-        WebServer webServer = PicoServices.realizedServices()
+        WebServer webServer = InjectionServices.realizedServices()
                 .lookup(WebServer.class)
                 .get();
 
@@ -60,8 +59,8 @@ class FaultToleranceTest {
 
     @AfterAll
     static void shutDown() {
-        PicoServices.picoServices()
-                .map(PicoServices::shutdown);
+        InjectionServices.injectionServices()
+                .map(InjectionServices::shutdown);
     }
 
     @Test

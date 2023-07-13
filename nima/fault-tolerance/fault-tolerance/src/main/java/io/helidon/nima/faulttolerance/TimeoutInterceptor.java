@@ -22,8 +22,8 @@ import java.time.temporal.ChronoUnit;
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.pico.api.ClassNamed;
-import io.helidon.pico.api.PicoServices;
+import io.helidon.inject.api.ClassNamed;
+import io.helidon.inject.api.InjectionServices;
 
 import jakarta.inject.Singleton;
 
@@ -32,7 +32,7 @@ import jakarta.inject.Singleton;
 @Singleton
 class TimeoutInterceptor extends InterceptorBase<Timeout> {
     TimeoutInterceptor() {
-        super(PicoServices.realizedServices(), Timeout.class, FaultTolerance.Timeout.class);
+        super(InjectionServices.realizedServices(), Timeout.class, FaultTolerance.Timeout.class);
     }
 
     @Override

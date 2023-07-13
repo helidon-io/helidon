@@ -25,14 +25,14 @@ module io.helidon.integrations.oci.sdk.runtime {
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.config.metadata;
-    requires transitive io.helidon.pico.runtime;
+    requires transitive io.helidon.inject.runtime;
     requires oci.java.sdk.common;
     requires io.helidon.common.types;
 
     exports io.helidon.integrations.oci.sdk.runtime;
 
-    uses io.helidon.pico.api.ModuleComponent;
+    uses io.helidon.inject.api.ModuleComponent;
 
-    provides io.helidon.pico.api.ModuleComponent with
-            io.helidon.integrations.oci.sdk.runtime.Pico$$Module;
+    provides io.helidon.inject.api.ModuleComponent with
+            io.helidon.integrations.oci.sdk.runtime.Injection$$Module;
 }

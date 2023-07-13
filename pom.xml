@@ -202,7 +202,7 @@
         <module>nima</module>
         <module>reactive</module>
         <module>cors</module>
-        <module>pico</module>
+        <module>inject</module>
         <module>builder</module>
     </modules>
 
@@ -1197,7 +1197,7 @@
                 <artifactId>commons-io</artifactId>
                 <version>${version.lib.commons-io}</version>
             </dependency>
-            <!-- Pico TCK tests -->
+            <!-- Injection TCK tests -->
             <dependency>
                 <groupId>jakarta.inject</groupId>
                 <artifactId>jakarta.inject-tck</artifactId>

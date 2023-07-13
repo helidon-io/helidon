@@ -17,7 +17,7 @@
 package io.helidon.nima.webserver.http;
 
 import io.helidon.common.http.Http;
-import io.helidon.pico.api.Contract;
+import io.helidon.inject.api.Contract;
 
 /**
  * This class is only used by generated code.
