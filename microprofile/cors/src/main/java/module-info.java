@@ -28,7 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.cors {
     requires static io.helidon.common.features.api;
 
-    requires jakarta.ws.rs;
+    requires transitive jakarta.ws.rs;
     requires io.helidon.config;
     requires io.helidon.config.mp;
     requires io.helidon.webserver.cors;
