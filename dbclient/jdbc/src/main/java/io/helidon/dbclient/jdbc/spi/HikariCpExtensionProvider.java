@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,21 +21,22 @@ import io.helidon.common.config.Config;
 import io.helidon.dbclient.jdbc.HikariCpExtension;
 
 /**
- * Java {@link ServiceLoader} interface that provides JDBC DB Client configuration extension.
+ * Java {@link ServiceLoader} interface that provides implementations of {@link HikariCpExtension}.
  */
 public interface HikariCpExtensionProvider {
 
     /**
      * Configuration key of the extension provider.
+     *
      * @return configuration key expected under {@code connection.helidon}
      */
     String configKey();
 
     /**
-     * Get instance of JDBC DB Client configuration extension.
+     * Get instance of {@link HikariCpExtension} from config.
      *
-     * @param config configuration of this provider to obtain an extension instance
-     * @return JDBC DB Client configuration extension
+     * @param config provider configuration
+     * @return HikariCpExtension
      */
     HikariCpExtension extension(Config config);
 

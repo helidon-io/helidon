@@ -24,9 +24,12 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
 
 /**
- * PoJo used to define Pokemon IDs range in query statement tests.
+ * POJO used to define {@code Pokemon} IDs range in query statement tests.
+ *
+ * @param idMin Beginning of IDs range.
+ * @param idMax End of IDs range.
  */
-public class RangePoJo {
+public record RangePoJo(int idMin, int idMax) {
 
     public static final class Mapper implements DbMapper<RangePoJo> {
 
@@ -40,25 +43,20 @@ public class RangePoJo {
         @Override
         public Map<String, ?> toNamedParameters(RangePoJo value) {
             Map<String, Object> params = new HashMap<>(2);
-            params.put("idmin", value.getIdMin());
-            params.put("idmax", value.getIdMax());
+            params.put("idmin", value.idMin());
+            params.put("idmax", value.idMax());
             return params;
         }
 
         @Override
         public List<?> toIndexedParameters(RangePoJo value) {
             List<Object> params = new ArrayList<>(2);
-            params.add(value.getIdMin());
-            params.add(value.getIdMax());
+            params.add(value.idMin());
+            params.add(value.idMax());
             return params;
         }
 
     }
-
-    /** Beginning of IDs range. */
-    private final int idMin;
-    /** End of IDs range. */
-    private final int idMax;
 
     /**
      * Creates an instance of Range  POJO.
@@ -66,9 +64,7 @@ public class RangePoJo {
      * @param idMin beginning of IDs range
      * @param idMax end of IDs range
      */
-    public RangePoJo(int idMin, int idMax) {
-        this.idMin = idMin;
-        this.idMax = idMax;
+    public RangePoJo {
     }
 
     /**
@@ -76,7 +72,8 @@ public class RangePoJo {
      *
      * @return beginning of IDs range
      */
-    public int getIdMin() {
+    @Override
+    public int idMin() {
         return idMin;
     }
 
@@ -85,7 +82,8 @@ public class RangePoJo {
      *
      * @return end of IDs range
      */
-    public int getIdMax() {
+    @Override
+    public int idMax() {
         return idMax;
     }
 

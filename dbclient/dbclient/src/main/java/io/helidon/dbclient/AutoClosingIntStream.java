@@ -60,7 +60,7 @@ class AutoClosingIntStream implements IntStream {
         if (stream instanceof AutoClosingIntStream) {
             return stream;
         }
-        return new AutoClosingIntStream(stream, AutoCloseHandler.decorate(closeHandler));
+        return new AutoClosingIntStream(stream, AutoClosingHandler.decorate(closeHandler));
     }
 
     @Override

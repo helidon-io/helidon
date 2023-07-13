@@ -130,7 +130,7 @@ public class InitService implements HttpService {
         DbTransaction tx = dbClient.transaction();
         long count = 0;
         for (Map.Entry<Integer, Type> entry : Type.TYPES.entrySet()) {
-            count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
+            count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().name());
         }
         tx.commit();
         response.send(okStatus(Json.createValue(count)));
@@ -152,7 +152,7 @@ public class InitService implements HttpService {
         for (Map.Entry<Integer, Pokemon> entry : Pokemon.POKEMONS.entrySet()) {
             Pokemon pokemon = entry.getValue();
             for (Type type : pokemon.getTypes()) {
-                count += tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
+                count += tx.namedDml("insert-poketype", pokemon.getId(), type.id());
             }
         }
         tx.commit();

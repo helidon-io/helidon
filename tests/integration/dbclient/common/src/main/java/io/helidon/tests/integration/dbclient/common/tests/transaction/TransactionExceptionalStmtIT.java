@@ -17,11 +17,9 @@ package io.helidon.tests.integration.dbclient.common.tests.transaction;
 
 import java.lang.System.Logger.Level;
 import java.util.concurrent.CompletionException;
-import java.util.function.Consumer;
 
 import io.helidon.dbclient.DbClientException;
 
-import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbTransaction;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class TransactionExceptionalStmtIT {
 
     private static final System.Logger LOGGER = System.getLogger(TransactionExceptionalStmtIT.class.getName());
-    private static final Consumer<DbRow> EMPTY_CONSUMER = it -> {};
 
     /**
      * Verify that execution of query with non-existing named statement throws an exception.
@@ -46,7 +43,7 @@ public class TransactionExceptionalStmtIT {
             DbTransaction tx = DB_CLIENT.transaction();
             tx.createNamedQuery("select-pokemons-not-exists")
                     .execute()
-                    .forEach(EMPTY_CONSUMER);
+                    .forEach(it -> {});
             tx.commit();
             fail("Execution of non existing statement shall cause an exception to be thrown.");
         } catch (DbClientException ex) {
@@ -63,7 +60,7 @@ public class TransactionExceptionalStmtIT {
             DbTransaction tx = DB_CLIENT.transaction();
             tx.createNamedQuery("select-pokemons-error-arg")
                     .execute()
-                    .forEach(EMPTY_CONSUMER);
+                    .forEach(it -> {});
             tx.commit();
             fail("Execution of query with both named and ordered parameters without passing any shall fail.");
         } catch (DbClientException |
@@ -83,7 +80,7 @@ public class TransactionExceptionalStmtIT {
                     .addParam("id", POKEMONS.get(5).getId())
                     .addParam(POKEMONS.get(5).getName())
                     .execute()
-                    .forEach(EMPTY_CONSUMER);
+                    .forEach(it -> {});
             tx.commit();
             fail("Execution of query with both named and ordered parameters without passing them shall fail.");
         } catch (DbClientException ex) {
@@ -101,7 +98,7 @@ public class TransactionExceptionalStmtIT {
             tx.createNamedQuery("select-pokemon-named-arg")
                     .addParam(POKEMONS.get(5).getName())
                     .execute()
-                    .forEach(EMPTY_CONSUMER);
+                    .forEach(it -> {});
             tx.commit();
             fail("Execution of query with named parameter with passing ordered parameter value shall fail.");
         } catch (DbClientException ex) {
@@ -119,7 +116,7 @@ public class TransactionExceptionalStmtIT {
             tx.createNamedQuery("select-pokemon-order-arg")
                     .addParam("name", POKEMONS.get(6).getName())
                     .execute()
-                    .forEach(EMPTY_CONSUMER);
+                    .forEach(it -> {});
             tx.commit();
             fail("Execution of query with ordered parameter with passing named parameter value shall fail.");
         } catch (DbClientException ex) {

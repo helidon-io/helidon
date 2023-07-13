@@ -27,7 +27,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-mongodb</artifactId>
-    <name>Integration Tests: DB Client MongoDB</name>
+    <name>Integration Tests: Database Client MongoDB</name>
 
     <properties>
         <mongo.port>27017</mongo.port>
@@ -35,8 +35,8 @@
         <mongo.database>test</mongo.database>
         <mongo.user>helidon</mongo.user>
         <mongo.password>h3l1d0n</mongo.password>
-        <mongo.roootuser>root</mongo.roootuser>
-        <mongo.roootpw>I4mGr00t</mongo.roootpw>
+        <mongo.root-user>root</mongo.root-user>
+        <mongo.root-password>I4mGr00t</mongo.root-password>
     </properties>
 
     <dependencies>
@@ -249,8 +249,8 @@
                                     <alias>mongo</alias>
                                     <run>
                                         <env>
-                                            <MONGO_INITDB_ROOT_USERNAME>${mongo.roootuser}</MONGO_INITDB_ROOT_USERNAME>
-                                            <MONGO_INITDB_ROOT_PASSWORD>${mongo.roootpw}</MONGO_INITDB_ROOT_PASSWORD>
+                                            <MONGO_INITDB_ROOT_USERNAME>${mongo.root-user}</MONGO_INITDB_ROOT_USERNAME>
+                                            <MONGO_INITDB_ROOT_PASSWORD>${mongo.root-password}</MONGO_INITDB_ROOT_PASSWORD>
                                             <MONGO_INITDB_DATABASE>${mongo.database}</MONGO_INITDB_DATABASE>
                                         </env>
                                         <hostname>${mongo.host}</hostname>

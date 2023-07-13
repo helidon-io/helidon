@@ -21,12 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * A runnable that runs only once.
  * This class supports {@link AutoClosingStream}.
  */
-class AutoCloseHandler implements Runnable {
+class AutoClosingHandler implements Runnable {
 
     private final AtomicBoolean invoked = new AtomicBoolean();
     private final Runnable delegate;
 
-    private AutoCloseHandler(Runnable delegate) {
+    private AutoClosingHandler(Runnable delegate) {
         this.delegate = delegate;
     }
 
@@ -37,10 +37,10 @@ class AutoCloseHandler implements Runnable {
      * @return decorated runnable
      */
     static Runnable decorate(Runnable runnable) {
-        if (runnable instanceof AutoCloseHandler) {
+        if (runnable instanceof AutoClosingHandler) {
             return runnable;
         }
-        return new AutoCloseHandler(runnable);
+        return new AutoClosingHandler(runnable);
     }
 
     @Override

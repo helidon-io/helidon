@@ -28,6 +28,7 @@ import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.app.model.Pokemon;
 import io.helidon.tests.integration.dbclient.app.model.Type;
+import io.helidon.tests.integration.dbclient.app.tools.*;
 
 import static io.helidon.tests.integration.dbclient.app.model.Type.TYPES;
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -99,7 +100,7 @@ public abstract class AbstractInsertService extends AbstractService {
     private void executeTest(ServerRequest request, ServerResponse response) {
         String testName = pathParam(request, "testName");
         LOGGER.log(Level.DEBUG, () -> String.format("Running %s.%s on server", getClass().getSimpleName(), testName));
-        int id = Integer.parseInt(queryParam(request, QUERY_ID_PARAM));
+        int id = Integer.parseInt(queryParam(request, QueryParams.ID));
         String name = POKEMON_NAMES.get(testName);
         long count = switch (testName) {
             case "testCreateNamedInsertStrStrNamedArgs" -> testCreateNamedInsertStrStrNamedArgs(id, name);

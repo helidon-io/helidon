@@ -78,7 +78,7 @@ class AutoClosingStream<T> implements Stream<T> {
         if (stream instanceof AutoClosingStream<T>) {
             return stream;
         }
-        return new AutoClosingStream<>(stream, AutoCloseHandler.decorate(closeHandler));
+        return new AutoClosingStream<>(stream, AutoClosingHandler.decorate(closeHandler));
     }
 
     @Override

@@ -49,7 +49,7 @@ public class CheckIT extends AbstractIT {
     private static final int TIMEOUT = 60;
 
     /**
-     * Helidon DB client with admin database access.
+     * Helidon Database Client with admin access.
      */
     public static final DbClient DB_ADMIN = initDbAdmin();
 

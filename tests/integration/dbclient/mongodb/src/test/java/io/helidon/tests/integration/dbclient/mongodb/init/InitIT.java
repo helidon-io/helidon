@@ -47,37 +47,21 @@ public class InitIT extends AbstractIT {
      * @param dbClient Helidon database client
      */
     private static void initData(DbClient dbClient) {
-        // Init Pokémon types
         DbExecute exec = dbClient.execute();
-        long count = -1;
+        long count = 0;
+
         for (Map.Entry<Integer, Type> entry : TYPES.entrySet()) {
-            if (count < 0) {
-                count = dbClient.execute().namedInsert("insert-type", entry.getKey(), entry.getValue().getName());
-            } else {
-                count += exec.namedInsert("insert-type", entry.getKey(), entry.getValue().getName());
-            }
+            count += exec.namedInsert("insert-type", entry.getKey(), entry.getValue().name());
         }
 
-        // Init Pokémon
-        count = -1;
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
-            if (count < 0) {
-                count = exec.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
-            } else {
-                count += exec.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
-            }
+            count += exec.namedInsert("insert-pokemon", entry.getKey(), entry.getValue().getName());
         }
 
-        // Init Pokémon to type relation
-        count = -1;
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
             Pokemon pokemon = entry.getValue();
             for (Type type : pokemon.getTypes()) {
-                if (count < 0) {
-                    count = exec.namedInsert("insert-poketype", pokemon.getId(), type.getId());
-                } else {
-                    count += exec.namedInsert("insert-poketype", pokemon.getId(), type.getId());
-                }
+                count += exec.namedInsert("insert-poketype", pokemon.getId(), type.id());
             }
         }
     }
@@ -91,7 +75,7 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized Pokémon types.
+     * Verify that the {@code Types} was properly initialized.
      */
     @Test
     public void testListTypes() {
@@ -106,12 +90,12 @@ public class InitIT extends AbstractIT {
             String name = row.column(2).as(String.class);
             assertThat(ids, hasItem(id));
             ids.remove(id);
-            assertThat(name, TYPES.get(id).getName().equals(name));
+            assertThat(name, TYPES.get(id).name().equals(name));
         }
     }
 
     /**
-     * Verify that database contains properly initialized Pokémon.
+     * Verify that the {@code Pokemon} was properly initialized.
      */
     @Test
     public void testListPokemons() {
@@ -131,7 +115,7 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized Pokémon types relation.
+     * Verify that the {@code PokemonTypes} was properly initialized.
      */
     @Test
     public void testListPokemonTypes() {

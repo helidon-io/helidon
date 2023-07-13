@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * Metrics support for Helidon DB JDBC Client.
+ * Metrics support for Helidon Database Client JDBC.
  */
 package io.helidon.dbclient.metrics.jdbc;

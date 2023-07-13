@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,13 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
- * Helidon DB Client.
+ * Helidon Database Client.
  *
  * @see io.helidon.dbclient.DbClient
  */
 @Preview
-@Feature(value = "DB Client",
-         description = "Database client",
+@Feature(value = "Database Client",
+         description = "Database Client API",
          in = HelidonFlavor.SE,
          path = "DbClient"
 )

@@ -59,7 +59,7 @@ class AutoClosingDoubleStream implements DoubleStream {
         if (stream instanceof AutoClosingDoubleStream) {
             return stream;
         }
-        return new AutoClosingDoubleStream(stream, AutoCloseHandler.decorate(closeHandler));
+        return new AutoClosingDoubleStream(stream, AutoClosingHandler.decorate(closeHandler));
     }
 
     @Override

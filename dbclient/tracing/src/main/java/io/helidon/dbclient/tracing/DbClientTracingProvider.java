@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ public class DbClientTracingProvider implements DbClientServiceProvider {
         }
 
         if (result.isEmpty()) {
-            LOGGER.log(System.Logger.Level.INFO, "DB Client tracing is enabled, yet none is configured in config.");
+            LOGGER.log(System.Logger.Level.INFO, "Database Client tracing is enabled, yet none is configured in config.");
         }
 
         return result;

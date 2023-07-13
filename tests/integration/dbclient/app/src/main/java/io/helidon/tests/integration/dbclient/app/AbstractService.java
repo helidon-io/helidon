@@ -27,25 +27,7 @@ import io.helidon.tests.integration.tools.service.RemoteTestException;
  */
 public abstract class AbstractService implements HttpService {
 
-    /**
-     * Query parameter for name of Pokémon, Type, etc.
-     */
-    public static final String QUERY_NAME_PARAM = "name";
-    /**
-     * Query parameter for ID of Pokémon, Type, etc.
-     */
-    public static final String QUERY_ID_PARAM = "id";
-    /**
-     * Query parameter for beginning of ID range.
-     */
-    public static final String QUERY_FROM_ID_PARAM = "fromid";
-    /**
-     * Query parameter for end of ID range.
-     */
-    public static final String QUERY_TO_ID_PARAM = "toid";
-
     private final DbClient dbClient;
-
     private final Map<String, String> statements;
 
     /**

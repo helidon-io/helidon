@@ -23,16 +23,15 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 /**
- * Pokémon type POJO.
+ * {@code Pokemon} type POJO.
  */
-public class Type {
+public record Type(int id, String name) {
 
     /**
-     * Map of Pokémon types.
+     * Map of {@code Pokemon} types by ID.
      */
     public static final Map<Integer, Type> TYPES = new HashMap<>();
 
-    // Initialize Pokémon types Map
     static {
         TYPES.put(1, new Type(1, "Normal"));
         TYPES.put(2, new Type(2, "Fighting"));
@@ -54,22 +53,6 @@ public class Type {
         TYPES.put(18, new Type(18, "Fairy"));
     }
 
-    private final int id;
-    private final String name;
-
-    public Type(int id, String name) {
-        this.id = id;
-        this.name = name;
-    }
-
-    public int getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
     @Override
     public String toString() {
         return "Type: {id=" + id + ", name=" + name + "}";
@@ -81,5 +64,4 @@ public class Type {
         job.add("name", name);
         return job.build();
     }
-
 }

@@ -22,6 +22,7 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.JsonObject;
 
 import java.lang.System.Logger.Level;
@@ -54,7 +55,7 @@ public abstract class AbstractGetService extends AbstractService {
 
     private void executeTest(ServerRequest request, ServerResponse response) {
         String testName = pathParam(request, "testName");
-        String name = queryParam(request, QUERY_NAME_PARAM);
+        String name = queryParam(request, QueryParams.NAME);
         LOGGER.log(Level.DEBUG, () -> String.format("Running %s.%s on server", getClass().getSimpleName(), testName));
         Optional<DbRow> result = switch (testName) {
             case "testCreateNamedGetStrStrNamedArgs" -> testCreateNamedGetStrStrNamedArgs(name);

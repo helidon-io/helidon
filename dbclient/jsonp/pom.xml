@@ -25,13 +25,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>helidon-dbclient-jsonp</artifactId>
-    <name>Helidon DB Client JSON-Processing</name>
-
-    <description>
-        Helidon DB Client support for JSON-Processing
-    </description>
+    <name>Helidon Database Client JSON-Processing</name>
+    <description>Helidon Database Client JSON-Processing Support</description>
 
     <dependencies>
         <dependency>

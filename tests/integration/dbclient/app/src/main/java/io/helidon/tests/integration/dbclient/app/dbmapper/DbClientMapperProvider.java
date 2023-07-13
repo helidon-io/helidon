@@ -25,7 +25,7 @@ import io.helidon.tests.integration.dbclient.app.model.RangePoJo;
 import jakarta.json.JsonObject;
 
 /**
- * Provides DB Client mappers.
+ * Provides Database Client mappers.
  */
 public class DbClientMapperProvider implements DbMapperProvider {
 

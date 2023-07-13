@@ -23,12 +23,12 @@ import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-import static io.helidon.tests.integration.dbclient.app.AbstractService.QUERY_ID_PARAM;
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
 
 /**
@@ -51,10 +51,10 @@ public class VerifyService implements HttpService {
                 .get("/getConfigParam", this::getConfigParam);
     }
 
-    // Get Pokémon by ID and return its data.
+    // Get by ID and return its data.
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         DbExecute exec = dbClient.execute();
-        String idStr = AbstractService.queryParam(request, QUERY_ID_PARAM);
+        String idStr = AbstractService.queryParam(request, QueryParams.ID);
         int id = Integer.parseInt(idStr);
         JsonObject jsonObject = exec
                 .namedGet("get-pokemon-by-id", id)
@@ -82,7 +82,7 @@ public class VerifyService implements HttpService {
 
     // Get server configuration parameter.
     private void getConfigParam(ServerRequest request, ServerResponse response) {
-        String name = AbstractService.queryParam(request, AbstractService.QUERY_NAME_PARAM);
+        String name = AbstractService.queryParam(request, QueryParams.NAME);
         Config node = config.get(name);
         JsonObjectBuilder job = Json.createObjectBuilder();
         if (!node.exists()) {

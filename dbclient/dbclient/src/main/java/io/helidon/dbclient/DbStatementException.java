@@ -16,7 +16,7 @@
 package io.helidon.dbclient;
 
 /**
- * A {@link RuntimeException} used by Helidon database client for database statement.
+ * A {@link DbClientException} used for database statement.
  */
 public class DbStatementException extends DbClientException {
 

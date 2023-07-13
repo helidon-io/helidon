@@ -33,7 +33,6 @@ import io.helidon.dbclient.DbRow;
 public abstract class AbstractIT {
 
     public static final Config CONFIG = Config.create(ConfigSources.classpath(ConfigIT.configFile()));
-
     public static final DbClient DB_CLIENT = initDbClient();
 
     /**
@@ -47,30 +46,14 @@ public abstract class AbstractIT {
     }
 
     /**
-     * Pokemon type POJO.
+     * {@code Pokemon} type POJO.
      */
-    public static final class Type {
-        private final int id;
-        private final String name;
-
-        public Type(int id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-
-        public int getId() {
-            return id;
-        }
-
-        public String getName() {
-            return name;
-        }
+    public record Type(int id, String name) {
 
         @Override
         public String toString() {
-            return "Type: {id="+id+", name="+name+"}";
+            return "Type: {id=" + id + ", name=" + name + "}";
         }
-
     }
 
     /**
@@ -100,7 +83,6 @@ public abstract class AbstractIT {
             params.add(value.getId());
             return params;
         }
-
     }
 
     /**
@@ -160,10 +142,11 @@ public abstract class AbstractIT {
 
     }
 
-    /** Map of pokemon types. */
+    /**
+     * Map of {@code Pokemon} types.
+     */
     public static final Map<Integer, Type> TYPES = new HashMap<>();
 
-    // Initialize pokemon types Map
     static {
         TYPES.put(1, new Type(1, "Normal"));
         TYPES.put(2, new Type(2, "Fighting"));
@@ -185,12 +168,13 @@ public abstract class AbstractIT {
         TYPES.put(18, new Type(18, "Fairy"));
     }
 
-    /** Map of pokemons. */
+    /**
+     * Map of pokemons.
+     */
     public static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 
-    // Initialize pokemons Map
     static {
-        // Pokemons for query tests
+        // query tests
         POKEMONS.put(1, new Pokemon(1, "Pikachu", TYPES.get(13)));
         POKEMONS.put(2, new Pokemon(2, "Raichu", TYPES.get(13)));
         POKEMONS.put(3, new Pokemon(3, "Machop", TYPES.get(2)));
@@ -200,38 +184,56 @@ public abstract class AbstractIT {
         POKEMONS.put(7, new Pokemon(7, "Gyarados", TYPES.get(3), TYPES.get(11)));
     }
 
-    /** Last used id in Pokemons table. */
+    /**
+     * Last used id in {@code Pokemon} table.
+     */
     public static final int LAST_POKEMON_ID = 5;
 
-    /** Select statement with named arguments for Pokemon class. */
+    /**
+     * Select statement with named arguments for {@link Pokemon}.
+     */
     public static final String SELECT_POKEMON_NAMED_ARG
             = CONFIG.get("db.statements.select-pokemon-named-arg").asString().get();
 
-    /** Select statement with ordered arguments for Pokemon class. */
+    /**
+     * Select statement with ordered arguments for {@link Pokemon}.
+     */
     public static final String SELECT_POKEMON_ORDER_ARG
             = CONFIG.get("db.statements.select-pokemon-order-arg").asString().get();
 
-    /** Insert statement with named arguments for Pokemon class. */
+    /**
+     * Insert statement with named arguments for {@link Pokemon}.
+     */
     public static final String INSERT_POKEMON_NAMED_ARG
             = CONFIG.get("db.statements.insert-pokemon-named-arg").asString().get();
 
-    /** Insert statement with ordered arguments for Pokemon class. */
+    /**
+     * Insert statement with ordered arguments for {@link Pokemon}.
+     */
     public static final String INSERT_POKEMON_ORDER_ARG
             = CONFIG.get("db.statements.insert-pokemon-order-arg").asString().get();
 
-    /** Update statement with named arguments for Pokemon class. */
+    /**
+     * Update statement with named arguments for {@link Pokemon}.
+     */
     public static final String UPDATE_POKEMON_NAMED_ARG
             = CONFIG.get("db.statements.update-pokemon-named-arg").asString().get();
 
-    /** Update statement with ordered arguments for Pokemon class. */
+    /**
+     * Update statement with ordered arguments for {@link Pokemon}.
+     */
     public static final String UPDATE_POKEMON_ORDER_ARG
             = CONFIG.get("db.statements.update-pokemon-order-arg").asString().get();
 
-    /** Delete statement with named arguments for Pokemon class. */
+    /**
+     * Delete statement with named arguments for {@link Pokemon}.
+     */
     public static final String DELETE_POKEMON_NAMED_ARG
             = CONFIG.get("db.statements.delete-pokemon-named-arg").asString().get();
 
-    /** Delete statement with ordered arguments for Pokemon class. */
+    /**
+     * Delete statement with ordered arguments for {@link Pokemon}.
+     */
     public static final String DELETE_POKEMON_ORDER_ARG
             = CONFIG.get("db.statements.delete-pokemon-order-arg").asString().get();
 

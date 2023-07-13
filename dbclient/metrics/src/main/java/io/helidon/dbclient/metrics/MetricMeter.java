@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricType;
 
 /**
- * Meter for Helidon DB. This class implements the {@link io.helidon.dbclient.DbClientService} and
- * can be configured either through a {@link io.helidon.dbclient.DbClient.Builder} or through configuration.
+ * {@link MetricService} implementation for {@link Meter}.
  */
 final class MetricMeter extends MetricService<Meter> {
 
@@ -34,6 +33,7 @@ final class MetricMeter extends MetricService<Meter> {
 
     /**
      * Create a new fluent API builder to create a new meter metric.
+     *
      * @return a new builder instance
      */
     static Builder builder() {
@@ -42,8 +42,7 @@ final class MetricMeter extends MetricService<Meter> {
 
     @Override
     protected void executeMetric(Meter metric, CompletionStage<Void> future) {
-        future
-                .thenAccept(nothing -> {
+        future.thenAccept(nothing -> {
                     if (measureSuccess()) {
                         metric.mark();
                     }

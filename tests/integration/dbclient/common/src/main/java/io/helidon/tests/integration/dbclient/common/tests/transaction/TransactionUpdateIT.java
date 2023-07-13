@@ -45,7 +45,7 @@ public class TransactionUpdateIT extends AbstractIT {
     private static final int BASE_ID = LAST_POKEMON_ID + 220;
 
     /**
-     * Map of Pokémon for update tests.
+     * Map of {@code Pokemon} by ID for update tests.
      */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 

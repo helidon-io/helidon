@@ -27,7 +27,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-jdbc</artifactId>
-    <name>Integration Tests: DB Client JDBC</name>
+    <name>Integration Tests: Database Client JDBC</name>
 
     <properties>
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>

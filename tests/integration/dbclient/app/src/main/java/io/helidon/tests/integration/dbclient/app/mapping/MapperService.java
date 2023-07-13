@@ -29,6 +29,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.app.AbstractService;
 import io.helidon.tests.integration.dbclient.app.model.Pokemon;
 
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -76,14 +77,14 @@ public class MapperService extends AbstractService {
     }
 
     private void execInsert(ServerRequest req, ServerResponse res, Function<Integer, Pokemon> test) {
-        int id = Integer.parseInt(queryParam(req, QUERY_ID_PARAM));
+        int id = Integer.parseInt(queryParam(req, QueryParams.ID));
         Pokemon pokemon = test.apply(id);
         res.send(okStatus(pokemon.toJsonObject()));
     }
 
     private void execUpdate(ServerRequest req, ServerResponse res, Function<Pokemon, Long> test) {
-        String name = queryParam(req, QUERY_NAME_PARAM);
-        int id = Integer.parseInt(queryParam(req, QUERY_ID_PARAM));
+        String name = queryParam(req, QueryParams.NAME);
+        int id = Integer.parseInt(queryParam(req, QueryParams.ID));
         Pokemon srcPokemon = Pokemon.POKEMONS.get(id);
         Pokemon updatedPokemon = new Pokemon(id, name, srcPokemon.getTypesArray());
         long count = test.apply(updatedPokemon);
@@ -91,14 +92,14 @@ public class MapperService extends AbstractService {
     }
 
     private void execDelete(ServerRequest req, ServerResponse res, Function<Pokemon, Long> test) {
-        int id = Integer.parseInt(queryParam(req, QUERY_ID_PARAM));
+        int id = Integer.parseInt(queryParam(req, QueryParams.ID));
         Pokemon pokemon = Pokemon.POKEMONS.get(id);
         long count = test.apply(pokemon);
         res.send(okStatus(Json.createValue(count)));
     }
 
     private void execGetMapping(ServerRequest req, ServerResponse res, Function<String, Optional<DbRow>> test) {
-        String name = queryParam(req, QUERY_NAME_PARAM);
+        String name = queryParam(req, QueryParams.NAME);
         JsonObject jsonObject = test.apply(name)
                 .map(row -> row.as(Pokemon.class).toJsonObject())
                 .orElse(JsonObject.EMPTY_JSON_OBJECT);
@@ -106,7 +107,7 @@ public class MapperService extends AbstractService {
     }
 
     private void execQueryMapping(ServerRequest req, ServerResponse res, Function<String, Stream<DbRow>> test) {
-        String name = queryParam(req, QUERY_NAME_PARAM);
+        String name = queryParam(req, QueryParams.NAME);
         JsonArray jsonArray = test.apply(name)
                 .map(row -> row.as(Pokemon.class).toJsonObject())
                 .collect(Json::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::add)
@@ -115,7 +116,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify insertion of PoJo instance using indexed mapping.
+     * Verify insertion using indexed mapping.
      *
      * @param id parameter
      * @return pokemon
@@ -130,7 +131,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify insertion of PoJo instance using named mapping.
+     * Verify insertion using named mapping.
      *
      * @param id parameter
      * @return pokemon
@@ -145,7 +146,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify update of PoJo instance using indexed mapping.
+     * Verify update using indexed mapping.
      *
      * @param pokemon pokemon
      * @return count
@@ -158,7 +159,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify update of PoJo instance using named mapping.
+     * Verify update using named mapping.
      *
      * @param pokemon pokemon
      * @return count
@@ -171,7 +172,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify delete of PoJo instance using indexed mapping.
+     * Verify delete using indexed mapping.
      *
      * @param pokemon pokemon
      * @return count
@@ -184,7 +185,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify delete of PoJo instance using named mapping.
+     * Verify delete using named mapping.
      *
      * @param pokemon pokemon
      * @return count
@@ -197,7 +198,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify query of PoJo instance as a result using mapping.
+     * Verify query as a result using mapping.
      *
      * @param name parameter
      * @return rows
@@ -210,7 +211,7 @@ public class MapperService extends AbstractService {
     }
 
     /**
-     * Verify get of PoJo instance as a result using mapping.
+     * Verify get as a result using mapping.
      *
      * @param name parameter
      * @return row

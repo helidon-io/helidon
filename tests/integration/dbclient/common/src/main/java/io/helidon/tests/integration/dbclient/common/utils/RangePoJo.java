@@ -24,7 +24,7 @@ import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
 
 /**
- * PoJo used to define Pokemon IDs range in query statement tests.
+ * POJO used to define {@code Pokemon} IDs range in query statement tests.
  */
 public class RangePoJo {
 

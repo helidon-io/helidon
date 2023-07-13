@@ -20,7 +20,7 @@ import io.helidon.dbclient.jsonp.JsonProcessingMapperProvider;
 import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
- * Helidon DB JSON-P Mapper.
+ * Helidon Database Client JSON-P Mapper.
  */
 @Feature(value = "JSON-P",
         description = "JSON Processing mapping DbRow",

@@ -48,7 +48,7 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code Multi<DbRow> rows} argument contains Pokémon matching specified IDs range.
+     * Verify that the given rows contain data matching specified IDs range.
      *
      * @param rows  database query result to verify
      * @param idMin beginning of ID range
@@ -57,7 +57,7 @@ public class Utils {
     public static void verifyPokemonsIdRange(Stream<DbRow> rows, int idMin, int idMax) {
         assertThat(rows, notNullValue());
         List<DbRow> rowsList = rows.toList();
-        // Build Map of valid pokemons
+        // Build Map of valid data
         Map<Integer, Pokemon> valid = new HashMap<>(POKEMONS.size());
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
             int id = entry.getKey();
@@ -66,8 +66,8 @@ public class Utils {
                 valid.put(id, pokemon);
             }
         }
-        // Compare result with valid Pokémon
-        //assertThat(rowsList, hasSize(valid.size()));
+        // Compare result with valid data
+        assertThat(rowsList, hasSize(valid.size()));
         for (DbRow row : rowsList) {
             Integer id = row.column(1).as(Integer.class);
             String name = row.column(2).as(String.class);
@@ -78,7 +78,7 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code Multi<DbRow> rows} argument contains single Pokémon matching specified IDs range.
+     * Verify that the given row contains single data matching specified IDs range.
      *
      * @param maybeRow database query result to verify
      * @param idMin    beginning of ID range
@@ -87,7 +87,7 @@ public class Utils {
     public static void verifyPokemonsIdRange(Optional<DbRow> maybeRow, int idMin, int idMax) {
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
-        // Build Map of valid pokemons
+        // Build Map of valid data
         Map<Integer, Pokemon> valid = new HashMap<>(POKEMONS.size());
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
             int id = entry.getKey();
@@ -103,26 +103,26 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code List<DbRow> rows} argument contains single record with provided Pokémon.
+     * Verify that the given rows contain single record with expected data.
      *
-     * @param rowsList database query result to verify
-     * @param pokemon  Pokémon to compare with
+     * @param rows     database query result to verify
+     * @param expected data to compare with
      */
-    public static void verifyPokemon(List<DbRow> rowsList, AbstractIT.Pokemon pokemon) {
-        assertThat(rowsList, notNullValue());
-        assertThat(rowsList, hasSize(1));
-        DbRow row = rowsList.get(0);
+    public static void verifyPokemon(List<DbRow> rows, AbstractIT.Pokemon expected) {
+        assertThat(rows, notNullValue());
+        assertThat(rows, hasSize(1));
+        DbRow row = rows.get(0);
         Integer id = row.column(1).as(Integer.class);
         String name = row.column(2).as(String.class);
-        assertThat(id, equalTo(pokemon.getId()));
-        assertThat(name, pokemon.getName().equals(name));
+        assertThat(id, equalTo(expected.getId()));
+        assertThat(name, expected.getName().equals(name));
     }
 
     /**
-     * Verify that {@code Stream<DbRow> rows} argument contains single record with provided Pokémon.
+     * Verify that the given rows contain single record with expected data.
      *
      * @param rows    database query result to verify
-     * @param pokemon Pokémon to compare with
+     * @param pokemon data to compare with
      */
     public static void verifyPokemon(Stream<DbRow> rows, AbstractIT.Pokemon pokemon) {
         assertThat(rows, notNullValue());
@@ -130,78 +130,78 @@ public class Utils {
     }
 
     /**
-     * Verify that {@code Multi<DbRow> rows} argument contains single record with provided Pokémon.
+     * Verify that the given row contains single record with expected data.
      *
      * @param maybeRow database query result to verify
-     * @param pokemon  Pokémon to compare with
+     * @param expected data to compare with
      */
-    public static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon pokemon) {
+    public static void verifyPokemon(Optional<DbRow> maybeRow, AbstractIT.Pokemon expected) {
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column(1).as(Integer.class);
         String name = row.column(2).as(String.class);
-        assertThat(id, equalTo(pokemon.getId()));
-        assertThat(name, pokemon.getName().equals(name));
+        assertThat(id, equalTo(expected.getId()));
+        assertThat(name, expected.getName().equals(name));
     }
 
     /**
-     * Verify that {@code Pokemon result} argument contains single record with provided Pokémon.
+     * Verify that the given data contains single record with expected data.
      *
-     * @param result  database query result mapped to Pokemon PoJo to verify
-     * @param pokemon Pokémon to compare with
+     * @param actual   database query result
+     * @param expected data to compare with
      */
-    public static void verifyPokemon(AbstractIT.Pokemon result, AbstractIT.Pokemon pokemon) {
-        assertThat(result.getId(), equalTo(pokemon.getId()));
-        assertThat(result.getName(), equalTo(pokemon.getName()));
+    public static void verifyPokemon(AbstractIT.Pokemon actual, AbstractIT.Pokemon expected) {
+        assertThat(actual.getId(), equalTo(expected.getId()));
+        assertThat(actual.getName(), equalTo(expected.getName()));
     }
 
     /**
-     * Verify that provided Pokémon was successfully inserted into the database.
+     * Verify that provided data was successfully inserted into the database.
      *
-     * @param result  DML statement result
-     * @param pokemon Pokémon to compare with
+     * @param result DML statement result
+     * @param data   data to compare with
      */
-    public static void verifyInsertPokemon(long result, AbstractIT.Pokemon pokemon) {
+    public static void verifyInsertPokemon(long result, AbstractIT.Pokemon data) {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = DB_CLIENT.execute()
-                .namedGet("select-pokemon-by-id", pokemon.getId());
+                .namedGet("select-pokemon-by-id", data.getId());
 
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column("id").as(Integer.class);
         String name = row.column("name").as(String.class);
-        assertThat(id, equalTo(pokemon.getId()));
-        assertThat(name, pokemon.getName().equals(name));
+        assertThat(id, equalTo(data.getId()));
+        assertThat(name, data.getName().equals(name));
     }
 
     /**
-     * Verify that provided Pokémon was successfully updated in the database.
+     * Verify that provided data was successfully updated in the database.
      *
-     * @param result  DML statement result
-     * @param pokemon Pokémon to compare with
+     * @param result DML statement result
+     * @param data   data to compare with
      */
-    public static void verifyUpdatePokemon(Long result, AbstractIT.Pokemon pokemon) {
+    public static void verifyUpdatePokemon(long result, AbstractIT.Pokemon data) {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = DB_CLIENT.execute()
-                .namedGet("select-pokemon-by-id", pokemon.getId());
+                .namedGet("select-pokemon-by-id", data.getId());
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
         Integer id = row.column(1).as(Integer.class);
         String name = row.column(2).as(String.class);
-        assertThat(id, equalTo(pokemon.getId()));
-        assertThat(name, pokemon.getName().equals(name));
+        assertThat(id, equalTo(data.getId()));
+        assertThat(name, data.getName().equals(name));
     }
 
     /**
-     * Verify that provided Pokémon was successfully deleted from the database.
+     * Verify that provided data was successfully deleted from the database.
      *
-     * @param result  DML statement result
-     * @param pokemon Pokémon to compare with
+     * @param result   DML statement result
+     * @param expected data to compare with
      */
-    public static void verifyDeletePokemon(Long result, AbstractIT.Pokemon pokemon) {
+    public static void verifyDeletePokemon(long result, AbstractIT.Pokemon expected) {
         assertThat(result, equalTo(1L));
         Optional<DbRow> maybeRow = DB_CLIENT.execute()
-                .namedGet("select-pokemon-by-id", pokemon.getId());
+                .namedGet("select-pokemon-by-id", expected.getId());
         assertThat(maybeRow.isPresent(), equalTo(false));
     }
 }

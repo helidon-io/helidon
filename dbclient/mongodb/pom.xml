@@ -25,13 +25,9 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>helidon-dbclient-mongodb</artifactId>
-    <name>Helidon DB Client MongoDB</name>
-
-    <description>
-        Integration with MongoDB
-    </description>
+    <name>Helidon Database Client MongoDB</name>
+    <description>Helidon Database Client MongoDB Support</description>
 
     <dependencies>
         <dependency>

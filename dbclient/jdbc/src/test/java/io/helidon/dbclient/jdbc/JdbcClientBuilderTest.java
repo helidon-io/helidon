@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,10 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class JdbcClientBuilderTest {
+/**
+ * Tests {@link JdbcClientBuilder}.
+ */
+class JdbcClientBuilderTest {
 
     private static final DbClientServiceContext TEST_SERVICE_CONTEXT = Mockito.mock(DbClientServiceContext.class);
 

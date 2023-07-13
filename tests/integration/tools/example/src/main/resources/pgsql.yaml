@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,10 +28,7 @@ db:
     type: query
     statement: "SELECT 0"
   statements:
-    # custom query ping statement
     ping-query: "SELECT 0"
-    # database schema initialization statements
     create-table: "CREATE TABLE Person (nick VARCHAR(64) NOT NULL PRIMARY KEY, name VARCHAR(64) NOT NULL)"
     insert-person: "INSERT INTO Person (nick, name) VALUES(?, ?)"
-    # get person name by nick, use named parameters in query
     get-name: "SELECT name FROM Person WHERE nick = :nick"

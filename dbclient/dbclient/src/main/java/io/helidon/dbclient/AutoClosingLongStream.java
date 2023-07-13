@@ -60,7 +60,7 @@ class AutoClosingLongStream implements LongStream {
         if (stream instanceof AutoClosingLongStream) {
             return stream;
         }
-        return new AutoClosingLongStream(stream, AutoCloseHandler.decorate(closeHandler));
+        return new AutoClosingLongStream(stream, AutoClosingHandler.decorate(closeHandler));
     }
 
     @Override

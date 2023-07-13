@@ -41,7 +41,7 @@ public class ServerMetricsCheckIT {
             .build();
 
     /**
-     * Read and check DB Client metrics from Helidon Web Server.
+     * Read and check Database Client metrics from Helidon Web Server.
      *
      */
     @Test

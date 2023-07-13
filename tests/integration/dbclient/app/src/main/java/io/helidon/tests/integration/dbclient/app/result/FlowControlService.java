@@ -80,9 +80,9 @@ public class FlowControlService extends AbstractService {
             Integer id = row.column(1).as(Integer.class);
             String name = row.column(2).as(String.class);
             Type type = new Type(id, name);
-            if (!Type.TYPES.get(id).getName().equals(name)) {
+            if (!Type.TYPES.get(id).name().equals(name)) {
                 throw new RemoteTestException("Expected type name \"%s\", but got \"%s\".",
-                        Type.TYPES.get(id).getName(),
+                        Type.TYPES.get(id).name(),
                         name);
             }
             LOGGER.log(Level.DEBUG, type::toString);

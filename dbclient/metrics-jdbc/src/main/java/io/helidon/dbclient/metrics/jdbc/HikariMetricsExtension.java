@@ -22,8 +22,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.zaxxer.hikari.HikariConfig;
 
 /**
- * JDBC Configuration Interceptor for Metrics.
- *
  * Registers JDBC connection pool metrics to {@code HikariConnectionPool}.
  */
 final class HikariMetricsExtension implements HikariCpExtension {
@@ -35,6 +33,12 @@ final class HikariMetricsExtension implements HikariCpExtension {
         this.enabled = enabled;
     }
 
+    /**
+     * Create a new instance.
+     *
+     * @param config config
+     * @return HikariCpExtension
+     */
     static HikariMetricsExtension create(Config config) {
         return new HikariMetricsExtension(config, config.get("enabled").asBoolean().orElse(true));
     }

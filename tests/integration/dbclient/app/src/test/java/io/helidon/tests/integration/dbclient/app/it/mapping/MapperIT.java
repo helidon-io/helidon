@@ -37,7 +37,6 @@ import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Verify mapping interface.
- * Pokémon POJO mapper is defined in {@link Pokemon} class.
  */
 public class MapperIT {
 
@@ -49,7 +48,7 @@ public class MapperIT {
             .build());
 
     /**
-     * Verify insertion of PoJo instance using indexed mapping.
+     * Verify insertion using indexed mapping.
      */
     @Test
     public void testInsertWithOrderMapping() {
@@ -57,7 +56,7 @@ public class MapperIT {
     }
 
     /**
-     * Verify insertion of PoJo instance using named mapping.
+     * Verify insertion using named mapping.
      */
     @Test
     public void testInsertWithNamedMapping() {
@@ -65,7 +64,7 @@ public class MapperIT {
     }
 
     /**
-     * Verify update of PoJo instance using indexed mapping.
+     * Verify update using indexed mapping.
      */
     @Test
     public void testUpdateWithOrderMapping() {
@@ -73,7 +72,7 @@ public class MapperIT {
     }
 
     /**
-     * Verify update of PoJo instance using named mapping.
+     * Verify update using named mapping.
      */
     @Test
     public void testUpdateWithNamedMapping() {
@@ -81,7 +80,7 @@ public class MapperIT {
     }
 
     /**
-     * Verify delete of PoJo instance using indexed mapping.
+     * Verify delete using indexed mapping.
      */
     @Test
     public void testDeleteWithOrderMapping() {
@@ -89,7 +88,7 @@ public class MapperIT {
     }
 
     /**
-     * Verify delete of PoJo instance using named mapping.
+     * Verify delete using named mapping.
      */
     @Test
     public void testDeleteWithNamedMapping() {
@@ -99,7 +98,7 @@ public class MapperIT {
     // Query and Get calls are here just once so no common executor code is needed.
 
     /**
-     * Verify query of PoJo instance as a result using mapping.
+     * Verify query as a result using mapping.
      */
     @Test
     public void testQueryWithMapping() {
@@ -115,7 +114,7 @@ public class MapperIT {
     }
 
     /**
-     * Verify get of PoJo instance as a result using mapping.
+     * Verify get as a result using mapping.
      */
     @Test
     public void testGetWithMapping() {

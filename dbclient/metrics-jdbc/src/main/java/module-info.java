@@ -18,7 +18,7 @@ import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 import io.helidon.dbclient.metrics.jdbc.JdbcMetricsExtensionProvider;
 
 /**
- * Helidon JDBC DB Client Metrics.
+ * Metrics support for Helidon Database Client JDBC.
  */
 module io.helidon.dbclient.metrics.jdbc {
     requires io.helidon.dbclient;

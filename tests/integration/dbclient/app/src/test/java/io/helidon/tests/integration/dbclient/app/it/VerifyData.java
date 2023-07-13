@@ -33,48 +33,48 @@ public class VerifyData {
     private static final String POKEMON_NAME_KEY = "name";
 
     /**
-     * Verify that returned data contain single record with provided pokemon.
+     * Verify that returned data contain single record with expected data.
      *
-     * @param data database query result to verify
-     * @param pokemon Pokémon to compare with
+     * @param actual   database query result to verify
+     * @param expected data to compare with
      */
-    public static void verifyPokemon(JsonObject data, Pokemon pokemon) {
-        assertThat(data, notNullValue());
-        assertThat(data.isEmpty(), is(false));
-        Integer id = data.getInt(POKEMON_ID_KEY);
-        String name = data.getString(POKEMON_NAME_KEY);
-        assertThat(id, equalTo(pokemon.getId()));
-        assertThat(name, pokemon.getName().equals(name));
+    public static void verifyPokemon(JsonObject actual, Pokemon expected) {
+        assertThat(actual, notNullValue());
+        assertThat(actual.isEmpty(), is(false));
+        Integer id = actual.getInt(POKEMON_ID_KEY);
+        String name = actual.getString(POKEMON_NAME_KEY);
+        assertThat(id, equalTo(expected.getId()));
+        assertThat(name, expected.getName().equals(name));
     }
 
     /**
-     * Verify that returned data contain single record with provided pokemon.
+     * Verify that returned data contain single record with expected data.
      *
-     * @param data database query result to verify
-     * @param pokemon Pokémon to compare with
+     * @param actual   database query result to verify
+     * @param expected data to compare with
      */
-    public static void verifyPokemon(JsonObject data, JsonObject pokemon) {
-        assertThat(data, notNullValue());
-        assertThat(pokemon, notNullValue());
-        Integer id = data.getInt(POKEMON_ID_KEY);
-        String name = data.getString(POKEMON_NAME_KEY);
-        assertThat(id, equalTo(pokemon.getInt(POKEMON_ID_KEY)));
-        assertThat(name, equalTo(pokemon.getString(POKEMON_NAME_KEY)));
+    public static void verifyPokemon(JsonObject actual, JsonObject expected) {
+        assertThat(actual, notNullValue());
+        assertThat(expected, notNullValue());
+        Integer id = actual.getInt(POKEMON_ID_KEY);
+        String name = actual.getString(POKEMON_NAME_KEY);
+        assertThat(id, equalTo(expected.getInt(POKEMON_ID_KEY)));
+        assertThat(name, equalTo(expected.getString(POKEMON_NAME_KEY)));
     }
 
     /**
-     * Retrieve Pokémon as JSON object from remote web resource.
+     * Retrieve record as JSON object from remote web resource.
      *
      * @param testClient webclient used to access remote web resource
-     * @param id ID of Pokémon to retrieve
-     * @return pokemon stored in JSON object
+     * @param id         ID of record to retrieve
+     * @return JSON object
      */
     public static JsonObject getPokemon(TestClient testClient, int id) {
         return testClient.callServiceAndGetData(
-                "Verify",
-                "getPokemonById",
-                QueryParams.single(QueryParams.ID, String.valueOf(id))
-        ).asJsonObject();
+                        "Verify",
+                        "getPokemonById",
+                        QueryParams.single(QueryParams.ID, String.valueOf(id)))
+                .asJsonObject();
     }
 
 }

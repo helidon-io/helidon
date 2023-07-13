@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * JSON Processing support for Helidon DB.
+ * JSON Processing support for Helidon Database Client.
  */
 package io.helidon.dbclient.jsonp;

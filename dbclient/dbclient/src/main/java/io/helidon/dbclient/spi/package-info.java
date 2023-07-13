@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 /**
- * Service provider interface for Helidon DB.
- * The main entry point for driver implementor is {@link io.helidon.dbclient.spi.DbClientProvider}.
+ * Service provider interface for Helidon Database Client.
  *
  * @see io.helidon.dbclient.spi.DbClientProvider
  * @see io.helidon.dbclient.spi.DbClientBuilder

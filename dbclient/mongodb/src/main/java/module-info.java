@@ -20,10 +20,10 @@ import io.helidon.dbclient.mongodb.MongoDbClientProvider;
 import io.helidon.dbclient.spi.DbClientProvider;
 
 /**
- * Helidon DB Client Mongo support.
+ * Helidon Database Client MongoDB.
  */
 @Feature(value = "mongo",
-        description = "DB Client with mongo driver",
+        description = "Database Client with mongo driver",
         in = HelidonFlavor.SE,
         path = {"DbClient", "mongo"}
 )

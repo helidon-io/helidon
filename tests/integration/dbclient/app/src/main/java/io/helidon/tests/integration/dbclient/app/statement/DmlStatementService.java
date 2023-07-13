@@ -27,6 +27,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.app.AbstractService;
 import io.helidon.tests.integration.dbclient.app.model.Pokemon;
 
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.Json;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -49,8 +50,8 @@ public class DmlStatementService extends AbstractService {
 
     private void executeTest(ServerRequest request, ServerResponse response) {
         String testName = pathParam(request, "testName");
-        String name = queryParam(request, QUERY_NAME_PARAM);
-        int id = Integer.parseInt(queryParam(request, QUERY_ID_PARAM));
+        String name = queryParam(request, QueryParams.NAME);
+        int id = Integer.parseInt(queryParam(request, QueryParams.ID));
         LOGGER.log(Level.DEBUG, () -> String.format("Running %s.%s on server", getClass().getSimpleName(), testName));
         long count = switch (testName) {
             case "testDmlArrayParams" -> testDmlArrayParams(id, name);

@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 /**
- * Helidon DB integration for mongoDB.
+ * Helidon Database Client MongoDB.
  */
 package io.helidon.dbclient.mongodb;

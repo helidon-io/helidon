@@ -26,16 +26,11 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
-    <packaging>pom</packaging>
-
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-project</artifactId>
-    <name>Integration Tests: DB Client</name>
-
-    <description>
-        A set of tests that validate DB Client
-    </description>
+    <packaging>pom</packaging>
+    <name>Integration Tests: Database Client</name>
+    <description>A set of tests that validate Database Client</description>
 
     <modules>
         <module>common</module>

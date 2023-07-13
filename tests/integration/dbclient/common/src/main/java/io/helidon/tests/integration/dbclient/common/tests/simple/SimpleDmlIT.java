@@ -45,7 +45,7 @@ public class SimpleDmlIT extends AbstractIT {
     private static final int BASE_ID = LAST_POKEMON_ID + 40;
 
     /**
-     * Map of Pokémon for update tests.
+     * Map of {@code Pokemon} by ID for update tests.
      */
     private static final Map<Integer, Pokemon> POKEMONS = new HashMap<>();
 
@@ -63,7 +63,7 @@ public class SimpleDmlIT extends AbstractIT {
     public static void setup() {
         try {
             // [BASE_ID + 1 .. BASE_ID + 9] is reserved for inserts
-            // [BASE_ID + 10 .. BASE_ID + 19] are Pokémon for updates
+            // [BASE_ID + 10 .. BASE_ID + 19] are reserved for updates
             addPokemon(new Pokemon(BASE_ID + 10, "Piplup", TYPES.get(11)));                 // BASE_ID+10
             addPokemon(new Pokemon(BASE_ID + 11, "Prinplup", TYPES.get(11)));               // BASE_ID+11
             addPokemon(new Pokemon(BASE_ID + 12, "Empoleon", TYPES.get(9), TYPES.get(11))); // BASE_ID+12
@@ -71,7 +71,7 @@ public class SimpleDmlIT extends AbstractIT {
             addPokemon(new Pokemon(BASE_ID + 14, "Starmie", TYPES.get(11), TYPES.get(14))); // BASE_ID+14
             addPokemon(new Pokemon(BASE_ID + 15, "Horsea", TYPES.get(11)));                 // BASE_ID+15
             addPokemon(new Pokemon(BASE_ID + 16, "Seadra", TYPES.get(11)));                 // BASE_ID+16
-            // BASE_ID + 20 .. BASE_ID + 29 are pokemons for deletes
+            // BASE_ID + 20 .. BASE_ID + 29 are reserved for deletes
             addPokemon(new Pokemon(BASE_ID + 20, "Mudkip", TYPES.get(11)));                  // BASE_ID+20
             addPokemon(new Pokemon(BASE_ID + 21, "Marshtomp", TYPES.get(5), TYPES.get(11))); // BASE_ID+21
             addPokemon(new Pokemon(BASE_ID + 22, "Swampert", TYPES.get(5), TYPES.get(11)));  // BASE_ID+22

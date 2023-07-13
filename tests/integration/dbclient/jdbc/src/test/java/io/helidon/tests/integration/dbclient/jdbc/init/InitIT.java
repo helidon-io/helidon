@@ -60,11 +60,10 @@ public class InitIT extends AbstractIT {
      * @param dbClient Helidon database client
      */
     private static void initData(DbClient dbClient) {
-        // Init Pokémon types
         DbTransaction tx = dbClient.transaction();
         long count = 0;
         for (Map.Entry<Integer, Type> entry : TYPES.entrySet()) {
-            count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().getName());
+            count += tx.namedDml("insert-type", entry.getKey(), entry.getValue().name());
         }
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
             count += tx.namedDml("insert-pokemon", entry.getKey(), entry.getValue().getName());
@@ -72,7 +71,7 @@ public class InitIT extends AbstractIT {
         for (Map.Entry<Integer, Pokemon> entry : POKEMONS.entrySet()) {
             Pokemon pokemon = entry.getValue();
             for (Type type : pokemon.getTypes()) {
-                count += tx.namedDml("insert-poketype", pokemon.getId(), type.getId());
+                count += tx.namedDml("insert-poketype", pokemon.getId(), type.id());
             }
         }
         tx.commit();
@@ -88,7 +87,7 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized Pokémon types.
+     * Verify that the {@code Types} tables was properly initialized.
      */
     @Test
     public void testListTypes() {
@@ -103,12 +102,12 @@ public class InitIT extends AbstractIT {
             String name = row.column(2).as(String.class);
             assertThat(ids, hasItem(id));
             ids.remove(id);
-            assertThat(name, TYPES.get(id).getName().equals(name));
+            assertThat(name, TYPES.get(id).name().equals(name));
         }
     }
 
     /**
-     * Verify that database contains properly initialized Pokémon.
+     * Verify that the {@code Pokemon} tables was properly initialized.
      */
     @Test
     public void testListPokemons() {
@@ -128,7 +127,7 @@ public class InitIT extends AbstractIT {
     }
 
     /**
-     * Verify that database contains properly initialized Pokémon types relation.
+     * Verify that the {@code PokemonTypes} tables was properly initialized.
      */
     @Test
     public void testListPokemonTypes() {

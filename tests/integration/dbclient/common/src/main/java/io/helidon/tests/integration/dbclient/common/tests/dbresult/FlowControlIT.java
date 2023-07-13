@@ -19,7 +19,6 @@ import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.stream.Stream;
 
-import io.helidon.dbclient.DbExecute;
 import io.helidon.dbclient.DbRow;
 import io.helidon.tests.integration.dbclient.common.AbstractIT.Type;
 
@@ -55,7 +54,7 @@ public class FlowControlIT {
             Integer id = row.column(1).as(Integer.class);
             String name = row.column(2).as(String.class);
             Type type = new Type(id, name);
-            assertThat(name, TYPES.get(id).getName().equals(name));
+            assertThat(name, TYPES.get(id).name().equals(name));
             LOGGER.log(Level.DEBUG, () -> String.format("Type: %s", type));
         }
     }

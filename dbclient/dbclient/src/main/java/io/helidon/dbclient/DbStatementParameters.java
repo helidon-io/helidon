@@ -16,14 +16,14 @@
 package io.helidon.dbclient;
 
 /**
- * Db statement that does not support execution, only parameters.
+ * Statement parameters.
  */
 public class DbStatementParameters {
 
     /**
-     * Undefined parameters.
+     * Undefined parameters (neither named or indexed).
      */
-    public static final DbStatementParameters UNDEFINED = new DbNamedStatementParameters();
+    public static final DbStatementParameters UNDEFINED = new DbStatementParameters();
 
     /**
      * Create a new instance.

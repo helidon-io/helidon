@@ -27,6 +27,7 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.app.AbstractService;
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import io.helidon.tests.integration.tools.service.AppResponse;
 import io.helidon.tests.integration.tools.service.RemoteTestException;
 
@@ -85,7 +86,7 @@ public class HealthCheckService extends AbstractService {
 
     // Verify health check implementation with builder and custom name.
     private void testHealthCheckWithName(ServerRequest request, ServerResponse response) {
-        String name = queryParam(request, QUERY_NAME_PARAM);
+        String name = queryParam(request, QueryParams.NAME);
         executeTest(response, "testHealthCheckWithName",
                 DbClientHealthCheck.builder(dbClient())
                         .config(dbConfig.get("health-check"))

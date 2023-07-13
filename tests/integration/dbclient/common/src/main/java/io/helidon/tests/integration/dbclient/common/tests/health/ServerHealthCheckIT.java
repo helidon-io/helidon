@@ -22,9 +22,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.function.Consumer;
 
-import io.helidon.dbclient.DbRow;
 import io.helidon.health.HealthCheck;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.nima.observe.ObserveFeature;
@@ -55,7 +53,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class ServerHealthCheckIT {
 
     private static final System.Logger LOGGER = System.getLogger(ServerHealthCheckIT.class.getName());
-    private static final Consumer<DbRow> EMPTY_CONSUMER = it -> {};
 
     private static WebServer SERVER;
     private static String URL;
@@ -72,7 +69,7 @@ public class ServerHealthCheckIT {
     }
 
     /**
-     * Start Helidon Web Server with DB Client health check support.
+     * Start Helidon Web Server with Database Client health check support.
      */
     @BeforeAll
     public static void startup() {
@@ -85,7 +82,7 @@ public class ServerHealthCheckIT {
     }
 
     /**
-     * Stop Helidon Web Server with DB Client health check support.
+     * Stop Helidon Web Server with Database Client health check support.
      */
     @AfterAll
     public static void shutdown() {
@@ -111,7 +108,7 @@ public class ServerHealthCheckIT {
     }
 
     /**
-     * Read and check DB Client health status from Helidon Web Server.
+     * Read and check Database Client health status from Helidon Web Server.
      *
      * @throws InterruptedException if the current thread was interrupted
      * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
@@ -121,7 +118,7 @@ public class ServerHealthCheckIT {
         // Call select-pokemons to warm up server
         DB_CLIENT.execute()
                 .namedQuery("select-pokemons")
-                .forEach(EMPTY_CONSUMER);
+                .forEach(it -> {});
 
         // Read and process health check response
         String response = get(URL + "/health");

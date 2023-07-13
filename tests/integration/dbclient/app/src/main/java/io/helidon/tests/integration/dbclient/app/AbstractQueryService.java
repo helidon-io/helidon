@@ -25,6 +25,7 @@ import io.helidon.dbclient.DbRow;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -56,7 +57,7 @@ public abstract class AbstractQueryService extends AbstractService {
 
     private void executeTest(ServerRequest request, ServerResponse response) {
         String testName = pathParam(request, "testName");
-        String name = queryParam(request, QUERY_NAME_PARAM);
+        String name = queryParam(request, QueryParams.NAME);
         LOGGER.log(Level.DEBUG, () -> String.format("Running %s.%s on server",
                 getClass().getSimpleName(), testName));
         List<DbRow> result = switch (testName) {

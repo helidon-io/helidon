@@ -23,6 +23,7 @@ import io.helidon.dbclient.DbClient;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.Json;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -51,8 +52,8 @@ public abstract class AbstractUpdateService extends AbstractService {
 
     private void executeTest(ServerRequest request, ServerResponse response) {
         String testName = pathParam(request, "testName");
-        int id = Integer.parseInt(queryParam(request, QUERY_ID_PARAM));
-        String name = queryParam(request, QUERY_NAME_PARAM);
+        int id = Integer.parseInt(queryParam(request, QueryParams.ID));
+        String name = queryParam(request, QueryParams.NAME);
         LOGGER.log(Level.DEBUG, () -> String.format("Running %s.%s on server", getClass().getSimpleName(), testName));
         long count = switch (testName) {
             case "testCreateNamedUpdateStrStrNamedArgs" -> testCreateNamedUpdateStrStrNamedArgs(id, name);

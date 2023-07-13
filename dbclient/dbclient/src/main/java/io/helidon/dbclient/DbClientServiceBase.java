@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,7 @@ public abstract class DbClientServiceBase implements DbClientService {
          * <p>
          * Supported keys:
          * <table class="config">
-         * <caption>DB Client Service configuration options</caption>
+         * <caption>Database Client Service configuration options</caption>
          * <tr>
          *  <th>key</th>
          *  <th>default value</th>

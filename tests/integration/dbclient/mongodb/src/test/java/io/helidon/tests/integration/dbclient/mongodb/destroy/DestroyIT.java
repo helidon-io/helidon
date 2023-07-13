@@ -84,7 +84,7 @@ public class DestroyIT {
     }
 
     /**
-     * Verify that table PokemonTypes does not exist.
+     * Verify that table {@code PokemonTypes} does not exist.
      */
     @Test
     public void testPokemonTypesDeleted() {

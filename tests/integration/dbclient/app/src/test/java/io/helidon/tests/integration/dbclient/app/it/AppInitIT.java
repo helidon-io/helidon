@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
- * Initialize DB Client Integration Tests.
+ * Initialize Database Client Integration Tests.
  */
 @TestMethodOrder(OrderAnnotation.class)
 public class AppInitIT {

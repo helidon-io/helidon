@@ -20,9 +20,7 @@ import io.helidon.dbclient.jdbc.HikariCpExtension;
 import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
- * JDBC Configuration Interceptor Provider for Metrics.
- *
- * Returns JDBC Configuration Interceptor instance on request.
+ * {@link HikariCpExtensionProvider} implementation for {@link HikariMetricsExtension}.
  */
 public class JdbcMetricsExtensionProvider implements HikariCpExtensionProvider {
     @Override

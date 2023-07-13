@@ -29,6 +29,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.app.AbstractService;
 import io.helidon.tests.integration.dbclient.app.model.RangePoJo;
 
+import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.JsonObject;
 
 import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
@@ -57,8 +58,8 @@ public class GetStatementService extends AbstractService {
 
     private void executeTest(ServerRequest request, ServerResponse response) {
         String testName = pathParam(request, "testName");
-        int fromId = Integer.parseInt(queryParam(request, QUERY_FROM_ID_PARAM));
-        int toId = Integer.parseInt(queryParam(request, QUERY_TO_ID_PARAM));
+        int fromId = Integer.parseInt(queryParam(request, QueryParams.FROM_ID));
+        int toId = Integer.parseInt(queryParam(request, QueryParams.TO_ID));
         LOGGER.log(Level.DEBUG, () -> String.format("Running %s.%s on server", getClass().getSimpleName(), testName));
         Optional<DbRow> result = switch (testName) {
             case "testGetArrayParams" -> testGetArrayParams(fromId, toId);

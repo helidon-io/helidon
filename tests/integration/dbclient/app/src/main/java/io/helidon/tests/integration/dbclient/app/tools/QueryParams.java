@@ -23,22 +23,19 @@ import java.util.HashMap;
 public class QueryParams extends HashMap<String, String> {
 
     /**
-     * Query parameter for Pokémon name.
+     * Query parameter {@code name}.
      */
     public static final String NAME = "name";
-
     /**
-     * Query parameter for Pokémon ID.
+     * Query parameter {@code id}
      */
     public static final String ID = "id";
-
     /**
-     * Query parameter for Pokémon ID range: lower bound.
+     * Query parameter {@code fromid}.
      */
     public static final String FROM_ID = "fromid";
-
     /**
-     * Query parameter for Pokémon ID range: upper bound.
+     * Query parameter {@code toid}.
      */
     public static final String TO_ID = "toid";
 

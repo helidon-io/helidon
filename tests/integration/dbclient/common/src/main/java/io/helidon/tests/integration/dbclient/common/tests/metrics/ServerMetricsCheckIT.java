@@ -76,9 +76,9 @@ public class ServerMetricsCheckIT {
     }
 
     /**
-     * Initialize DB Client from test configuration.
+     * Initialize Database Client from test configuration.
      *
-     * @return DB Client instance
+     * @return Database Client instance
      */
     private static DbClient initDbClient() {
         Config dbConfig = AbstractIT.CONFIG.get("db");
@@ -93,7 +93,7 @@ public class ServerMetricsCheckIT {
     }
 
     /**
-     * Start Helidon Web Server with DB Client metrics support.
+     * Start Helidon Web Server with Database Client metrics support.
      */
     @BeforeAll
     public static void startup() {
@@ -108,7 +108,7 @@ public class ServerMetricsCheckIT {
     }
 
     /**
-     * Stop Helidon Web Server with DB Client metrics support.
+     * Stop Helidon Web Server with Database Client metrics support.
      */
     @AfterAll
     public static void shutdown() {
@@ -136,7 +136,7 @@ public class ServerMetricsCheckIT {
     }
 
     /**
-     * Read and check DB Client metrics from Helidon Web Server.
+     * Read and check Database Client metrics from Helidon Web Server.
      *
      * @throws InterruptedException if the current thread was interrupted
      * @throws IOException          if an I/O error occurs when sending or receiving HTTP request
