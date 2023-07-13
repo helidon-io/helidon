@@ -30,6 +30,42 @@
                 <option value="json" name="JSON" description="Handle 'application/json' payloads">
                     <inputs>
                         <enum id="json-lib" name="Select a JSON library" default="${default-json-lib}" optional="true">
+                            <option value="jsonp" name="JSON-P" description="Jakarta JSON Processing" if="${flavor} == 'nima'">
+                                <output>
+                                    <model>
+                                        <list key="dependencies">
+                                            <map>
+                                                <value key="groupId">jakarta.json</value>
+                                                <value key="artifactId">jakarta.json-api</value>
+                                            </map>
+                                            <map>
+                                                <value key="groupId">io.helidon.nima.http.media</value>
+                                                <value key="artifactId">helidon-nima-http-media-jsonp</value>
+                                            </map>
+                                        </list>
+                                        <list key="Main-routing-builder">
+                                            <value>.register("/greet", new GreetService())</value>
+                                        </list>
+                                        <list key="MainTest-other-imports">
+                                            <value>jakarta.json.JsonObject</value>
+                                        </list>
+                                        <list key="Abstract-tests">
+                                            <value><![CDATA[
+    @Test
+    void testRootRoute() {
+        try (Http1ClientResponse response = client.get("/greet")
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            assertThat(json.getString("message"), is("Hello World!"));
+        }
+    }
+]]></value>
+                                        </list>
+                                    </model>
+                                </output>
+                            </option>
                             <option value="jackson" name="Jackson" description="Popular JSON library">
                                 <output>
                                     <model>
@@ -136,12 +172,12 @@
                             </list>
                             <list key="Abstract-tests">
                             <value><![CDATA[
-@Test
-void testFileService() {
-    try (Http1ClientResponse response = client.get("/api").request()) {
-        assertThat(response.status(), is(Http.Status.OK_200));
+    @Test
+    void testFileService() {
+        try (Http1ClientResponse response = client.get("/api").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+        }
     }
-}
 ]]></value>
                             </list>
                         </model>
