@@ -98,15 +98,6 @@ class TestCascadePersist2 {
         final SeContainerInitializer initializer = SeContainerInitializer.newInstance()
             .addBeanClasses(this.getClass());
         this.cdiContainer = initializer.initialize();
-        /*
-        final DataSource ds = this.cdiContainer.select(DataSource.class).get();
-        assertThat(ds, notNullValue());
-        try (final Connection connection = ds.getConnection();
-             final Statement statement = connection.createStatement()) {
-            assertThat(statement, notNullValue());
-            statement.executeUpdate("RUNSCRIPT FROM 'classpath:chirp2.ddl'");
-        }
-        */
     }
 
     @AfterEach

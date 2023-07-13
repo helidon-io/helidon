@@ -92,6 +92,7 @@ public class Microblog implements Serializable {
         mappedBy = "microblog",
         targetEntity = Chirp.class
     )
+    @SuppressWarnings("serial")
     private List<Chirp> chirps;
 
     @Deprecated

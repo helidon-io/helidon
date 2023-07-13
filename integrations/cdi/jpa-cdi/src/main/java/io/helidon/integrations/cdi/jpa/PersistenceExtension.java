@@ -151,6 +151,8 @@ public final class PersistenceExtension implements Extension {
 
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
+    private static final Logger LOGGER = Logger.getLogger(PersistenceExtension.class.getName());
+
 
     /*
      * Instance fields.
@@ -312,6 +314,14 @@ public final class PersistenceExtension implements Extension {
     private void vetoDeprecatedJtaDataSourceProvider(@Observes ProcessBeanAttributes<JtaDataSourceProvider> event) {
         if (!this.enabled) {
             return;
+        }
+        if (LOGGER.isLoggable(Level.FINE)) {
+            LOGGER.logp(Level.FINE, this.getClass().getName(), "vetoDeprecatedJtaDataSourceProvider",
+                        "Vetoing BeanAttributes {0} representing "
+                        + JtaDataSourceProvider.class
+                        + " because it is deprecated and "
+                        + JtaAdaptingDataSourceProvider.class
+                        + " replaces it", event.getBeanAttributes());
         }
         event.veto();
     }
