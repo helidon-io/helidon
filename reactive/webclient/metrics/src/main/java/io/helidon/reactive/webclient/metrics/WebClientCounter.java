@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import io.helidon.reactive.webclient.WebClientServiceRequest;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Metric;
 
 /**
  * Client metric counter for all requests.
@@ -33,8 +33,8 @@ class WebClientCounter extends WebClientMetric {
     }
 
     @Override
-    MetricType metricType() {
-        return MetricType.COUNTER;
+    Class<? extends Metric> metricType() {
+        return Counter.class;
     }
 
     @Override

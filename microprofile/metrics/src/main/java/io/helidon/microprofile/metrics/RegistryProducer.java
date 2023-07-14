@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,12 @@ package io.helidon.microprofile.metrics;
 import io.helidon.metrics.api.RegistryFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Produces;
+import jakarta.enterprise.inject.spi.InjectionPoint;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
@@ -37,26 +40,37 @@ final class RegistryProducer {
     }
 
     @Produces
+    @Default
+    public static org.eclipse.microprofile.metrics.MetricRegistry getScopedRegistry(InjectionPoint injectionPoint) {
+        RegistryScope scope = injectionPoint.getAnnotated().getAnnotation(RegistryScope.class);
+        return scope == null
+                ? getApplicationRegistry()
+                : RegistryFactory.getInstance().getRegistry(scope.scope());
+    }
+
     public static org.eclipse.microprofile.metrics.MetricRegistry getDefaultRegistry() {
         return getApplicationRegistry();
     }
 
+    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
     @Produces
     @RegistryType(type = Type.APPLICATION)
     public static org.eclipse.microprofile.metrics.MetricRegistry getApplicationRegistry() {
-        return RegistryFactory.getInstance().getRegistry(Type.APPLICATION);
+        return RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
     }
 
     @Produces
+    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
     @RegistryType(type = Type.BASE)
     public static org.eclipse.microprofile.metrics.MetricRegistry getBaseRegistry() {
-        return RegistryFactory.getInstance().getRegistry(Type.BASE);
+        return RegistryFactory.getInstance().getRegistry(MetricRegistry.BASE_SCOPE);
     }
 
+    // TODO Once RegistryScope becomes a qualifier, use it instead of RegistryType.
     @Produces
     @RegistryType(type = Type.VENDOR)
     public static org.eclipse.microprofile.metrics.MetricRegistry getVendorRegistry() {
-        return RegistryFactory.getInstance().getRegistry(Type.VENDOR);
+        return RegistryFactory.getInstance().getRegistry(MetricRegistry.VENDOR_SCOPE);
     }
 
     /**

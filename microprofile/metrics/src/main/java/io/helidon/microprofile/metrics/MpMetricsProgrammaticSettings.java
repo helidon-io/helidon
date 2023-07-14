@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.microprofile.metrics;
 
-import jakarta.enterprise.context.Dependent;
-import org.eclipse.microprofile.metrics.annotation.Metered;
+import io.helidon.metrics.api.MetricsProgrammaticSettings;
 
 /**
- * Class MeteredBean.
+ * MP implementation of metrics programmatic settings.
  */
-@Dependent
-@Metered
-public class MeteredBean {
+public class MpMetricsProgrammaticSettings implements MetricsProgrammaticSettings {
 
-    @Metered
-    public void method1() {
+    /**
+     * Creates a new instance (explicit for style checking and service loading).
+     *
+     */
+    public MpMetricsProgrammaticSettings() {
     }
 
-    // Inherits annotations from class
-    public void method2() {
+    @Override
+    public String scopeTagName() {
+        return "mp_scope";
+    }
+
+    @Override
+    public String appTagName() {
+        return "mp_app";
     }
 }

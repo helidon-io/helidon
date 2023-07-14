@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.reactive.Single;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.dbclient.DbClientServiceContext;
 import io.helidon.reactive.dbclient.DbStatementType;
@@ -31,7 +32,6 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * Common ancestor for Helidon DB metrics.
@@ -41,7 +41,7 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
     private final LazyValue<MetricRegistry> registry = LazyValue.create(() ->
-            RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION));
+            RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE));
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
@@ -77,7 +77,7 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
         T metric = cache.computeIfAbsent(statementName, s -> {
             String name = nameFunction.apply(statementName, dbStatementType);
             MetadataBuilder builder = (meta == null)
-                    ? Metadata.builder().withName(name).withType(metricType())
+                    ? Metadata.builder().withName(name)
                     : Metadata.builder(meta);
             if (description != null) {
                 builder = builder.withDescription(description);
@@ -99,6 +99,6 @@ abstract class DbClientMetric<T extends Metric> extends DbClientServiceBase {
     }
 
     protected abstract void executeMetric(T metric, CompletionStage<Void> aFuture);
-    protected abstract MetricType metricType();
+    protected abstract Class<? extends Metric> metricType();
     protected abstract T metric(MetricRegistry registry, Metadata meta);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,8 @@ package io.helidon.metrics.api;
 
 import java.time.Duration;
 
-import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.SimpleTimer;
-import org.junit.jupiter.api.Assertions;
+import org.eclipse.microprofile.metrics.Timer;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -37,20 +34,20 @@ public class TestNoOpRegistry {
     @BeforeAll
     static void setUpRegistry() {
         RegistryFactory registryFactory = RegistryFactory.create(MetricsSettings.builder().enabled(false).build());
-        appRegistry = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        appRegistry = registryFactory.getRegistry(Registry.APPLICATION_SCOPE);
     }
 
     @Test
     void checkUpdatesAreNoOps() {
-        SimpleTimer simpleTimer = appRegistry.simpleTimer("testSimpleTimer");
-        simpleTimer.update(Duration.ofSeconds(4));
-        assertThat("Updated SimpleTimer count", simpleTimer.getCount(), is(0L));
+        Timer timer = appRegistry.timer("testSimpleTimer");
+        timer.update(Duration.ofSeconds(4));
+        assertThat("Updated Timer count", timer.getCount(), is(0L));
     }
 
     @Test
     void checkDifferentInstances() {
-        SimpleTimer simplerTimer = appRegistry.simpleTimer("testForUnsupportedOp");
-        SimpleTimer otherSimpleTimer = appRegistry.simpleTimer("someOtherName");
-        assertThat("Same metric instance for different names", otherSimpleTimer, is(not(sameInstance(simplerTimer))));
+        Timer timer = appRegistry.timer("testForUnsupportedOp");
+        Timer otherTimer = appRegistry.timer("someOtherName");
+        assertThat("Same metric instance for different names", otherTimer, is(not(sameInstance(timer))));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ enum MediaTypeEnum implements MediaType {
     TEXT_PLAIN("text", "plain"),
     TEXT_XML("text", "xml"),
     TEXT_HTML("text", "html"),
+    APPLICATION_OPENMETRICS_TEXT("application", "openmetrics-text"),
     APPLICATION_OPENAPI_YAML("application", "vnd.oai.openapi"),
     APPLICATION_OPENAPI_JSON("application", "vnd.oai.openapi+json"),
     APPLICATION_X_YAML("application", "x-yaml"),

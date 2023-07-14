@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.common.http.Http;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
@@ -34,7 +35,6 @@ import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
@@ -82,7 +82,7 @@ public final class TodosHandler implements Service {
      * @param bsc the {@code BackendServiceClient} to use
      */
     public TodosHandler(BackendServiceClient bsc) {
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
 
         this.bsc = bsc;
         this.createCounter = registry.counter("created");
@@ -96,9 +96,7 @@ public final class TodosHandler implements Service {
     private Metadata counterMetadata(String name, String description) {
         return Metadata.builder()
                 .withName(name)
-                .withDisplayName(name)
                 .withDescription(description)
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build();
     }

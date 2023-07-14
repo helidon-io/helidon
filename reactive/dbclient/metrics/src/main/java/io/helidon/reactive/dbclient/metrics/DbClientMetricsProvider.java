@@ -57,8 +57,6 @@ public class DbClientMetricsProvider implements DbClientServiceProvider {
         switch (type) {
         case "COUNTER":
             return DbClientMetrics.counter().config(config).build();
-        case "METER":
-            return DbClientMetrics.meter().config(config).build();
         case "TIMER":
             return DbClientMetrics.timer().config(config).build();
         default:

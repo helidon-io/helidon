@@ -56,12 +56,5 @@ class TestBasicPerformanceIndicators {
         // This test runs with extended KPI metrics disabled. Make sure the count and meter are still updated.
         int count = vendorMetrics.getInt("requests.count");
         assertThat("requests.count", count, is(greaterThan(0)));
-
-        JsonObject meter = vendorMetrics.getJsonObject("requests.meter");
-        int meterCount = meter.getInt("count");
-        assertThat("requests.meter count", meterCount, is(greaterThan(0)));
-
-        double meterRate = meter.getJsonNumber("meanRate").doubleValue();
-        assertThat("requests.meter meanRate", meterRate, is(greaterThan(0.0)));
     }
 }

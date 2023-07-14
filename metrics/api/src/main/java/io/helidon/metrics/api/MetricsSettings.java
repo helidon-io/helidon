@@ -21,8 +21,6 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-
 /**
  * Settings which control behavior for metrics overall.
  * <p>
@@ -73,39 +71,42 @@ public interface MetricsSettings {
     }
 
     /**
+     * Returns whether metrics are enabled.
      *
-     * @return whether metrics are enabled according to the settings
+     * @return enabled setting
      */
     boolean isEnabled();
 
     /**
+     * Returns the KPI metrics settings.
      *
-     * @return the KPI metrics settings
+     * @return KPI metrics settings
      */
     KeyPerformanceIndicatorMetricsSettings keyPerformanceIndicatorSettings();
 
     /**
+     * Returns the base metrics settings.
      *
-     * @return the base metrics settings
+     * @return base metrics settings
      */
     BaseMetricsSettings baseMetricsSettings();
 
     /**
-     * Reports whether the specified metric is enabled in the indicated registry type.
+     * Reports whether the specified metric is enabled in the indicated registry scope.
      *
-     * @param registryType which registry type to check
+     * @param scope which scope to check
      * @param metricName name of the metric to check
      * @return true if metrics overall is enabled and if the metric is enabled in the specified registry; false otherwise
      */
-    boolean isMetricEnabled(MetricRegistry.Type registryType, String metricName);
+    boolean isMetricEnabled(String scope, String metricName);
 
     /**
-     * Returns the {@link RegistrySettings} for the indicated registry type.
+     * Returns the {@link RegistrySettings} for the indicated registry scope.
      *
-     * @param registryType registry type of interest
-     * @return {@code RegistrySettings} for the selected type
+     * @param scope scope of interest
+     * @return {@code RegistrySettings} for the selected scope
      */
-    RegistrySettings registrySettings(MetricRegistry.Type registryType);
+    RegistrySettings registrySettings(String scope);
 
     /**
      * Returns the global tags, if any.
@@ -120,6 +121,14 @@ public interface MetricsSettings {
      * @return app tag value; null if none set
      */
     String appTagValue();
+
+    /**
+     * Returns an arbitrary String config value for the given key.
+     *
+     * @param key the key to look up
+     * @return String value of the setting
+     */
+    String value(String key);
 
     /**
      * Builder for {@code MetricsSettings}.
@@ -207,16 +216,16 @@ public interface MetricsSettings {
         Builder baseMetricsSettings(BaseMetricsSettings.Builder baseMetricsSettingsBuilder);
 
         /**
-         * Sets the registry settings for the specified registry type.
+         * Sets the registry settings for the specified scope.
          *
-         * @param registryType type of registry for which to assign settings
+         * @param scope scope of registry for which to assign settings
          * @param registrySettings assigned registry settings
          * @return updated builder
          */
         @ConfiguredOption(key = REGISTRIES_CONFIG_KEY,
                           kind = ConfiguredOption.Kind.MAP,
                           type = RegistrySettings.class)
-        Builder registrySettings(MetricRegistry.Type registryType, RegistrySettings registrySettings);
+        Builder registrySettings(String scope, RegistrySettings registrySettings);
 
         /**
          * Sets the global tags to be applied to all metrics.

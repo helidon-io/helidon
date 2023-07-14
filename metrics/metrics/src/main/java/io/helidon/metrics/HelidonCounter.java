@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,56 +17,58 @@
 package io.helidon.metrics;
 
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.atomic.LongAdder;
 
-import io.helidon.metrics.api.Sample;
 import io.helidon.metrics.api.SampledMetric;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Implementation of {@link Counter}.
  */
-final class HelidonCounter extends MetricImpl implements Counter, SampledMetric {
-    private final Counter delegate;
+class HelidonCounter extends MetricImpl implements Counter, SampledMetric {
+    private final io.micrometer.core.instrument.Counter delegate;
 
-    private HelidonCounter(String registryType, Metadata metadata, Counter delegate) {
-        super(registryType, metadata);
-
+    private HelidonCounter(String scope, Metadata metadata, io.micrometer.core.instrument.Counter delegate) {
+        super(scope, metadata);
         this.delegate = delegate;
     }
 
-    static HelidonCounter create(String registryType, Metadata metadata) {
-        return create(registryType, metadata, new CounterImpl());
+    static HelidonCounter create(String scope, Metadata metadata, Tag... tags) {
+        return create(Metrics.globalRegistry, scope, metadata, tags);
     }
 
-    static HelidonCounter create(String registryType, Metadata metadata, Counter metric) {
-        return new HelidonCounter(registryType, metadata, metric);
+    static HelidonCounter create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
+        return new HelidonCounter(scope,
+                                  metadata,
+                                  io.micrometer.core.instrument.Counter.builder(metadata.getName())
+                                          .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                          .description(metadata.getDescription())
+                                          .tags(allTags(scope, tags))
+                                          .register(meterRegistry));
     }
 
     @Override
     public void inc() {
-        delegate.inc();
+        delegate.increment();
     }
 
     @Override
     public void inc(long n) {
-        delegate.inc(n);
+        delegate.increment(n);
     }
 
     @Override
     public long getCount() {
-        return delegate.getCount();
+        return (long) delegate.count();
     }
 
     @Override
-    public Optional<Sample.Labeled> sample() {
-        if (delegate instanceof CounterImpl ci) {
-            return Optional.ofNullable(ci.sample);
-        }
-        return Optional.empty();
+    public io.micrometer.core.instrument.Counter delegate() {
+        return delegate;
     }
 
     @Override
@@ -91,42 +93,4 @@ final class HelidonCounter extends MetricImpl implements Counter, SampledMetric 
         return ", counter='" + getCount() + '\'';
     }
 
-    private static class CounterImpl implements Counter {
-        private final LongAdder adder = new LongAdder();
-
-        private Sample.Labeled sample = null;
-
-        @Override
-        public void inc() {
-            inc(1);
-        }
-
-        @Override
-        public void inc(long n) {
-            adder.add(n);
-            sample = Sample.labeled(n);
-        }
-
-        @Override
-        public long getCount() {
-            return adder.sum();
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(super.hashCode(), getCount());
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            CounterImpl that = (CounterImpl) o;
-            return getCount() == that.getCount();
-        }
-    }
 }

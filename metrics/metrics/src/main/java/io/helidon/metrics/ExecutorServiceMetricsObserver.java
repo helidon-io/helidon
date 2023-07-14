@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -61,7 +60,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
             );
 
     private final LazyValue<MetricRegistry> registry = LazyValue
-            .create(() -> io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR));
+            .create(() -> io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE));
 
     /**
      * Creates a new instance of the observer.
@@ -130,15 +129,14 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                 Metadata metadata = Metadata.builder()
                         .withName(METRIC_NAME_PREFIX + mi.displayName())
                         .withDescription(mi.description())
-                        .withType(MetricType.GAUGE)
                         .withUnit(MetricUnits.NONE)
                         .build();
                 Tag[] tags = tags(supplierInfo.supplierCategory(),
                                   supplierInfo.supplierIndex(),
                                   index);
-                registry.get().register(metadata, (Gauge<Object>) () -> {
+                registry.get().gauge(metadata, () -> {
                     try {
-                        return mi.method().invoke(executorService);
+                        return (Number) mi.method().invoke(executorService);
                     } catch (IllegalAccessException | InvocationTargetException e) {
                         throw new RuntimeException(e);
                     }
@@ -226,48 +224,41 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
         private static final Metadata ACTIVE_COUNT_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "active-count")
                 .withDescription("Active count")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
 
         private static final Metadata COMPLETED_TASK_COUNT_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "completed-task-count")
                 .withDescription("Completed task count")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
 
         private static final Metadata POOL_SIZE_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "pool-size")
                 .withDescription("Pool size")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
         private static final Metadata LARGEST_POOL_SIZE_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "largest-pool-size")
                 .withDescription("Largest pool size")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
 
         private static final Metadata TASK_COUNT_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "task-count")
                 .withDescription("Task count")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
 
         private static final Metadata QUEUE_REMAINING_CAPACITY_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "queue.remaining-capacity")
                 .withDescription("Queue remaining capacity")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
 
         private static final Metadata QUEUE_SIZE_METADATA = Metadata.builder()
                 .withName(METRIC_NAME_PREFIX + "queue.size")
                 .withDescription("Queue size")
-                .withType(MetricType.GAUGE)
                 .withUnit(MetricUnits.NONE)
                 .build();
 
@@ -278,7 +269,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
      *
      * @param <T> type of the gauge
      */
-    private static class GaugeFactory<T, E extends ExecutorService> {
+    private static class GaugeFactory<T extends Number, E extends ExecutorService> {
 
         /**
          * Creates a gauge factory using template metadata (we have to adjust the name) and a function on the executor service
@@ -289,7 +280,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
          * @param <T> type of the gauge
          * @return the new gauge factory
          */
-        private static <T, E extends ExecutorService> GaugeFactory<T, E> create(
+        private static <T extends Number, E extends ExecutorService> GaugeFactory<T, E> create(
                 Metadata templateMetadata,
                 Function<E, T> valueFunction) {
             return new GaugeFactory<>(templateMetadata, valueFunction);
@@ -310,7 +301,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                        Set<MetricID> metricIDs) {
             Tag[] tags = tags(supplierCategory, supplierIndex, index);
             metricIDs.add(new MetricID(templateMetadata.getName(), tags));
-            return registry.register(templateMetadata, () -> valueFunction.apply(executor), tags);
+            return registry.gauge(templateMetadata, () -> valueFunction.apply(executor), tags);
         }
     }
 

@@ -26,4 +26,12 @@
     <engine>
         <property name="deploymentExportPath">target/deployments</property>
     </engine>
+
+
+    <container qualifier="helidon-embedded" default="true">
+        <configuration>
+            <property name="excludeArchivePattern">.*?/microprofile-metrics-.*?tck.*?\.jar.*</property>
+            <property name="useParentClassloader">false</property>
+        </configuration>
+    </container>
 </arquillian>

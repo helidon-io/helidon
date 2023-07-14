@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.reactive.webclient.WebClientServiceRequest;
 
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricType;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -35,8 +35,8 @@ class WebClientTimer extends WebClientMetric {
     }
 
     @Override
-    MetricType metricType() {
-        return MetricType.TIMER;
+    Class<? extends Metric> metricType() {
+        return Timer.class;
     }
 
     @Override

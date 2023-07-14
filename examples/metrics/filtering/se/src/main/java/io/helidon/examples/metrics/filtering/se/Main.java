@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
@@ -69,7 +70,7 @@ public final class Main {
                 .filterSettings(registryFilterSettingsBuilder);
 
         MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder()
-                .registrySettings(MetricRegistry.Type.APPLICATION, registrySettingsBuilder.build());
+                .registrySettings(Registry.APPLICATION_SCOPE, registrySettingsBuilder.build());
 
         WebServer server = WebServer.builder()
                 .routing(createRouting(config, metricsSettingsBuilder))
@@ -104,7 +105,7 @@ public final class Main {
                 .metricsSettings(metricsSettingsBuilder)
                 .build();
         MetricRegistry appRegistry = RegistryFactory.getInstance(metricsSettingsBuilder.build())
-                .getRegistry(MetricRegistry.Type.APPLICATION);
+                .getRegistry(Registry.APPLICATION_SCOPE);
 
         GreetService greetService = new GreetService(config, appRegistry);
 

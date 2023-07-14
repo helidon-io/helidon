@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,6 +62,7 @@ public class TestBean {
     @Inject
     private MetricRegistry metricRegistry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
     @RegistryType(type = MetricRegistry.Type.BASE)
     private MetricRegistry baseRegistry;
@@ -156,10 +157,10 @@ public class TestBean {
     }
 
     public String appRegistry() {
-        return "SimpleTimers.size(): " + metricRegistry.getSimpleTimers().size();
+        return "Timers.size(): " + metricRegistry.getTimers().size();
     }
 
     public String baseRegistry() {
-        return "SimpleTimers.size(): " + metricRegistry.getSimpleTimers().size();
+        return "Timers.size(): " + baseRegistry.getTimers().size();
     }
 }

@@ -436,7 +436,9 @@ class MPOpenAPIBuilder extends OpenApiFeature.Builder<MPOpenAPIBuilder, MpOpenAp
 
     private void addClassToIndexer(Indexer indexer, Class<?> c) {
         try (InputStream is = MpOpenApiFeature.contextClassLoader().getResourceAsStream(resourceNameForClass(c))) {
-            indexer.index(is);
+            if (is != null) {
+                indexer.index(is);
+            }
         } catch (IOException ex) {
             throw new RuntimeException(String.format("Cannot load bytecode from class %s at %s for annotation processing",
                                                      c.getName(), resourceNameForClass(c)), ex);

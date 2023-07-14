@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import jakarta.ws.rs.ext.Provider;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -56,9 +55,7 @@ public class HttpStatusMetricFilter implements ContainerResponseFilter {
     private void init() {
         Metadata metadata = Metadata.builder()
                 .withName(STATUS_COUNTER_NAME)
-                .withDisplayName("HTTP response values")
                 .withDescription("Counts the number of HTTP responses in each status category (1xx, 2xx, etc.)")
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build();
         // Declare the counters and keep references to them.

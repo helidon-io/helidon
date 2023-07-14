@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,18 @@
 
 package io.helidon.metrics.api;
 
+import java.util.Optional;
+import java.util.Set;
+
+import io.helidon.common.media.type.MediaType;
 import io.helidon.config.Config;
 
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Behavior of a {@code RegistryFactory}, capable of providing metrics registries of various types (application, base, vendor)
@@ -35,6 +43,11 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
  * </ul>
  */
 public interface RegistryFactory {
+
+    /**
+     * Set of specific types of metrics.
+     */
+    Set<Class<? extends Metric>> METRIC_TYPES = Set.of(Counter.class, Gauge.class, Histogram.class, Timer.class);
 
     /**
      * Returns a {@code RegistryFactory} according to the default metrics settings.
@@ -114,12 +127,12 @@ public interface RegistryFactory {
     }
 
     /**
-     * Returns a {@link MetricRegistry} instance of the requested type.
+     * Returns a {@link MetricRegistry} instance of the requested scope.
      *
-     * @param type {@link MetricRegistry.Type} of the registry to be returned
-     * @return the {@code MetricRegistry} of the requested type
+     * @param scope scope of the registry to be returned
+     * @return the {@code MetricRegistry} of the requested scope
      */
-    Registry getRegistry(Type type);
+    Registry getRegistry(String scope);
 
     /**
      * Updates the metrics settings for the {@code RegistryFactory}.
@@ -136,6 +149,27 @@ public interface RegistryFactory {
      * @return whether this factory is enabled, disabled factory may only do no-ops (and produce no-op metrics)
      */
     boolean enabled();
+
+    /**
+     * Exposes the contents of the implementation registry according to the requested media type,
+     * using the specified tag name used to add each metric's scope to its identity, and limiting by the provided scope
+     * selection and meter name selection.
+     *
+     * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
+     * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
+     * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
+     * @return {@link String} meter exposition as governed by the parameters; {@code empty} if no metrics matched the selections
+     * @throws java.lang.IllegalArgumentException if the implementation cannot handle the requested media type
+     * @throws java.lang.UnsupportedOperationException if the implementation cannot expose its metrics
+     */
+    Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
+
+    /**
+     * Returns the current scopes represented by registries created by the factory.
+     *
+     * @return scopes
+     */
+    Iterable<String> scopes();
 
     /**
      * Called to start required background tasks of a factory (if any).

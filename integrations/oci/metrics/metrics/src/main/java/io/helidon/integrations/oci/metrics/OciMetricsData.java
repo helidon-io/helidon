@@ -26,17 +26,14 @@ import java.util.stream.Stream;
 
 import com.oracle.bmc.monitoring.model.Datapoint;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -45,7 +42,7 @@ class OciMetricsData {
     private static final UnitConverter TIME_UNIT_CONVERTER = UnitConverter.timeUnitConverter();
     private static final List<UnitConverter> UNIT_CONVERTERS = List.of(STORAGE_UNIT_CONVERTER, TIME_UNIT_CONVERTER);
 
-    private final Map<MetricRegistry, MetricRegistry.Type> metricRegistries;
+    private final Map<MetricRegistry, String> metricRegistries;
     private final OciMetricsSupport.NameFormatter nameFormatter;
     private final String compartmentId;
     private final String namespace;
@@ -53,7 +50,7 @@ class OciMetricsData {
     private final boolean descriptionEnabled;
 
     OciMetricsData(
-            Map<MetricRegistry, MetricRegistry.Type> metricRegistries,
+            Map<MetricRegistry, String> metricRegistries,
             OciMetricsSupport.NameFormatter nameFormatter,
             String compartmentId,
             String namespace,
@@ -80,14 +77,8 @@ class OciMetricsData {
     Stream<MetricDataDetails> metricDataDetails(MetricRegistry metricRegistry, MetricID metricId, Metric metric) {
         if (metric instanceof Counter) {
             return forCounter(metricRegistry, metricId, ((Counter) metric));
-        } else if (metric instanceof ConcurrentGauge) {
-            return forConcurrentGauge(metricRegistry, metricId, ((ConcurrentGauge) metric));
-        } else if (metric instanceof Meter) {
-            return forMeter(metricRegistry, metricId, ((Meter) metric));
         } else if (metric instanceof Gauge<?>) {
             return forGauge(metricRegistry, metricId, ((Gauge<? extends Number>) metric));
-        } else if (metric instanceof SimpleTimer) {
-            return forSimpleTimer(metricRegistry, metricId, ((SimpleTimer) metric));
         } else if (metric instanceof Timer) {
             return forTimer(metricRegistry, metricId, ((Timer) metric));
         } else if (metric instanceof Histogram) {
@@ -98,66 +89,26 @@ class OciMetricsData {
     }
 
     private Stream<MetricDataDetails> forCounter(MetricRegistry metricRegistry, MetricID metricId, Counter counter) {
-        return Stream.of(metricDataDetails(metricRegistry, metricId, null, counter.getCount()));
-    }
-
-    private Stream<MetricDataDetails> forConcurrentGauge(
-            MetricRegistry metricRegistry, MetricID metricId, ConcurrentGauge concurrentGauge) {
-        Stream.Builder<MetricDataDetails> result = Stream.builder();
-        long count = concurrentGauge.getCount();
-        result.add(metricDataDetails(metricRegistry, metricId, null, count));
-        if (count > 0) {
-            result.add(metricDataDetails(metricRegistry, metricId, "min", concurrentGauge.getMin()));
-            result.add(metricDataDetails(metricRegistry, metricId, "max", concurrentGauge.getMax()));
-        }
-        return result.build();
-    }
-
-    private Stream<MetricDataDetails> forMeter(MetricRegistry metricRegistry, MetricID metricId, Meter meter) {
-        Stream.Builder<MetricDataDetails> result = Stream.builder();
-        long count = meter.getCount();
-        result.add(metricDataDetails(metricRegistry, metricId, "total", count));
-        if (count > 0) {
-            result.add(metricDataDetails(metricRegistry, metricId, "gauge", meter.getMeanRate()));
-            result.add(metricDataDetails(metricRegistry, metricId, "one_minute_rate", meter.getOneMinuteRate()));
-            result.add(metricDataDetails(metricRegistry, metricId, "five_minute_rate", meter.getFiveMinuteRate()));
-            result.add(metricDataDetails(metricRegistry, metricId, "fifteen_minute_rate", meter.getFifteenMinuteRate()));
-        }
-        return result.build();
+        return Stream.of(metricDataDetails(counter, metricRegistry, metricId, null, counter.getCount()));
     }
 
     private Stream<MetricDataDetails> forGauge(MetricRegistry metricRegistry, MetricID metricId, Gauge<? extends Number> gauge) {
-        return Stream.of(metricDataDetails(metricRegistry, metricId, null, gauge.getValue().doubleValue()));
-    }
-
-    private Stream<MetricDataDetails> forSimpleTimer(MetricRegistry metricRegistry, MetricID metricId, SimpleTimer simpleTimer) {
-        Stream.Builder<MetricDataDetails> result = Stream.builder();
-        long count = simpleTimer.getCount();
-        result.add(metricDataDetails(metricRegistry, metricId, "total", count));
-        if (count > 0) {
-            result.add(metricDataDetails(metricRegistry,
-                                         metricId,
-                                         "elapsedTime_seconds",
-                                         simpleTimer.getElapsedTime().toSeconds()));
-        }
-        return result.build();
+        return Stream.of(metricDataDetails(gauge, metricRegistry, metricId, null, gauge.getValue().doubleValue()));
     }
 
     private Stream<MetricDataDetails> forTimer(MetricRegistry metricRegistry, MetricID metricId, Timer timer) {
         Stream.Builder<MetricDataDetails> result = Stream.builder();
         long count = timer.getCount();
-        result.add(metricDataDetails(metricRegistry, metricId, "seconds_count", count));
+        result.add(metricDataDetails(timer, metricRegistry, metricId, "seconds_count", count));
         if (count > 0) {
             Snapshot snapshot = timer.getSnapshot();
-            result.add(metricDataDetails(metricRegistry,
+            result.add(metricDataDetails(timer,
+                                         metricRegistry,
                                          metricId,
                                          "mean_seconds",
                                          snapshot.getMean()));
-            result.add(metricDataDetails(metricRegistry,
-                                         metricId,
-                                         "min_seconds",
-                                         snapshot.getMin()));
-            result.add(metricDataDetails(metricRegistry,
+            result.add(metricDataDetails(timer,
+                                         metricRegistry,
                                          metricId,
                                         "max_seconds",
                                          snapshot.getMax()));
@@ -172,18 +123,16 @@ class OciMetricsData {
         String units = metadata.getUnit();
         String unitsPrefix = units != null && !Objects.equals(units, MetricUnits.NONE) ? units + "_" : "";
         String unitsSuffix = units != null && !Objects.equals(units, MetricUnits.NONE) ? "_" + units : "";
-        result.add(metricDataDetails(metricRegistry, metricId, unitsPrefix + "count", count));
+        result.add(metricDataDetails(histogram, metricRegistry, metricId, unitsPrefix + "count", count));
         if (count > 0) {
             Snapshot snapshot = histogram.getSnapshot();
-            result.add(metricDataDetails(metricRegistry,
+            result.add(metricDataDetails(histogram,
+                                         metricRegistry,
                                          metricId,
                                          "mean" + unitsSuffix,
                                          snapshot.getMean()));
-            result.add(metricDataDetails(metricRegistry,
-                                         metricId,
-                                         "min" + unitsSuffix,
-                                         snapshot.getMin()));
-            result.add(metricDataDetails(metricRegistry,
+            result.add(metricDataDetails(histogram,
+                                         metricRegistry,
                                          metricId,
                                          "max" + unitsSuffix,
                                          snapshot.getMax()));
@@ -191,7 +140,7 @@ class OciMetricsData {
         return result.build();
     }
 
-    private MetricDataDetails metricDataDetails(
+    private MetricDataDetails metricDataDetails(Metric metric,
             MetricRegistry metricRegistry, MetricID metricId, String suffix, double value) {
         if (Double.isNaN(value)) {
             return null;
@@ -200,7 +149,7 @@ class OciMetricsData {
         Metadata metadata = metricRegistry.getMetadata().get(metricId.getName());
         Map<String, String> dimensions = dimensions(metricId, metricRegistry);
         List<Datapoint> datapoints = datapoints(metadata, value);
-        String metricName = nameFormatter.format(metricId, suffix, metadata);
+        String metricName = nameFormatter.format(metric, metricId, suffix, metadata);
         return MetricDataDetails.builder()
                 .compartmentId(compartmentId)
                 .name(metricName)
@@ -213,7 +162,7 @@ class OciMetricsData {
     }
 
     private Map<String, String> dimensions(MetricID metricId, MetricRegistry metricRegistry) {
-        String registryType = metricRegistries.get(metricRegistry).getName();
+        String registryType = metricRegistries.get(metricRegistry);
         Map<String, String> result = new HashMap<>(metricId.getTags());
         result.put("scope", registryType);
         return result;

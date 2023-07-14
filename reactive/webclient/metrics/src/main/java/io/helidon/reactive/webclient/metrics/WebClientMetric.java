@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,16 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.metrics.api.Registry;
+import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.webclient.WebClientServiceRequest;
 import io.helidon.reactive.webclient.WebClientServiceResponse;
 import io.helidon.reactive.webclient.spi.WebClientService;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * Base client metric class.
@@ -48,7 +49,7 @@ abstract class WebClientMetric implements WebClientService {
     private final boolean errors;
 
     WebClientMetric(Builder builder) {
-        this.registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        this.registry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
         this.methods = builder.methods;
         this.nameFormat = builder.nameFormat;
         this.description = builder.description;
@@ -106,7 +107,7 @@ abstract class WebClientMetric implements WebClientService {
         } else {
             name = createName(request, response);
         }
-        MetadataBuilder builder = Metadata.builder().withName(name).withType(metricType());
+        MetadataBuilder builder = Metadata.builder().withName(name);
         if (description != null) {
             builder = builder.withDescription(description);
         }
@@ -125,7 +126,7 @@ abstract class WebClientMetric implements WebClientService {
         return methods().isEmpty() || methods().contains(method.name());
     }
 
-    abstract MetricType metricType();
+    abstract Class<? extends Metric> metricType();
 
     /**
      * Client metric builder.

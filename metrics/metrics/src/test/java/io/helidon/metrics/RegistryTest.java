@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,9 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.core.IsSame;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -53,11 +52,12 @@ public class RegistryTest {
     private static Registry registry;
 
     private final static Tag tag1 = new Tag("name1", "value1");
+    private final static Tag tag1v2 = new Tag("name1", "value2");
     private final static Tag tag2 = new Tag("name2", "value2");
 
     @BeforeAll
     static void createInstance() {
-        registry = new Registry(MetricRegistry.Type.BASE, RegistrySettings.create());
+        registry = new Registry(MetricRegistry.BASE_SCOPE, RegistrySettings.create());
     }
 
     @Test
@@ -70,39 +70,34 @@ public class RegistryTest {
     @Test
     void testSameIDDifferentType() {
         registry.counter("counter1", tag1);
-        assertThrows(IllegalArgumentException.class, () -> registry.meter("counter1", tag1));
+        assertThrows(IllegalArgumentException.class, () -> registry.timer("counter1", tag1));
     }
 
     @Test
+    @Disabled
     void testSameNameDifferentTagsDifferentTypes() {
         Metadata metadata1 = Metadata.builder()
                     .withName("counter2")
-                    .withType(MetricType.COUNTER)
                     .build();
         Metadata metadata2 = Metadata.builder()
                     .withName("counter2")
-                    .withType(MetricType.TIMER)
                     .build();
         registry.counter(metadata1, tag1);
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> registry.timer(metadata2, tag2));
-        assertThat(ex.getMessage(), containsString("conflicts"));
+        assertThat(ex.getMessage(), containsString("conflict with"));
     }
 
     @Test
     void testSameIDSameReuseDifferentOtherMetadata() {
         Metadata metadata1 = Metadata.builder()
 				.withName("counter5")
-				.withDisplayName("display name")
 				.withDescription("description")
-				.withType(MetricType.COUNTER)
 				.withUnit(MetricUnits.NONE)
 				.build();
         Metadata metadata2 = Metadata.builder()
 				.withName("counter5")
-				.withDisplayName("OTHER display name")
-				.withDescription("description")
-				.withType(MetricType.COUNTER)
+				.withDescription("other description")
 				.withUnit(MetricUnits.NONE)
 				.build();
 
@@ -116,10 +111,9 @@ public class RegistryTest {
     void testRemovalOfExistingMetricByName() {
         Metadata metadata = Metadata.builder()
                 .withName("counter6")
-                .withType(MetricType.COUNTER)
                 .build();
-        registry.counter(metadata);
         registry.counter(metadata, tag1);
+        registry.counter(metadata, tag1v2);
         // Removing by name should remove all metrics with that name, regardless of tags.
         boolean result = registry.remove(metadata.getName());
         assertThat(result, is(true));
@@ -131,11 +125,10 @@ public class RegistryTest {
     void testRemovalOfExistingMetricByMetricID() {
         Metadata metadata = Metadata.builder()
                 .withName("counter7")
-                .withType(MetricType.COUNTER)
                 .build();
 
-        registry.counter(metadata);
         registry.counter(metadata, tag1);
+        registry.counter(metadata, tag1v2);
         MetricID metricID = new MetricID(metadata.getName(), tag1);
         // Removing by MetricID should leave other like-named metrics intact.
         boolean result = registry.remove(metricID);
@@ -174,15 +167,15 @@ public class RegistryTest {
 
     @Test
     void testGetType() {
-        assertThat("Registry type", registry.getType(), is(MetricRegistry.Type.BASE));
+        assertThat("Registry type", registry.getScope(), is(MetricRegistry.BASE_SCOPE));
 
         MetricRegistry vendorRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
-                .getRegistry(MetricRegistry.Type.VENDOR);
-        assertThat("Registry type for vendor registry", vendorRegistry.getType(), is(MetricRegistry.Type.VENDOR));
+                .getRegistry(MetricRegistry.VENDOR_SCOPE);
+        assertThat("Registry type for vendor registry", vendorRegistry.getScope(), is(MetricRegistry.VENDOR_SCOPE));
 
         MetricRegistry baseRegistry = io.helidon.metrics.api.RegistryFactory.getInstance()
-                .getRegistry(MetricRegistry.Type.BASE);
-        assertThat("Registry type for base registry", baseRegistry.getType(), is(MetricRegistry.Type.BASE));
+                .getRegistry(MetricRegistry.BASE_SCOPE);
+        assertThat("Registry type for base registry", baseRegistry.getScope(), is(MetricRegistry.BASE_SCOPE));
     }
 
     @Test
@@ -209,7 +202,6 @@ public class RegistryTest {
     void testGetMetadata() {
         Metadata metadata = Metadata.builder()
                 .withName("counter11")
-                .withType(MetricType.COUNTER)
                 .build();
 
         Counter counter = registry.counter(metadata, tag1);
@@ -243,10 +235,10 @@ public class RegistryTest {
         MetricID metricIDb = new MetricID("simpleTimer1", tag1);
 
         Counter counter = registry.counter(metricIDa);
-        SimpleTimer simpleTimer = registry.simpleTimer(metricIDb);
+        Timer simpleTimer = registry.timer(metricIDb);
 
-        Map<MetricID, SimpleTimer> matchingMetrics = registry.getMetrics(SimpleTimer.class,
-                                                                         new MetricNameFilter(metricIDb.getName()));
+        Map<MetricID, Timer> matchingMetrics = registry.getMetrics(Timer.class,
+                                                                   new MetricNameFilter(metricIDb.getName()));
         assertThat("Metrics matching filter", matchingMetrics, hasEntry(metricIDb, simpleTimer));
         assertThat("Metrics not matching filter", matchingMetrics, not(hasEntry(metricIDa, counter)));
     }

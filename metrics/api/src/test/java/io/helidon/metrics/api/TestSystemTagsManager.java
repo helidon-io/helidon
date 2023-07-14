@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -82,13 +83,13 @@ class TestSystemTagsManager {
 
         MetricID metricID = new MetricID("my-metric", new Tag(METRIC_TAG_NAME, METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
                                    hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   not(hasKey(SystemTagsManager.APP_TAG))));
+                                   not(hasKey(MetricsProgrammaticSettings.instance().appTagName()))));
 
     }
 
@@ -100,13 +101,13 @@ class TestSystemTagsManager {
 
         MetricID metricID = new MetricID("my-metric", new Tag(METRIC_TAG_NAME, METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(not(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1)),
                                    not(hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)),
                                    hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   hasKey(SystemTagsManager.APP_TAG)));
+                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
     }
 
     @Test
@@ -117,13 +118,13 @@ class TestSystemTagsManager {
 
         MetricID metricID = new MetricID("my-metric", new Tag(METRIC_TAG_NAME, METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
                                    hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   hasKey(SystemTagsManager.APP_TAG)));
+                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
     }
 
     @Test
@@ -133,11 +134,9 @@ class TestSystemTagsManager {
 
         MetricID metricID = new MetricID("no-tags-metric");
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
 
-        assertThat("All tags for metric ID with no tags itself and no global tags is empty",
-                   fullTags.isEmpty(),
-                   is(true));
+        assertThat("Global tags (with scope) size", fullTags.size(), is(1));
     }
 
     @Test
@@ -148,11 +147,11 @@ class TestSystemTagsManager {
 
         MetricID metricID = new MetricID("no-tags-metric");
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID).forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                                   hasKey(SystemTagsManager.APP_TAG)));
+                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
     }
 }

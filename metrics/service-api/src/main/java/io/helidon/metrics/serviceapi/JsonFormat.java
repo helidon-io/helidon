@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,15 +50,12 @@ import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonValue;
-import org.eclipse.microprofile.metrics.ConcurrentGauge;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -131,9 +128,7 @@ public final class JsonFormat {
 
         Metadata metadata = helidonMetric.metadata();
         addNonEmpty(metaBuilder, "unit", metadata.getUnit());
-        addNonEmpty(metaBuilder, "type", metadata.getType());
         addNonEmpty(metaBuilder, "description", metadata.getDescription());
-        addNonEmpty(metaBuilder, "displayName", metadata.getDisplayName());
         if (metricIds != null) {
             for (MetricID metricID : metricIds) {
                 boolean tagAdded = false;
@@ -177,16 +172,16 @@ public final class JsonFormat {
 
     @SuppressWarnings("unchecked")
     private static void jsonData(JsonObjectBuilder builder, MetricID key, HelidonMetric value) {
-        switch (value.metadata().getTypeRaw()) {
-        case CONCURRENT_GAUGE -> concurrentGauge(builder, key, (ConcurrentGauge) value);
-        case COUNTER -> counter(builder, key, (Counter) value);
-        case GAUGE -> gauge(builder, key, (Gauge<? extends Number>) value);
-        case METERED -> meter(builder, key, (Meter) value);
-        case HISTOGRAM -> histogram(builder, key, (Histogram) value);
-        case TIMER -> timer(builder, key, value, (Timer) value);
-        case SIMPLE_TIMER -> simpleTimer(builder, key, value, (SimpleTimer) value);
-        case INVALID -> throw new IllegalArgumentException("Invalid metric encountered: " + key);
-        default -> throw new IllegalArgumentException("Invalid metric type encountered: " + value.metadata().getTypeRaw()
+        if (value instanceof Counter counter) {
+            counter(builder, key, counter);
+        } else if (value instanceof Gauge<?> gauge) {
+            gauge(builder, key, gauge);
+        } else if (value instanceof Histogram histogram) {
+            histogram(builder, key, histogram);
+        } else if (value instanceof Timer timer) {
+            timer(builder, key, value, timer);
+        } else {
+            throw new IllegalArgumentException("Invalid metric type encountered: " + value.getClass().getName()
                                                               + ", key" + key);
         }
     }
@@ -217,19 +212,6 @@ public final class JsonFormat {
                 registry);
     }
 
-    private static void simpleTimer(JsonObjectBuilder builder,
-                                    MetricID metricID,
-                                    HelidonMetric helidonMetric,
-                                    SimpleTimer value) {
-        long divisor = conversionFactor(helidonMetric);
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricID), value.getCount())
-                .add(jsonFullKey("elapsedTime", metricID), jsonDuration(value.getElapsedTime(), divisor))
-                .add(jsonFullKey("maxTimeDuration", metricID), jsonDuration(value.getMaxTimeDuration(), divisor))
-                .add(jsonFullKey("minTimeDuration", metricID), jsonDuration(value.getMinTimeDuration(), divisor));
-        builder.add(metricID.getName(), myBuilder);
-    }
-
     private static JsonValue jsonDuration(Duration duration, long conversionFactor) {
         if (duration == null) {
             return JsonObject.NULL;
@@ -245,22 +227,20 @@ public final class JsonFormat {
         JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
                 .add(jsonFullKey("count", metricID), value.getCount())
                 .add(jsonFullKey("elapsedTime", metricID), jsonDuration(value.getElapsedTime(), divisor))
-                .add(jsonFullKey("meanRate", metricID), value.getMeanRate())
-                .add(jsonFullKey("oneMinRate", metricID), value.getOneMinuteRate())
-                .add(jsonFullKey("fiveMinRate", metricID), value.getFiveMinuteRate())
-                .add(jsonFullKey("fifteenMinRate", metricID), value.getFifteenMinuteRate())
-                .add(jsonFullKey("min", metricID), snapshot.getMin() / divisor)
+                .add(jsonFullKey("meanRate", metricID), value.getSnapshot().getMean())
                 .add(jsonFullKey("max", metricID), snapshot.getMax() / divisor)
-                .add(jsonFullKey("mean", metricID), snapshot.getMean() / divisor)
-                .add(jsonFullKey("stddev", metricID), snapshot.getStdDev() / divisor)
-                .add(jsonFullKey("p50", metricID), snapshot.getMedian() / divisor)
-                .add(jsonFullKey("p75", metricID), snapshot.get75thPercentile() / divisor)
-                .add(jsonFullKey("p95", metricID), snapshot.get95thPercentile() / divisor)
-                .add(jsonFullKey("p98", metricID), snapshot.get98thPercentile() / divisor)
-                .add(jsonFullKey("p99", metricID), snapshot.get99thPercentile() / divisor)
-                .add(jsonFullKey("p999", metricID), snapshot.get999thPercentile() / divisor);
+                .add(jsonFullKey("mean", metricID), snapshot.getMean() / divisor);
+        addQuantiles(myBuilder, metricID, snapshot, divisor);
+
 
         builder.add(metricID.getName(), myBuilder);
+    }
+
+    private static void addQuantiles(JsonObjectBuilder builder, MetricID metricID, Snapshot snapshot, long divisor) {
+        Snapshot.PercentileValue[] percentileValues = snapshot.percentileValues();
+        for (Quantile quantile : Quantile.STANDARD_QUANTILES) {
+            builder.add(quantile.jsonFullKey(metricID), quantile.value(divisor, percentileValues));
+        }
     }
 
     private static void histogram(JsonObjectBuilder builder, MetricID metricId, Histogram value) {
@@ -268,39 +248,9 @@ public final class JsonFormat {
                 .add(jsonFullKey("count", metricId), value.getCount())
                 .add(jsonFullKey("sum", metricId), value.getSum());
         Snapshot snapshot = value.getSnapshot();
-        myBuilder = myBuilder.add(jsonFullKey("min", metricId), snapshot.getMin())
-                .add(jsonFullKey("max", metricId), snapshot.getMax())
-                .add(jsonFullKey("mean", metricId), snapshot.getMean())
-                .add(jsonFullKey("stddev", metricId), snapshot.getStdDev())
-                .add(jsonFullKey("p50", metricId), snapshot.getMedian())
-                .add(jsonFullKey("p75", metricId), snapshot.get75thPercentile())
-                .add(jsonFullKey("p95", metricId), snapshot.get95thPercentile())
-                .add(jsonFullKey("p98", metricId), snapshot.get98thPercentile())
-                .add(jsonFullKey("p99", metricId), snapshot.get99thPercentile())
-                .add(jsonFullKey("p999", metricId), snapshot.get999thPercentile());
-
-        builder.add(metricId.getName(), myBuilder);
-    }
-
-    private static void meter(JsonObjectBuilder builder, MetricID metricId, Meter value) {
-        /*
-        From spec:
-        {
-         "requests": {
-         "count": 29382,
-         "meanRate": 12.223,
-         "oneMinRate": 12.563,
-         "fiveMinRate": 12.364,
-         "fifteenMinRate": 12.126,
-         }
-        }
-        */
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("count", metricId), value.getCount())
-                .add(jsonFullKey("meanRate", metricId), value.getMeanRate())
-                .add(jsonFullKey("oneMinRate", metricId), value.getOneMinuteRate())
-                .add(jsonFullKey("fiveMinRate", metricId), value.getFiveMinuteRate())
-                .add(jsonFullKey("fifteenMinRate", metricId), value.getFifteenMinuteRate());
+        myBuilder = myBuilder.add(jsonFullKey("max", metricId), snapshot.getMax())
+                .add(jsonFullKey("mean", metricId), snapshot.getMean());
+        addQuantiles(myBuilder, metricId, snapshot, 1L);
 
         builder.add(metricId.getName(), myBuilder);
     }
@@ -345,14 +295,6 @@ public final class JsonFormat {
 
     private static void counter(JsonObjectBuilder builder, MetricID metricId, Counter value) {
         builder.add(jsonFullKey(metricId), value.getCount());
-    }
-
-    private static void concurrentGauge(JsonObjectBuilder builder, MetricID metricId, ConcurrentGauge value) {
-        JsonObjectBuilder myBuilder = JSON.createObjectBuilder()
-                .add(jsonFullKey("current", metricId), value.getCount())
-                .add(jsonFullKey("max", metricId), value.getMax())
-                .add(jsonFullKey("min", metricId), value.getMin());
-        builder.add(metricId.getName(), myBuilder);
     }
 
     private static String jsonEscape(String s) {
@@ -426,8 +368,34 @@ public final class JsonFormat {
 
     private static void accumulateJson(JsonObjectBuilder builder, Registry registry,
                                        Function<Registry, JsonObject> fn) {
-        builder.add(registry.type(), fn.apply(registry));
+        builder.add(registry.scope(), fn.apply(registry));
     }
+
+    private record Quantile(String outputLabel, double percentile) {
+
+        private static final List<Quantile> STANDARD_QUANTILES = List.of(new Quantile("p50", 0.5),
+                                                                         new Quantile("p75", 0.75),
+                                                                         new Quantile("p95", 0.95),
+                                                                         new Quantile("p98", 0.98),
+                                                                         new Quantile("p99", 0.99),
+                                                                         new Quantile("p999", 0.999));
+
+        String jsonFullKey(MetricID metricID) {
+            return JsonFormat.jsonFullKey(outputLabel, metricID);
+        }
+
+        double value(long divisor, Snapshot.PercentileValue[] percentileValues) {
+            for (Snapshot.PercentileValue pValue : percentileValues) {
+                if (pValue.getPercentile() <= percentile) {
+                    return pValue.getValue() / divisor;
+                }
+            }
+            return 0.0;
+        }
+
+    }
+
+
 
     /**
      * A {@code JsonObjectBuilder} that aggregates, rather than overwrites, when

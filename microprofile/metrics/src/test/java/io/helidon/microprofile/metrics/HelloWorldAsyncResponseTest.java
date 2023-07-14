@@ -16,7 +16,6 @@
 package io.helidon.microprofile.metrics;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -32,8 +31,8 @@ import jakarta.ws.rs.container.AsyncResponse;
 import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Timer;
+import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -65,10 +64,12 @@ public class HelloWorldAsyncResponseTest {
     @Inject
     MetricRegistry registry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
     @RegistryType(type = MetricRegistry.Type.BASE)
-    private MetricRegistry syntheticSimpleTimerRegistry;
+    private MetricRegistry syntheticTimerRegistry;
 
+    // TODO change to RegistryScope once MP makes it a qualifier
     @Inject
     @RegistryType(type = MetricRegistry.Type.VENDOR)
     private MetricRegistry vendorRegistry;
@@ -77,27 +78,27 @@ public class HelloWorldAsyncResponseTest {
     @Test
     public void test() throws Exception {
         MetricID metricID = MetricsCdiExtension
-                .restEndpointSimpleTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
-                                                                                    AsyncResponse.class,
-                                                                                    ServerResponse.class));
+                .restEndpointTimerMetricID(HelloWorldResource.class.getMethod("slowMessage",
+                                                                              AsyncResponse.class,
+                                                                              ServerResponse.class));
 
-        SortedMap<MetricID, SimpleTimer> simpleTimers = registry.getSimpleTimers();
+        SortedMap<MetricID, Timer> timers = registry.getTimers();
 
-        SimpleTimer explicitSimpleTimer = simpleTimers.get(new MetricID(SLOW_MESSAGE_SIMPLE_TIMER));
-        assertThat("SimpleTimer for explicit annotation", explicitSimpleTimer, is(notNullValue()));
-        long explicitSimpleTimerCountBefore = explicitSimpleTimer.getCount();
-        Duration explicitSimpleTimerDurationBefore = explicitSimpleTimer.getElapsedTime();
+        Timer explicitTimer = timers.get(new MetricID(SLOW_MESSAGE_SIMPLE_TIMER));
+        assertThat("Timer for explicit annotation", explicitTimer, is(notNullValue()));
+        long explicitTimerCountBefore = explicitTimer.getCount();
+        Duration explicitSimpleTimerDurationBefore = explicitTimer.getElapsedTime();
 
-        simpleTimers = syntheticSimpleTimerRegistry.getSimpleTimers();
-        SimpleTimer simpleTimer = simpleTimers.get(metricID);
-        assertThat("Synthetic SimpleTimer for the endpoint", simpleTimer, is(notNullValue()));
-        long syntheticSimpleTimerCountBefore = simpleTimer.getCount();
-        Duration syntheticaSimpleTimerDurationBefore = simpleTimer.getElapsedTime();
+        timers = syntheticTimerRegistry.getTimers();
+        Timer timer = timers.get(metricID);
+        assertThat("Synthetic Timer for the endpoint", timer, is(notNullValue()));
+        long syntheticTimerCountBefore = timer.getCount();
+        Duration syntheticTimerDurationBefore = timer.getElapsedTime();
 
-        Map<MetricID, Timer> timers = registry.getTimers();
-        Timer timer = timers.get(new MetricID(SLOW_MESSAGE_TIMER));
-        assertThat("Timer", timer, is(notNullValue()));
-        long slowMessageTimerCountBefore= timer.getCount();
+        timers = registry.getTimers();
+        Timer slowMessageTimer = timers.get(new MetricID(SLOW_MESSAGE_TIMER));
+        assertThat("Timer", slowMessageTimer, is(notNullValue()));
+        long slowMessageTimerCountBefore= slowMessageTimer.getCount();
 
         String result = HelloWorldTest.runAndPause(() ->webTarget
                 .path("helloworld/slow")
@@ -107,30 +108,24 @@ public class HelloWorldAsyncResponseTest {
         );
 
         /*
-         * We test simple timers (explicit and the implicit REST.request one) and timers on the async method.
-         *
-         * We don't test a ConcurrentGauge, which is the other metric that has a post-invoke update, because it reports data
-         * for the preceding whole minute. We don't want to deal with the timing issues to make sure that updates to the
-         * metric fall within one minute and that we check it in the next minute. That's done,
-         * though not for the JAX-RS async case, in the SE metrics tests. Because the async completion mechanism is independent
-         * of the specific type of metric, we're not missing much by excluding a ConcurrentGauge from the async method.
+         * We test timers (explicit and the implicit REST.request one) including on the async method.
          */
         assertThat("Mismatched string result", result, is(HelloWorldResource.SLOW_RESPONSE));
 
         Duration minDuration = Duration.ofMillis(HelloWorldResource.SLOW_DELAY_MS);
 
         assertThatWithRetry("Change in count for explicit SimpleTimer",
-                            () -> explicitSimpleTimer.getCount() - explicitSimpleTimerCountBefore,
+                            () -> explicitTimer.getCount() - explicitTimerCountBefore,
                             is(1L));
-        long explicitDiffNanos = explicitSimpleTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
+        long explicitDiffNanos = explicitTimer.getElapsedTime().toNanos() - explicitSimpleTimerDurationBefore.toNanos();
         assertThat("Change in elapsed time for explicit SimpleTimer", explicitDiffNanos, is(greaterThan(minDuration.toNanos())));
 
         assertThatWithRetry("Change in synthetic SimpleTimer elapsed time",
-                            () -> simpleTimer.getElapsedTime().toNanos() - syntheticaSimpleTimerDurationBefore.toNanos(),
+                            () -> slowMessageTimer.getElapsedTime().toNanos() - syntheticTimerDurationBefore.toNanos(),
                             is(greaterThan(minDuration.toNanos())));
 
-        assertThat("Change in timer count", timer.getCount() - slowMessageTimerCountBefore, is(1L));
-        assertThat("Timer mean rate", timer.getMeanRate(), is(greaterThan(0.0)));
+        assertThat("Change in timer count", slowMessageTimer.getCount() - slowMessageTimerCountBefore, is(1L));
+        assertThat("Timer mean rate", slowMessageTimer.getSnapshot().getMean(), is(greaterThan(0.0D)));
     }
 
     @Test
@@ -141,28 +136,28 @@ public class HelloWorldAsyncResponseTest {
                         .request(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
 
-        SimpleTimer syntheticSimpleTimer = getSyntheticSimpleTimer();
+        Timer syntheticTimer = getSyntheticTimer();
         // Give the server a chance to update the metrics, which happens just after it sends each response.
-        assertThatWithRetry("Synthetic SimpleTimer count", syntheticSimpleTimer::getCount, is(3L));
+        assertThatWithRetry("Synthetic Timer count", syntheticTimer::getCount, is(3L));
     }
 
-    SimpleTimer getSyntheticSimpleTimer() {
+    Timer getSyntheticTimer() {
         MetricID metricID = null;
         try {
-            metricID = MetricsCdiExtension.restEndpointSimpleTimerMetricID(
+            metricID = MetricsCdiExtension.restEndpointTimerMetricID(
                     HelloWorldResource.class.getMethod("slowMessageWithArg",
                     String.class, AsyncResponse.class));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);
         }
 
-        SortedMap<MetricID, SimpleTimer> simpleTimers = syntheticSimpleTimerRegistry.getSimpleTimers();
-        SimpleTimer syntheticSimpleTimer = simpleTimers.get(metricID);
+        SortedMap<MetricID, Timer> timers = syntheticTimerRegistry.getTimers();
+        Timer syntheticTimer = timers.get(metricID);
         // We should not need to retry here. Annotation processing creates the synthetic simple timers long before tests run.
         assertThat("Synthetic simple timer "
-                        + MetricsCdiExtension.SYNTHETIC_SIMPLE_TIMER_METRIC_NAME,
-                syntheticSimpleTimer, is(notNullValue()));
-        return syntheticSimpleTimer;
+                        + MetricsCdiExtension.SYNTHETIC_TIMER_METRIC_NAME,
+                syntheticTimer, is(notNullValue()));
+        return syntheticTimer;
     }
 
     @Test

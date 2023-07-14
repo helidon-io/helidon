@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
@@ -42,12 +43,16 @@ import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricRegistry.Type;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * OCI Metrics Support
@@ -75,14 +80,14 @@ public class OciMetricsSupport implements HttpService {
     private final TimeUnit schedulingTimeUnit;
     private final String resourceGroup;
     private final boolean descriptionEnabled;
-    private final Type[] scopes;
+    private final String[] scopes;
     private final int batchSize;
     private final boolean enabled;
     private final AtomicInteger webServerCounter = new AtomicInteger(0);
 
     private final Monitoring monitoringClient;
 
-    private final Map<MetricRegistry, Type> metricRegistries = new HashMap<>();
+    private final Map<MetricRegistry, String> metricRegistries = new HashMap<>();
     private OciMetricsData ociMetricsData;
 
     private OciMetricsSupport(Builder builder) {
@@ -124,26 +129,47 @@ public class OciMetricsSupport implements HttpService {
          *     metadata does not have units set or, in translating the units for OCI, the result is blank.
          * </p>
          *
+         * @param metric the metric to be formatted
          * @param metricId {@code MetricID} of the metric being formatted
          * @param suffix name suffix to append to the recorded metric name (e.g, "total"); can be null
          * @param metadata metric metadata describing the metric
          * @return the formatted metric name
          */
-        default String format(MetricID metricId, String suffix, Metadata metadata) {
-
-            MetricType metricType = metadata.getTypeRaw();
+        default String format(Metric metric, MetricID metricId, String suffix, Metadata metadata) {
 
             StringBuilder result = new StringBuilder(metricId.getName());
             if (suffix != null) {
                 result.append("_").append(suffix);
             }
-            result.append("_").append(metricType.toString().replace(" ", "_"));
+            result.append("_").append(textType(metric).replace(" ", "_"));
 
             String units = formattedBaseUnits(metadata.getUnit());
             if (units != null && !units.isBlank()) {
                 result.append("_").append(units);
             }
             return result.toString();
+        }
+
+        /**
+         * Converts a metric instance into the corresponding text representation of its metric type.
+         *
+         * @param metric {@link org.eclipse.microprofile.metrics.Metric} to be converted
+         * @return text type of the metric
+         */
+        static String textType(Metric metric) {
+            if (metric instanceof Counter) {
+                return "counter";
+            }
+            if (metric instanceof Gauge<?>) {
+                return "gauge";
+            }
+            if (metric instanceof Histogram) {
+                return "histogram";
+            }
+            if (metric instanceof Timer) {
+                return "timer";
+            }
+            throw new IllegalArgumentException("Cannot map metric of type " + metric.getClass().getName());
         }
     }
 
@@ -294,7 +320,7 @@ public class OciMetricsSupport implements HttpService {
         private String namespace;
         private NameFormatter nameFormatter = DEFAULT_NAME_FORMATTER;
         private String resourceGroup;
-        private Type[] scopes = getAllMetricScopes();
+        private String[] scopes = Registry.BUILT_IN_SCOPES.toArray(new String[0]);
         private boolean descriptionEnabled = true;
         private int batchSize = DEFAULT_BATCH_SIZE;
         private boolean enabled = true;
@@ -393,7 +419,7 @@ public class OciMetricsSupport implements HttpService {
          * Sets the {@link NameFormatter} to use in formatting metric
          * names. See the
          * {@link NameFormatter#format(
-         * MetricID, String, Metadata)} method for details
+         * Metric, MetricID, String, Metadata)} method for details
          * about the default formatting.
          *
          * @param nameFormatter the formatter to use
@@ -453,16 +479,14 @@ public class OciMetricsSupport implements HttpService {
 
         private Builder scopes(List<String> value) {
             if (value == null || value.isEmpty()) {
-                this.scopes = getAllMetricScopes();
+                this.scopes = Registry.BUILT_IN_SCOPES.toArray(new String[0]);
             } else {
-                List<Type> convertedScope = new ArrayList<>();
+                List<String> convertedScope = new ArrayList<>();
                 for (String element: value) {
-                    Type scopeItem = SCOPE_TYPES.get(element.toLowerCase(Locale.ROOT).trim());
-                    if (scopeItem != null) {
-                        convertedScope.add(scopeItem);
-                    }
+                    String scopeItem = element.toLowerCase(Locale.ROOT).trim();
+                    convertedScope.add(scopeItem);
                 }
-                this.scopes = convertedScope.toArray(new Type[convertedScope.size()]);
+                this.scopes = convertedScope.toArray(new String[0]);
             }
             return this;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.Http.Status;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
@@ -75,7 +76,7 @@ public class StatusTest {
 
     @BeforeEach
     void findStatusMetrics() {
-        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
         for (int i = 1; i < STATUS_COUNTERS.length; i++) {
             STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricService.STATUS_COUNTER_NAME,
                                                                      new Tag(HttpStatusMetricService.STATUS_TAG_NAME, i + "xx")));

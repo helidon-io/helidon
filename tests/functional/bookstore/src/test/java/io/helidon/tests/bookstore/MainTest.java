@@ -50,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -353,7 +354,7 @@ class MainTest {
                     .path("/metrics")
                     .header(Http.Header.ACCEPT, MediaTypes.WILDCARD.text())
                     .request(String.class);
-            assertThat("Making sure we got Prometheus format", payload, startsWith("# TYPE"));
+            assertThat("Making sure we got Prometheus format", payload, anyOf(startsWith("# TYPE"), startsWith("# HELP")));
 
             JsonObject jsonObject;
 

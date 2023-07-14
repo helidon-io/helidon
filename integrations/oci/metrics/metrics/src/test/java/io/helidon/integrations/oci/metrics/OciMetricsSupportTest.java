@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.WebServer;
@@ -39,7 +40,6 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,11 +63,11 @@ class OciMetricsSupportTest {
     private static int noOfMetrics;
     private static String endPoint = "https://telemetry.DummyEndpoint.com";
     private static String postingEndPoint;
-    private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
+    private final String[] types = Registry.BUILT_IN_SCOPES.toArray(new String[0]);
     private final RegistryFactory rf = RegistryFactory.getInstance();
-    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Type.BASE);
-    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Type.VENDOR);
-    private final MetricRegistry appMetricRegistry = rf.getRegistry(Type.APPLICATION);
+    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Registry.BASE_SCOPE);
+    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Registry.VENDOR_SCOPE);
+    private final MetricRegistry appMetricRegistry = rf.getRegistry(Registry.APPLICATION_SCOPE);
 
     @BeforeAll
     static void mockSetGetEndpoints() {
@@ -83,7 +83,7 @@ class OciMetricsSupportTest {
     @BeforeEach
     void resetState() {
         // clear all registry
-        for (Type type : types) {
+        for (String type : types) {
             MetricRegistry metricRegistry = rf.getRegistry(type);
             metricRegistry.removeMatching(new MetricFilter() {
                 @Override
@@ -324,10 +324,10 @@ class OciMetricsSupportTest {
         appMetricRegistry.counter("appDummyCounter3").inc();
 
         validateMetricCount(new String[] {}, 6);
-        validateMetricCount(new String[] {Type.BASE.getName(), Type.VENDOR.getName(), Type.APPLICATION.getName()}, 6);
-        validateMetricCount(new String[] {Type.BASE.getName()}, 1);
-        validateMetricCount(new String[] {Type.VENDOR.getName()}, 2);
-        validateMetricCount(new String[] {Type.APPLICATION.getName()}, 3);
+        validateMetricCount(new String[] {Registry.BASE_SCOPE, Registry.VENDOR_SCOPE, Registry.APPLICATION_SCOPE}, 6);
+        validateMetricCount(new String[] {Registry.BASE_SCOPE}, 1);
+        validateMetricCount(new String[] {Registry.VENDOR_SCOPE}, 2);
+        validateMetricCount(new String[] {Registry.APPLICATION_SCOPE}, 3);
         validateMetricCount(new String[] {"base", "vendor", "application"}, 6);
         validateMetricCount(new String[] {"base"}, 1);
         validateMetricCount(new String[] {"vendor"}, 2);

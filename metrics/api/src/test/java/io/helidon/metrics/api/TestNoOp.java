@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class TestNoOp {
 
     @Test
     void testCounterAndGetCounters() {
-        MetricRegistry appRegistry = factory.getRegistry(MetricRegistry.Type.APPLICATION);
+        MetricRegistry appRegistry = factory.getRegistry(Registry.APPLICATION_SCOPE);
 
         Counter counter = appRegistry.counter("disabledCounter");
         counter.inc();

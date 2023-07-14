@@ -95,6 +95,10 @@ public final class MediaTypes {
      */
     public static final MediaType APPLICATION_OPENAPI_JSON = MediaTypeEnum.APPLICATION_OPENAPI_JSON;
     /**
+     * {@code application/openmetrics-text} media type.
+     */
+    public static final MediaType APPLICATION_OPENMETRICS_TEXT = MediaTypeEnum.APPLICATION_OPENMETRICS_TEXT;
+    /**
      * {@code application/x-yaml} media type.
      */
     public static final MediaType APPLICATION_X_YAML = MediaTypeEnum.APPLICATION_X_YAML;

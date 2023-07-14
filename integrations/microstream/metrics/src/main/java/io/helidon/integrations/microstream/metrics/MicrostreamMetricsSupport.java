@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@
 package io.helidon.integrations.microstream.metrics;
 
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
-import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 
@@ -42,25 +41,19 @@ public class MicrostreamMetricsSupport {
 
     private static final Metadata GLOBAL_FILE_COUNT = Metadata.builder()
             .withName("microstream.globalFileCount")
-            .withDisplayName("total storage file count")
             .withDescription("Displays the number of storage files.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata LIVE_DATA_LENGTH = Metadata.builder()
             .withName("microstream.liveDataLength")
-            .withDisplayName("live data length")
             .withDescription("Displays live data length. This is the 'real' size of the stored data.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.BYTES)
             .build();
 
     private static final Metadata TOTAL_DATA_LENGTH = Metadata.builder()
             .withName("microstream.totalDataLength")
-            .withDisplayName("total data length")
             .withDescription("Displays total data length. This is the accumulated size of all storage data files.")
-            .withType(MetricType.GAUGE)
             .withUnit(MetricUnits.BYTES)
             .build();
 
@@ -80,7 +73,7 @@ public class MicrostreamMetricsSupport {
             registryFactory = builder.registryFactory();
         }
 
-        this.vendorRegistry = registryFactory.getRegistry(MetricRegistry.Type.VENDOR);
+        this.vendorRegistry = registryFactory.getRegistry(Registry.VENDOR_SCOPE);
     }
 
     /**
@@ -93,11 +86,11 @@ public class MicrostreamMetricsSupport {
         return new Builder(embeddedStorageManager);
     }
 
-    private void register(Metadata meta, Metric metric, Tag... tags) {
+    private <T extends Number> void register(Metadata meta, Supplier<T> supplier, Tag... tags) {
         if (config.get(CONFIG_METRIC_ENABLED_VENDOR + meta.getName() + ".enabled")
                 .asBoolean()
                 .orElse(true)) {
-            vendorRegistry.register(meta, metric, tags);
+            vendorRegistry.gauge(meta, supplier, tags);
         }
     }
 
@@ -105,9 +98,9 @@ public class MicrostreamMetricsSupport {
      * Register this metrics at the vendor metrics registry.
      */
     public void registerMetrics() {
-        register(GLOBAL_FILE_COUNT, (Gauge<Long>) () -> embeddedStorageManager.createStorageStatistics().fileCount());
-        register(LIVE_DATA_LENGTH, (Gauge<Long>) () -> embeddedStorageManager.createStorageStatistics().liveDataLength());
-        register(TOTAL_DATA_LENGTH, (Gauge<Long>) () -> embeddedStorageManager.createStorageStatistics().totalDataLength());
+        register(GLOBAL_FILE_COUNT,  () -> embeddedStorageManager.createStorageStatistics().fileCount());
+        register(LIVE_DATA_LENGTH,  () -> embeddedStorageManager.createStorageStatistics().liveDataLength());
+        register(TOTAL_DATA_LENGTH, () -> embeddedStorageManager.createStorageStatistics().totalDataLength());
     }
 
     /**

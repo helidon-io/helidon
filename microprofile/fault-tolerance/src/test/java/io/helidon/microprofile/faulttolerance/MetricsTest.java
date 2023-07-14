@@ -23,7 +23,6 @@ import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.junit.jupiter.api.Test;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -64,7 +63,6 @@ class MetricsTest extends FaultToleranceTest {
         MetricRegistry metricRegistry = getMetricRegistry();
         metricRegistry.counter(Metadata.builder()
                 .withName("dcounter")
-                .withType(MetricType.COUNTER)
                 .withUnit(MetricUnits.NONE)
                 .build());
         metricRegistry.counter("dcounter").inc();

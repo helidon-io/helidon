@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonStructure;
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * Support for metrics for Helidon Web Server.
@@ -190,9 +189,9 @@ public class MetricsSupport extends HelidonRestServiceSupport {
     }
 
     private void setUpEndpoints(String context, Routing.Rules rules) {
-        Registry base = registryFactory.getRegistry(MetricRegistry.Type.BASE);
-        Registry vendor = registryFactory.getRegistry(MetricRegistry.Type.VENDOR);
-        Registry app = registryFactory.getRegistry(MetricRegistry.Type.APPLICATION);
+        Registry base = registryFactory.getRegistry(Registry.BASE_SCOPE);
+        Registry vendor = registryFactory.getRegistry(Registry.VENDOR_SCOPE);
+        Registry app = registryFactory.getRegistry(Registry.APPLICATION_SCOPE);
 
         // routing to root of metrics
         rules.get(context, (req, res) -> getMultiple(req, res, base, app, vendor))
@@ -201,7 +200,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
         // routing to each scope
         Stream.of(app, base, vendor)
                 .forEach(registry -> {
-                    String type = registry.type();
+                    String type = registry.scope();
 
                     rules.get(context + "/" + type, (req, res) -> getAll(req, res, registry))
                             .get(context + "/" + type + "/{metric}", (req, res) -> getByName(req, res, registry))
@@ -337,9 +336,7 @@ public class MetricsSupport extends HelidonRestServiceSupport {
 
         // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
         // application, base, vendor
-        Stream.of(org.eclipse.microprofile.metrics.MetricRegistry.Type.values())
-                .map(org.eclipse.microprofile.metrics.MetricRegistry.Type::name)
-                .map(String::toLowerCase)
+       Registry.BUILT_IN_SCOPES
                 .forEach(type -> Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
                         .map(suffix -> context + "/" + type + suffix)
                         .forEach(path -> rules.get(path, DISABLED_ENDPOINT_HANDLER)

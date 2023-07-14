@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ import java.lang.annotation.Target;
 
 import jakarta.enterprise.inject.Stereotype;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
+import org.eclipse.microprofile.metrics.annotation.Timed;
 
 @Stereotype
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Counted
-@SimplyTimed(name = StereotypeA.SIMPLE_TIMER_NAME)
+@Timed(name = StereotypeA.TIMER_NAME)
 @interface StereotypeA {
 
-    String SIMPLE_TIMER_NAME = "simplyTimedA";
+    String TIMER_NAME = "simplyTimedA";
 }

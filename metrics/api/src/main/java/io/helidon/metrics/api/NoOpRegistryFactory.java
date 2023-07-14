@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@
 
 package io.helidon.metrics.api;
 
-import java.util.EnumMap;
-import java.util.stream.Stream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
+import io.helidon.common.media.type.MediaType;
 
 /**
  * No-op implementation of {@link RegistryFactory}.
@@ -36,22 +37,35 @@ class NoOpRegistryFactory implements RegistryFactory {
         return new NoOpRegistryFactory();
     }
 
-    private static final EnumMap<Type, Registry> NO_OP_REGISTRIES = Stream.of(Type.values())
+    private static final Map<String, Registry> NO_OP_REGISTRIES = Registry.BUILT_IN_SCOPES
+            .stream()
             .collect(
-                    () -> new EnumMap<>(Type.class),
-                    (map, type) -> map.put(type, NoOpMetricRegistry.create(type)),
-                    EnumMap::putAll);
+                    HashMap::new,
+                    (map, scope) -> map.put(scope, NoOpMetricRegistry.create(scope)),
+                    Map::putAll);
 
     private NoOpRegistryFactory() {
     }
 
     @Override
-    public Registry getRegistry(Type type) {
-        return NO_OP_REGISTRIES.get(type);
+    public Registry getRegistry(String scope) {
+        return NO_OP_REGISTRIES.get(scope);
     }
 
     @Override
     public boolean enabled() {
         return false;
+    }
+
+    @Override
+    public Optional<?> scrape(MediaType mediaType,
+                                   Iterable<String> scopeSelection,
+                                   Iterable<String> meterNameSelection) {
+        throw new UnsupportedOperationException("NoOp registry does not support output");
+    }
+
+    @Override
+    public Iterable<String> scopes() {
+        return NO_OP_REGISTRIES.keySet();
     }
 }

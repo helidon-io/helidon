@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,17 +41,6 @@ public class DbClientMetrics {
      */
     public static DbClientMetricBuilder counter() {
         return DbClientCounter.builder();
-    }
-
-    /**
-     * Create a meter builder, to be registered
-     * with {@link io.helidon.reactive.dbclient.DbClient.Builder#addService(java.util.function.Supplier)}.
-     *
-     * @return a new meter builder
-     * @see org.eclipse.microprofile.metrics.Meter
-     */
-    public static DbClientMetricBuilder meter() {
-        return DbClientMeter.builder();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.common.reactive.IoMulti;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.reactive.webclient.WebClient;
@@ -49,7 +50,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 public class ClientMain {
 
     private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
-            .getRegistry(MetricRegistry.Type.APPLICATION);
+            .getRegistry(Registry.APPLICATION_SCOPE);
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject JSON_NEW_GREETING;
 

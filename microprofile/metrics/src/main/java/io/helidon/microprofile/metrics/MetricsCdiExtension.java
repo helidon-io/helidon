@@ -90,15 +90,11 @@ import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.SimpleTimer;
 import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.ConcurrentGauge;
+import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Gauge;
-import org.eclipse.microprofile.metrics.annotation.Metered;
-import org.eclipse.microprofile.metrics.annotation.SimplyTimed;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 
 import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
@@ -122,19 +118,15 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * </p>
  */
 public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature> {
-
     private static final System.Logger LOGGER = System.getLogger(MetricsCdiExtension.class.getName());
 
     static final Set<Class<? extends Annotation>> ALL_METRIC_ANNOTATIONS = Set.of(
-            Counted.class, Metered.class, Timed.class, ConcurrentGauge.class, SimplyTimed.class, Gauge.class);
+            Counted.class, Timed.class, Gauge.class); // There is no annotation for histograms.
 
     private static final Map<Class<? extends Annotation>, AnnotationLiteral<?>> INTERCEPTED_METRIC_ANNOTATIONS =
             Map.of(
                     Counted.class, InterceptorCounted.binding(),
-                    Metered.class, InterceptorMetered.binding(),
-                    Timed.class, InterceptorTimed.binding(),
-                    ConcurrentGauge.class, InterceptorConcurrentGauge.binding(),
-                    SimplyTimed.class, InterceptorSimplyTimed.binding());
+                    Timed.class, InterceptorTimed.binding());
 
     private static final List<Class<? extends Annotation>> JAX_RS_ANNOTATIONS
             = Arrays.asList(GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class, DELETE.class, PATCH.class);
@@ -150,30 +142,25 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     static final String REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME = "rest-request.enabled";
     private static final boolean REST_ENDPOINTS_METRIC_ENABLED_DEFAULT_VALUE = false;
 
-    static final String SYNTHETIC_SIMPLE_TIMER_METRIC_NAME = "REST.request";
-    static final String SYNTHETIC_SIMPLE_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME =
-            SYNTHETIC_SIMPLE_TIMER_METRIC_NAME + ".unmappedException.total";
+    static final String SYNTHETIC_TIMER_METRIC_NAME = "REST.request";
+    static final String SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME =
+            SYNTHETIC_TIMER_METRIC_NAME + ".unmappedException.total";
 
-    static final Metadata SYNTHETIC_SIMPLE_TIMER_METADATA = Metadata.builder()
-            .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME)
-            .withDisplayName("Total Requests and Response Time")
+    static final Metadata SYNTHETIC_TIMER_METADATA = Metadata.builder()
+            .withName(SYNTHETIC_TIMER_METRIC_NAME)
             .withDescription("""
                                      The number of invocations and total response time of this RESTful resource method since the \
                                      start of the server. The metric will not record the elapsed time nor count of a REST \
                                      request if it resulted in an unmapped exception. Also tracks the highest recorded time \
-                                     duration within the previous completed full minute and lowest recorded time duration within \
-                                     the previous completed full minute.""")
-            .withType(MetricType.SIMPLE_TIMER)
+                                     duration and the 50th, 75th, 95th, 98th, 99th and 99.9th percentile.""")
             .withUnit(MetricUnits.NANOSECONDS)
             .build();
 
-    static final Metadata SYNTHETIC_SIMPLE_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
-            .withName(SYNTHETIC_SIMPLE_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
-            .withDisplayName("Total Unmapped Exceptions count")
+    static final Metadata SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA = Metadata.builder()
+            .withName(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME)
             .withDescription("""
                                      The total number of unmapped exceptions that occur from this RESTful resouce method since \
                                      the start of the server.""")
-            .withType(MetricType.COUNTER)
             .withUnit(MetricUnits.NONE)
             .build();
 
@@ -252,12 +239,14 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     private void registerMetricsForAnnotatedSites() {
-        MetricRegistry registry = getMetricRegistry();
         for (RegistrationPrep registrationPrep : annotatedSites) {
             metricAnnotationDiscoveriesByExecutable.get(registrationPrep.executable())
                     .forEach(discovery -> {
                         if (discovery.isActive()) { // All annotation discovery observers agreed to preserve the discovery.
-                            org.eclipse.microprofile.metrics.Metric metric = registrationPrep.register(registry);
+                            org.eclipse.microprofile.metrics.Metric metric =
+                                    registrationPrep.register(RegistryFactory
+                                                                      .getInstance()
+                                                                      .getRegistry(registrationPrep.scope()));
                             MetricID metricID = new MetricID(registrationPrep.metricName(), registrationPrep.tags());
                             metricRegistrationObservers.forEach(
                                     o -> o.onRegistration(discovery, registrationPrep.metadata(), metricID, metric));
@@ -366,10 +355,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         discovery.addAnnotatedType(RegistryProducer.class, RegistryProducer.class.getName());
         discovery.addAnnotatedType(MetricProducer.class, MetricProducer.class.getName());
         discovery.addAnnotatedType(InterceptorCounted.class, InterceptorCounted.class.getName());
-        discovery.addAnnotatedType(InterceptorMetered.class, InterceptorMetered.class.getName());
         discovery.addAnnotatedType(InterceptorTimed.class, InterceptorTimed.class.getName());
-        discovery.addAnnotatedType(InterceptorConcurrentGauge.class, InterceptorConcurrentGauge.class.getName());
-        discovery.addAnnotatedType(InterceptorSimplyTimed.class, InterceptorSimplyTimed.class.getName());
 
         // Telling CDI about our private SyntheticRestRequest annotation and its interceptor
         // is enough for CDI to intercept invocations of methods so annotated.
@@ -399,11 +385,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      * @param pat ProcessAnnotatedType event
      */
     private void recordMetricAnnotatedClass(@Observes @Priority(Interceptor.Priority.APPLICATION + 500 + 10)
-                                            @WithAnnotations({Counted.class,
-                                                    Metered.class,
-                                                    Timed.class,
-                                                    ConcurrentGauge.class,
-                                                    SimplyTimed.class}) ProcessAnnotatedType<?> pat) {
+                                            @WithAnnotations({Counted.class, Timed.class}) ProcessAnnotatedType<?> pat) {
         if (isConcreteNonInterceptor(pat)) {
             recordAnnotatedType(pat);
             recordStereotypes(pat);
@@ -558,7 +540,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      *
      * @param pat the {@code ProcessAnnotatedType} for the type containing the JAX-RS annotated methods
      */
-    private void recordSimplyTimedForRestResources(@Observes
+    private void recordTimedForRestResources(@Observes
                                                    @WithAnnotations({GET.class, PUT.class, POST.class, HEAD.class, OPTIONS.class,
                                                            DELETE.class, PATCH.class})
                                                            ProcessAnnotatedType<?> pat) {
@@ -606,18 +588,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     /**
-     * Creates or looks up the {@code SimpleTimer} instance for measuring REST requests on any JAX-RS method.
+     * Creates or looks up the {@code Timer} instance for measuring REST requests on any JAX-RS method.
      *
-     * @param method the {@code Method} for which the SimpleTimer instance is needed
-     * @return the located or created {@code SimpleTimer}
+     * @param method the {@code Method} for which the Timer instance is needed
+     * @return the located or created {@code Timer}
      */
-    static SimpleTimer restEndpointSimpleTimer(Method method) {
-        // By spec, the synthetic SimpleTimers are always in the base registry.
+    static Timer restEndpointTimer(Method method) {
+        // By spec, the synthetic Timers are always in the base registry.
         LOGGER.log(Level.DEBUG,
                 () -> String.format("Registering synthetic SimpleTimer for %s#%s", method.getDeclaringClass().getName(),
                         method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .simpleTimer(SYNTHETIC_SIMPLE_TIMER_METADATA, syntheticRestRequestMetricTags(method));
+                .timer(SYNTHETIC_TIMER_METADATA, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -631,25 +613,25 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                    () -> String.format("Registering synthetic Counter for %s#%s", method.getDeclaringClass().getName(),
                                        method.getName()));
         return getRegistryForSyntheticRestRequestMetrics()
-                .counter(SYNTHETIC_SIMPLE_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
+                .counter(SYNTHETIC_TIMER_UNMAPPED_EXCEPTION_METADATA, syntheticRestRequestMetricTags(method));
     }
 
     private void registerAndSaveRestRequestMetrics(Method method) {
         workItemsManager.put(method, SyntheticRestRequest.class,
-                             SyntheticRestRequestWorkItem.create(restEndpointSimpleTimerMetricID(method),
-                                                                 restEndpointSimpleTimer(method),
+                             SyntheticRestRequestWorkItem.create(restEndpointTimerMetricID(method),
+                                                                 restEndpointTimer(method),
                                                                  restEndpointCounterMetricID(method),
                                                                  restEndpointCounter(method)));
     }
 
     /**
-     * Creates the {@link MetricID} for the synthetic {@link SimplyTimed} metric we add to each JAX-RS method.
+     * Creates the {@link MetricID} for the synthetic {@link Timed} metric we add to each JAX-RS method.
      *
      * @param method Java method of interest
      * @return {@code MetricID} for the simpletimer for this Java method
      */
-    static MetricID restEndpointSimpleTimerMetricID(Method method) {
-        return new MetricID(SYNTHETIC_SIMPLE_TIMER_METRIC_NAME, syntheticRestRequestMetricTags(method));
+    static MetricID restEndpointTimerMetricID(Method method) {
+        return new MetricID(SYNTHETIC_TIMER_METRIC_NAME, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -659,7 +641,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
      * @return {@code MetricID} for the counter for this Java method
      */
     static MetricID restEndpointCounterMetricID(Method method) {
-        return new MetricID(SYNTHETIC_SIMPLE_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
+        return new MetricID(SYNTHETIC_TIMER_METRIC_UNMAPPED_EXCEPTION_NAME, syntheticRestRequestMetricTags(method));
     }
 
     /**
@@ -703,12 +685,12 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     private void registerRestRequestMetrics() {
         restRequestMetricsToRegister.forEach(this::registerAndSaveRestRequestMetrics);
         if (LOGGER.isLoggable(Level.DEBUG)) {
-            Set<Class<?>> syntheticSimpleTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
-            syntheticSimpleTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
-            if (!syntheticSimpleTimerAnnotatedClassesIgnored.isEmpty()) {
+            Set<Class<?>> syntheticTimerAnnotatedClassesIgnored = new HashSet<>(methodsWithRestRequestMetrics.keySet());
+            syntheticTimerAnnotatedClassesIgnored.removeAll(restRequestMetricsClassesProcessed);
+            if (!syntheticTimerAnnotatedClassesIgnored.isEmpty()) {
                 LOGGER.log(Level.DEBUG, () ->
-                        "Classes with synthetic SimplyTimer annotations added that were not processed, probably "
-                                + "because they were vetoed:" + syntheticSimpleTimerAnnotatedClassesIgnored.toString());
+                        "Classes with synthetic Timed annotations added that were not processed, probably "
+                                + "because they were vetoed:" + syntheticTimerAnnotatedClassesIgnored.toString());
             }
         }
         restRequestMetricsClassesProcessed.clear();
@@ -889,13 +871,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 } else {
                     Metadata md = Metadata.builder()
                             .withName(gaugeID.getName())
-                            .withDisplayName(gaugeAnnotation.displayName())
                             .withDescription(gaugeAnnotation.description())
-                            .withType(MetricType.GAUGE)
                             .withUnit(gaugeAnnotation.unit())
                             .build();
                     LOGGER.log(Level.DEBUG, () -> String.format("Registering gauge with metadata %s", md.toString()));
-                    registry.register(md, dg, gaugeID.getTagsAsList().toArray(new Tag[0]));
+                    registry.gauge(md, dg, DelegatingGauge::getValue, gaugeID.getTagsAsList().toArray(new Tag[0]));
                 }
             } catch (Throwable t) {
                 gaugeProblems.add(new IllegalArgumentException(

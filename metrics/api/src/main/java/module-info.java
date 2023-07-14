@@ -27,10 +27,12 @@ module io.helidon.metrics.api {
 
     requires transitive microprofile.metrics.api;
     requires static io.helidon.config.metadata;
+    requires micrometer.core;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
 
     uses RegistryFactoryProvider;
     uses ExemplarService;
+    uses io.helidon.metrics.api.MetricsProgrammaticSettings;
 }

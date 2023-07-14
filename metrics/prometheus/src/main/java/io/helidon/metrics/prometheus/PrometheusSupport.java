@@ -73,8 +73,13 @@ public final class PrometheusSupport extends HelidonFeatureSupport {
     }
 
     private void process(ServerRequest req, ServerResponse res) {
+        // Recent releases of the Prometheus client append suffixes such as "_total" to the meter names. To preserve the
+        // outward behavior of this endpoint where the query parameter specifies the base name (without the suffix),
+        // pass a predicate for filtering rather than just the set of strings of base names.
         Set<String> filters = new HashSet<>(req.query().all("name[]", List::of));
-        Enumeration<Collector.MetricFamilySamples> mfs = collectorRegistry.filteredMetricFamilySamples(filters);
+        Enumeration<Collector.MetricFamilySamples> mfs = collectorRegistry.filteredMetricFamilySamples(candidate ->
+                filters.isEmpty() || filters.stream().anyMatch(candidate::startsWith));
+
         res.headers().contentType(CONTENT_TYPE);
         res.send(compose(mfs));
     }

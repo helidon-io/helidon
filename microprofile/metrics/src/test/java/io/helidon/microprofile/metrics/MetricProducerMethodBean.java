@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import jakarta.enterprise.inject.spi.InjectionPoint;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Meter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
 import org.eclipse.microprofile.metrics.annotation.Metric;
@@ -31,17 +30,17 @@ import org.eclipse.microprofile.metrics.annotation.Timed;
 public class MetricProducerMethodBean {
 
     @Inject
-    private Meter hits;
+    private Counter hits;
 
     @Timed(name = "calls")
     public void cachedMethod(boolean hit) {
         if (hit) {
-            hits.mark();
+            hits.inc();
         }
     }
 
     @Produces
-    Gauge<Double> cacheHitRatioGauge(final @Metric(name = "hits") Meter hits, final @Metric(name = "calls") Timer calls) {
+    Gauge<Double> cacheHitRatioGauge(final @Metric(name = "hits") Counter hits, final @Metric(name = "calls") Timer calls) {
         return new Gauge<Double>() {
 
             @Override

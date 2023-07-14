@@ -21,6 +21,7 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
+import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Invocation;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest()
@@ -102,10 +104,12 @@ public class TestMetricsOnOwnSocket {
 
             JsonObject metrics = r.readEntity(JsonObject.class);
             assertThat("Check for requests.load", metrics.containsKey("requests.load"), is(true));
-            JsonObject load = metrics.getJsonObject("requests.load");
-            assertThat("JSON requests.load contains count", load.containsKey("count"), is(true));
+            // In Helidon 4, requests.load changed from a meter to a counter (backends can do the time-series analysis), so
+            // just fetch it as a number.
+            assertThat("Load count type", metrics.get("requests.load"), is(instanceOf(JsonNumber.class)));
+            JsonNumber load = metrics.getJsonNumber("requests.load");
 
-            return load.getInt("count");
+            return load.intValue();
         }
     }
 }

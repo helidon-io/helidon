@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,7 @@ public interface ComponentMetricsSettings {
     }
 
     /**
+     * Returns whether the component settings indicate that metrics are enabled for the component.
      *
      * @return whether metrics are enabled for the component according to the settings
      */

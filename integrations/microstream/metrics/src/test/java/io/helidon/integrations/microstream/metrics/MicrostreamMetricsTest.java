@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.integrations.microstream.metrics;
 
 import java.util.Date;
 
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
 import one.microstream.X;
@@ -77,7 +78,7 @@ class MicrostreamMetricsTest {
     }
 
     private Gauge<?> findFirstGauge(String name) {
-        MetricRegistry metricsRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.VENDOR);
+        MetricRegistry metricsRegistry = RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE);
         MetricID id = metricsRegistry.getGauges(new MetricNameFilter(name)).firstKey();
         return metricsRegistry.getGauges().get(id);
     }

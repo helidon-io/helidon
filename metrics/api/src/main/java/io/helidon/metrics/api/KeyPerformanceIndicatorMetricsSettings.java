@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,14 +61,16 @@ public interface KeyPerformanceIndicatorMetricsSettings {
     }
 
     /**
+     * Returns whether extends KPI metrics are enabled.
      *
-     * @return whether extended KPI metrics are enabled in the settings
+     * @return extended setting
      */
     boolean isExtended();
 
     /**
+     * Returns the threshold (in ms) for long-running requests.
      *
-     * @return the threshold (in ms) for long-running requests
+     * @return the threshold (in ms)
      */
     long longRunningRequestThresholdMs();
 
