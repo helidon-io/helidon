@@ -31,13 +31,13 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.tests.integration.dbclient.app.model.Pokemon;
-import io.helidon.tests.integration.dbclient.app.model.Type;
+import io.helidon.tests.integration.dbclient.common.model.Pokemon;
+import io.helidon.tests.integration.dbclient.common.model.Type;
 
 import jakarta.json.Json;
 import jakarta.json.JsonObjectBuilder;
 
-import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
+import static io.helidon.tests.integration.harness.AppResponse.okStatus;
 
 /**
  * Service for tests initialization services.
@@ -63,8 +63,8 @@ public class InitService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         rules
-                .get("/setup", this::setup)
-                .get("/testPing", this::testHealthCheck)
+                .get("/testPing", this::testPing)
+                .get("/testHealthCheck", this::testHealthCheck)
                 .get("/testDropSchema", this::testDropSchema)
                 .get("/testInitSchema", this::testInitSchema)
                 .get("/testInitTypes", this::testInitTypes)
@@ -72,7 +72,7 @@ public class InitService implements HttpService {
                 .get("/testInitPokemonTypes", this::testInitPokemonTypes);
     }
 
-    private void setup(ServerRequest request, ServerResponse response) {
+    private void testPing(ServerRequest request, ServerResponse response) {
         boolean ping = dbConfig.get("test.ping-dml")
                 .map(c -> c.asBoolean().get())
                 .orElse(false);

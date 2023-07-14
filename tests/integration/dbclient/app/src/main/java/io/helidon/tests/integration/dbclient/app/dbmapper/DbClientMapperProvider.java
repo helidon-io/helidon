@@ -19,8 +19,8 @@ import java.util.Optional;
 
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;
-import io.helidon.tests.integration.dbclient.app.model.Pokemon;
-import io.helidon.tests.integration.dbclient.app.model.RangePoJo;
+import io.helidon.tests.integration.dbclient.common.model.Pokemon;
+import io.helidon.tests.integration.dbclient.common.model.RangePoJo;
 
 import jakarta.json.JsonObject;
 

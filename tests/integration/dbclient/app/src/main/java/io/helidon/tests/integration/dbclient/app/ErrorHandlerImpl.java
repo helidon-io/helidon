@@ -19,7 +19,7 @@ import io.helidon.nima.webserver.http.ErrorHandler;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
-import static io.helidon.tests.integration.tools.service.AppResponse.exceptionStatus;
+import static io.helidon.tests.integration.harness.AppResponse.exceptionStatus;
 
 /**
  * Error handler.

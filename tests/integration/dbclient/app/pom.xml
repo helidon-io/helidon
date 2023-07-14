@@ -14,15 +14,6 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-
-<!--
-  Tests execution requires following maven properties to be provided:
-   * app.config  - configuration file name
-   * db.user     - database user name
-   * db.password - database user password
-   * db.url      - database URL
--->
-
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -39,9 +30,9 @@
     <name>Integration Tests: Database Client Application</name>
 
     <properties>
-        <version.lib.jandex-maven-plugin>1.0.6</version.lib.jandex-maven-plugin>
         <mainClass>io.helidon.tests.integration.dbclient.app.Main</mainClass>
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+        <version.lib.junit-suite>1.9.3</version.lib.junit-suite>
     </properties>
 
     <dependencies>
@@ -86,8 +77,13 @@
             <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tests.integration.tools</groupId>
-            <artifactId>helidon-tests-integration-tools-service</artifactId>
+            <groupId>io.helidon.tests.integration.dbclient</groupId>
+            <artifactId>helidon-tests-integration-dbclient-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tests.integration</groupId>
+            <artifactId>helidon-tests-integration-harness</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -95,23 +91,8 @@
             <artifactId>parsson</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>jandex</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tests.integration.tools</groupId>
-            <artifactId>helidon-tests-integration-tools-client</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.webclient</groupId>
@@ -121,6 +102,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-engine</artifactId>
+            <version>${version.lib.junit-suite}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -136,15 +123,6 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.jboss.jandex</groupId>
-                    <artifactId>jandex-maven-plugin</artifactId>
-                    <version>${version.lib.jandex-maven-plugin}</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -152,15 +130,6 @@
                 <executions>
                     <execution>
                         <id>copy-libs</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.jboss.jandex</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
                     </execution>
                 </executions>
             </plugin>
@@ -177,7 +146,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
                     <parallel>methods</parallel>
                     <threadCount>10</threadCount>
                     <systemPropertyVariables>
@@ -198,7 +167,7 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/*IT</include>
+                                <include>**/*SuiteIT</include>
                             </includes>
                         </configuration>
                     </execution>

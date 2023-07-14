@@ -30,25 +30,25 @@ import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.health.HealthObserveProvider;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.tests.integration.dbclient.app.health.HealthCheckService;
-import io.helidon.tests.integration.dbclient.app.interceptor.InterceptorService;
-import io.helidon.tests.integration.dbclient.app.mapping.MapperService;
-import io.helidon.tests.integration.dbclient.app.result.FlowControlService;
-import io.helidon.tests.integration.dbclient.app.simple.SimpleDeleteService;
-import io.helidon.tests.integration.dbclient.app.simple.SimpleGetService;
-import io.helidon.tests.integration.dbclient.app.simple.SimpleInsertService;
-import io.helidon.tests.integration.dbclient.app.simple.SimpleQueryService;
-import io.helidon.tests.integration.dbclient.app.simple.SimpleUpdateService;
-import io.helidon.tests.integration.dbclient.app.statement.DmlStatementService;
-import io.helidon.tests.integration.dbclient.app.statement.GetStatementService;
-import io.helidon.tests.integration.dbclient.app.statement.QueryStatementService;
+import io.helidon.tests.integration.dbclient.app.tests.HealthCheckService;
+import io.helidon.tests.integration.dbclient.app.tests.InterceptorService;
+import io.helidon.tests.integration.dbclient.app.tests.MapperService;
+import io.helidon.tests.integration.dbclient.app.tests.FlowControlService;
+import io.helidon.tests.integration.dbclient.app.tests.SimpleDeleteService;
+import io.helidon.tests.integration.dbclient.app.tests.SimpleGetService;
+import io.helidon.tests.integration.dbclient.app.tests.SimpleInsertService;
+import io.helidon.tests.integration.dbclient.app.tests.SimpleQueryService;
+import io.helidon.tests.integration.dbclient.app.tests.SimpleUpdateService;
+import io.helidon.tests.integration.dbclient.app.tests.StatementDmlService;
+import io.helidon.tests.integration.dbclient.app.tests.StatementGetService;
+import io.helidon.tests.integration.dbclient.app.tests.StatementQueryService;
 import io.helidon.tests.integration.dbclient.app.tools.ExitService;
-import io.helidon.tests.integration.dbclient.app.transaction.TransactionDeleteService;
-import io.helidon.tests.integration.dbclient.app.transaction.TransactionGetService;
-import io.helidon.tests.integration.dbclient.app.transaction.TransactionInsertService;
-import io.helidon.tests.integration.dbclient.app.transaction.TransactionQueryService;
-import io.helidon.tests.integration.dbclient.app.transaction.TransactionUpdateService;
-import io.helidon.tests.integration.tools.service.RemoteTestException;
+import io.helidon.tests.integration.dbclient.app.tests.TransactionDeleteService;
+import io.helidon.tests.integration.dbclient.app.tests.TransactionGetService;
+import io.helidon.tests.integration.dbclient.app.tests.TransactionInsertService;
+import io.helidon.tests.integration.dbclient.app.tests.TransactionQueryService;
+import io.helidon.tests.integration.dbclient.app.tests.TransactionUpdateService;
+import io.helidon.tests.integration.harness.RemoteTestException;
 
 /**
  * Main class.
@@ -116,9 +116,9 @@ public class Main {
                         .register("/TransactionUpdate", new TransactionUpdateService(dbClient, statements))
                         .register("/TransactionInsert", new TransactionInsertService(dbClient, statements))
                         .register("/TransactionDelete", new TransactionDeleteService(dbClient, statements))
-                        .register("/DmlStatement", new DmlStatementService(dbClient, statements))
-                        .register("/GetStatement", new GetStatementService(dbClient, statements))
-                        .register("/QueryStatement", new QueryStatementService(dbClient, statements))
+                        .register("/StatementDml", new StatementDmlService(dbClient, statements))
+                        .register("/StatementGet", new StatementGetService(dbClient, statements))
+                        .register("/StatementQuery", new StatementQueryService(dbClient, statements))
                         .register("/FlowControl", new FlowControlService(dbClient, statements))
                         .register("/Mapper", new MapperService(dbClient, statements))
                         .register("/Interceptor", new InterceptorService(

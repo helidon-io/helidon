@@ -22,14 +22,15 @@ import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.tests.integration.dbclient.app.tests.AbstractService;
+import io.helidon.tests.integration.dbclient.app.tools.QueryParams;
 
-import io.helidon.tests.integration.dbclient.app.tools.*;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
-import static io.helidon.tests.integration.tools.service.AppResponse.okStatus;
+import static io.helidon.tests.integration.harness.AppResponse.okStatus;
 
 /**
  * Service for test data verification.
@@ -51,7 +52,6 @@ public class VerifyService implements HttpService {
                 .get("/getConfigParam", this::getConfigParam);
     }
 
-    // Get by ID and return its data.
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         DbExecute exec = dbClient.execute();
         String idStr = AbstractService.queryParam(request, QueryParams.ID);
@@ -73,14 +73,12 @@ public class VerifyService implements HttpService {
         response.send(okStatus(jsonObject));
     }
 
-    // Get database type.
     private void getDatabaseType(ServerRequest request, ServerResponse response) {
         JsonObjectBuilder job = Json.createObjectBuilder();
         job.add("type", dbClient.dbType());
         response.send(okStatus(job.build()));
     }
 
-    // Get server configuration parameter.
     private void getConfigParam(ServerRequest request, ServerResponse response) {
         String name = AbstractService.queryParam(request, QueryParams.NAME);
         Config node = config.get(name);

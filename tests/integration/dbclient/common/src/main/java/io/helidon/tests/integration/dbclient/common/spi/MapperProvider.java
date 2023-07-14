@@ -19,7 +19,8 @@ import java.util.Optional;
 
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.spi.DbMapperProvider;
-import io.helidon.tests.integration.dbclient.common.AbstractIT;
+import io.helidon.tests.integration.dbclient.common.model.Pokemon;
+import io.helidon.tests.integration.dbclient.common.model.Pokemon.PokemonMapper;
 import io.helidon.tests.integration.dbclient.common.utils.RangePoJo;
 
 /**
@@ -32,10 +33,9 @@ public class MapperProvider implements DbMapperProvider {
         public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
             if (type.equals(RangePoJo.class)) {
                 return Optional.of((DbMapper<T>) RangePoJo.Mapper.INSTANCE);
-            } else if (type.equals(AbstractIT.Pokemon.class)) {
-                return Optional.of((DbMapper<T>) AbstractIT.PokemonMapper.INSTANCE);
+            } else if (type.equals(Pokemon.class)) {
+                return Optional.of((DbMapper<T>) PokemonMapper.INSTANCE);
             }
             return Optional.empty();
         }
-
 }

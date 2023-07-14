@@ -34,8 +34,16 @@
 
     <modules>
         <module>common</module>
-        <module>jdbc</module>
-        <module>mongodb</module>
+<!--        <module>h2</module>-->
         <module>app</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>testcontainers</id>
+            <modules>
+<!--                <module>mongodb</module>-->
+            </modules>
+        </profile>
+    </profiles>
 </project>

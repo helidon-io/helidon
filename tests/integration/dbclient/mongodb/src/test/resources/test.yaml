@@ -43,12 +43,9 @@ dbadmin:
 db:
   source: mongoDb
   connection:
-    url: mongodb://${mongo.host}:${mongo.port}/admin
-    username: ${mongo.root-user}
-    password: ${mongo.root-password}
-#  url: mongodb://${mongo.host}:${mongo.port}/${mongo.database}
-#  username: ${mongo.user}
-#  password: ${mongo.password}
+  url: mongodb://${mongo.host}:${mongo.port}/${mongo.database}
+  username: ${mongo.user}
+  password: ${mongo.password}
 
   health-check:
     type: query
@@ -172,7 +169,6 @@ db:
             "value":{ $set: { "name": ? } },
             "query": { id: ? }
         }'
-    # test DML delete
     delete-pokemon-named-arg: '{
             "collection": "pokemons",
             "operation": "delete",
@@ -207,4 +203,4 @@ db:
         }'
 
 test:
-    ping-dml: false
+  ping-dml: false

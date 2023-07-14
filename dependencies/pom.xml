@@ -92,7 +92,7 @@
         <version.lib.jedis>3.6.3</version.lib.jedis>
         <version.lib.jersey>3.1.2</version.lib.jersey>
         <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
-        <version.lib.junit>5.7.0</version.lib.junit>
+        <version.lib.junit>5.9.3</version.lib.junit>
         <version.lib.kafka>3.4.0</version.lib.kafka>
         <version.lib.log4j>2.18.0</version.lib.log4j>
         <version.lib.logback>1.4.0</version.lib.logback>
