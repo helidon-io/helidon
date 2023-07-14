@@ -29,8 +29,8 @@ helidon init --version 4.0.0-M1
 
 - Removed the Helidon Reactive WebServer and WebClient that were based on Netty as we fully commit to new implementations based on virtual threads that have a blocking style API (Project Níma).
 - Converted other modules with reactive APIs to blocking style APIs. The `io.helidon.common.reactive` APIs will stay as general purpose reactive utilities and operators
+- Introduced Helidon Injection, a deterministic, source-code-first, compile time injection framework
 - Upgraded MicroProfile support to MicroProfile 6 and Jakarta 10 Core Profile running on the Níma WebServer
-- Laid the foundation for Helidon Inject, a deterministic, source-code-first, compile time injection framework
 - Started adoption of Helidon Builders, a builder code generation framework
 
 The above is work-in-progress. There are still missing features, and APIs are undergoing change. For example
@@ -39,19 +39,6 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 
 ### CHANGES
 
-- Builders: updates [6710](https://github.com/helidon-io/helidon/pull/6710)
-- Builders: builder `toString` method update [7142](https://github.com/helidon-io/helidon/pull/7142)
-- Builders: support lowercase for modifiers names [6844](https://github.com/helidon-io/helidon/pull/6844)
-- Builders: ConfigBean not resolving config correctly [6652](https://github.com/helidon-io/helidon/pull/6652)
-- Builders: Default prefixed builder types renamed to be suffixed [6796](https://github.com/helidon-io/helidon/pull/6796)
-- Builders: Document assumptions about types of current processing round [7072](https://github.com/helidon-io/helidon/pull/7072)
-- Builders: Fix error messages in validation task of builder processor. [7070](https://github.com/helidon-io/helidon/pull/7070)
-- Builders: Follow up changes for builders PR [7074](https://github.com/helidon-io/helidon/pull/7074)
-- Builders: GeneratedConfigBean should be easily available from Config-driven-services  [6680](https://github.com/helidon-io/helidon/pull/6680)
-- Builders: New config builders [7008](https://github.com/helidon-io/helidon/pull/7008)
-- Builders: Optional Builder methods should default to package private [6593](https://github.com/helidon-io/helidon/pull/6593)
-- Builders: Pico cfg driven with additional ctor injection points fix [6612](https://github.com/helidon-io/helidon/pull/6612)
-- Builders: TypeInfo and Builder Refinements [6729](https://github.com/helidon-io/helidon/pull/6729)
 - Config: Config with injection [7080](https://github.com/helidon-io/helidon/pull/7080)
 - Config: Generate config metadata fix. [7145](https://github.com/helidon-io/helidon/pull/7145)
 - GraphQL: Update GraphQLServiceTest to use @ServerTest and Http1Client [6795](https://github.com/helidon-io/helidon/pull/6795)
@@ -60,9 +47,7 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 - Inject: Allow empty list injection [7160](https://github.com/helidon-io/helidon/pull/7160)
 - Inject: Annotation for Named that accepts a class [6779](https://github.com/helidon-io/helidon/pull/6779)
 - Inject: Attempt to do type regeneration turned into an error condition instead of being logged [7155](https://github.com/helidon-io/helidon/pull/7155)
-- Inject: Build log fix [7128](https://github.com/helidon-io/helidon/pull/7128)
 - Inject: Constructors are now intercepted with appropriate interceptors only. [6648](https://github.com/helidon-io/helidon/pull/6648)
-- Inject: Creates a clean set of Pico examples [6800](https://github.com/helidon-io/helidon/pull/6800)
 - Inject: Custom Annotation Processor Refinements [6883](https://github.com/helidon-io/helidon/pull/6883)
 - Inject: Fix pico lookup method returning <T> from generic criteria [6582](https://github.com/helidon-io/helidon/pull/6582)
 - Inject: Fixes incremental compilation for Pico services and running unit tests from IDE [6863](https://github.com/helidon-io/helidon/pull/6863)
@@ -73,11 +58,9 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 - Inject: Pico anno processor rewrite [6705](https://github.com/helidon-io/helidon/pull/6705)
 - Inject: Pico interceptor arguments are now correctly handled. [6642](https://github.com/helidon-io/helidon/pull/6642)
 - Inject: Preparation for Pico Extensibility Enhancements [6936](https://github.com/helidon-io/helidon/pull/6936)
-- Inject: Rename Pico -> Inject / Injection [7174](https://github.com/helidon-io/helidon/pull/7174)
-- Inject: Rename Pico Module [6682](https://github.com/helidon-io/helidon/pull/6682)
+- Inject: Rename Pico -> Inject / Injection [7174](https://github.com/helidon-io/helidon/pull/7174) [6682](https://github.com/helidon-io/helidon/pull/6682)
 - Inject: TypeInfo and TypedElementName API name tuning [6841](https://github.com/helidon-io/helidon/pull/6841)
 - Inject: module-info parsing [7156](https://github.com/helidon-io/helidon/pull/7156)
-- Inject: remove unnecessary method call to modifiers [6870](https://github.com/helidon-io/helidon/pull/6870)
 - LRA: Fix LRA Logging [6734](https://github.com/helidon-io/helidon/pull/6734)
 - LRA: LRA coordinator docker fix [6727](https://github.com/helidon-io/helidon/pull/6727)
 - LRA: expunge reactive webclient [7112](https://github.com/helidon-io/helidon/pull/7112)
@@ -106,18 +89,6 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 - Reactive removal: Remove reactive module and netty and any additional cleanup [7165](https://github.com/helidon-io/helidon/issues/7165)
 - Security: rework to synchronous [6230](https://github.com/helidon-io/helidon/pull/6230)
 - Telemetry: Remove Microprofile dependencies from SE Telemetry [6998](https://github.com/helidon-io/helidon/pull/6998)
-- Test: Add @target(ElementType.METHOD) for annotation @mptest [6489](https://github.com/helidon-io/helidon/pull/6489)
-- Test: Use Hamcrest assertions instead of JUnit in tests/integration/jms (#1749) [6643](https://github.com/helidon-io/helidon/pull/6643)
-- Test: 7097 flaky HTTP/2 bookstore test [7137](https://github.com/helidon-io/helidon/pull/7137)
-- Test: Add enum related config bean tests [6592](https://github.com/helidon-io/helidon/pull/6592)
-- Test: Convenient flushing on response commit [6673](https://github.com/helidon-io/helidon/pull/6673)
-- Test: Disable intermittently-failing async metrics MP test until we understand the failure [6980](https://github.com/helidon-io/helidon/pull/6980)
-- Test: Port of tests/functional/config-profiles over to Nima [6826](https://github.com/helidon-io/helidon/pull/6826)
-- Test: Re-enables ServerTest.java in nima/openapi [6585](https://github.com/helidon-io/helidon/pull/6585)
-- Test: Reenables JerseyPropertiesTest.java in microprofile/server [6594](https://github.com/helidon-io/helidon/pull/6594)
-- Test: Removed old bookstore-se app and renamed bookstore-nima to bookstore-se [6790](https://github.com/helidon-io/helidon/pull/6790)
-- Test: Removed tests/integration/native-image/se-1 [6882](https://github.com/helidon-io/helidon/pull/6882)
-- Test: Update MessagingHealthTest to use Nima WebClient instead of Reactive WebClient [6814](https://github.com/helidon-io/helidon/pull/6814)
 - Tracing: Add Baggage to Helidon Span [6581](https://github.com/helidon-io/helidon/pull/6581)
 - Tracing: Support for different propagators for Jaeger OpenTelemetry integration. [6586](https://github.com/helidon-io/helidon/pull/6586)
 - WebClient: Add header and config builder method to  webclient builder [7056](https://github.com/helidon-io/helidon/pull/7056)
@@ -145,6 +116,19 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 - WebServer: Set running flag to false in shutdownhook [6428](https://github.com/helidon-io/helidon/pull/6428)
 - WebServer: TLS reloading fixed [7140](https://github.com/helidon-io/helidon/pull/7140)
 - WebServer: Writing to closed socket with a silent error [6887](https://github.com/helidon-io/helidon/pull/6887)
+- Builders: updates [6710](https://github.com/helidon-io/helidon/pull/6710)
+- Builders: builder `toString` method update [7142](https://github.com/helidon-io/helidon/pull/7142)
+- Builders: support lowercase for modifiers names [6844](https://github.com/helidon-io/helidon/pull/6844)
+- Builders: ConfigBean not resolving config correctly [6652](https://github.com/helidon-io/helidon/pull/6652)
+- Builders: Default prefixed builder types renamed to be suffixed [6796](https://github.com/helidon-io/helidon/pull/6796)
+- Builders: Document assumptions about types of current processing round [7072](https://github.com/helidon-io/helidon/pull/7072)
+- Builders: Fix error messages in validation task of builder processor. [7070](https://github.com/helidon-io/helidon/pull/7070)
+- Builders: Follow up changes for builders PR [7074](https://github.com/helidon-io/helidon/pull/7074)
+- Builders: GeneratedConfigBean should be easily available from Config-driven-services  [6680](https://github.com/helidon-io/helidon/pull/6680)
+- Builders: New config builders [7008](https://github.com/helidon-io/helidon/pull/7008)
+- Builders: Optional Builder methods should default to package private [6593](https://github.com/helidon-io/helidon/pull/6593)
+- Builders: Pico cfg driven with additional ctor injection points fix [6612](https://github.com/helidon-io/helidon/pull/6612)
+- Builders: TypeInfo and Builder Refinements [6729](https://github.com/helidon-io/helidon/pull/6729)
 - Build: Change provided and optional to just optional - iteration 1 (#6495) [6503](https://github.com/helidon-io/helidon/pull/6503)
 - Build: Change provided and optional to just optional - iteration 2 (#6495) [6650](https://github.com/helidon-io/helidon/pull/6650)
 - Build: Fixed parallel build. [7111](https://github.com/helidon-io/helidon/pull/7111)
@@ -166,6 +150,7 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 - Docs: fix links for openapi in 4x [6688](https://github.com/helidon-io/helidon/pull/6688)
 - Docs: New document describing the client and server WebSocket APIs in Nima [6578](https://github.com/helidon-io/helidon/pull/6578)
 - Examples: Add metrics to quickstarts [7114](https://github.com/helidon-io/helidon/pull/7114)
+- Examples: Creates a clean set of Pico examples [6800](https://github.com/helidon-io/helidon/pull/6800)
 - Examples: Create file validations [6608](https://github.com/helidon-io/helidon/pull/6608)
 - Examples: Fix Helidon Archetype generates broken projects [6722](https://github.com/helidon-io/helidon/pull/6722)
 - Examples: Fix archetype build [7177](https://github.com/helidon-io/helidon/pull/7177)
@@ -188,6 +173,18 @@ the Grpc implementation is limited and MicroProfile Grpc support is temporarily 
 - Examples: Updates to (standalone) Quickstart SE to use Nima and @ServerTest [6770](https://github.com/helidon-io/helidon/pull/6770)
 - Examples: Updates to Quickstart SE to use Nima and @ServerTest [6766](https://github.com/helidon-io/helidon/pull/6766)
 - Examples: archetypes generating poorly formatted code [6622](https://github.com/helidon-io/helidon/pull/6622)
+- Test: Add @target(ElementType.METHOD) for annotation @mptest [6489](https://github.com/helidon-io/helidon/pull/6489)
+- Test: Use Hamcrest assertions instead of JUnit in tests/integration/jms (#1749) [6643](https://github.com/helidon-io/helidon/pull/6643)
+- Test: 7097 flaky HTTP/2 bookstore test [7137](https://github.com/helidon-io/helidon/pull/7137)
+- Test: Add enum related config bean tests [6592](https://github.com/helidon-io/helidon/pull/6592)
+- Test: Convenient flushing on response commit [6673](https://github.com/helidon-io/helidon/pull/6673)
+- Test: Disable intermittently-failing async metrics MP test until we understand the failure [6980](https://github.com/helidon-io/helidon/pull/6980)
+- Test: Port of tests/functional/config-profiles over to Nima [6826](https://github.com/helidon-io/helidon/pull/6826)
+- Test: Re-enables ServerTest.java in nima/openapi [6585](https://github.com/helidon-io/helidon/pull/6585)
+- Test: Reenables JerseyPropertiesTest.java in microprofile/server [6594](https://github.com/helidon-io/helidon/pull/6594)
+- Test: Removed old bookstore-se app and renamed bookstore-nima to bookstore-se [6790](https://github.com/helidon-io/helidon/pull/6790)
+- Test: Removed tests/integration/native-image/se-1 [6882](https://github.com/helidon-io/helidon/pull/6882)
+- Test: Update MessagingHealthTest to use Nima WebClient instead of Reactive WebClient [6814](https://github.com/helidon-io/helidon/pull/6814)
 
 
 ## [4.0.0-ALPHA6]
