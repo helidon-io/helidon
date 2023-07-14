@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -31,8 +31,8 @@ include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.dbclient</groupId>
-    <artifactId>helidon-reactive-dbclient</artifactId>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient</artifactId>
 </dependency>
 ----
 
@@ -40,8 +40,8 @@ To use with a JDBC client also add the following dependency:
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.dbclient</groupId>
-    <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-jdbc</artifactId>
 </dependency>
 ----
 
@@ -49,8 +49,8 @@ Or to use with MongoDB client add the following dependency:
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.reactive.dbclient</groupId>
-    <artifactId>helidon-reactive-dbclient-mongodb</artifactId>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-mongodb</artifactId>
 </dependency>
 ----
 
@@ -101,12 +101,12 @@ For the DB Client using JDBC implementation and H2 database, you must include th
 ----
 <dependencies>
      <dependency>
-         <groupId>io.helidon.reactive.dbclient</groupId> <!--1-->
-         <artifactId>helidon-reactive-dbclient</artifactId>
+         <groupId>io.helidon.dbclient</groupId> <!--1-->
+         <artifactId>helidon-dbclient</artifactId>
      </dependency>
      <dependency>
-         <groupId>io.helidon.reactive.dbclient</groupId> <!--2-->
-         <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
+         <groupId>io.helidon.dbclient</groupId> <!--2-->
+         <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
          <groupId>com.h2database</groupId> <!--3-->

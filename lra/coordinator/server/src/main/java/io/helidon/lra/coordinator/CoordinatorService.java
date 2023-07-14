@@ -23,14 +23,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
@@ -292,7 +293,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void recovery(ServerRequest req, ServerResponse res) {
-        nextRecoveryCycle().await();
+        nextRecoveryCycle();
 
         Optional<String> lraUUID = req.query().first("lraId")
                 .or(() -> req.path().pathParameters().first("LraId"))
@@ -329,8 +330,7 @@ public class CoordinatorService implements HttpService {
                             .add("status", l.status().get().name())
                             .build()
                     )
-                    .collect(JSON::createArrayBuilder, JsonArrayBuilder::add)
-                    .await()
+                    .collect(JSON::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::addAll)
                     .build();
 
             res.status(OK_200).send(jsonValues);
@@ -341,7 +341,7 @@ public class CoordinatorService implements HttpService {
         Optional<String> lraId = req.path().pathParameters().first("LraId")
                 .or(() -> req.query().first("lraId"));
 
-        lraPersistentRegistry
+        JsonArray array = lraPersistentRegistry
                 .stream()
                 // filter by lraId param or dont filter at all
                 .filter(lra -> lraId.map(id -> lra.lraId().equals(id)).orElse(true))
@@ -350,11 +350,11 @@ public class CoordinatorService implements HttpService {
                         .add("status", l.status().get().name())
                         .build()
                 )
-                .collect(JSON::createArrayBuilder, JsonArrayBuilder::add)
-                .map(JsonArrayBuilder::build)
-                .onError(res::send)
-                .defaultIfEmpty(JsonArray.EMPTY_JSON_ARRAY)
-                .forSingle(s -> res.status(OK_200).send(s));
+                .collect(JSON::createArrayBuilder, JsonArrayBuilder::add, JsonArrayBuilder::addAll)
+                .build();
+
+        res.status(OK_200)
+                .send(array);
     }
 
     private void tick(FixedRateInvocation inv) {
@@ -397,11 +397,14 @@ public class CoordinatorService implements HttpService {
         return coordinatorURL;
     }
 
-    private Single<Void> nextRecoveryCycle() {
-        return Single.create(completedRecovery.get(), true)
-                //wait for the second one, as first could have been in progress
-                .onCompleteResumeWith(Single.create(completedRecovery.get(), true))
-                .ignoreElements();
+    private void nextRecoveryCycle() {
+        try {
+            completedRecovery.get().get(1, TimeUnit.SECONDS);
+            //wait for the second one, as first could have been in progress
+            completedRecovery.get().get(1, TimeUnit.SECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            LOGGER.log(Level.TRACE, "Failed to get recovery cycle result, ignoring", e);
+        }
     }
 
     private URI coordinatorUriWithPath(String additionalPath) {

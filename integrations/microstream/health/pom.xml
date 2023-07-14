@@ -43,8 +43,8 @@
             <artifactId>microprofile-health-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.health</groupId>
-            <artifactId>helidon-reactive-health</artifactId>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

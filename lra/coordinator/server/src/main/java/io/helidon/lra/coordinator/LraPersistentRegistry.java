@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.lra.coordinator;
 
-import io.helidon.common.reactive.Multi;
+import java.util.stream.Stream;
 
 /**
  * Persistable lra registry.
@@ -61,6 +61,6 @@ interface LraPersistentRegistry {
      *
      * @return stream of all the Lras
      */
-    Multi<Lra> stream();
+    Stream<Lra> stream();
 
 }

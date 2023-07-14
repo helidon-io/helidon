@@ -37,7 +37,6 @@
 
     <modules>
         <module>nohttp-programmatic</module>
-        <module>jersey</module>
         <module>webserver-digest-auth</module>
         <module>webserver-signatures</module>
         <module>google-login</module>
