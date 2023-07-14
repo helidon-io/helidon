@@ -35,12 +35,15 @@ public final class Main {
          // load logging configuration
         LogConfig.configureRuntime();
 
+        Config config = Config.create();
+
         WebServer server = WebServer.builder()
+                .config(config.get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();
 
-        System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
     }
 
     /**
@@ -55,4 +58,8 @@ public final class Main {
                {{.}}{{#last}}; {{/last}}
                {{/Main-routing-builder}}
     }
+
+{{#Main-content}}
+{{.}}
+{{/Main-content}}
 }

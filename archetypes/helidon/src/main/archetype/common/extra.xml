@@ -30,6 +30,7 @@
                             <includes>
                                 <include>src/*/java/**/FtResource.java.mustache</include>
                                 <include>src/*/java/**/FtResourceTest.java.mustache</include>
+                                <include>src/*/java/**/FtService.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
@@ -46,7 +47,7 @@
                             <list key="Main-helidon-imports">
                                 <value>io.helidon.common.http.Http</value>
                             </list>
-                            <list key="Main-other-imports">
+                            <list key="Main-other-imports" if="${flavor} != 'nima'">
                                 <value>java.util.concurrent.TimeoutException</value>
                             </list>
                             <list key="maven-plugins">
@@ -65,7 +66,7 @@
                         </model>
                     </output>
                 </option>
-                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities">
+                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities" if="${flavor} != 'nima'">
                     <output>
                         <templates engine="mustache" transformations="mustache,packaged">
                             <directory>files</directory>

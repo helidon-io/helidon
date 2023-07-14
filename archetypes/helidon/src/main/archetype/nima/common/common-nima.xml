@@ -30,6 +30,10 @@
                     <value key="groupId">io.helidon.nima.webserver</value>
                     <value key="artifactId">helidon-nima-webserver</value>
                 </map>
+                <map order="999">
+                    <value key="groupId">io.helidon.config</value>
+                    <value key="artifactId">helidon-config-yaml</value>
+                </map>
                 <map order="0">
                     <value key="groupId">org.junit.jupiter</value>
                     <value key="artifactId">junit-jupiter-api</value>
@@ -48,6 +52,7 @@
             </list>
             <list key="Main-helidon-imports">
                 <value>io.helidon.logging.common.LogConfig</value>
+                <value>io.helidon.config.Config</value>
                 <value>io.helidon.nima.webserver.WebServer</value>
                 <value>io.helidon.nima.webserver.http.HttpRouting</value>
             </list>
