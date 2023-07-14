@@ -40,7 +40,7 @@
         <module>metrics</module>
         <module>fault-tolerance</module>
         <module>media</module>
-        <module>dbclient</module>
+<!--        <module>dbclient</module>-->
         <module>webclient</module>
         <module>webserver</module>
         <module>service-common</module>

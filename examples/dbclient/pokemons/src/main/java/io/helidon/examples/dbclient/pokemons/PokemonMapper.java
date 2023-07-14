@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.reactive.dbclient.DbColumn;
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.DbRow;
+import io.helidon.dbclient.DbColumn;
+import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.DbRow;
 
 /**
  * Maps database statements to {@link io.helidon.examples.dbclient.common.Pokemon} class.

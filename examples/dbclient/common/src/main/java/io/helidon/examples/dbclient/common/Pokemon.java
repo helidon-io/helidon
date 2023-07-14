@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.examples.dbclient.common;
 import io.helidon.common.Reflected;
 
 /**
- * POJO representing a very simplified Pokemon.
+ * POJO representing a very simplified Pokémon.
  */
 @Reflected
 public class Pokemon {
@@ -33,7 +33,7 @@ public class Pokemon {
     }
 
     /**
-     * Create pokemon with name and type.
+     * Create Pokémon with name and type.
      *
      * @param name name of the beast
      * @param type type of the beast

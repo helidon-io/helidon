@@ -16,71 +16,41 @@
 
 package io.helidon.service.employee;
 
-import java.util.concurrent.TimeUnit;
-
 import io.helidon.common.http.Http;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.config.Config;
+import io.helidon.nima.testing.junit5.webserver.DirectClient;
+import io.helidon.nima.testing.junit5.webserver.RoutingTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import jakarta.json.JsonArray;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@RoutingTest
 public class MainTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
+    private final DirectClient client;
 
-    @BeforeAll
-    public static void startTheServer() {
-        webServer = Main.startServer().await();
-
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
-                .build();
+    public MainTest(DirectClient client) {
+        this.client = client;
     }
 
-    @AfterAll
-    public static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(10, TimeUnit.SECONDS);
-        }
+    @SetUpRoute
+    public static void setup(HttpRouting.Builder routing) {
+        Main.routing(routing, Config.empty());
     }
 
     @Test
-    public void testHelloWorld() {
-        webClient.get()
-                .path("/employees")
-                .request()
-                .thenAccept(response -> {
-                    response.close();
-                    assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
-                })
-                .await();
-
-        webClient.get()
-                .path("/health")
-                .request()
-                .thenAccept(response -> {
-                    response.close();
-                    assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
-                })
-                .await();
-
-        webClient.get()
-                .path("/metrics")
-                .request()
-                .thenAccept(response -> {
-                    response.close();
-                    assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
-                })
-                .await();
+    public void testEmployees() {
+        try (Http1ClientResponse response = client.get("/employees")
+                                                  .request()) {
+            assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(JsonArray.class).size(), is(40));
+        }
     }
 
 }

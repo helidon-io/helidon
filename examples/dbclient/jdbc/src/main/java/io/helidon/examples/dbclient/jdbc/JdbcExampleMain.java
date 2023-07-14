@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,12 @@
 package io.helidon.examples.dbclient.jdbc;
 
 import io.helidon.config.Config;
+import io.helidon.dbclient.DbClient;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.health.DbClientHealthCheck;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jsonb.JsonbSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.tracing.TracerBuilder;
 
 /**
@@ -44,67 +41,27 @@ public final class JdbcExampleMain {
      *
      * @param args command line arguments.
      */
-    public static void main(final String[] args) {
-        startServer();
-    }
-
-    /**
-     * Start the server.
-     *
-     * @return the created {@link io.helidon.reactive.webserver.WebServer} instance
-     */
-    static WebServer startServer() {
-
+    public static void main(String[] args) {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
+        // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
 
         // Prepare routing for the server
         WebServer server = WebServer.builder()
-                .routing(createRouting(config))
-                // Get webserver config from the "server" section of application.yaml
+                .routing(routing -> routing(routing, config))
                 .config(config.get("server"))
-                .tracer(TracerBuilder.create(config.get("tracing")))
-                .addMediaSupport(JsonpSupport.create())
-                .addMediaSupport(JsonbSupport.create())
-                .build();
+                .build()
+                .start();
 
-        // Start the server and print some info.
-        server.start().thenAccept(ws -> {
-            System.out.println(
-                    "WEB server is up! http://localhost:" + ws.port() + "/");
-        });
-
-        // Server threads are not daemon. NO need to block. Just react.
-        server.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-
-        return server;
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
     }
 
-    /**
-     * Creates new {@link io.helidon.reactive.webserver.Routing}.
-     *
-     * @param config configuration of this server
-     * @return routing configured with JSON support, a health check, and a service
-     */
-    private static Routing createRouting(Config config) {
-        Config dbConfig = config.get("db");
-
-        // Client services are added through a service loader - see mongoDB example for explicit services
-        DbClient dbClient = DbClient.builder(dbConfig)
-                .build();
-
-        // Some relational databases do not support DML statement as ping so using query which works for all of them
-        HealthSupport health = HealthSupport.builder()
-                .add(DbClientHealthCheck.create(dbClient, dbConfig.get("health-check")))
-                .build();
-
-        return Routing.builder()
-                .register(health)                   // Health at "/health"
-                .register(MetricsSupport.create())  // Metrics at "/metrics"
-                .register("/db", new PokemonService(dbClient))
+    static void routing(HttpRouting.Builder routing, Config config) {
+        routing.addFeature(ObserveFeature.create(config))
+                .addFeature(TracingFeature.create(TracerBuilder.create(config.get("tracing")).build()))
+                .register("/db", new PokemonService(DbClient.create(config.get("db"))))
                 .build();
     }
 }

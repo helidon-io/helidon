@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,10 @@ package io.helidon.tests.integration.dbclient.common.spi;
 
 import java.util.Optional;
 
-import io.helidon.reactive.dbclient.DbMapper;
-import io.helidon.reactive.dbclient.spi.DbMapperProvider;
-import io.helidon.tests.integration.dbclient.common.AbstractIT;
+import io.helidon.dbclient.DbMapper;
+import io.helidon.dbclient.spi.DbMapperProvider;
+import io.helidon.tests.integration.dbclient.common.model.Pokemon;
+import io.helidon.tests.integration.dbclient.common.model.Pokemon.PokemonMapper;
 import io.helidon.tests.integration.dbclient.common.utils.RangePoJo;
 
 /**
@@ -32,10 +33,9 @@ public class MapperProvider implements DbMapperProvider {
         public <T> Optional<DbMapper<T>> mapper(Class<T> type) {
             if (type.equals(RangePoJo.class)) {
                 return Optional.of((DbMapper<T>) RangePoJo.Mapper.INSTANCE);
-            } else if (type.equals(AbstractIT.Pokemon.class)) {
-                return Optional.of((DbMapper<T>) AbstractIT.PokemonMapper.INSTANCE);
+            } else if (type.equals(Pokemon.class)) {
+                return Optional.of((DbMapper<T>) PokemonMapper.INSTANCE);
             }
             return Optional.empty();
         }
-
 }

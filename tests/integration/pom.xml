@@ -38,7 +38,7 @@
     </properties>
 
     <modules>
-        <module>tools</module>
+        <module>harness</module>
         <module>zipkin-mp-2.2</module>
         <module>mp-graphql</module>
         <module>mp-security-client</module>

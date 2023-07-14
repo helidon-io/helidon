@@ -5,11 +5,11 @@ This project implements an employee directory REST service using Helidon SE.
  an HTML/JavaScript front end. The source for both application is included with
  the Maven project.
 
-By default the service uses a ArrayList backend with sample data. You can connect
+By default, the service uses a ArrayList backend with sample data. You can connect
  the backend application to an Oracle database by changing the values in the
  `resources/application.yaml` file.
 
-The service uses Helidon DB Client that provides reactive and non-blocking access to a database.
+The service uses Helidon DB Client to access the database.
 
 ## Build and run
 
@@ -100,7 +100,7 @@ Output:
 ]
 ```
 
-Connect with a web brower at:
+Connect with a web browser at:
 ```txt
 http://localhost:8080/public/index.html
 ```

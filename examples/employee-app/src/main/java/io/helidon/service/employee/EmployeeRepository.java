@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,11 @@ package io.helidon.service.employee;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
 
 /**
  * Interface for Data Access Objects.
- * <p>
- * As Helidon SE is a reactive framework, we cannot block it.
- * Method on this interface return a {@link java.util.concurrent.CompletionStage} with the data, so it
- * can be correctly handled by the server.
- * <p>
- * Methods in implementation must not block thread
  */
 public interface EmployeeRepository {
 
@@ -37,78 +30,85 @@ public interface EmployeeRepository {
      * Create a new employeeRepository instance using one of the two implementations
      * {@link EmployeeRepositoryImpl} or {@link EmployeeRepositoryImplDB} depending
      * on the specified driver type.
+     *
      * @param driverType Represents the driver type. It can be Array or Oracle.
-     * @param config Contains the application configuration specified in the
-     * <code>application.yaml</code> file.
+     * @param config     Contains the application configuration specified in the
+     *                   <code>application.yaml</code> file.
      * @return The employee repository implementation.
      */
     static EmployeeRepository create(String driverType, Config config) {
-        switch (driverType) {
-        case "Database":
-            return new EmployeeRepositoryImplDB(config);
-        case "Array":
-        default:
-            // Array is default
-            return new EmployeeRepositoryImpl();
-        }
+        return switch (driverType) {
+            case "Database" -> new EmployeeRepositoryImplDB(config);
+            default ->
+                // Array is default
+                    new EmployeeRepositoryImpl();
+        };
     }
 
     /**
      * Returns the list of the employees.
+     *
      * @return The collection of all the employee objects
      */
-    CompletionStage<List<Employee>> getAll();
+    List<Employee> getAll();
 
     /**
      * Returns the list of the employees that match with the specified lastName.
+     *
      * @param lastName Represents the last name value for the search.
      * @return The collection of the employee objects that match with the specified
-     *         lastName
+     * lastName
      */
-    CompletionStage<List<Employee>> getByLastName(String lastName);
+    List<Employee> getByLastName(String lastName);
 
     /**
      * Returns the list of the employees that match with the specified title.
+     *
      * @param title Represents the title value for the search
      * @return The collection of the employee objects that match with the specified
-     *         title
+     * title
      */
-    CompletionStage<List<Employee>> getByTitle(String title);
+    List<Employee> getByTitle(String title);
 
     /**
      * Returns the list of the employees that match with the specified department.
+     *
      * @param department Represents the department value for the search.
      * @return The collection of the employee objects that match with the specified
-     *         department
+     * department
      */
-    CompletionStage<List<Employee>> getByDepartment(String department);
+    List<Employee> getByDepartment(String department);
 
     /**
      * Add a new employee.
+     *
      * @param employee returns the employee object including the ID generated.
      * @return the employee object including the ID generated
      */
-    CompletionStage<Employee> save(Employee employee); // Add new employee
+    Employee save(Employee employee); // Add new employee
 
     /**
      * Update an existing employee.
+     *
      * @param updatedEmployee The employee object with the values to update
-     * @param id The employee ID
+     * @param id              The employee ID
      * @return number of updated records
      */
-    CompletionStage<Long> update(Employee updatedEmployee, String id);
+    long update(Employee updatedEmployee, String id);
 
     /**
      * Delete an employee by ID.
+     *
      * @param id The employee ID
      * @return number of deleted records
      */
-    CompletionStage<Long> deleteById(String id);
+    long deleteById(String id);
 
     /**
      * Get an employee by ID.
+     *
      * @param id The employee ID
      * @return The employee object if the employee is found
      */
-    CompletionStage<Optional<Employee>> getById(String id);
+    Optional<Employee> getById(String id);
 }

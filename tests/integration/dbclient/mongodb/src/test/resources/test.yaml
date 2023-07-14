@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,11 +18,9 @@ dbadmin:
   source: mongoDb
   connection:
     url: mongodb://${mongo.host}:${mongo.port}/admin
-    username: ${mongo.roootuser}
-    password: ${mongo.roootpw}
-
+    username: ${mongo.root-user}
+    password: ${mongo.root-password}
   statements:
-    # required ping statement
     ping: '{
             "operation": "command",
             "query": { ping: 1 }
@@ -42,16 +40,12 @@ dbadmin:
         }
     }'
 
-
 db:
   source: mongoDb
   connection:
-    url: mongodb://${mongo.host}:${mongo.port}/admin
-    username: ${mongo.roootuser}
-    password: ${mongo.roootpw}
-#  url: mongodb://${mongo.host}:${mongo.port}/${mongo.database}
-#  username: ${mongo.user}
-#  password: ${mongo.password}
+  url: mongodb://${mongo.host}:${mongo.port}/${mongo.database}
+  username: ${mongo.user}
+  password: ${mongo.password}
 
   health-check:
     type: query
@@ -61,12 +55,10 @@ db:
         }'
 
   statements:
-    # custom query ping statement
     ping-query: '{
             "operation": "command",
             "query": { ping: 1 }
         }'
-    # database schema cleanup statements
     delete-types: '{
             "collection": "types",
             "operation": "delete",
@@ -82,7 +74,6 @@ db:
             "operation": "delete",
             "query": { }
         }'
-    # data initialization statements
     insert-type: '{
             "collection": "types",
             "value": {
@@ -104,7 +95,6 @@ db:
                 "id_type": ?
             }
         }'
-    # data initialization verification statements
     select-types: '{
             "collection": "types",
             "projection": { id: 1, type: 1, _id: 0 },
@@ -120,13 +110,11 @@ db:
             "projection": { id_pokemon: 1, id_type: 1, _id: 0 },
             "query": { id_pokemon: ? }
         }'
-    # data cleanup verification statements
     select-poketypes-all: '{
             "collection": "pokemon_types",
             "projection": { id_pokemon: 1, id_type: 1, _id: 0 },
             "query": {}
         }'
-    # test queries
     select-pokemon-named-arg: '{
             "collection": "pokemons",
             "operation": "query",
@@ -139,7 +127,6 @@ db:
             "projection": { id: 1, name: 1, _id: 0 },
             "query": { name: ? }
         }'
-    # test DML insert
     insert-pokemon-named-arg: '{
             "collection": "pokemons",
             "operation": "insert",
@@ -156,7 +143,6 @@ db:
                 "name": ?
             }
         }'
-    # Pokemon mapper uses reverse order of indexed arguments
     insert-pokemon-order-arg-rev: '{
             "collection": "pokemons",
             "operation": "insert",
@@ -165,7 +151,6 @@ db:
                 "id": ?
             }
         }'
-    # test DML update
     select-pokemon-by-id: '{
             "collection": "pokemons",
             "operation": "query",
@@ -184,7 +169,6 @@ db:
             "value":{ $set: { "name": ? } },
             "query": { id: ? }
         }'
-    # test DML delete
     delete-pokemon-named-arg: '{
             "collection": "pokemons",
             "operation": "delete",
@@ -195,7 +179,6 @@ db:
             "operation": "delete",
             "query": { id: ? }
         }'
-    # Pokemon mapper uses full list of attributes
     delete-pokemon-full-named-arg: '{
             "collection": "pokemons",
             "operation": "delete",
@@ -206,7 +189,6 @@ db:
             "operation": "delete",
             "query": { $and: [ {name: ? }, { id: ? } ] }
         }'
-    # test DbStatementQuery methods
     select-pokemons-idrng-named-arg: '{
             "collection": "pokemons",
             "operation": "query",
@@ -220,7 +202,5 @@ db:
             "query": { $and: [ { id: { $gt: ? } }, { id: { $lt: ? } } ] }
         }'
 
-# Tests configuration
 test:
-    # Whether database supports ping statement as DML (default value is true)
-    ping-dml: false
+  ping-dml: false

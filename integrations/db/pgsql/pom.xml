@@ -26,8 +26,8 @@
     </parent>
 
     <artifactId>helidon-integrations-db-pgsql</artifactId>
-    <name>Helidon Integrations DB PostgreSQL JDBC</name>
-    <description>JDBC driver for PostgreSQL database with native-image support</description>
+    <name>Helidon Integrations DB PostgresSQL JDBC</name>
+    <description>JDBC driver for PostgresSQL database with native-image support</description>
 
     <properties>
         <spotbugs.skip>true</spotbugs.skip>
