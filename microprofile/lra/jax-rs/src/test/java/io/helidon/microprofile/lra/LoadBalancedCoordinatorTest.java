@@ -53,9 +53,9 @@ import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.DisableDiscovery;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
 
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
@@ -162,11 +162,11 @@ public class LoadBalancedCoordinatorTest {
     }
 
     public <T> T await(String key, URI lraId) {
-        return Single.<T>create(getCompletable(key, lraId), true).await(TIMEOUT_SEC, TimeUnit.SECONDS);
+        return Single.<T>create(getCompletable(key, lraId), true).await(Duration.ofSeconds(TIMEOUT_SEC));
     }
 
     public <T> T await(String key) {
-        return Single.<T>create(getCompletable(key), true).await(TIMEOUT_SEC, TimeUnit.SECONDS);
+        return Single.<T>create(getCompletable(key), true).await(Duration.ofSeconds(TIMEOUT_SEC));
     }
 
     @Test
@@ -569,24 +569,17 @@ public class LoadBalancedCoordinatorTest {
     private void waitForRecovery(URI lraId) {
         URI coordinatorPath = coordinatorPath(lraId);
         for (int i = 0; i < 10; i++) {
-            WebClient client = WebClient.builder()
+            Http1Client client = Http1Client.builder()
                     .baseUri(coordinatorPath)
                     .build();
 
-            WebClientResponse response = client
-                    .get()
-                    .path("recovery")
-                    .submit()
-                    .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+            Http1ClientResponse response = client.get("recovery").request();
 
-            String recoveringLras = response
-                    .content()
-                    .as(String.class)
-                    .await(TIMEOUT_SEC, TimeUnit.SECONDS);
+            String recoveringLras = response.as(String.class);
             response.close();
             if (!recoveringLras.contains(lraId.toASCIIString())) {
                 LOGGER.log(Level.DEBUG, "LRA is no longer among those recovering " + lraId.toASCIIString());
-                // intended LRA is not longer among those recovering
+                // intended LRA is no longer among those recovering
                 break;
             }
             LOGGER.log(Level.DEBUG, "Waiting for recovery attempt #" + i + " LRA is still waiting: " + recoveringLras);

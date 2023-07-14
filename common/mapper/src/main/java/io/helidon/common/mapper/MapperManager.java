@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,6 +237,7 @@ public interface MapperManager {
          * @param sourceType generic type of the source instance
          * @param targetType generic type of the target instance
          * @param weight     weight of the mapper
+         * @param qualifiers qualifiers of this mapper, if empty, will be a compatible mapper
          * @param <S>        type of source
          * @param <T>        type of target
          * @return updated builder instance

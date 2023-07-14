@@ -18,21 +18,22 @@ package io.helidon.microprofile.lra;
 
 import java.lang.System.Logger.Level;
 import java.net.URI;
-import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.reactive.Single;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.lra.coordinator.CoordinatorService;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -46,7 +47,6 @@ import static jakarta.interceptor.Interceptor.Priority.PLATFORM_AFTER;
 
 @ApplicationScoped
 public class CoordinatorClusterDeploymentService {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final System.Logger LOGGER = System.getLogger(CoordinatorClusterDeploymentService.class.getName());
 
     static final String LOAD_BALANCER_NAME = "coordinator-loadbalancer";
@@ -113,25 +113,30 @@ public class CoordinatorClusterDeploymentService {
     public HttpService coordinatorLoadBalancerService() {
         return rules ->
                 rules.post("/start", (req, res) -> {
-                            WebClientResponse response = WebClient.builder()
+                            Http1ClientRequest clientReq = Http1Client.builder()
                                     .baseUri(coordinators[roundRobinIndex.getAndUpdate(o -> o > 0 ? o - 1 :
                                             coordinators.length - 1)])
                                     .build()
                                     .method(req.prologue().method())
-                                    .headers(req.headers())
-                                    .queryParams(req.query())
-                                    //.submit(req.content().as(String.class))
-                                    .request()
-                                    .await(TIMEOUT);
-                            response.headers().forEach(res.headers()::set);
-                            res.status(response.status())
-                                    .send(response.content().as(String.class).await(TIMEOUT));
+                                    .headers(req.headers());
+
+                            // add all query params
+                            UriQuery query = req.query();
+                            for (String name : query.names()) {
+                                clientReq.queryParam(name, query.all(name).toArray(new String[0]));
+                            }
+
+                            try (Http1ClientResponse response = clientReq.request()) {
+                                response.headers().forEach(res.headers()::set);
+                                res.status(response.status())
+                                        .send(response.as(String.class));
+                            }
                         })
                         .any((req, res) -> {
                             String path = req.path().absolute().path();
                             if (!path.contains("/start")) {
                                 LOGGER.log(Level.ERROR, "Loadbalancer should be called only for starting LRA. " + path);
-                                forbiddenLoadBalancerCall.set(req.prologue().method().name() + " " + path);
+                                forbiddenLoadBalancerCall.set(req.prologue().method().text() + " " + path);
                             }
                             res.next();
                         });
@@ -166,7 +171,7 @@ public class CoordinatorClusterDeploymentService {
                         .addSource(ConfigSources.classpath("application.yaml"))
                         .addFilter((key, old) ->
                                 // Replace jdbc url to avoid collision between coordinators
-                                // use inmemory db with different name
+                                // use in-memory db with different name
                                 old.contains("jdbc:h2:file")
                                         ? "jdbc:h2:mem:lra-" + coordinatorName + ";DB_CLOSE_DELAY=-1"
                                         : old

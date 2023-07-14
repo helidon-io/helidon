@@ -43,12 +43,12 @@
             <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient</artifactId>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.dbclient</groupId>
-            <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>com.oracle.database.jdbc</groupId>

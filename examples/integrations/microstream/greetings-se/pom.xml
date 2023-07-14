@@ -40,6 +40,14 @@
             <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.integrations.microstream</groupId>
+            <artifactId>helidon-integrations-microstream</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.http.media</groupId>
             <artifactId>helidon-nima-http-media-jsonp</artifactId>
         </dependency>
@@ -48,21 +56,17 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe-health</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health-checks</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe-metrics</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
-            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -73,14 +77,6 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.microstream</groupId>
-            <artifactId>helidon-integrations-microstream</artifactId>
         </dependency>
     </dependencies>
 
@@ -97,5 +93,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

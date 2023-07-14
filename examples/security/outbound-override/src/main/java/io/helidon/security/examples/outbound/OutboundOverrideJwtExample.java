@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,40 +15,34 @@
  */
 package io.helidon.security.examples.outbound;
 
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
+import io.helidon.config.ConfigSources;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.security.providers.jwt.JwtProvider;
-
-import static io.helidon.security.examples.outbound.OutboundOverrideUtil.createConfig;
-import static io.helidon.security.examples.outbound.OutboundOverrideUtil.getSecurityContext;
-import static io.helidon.security.examples.outbound.OutboundOverrideUtil.sendError;
-import static io.helidon.security.examples.outbound.OutboundOverrideUtil.startServer;
-import static io.helidon.security.examples.outbound.OutboundOverrideUtil.webTarget;
+import io.helidon.security.integration.nima.SecurityFeature;
 
 /**
- * Creates two services. First service invokes the second with outbound security. There are two endpoints - one that
- * does simple identity propagation and one that uses an explicit username.
- *
- * Uses basic authentication to authenticate users and JWT to propagate identity.
- *
+ * Creates two services.
+ * First service invokes the second with outbound security.
+ * There are two endpoints:
+ * <ul>
+ *     <li>One that does simple identity propagation and one that uses an explicit username</li>
+ *     <li>One that uses basic authentication to authenticate users and JWT to propagate identity</li>
+ * </ul>- one that does simple identity propagation and one that uses an explicit username.
+ * <p>
  * The difference between this example and basic authentication example:
  * <ul>
- * <li>Configuration files (this example uses ones with -jwt.yaml suffix)</li>
- * <li>Property name used in {@link #override(ServerRequest, ServerResponse)} method to override username</li>
+ *     <li>Configuration files (this example uses ones with -jwt.yaml suffix)</li>
+ *     <li>Client property used to override username</li>
  * </ul>
  */
 public final class OutboundOverrideJwtExample {
-    private static volatile int clientPort;
-    private static volatile int servingPort;
 
     private OutboundOverrideJwtExample() {
     }
@@ -59,66 +53,62 @@ public final class OutboundOverrideJwtExample {
      * @param args ignored
      */
     public static void main(String[] args) {
-        CompletionStage<Void> first = startClientService(8080);
-        CompletionStage<Void> second = startServingService(9080);
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build();
 
-        first.toCompletableFuture().join();
-        second.toCompletableFuture().join();
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
 
-        System.out.println("Started services. Main endpoints:");
-        System.out.println("http://localhost:" + clientPort + "/propagate");
-        System.out.println("http://localhost:" + clientPort + "/override");
-        System.out.println();
-        System.out.println("Backend service started on:");
-        System.out.println("http://localhost:" + servingPort + "/hello");
+        server.context().register(server);
+
+        System.out.printf("""
+                        Server started in %3$d ms
+
+                        ***********************
+                        ** Endpoints:        **
+                        ***********************
+
+                        http://localhost:%1$d/propagate
+                        http://localhost:%1$d/override
+
+                        Backend service started on: http://localhost:%2$d/hello
+
+                        """,
+                server.port(),
+                server.port("backend"),
+                TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
     }
 
-    static CompletionStage<Void> startServingService(int port) {
-        Config config = createConfig("serving-service-jwt");
-
-        Routing routing = Routing.builder()
-                        .register(WebSecurity.create(config.get("security")))
-                        .get("/hello", (req, res) -> {
-                            // This is the token. It should be bearer <signed JWT base64 encoded>
-                            req.headers().first(Http.Header.AUTHORIZATION)
-                                    .ifPresent(System.out::println);
-                            res.send(req.context().get(SecurityContext.class).flatMap(SecurityContext::user).map(
-                                    Subject::principal).map(Principal::getName).orElse("Anonymous"));
-                        }).build();
-        return startServer(routing, port, server -> servingPort = server.port());
-    }
-
-    static CompletionStage<Void> startClientService(int port) {
-        Config config = createConfig("client-service-jwt");
-
-        Routing routing = Routing.builder()
-                .register(WebSecurity.create(config.get("security")))
-                .get("/override", OutboundOverrideJwtExample::override)
-                .get("/propagate", OutboundOverrideJwtExample::propagate)
+    static void setup(WebServerConfig.Builder server) {
+        Config config = Config.builder()
+                .sources(ConfigSources.classpath("serving-service-jwt.yaml"))
                 .build();
-        return startServer(routing, port, server -> clientPort = server.port());
-    }
 
-    private static void override(ServerRequest req, ServerResponse res) {
-        SecurityContext context = getSecurityContext(req);
+        server.putSocket("@default", socket -> socket
+                        .routing(routing -> routing
+                                .addFeature(SecurityFeature.create(config.get("security")))
+                                .register(new JwtOverrideService())))
 
-        webTarget(servingPort)
-                .property(JwtProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
-                .request(String.class)
-                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
-                .exceptionally(throwable -> sendError(throwable, res));
-    }
+                // backend that prints the current user
+                .putSocket("backend", socket -> socket
+                        .routing(routing -> routing
+                                .addFeature(SecurityFeature.create(config.get("security")))
+                                .get("/hello", (req, res) -> {
 
-    private static void propagate(ServerRequest req, ServerResponse res) {
-        SecurityContext context = getSecurityContext(req);
+                                    // This is the token. It should be bearer <signed JWT base64 encoded>
+                                    req.headers().first(Http.Header.AUTHORIZATION)
+                                            .ifPresent(System.out::println);
 
-        webTarget(servingPort)
-                .request(String.class)
-                .thenAccept(result -> res.send("You are: " + context.userName() + ", backend service returned: " + result))
-                .exceptionally(throwable -> sendError(throwable, res));
-    }
+                                    String username = req.context()
+                                            .get(SecurityContext.class)
+                                            .flatMap(SecurityContext::user)
+                                            .map(Subject::principal)
+                                            .map(Principal::getName)
+                                            .orElse("Anonymous");
 
-    static int clientPort() {
-        return clientPort;
+                                    res.send(username);
+                                })));
     }
 }

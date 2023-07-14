@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,36 +16,23 @@
 
 package io.helidon.security.examples.signatures;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
 /**
  * Unit test for {@link SignatureExampleBuilderMain}.
  */
+@ServerTest
 public class SignatureExampleConfigMainTest extends SignatureExampleTest {
-    private static int svc1Port;
-    private static int svc2Port;
 
-    @BeforeAll
-    public static void initClass() {
-        SignatureExampleConfigMain.main(null);
-        svc1Port = SignatureExampleConfigMain.getService1Server().port();
-        svc2Port = SignatureExampleConfigMain.getService2Server().port();
+    protected SignatureExampleConfigMainTest(WebServer server) {
+        super(server);
     }
 
-    @AfterAll
-    public static void destroyClass() throws InterruptedException {
-        stopServer(SignatureExampleConfigMain.getService2Server());
-        stopServer(SignatureExampleConfigMain.getService1Server());
-    }
-
-    @Override
-    int getService1Port() {
-        return svc1Port;
-    }
-
-    @Override
-    int getService2Port() {
-        return svc2Port;
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        SignatureExampleConfigMain.setup(server);
     }
 }

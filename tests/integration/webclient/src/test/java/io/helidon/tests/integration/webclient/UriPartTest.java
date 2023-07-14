@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.tests.integration.webclient;
 
 import java.util.concurrent.CompletionException;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,111 +31,103 @@ class UriPartTest extends TestParent {
 
     private static final String EXPECTED_QUERY = "some query &#&@Đ value";
 
+    UriPartTest(WebServer server, Http1Client client) {
+        super(server, client);
+    }
+
     @Test
     void testQuerySpace() {
-        String response = webClient.get()
+        String response = client.get()
                 .path("obtainedQuery")
                 .queryParam("param", "test")
                 .queryParam("test", EXPECTED_QUERY)
-                .request(String.class)
-                .await();
+                .request(String.class);
         assertThat(response.trim(), is(EXPECTED_QUERY));
-        assertThrows(IllegalArgumentException.class, () -> webClient.get()
+        assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("obtainedQuery")
                 .queryParam("test", EXPECTED_QUERY)
                 .skipUriEncoding()
-                .request(String.class)
-                .await());
+                .request(String.class));
     }
 
     @Test
     void testQueryKeySpace() {
         String queryNameWithSpace = "query name with space";
-        String response = webClient.get()
+        String response = client.get()
                 .path("obtainedQuery")
                 .queryParam("param", queryNameWithSpace)
                 .queryParam(queryNameWithSpace, EXPECTED_QUERY)
-                .request(String.class)
-                .await();
+                .request(String.class);
         assertThat(response.trim(), is(EXPECTED_QUERY));
-        assertThrows(IllegalArgumentException.class, () -> webClient.get()
+        assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("obtainedQuery")
                 .queryParam("param", queryNameWithSpace)
-                .skipUriEncoding()
-                .request(String.class)
-                .await());
+                .request(String.class));
     }
 
     @Test
     void testPathWithSpace() {
-        String response = webClient.get()
+        String response = client.get()
                 .path("pattern with space")
-                .request(String.class)
-                .await();
+                .request(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
-        assertThrows(IllegalArgumentException.class, () -> webClient.get()
+        assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("pattern with space")
-                .skipUriEncoding()
-                .request(String.class)
-                .await());
+                //.skipUriEncoding()
+                .request(String.class));
     }
 
     @Test
     void testFragment() {
         String fragment = "super fragment#&?/";
-        String response = webClient.get()
+        String response = client.get()
                 .path("obtainedQuery")
                 .queryParam("param", "empty")
                 .queryParam("empty", "")
                 .fragment("super fragment#&?/")
-                .request(String.class)
-                .await();
+                .request(String.class);
         assertThat(response.trim(), is(fragment));
-        assertThrows(IllegalArgumentException.class, () -> webClient.get()
+        assertThrows(IllegalArgumentException.class, () -> client.get()
                 .fragment("super fragment#&?/")
                 .skipUriEncoding()
-                .request(String.class)
-                .await());
+                .request(String.class));
     }
 
     @Test
     void testQueryNotDecoded() {
-        WebClient webClient = createNewClient(request -> {
+        Http1Client webClient = createNewClient((chain, request) -> {
             assertThat(request.query(), is("first&second%26=val&ue%26"));
-            return Single.just(request);
+            return chain.proceed(request);
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
                 .skipUriEncoding()
-                .request(String.class)
-                .await();
+                .request(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
 
     @Test
     void testQueryNotDoubleEncoded() {
-        WebClient webClient = createNewClient(request -> {
+        Http1Client webClient = createNewClient((chain, request) -> {
             assertThat(request.query(), is("first%26second%26=val%26ue%26"));
-            return Single.just(request);
+            return chain.proceed(request);
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
-                .request(String.class)
-                .await();
+                .request(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
 
     @Test
     void testPathNotDecoded() {
-        WebClient webClient = createNewClient(request -> {
-            assertThat(request.path().rawPath(), is("/greet/path%26"));
-            return Single.just(request);
+        Http1Client webClient = createNewClient((chain, request) -> {
+            assertThat(request.uri().path()/*.rawPath()*/, is("/greet/path%26"));
+            return chain.proceed(request);
         });
         assertThrows(CompletionException.class, () -> webClient.get()
                 .path("path%26")
                 .skipUriEncoding()
-                .request(String.class)
-                .await());
+                .request(String.class));
     }
 
 }

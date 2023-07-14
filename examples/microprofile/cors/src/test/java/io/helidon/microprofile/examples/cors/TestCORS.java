@@ -20,17 +20,16 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
-import io.helidon.cors.CrossOriginConfig;
 import io.helidon.microprofile.server.Server;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
-import io.helidon.reactive.webclient.WebClientRequestHeaders;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webclient.WebClientResponseHeaders;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -44,6 +43,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.cors.CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
@@ -60,9 +61,8 @@ public class TestCORS {
     private static final String JSON_NEW_GREETING_LABEL = "greeting";
 
     private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonpSupport JSONP_SUPPORT = JsonpSupport.create();
 
-    private static WebClient client;
+    private static Http1Client client;
     private static Server server;
 
     @BeforeAll
@@ -73,11 +73,11 @@ public class TestCORS {
         server = serverBuilder
                 .port(-1) // override the port for testing
                 .build()
-            .start();
-        client = WebClient.builder()
-                    .baseUri("http://localhost:" + server.port())
-                    .addMediaSupport(JSONP_SUPPORT)
-                    .build();
+                .start();
+        client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port())
+                .addMediaSupport(JsonpSupport.create())
+                .build();
     }
 
     @AfterAll
@@ -91,7 +91,7 @@ public class TestCORS {
     @Test
     public void testHelloWorld() {
 
-        WebClientResponse r = getResponse("/greet");
+        Http1ClientResponse r = getResponse("/greet");
 
         assertThat("HTTP response1", r.status().code(), is(200));
         assertThat("default message", fromPayload(r), is("Hello World!"));
@@ -117,20 +117,19 @@ public class TestCORS {
     @Order(10) // Run after the non-CORS tests (so the greeting is Hola) but before the CORS test that changes the greeting again.
     @Test
     void testAnonymousGreetWithCors() {
-        WebClientRequestBuilder builder = client.get();
-        WebClientRequestHeaders headers = builder.headers();
-        headers.add(Header.ORIGIN, "http://foo.com");
-        headers.add(Header.HOST, "here.com");
+        Http1ClientRequest req = client.get()
+                .header(Header.ORIGIN, "http://foo.com")
+                .header(Header.HOST, "here.com");
 
-        WebClientResponse r = getResponse("/greet", builder);
+        Http1ClientResponse r = getResponse("/greet", req);
         assertThat("HTTP response", r.status().code(), is(200));
         String payload = fromPayload(r);
         assertThat("HTTP response payload", payload, is("Hola World!"));
         Headers responseHeaders = r.headers();
         Optional<String> allowOrigin = responseHeaders.value(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is present",
+        assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN + " is present",
                 allowOrigin.isPresent(), is(true));
-        assertThat("CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin.get(), is("*"));
+        assertThat("CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin.get(), is("*"));
     }
 
     @Order(11) // Run after the non-CORS tests but before other CORS tests.
@@ -139,111 +138,104 @@ public class TestCORS {
 
         // Send the pre-flight request and check the response.
 
-        WebClientRequestBuilder builder = client.method("OPTIONS");
-        WebClientRequestHeaders headers = builder.headers();
-        headers.add(Header.ORIGIN, "http://foo.com");
-        headers.add(Header.HOST, "here.com");
-        headers.add(Header.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+        Http1ClientRequest req = client.method(Http.Method.OPTIONS)
+                .header(Header.ORIGIN, "http://foo.com")
+                .header(Header.HOST, "here.com")
+                .header(Header.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
-        WebClientResponse r = builder.path("/greet/greeting")
-                .submit()
-                .await();
+        List<String> allowOrigins;
+        Headers responseHeaders;
+        Headers preflightResponseHeaders;
+        try (Http1ClientResponse res = req.path("/greet/greeting").request()) {
+            assertThat("pre-flight status", res.status().code(), is(200));
+            preflightResponseHeaders = res.headers();
+        }
 
-        assertThat("pre-flight status", r.status().code(), is(200));
-        Headers preflightResponseHeaders = r.headers();
         List<String> allowMethods = preflightResponseHeaders.values(Header.ACCESS_CONTROL_ALLOW_METHODS);
-        assertThat("pre-flight response check for " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS,
-                allowMethods, is(not(empty())));
-        assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS, allowMethods, contains("PUT"));
-        List<String> allowOrigins = preflightResponseHeaders.values(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("pre-flight response check for " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                allowOrigins, is(not(empty())));
-        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
+        assertThat("pre-flight response check for " + ACCESS_CONTROL_ALLOW_METHODS, allowMethods, is(not(empty())));
+        assertThat("Header " + ACCESS_CONTROL_ALLOW_METHODS, allowMethods, contains("PUT"));
+
+        allowOrigins = preflightResponseHeaders.values(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
+
+        assertThat("pre-flight response check for " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, is(not(empty())));
+        assertThat("Header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
 
         // Send the follow-up request.
 
-        builder = client.put();
-        headers = builder.headers();
-        headers.add(Header.ORIGIN, "http://foo.com");
-        headers.add(Header.HOST, "here.com");
-        headers.addAll(preflightResponseHeaders);
+        req = client.put()
+                .header(Header.ORIGIN, "http://foo.com")
+                .header(Header.HOST, "here.com");
+        preflightResponseHeaders.forEach(req.headers()::add);
 
-        r = putResponse("/greet/greeting", "Cheers", builder);
-        assertThat("HTTP response3", r.status().code(), is(204));
-        WebClientResponseHeaders responseHeaders = r.headers();
+        try (Http1ClientResponse res = putResponse("/greet/greeting", "Cheers", req)) {
+            assertThat("HTTP response3", res.status().code(), is(204));
+            responseHeaders = res.headers();
+        }
+
         allowOrigins = responseHeaders.values(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
-                allowOrigins, is(not(empty())));
-        assertThat( "Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
+        assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, is(not(empty())));
+        assertThat("Header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
     }
 
     @Order(12) // Run after CORS test changes greeting to Cheers.
     @Test
     void testNamedGreetWithCors() {
-        WebClientRequestBuilder builder = client.get();
-        WebClientRequestHeaders headers = builder.headers();
-        headers.add(Header.ORIGIN, "http://foo.com");
-        headers.add(Header.HOST, "here.com");
+        Http1ClientRequest req = client.get()
+                .header(Header.ORIGIN, "http://foo.com")
+                .header(Header.HOST, "here.com");
 
-        WebClientResponse r = getResponse("/greet/Maria", builder);
+        Http1ClientResponse r = getResponse("/greet/Maria", req);
         assertThat("HTTP response", r.status().code(), is(200));
         assertThat(fromPayload(r), containsString("Cheers Maria"));
-        WebClientResponseHeaders responseHeaders = r.headers();
+        Headers responseHeaders = r.headers();
         Optional<String> allowOrigin = responseHeaders.value(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
-        assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " presence check",
-                allowOrigin.isPresent(), is(true));
+        assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN + " presence check", allowOrigin.isPresent(), is(true));
         assertThat(allowOrigin.get(), is("*"));
     }
 
-    @Order(100) // After all other tests so we can rely on deterministic greetings.
+    @Order(100) // After all other tests, so we can rely on deterministic greetings.
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() {
-        WebClientRequestBuilder builder = client.put();
-        WebClientRequestHeaders headers = builder.headers();
-        headers.set(Header.ORIGIN, "http://other.com");
-        headers.set(Header.HOST, "here.com");
+        Http1ClientRequest req = client.put()
+                .header(Header.ORIGIN, "http://foo.com")
+                .header(Header.HOST, "here.com");
 
-        WebClientResponse r = putResponse("/greet/greeting", "Ahoy", builder);
-        // Result depends on whether we are using overrides or not.
-        boolean isOverriding = Config.create().get("cors").exists();
-        assertThat("HTTP response3", r.status().code(), is(isOverriding ? 204 : 403));
+        try (Http1ClientResponse r = putResponse("/greet/greeting", "Ahoy", req)) {
+            // Result depends on whether we are using overrides or not.
+            boolean isOverriding = Config.create().get("cors").exists();
+            assertThat("HTTP response3", r.status().code(), is(isOverriding ? 204 : 403));
+        }
     }
 
 
-    private static WebClientResponse getResponse(String path) {
+    private static Http1ClientResponse getResponse(String path) {
         return getResponse(path, client.get());
     }
 
-    private static WebClientResponse getResponse(String path, WebClientRequestBuilder builder) {
-        return builder
-                .accept(MediaTypes.APPLICATION_JSON)
-                .path(path)
-                .submit()
-                .await();
+    private static Http1ClientResponse getResponse(String path, Http1ClientRequest builder) {
+        return builder.accept(HttpMediaType.APPLICATION_JSON)
+                      .path(path)
+                      .request();
     }
 
-    private static String fromPayload(WebClientResponse response) {
-        JsonObject json = response
-                .content()
-                .as(JsonObject.class)
-                .await();
+    private static String fromPayload(Http1ClientResponse response) {
+        JsonObject json = response.entity().as(JsonObject.class);
         return json.getString(JSON_MESSAGE_RESPONSE_LABEL);
     }
 
     private static JsonObject toPayload(String message) {
         JsonObjectBuilder builder = JSON_BF.createObjectBuilder();
         return builder.add(JSON_NEW_GREETING_LABEL, message)
-                .build();
+                      .build();
     }
-    private static WebClientResponse putResponse(String path, String message) {
+
+    private static Http1ClientResponse putResponse(String path, String message) {
         return putResponse(path, message, client.put());
     }
 
-    private static WebClientResponse putResponse(String path, String message, WebClientRequestBuilder builder) {
-        return builder
-                .accept(MediaTypes.APPLICATION_JSON)
-                .path(path)
-                .submit(toPayload(message))
-                .await();
+    private static Http1ClientResponse putResponse(String path, String message, Http1ClientRequest builder) {
+        return builder.accept(HttpMediaType.APPLICATION_JSON)
+                      .path(path)
+                      .submit(toPayload(message));
     }
 }

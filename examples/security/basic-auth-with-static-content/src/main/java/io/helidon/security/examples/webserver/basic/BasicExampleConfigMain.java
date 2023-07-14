@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,11 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 
 /**
  * Example using configuration based approach.
@@ -37,36 +37,60 @@ public final class BasicExampleConfigMain {
 
     /**
      * Entry point, starts the server.
+     *
      * @param args not used
      */
     public static void main(String[] args) {
-        BasicExampleUtil.startAndPrintEndpoints(BasicExampleConfigMain::startServer);
-    }
-
-    static WebServer startServer() {
         LogConfig.initClass();
 
+        WebServerConfig.Builder builder = WebServer.builder()
+                .port(8080);
+        setup(builder);
+        WebServer server = builder.build();
+
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
+
+        System.out.printf("""
+                Server started in %d ms
+
+                Signature example: from builder
+
+                "Users:
+                jack/password in roles: user, admin
+                jill/password in roles: user
+                john/password in no roles
+
+                ***********************
+                ** Endpoints:        **
+                ***********************
+
+                No authentication: http://localhost:8080/public
+                No roles required, authenticated: http://localhost:8080/noRoles
+                User role required: http://localhost:8080/user
+                Admin role required: http://localhost:8080/admin
+                Always forbidden (uses role nobody is in), audited: http://localhost:8080/deny
+                Admin role required, authenticated, authentication optional, audited \
+                (always forbidden - challenge is not returned as authentication is optional): http://localhost:8080/noAuthn
+                Static content, requires user role: http://localhost:8080/static/index.html
+
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
+    }
+
+    static void setup(WebServerConfig.Builder server) {
         Config config = Config.create();
-
-        Routing routing = Routing.builder()
-                // must be configured first, to protect endpoints
-                .register(WebSecurity.create(config.get("security")))
-                .register("/static", StaticContentSupport.create("/WEB"))
-                .get("/{*}", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-                    res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
-                            .orElse("Security context is null"));
-                })
-                .build();
-
-        return WebServer.builder()
-                .config(config.get("server"))
-                .routing(routing)
-                .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
-
+        server.config(config)
+                .routing(routing -> routing
+                        // must be configured first, to protect endpoints
+                        .addFeature(SecurityFeature.create(config.get("security")))
+                        .register("/static", StaticContentService.create("/WEB"))
+                        .get("/{*}", (req, res) -> {
+                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.send("Hello, you are: \n" + securityContext
+                                    .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
+                                    .orElse("Security context is null"));
+                        }));
     }
 }

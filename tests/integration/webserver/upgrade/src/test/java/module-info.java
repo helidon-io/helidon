@@ -21,10 +21,12 @@ open module helidon.tests.integration.webserver.upgrade.test {
 
     requires helidon.tests.integration.webserver.upgrade;
 
-    requires io.helidon.reactive.webserver;
-    requires io.helidon.reactive.webclient;
     requires java.net.http;
     requires hamcrest.all;
     requires org.junit.jupiter.api;
     requires org.junit.jupiter.params;
+    requires io.helidon.nima.webclient;
+    requires io.helidon.nima.webserver;
+    requires io.helidon.nima.testing.junit5.webserver;
+    requires io.helidon.common.pki;
 }

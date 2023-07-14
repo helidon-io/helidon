@@ -26,7 +26,6 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon</groupId>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
     <name>Helidon BOM POM</name>
@@ -236,16 +235,6 @@
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-jersey</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-jersey-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -914,11 +903,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.reactive.webserver.cors</groupId>
-                <artifactId>helidon-cors</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile</groupId>
                 <artifactId>helidon-microprofile-cors</artifactId>
                 <version>${helidon.version}</version>
@@ -1013,7 +997,7 @@
                 <artifactId>helidon-microprofile-bean-validation</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- Microstream -->
+            <!-- MicroStream -->
             <dependency>
             	<groupId>io.helidon.integrations.microstream</groupId>
             	<artifactId>helidon-integrations-microstream</artifactId>
@@ -1124,6 +1108,11 @@
             <dependency>
                 <groupId>io.helidon.nima.webclient</groupId>
                 <artifactId>helidon-nima-webclient-tracing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webclient</groupId>
+                <artifactId>helidon-nima-webclient-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

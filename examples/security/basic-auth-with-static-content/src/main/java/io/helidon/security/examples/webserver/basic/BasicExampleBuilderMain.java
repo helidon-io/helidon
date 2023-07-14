@@ -25,12 +25,12 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
 
@@ -56,24 +56,56 @@ public final class BasicExampleBuilderMain {
      * @param args not used
      */
     public static void main(String[] args) {
-        BasicExampleUtil.startAndPrintEndpoints(BasicExampleBuilderMain::startServer);
-    }
-
-    static WebServer startServer() {
         LogConfig.initClass();
 
-        Routing routing = Routing.builder()
+        WebServerConfig.Builder builder = WebServer.builder()
+                .port(8080);
+        setup(builder);
+        WebServer server = builder.build();
+
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
+
+        System.out.printf("""
+                Server started in %d ms
+
+                Signature example: from builder
+
+                "Users:
+                jack/password in roles: user, admin
+                jill/password in roles: user
+                john/password in no roles
+
+                ***********************
+                ** Endpoints:        **
+                ***********************
+
+                No authentication: http://localhost:8080/public
+                No roles required, authenticated: http://localhost:8080/noRoles
+                User role required: http://localhost:8080/user
+                Admin role required: http://localhost:8080/admin
+                Always forbidden (uses role nobody is in), audited: http://localhost:8080/deny
+                Admin role required, authenticated, authentication optional, audited \
+                (always forbidden - challenge is not returned as authentication is optional): http://localhost:8080/noAuthn
+                Static content, requires user role: http://localhost:8080/static/index.html
+
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
+    }
+
+    static void setup(WebServerConfig.Builder server) {
+        server.routing(routing -> routing
                 // must be configured first, to protect endpoints
-                .register(buildWebSecurity().securityDefaults(WebSecurity.authenticate()))
-                .any("/static[/{*}]", WebSecurity.rolesAllowed("user"))
-                .register("/static", StaticContentSupport.create("/WEB"))
-                .get("/noRoles", WebSecurity.enforce())
-                .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
-                .get("/admin", WebSecurity.rolesAllowed("admin"))
+                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
+                .any("/static[/{*}]", SecurityFeature.rolesAllowed("user"))
+                .register("/static", StaticContentService.create("/WEB"))
+                .get("/noRoles", SecurityFeature.enforce())
+                .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                .get("/admin", SecurityFeature.rolesAllowed("admin"))
                 // audit is not enabled for GET methods by default
-                .get("/deny", WebSecurity.rolesAllowed("deny").audit())
+                .get("/deny", SecurityFeature.rolesAllowed("deny").audit())
                 // roles allowed imply authn and authz
-                .any("/noAuthn", WebSecurity.rolesAllowed("admin")
+                .any("/noAuthn", SecurityFeature.rolesAllowed("admin")
                         .authenticationOptional()
                         .audit())
                 .get("/{*}", (req, res) -> {
@@ -82,20 +114,10 @@ public final class BasicExampleBuilderMain {
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
-                })
-                .build();
-
-        return WebServer.builder()
-                .routing(routing)
-                // uncomment to use an explicit port
-                //.port(8080)
-                .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
-
+                }));
     }
 
-    private static WebSecurity buildWebSecurity() {
+    private static SecurityFeature buildWebSecurity() {
         Security security = Security.builder()
                 .addAuthenticationProvider(
                         HttpBasicAuthProvider.builder()
@@ -103,41 +125,18 @@ public final class BasicExampleBuilderMain {
                                 .userStore(buildUserStore()),
                         "http-basic-auth")
                 .build();
-        return WebSecurity.create(security);
+        return SecurityFeature.create(security);
     }
 
     private static SecureUserStore buildUserStore() {
         return login -> Optional.ofNullable(USERS.get(login));
     }
 
-    private static class MyUser implements SecureUserStore.User {
-        private final String login;
-        private final char[] password;
-        private final Set<String> roles;
-
-        private MyUser(String login, char[] password, Set<String> roles) {
-            this.login = login;
-            this.password = password;
-            this.roles = roles;
-        }
-
-        private char[] password() {
-            return password;
-        }
+    private record MyUser(String login, char[] password, Set<String> roles) implements SecureUserStore.User {
 
         @Override
         public boolean isPasswordValid(char[] password) {
             return Arrays.equals(password(), password);
-        }
-
-        @Override
-        public Set<String> roles() {
-            return roles;
-        }
-
-        @Override
-        public String login() {
-            return login;
         }
     }
 }

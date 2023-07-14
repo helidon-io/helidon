@@ -29,16 +29,23 @@ module io.helidon.microprofile.security {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.security;
-    requires io.helidon.security.providers.abac;
-    requires transitive io.helidon.security.integration.jersey;
     requires transitive io.helidon.security.integration.nima;
+    requires io.helidon.security.providers.abac;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.cdi;
+    requires io.helidon.jersey.common;
+    requires io.helidon.security.integration.common;
+    requires io.helidon.security.providers.common;
+    requires io.helidon.security.annotations;
 
     exports io.helidon.microprofile.security;
+
+    uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+    uses io.helidon.microprofile.security.SecurityResponseMapper;
 
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.security to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.security.SecurityCdiExtension;
+    provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.security.ClientSecurityAutoDiscoverable;
 }

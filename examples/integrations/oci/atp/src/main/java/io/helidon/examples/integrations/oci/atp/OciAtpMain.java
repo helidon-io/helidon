@@ -21,16 +21,19 @@ import java.io.IOException;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+
+import com.oracle.bmc.ConfigFileReader;
+import com.oracle.bmc.auth.AuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.database.Database;
+import com.oracle.bmc.database.DatabaseClient;
+import com.oracle.bmc.model.BmcException;
 
 /**
  * Main class of the example.
  * This example sets up a web server to serve REST API to retrieve ATP wallet.
  */
 public final class OciAtpMain {
-
-    private static Config config;
-
     /**
      * Cannot be instantiated.
      */
@@ -46,22 +49,27 @@ public final class OciAtpMain {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
-        config = Config.create();
+        // By default, this will pick up application.yaml from the classpath
+        Config config = Config.create();
 
+        // this requires OCI configuration in the usual place
+        // ~/.oci/config
+        ConfigFileReader.ConfigFile configFile = ConfigFileReader.parseDefault();
+        AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(configFile);
+        Database databaseClient = DatabaseClient.builder().build(authProvider);
+
+        // Prepare routing for the server
         WebServer server = WebServer.builder()
-                .routing(OciAtpMain::routing)
                 .config(config.get("server"))
+                .routing(routing -> routing
+                        .register("/atp", new AtpService(databaseClient, config))
+                        // OCI SDK error handling
+                        .error(BmcException.class, (req, res, ex) ->
+                                res.status(ex.getStatusCode())
+                                        .send(ex.getMessage())))
+                .build()
                 .start();
 
-        System.out.println("WEB server is up! http://localhost:" + server.port());
-    }
-
-    /**
-     * Updates HTTP Routing.
-     */
-    static void routing(HttpRouting.Builder routing) {
-        AtpService atpService = new AtpService(config);
-        routing.register("/atp", atpService);
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/");
     }
 }

@@ -55,13 +55,8 @@
             <artifactId>helidon-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-jersey</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-security</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

@@ -16,21 +16,16 @@
 
 package io.helidon.demo.todos.frontend;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
-
 import io.helidon.common.http.Http;
-import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
-import io.helidon.security.SecurityContext;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tracing.Span;
-import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 
+import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -39,13 +34,13 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
  * Handler of requests to process TODOs.
- *
+ * <p>
  * A TODO is structured as follows:
  * <code>{ 'title': string, 'completed': boolean, 'id': string }</code>
- *
+ * <p>
  * The IDs are server generated on the initial POST operation (so they are not
  * included in that case).
- *
+ * <p>
  * Here is a summary of the operations:
  * <code>GET /api/todo</code>: Get all TODOs
  * <code>GET /api/todo/{id}</code>: Get a TODO
@@ -54,7 +49,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * <code>DELETE /api/todo/{id}</code>: Delete a TODO, deleted TODO is returned
  * <code>PUT /api/todo/{id}</code>: Update a TODO,  updated TODO is returned
  */
-public final class TodosHandler implements Service {
+public final class TodosHandler implements HttpService {
 
     /**
      * The backend service client.
@@ -77,37 +72,40 @@ public final class TodosHandler implements Service {
     private final Counter deleteCounter;
 
     /**
+     * Tracer.
+     */
+    private final Tracer tracer;
+
+    /**
      * Create a new {@code TodosHandler} instance.
      *
-     * @param bsc the {@code BackendServiceClient} to use
+     * @param bsc    the {@code BackendServiceClient} to use
+     * @param tracer tracer
      */
-    public TodosHandler(BackendServiceClient bsc) {
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
-
+    public TodosHandler(BackendServiceClient bsc, Tracer tracer) {
+        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
+        this.tracer = tracer;
         this.bsc = bsc;
         this.createCounter = registry.counter("created");
-
         this.updateCounter = registry.counter("updates");
+        this.deleteCounter = registry.counter(counterMetadata("deletes", "Number of deleted todos"));
+    }
 
-        this.deleteCounter = registry.counter(counterMetadata("deletes",
-                                                              "Number of deleted todos"));
+    @Override
+    public void routing(final HttpRules rules) {
+        rules.get("/todo/{id}", this::getSingle)
+             .delete("/todo/{id}", this::delete)
+             .put("/todo/{id}", this::update)
+             .get("/todo", this::getAll)
+             .post("/todo", this::create);
     }
 
     private Metadata counterMetadata(String name, String description) {
         return Metadata.builder()
-                .withName(name)
-                .withDescription(description)
-                .withUnit(MetricUnits.NONE)
-                .build();
-    }
-
-    @Override
-    public void update(final Routing.Rules rules) {
-        rules.get("/todo/{id}", this::getSingle)
-                .delete("/todo/{id}", this::delete)
-                .put("/todo/{id}", this::update)
-                .get("/todo", this::getAll)
-                .post("/todo", this::create);
+                       .withName(name)
+                       .withDescription(description)
+                       .withUnit(MetricUnits.NONE)
+                       .build();
     }
 
     /**
@@ -117,12 +115,10 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void create(final ServerRequest req, final ServerResponse res) {
-        secure(req, res, sc -> json(req, res, json -> {
-            createCounter.inc();
-            bsc.create(json, sc)
-                    .thenAccept(created -> sendResponse(res, created, Http.Status.INTERNAL_SERVER_ERROR_500))
-                    .exceptionally(t -> sendError(t, res));
-        }));
+        createCounter.inc();
+        JsonObject json = req.content().as(JsonObject.class);
+        bsc.create(json)
+           .ifPresentOrElse(res::send, () -> res.status(Http.Status.INTERNAL_SERVER_ERROR_500));
     }
 
     /**
@@ -131,25 +127,19 @@ public final class TodosHandler implements Service {
      * @param req the server request
      * @param res the server response
      */
-    private void getAll(final ServerRequest req, final ServerResponse res) {
-        AtomicReference<Span> createdSpan = new AtomicReference<>();
+    private void getAll(ServerRequest req, ServerResponse res) {
+        Span span = Span.current()
+                        .map(sp -> tracer.spanBuilder("getAll0").parent(sp.context()).start())
+                        .orElseGet(() -> tracer.spanBuilder("getAll").start());
 
-        SpanContext spanContext = req.spanContext().orElseGet(() -> {
-           io.helidon.tracing.Span mySpan = req.tracer().spanBuilder("getAll").start();
-           createdSpan.set(mySpan);
-           return mySpan.context();
-        });
-        secure(req, res, sc -> {
-            bsc.getAll(spanContext)
-                    .thenAccept(res::send)
-                    .exceptionally(t -> sendError(t, res))
-                    .whenComplete((noting, throwable) -> {
-                       Span mySpan = createdSpan.get();
-                       if (null != mySpan) {
-                           mySpan.end();
-                       }
-                    });
-        });
+        try {
+            JsonArray todos = bsc.getAll(span.context());
+            res.send(todos);
+        } catch (Throwable th) {
+            span.end();
+            throw th;
+        }
+        span.end();
     }
 
     /**
@@ -159,12 +149,10 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void update(final ServerRequest req, final ServerResponse res) {
-        secure(req, res, sc -> json(req, res, json -> {
-            updateCounter.inc();
-            // example of asynchronous processing
-            bsc.update(sc,
-                    req.path().param("id"), json, res);
-        }));
+        updateCounter.inc();
+        JsonObject json = req.content().as(JsonObject.class);
+        String id = req.path().pathParameters().value("id");
+        bsc.update(id, json, res);
     }
 
     /**
@@ -174,12 +162,10 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void delete(final ServerRequest req, final ServerResponse res) {
-        secure(req, res, sc -> {
-            deleteCounter.inc();
-            bsc.deleteSingle(req.path().param("id"))
-                    .thenAccept(json -> sendResponse(res, json, Http.Status.NOT_FOUND_404))
-                    .exceptionally(throwable -> sendError(throwable, res));
-        });
+        deleteCounter.inc();
+        String id = req.path().pathParameters().value("id");
+        bsc.deleteSingle(id)
+           .ifPresentOrElse(res::send, () -> res.status(Http.Status.NOT_FOUND_404));
     }
 
     /**
@@ -189,80 +175,8 @@ public final class TodosHandler implements Service {
      * @param res the server response
      */
     private void getSingle(final ServerRequest req, final ServerResponse res) {
-        secure(req, res, sc -> {
-            bsc.getSingle(req.path().param("id"))
-                    .thenAccept(found -> sendResponse(res, found, Http.Status.NOT_FOUND_404))
-                    .exceptionally(throwable -> sendError(throwable, res));
-        });
-    }
-
-    /**
-     * Send a response with a {@code 500} status code.
-     *
-     * @param res the server response
-     */
-    private void noSecurityContext(final ServerResponse res) {
-        res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-        res.send("Security context not present");
-    }
-
-    /**
-     * Send the response entity if {@code jsonResponse} has a value, otherwise
-     * sets the status to {@code failureStatus}.
-     *
-     * @param res           the server response
-     * @param jsonResponse  the response entity
-     * @param failureStatus the status to use if {@code jsonResponse} is empty
-     */
-    private void sendResponse(final ServerResponse res,
-                              final Optional<? extends JsonObject> jsonResponse,
-                              final Http.Status failureStatus) {
-
-        jsonResponse
-                .ifPresentOrElse(res::send, () -> res.status(failureStatus));
-    }
-
-    /**
-     * Reads a request entity as {@JsonObject}, and if successful invoke the
-     * given consumer, otherwise terminate the request with a {@code 500}
-     * status code.
-     *
-     * @param req  the server request
-     * @param res  the server response
-     * @param json the {@code JsonObject} consumer
-     */
-    private void json(final ServerRequest req,
-                      final ServerResponse res,
-                      final Consumer<JsonObject> json) {
-
-        req.content()
-                .as(JsonObject.class)
-                .thenAccept(json)
-                .exceptionally(throwable -> sendError(throwable, res));
-    }
-
-    /**
-     * Reads the request security context, and if successful invoke the given
-     * consumer, otherwise terminate the request with a {@code 500}
-     * status code.
-     *
-     * @param req the server request
-     * @param res the server response
-     * @param ctx the {@code SecurityContext} consumer
-     */
-    private void secure(final ServerRequest req,
-                        final ServerResponse res,
-                        final Consumer<SecurityContext> ctx) {
-
-        req.context()
-                .get(SecurityContext.class)
-                .ifPresentOrElse(ctx, () -> noSecurityContext(res));
-    }
-
-    private static Void sendError(Throwable throwable, ServerResponse res) {
-        res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-        res.send(throwable.getClass().getName()
-                         + ": " + throwable.getMessage());
-        return null;
+        String id = req.path().pathParameters().value("id");
+        bsc.getSingle(id)
+           .ifPresentOrElse(res::send, () -> res.status(Http.Status.NOT_FOUND_404));
     }
 }

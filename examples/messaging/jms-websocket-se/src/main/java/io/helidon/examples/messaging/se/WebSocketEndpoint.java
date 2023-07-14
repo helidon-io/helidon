@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,9 @@
 
 package io.helidon.examples.messaging.se;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
@@ -28,27 +26,24 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.Type;
+import io.helidon.nima.websocket.WsListener;
+import io.helidon.nima.websocket.WsSession;
 
-import jakarta.websocket.CloseReason;
-import jakarta.websocket.Endpoint;
-import jakarta.websocket.EndpointConfig;
-import jakarta.websocket.Session;
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 
 /**
  * WebSocket endpoint.
  */
-public class WebSocketEndpoint extends Endpoint {
+public class WebSocketEndpoint implements WsListener {
 
     private static final Logger LOGGER = Logger.getLogger(WebSocketEndpoint.class.getName());
 
-    private final Map<String, Messaging> messagingRegister = new HashMap<>();
+    private final Map<WsSession, Messaging> messagingRegister = new HashMap<>();
     private final Config config = Config.create();
 
     @Override
-    public void onOpen(Session session, EndpointConfig endpointConfig) {
-
-        System.out.println("Session " + session.getId());
+    public void onOpen(WsSession session) {
+        System.out.println("Session " + session);
 
         String url = config.get("app.jms.url").asString().get();
         String destination = config.get("app.jms.destination").asString().get();
@@ -62,8 +57,7 @@ public class WebSocketEndpoint extends Endpoint {
                         .jndiProviderUrl(url)
                         .type(Type.QUEUE)
                         .destination(destination)
-                        .build()
-                )
+                        .build())
                 .build();
 
         // Prepare Jms connector, can be used by any channel
@@ -73,31 +67,21 @@ public class WebSocketEndpoint extends Endpoint {
                 .connector(jmsConnector)
                 .listener(fromJms, payload -> {
                     System.out.println("Jms says: " + payload);
-                    // Send message received from Jms over websocket
-                    sendTextMessage(session, payload);
+                    session.send(payload, false);
                 })
                 .build()
                 .start();
 
         //Save the messaging instance for proper shutdown
         // when websocket connection is terminated
-        messagingRegister.put(session.getId(), messaging);
+        messagingRegister.put(session, messaging);
     }
 
     @Override
-    public void onClose(final Session session, final CloseReason closeReason) {
-        super.onClose(session, closeReason);
-        LOGGER.info("Closing session " + session.getId());
+    public void onClose(WsSession session, int status, String reason) {
+        LOGGER.info("Closing session " + session);
         // Properly stop messaging when websocket connection is terminated
-        Optional.ofNullable(messagingRegister.remove(session.getId()))
+        Optional.ofNullable(messagingRegister.remove(session))
                 .ifPresent(Messaging::stop);
-    }
-
-    private void sendTextMessage(Session session, String msg) {
-        try {
-            session.getBasicRemote().sendText(msg);
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Message sending failed", e);
-        }
     }
 }

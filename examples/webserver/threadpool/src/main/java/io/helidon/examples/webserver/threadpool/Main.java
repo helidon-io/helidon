@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package io.helidon.examples.webserver.threadpool;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.http.HttpRouting;
+
+import jakarta.json.JsonException;
 
 /**
  * The application main class.
@@ -43,64 +42,35 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
-        startServer(config);
-    }
-
-    /**
-     * Start the server.
-     *
-     * @return the created {@link WebServer} instance
-     */
-    static Single<WebServer> startServer(Config config) {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // Build server using three ports:
-        // default public port, admin port, private port
-        WebServer server = WebServer.builder(createPublicRouting(config))
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())
-                .build();
+        // By default, this will pick up application.yaml from the classpath
+        Config config = Config.create();
 
-        Single<WebServer> webServerSingle = server.start();
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder, config);
+        WebServer server = builder.build().start();
 
-        // Try to start the server. If successful, print some info and arrange to
-        // print a message at shutdown. If unsuccessful, print the exception.
-        webServerSingle
-                .thenAccept(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port());
-                    ws.whenShutdown().thenRun(()
-                            -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
-                .exceptionallyAccept(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                });
-
-        // Server threads are not daemon. No need to block. Just react.
-
-        return webServerSingle;
+        System.out.println(
+                "WEB server is up! http://localhost:" + server.port());
     }
 
     /**
-     * Creates public {@link Routing}.
-     *
-     * @return routing for use on "public" port
+     * Set up the server.
      */
-    private static Routing createPublicRouting(Config config) {
-        MetricsSupport metrics = MetricsSupport.create();
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .build();
-        GreetService greetService = new GreetService(config);
-        return Routing.builder()
-                .register(health)
-                .register(metrics)
-                .register("/greet", greetService)
-                .build();
+    static void setup(WebServerConfig.Builder server, Config config) {
+        server.config(config.get("server"))
+              .routing(r -> routing(r, config));
+    }
+
+    /**
+     * Set up the routing.
+     */
+    static void routing(HttpRouting.Builder routing, Config config) {
+        routing.addFeature(ObserveFeature.create())
+               .register("/greet", new GreetService(config))
+               .error(JsonException.class, new JsonErrorHandler());
     }
 
 }

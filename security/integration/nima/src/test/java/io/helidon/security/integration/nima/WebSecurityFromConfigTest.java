@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,51 +18,52 @@ package io.helidon.security.integration.nima;
 
 import java.util.Optional;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 
-import org.junit.jupiter.api.BeforeAll;
-
 /**
  * Unit test for {@link SecurityFeature}.
  */
+@ServerTest
 public class WebSecurityFromConfigTest extends WebSecurityTests {
-    private static String baseUri;
 
-    @BeforeAll
-    public static void initClass() throws InterruptedException {
-        WebSecurityTestUtil.auditLogFinest();
-        myAuditProvider = new UnitTestAuditProvider();
+    WebSecurityFromConfigTest(WebServer server, Http1Client webClient) {
+        super(server, webClient);
+    }
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder serverBuilder) {
+        UnitTestAuditProvider myAuditProvider = new UnitTestAuditProvider();
 
         Config securityConfig = Config.create().get("security");
 
         Security security = Security.builder(securityConfig)
                 .addAuditProvider(myAuditProvider).build();
 
-        server = WebServer.builder()
+        Context context = Context.create();
+        context.register(myAuditProvider);
+
+        serverBuilder.serverContext(context)
                 .routing(routing -> routing.addFeature(ContextFeature.create())
-                        .addFeature(SecurityFeature.create(security, securityConfig))
-                        .get("/*", (req, res) -> {
-                            Optional<SecurityContext> securityContext = Contexts.context()
-                                    .flatMap(ctx -> ctx.get(SecurityContext.class));
-                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-                            res.send("Hello, you are: \n" + securityContext
-                                    .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
-                                    .orElse("Security context is null"));
-                        }))
-                .build();
+                .addFeature(SecurityFeature.create(security, securityConfig))
+                .get("/*", (req, res) -> {
+                    Optional<SecurityContext> securityContext = Contexts.context()
+                            .flatMap(ctx -> ctx.get(SecurityContext.class));
+                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                    res.send("Hello, you are: \n" + securityContext
+                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
+                            .orElse("Security context is null"));
+                }));
 
-        server.start();
-        baseUri = "http://localhost:" + server.port();
-    }
-
-    @Override
-    String serverBaseUri() {
-        return baseUri;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,12 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Emitter;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.kafka.KafkaConnector;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
 
 import org.apache.kafka.common.serialization.StringSerializer;
 
-class SendingService implements Service {
+class SendingService implements HttpService {
 
     private final Emitter<String> emitter;
     private final Messaging messaging;
@@ -39,13 +39,13 @@ class SendingService implements Service {
         // Prepare channel for connecting processor -> kafka connector with specific subscriber configuration,
         // channel -> connector mapping is automatic when using KafkaConnector.configBuilder()
         Channel<String> toKafka = Channel.<String>builder()
-                .subscriberConfig(KafkaConnector.configBuilder()
-                        .bootstrapServers(kafkaServer)
-                        .topic(topic)
-                        .keySerializer(StringSerializer.class)
-                        .valueSerializer(StringSerializer.class)
-                        .build()
-                ).build();
+                                         .subscriberConfig(KafkaConnector.configBuilder()
+                                                                         .bootstrapServers(kafkaServer)
+                                                                         .topic(topic)
+                                                                         .keySerializer(StringSerializer.class)
+                                                                         .valueSerializer(StringSerializer.class)
+                                                                         .build())
+                                         .build();
 
         // Prepare channel for connecting emitter -> processor
         Channel<String> toProcessor = Channel.create();
@@ -56,13 +56,11 @@ class SendingService implements Service {
         // Prepare emitter for manual publishing to channel
         emitter = Emitter.create(toProcessor);
 
+        // Transforming to upper-case before sending to kafka
         messaging = Messaging.builder()
                 .emitter(emitter)
                 // Processor connect two channels together
-                .processor(toProcessor, toKafka, payload -> {
-                    // Transforming to upper-case before sending to kafka
-                    return payload.toUpperCase();
-                })
+                .processor(toProcessor, toKafka, String::toUpperCase)
                 .connector(kafkaConnector)
                 .build()
                 .start();
@@ -74,11 +72,11 @@ class SendingService implements Service {
      * @param rules the routing rules.
      */
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         // Listen for GET /example/send/{msg}
         // to send it thru messaging to Kafka
         rules.get("/send/{msg}", (req, res) -> {
-            String msg = req.path().param("msg");
+            String msg = req.path().pathParameters().value("msg");
             System.out.println("Emitting: " + msg);
             emitter.send(msg);
             res.send();

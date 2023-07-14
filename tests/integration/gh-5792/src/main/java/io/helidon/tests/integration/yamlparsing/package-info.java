@@ -15,6 +15,6 @@
  */
 
 /**
- * Tests of YAML parsing with an older SnakeYAML release.
+ * Integration test to make sure apps can use the older release of SnakeYAML if needed.
  */
 package io.helidon.tests.integration.yamlparsing;

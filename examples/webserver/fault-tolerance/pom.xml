@@ -35,17 +35,22 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.reactive.webserver.examples.faulttolerance.Main</mainClass>
+        <mainClass>io.helidon.webserver.examples.faulttolerance.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.fault-tolerance</groupId>
-            <artifactId>helidon-reactive-fault-tolerance</artifactId>
+            <groupId>io.helidon.nima.fault-tolerance</groupId>
+            <artifactId>helidon-nima-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -55,16 +60,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-test-support</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

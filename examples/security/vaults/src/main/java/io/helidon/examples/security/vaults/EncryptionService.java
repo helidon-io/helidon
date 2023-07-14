@@ -16,40 +16,39 @@
 
 package io.helidon.examples.security.vaults;
 
-import java.nio.charset.StandardCharsets;
-
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.security.Security;
 
-class EncryptionService implements Service {
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+class EncryptionService implements HttpService {
     private final Security security;
 
     EncryptionService(Security security) {
         this.security = security;
     }
 
+
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/encrypt/{config}/{text:.*}", this::encrypt)
-                .get("/decrypt/{config}/{cipherText:.*}", this::decrypt);
+             .get("/decrypt/{config}/{cipherText:.*}", this::decrypt);
     }
 
     private void encrypt(ServerRequest req, ServerResponse res) {
-        String configName = req.path().param("config");
-        String text = req.path().param("text");
+        String configName = req.path().pathParameters().value("config");
+        String text = req.path().pathParameters().value("text");
 
-        String encrypted = security.encrypt(configName, text.getBytes(StandardCharsets.UTF_8));
-        res.send(encrypted);
+        res.send(security.encrypt(configName, text.getBytes(UTF_8)));
     }
 
     private void decrypt(ServerRequest req, ServerResponse res) {
-        String configName = req.path().param("config");
-        String cipherText = req.path().param("cipherText");
+        String configName = req.path().pathParameters().value("config");
+        String cipherText = req.path().pathParameters().value("cipherText");
 
-        byte[] decrypted = security.decrypt(configName, cipherText);
-        res.send(decrypted);
+        res.send(security.decrypt(configName, cipherText));
     }
 }

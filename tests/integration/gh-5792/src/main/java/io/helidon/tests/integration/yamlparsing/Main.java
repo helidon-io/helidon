@@ -15,14 +15,10 @@
  */
 package io.helidon.tests.integration.yamlparsing;
 
-
-import io.helidon.reactive.media.jsonp.JsonpSupport;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.common.reactive.Single;
-import io.helidon.config.Config;
-import io.helidon.reactive.openapi.OpenAPISupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.openapi.OpenApiFeature;
 
 /**
  * The application main class.
@@ -40,59 +36,27 @@ public final class Main {
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        startServer();
-    }
-
-    /**
-     * Start the server.
-     * @return the created {@link WebServer} instance
-     */
-    static Single<WebServer> startServer() {
-
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
+        WebServer server = WebServer.builder()
+                .routing(Main::routing)
+                .build()
+                .start();
 
-        WebServer server = WebServer.builder(createRouting(config))
-                .config(config.get("server"))
-                .addMediaSupport(JsonpSupport.create())                .build();
-
-        Single<WebServer> webserver = server.start();
-
-        // Try to start the server. If successful, print some info and arrange to
-        // print a message at shutdown. If unsuccessful, print the exception.
-        webserver.thenAccept(ws -> {
-            System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
-            ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-        })
-        .exceptionallyAccept(t -> {
-            System.err.println("Startup failed: " + t.getMessage());
-            t.printStackTrace(System.err);
-        });
-
-        return webserver;
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet");
     }
 
     /**
-     * Creates new {@link io.helidon.reactive.webserver.Routing}.
-     *
-     * @return routing configured with JSON support, a health check, and a service
-     * @param config configuration of this server
+     * Updates HTTP Routing.
      */
-    private static Routing createRouting(Config config) {
-        SimpleGreetService simpleGreetService = new SimpleGreetService(config);
-        GreetService greetService = new GreetService(config);
-        OpenAPISupport openApiSupport = OpenAPISupport.builder()
-                .staticFile("target/classes/petstore.yaml")
+    static void routing(HttpRouting.Builder routing) {
+        OpenApiFeature openApiService = OpenApiFeature.builder()
                 .build();
-        Routing.Builder builder = Routing.builder()
-                .register(openApiSupport)
-                .register("/simple-greet", simpleGreetService)
-                .register("/greet", greetService); 
 
+        GreetService greetService = new GreetService();
 
-        return builder.build();
+        routing.register("/greet", greetService)
+                .addFeature(openApiService);
     }
 }

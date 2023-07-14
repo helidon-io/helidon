@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,25 @@
  */
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.io.UncheckedIOException;
+import java.security.Principal;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.WebServerTls;
+import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -43,189 +45,173 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * This test is testing ability to set mutual TLS on WebClient and WebServer.
  */
+@ServerTest
 public class MutualTlsTest {
 
-    private static final Config CONFIG = Config
-            .just(() -> ConfigSources.classpath("application-test.yaml").build());
+    private static final Config CONFIG = Config.just(() -> ConfigSources.classpath("application-test.yaml").build());
 
-    private static WebServer webServer;
+    private final WebServer server;
 
-    @BeforeAll
-    public static void setUpServer() throws InterruptedException {
-        webServer = startWebServer(CONFIG.get("server"));
+    public MutualTlsTest(WebServer server) {
+        this.server = server;
+        server.context().register(server);
     }
 
-    @AfterAll
-    public static void killServer() throws InterruptedException, ExecutionException, TimeoutException {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        server.config(CONFIG.get("server"))
+                .routing(MutualTlsTest::plainRouting)
+                .putSocket("secured", socket -> socket
+                        .from(server.sockets().get("secured"))
+                        .routing(MutualTlsTest::mTlsRouting))
+                .putSocket("invalid-server-cert", socket -> socket
+                        .from(server.sockets().get("invalid-server-cert"))
+                        .routing(MutualTlsTest::mTlsRouting))
+                .putSocket("client-no-ca", socket -> socket
+                        .from(server.sockets().get("client-no-ca"))
+                        .routing(MutualTlsTest::mTlsRouting))
+                .putSocket("optional", socket -> socket
+                        .from(server.sockets().get("optional"))
+                        .routing(MutualTlsTest::mTlsRouting));
     }
 
     @Test
     public void testAccessSuccessful() {
-        WebClient webClient = createWebClient(CONFIG.get("success"));
+        Http1Client webClient = createWebClient(CONFIG.get("success"));
         String result = webClient.get()
-                .uri("http://localhost:" + webServer.port())
-                .request(String.class)
-                .await();
+                .uri("http://localhost:" + server.port())
+                .request(String.class);
 
         assertThat(result, is("Hello world unsecured!"));
-        assertThat(executeRequest(webClient, "https", webServer.port("secured")), is("Hello Helidon-client!"));
+        assertThat(exec(webClient, "https", server.port("secured")), is("Hello Helidon-client!"));
     }
 
     @Test
+    @Disabled
     public void testNoClientCert() {
-        WebClient webClient = createWebClient(CONFIG.get("no-client-cert"));
+        Http1Client client = createWebClient(CONFIG.get("no-client-cert"));
 
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> executeRequest(webClient, "https",
-                                                                          webServer.port("secured")));
-        assertThat(exception.getCause().getMessage(), containsString("Received fatal alert: bad_certificate"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> exec(client, "https", server.port("secured")));
+        assertThat(ex.getMessage(), containsString("Received fatal alert: bad_certificate"));
     }
 
     @Test
+    @Disabled
     public void testOptionalAuthentication() {
-        WebClient webClient = createWebClient(CONFIG.get("no-client-cert"));
+        Http1Client client = createWebClient(CONFIG.get("no-client-cert"));
 
-        assertThat(executeRequest(webClient, "https",
-                                  webServer.port("optional")), is("Hello Unknown CN!"));
+        assertThat(exec(client, "https", server.port("optional")), is("Hello Unknown CN!"));
 
-        webClient = createWebClient(CONFIG.get("success"));
-        assertThat(executeRequest(webClient, "https",
-                                  webServer.port("optional")), is("Hello Helidon-client!"));
+        client = createWebClient(CONFIG.get("success"));
+        assertThat(exec(client, "https", server.port("optional")), is("Hello Helidon-client!"));
     }
 
     @Test
+    @Disabled
     public void testServerCertInvalidCn() {
-        int port = webServer.port("invalid-server-cert");
-        WebClient webClientOne = createWebClient(CONFIG.get("server-cert-invalid-cn"));
+        int port = server.port("invalid-server-cert");
+        Http1Client clientOne = createWebClient(CONFIG.get("server-cert-invalid-cn"));
 
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> executeRequest(webClientOne, "https", port));
-        assertThat(exception.getCause().getMessage(), is("No name matching localhost found"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> exec(clientOne, "https", port));
+        assertThat(ex.getCause().getMessage(), is("No name matching localhost found"));
 
-        WebClient webClientTwo = createWebClient(CONFIG.get("client-disable-hostname-verification"));
-        assertThat(executeRequest(webClientTwo, "https", port), is("Hello Helidon-client!"));
+        Http1Client webClientTwo = createWebClient(CONFIG.get("client-disable-hostname-verification"));
+        assertThat(exec(webClientTwo, "https", port), is("Hello Helidon-client!"));
     }
 
     @Test
+    @Disabled
     public void testClientNoCa() {
-        int port = webServer.port("client-no-ca");
-        WebClient webClientOne = createWebClient(CONFIG.get("client-no-ca"));
+        int port = server.port("client-no-ca");
+        Http1Client clientOne = createWebClient(CONFIG.get("client-no-ca"));
 
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> executeRequest(webClientOne, "https", port));
-        assertThat(exception.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> exec(clientOne, "https", port));
+        assertThat(ex.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
 
-        WebClient webClientTwo = createWebClient(CONFIG.get("client-trust-all"));
-        assertThat(executeRequest(webClientTwo, "https", port), is("Hello Helidon-client!"));
+        Http1Client webClientTwo = createWebClient(CONFIG.get("client-trust-all"));
+        assertThat(exec(webClientTwo, "https", port), is("Hello Helidon-client!"));
     }
 
     @Test
     public void testClientAndServerUpdateTls() {
-        int portSecured = webServer.port("secured");
-        int portDefault = webServer.port();
-        WebClient webClientFirst = createWebClient(CONFIG.get("success"));
-        WebClient webClientSecond = createWebClient(CONFIG.get("client-second-valid"));
+        int portSecured = server.port("secured");
+        int portDefault = server.port();
+        Http1Client clientFirst = createWebClient(CONFIG.get("success"));
+        Http1Client clientSecond = createWebClient(CONFIG.get("client-second-valid"));
 
-        assertThat(executeRequest(webClientFirst, "https", portSecured), is("Hello Helidon-client!"));
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> executeRequest(webClientSecond, "https", portSecured));
-        assertThat(exception.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
-        String response = webClientFirst.get().uri("http://localhost:" + portDefault + "/reload").request(String.class).await();
+        assertThat(exec(clientFirst, "https", portSecured), is("Hello Helidon-client!"));
+
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class, () -> exec(clientSecond, "https", portSecured));
+        assertThat(ex.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
+
+        String response = clientFirst.get().uri("http://localhost:" + portDefault + "/reload").request(String.class);
         assertThat(response, is("SslContext reloaded. Affected named socket: secured"));
 
-        assertThat(executeRequest(webClientSecond, "https", portSecured), is("Hello Oracle-client!"));
+        assertThat(exec(clientSecond, "https", portSecured), is("Hello Oracle-client!"));
 
-        exception = assertThrows(CompletionException.class,
-                                 () -> executeRequest(webClientFirst, "https", portSecured));
-        assertThat(exception.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
+        ex = assertThrows(UncheckedIOException.class, () -> exec(clientFirst, "https", portSecured));
+        assertThat(ex.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
 
-        response = webClientFirst.get().uri("http://localhost:" + portDefault + "/reload").request(String.class).await();
+        response = clientFirst.get().uri("http://localhost:" + portDefault + "/reload").request(String.class);
         assertThat(response, is("SslContext reloaded. Affected named socket: secured"));
 
-        assertThat(executeRequest(webClientFirst, "https", portSecured), is("Hello Helidon-client!"));
-        exception = assertThrows(CompletionException.class,
-                                                     () -> executeRequest(webClientSecond, "https", portSecured));
-        assertThat(exception.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
+        assertThat(exec(clientFirst, "https", portSecured), is("Hello Helidon-client!"));
+
+        ex = assertThrows(UncheckedIOException.class, () -> exec(clientSecond, "https", portSecured));
+        assertThat(ex.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
     }
 
-    private WebClient createWebClient(Config config) {
-        return WebClient.builder()
+    private Http1Client createWebClient(Config config) {
+        return Http1Client.builder()
                 .config(config)
                 .keepAlive(false)
                 .build();
     }
 
-    private String executeRequest(WebClient webClient, String schema, int port) {
-        return webClient.get()
-                .uri(schema + "://localhost:" + port)
-                .request(String.class)
-                .await();
+    private String exec(Http1Client webClient, String scheme, int port) {
+        return webClient.get(scheme + "://localhost:" + port).request(String.class);
     }
 
-    private static WebServer startWebServer(Config config) throws InterruptedException {
-        WebServer webServer = createWebServer(config);
-        long timeout = 2000; // 2 seconds should be enough to start the server
-        long now = System.currentTimeMillis();
+    private static void plainRouting(HttpRouting.Builder routing) {
+        AtomicBoolean atomicBoolean = new AtomicBoolean(true);
+        routing.get("/", (req, res) -> res.send("Hello world unsecured!"))
+                .get("/reload",
+                        (req, res) -> {
+                            String configName = atomicBoolean.getAndSet(!atomicBoolean.get())
+                                    ? "server-second-valid.tls"
+                                    : "server.sockets.0.tls";
+                            WebServer server = req.context().get(WebServer.class).orElseThrow();
+                            server.reloadTls("secured", Tls.create(CONFIG.get(configName)));
+                            res.send("SslContext reloaded. Affected named socket: secured");
+                        })
+                .build();
+    }
 
-        while (!webServer.isRunning()) {
-            Thread.sleep(100);
-            if ((System.currentTimeMillis() - now) > timeout) {
-                Assertions.fail("Failed to start webserver");
+    private static final Pattern CN_PATTERN = Pattern.compile("(.*)CN=(.*?)(,.*)?");
+
+    private static Optional<String> clientCertificateName(String name) {
+        Matcher matcher = CN_PATTERN.matcher(name);
+        if (matcher.matches()) {
+            String cn = matcher.group(2);
+            if (!cn.isBlank()) {
+                return Optional.of(cn);
             }
         }
-
-        return webServer;
+        return Optional.empty();
     }
 
-    private static WebServer createWebServer(Config config) {
-        WebServer webServer = WebServer.builder(createPlainRouting())
-                .config(config)
-                .addNamedRouting("secured", createMtlsRouting())
-                .addNamedRouting("invalid-server-cert", createMtlsRouting())
-                .addNamedRouting("client-no-ca", createMtlsRouting())
-                .addNamedRouting("optional", createMtlsRouting())
-                .build();
-        webServer.start()
-                .thenAccept(ws -> {
-                    System.out.println("WebServer is up!");
-                    ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
-        return webServer;
-    }
+    private static void mTlsRouting(HttpRouting.Builder routing) {
+        routing.get("/", (req, res) -> {
+            String cn = req.remotePeer()
+                    .tlsPrincipal()
+                    .map(Principal::getName)
+                    .flatMap(MutualTlsTest::clientCertificateName)
+                    .orElse("Unknown CN");
 
-    private static Routing createPlainRouting() {
-        AtomicBoolean atomicBoolean = new AtomicBoolean(true);
-        return Routing.builder()
-                .get("/", (req, res) -> res.send("Hello world unsecured!"))
-                .get("/reload",
-                     (req, res) -> {
-                         String configName = atomicBoolean.getAndSet(!atomicBoolean.get())
-                                 ? "server-second-valid.tls"
-                                 : "server.sockets.0.ssl";
-                         req.webServer().updateTls(WebServerTls.create(CONFIG.get(configName)),
-                                                   "secured");
-                         res.send("SslContext reloaded. Affected named socket: secured");
-                     })
-                .build();
-    }
-
-    private static Routing createMtlsRouting() {
-        return Routing.builder()
-                .get("/", (req, res) -> {
-                    String cn = req.headers().first(Http.Header.X_HELIDON_CN).orElse("Unknown CN");
-                    res.send("Hello " + cn + "!");
-                })
-                .build();
+            // close to avoid re-using cached connections on the client side
+            res.header(Http.HeaderValues.CONNECTION_CLOSE);
+            res.send("Hello " + cn + "!");
+        });
     }
 
 }

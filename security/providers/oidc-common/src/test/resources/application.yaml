@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,14 +18,14 @@ security:
   config.require-encryption: false
   oidc-test:
     identity-uri: "https://identity.oracle.com"
-    scope-audience: "http://localhost:7987/test-application"
+    scope-audience: "https://something:7987/test-application"
     client-id: "client-id-value"
     client-secret: "client-secret-value"
-    frontend-uri: "http://something:7001"
+    frontend-uri: "https://something:7001"
     validate-with-jwk: false
     # We must switch-off all network calls for unit tests
     oidc-metadata-well-known: false
-    token-endpoint-uri: "http://identity.oracle.com/tokens"
-    authorization-endpoint-uri: "http://identity.oracle.com/authorization"
-    introspect-endpoint-uri: "http://identity.oracle.com/introspect"
+    token-endpoint-uri: "https://identity.oracle.com/tokens"
+    authorization-endpoint-uri: "https://identity.oracle.com/authorization"
+    introspect-endpoint-uri: "https://identity.oracle.com/introspect"
     relative-uris: true

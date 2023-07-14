@@ -21,8 +21,10 @@ module helidon.tests.integration.webserver.upgrade {
 
     exports io.helidon.integration.webserver.upgrade;
 
-    requires io.helidon.reactive.webserver;
-    requires io.helidon.reactive.webserver.http2;
-    requires io.helidon.reactive.webserver.websocket;
     requires io.helidon.logging.common;
+    requires io.helidon.common.http;
+    requires io.helidon.nima.webserver;
+    requires io.helidon.common.pki;
+    requires io.helidon.nima.http2.webserver;
+    requires io.helidon.microprofile.tyrus;
 }

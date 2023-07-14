@@ -79,7 +79,7 @@
         <dependency>
             <!-- Security integration with web server -->
             <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-webserver</artifactId>
+            <artifactId>helidon-security-integration-nima</artifactId>
         </dependency>
         <dependency>
             <!-- Encryption of secrets -->

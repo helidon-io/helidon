@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,69 +15,63 @@
  */
 package io.helidon.security.examples.outbound;
 
-import java.util.concurrent.CompletionStage;
-
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.security.WebClientSecurity;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.security.examples.outbound.OutboundOverrideJwtExample.clientPort;
-import static io.helidon.security.examples.outbound.OutboundOverrideJwtExample.startClientService;
-import static io.helidon.security.examples.outbound.OutboundOverrideJwtExample.startServingService;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 /**
  * Test of security override example.
  */
+@ServerTest
 public class OutboundOverrideJwtExampleTest {
 
-    private static WebClient webClient;
+    private final Http1Client client;
 
-    @BeforeAll
-    public static void setup() {
-        CompletionStage<Void> first = startClientService(-1);
-        CompletionStage<Void> second = startServingService(-1);
+    OutboundOverrideJwtExampleTest(WebServer server, Http1Client client) {
+        server.context().register(server);
+        this.client = client;
+    }
 
-        first.toCompletableFuture().join();
-        second.toCompletableFuture().join();
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server, Http1Client.Http1ClientBuilder client) {
+        OutboundOverrideJwtExample.setup(server);
 
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
 
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + clientPort())
-                .addService(WebClientSecurity.create(security))
-                .build();
+        client.addService(WebClientSecurity.create(security));
     }
 
     @Test
     public void testOverrideExample() {
-        String value = webClient.get()
+        String value = client.get()
                 .path("/override")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class)
-                .await();
+                .request(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jill"));
     }
 
     @Test
     public void testPropagateExample() {
-        String value = webClient.get()
+        String value = client.get()
                 .path("/propagate")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class)
-                .await();
+                .request(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jack"));
     }
-
 }

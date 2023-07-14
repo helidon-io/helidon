@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,80 +16,74 @@
 
 package io.helidon.examples.translator;
 
-import java.util.concurrent.TimeUnit;
+import io.helidon.examples.translator.backend.TranslatorBackendService;
+import io.helidon.examples.translator.frontend.TranslatorFrontendService;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
 
-import io.helidon.reactive.webserver.WebServer;
-
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.examples.translator.backend.Main.startBackendServer;
-import static io.helidon.examples.translator.frontend.Main.startFrontendServer;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * The TranslatorTest.
  */
+@SuppressWarnings("SpellCheckingInspection")
+@ServerTest
 public class TranslatorTest {
 
-    private static WebServer webServerFrontend;
-    private static WebServer webServerBackend;
-    private static Client client;
-    private static WebTarget target;
+    private final Http1Client client;
 
-    @BeforeAll
-    public static void setUp() {
-        webServerBackend = startBackendServer().await(10, TimeUnit.SECONDS);
-        webServerFrontend = startFrontendServer().await(10, TimeUnit.SECONDS);
-        client = ClientBuilder.newClient();
-        target = client.target("http://localhost:" + webServerFrontend.port());
+    public TranslatorTest(Http1Client client) {
+        this.client = client;
     }
 
-    @AfterAll
-    public static void tearDown() {
-        webServerFrontend.shutdown().await(10, TimeUnit.SECONDS);
-        webServerBackend.shutdown().await(10, TimeUnit.SECONDS);
-        if (client != null) {
-            client.close();
-        }
+    @SetUpServer
+    public static void setUp(WebServerConfig.Builder builder) {
+        builder.routing(routing -> routing.
+                        register(new TranslatorFrontendService("localhost", 9080)))
+                .putSocket("backend", socket -> socket
+                        .port(9080)
+                        .routing(routing -> routing.register(new TranslatorBackendService())));
     }
 
     @Test
     public void testCzech() {
-        try (Response response = target.queryParam("q", "cloud")
-                                  .queryParam("lang", "czech")
-                                  .request()
-                                  .get()) {
-            assertThat("Unexpected response! Status code: " + response.getStatus(),
-                    response.readEntity(String.class), is("oblak\n"));
+        try (Http1ClientResponse response = client.get()
+                .queryParam("q", "cloud")
+                .queryParam("lang", "czech")
+                .request()) {
+
+            assertThat("Unexpected response! Status code: " + response.status(),
+                    response.entity().as(String.class), is("oblak\n"));
         }
     }
 
     @Test
     public void testItalian() {
-        try (Response response = target.queryParam("q", "cloud")
-                                  .queryParam("lang", "italian")
-                                  .request()
-                                  .get()) {
-            assertThat("Unexpected response! Status code: " + response.getStatus(),
-                    response.readEntity(String.class), is("nube\n"));
+        try (Http1ClientResponse response = client.get()
+                .queryParam("q", "cloud")
+                .queryParam("lang", "italian")
+                .request()) {
+
+            assertThat("Unexpected response! Status code: " + response.status(),
+                    response.entity().as(String.class), is("nube\n"));
         }
     }
 
     @Test
     public void testFrench() {
-        try (Response response = target.queryParam("q", "cloud")
-                                  .queryParam("lang", "french")
-                                  .request()
-                                  .get()) {
-            assertThat("Unexpected response! Status code: " + response.getStatus(),
-                    response.readEntity(String.class), is("nuage\n"));
+        try (Http1ClientResponse response = client.get()
+                .queryParam("q", "cloud")
+                .queryParam("lang", "french")
+                .request()) {
+
+            assertThat("Unexpected response! Status code: " + response.status(),
+                    response.entity().as(String.class), is("nuage\n"));
         }
     }
 }

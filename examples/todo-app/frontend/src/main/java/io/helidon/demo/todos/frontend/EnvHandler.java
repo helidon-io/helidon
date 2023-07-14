@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package io.helidon.demo.todos.frontend;
 
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
 
 /**
  * Handles response to current environment name.
  */
-public final class EnvHandler implements Service {
+public final class EnvHandler implements HttpService {
 
     /**
      * The environment name.
@@ -32,19 +32,17 @@ public final class EnvHandler implements Service {
 
     /**
      * Create a new {@code EnvHandler} instance.
+     *
      * @param config the configuration root
      */
-    public EnvHandler(final Config config) {
+    public EnvHandler(Config config) {
         Config envConfig = config.get("env");
         this.env = envConfig.asString().orElse("unknown");
-
-        envConfig.onChange(config1 -> {
-            EnvHandler.this.env = config1.asString().orElse("unknown");
-        });
+        envConfig.onChange(node -> EnvHandler.this.env = node.asString().orElse("unknown"));
     }
 
     @Override
-    public void update(final Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get((req, res) -> res.send(env));
     }
 }

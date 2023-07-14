@@ -16,19 +16,18 @@
 
 package io.helidon.examples.webserver.multiport;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,25 +35,34 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 public class MainTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
-    private static int publicPort;
-    private static int privatePort;
-    private static int adminPort;
+    private final Http1Client client;
+    private final int publicPort;
+    private final int privatePort;
+    private final int adminPort;
 
-    @BeforeAll
-    public static void startTheServer() {
+    public MainTest(WebServer server) {
+        client = Http1Client.builder().build();
+        publicPort = server.port();
+        privatePort = server.port("private");
+        adminPort = server.port("admin");
+    }
+
+    int port(Params params) {
+        return switch (params.socket) {
+            case PUBLIC -> publicPort;
+            case ADMIN -> adminPort;
+            case PRIVATE -> privatePort;
+        };
+    }
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
         // Use test configuration so we can have ports allocated dynamically
         Config config = Config.builder().addSource(ConfigSources.classpath("application-test.yaml")).build();
-        Single<WebServer> w = Main.startServer(config);
-        webServer = w.await();
-        webClient = WebClient.builder().build();
-
-        publicPort = webServer.port();
-        privatePort = webServer.port("private");
-        adminPort = webServer.port("admin");
+        Main.setup(server, config);
     }
 
     static Stream<Params> initParams() {
@@ -63,81 +71,63 @@ public class MainTest {
         final String HEALTH_PATH = "/health";
         final String METRICS_PATH = "/health";
 
-        return List.of(
-                new Params(publicPort, PUBLIC_PATH, Http.Status.OK_200),
-                new Params(publicPort, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
-                new Params(publicPort, HEALTH_PATH, Http.Status.NOT_FOUND_404),
-                new Params(publicPort, METRICS_PATH, Http.Status.NOT_FOUND_404),
+        return Stream.of(
+                new Params(Socket.PUBLIC, PUBLIC_PATH, Http.Status.OK_200),
+                new Params(Socket.PUBLIC, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PUBLIC, HEALTH_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PUBLIC, METRICS_PATH, Http.Status.NOT_FOUND_404),
 
-                new Params(privatePort, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
-                new Params(privatePort, PRIVATE_PATH, Http.Status.OK_200),
-                new Params(privatePort, HEALTH_PATH, Http.Status.NOT_FOUND_404),
-                new Params(privatePort, METRICS_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PRIVATE, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PRIVATE, PRIVATE_PATH, Http.Status.OK_200),
+                new Params(Socket.PRIVATE, HEALTH_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PRIVATE, METRICS_PATH, Http.Status.NOT_FOUND_404),
 
-                new Params(adminPort, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
-                new Params(adminPort, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
-                new Params(adminPort, HEALTH_PATH, Http.Status.OK_200),
-                new Params(adminPort, METRICS_PATH, Http.Status.OK_200)
-        ).stream();
-    }
-
-    @AfterAll
-    public static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
+                new Params(Socket.ADMIN, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.ADMIN, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.ADMIN, HEALTH_PATH, Http.Status.OK_200),
+                new Params(Socket.ADMIN, METRICS_PATH, Http.Status.OK_200));
     }
 
     @MethodSource("initParams")
     @ParameterizedTest
-    public void portAccessTest(Params params) throws Exception {
+    public void portAccessTest(Params params) {
         // Verifies we can access endpoints only on the proper port
-        webClient.get()
-                .uri("http://localhost:" + params.port)
-                .path(params.path)
-                .request()
-                .thenAccept(response -> assertThat(response.status(), is(params.httpStatus)))
-                .toCompletableFuture()
-                .get();
+        client.get()
+              .uri("http://localhost:" + port(params))
+              .path(params.path)
+              .request()
+              .close();
     }
 
     @Test
-    public void portTest() throws Exception {
+    public void portTest() {
+        try (Http1ClientResponse response = client.get()
+                                                  .uri("http://localhost:" + publicPort)
+                                                  .path("/hello")
+                                                  .request()) {
+            assertThat(response.as(String.class), is("Public Hello!!"));
+        }
 
-        webClient.get()
-                .uri("http://localhost:" + publicPort)
-                .path("/hello")
-                .request(String.class)
-                .thenAccept(s -> assertThat(s, is("Public Hello!!")))
-                .toCompletableFuture()
-                .get();
-
-        webClient.get()
-                .uri("http://localhost:" + privatePort)
-                .path("/private/hello")
-                .request(String.class)
-                .thenAccept(s -> assertThat(s, is("Private Hello!!")))
-                .toCompletableFuture()
-                .get();
+        try (Http1ClientResponse response = client.get()
+                                                  .uri("http://localhost:" + privatePort)
+                                                  .path("/private/hello")
+                                                  .request()) {
+            assertThat(response.as(String.class), is("Private Hello!!"));
+        }
     }
 
-    private static class Params {
-        int port;
-        String path;
-        Http.Status httpStatus;
-
-        private Params(int port, String path, Http.Status httpStatus) {
-            this.port = port;
-            this.path = path;
-            this.httpStatus = httpStatus;
-        }
+    private record Params(Socket socket, String path, Http.Status httpStatus) {
 
         @Override
         public String toString() {
-            return port + ":" + path + " should return "  + httpStatus;
+            return path + " @" + socket + " should return " + httpStatus;
         }
+    }
+
+    private enum Socket {
+        PUBLIC,
+        ADMIN,
+        PRIVATE
     }
 
 }

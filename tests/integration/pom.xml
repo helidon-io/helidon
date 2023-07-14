@@ -47,11 +47,6 @@
         <module>webclient</module>
         <module>webserver</module>
         <module>security</module>
-        <!--
-        This test was testing that we use custom executors for Jersey and Jersey async
-        with a switch to virtual threads, we only use virtual threads, and these executors are not configured
-        <module>mp-gh-1538</module>
-        -->
         <module>mp-gh-2421</module>
         <module>mp-gh-2461</module>
         <module>mp-gh-3246</module>
@@ -70,9 +65,7 @@
         <module>native-image</module>
         <module>vault</module>
         <module>oidc</module>
-        <!-- TODO restore following OpenAPI tests when refactored -->
-<!--        <module>gh-5792</module>-->
-<!--        <module>gh-5792-nima</module>-->
+        <module>gh-5792</module>
         <module>jersey-connector</module>
     </modules>
 

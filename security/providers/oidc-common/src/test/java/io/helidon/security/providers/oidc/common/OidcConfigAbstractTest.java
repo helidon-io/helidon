@@ -37,18 +37,18 @@ abstract class OidcConfigAbstractTest {
         OidcConfig config = getConfig();
         assertAll("All values explicitly configured either in yaml or by hand",
                   () -> assertThat("Identity URI", config.identityUri(), is(URI.create("https://identity.oracle.com"))),
-                  () -> assertThat("Scope audience", config.scopeAudience(), is("http://localhost:7987/test-application/")),
+                  () -> assertThat("Scope audience", config.scopeAudience(), is("https://something:7987/test-application/")),
                   () -> assertThat("Client ID", config.clientId(), is("client-id-value")),
                   () -> assertThat("Validate JWT with JWK", config.validateJwtWithJwk(), is(false)),
                   () -> assertThat("Token endpoint",
                                    config.tokenEndpointUri(),
-                                   is(URI.create("http://identity.oracle.com/tokens"))),
+                                   is(URI.create("https://identity.oracle.com/tokens"))),
                   () -> assertThat("Authorization endpoint",
                                    config.authorizationEndpointUri(),
-                                   is("http://identity.oracle.com/authorization")),
+                                   is("https://identity.oracle.com/authorization")),
                   () -> assertThat("Introspect endpoint",
                                    config.introspectUri(),
-                                   is(URI.create("http://identity.oracle.com/introspect"))),
+                                   is(URI.create("https://identity.oracle.com/introspect"))),
                   () -> assertThat("Validate relativeUris flag",
                                   config.relativeUris(),
                                   is(true))
@@ -58,16 +58,17 @@ abstract class OidcConfigAbstractTest {
     @Test
     void testDefaultValues() {
         OidcConfig config = getConfig();
+        OidcCookieHandler tokenCookieHandler = config.tokenCookieHandler();
         assertAll("All values using defaults",
                   () -> assertThat("Redirect URI", config.redirectUri(), is("/oidc/redirect")),
                   () -> assertThat("Use Parameter", config.useParam(), is(OidcConfig.DEFAULT_PARAM_USE)),
                   () -> assertThat("Use Cookie", config.useCookie(), is(OidcConfig.DEFAULT_COOKIE_USE)),
                   () -> assertThat("Use Header", config.useHeader(), is(OidcConfig.DEFAULT_HEADER_USE)),
                   () -> assertThat("Base scopes to use", config.baseScopes(), is(BaseBuilder.DEFAULT_BASE_SCOPES)),
-                  () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is("JSESSIONID=")),
-                  () -> assertThat("Cookie name", config.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
+                  () -> assertThat("Cookie value prefix", tokenCookieHandler.cookieValuePrefix(), is("JSESSIONID=")),
+                  () -> assertThat("Cookie name", tokenCookieHandler.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
                   // cookie options should be separated by space as defined by the specification
-                  () -> assertThat("Cookie options", config.cookieOptions(), is("; Path=/; HttpOnly; SameSite=Lax")),
+                  () -> assertThat("Cookie options", tokenCookieHandler.createCookieOptions(), is("; Path=/; HttpOnly; SameSite=Lax")),
                   () -> assertThat("Audience", config.audience(), is("https://identity.oracle.com")),
                   () -> assertThat("Parameter name", config.paramName(), is("accessToken")),
                   () -> assertThat("Issuer", config.issuer(), nullValue()),
@@ -83,7 +84,7 @@ abstract class OidcConfigAbstractTest {
         assertAll("All values computed either from configured or default values",
                   () -> assertThat("Redirect URI with host",
                                    config.redirectUriWithHost(),
-                                   is("http://something:7001/oidc/redirect"))
+                                   is("https://something:7001/oidc/redirect"))
         );
     }
 }

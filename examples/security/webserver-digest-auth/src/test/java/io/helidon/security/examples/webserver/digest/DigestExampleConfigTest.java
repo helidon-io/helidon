@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,23 @@
 
 package io.helidon.security.examples.webserver.digest;
 
-import java.io.IOException;
-
-import io.helidon.reactive.webserver.WebServer;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServerConfig;
 
 /**
  * Unit test for {@link DigestExampleConfigMain}.
  */
+@ServerTest
 public class DigestExampleConfigTest extends DigestExampleTest {
 
-    private static WebServer server;
-
-    @BeforeAll
-    public static void startServer() throws IOException {
-        // start the test
-        DigestExampleConfigMain.main(new String[0]);
-        server = DigestExampleConfigMain.getServer();
+    DigestExampleConfigTest(Http1Client client) {
+        super(client);
     }
 
-    @AfterAll
-    public static void stopServer() throws InterruptedException {
-        stopServer(server);
-    }
-
-    @Override
-    String getServerBase() {
-        return "http://localhost:" + server.port();
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder builder) {
+        builder.routing(DigestExampleConfigMain::routing);
     }
 }

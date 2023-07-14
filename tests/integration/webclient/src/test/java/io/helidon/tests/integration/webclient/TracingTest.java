@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,16 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.context.Context;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.tracing.opentracing.OpenTracing;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
@@ -42,29 +42,30 @@ import static org.hamcrest.Matchers.iterableWithSize;
  * Test tracing integration.
  */
 class TracingTest extends TestParent {
-    private static final Duration TIMEOUT = Duration.ofSeconds(30);
+
+    TracingTest(WebServer server, Http1Client client) {
+        super(server, client);
+    }
 
     @Test
     void testTracingNoServerSuccess() {
         MockTracer mockTracer = new MockTracer();
-        String uri = "http://localhost:" + webServer.port() + "/greet";
+        String uri = "http://localhost:" + server.port() + "/greet";
         Context context = Context.builder().id("tracing-unit-test").build();
         context.register(OpenTracing.create(mockTracer));
 
-        WebClient client = WebClient.builder()
+        Http1Client client = Http1Client.builder()
                 .baseUri(uri)
-                .context(context)
-                .addMediaSupport(JsonpSupport.create())
+                .mediaContext(MediaContext.builder()
+                        .addMediaSupport(JsonpSupport.create())
+                        .build())
                 .config(CONFIG.get("client"))
                 .build();
 
-        WebClientResponse response = client.get()
-                .request()
-                .await(TIMEOUT);
+        Http1ClientResponse response = client.get().request();
 
         // we must fully read entity for tracing to finish
-        response.content().as(JsonObject.class)
-                .await(TIMEOUT);
+        response.entity().as(JsonObject.class);
 
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat(mockSpans, iterableWithSize(1));
@@ -84,34 +85,31 @@ class TracingTest extends TestParent {
     }
 
     @Test
-    void testTracingNoServerFailure() throws ExecutionException, InterruptedException {
+    void testTracingNoServerFailure() {
         MockTracer mockTracer = new MockTracer();
 
         Context context = Context.builder().id("tracing-unit-test").build();
         context.register(OpenTracing.create(mockTracer));
 
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .context(context)
-                .addMediaSupport(JsonpSupport.create())
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .mediaContext(MediaContext.builder()
+                        .addMediaSupport(JsonpSupport.create())
+                        .build())
                 .config(CONFIG.get("client"))
                 .build();
 
-        WebClientResponse response = client.get()
-                .path("/error")
-                .request()
-                .await(TIMEOUT);
-
-        // we must fully read entity, as otherwise tracing does not finish
-        response.content().as(String.class)
-                .await(TIMEOUT);
+        try (Http1ClientResponse response = client.get("/error").request()) {
+            // we must fully read entity, as otherwise tracing does not finish
+            String ignored = response.entity().as(String.class);
+        }
 
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat(mockSpans, iterableWithSize(1));
 
         MockSpan theSpan = mockSpans.get(0);
 
-        assertThat(theSpan.operationName(), is("GET-http://localhost:" + webServer.port() + "/greet/error"));
+        assertThat(theSpan.operationName(), is("GET-http://localhost:" + server.port() + "/greet/error"));
 
         List<MockSpan.LogEntry> logEntries = theSpan.logEntries();
         assertThat(logEntries, iterableWithSize(1));

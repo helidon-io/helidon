@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.tests.functional.requestscopecdi;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import io.netty.handler.codec.http.HttpResponseStatus;
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
@@ -42,7 +41,7 @@ class SecretTest {
                 .request()
                 .accept(MediaTypes.APPLICATION_JSON.text())
                 .get();
-        assertThat(r.getStatus(), is(HttpResponseStatus.OK.code()));
+        assertThat(r.getStatus(), is(Response.Status.OK.getStatusCode()));
         JsonObject o = r.readEntity(JsonObject.class);
         assertEquals(o.get("secret1"), o.get("secret2"));
     }

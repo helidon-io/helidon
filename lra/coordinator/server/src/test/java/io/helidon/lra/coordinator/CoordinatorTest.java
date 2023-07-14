@@ -16,80 +16,66 @@
 package io.helidon.lra.coordinator;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.LazyValue;
-import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webserver.ListenerConfig;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.testing.junit5.webserver.Socket;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class CoordinatorTest {
+@ServerTest
+class CoordinatorTest {
 
-    private static final String CONTEXT_PATH = "/test";
-    private static final String COORDINATOR_ROUTING_NAME = "coordinator";
+    private static CompletableFuture<Void> shutdownFuture;
+    private static int coordinatorPort;
 
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
-    private static WebServer server;
-    private static String serverUrl;
-    private static WebClient webClient;
-    private static CoordinatorService coordinatorService;
+    private final Http1Client client;
 
-    @BeforeAll
-    static void beforeAll() {
-        LazyValue<URI> coordinatorUri = LazyValue.create(() ->
-                                                                 URI.create("http://localhost:" + server.port(
-                                                                         COORDINATOR_ROUTING_NAME) + "/lra-coordinator"));
+    CoordinatorTest(WebServer server, @Socket("coordinator") Http1Client client) {
+        this.client = client;
+        coordinatorPort = server.port("coordinator");
+    }
 
-        coordinatorService = CoordinatorService.builder()
-                .url(coordinatorUri::get)
-                .config(Config.builder(
-                                () -> ConfigSources.create(Map.of(
-                                        "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator"
-                                )).build(),
-                                () -> ConfigSources.classpath("application.yaml").build())
-                                .build()
-                                .get(CoordinatorService.CONFIG_PREFIX))
+    @SetUpServer
+    static void setup(WebServerConfig.Builder serverBuilder) {
+        Config config = Config.create(ConfigSources.create(Map.of(
+                        "helidon.lra.coordinator.db.connection.url", "jdbc:h2:file:./target/lra-coordinator")),
+                ConfigSources.classpath("application.yaml"));
+
+        CoordinatorService coordinatorService = CoordinatorService.builder()
+                .url(() -> URI.create("http://localhost:" + coordinatorPort + "/lra-coordinator"))
+                .config(config.get(CoordinatorService.CONFIG_PREFIX))
                 .build();
-        server = WebServer.builder()
-                .shutdownHook(true)
-                .host("localhost")
-                .routing(r -> r.register(CONTEXT_PATH, () -> rules -> rules.put((req, res) -> res.send())))
-                .putSocket(COORDINATOR_ROUTING_NAME, ListenerConfig.builder()
-                        .port(0)
-                        .routing(it -> it.register("/lra-coordinator", coordinatorService)))
-                .build()
-                .start();
 
-        serverUrl = "http://localhost:" + server.port();
-        webClient = WebClient.builder()
-                .keepAlive(false)
-                .baseUri("http://localhost:" + server.port(COORDINATOR_ROUTING_NAME) + "/lra-coordinator")
+        shutdownFuture = new CompletableFuture<>();
+        shutdownFuture.thenRun(coordinatorService::shutdown);
+
+        serverBuilder.shutdownHook(true)
+                .routing(r -> r.register("/test", () -> rules -> rules.put((req, res) -> res.send())))
+                .putSocket("coordinator", socket -> socket
+                        .routing(routing -> routing
+                                .register("/lra-coordinator", coordinatorService)))
                 .build();
     }
 
     @AfterAll
     static void afterAll() {
-        if (server != null) {
-            server.stop();
-        }
-        if (coordinatorService != null) {
-            coordinatorService.shutdown();
-        }
+        shutdownFuture.complete(null);
     }
 
     @Test
@@ -119,63 +105,55 @@ public class CoordinatorTest {
     }
 
     private String start() {
-        return webClient
-                .post()
-                .path("start")
-                .submit()
-                .flatMapSingle(res -> res.content().as(String.class))
-                .await(TIMEOUT);
+        return client.post("/lra-coordinator/start").request(String.class);
     }
 
-    private LRAStatus getParsedStatusOfLra(String lraId) {
-        return WebClient.builder()
+    private static LRAStatus getParsedStatusOfLra(String lraId) {
+        return Http1Client.builder()
                 .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId)
                 .build()
                 .get()
-                .request()
-                .flatMapSingle(res -> res.content().as(JsonArray.class))
-                .flatMap(Multi::create)
+                .request(JsonArray.class)
+                .stream()
                 .map(JsonValue::asJsonObject)
                 .map(jo -> jo.getString("status"))
                 .map(LRAStatus::valueOf)
-                .first()
-                .await(TIMEOUT);
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Unable to get LRA status for id: " + lraId));
     }
 
-    private LRAStatus status(String lraId) {
-        return WebClient.builder()
+    private static LRAStatus status(String lraId) {
+        String lraStatus = Http1Client.builder()
                 .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId + "/status")
                 .build()
                 .get()
-                .request()
-                .flatMapSingle(res -> res.content().as(String.class))
-                .map(LRAStatus::valueOf)
-                .await(TIMEOUT);
+                .request(String.class);
+        return LRAStatus.valueOf(lraStatus);
     }
 
-    private void close(String lraId) {
-        WebClient.builder()
+    private static void close(String lraId) {
+        Http1Client.builder()
                 .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId + "/close")
                 .build()
                 .put()
-                .submit()
-                .await(TIMEOUT);
+                .request()
+                .close();
     }
 
-    private void cancel(String lraId) {
-        WebClient.builder()
+    private static void cancel(String lraId) {
+        Http1Client.builder()
                 .addMediaSupport(JsonpSupport.create())
                 // Lra id is already whole url
                 .baseUri(lraId + "/cancel")
                 .build()
                 .put()
-                .submit()
-                .await(TIMEOUT);
+                .request()
+                .close();
     }
 }

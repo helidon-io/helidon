@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,18 +21,14 @@ import java.util.Optional;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 
 /**
- * Example of HTTP digest authentication with RX Web Server fully configured in config file.
+ * Example of HTTP digest authentication with Web Server fully configured in config file.
  */
 public final class DigestExampleConfigMain {
-    // used from unit tests
-    private static WebServer server;
-
     private DigestExampleConfigMain() {
     }
 
@@ -42,30 +38,21 @@ public final class DigestExampleConfigMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // load logging configuration
         LogConfig.configureRuntime();
-
-        // load configuration
-        Config config = Config.create();
-
-        // build routing (security is loaded from config)
-        Routing routing = Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(config.get("security")))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/{*}", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-                    res.send("Hello, you are: \n" + securityContext
-                            .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
-                            .orElse("Security context is null"));
-                })
-                .build();
-
-        server = DigestExampleUtil.startServer(routing);
+        DigestExampleUtil.startServer(DigestExampleConfigMain::routing);
     }
 
-    static WebServer getServer() {
-        return server;
+    static void routing(HttpRouting.Builder routing) {
+        Config config = Config.create();
+        // helper method to load both security and web server security from configuration
+        routing.addFeature(SecurityFeature.create(config.get("security")))
+               // web server does not (yet) have possibility to configure routes in config files, so explicit...
+               .get("/{*}", (req, res) -> {
+                   Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                   res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                   res.send("Hello, you are: \n" + securityContext
+                           .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
+                           .orElse("Security context is null"));
+               });
     }
 }

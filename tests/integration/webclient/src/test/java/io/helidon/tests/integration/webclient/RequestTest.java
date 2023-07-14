@@ -18,12 +18,12 @@ package io.helidon.tests.integration.webclient;
 
 import java.net.URI;
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webclient.WebClientException;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
-import io.helidon.reactive.webclient.WebClientResponse;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -54,161 +54,109 @@ class RequestTest extends TestParent {
                 .build();
     }
 
-    @Test
-    public void testHelloWorld() throws ExecutionException, InterruptedException {
-        webClient.get()
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hello World!")))
-                .toCompletableFuture()
-                .get();
+    RequestTest(WebServer server, Http1Client client) {
+        super(server, client);
     }
 
     @Test
-    public void testIncorrect() throws ExecutionException, InterruptedException {
-        webClient.get()
-                .path("/incorrect")
-                .request()
-                .thenAccept(response -> {
-                    if (response.status() != Http.Status.NOT_FOUND_404) {
-                        fail("This request should be 404!");
-                    }
-                    response.close();
-                })
-                .toCompletableFuture()
-                .get();
+    public void testHelloWorld() {
+        JsonObject jsonObject = client.get().request(JsonObject.class);
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
     }
 
     @Test
-    public void testFollowRedirect() throws ExecutionException, InterruptedException {
-        webClient.get()
+    public void testIncorrect() {
+        try (Http1ClientResponse response = client.get("/incorrect").request()) {
+            if (response.status() != Http.Status.NOT_FOUND_404) {
+                fail("This request should be 404!");
+            }
+        }
+    }
+
+    @Test
+    public void testFollowRedirect() {
+        JsonObject jsonObject = client.get()
                 .path("/redirect")
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hello World!")))
-                .toCompletableFuture()
-                .get();
+                .request(JsonObject.class);
+        assertThat(jsonObject.getString("message"), is("Hello World!"));
 
-        WebClientResponse response = webClient.get()
+        try (Http1ClientResponse response = client.get()
                 .path("/redirect")
                 .followRedirects(false)
-                .request()
-                .toCompletableFuture()
-                .get();
-        assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+                .request()) {
+            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+        }
     }
 
     @Test
     public void testFollowRedirectPath() {
-        JsonObject jsonObject = webClient.get()
-                .path("/redirectPath")
-                .request(JsonObject.class)
-                .await();
+        JsonObject jsonObject = client.get("/redirectPath").request(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
     }
 
     @Test
     public void testFollowRedirectInfinite() {
         try {
-            webClient.get()
-                    .path("/redirect/infinite")
-                    .request(JsonObject.class)
-                    .thenAccept(jsonObject -> fail("This should have failed!"))
-                    .toCompletableFuture()
-                    .get();
-        } catch (ExecutionException e) {
-            if (e.getCause() instanceof WebClientException) {
-                WebClientException clientException = (WebClientException) e.getCause();
-                assertThat(clientException.getMessage(), startsWith("Max number of redirects extended! (5)"));
-            } else {
-                fail(e);
-            }
-        } catch (Exception e) {
-            fail(e);
+            client.get("/redirect/infinite").request(JsonObject.class);
+            fail("This should have failed!");
+        } catch (Throwable ex) {
+            assertThat(ex.getMessage(), startsWith("Max number of redirects extended! (5)"));
         }
     }
 
     @Test
-    public void testPut() throws Exception {
-        webClient.put()
-                .path("/greeting")
-                .submit(JSON_NEW_GREETING)
-                .thenAccept(response -> assertThat(response.status().code(), is(204)))
-                .thenCompose(nothing -> webClient.get()
-                        .request(JsonObject.class))
-                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hola World!")))
-                .thenCompose(nothing -> webClient.put()
-                        .path("/greeting")
-                        .submit(JSON_OLD_GREETING))
-                .thenAccept(response -> assertThat(response.status().code(), is(204)))
-                .exceptionally(throwable -> {
-                    fail(throwable);
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
+    public void testPut() {
+        try (Http1ClientResponse response = client.put("/greeting").submit(JSON_NEW_GREETING)) {
+            assertThat(response.status().code(), is(204));
+        }
+
+        JsonObject jsonObject = client.get().request(JsonObject.class);
+        assertThat(jsonObject.getString("message"), is("Hola World!"));
+
+        try (Http1ClientResponse response = client.put("/greeting").submit(JSON_OLD_GREETING)) {
+            assertThat(response.status().code(), is(204));
+        }
     }
 
     @Test
     public void testEntityNotHandled() {
         try {
-            webClient.get()
-                    .path("/incorrect")
-                    .request(JsonObject.class)
-                    .toCompletableFuture()
-                    .get();
-        } catch (ExecutionException e) {
-            WebClientException ce = (WebClientException) e.getCause();
-            assertThat(ce.getMessage(), startsWith("Request failed with code 404"));
-            return;
-        } catch (Exception e) {
-            fail(e);
+            client.get("/incorrect").request(JsonObject.class);
+            fail("This request entity process should have failed.");
+        } catch (Throwable ex) {
+            assertThat(ex.getMessage(), startsWith("Request failed with code 404"));
         }
-        fail("This request entity process should have failed.");
     }
 
     @Test
-    public void testResponseLastUri() throws Exception {
-        URI defaultTemplate = URI.create("http://localhost:" + Main.serverPort + "/greet");
-        URI redirectTemplate = URI.create("http://localhost:" + Main.serverPort + "/greet/redirect");
+    public void testResponseLastUri() {
+        URI defaultTemplate = URI.create("http://localhost:" + server.port() + "/greet");
+        URI redirectTemplate = URI.create("http://localhost:" + server.port() + "/greet/redirect");
 
-        WebClientResponse response = webClient.get()
+        try (Http1ClientResponse response = client.get("/redirect").request()) {
+            assertThat(response.lastEndpointUri(), is(defaultTemplate));
+        }
+
+        try (Http1ClientResponse response = client.get()
                 .path("/redirect")
-                .request()
-                .toCompletableFuture()
-                .get();
+                .followRedirects(false)
+                .request()) {
 
-        assertThat(response.lastEndpointURI(), is(defaultTemplate));
-        response.close();
+            assertThat(response.lastEndpointUri(), is(redirectTemplate));
+        }
 
-        response = webClient.get()
-                .path("/redirect")
-                .followRedirects(false )
-                .request()
-                .toCompletableFuture()
-                .get();
-
-        assertThat(response.lastEndpointURI(), is(redirectTemplate));
-        response.close();
-
-        response = webClient.get()
-                .request()
-                .toCompletableFuture()
-                .get();
-
-        assertThat(response.lastEndpointURI(), is(defaultTemplate));
-        response.close();
+        try (Http1ClientResponse response = client.get().request()) {
+            assertThat(response.lastEndpointUri(), is(defaultTemplate));
+        }
     }
 
     @Test
     public void reuseRequestBuilder() {
-        WebClientRequestBuilder requestBuilder = webClient.get();
-        JsonObject response = requestBuilder
-                .request(JsonObject.class)
-                .await();
+        Http1ClientRequest request = client.get();
+        JsonObject response = request.request(JsonObject.class);
         assertThat(response, notNullValue());
         assertThat(response.getString("message"), is("Hello World!"));
-        response = requestBuilder
-                .request(JsonObject.class)
-                .await();
+        response = request.request(JsonObject.class);
         assertThat(response, notNullValue());
         assertThat(response.getString("message"), is("Hello World!"));
     }

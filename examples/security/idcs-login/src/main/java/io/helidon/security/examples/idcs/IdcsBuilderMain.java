@@ -16,23 +16,23 @@
 
 package io.helidon.security.examples.idcs;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider;
+import io.helidon.security.providers.oidc.OidcFeature;
 import io.helidon.security.providers.oidc.OidcProvider;
 import io.helidon.security.providers.oidc.common.OidcConfig;
-import io.helidon.security.providers.oidc.reactive.OidcSupport;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
@@ -40,26 +40,43 @@ import static io.helidon.config.ConfigSources.file;
 /**
  * IDCS Login example main class using configuration .
  */
+@SuppressWarnings("HttpUrlsUsage")
 public final class IdcsBuilderMain {
-    private static volatile WebServer theServer;
+
+    // do not change this constant, unless you modify configuration
+    // of IDCS application redirect URI
+    static final int PORT = 7987;
 
     private IdcsBuilderMain() {
-    }
-
-    public static WebServer getTheServer() {
-        return theServer;
     }
 
     /**
      * Start the example.
      *
      * @param args ignored
-     * @throws IOException if logging configuration fails
      */
-    public static void main(String[] args) throws IOException {
-        // load logging configuration
+    public static void main(String[] args) {
         LogConfig.configureRuntime();
 
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build();
+
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
+
+        System.out.printf("""
+                Server started in %2$d ms
+
+                Started server on localhost:%1$d
+                You can access this example at http://localhost:%1$d/rest/profile
+
+                Check application.yaml in case you are behind a proxy to configure it
+                """, server.port(), TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
+    }
+
+    static void setup(WebServerConfig.Builder server) {
         Config config = buildConfig();
 
         OidcConfig oidcConfig = OidcConfig.builder()
@@ -76,34 +93,33 @@ public final class IdcsBuilderMain {
         Security security = Security.builder()
                 .addProvider(OidcProvider.create(oidcConfig))
                 .addProvider(IdcsRoleMapperProvider.builder()
-                                     .config(config)
-                                     .oidcConfig(oidcConfig))
+                        .config(config)
+                        .oidcConfig(oidcConfig))
                 .build();
 
-        Routing.Builder routing = Routing.builder()
-                .register(WebSecurity.create(security, config.get("security")))
-                // IDCS requires a web resource for redirects
-                .register(OidcSupport.create(config))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/rest/profile", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-                    res.send("Response from builder based service, you are: \n" + securityContext
-                            .flatMap(SecurityContext::user)
-                            .map(Subject::toString)
-                            .orElse("Security context is null"));
-                });
-
-        theServer = IdcsUtil.startIt(routing);
+        server.port(PORT)
+                .routing(routing -> routing
+                        .addFeature(SecurityFeature.create(security, config.get("security")))
+                        // IDCS requires a web resource for redirects
+                        .addFeature(OidcFeature.create(config))
+                        // web server does not (yet) have possibility to configure routes in config files, so explicit...
+                        .get("/rest/profile", (req, res) -> {
+                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.send("Response from builder based service, you are: \n" + securityContext
+                                    .flatMap(SecurityContext::user)
+                                    .map(Subject::toString)
+                                    .orElse("Security context is null"));
+                        }));
     }
 
     private static Config buildConfig() {
         return Config.builder()
-                .sources(
-                        // you can use this file to override the defaults built-in
-                        file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
-                        // in jar file (see src/main/resources/application.yaml)
-                        classpath("application.yaml"))
-                .build();
+                     .sources(
+                             // you can use this file to override the defaults built-in
+                             file(System.getProperty("user.home") + "/helidon/conf/examples.yaml").optional(),
+                             // in jar file (see src/main/resources/application.yaml)
+                             classpath("application.yaml"))
+                     .build();
     }
 }

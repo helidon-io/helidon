@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ public final class IdcsMain {
         System.out.println("  http://localhost:7987/rest/login");
         System.out.println("Full security with scopes and roles (see IdcsResource.java)");
         System.out.println("  http://localhost:7987/rest/scopes");
-        System.out.println("A protected reactive service (see application.yaml - security.web-server)");
-        System.out.println("  http://localhost:7987/reactive");
+        System.out.println("A protected nima service (see application.yaml - security.web-server)");
+        System.out.println("  http://localhost:7987/nima");
         System.out.println("A protected static resource (see application.yaml - security.web-server");
         System.out.println("  http://localhost:7987/web/resource.html");
     }

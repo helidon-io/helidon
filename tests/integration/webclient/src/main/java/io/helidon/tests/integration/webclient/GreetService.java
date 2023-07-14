@@ -21,23 +21,20 @@ import java.security.Principal;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.security.WebClientSecurity;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.security.SecurityContext;
 
 import jakarta.json.Json;
@@ -47,20 +44,20 @@ import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you. Examples:
- *
+ * <p>
  * Get default greeting message:
  * curl -X GET http://localhost:8080/greet
- *
+ * <p>
  * Get greeting message for Joe:
  * curl -X GET http://localhost:8080/greet/Joe
- *
+ * <p>
  * Change greeting
  * curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting
- *
+ * <p>
  * The message is returned as a JSON object
  */
 
-public class GreetService implements Service {
+public class GreetService implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final System.Logger LOGGER = System.getLogger(GreetService.class.getName());
@@ -80,7 +77,7 @@ public class GreetService implements Service {
      * @param rules the routing rules.
      */
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules
                 .get("/", this::getDefaultMessageHandler)
                 .get("/redirect", this::redirect)
@@ -97,47 +94,39 @@ public class GreetService implements Service {
                 .get("/obtainedQuery", this::obtainedQuery)
                 .get("/pattern with space", this::getDefaultMessageHandler)
                 .put("/greeting", this::updateGreetingHandler)
-                .get("/connectionClose", this::connectionClose)
                 .get("/contextCheck", this::contextCheck);
     }
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
         serverRequest.headers().contentLength()
                 .ifPresentOrElse(value -> serverResponse.send(Http.Header.CONTENT_LENGTH + " is " + value),
-                                 () -> serverResponse.send("No " + Http.Header.CONTENT_LENGTH + " has been set"));
+                        () -> serverResponse.send("No " + Http.Header.CONTENT_LENGTH + " has been set"));
     }
 
-    private void basicAuthOutbound(ServerRequest serverRequest, ServerResponse response) {
-        WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:" + Main.serverPort + "/greet/secure/basic")
+    private void basicAuthOutbound(ServerRequest request, ServerResponse response) {
+        Http1Client webClient = Http1Client.builder()
+                .baseUri("http://localhost:" + request.requestedUri().port() + "/greet/secure/basic")
                 .addService(WebClientSecurity.create())
                 .build();
 
-        webClient.get()
-                .request()
-                .thenAccept(clientResponse -> {
-                    response.status(clientResponse.status());
-                    response.send(clientResponse.content());
-                })
-                .exceptionally(throwable -> {
-                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-                    response.send();
-                    return null;
-                });
-
+        try (Http1ClientResponse clientResponse = webClient.get()
+                .request()) {
+            response.status(clientResponse.status());
+            response.send(clientResponse.entity().inputStream());
+        }
     }
 
     private void valuesPropagated(ServerRequest serverRequest, ServerResponse serverResponse) {
-        String queryParam = serverRequest.queryParams().first("param").orElse("Query param not present");
-        String fragment = serverRequest.fragment();
+        String queryParam = serverRequest.query().first("param").orElse("Query param not present");
+        String fragment = serverRequest.prologue().fragment().value();
         serverResponse.status(Http.Status.OK_200);
         serverResponse.send(queryParam + " " + fragment);
     }
 
     private void obtainedQuery(ServerRequest serverRequest, ServerResponse serverResponse) {
-        String queryParam = serverRequest.queryParams().first("param").orElse("Query param not present");
-        String queryValue = serverRequest.queryParams().first(queryParam).orElse("Query " + queryParam + " param not present");
-        String fragment = serverRequest.fragment();
+        String queryParam = serverRequest.query().first("param").orElse("Query param not present");
+        String queryValue = serverRequest.query().first(queryParam).orElse("Query " + queryParam + " param not present");
+        String fragment = serverRequest.requestedUri().toUri().getFragment();
         serverResponse.status(Http.Status.OK_200);
         serverResponse.send(queryValue + " " + (fragment == null ? "" : fragment));
     }
@@ -169,32 +158,29 @@ public class GreetService implements Service {
      * @param request  the server request
      * @param response the server response
      */
-    private void redirect(ServerRequest request,
-                          ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet");
+    private void redirect(ServerRequest request, ServerResponse response) {
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
-    private void redirectPath(ServerRequest request,
-                              ServerResponse response) {
+    private void redirectPath(ServerRequest request, ServerResponse response) {
         response.headers().add(Http.Header.LOCATION, "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
-    private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + Main.serverPort + "/greet/redirect/infinite");
+    private void redirectInfinite(ServerRequest request, ServerResponse response) {
+        response.headers().add(Http.Header.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void form(ServerRequest req, ServerResponse res) {
-        req.content().as(Parameters.class)
-                .thenApply(form -> "Hi " + form.first("name").orElse("unknown"))
-                .thenAccept(res::send);
+        Parameters form = req.content().as(Parameters.class);
+        res.send("Hi " + form.first("name").orElse("unknown"));
     }
 
     private void formContent(ServerRequest req, ServerResponse res) {
-        req.content().as(Parameters.class)
-                .thenAccept(res::send);
+        Parameters form = req.content().as(Parameters.class);
+        res.send(form);
     }
 
     /**
@@ -205,31 +191,16 @@ public class GreetService implements Service {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        request.content().as(JsonObject.class)
-                .thenAccept(jo -> updateGreetingFromJson(jo, response))
-                .exceptionally(ex -> processErrors(ex, request, response));
-    }
-
-    private void connectionClose(ServerRequest request, ServerResponse response) {
-        response.send(Multi
-                .interval(100, 500, TimeUnit.MILLISECONDS,
-                        Executors.newSingleThreadScheduledExecutor())
-                .map(i -> "item" + i)
-                .limit(15)
-                .peek(s -> {
-                    if ("item2".equals(s)) {
-                        try {
-                            Main.webServer.shutdown().get(10, TimeUnit.SECONDS);
-                        } catch (Throwable t) {
-                            LOGGER.log(Level.ERROR, "Webserver failed to shut down!", t);
-                        }
-                    }
-                })
-                .map(String::getBytes)
-                .map(DataChunk::create)
-                // force flush after each chunk
-                .flatMap(bb -> Multi.just(bb, DataChunk.create(true)))
-        );
+        try {
+            JsonObject jsonObject = request.content().as(JsonObject.class);
+            updateGreetingFromJson(jsonObject, response);
+        } catch (JsonException ex) {
+            LOGGER.log(Level.DEBUG, "Invalid JSON", ex);
+            JsonObject jsonErrorObject = JSON.createObjectBuilder()
+                    .add("error", "Invalid JSON")
+                    .build();
+            response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
+        }
     }
 
     private void sendResponse(ServerResponse response, String name) {
@@ -239,27 +210,6 @@ public class GreetService implements Service {
                 .add("message", msg)
                 .build();
         response.send(returnObject);
-    }
-
-    private static <T> T processErrors(Throwable ex, ServerRequest request, ServerResponse response) {
-
-        if (ex.getCause() instanceof JsonException) {
-
-            LOGGER.log(Level.DEBUG, "Invalid JSON", ex);
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "Invalid JSON")
-                    .build();
-            response.status(Http.Status.BAD_REQUEST_400).send(jsonErrorObject);
-        } else {
-
-            LOGGER.log(Level.DEBUG, "Internal error", ex);
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "Internal error")
-                    .build();
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(jsonErrorObject);
-        }
-
-        return null;
     }
 
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
@@ -274,18 +224,18 @@ public class GreetService implements Service {
         }
 
         greeting.set(jo.getString("greeting"));
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.send(jo);
     }
 
     /**
      * Checks the existence of a {@code Context} object in a WebClient thread.
      *
-     * @param request the request
+     * @param request  the request
      * @param response the response
      */
     private void contextCheck(ServerRequest request, ServerResponse response) {
-        WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:" + Main.serverPort + "/")
+        Http1Client webClient = Http1Client.builder()
+                .baseUri("http://localhost:" + request.requestedUri().port() + "/")
                 .build();
 
         Optional<Context> context = Contexts.context();
@@ -300,19 +250,11 @@ public class GreetService implements Service {
         context.get().register(this);
 
         // Ensure context is available in webclient threads
-        webClient.get()
-                .request()
-                .thenAccept(clientResponse -> {
-                    Context singleContext = Contexts.context().orElseThrow();
-                    Objects.requireNonNull(singleContext.get(GreetService.class));
-                    response.status(Http.Status.OK_200);
-                    response.send();
-                })
-                .exceptionally(throwable -> {
-                    response.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-                    response.send();
-                    return null;
-                });
-
+        try (Http1ClientResponse ignored = webClient.get().request()) {
+            Context singleContext = Contexts.context().orElseThrow();
+            Objects.requireNonNull(singleContext.get(GreetService.class));
+            response.status(Http.Status.OK_200);
+            response.send();
+        }
     }
 }

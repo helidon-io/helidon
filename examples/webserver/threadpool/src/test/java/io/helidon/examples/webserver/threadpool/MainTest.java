@@ -17,99 +17,68 @@
 package io.helidon.examples.webserver.threadpool;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 public class MainTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonObject TEST_JSON_OBJECT;
+    private static final JsonObject TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
+            .add("greeting", "Hola")
+            .build();
 
-    static {
-        TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", "Hola")
-                .build();
+    private final Http1Client client;
+
+    public MainTest(Http1Client client) {
+        this.client = client;
     }
 
     @BeforeAll
-    public static void startTheServer() {
-
-        // Use test configuration so we can have ports allocated dynamically
+    public static void setup(WebServerConfig.Builder server) {
         Config config = Config.builder().addSource(ConfigSources.classpath("application-test.yaml")).build();
-
-        webServer = Main.startServer(config).await();
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-    }
-
-    @AfterAll
-    public static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown().await(10, TimeUnit.SECONDS);
-        }
+        Main.setup(server, config);
     }
 
     @Test
     public void testHelloWorld() {
+        try (Http1ClientResponse response = client.get("/greet").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), is("Hello World!"));
+        }
 
-        JsonObject jsonObject;
-        WebClientResponse response;
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), is("Hello Joe!"));
+        }
 
-        jsonObject = webClient.get()
-                .path("/greet")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
+        try (Http1ClientResponse response = client.put("/greet/greeting").submit(TEST_JSON_OBJECT)) {
+            assertThat(response.status().code(), is(204));
+        }
 
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), is("Hola Joe!"));
+        }
 
-        WebClientResponse res = webClient.put()
-                .path("/greet/greeting")
-                .submit(TEST_JSON_OBJECT)
-                .await();
-        assertThat(res.status().code(), is(204));
+        try (Http1ClientResponse response = client.get("/health").request()) {
+            assertThat(response.status().code(), is(200));
+        }
 
-        JsonObject json = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(json.getString("message"), is("Hola Joe!"));
-
-        response = webClient.get()
-                .path("/health")
-                .request()
-                .await();
-        assertThat(response.status().code(), is(200));
-
-        response = webClient.get()
-                .path("/metrics")
-                .request()
-                .await();
-        assertThat(response.status().code(), is(200));
+        try (Http1ClientResponse response = client.get("/metrics").request()) {
+            assertThat(response.status().code(), is(200));
+        }
     }
 
 }

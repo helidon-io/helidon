@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,22 @@
 
 package io.helidon.security.integration.nima;
 
-import java.time.Duration;
 import java.util.Set;
 
 import io.helidon.common.http.Http;
+import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webclient.security.WebClientSecurity;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD;
+import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -44,42 +44,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 abstract class WebSecurityTests {
     static final String AUDIT_MESSAGE_FORMAT = "Unit test message format";
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
-    static UnitTestAuditProvider myAuditProvider;
-    static WebServer server;
-    private static WebClient securitySetup;
-    private static WebClient webClient;
 
-    @BeforeAll
-    static void buildClients() {
+    private final UnitTestAuditProvider myAuditProvider;
+    private final Http1Client securityClient;
+    private final Http1Client webClient;
+
+    WebSecurityTests(WebServer server, Http1Client webClient) {
+        this.myAuditProvider = server.context().get(UnitTestAuditProvider.class).orElseThrow();
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
-
-        securitySetup = WebClient.builder()
+        this.securityClient = WebClient.builder()
+                .baseUri("http://localhost:" + server.port())
                 .addService(WebClientSecurity.create(security))
                 .build();
-
-        webClient = WebClient.create();
+        this.webClient = webClient;
     }
-
-    @AfterAll
-    static void stopIt() {
-        server.stop();
-    }
-
-    abstract String serverBaseUri();
 
     @Test
     void basicTestJohn() {
         String username = "john";
         String password = "password";
 
-        testProtected(serverBaseUri() + "/noRoles", username, password, Set.of(), Set.of());
+        testProtected("/noRoles", username, password, Set.of(), Set.of());
         // this user has no roles, all requests should fail except for public
-        testForbidden(serverBaseUri() + "/user", username, password);
-        testForbidden(serverBaseUri() + "/admin", username, password);
-        testForbidden(serverBaseUri() + "/deny", username, password);
+        testForbidden("/user", username, password);
+        testForbidden("/admin", username, password);
+        testForbidden("/deny", username, password);
     }
 
     @Test
@@ -87,22 +78,10 @@ abstract class WebSecurityTests {
         String username = "jack";
         String password = "jackIsGreat";
 
-        testProtected(serverBaseUri() + "/noRoles",
-                      username,
-                      password,
-                      Set.of("user", "admin"),
-                      Set.of());
-        testProtected(serverBaseUri() + "/user",
-                      username,
-                      password,
-                      Set.of("user", "admin"),
-                      Set.of());
-        testProtected(serverBaseUri() + "/admin",
-                      username,
-                      password,
-                      Set.of("user", "admin"),
-                      Set.of());
-        testForbidden(serverBaseUri() + "/deny", username, password);
+        testProtected("/noRoles", username, password, Set.of("user", "admin"), Set.of());
+        testProtected("/user", username, password, Set.of("user", "admin"), Set.of());
+        testProtected("/admin", username, password, Set.of("user", "admin"), Set.of());
+        testForbidden("/deny", username, password);
     }
 
     @Test
@@ -110,58 +89,41 @@ abstract class WebSecurityTests {
         String username = "jill";
         String password = "password";
 
-        testProtected(serverBaseUri() + "/noRoles",
-                      username,
-                      password,
-                      Set.of("user"),
-                      Set.of("admin"));
-        testProtected(serverBaseUri() + "/user",
-                      username,
-                      password,
-                      Set.of("user"),
-                      Set.of("admin"));
-        testForbidden(serverBaseUri() + "/admin", username, password);
-        testForbidden(serverBaseUri() + "/deny", username, password);
+        testProtected("/noRoles", username, password, Set.of("user"), Set.of("admin"));
+        testProtected("/user", username, password, Set.of("user"), Set.of("admin"));
+        testForbidden("/admin", username, password);
+        testForbidden("/deny", username, password);
     }
 
     @Test
     void basicTest401() {
-        webClient.get()
-                .uri(serverBaseUri() + "/noRoles")
-                .request()
-                .thenAccept(it -> {
-                    assertThat(it.status(), is(Http.Status.UNAUTHORIZED_401));
-                    it.headers()
-                            .first(Http.Header.WWW_AUTHENTICATE)
-                            .ifPresentOrElse(header -> assertThat(header.toLowerCase(), is("basic realm=\"mic\"")),
-                                             () -> {
-                                                 throw new IllegalStateException("Header " + Http.Header.WWW_AUTHENTICATE + " is"
-                                                                                         + " not present in response!");
-                                             });
-                })
-                .await(TIMEOUT);
+        try (Http1ClientResponse response = webClient.get("/noRoles").request()) {
+            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
 
-        WebClientResponse webClientResponse = callProtected(serverBaseUri() + "/noRoles", "invalidUser", "invalidPassword");
-        assertThat(webClientResponse.status(), is(Http.Status.UNAUTHORIZED_401));
-        webClientResponse.headers()
-                .first(Http.Header.WWW_AUTHENTICATE)
-                .ifPresentOrElse(header -> assertThat(header.toLowerCase(), is("basic realm=\"mic\"")),
-                                 () -> {
-                                     throw new IllegalStateException("Header " + Http.Header.WWW_AUTHENTICATE + " is"
-                                                                             + " not present in response!");
-                                 });
+            String header = response.headers()
+                    .first(Http.Header.WWW_AUTHENTICATE)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Header " + Http.Header.WWW_AUTHENTICATE + " is" + " not present in response!"));
+
+            assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
+        }
+
+        try (Http1ClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
+            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+
+            String header = response.headers()
+                    .first(Http.Header.WWW_AUTHENTICATE)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Header " + Http.Header.WWW_AUTHENTICATE + " is" + " not present in response!"));
+            assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
+        }
     }
 
     @Test
     void testCustomizedAudit() {
-        webClient.get()
-                .uri(serverBaseUri() + "/auditOnly")
-                .request()
-                .thenCompose(it -> {
-                    assertThat(it.status(), is(Http.Status.OK_200));
-                    return it.close();
-                })
-                .await(TIMEOUT);
+        try (Http1ClientResponse response = webClient.get("/auditOnly").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+        }
 
         // audit
         AuditEvent auditEvent = myAuditProvider.getAuditEvent();
@@ -171,10 +133,11 @@ abstract class WebSecurityTests {
     }
 
     private void testForbidden(String uri, String username, String password) {
-        WebClientResponse response = callProtected(uri, username, password);
-        assertThat(uri + " for user " + username + " should be forbidden",
-                   response.status(),
-                   is(Http.Status.FORBIDDEN_403));
+        try (Http1ClientResponse response = callProtected(uri, username, password)) {
+            assertThat(uri + " for user " + username + " should be forbidden",
+                    response.status(),
+                    is(Http.Status.FORBIDDEN_403));
+        }
     }
 
     private void testProtected(String uri,
@@ -183,29 +146,25 @@ abstract class WebSecurityTests {
                                Set<String> expectedRoles,
                                Set<String> invalidRoles) {
 
-        WebClientResponse response = callProtected(uri, username, password);
+        try (Http1ClientResponse response = callProtected(uri, username, password)) {
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Http.Status.OK_200));
 
-        String entity = response.content()
-                .as(String.class)
-                .await(TIMEOUT);
+            String entity = response.entity().as(String.class);
 
-        // check login
-        assertThat(entity, containsString("id='" + username + "'"));
-        // check roles
-        expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
-        invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
-
+            // check login
+            assertThat(entity, containsString("id='" + username + "'"));
+            // check roles
+            expectedRoles.forEach(role -> assertThat(entity, containsString(":" + role)));
+            invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
+        }
     }
 
-    private WebClientResponse callProtected(String uri, String username, String password) {
-        return securitySetup.get()
-                .uri(uri)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, username)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
-                .request()
-                .await(TIMEOUT);
+    private Http1ClientResponse callProtected(String uri, String username, String password) {
+        return securityClient.get(uri)
+                .property(EP_PROPERTY_OUTBOUND_USER, username)
+                .property(EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .request();
     }
 
 }

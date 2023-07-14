@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +21,9 @@ import java.io.InputStream;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
-import io.helidon.reactive.webserver.websocket.WebSocketRouting;
-
-import jakarta.websocket.server.ServerEndpointConfig;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
+import io.helidon.nima.websocket.webserver.WsRouting;
 
 /**
  * The application main class.
@@ -59,44 +56,27 @@ public final class Main {
         // load logging configuration
         setupLogging();
 
-        // By default this will pick up application.yaml from the classpath
+        // By default, this will pick up application.yaml from the classpath
         Config config = Config.create();
 
         SendingService sendingService = new SendingService(config);
 
         WebServer server = WebServer.builder()
-                .routing(r -> r
+                .routing(routing -> routing
                         // register static content support (on "/")
-                        .register(StaticContentSupport.builder("/WEB")
+                        .register(StaticContentService.builder("/WEB")
                                 .welcomeFileName("index.html")
                                 .build())
                         // register rest endpoint for sending to Jms
                         .register("/rest/messages", sendingService))
-                .addRouting(WebSocketRouting.builder()
-                        // register WebSocket endpoint to push messages coming from Jms to client
-                        .endpoint("/ws", ServerEndpointConfig.Builder.create(
-                                        WebSocketEndpoint.class, "/messages")
-                                .build())
+                .addRouting(WsRouting.builder()
+                        .endpoint("/ws/messages", new WebSocketEndpoint())
                         .build())
                 .config(config.get("server"))
                 .build();
 
-        server.start()
-                .thenAccept(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port());
-                    ws.whenShutdown().thenRun(()
-                            -> {
-                        // Stop messaging properly
-                        sendingService.shutdown();
-                        System.out.println("WEB server is DOWN. Good bye!");
-                    });
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
+        System.out.println("WEB server is up! http://localhost:" + server.port());
+        Runtime.getRuntime().addShutdownHook(new Thread(sendingService::shutdown));
 
         // Server threads are not daemon. No need to block. Just react.
         return server;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,60 +19,65 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.BadRequestException;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
-import io.helidon.tracing.jersey.client.ClientTracingFilter;
-
-import jakarta.ws.rs.ProcessingException;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Response;
+import io.helidon.common.http.Http;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
  * Translator frontend resource.
  */
-public final class TranslatorFrontendService implements Service {
+public final class TranslatorFrontendService implements HttpService {
 
     private static final Logger LOGGER = Logger.getLogger(TranslatorFrontendService.class.getName());
-    private final WebTarget backendTarget;
+    private final Http1Client client;
 
-    TranslatorFrontendService(String backendHostname, int backendPort) {
-         backendTarget = ClientBuilder.newClient()
-                 .target("http://" + backendHostname + ":" + backendPort);
+    /**
+     * Create a new instance.
+     *
+     * @param backendHostname backend service host
+     * @param backendPort     backend service port
+     */
+    public TranslatorFrontendService(String backendHostname, int backendPort) {
+        client = Http1Client.builder()
+                .baseUri("http://" + backendHostname + ":" + backendPort)
+                .build();
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get(this::getText);
     }
 
-    private void getText(ServerRequest request, ServerResponse response) {
+    private void getText(ServerRequest re, ServerResponse res) {
         try {
-            String query = request.queryParams().first("q")
+            String query = re.query()
+                    .first("q")
                     .orElseThrow(() -> new BadRequestException("missing query parameter 'q'"));
-            String language = request.queryParams().first("lang")
+
+            String language = re.query()
+                    .first("lang")
                     .orElseThrow(() -> new BadRequestException("missing query parameter 'lang'"));
 
-            try (Response backendResponse = backendTarget
-                    .property(ClientTracingFilter.TRACER_PROPERTY_NAME, request.tracer())
-                    .property(ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME, request.spanContext().orElse(null))
+            try (Http1ClientResponse clientRes = client.get()
                     .queryParam("q", query)
                     .queryParam("lang", language)
-                    .request()
-                    .get()) {
+                    .request()) {
+
                 final String result;
-                if (backendResponse.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
-                    result = backendResponse.readEntity(String.class);
+                if (clientRes.status().family() == Http.Status.Family.SUCCESSFUL) {
+                    result = clientRes.entity().as(String.class);
                 } else {
-                    result = "Error: " + backendResponse.readEntity(String.class);
+                    result = "Error: " + clientRes.entity().as(String.class);
                 }
-                response.send(result + "\n");
+                res.send(result + "\n");
             }
-        } catch (ProcessingException pe) {
+        } catch (RuntimeException pe) {
             LOGGER.log(Level.WARNING, "Problem to call translator frontend.", pe);
-            response.status(503).send("Translator backend service isn't available.");
+            res.status(503).send("Translator backend service isn't available.");
         }
     }
 }

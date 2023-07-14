@@ -45,20 +45,16 @@
             <artifactId>helidon-nima-webserver-static-content</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.websocket</groupId>
+            <artifactId>helidon-nima-websocket-webserver</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.messaging</groupId>
             <artifactId>helidon-messaging</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.messaging.jms</groupId>
             <artifactId>helidon-messaging-jms</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.websocket</groupId>
-            <artifactId>jakarta.websocket-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

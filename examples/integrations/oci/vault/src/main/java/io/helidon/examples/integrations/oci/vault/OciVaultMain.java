@@ -87,6 +87,7 @@ public final class OciVaultMain {
                         .error(BmcException.class, (req, res, ex) -> res.status(
                                 ex.getStatusCode()).send(ex.getMessage())))
                 .config(config.get("server"))
+                .build()
                 .start();
 
         System.out.println("WEB server is up! http://localhost:" + server.port());

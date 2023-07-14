@@ -19,10 +19,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -39,7 +39,7 @@ import org.eclipse.microprofile.metrics.Tag;
  *     value {@code 1xx}, {@code 2xx}, etc.
  * </p>
  */
-public class HttpStatusMetricService implements Service {
+public class HttpStatusMetricService implements HttpService {
 
     static final String STATUS_COUNTER_NAME = "httpStatus";
 
@@ -67,7 +67,7 @@ public class HttpStatusMetricService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.any(this::updateRange);
     }
 
@@ -79,9 +79,8 @@ public class HttpStatusMetricService implements Service {
     // Edited to adopt Ciaran's fix later in the thread.
     private void updateRange(ServerRequest request, ServerResponse response) {
         IN_PROGRESS.incrementAndGet();
-        response.whenSent()
-                .thenAccept(this::logMetric);
-        request.next();
+        response.next();
+        logMetric(response);
     }
 
     private void logMetric(ServerResponse response) {

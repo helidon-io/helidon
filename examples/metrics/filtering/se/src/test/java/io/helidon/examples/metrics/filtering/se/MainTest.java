@@ -17,116 +17,79 @@
 package io.helidon.examples.metrics.filtering.se;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
+@ServerTest
 public class MainTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonObject TEST_JSON_OBJECT;
+    private static final JsonObject TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
+                                                                   .add("greeting", "Hola")
+                                                                   .build();
 
-    static {
-        TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", "Hola")
-                .build();
+    private final Http1Client client;
+
+    public MainTest(Http1Client client) {
+        this.client = client;
     }
 
-    @BeforeAll
-    public static void startTheServer() {
-        webServer = Main.startServer().await();
-
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-    }
-
-    @AfterAll
-    public static void stopServer() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(10, TimeUnit.SECONDS);
-        }
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        Main.setup(server);
     }
 
     @Test
     public void testHelloWorld() {
-        JsonObject jsonObject;
-        WebClientResponse response;
+        try (Http1ClientResponse response = client.get("/greet").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), CoreMatchers.is("Hello World!"));
+        }
 
-        jsonObject = webClient.get()
-                .path("/greet")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), CoreMatchers.is("Hello Joe!"));
+        }
 
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
+        try (Http1ClientResponse response = client.put("/greet/greeting").submit(TEST_JSON_OBJECT)) {
+            assertThat(response.status().code(), CoreMatchers.is(204));
+        }
 
-        response = webClient.put()
-                .path("/greet/greeting")
-                .submit(TEST_JSON_OBJECT)
-                .await();
-        assertThat(response.status().code(), is(204));
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), CoreMatchers.is("Hola Joe!"));
+        }
 
-        jsonObject = webClient.get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await();
-        assertThat(jsonObject.getString("message"), is("Hola Joe!"));
-
-        response = webClient.get()
-                .path("/metrics")
-                .request()
-                .await();
-        assertThat(response.status().code(), is(200));
+        try (Http1ClientResponse response = client.get("/metrics").request()) {
+            assertThat(response.status().code(), CoreMatchers.is(200));
+        }
     }
 
     @Test
     public void testMetrics() {
-        WebClientResponse response;
+        try (Http1ClientResponse response = client.get("/greet").request()) {
+            assertThat(response.as(String.class), containsString("Hello World!"));
+        }
 
-        String get = webClient.get()
-                .path("/greet")
-                .request(String.class)
-                .await();
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
+            assertThat(response.as(String.class), containsString("Hello Joe!"));
+        }
 
-        assertThat(get, containsString("Hello World!"));
-
-        get = webClient.get()
-                .path("/greet/Joe")
-                .request(String.class)
-                .await();
-
-        assertThat(get, containsString("Hello Joe!"));
-
-        String openMetricsOutput = webClient.get()
-                .path("/metrics/application")
-                .request(String.class)
-                .await();
-
-        assertThat("Metrics output", openMetricsOutput, not(containsString(GreetService.TIMER_FOR_GETS)));
-        assertThat("Metrics output", openMetricsOutput, containsString(GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS));
+        try (Http1ClientResponse response = client.get("/metrics/application").request()) {
+            String openMetricsOutput = response.as(String.class);
+            assertThat("Metrics output", openMetricsOutput, not(containsString(GreetService.TIMER_FOR_GETS)));
+            assertThat("Metrics output", openMetricsOutput, containsString(GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS));
+        }
     }
 }

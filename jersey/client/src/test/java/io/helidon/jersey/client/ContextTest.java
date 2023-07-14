@@ -26,16 +26,16 @@ import java.util.function.Function;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.InvocationCallback;
 import org.glassfish.jersey.client.ClientAsyncExecutor;
 import org.glassfish.jersey.spi.ThreadPoolExecutorProvider;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.StringStartsWith.startsWith;
 
+@ServerTest
 public class ContextTest {
 
     private static final Duration TIME_OUT = Duration.ofSeconds(5);
@@ -51,30 +52,22 @@ public class ContextTest {
     private static final String TEST_THREAD_NAME_PREFIX = "test-exec";
     private static WebServer server;
 
-    @BeforeAll
-    static void beforeAll() {
-        server = WebServer.builder()
-                .host("localhost")
-                .routing(r -> r.put((req, res) -> res.send("I'm Frank!")))
-                .build()
-                .start()
-                .await(TIME_OUT);
+    ContextTest(WebServer server) {
+        this.server = server;
     }
 
-    @AfterAll
-    static void afterAll() {
-        if (server != null) {
-            server.shutdown().await(TIME_OUT);
-        }
+    @SetUpRoute
+    static void routing(HttpRouting.Builder routing) {
+        routing.put((req, res) -> res.send("I'm Frank!"));
     }
 
     @Test
-    void defaultThreadPool() {
+    void defaultThreadPool() throws Exception {
         test(Function.identity(), ExecutorProvider.THREAD_NAME_PREFIX, TEST_VAL);
     }
 
     @Test
-    void overrideDefaultThreadPoolWithBuilder() throws InterruptedException {
+    void overrideDefaultThreadPoolWithBuilder() throws Exception {
         ExecutorService executorService = Executors.newSingleThreadExecutor(r -> new Thread(r, TEST_THREAD_NAME_PREFIX));
         try {
             test(cb -> cb.executorService(executorService), TEST_THREAD_NAME_PREFIX, null);
@@ -86,11 +79,14 @@ public class ContextTest {
 
     @Test
     @Disabled("Disabled until better defaulting spi is available in Jersey")
-    void overrideDefaultThreadPoolWithExecutorProvider() throws InterruptedException {
+    void overrideDefaultThreadPoolWithExecutorProvider() throws Exception {
         test(cb -> cb.register(TestNoCtxExecutorProvider.class), TEST_THREAD_NAME_PREFIX, null);
     }
 
-    void test(Function<ClientBuilder, ClientBuilder> builderTweaker, String expectedThreadPrefix, String expectedContextValue) {
+    void test(Function<ClientBuilder, ClientBuilder> builderTweaker,
+              String expectedThreadPrefix,
+              String expectedContextValue) throws Exception {
+
         Context ctx = Context.create();
         ctx.register(TEST_KEY, TEST_VAL);
 
@@ -110,9 +106,9 @@ public class ContextTest {
                                     .orElse(null));
                         }, threadNameFuture::completeExceptionally)));
 
-        String actThreadName = Single.create(threadNameFuture, true).await(TIME_OUT);
+        String actThreadName = threadNameFuture.get(5, TimeUnit.SECONDS);
         assertThat(actThreadName, startsWith(expectedThreadPrefix));
-        String actContextVal = Single.create(contextValFuture, true).await(TIME_OUT);
+        String actContextVal = contextValFuture.get(5, TimeUnit.SECONDS);
         assertThat(actContextVal, is(expectedContextValue));
     }
 

@@ -17,16 +17,15 @@
 package io.helidon.examples.integrations.microstream.greetings.se;
 
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -34,48 +33,34 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 public class MicrostreamExampleGreetingsSeTest {
-
-    private static WebServer webServer;
-    private static WebClient webClient;
 
     @TempDir
     static Path tempDir;
 
-    @BeforeAll
-    static void startServer() throws Exception {
-        System.setProperty("microstream.storage-directory", tempDir.toString());
+    private final Http1Client client;
 
-        webServer = Main.startServer();
-
-        webClient = WebClient.builder().baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create()).build();
+    public MicrostreamExampleGreetingsSeTest(Http1Client client) {
+        this.client = client;
     }
 
-    @AfterAll
-    static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown().await(10, TimeUnit.SECONDS);
-        }
+    @SetUpServer
+    static void setup(WebServerConfig.Builder server) {
+        System.setProperty("microstream.storage-directory", tempDir.toString());
+        Main.setup(server);
     }
 
     @Test
     void testExample() {
-        JsonObject jsonObject = webClient
-                .get()
-                .path("/greet/Joe")
-                .request(JsonObject.class)
-                .await(10, TimeUnit.SECONDS);
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
+            assertThat(response.as(JsonObject.class).getString("message"), is("Hello Joe!"));
+        }
 
-        assertThat(jsonObject.getString("message"), is("Hello Joe!"));
-
-        JsonArray jsonArray = webClient
-                .get()
-                .path("/greet/logs")
-                .request(JsonArray.class)
-                .await(10, TimeUnit.SECONDS);
-
-        assertThat(jsonArray.get(0).asJsonObject().getString("name"), is("Joe"));
-        assertThat(jsonArray.get(0).asJsonObject().getString("time"), notNullValue());
+        try (Http1ClientResponse response = client.get("/greet/logs").request()) {
+            JsonArray jsonArray = response.as(JsonArray.class);
+            assertThat(jsonArray.get(0).asJsonObject().getString("name"), is("Joe"));
+            assertThat(jsonArray.get(0).asJsonObject().getString("time"), notNullValue());
+        }
     }
 }

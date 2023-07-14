@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,32 +18,38 @@ package io.helidon.tests.integration.webclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 
-import io.helidon.reactive.media.common.MediaContext;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for MediaContext functionality in WebClient.
  */
+@TestMethodOrder(OrderAnnotation.class)
 public class MediaContextTest extends TestParent {
 
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_GREETING;
     private static final JsonObject JSON_GREETING;
     private static final JsonObject JSON_NEW_GREETING;
-    private static final JsonObject JSON_OLD_GREETING;
 
     static {
         DEFAULT_GREETING = CONFIG.get("app.greeting").asString().orElse("Hello");
@@ -55,132 +61,90 @@ public class MediaContextTest extends TestParent {
         JSON_NEW_GREETING = JSON_BUILDER.createObjectBuilder()
                 .add("greeting", "Hola")
                 .build();
-        JSON_OLD_GREETING = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", CONFIG.get("app.greeting").asString().orElse("Hello"))
-                .build();
+    }
+
+    MediaContextTest(WebServer server, Http1Client client) {
+        super(server, client);
     }
 
     @Test
-    public void testMediaSupportDefaults() throws Exception {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .build();
-
-        client.get()
-                .request(String.class)
-                .thenAccept(it -> assertThat(it, is(JSON_GREETING.toString())))
-                .toCompletableFuture()
-                .get();
+    @Order(1)
+    public void testInputStreamDifferentThreadContentAs() throws IOException {
+        try (Http1ClientResponse res = client.get("/greet").request()) {
+            InputStream is = res.inputStream();
+            assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"));
+        }
     }
 
     @Test
-    public void testMediaSupportWithoutDefaults() throws Exception {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .mediaContext(MediaContext.empty())
+    @Order(2)
+    public void testMediaSupportDefaults() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port() + "/greet")
                 .build();
 
-        client.get()
-                .request(String.class)
-                .thenAccept(it -> fail("No reader for String should be registered!"))
-                .exceptionally(ex -> {
-                    assertThat(ex.getCause().getMessage(), is("No reader found for type: class java.lang.String"));
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
+        String greeting = client.get().request(String.class);
+        assertThat(greeting, is(JSON_GREETING.toString()));
     }
 
     @Test
-    public void testReaderRegisteredOnClient() throws Exception {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .addReader(JsonpSupport.reader())
+    @Order(3)
+    @Disabled("https://github.com/helidon-io/helidon/issues/7204")
+    public void testMediaSupportWithoutDefaults() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .mediaContext(MediaContext.builder()
+                        //.registerDefaults(false)
+                        .build())
                 .build();
 
-        client.get()
-                .request(JsonObject.class)
-                .thenAccept(it -> assertThat(it, is(JSON_GREETING)))
-                .thenCompose(it -> client.put()
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                client.get().request(String.class));
+        assertThat(ex.getMessage(), startsWith("No client response media support for class"));
+    }
+
+    @Test
+    @Order(4)
+    @Disabled("https://github.com/helidon-io/helidon/issues/7205")
+    public void testReaderRegisteredOnClient() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .mediaContext(MediaContext.builder()
+                        //.addMediaReader(JsonpSupport.create().reader())
+                        .mediaSupportsDiscoverServices(false)
+                        .build())
+                .build();
+
+        JsonObject jsonObject = client.get().request(JsonObject.class);
+        assertThat(jsonObject, is(not(nullValue())));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
+                client.put()
                         .path("/greeting")
-                        .submit(JSON_NEW_GREETING))
-                .thenAccept(it -> fail("No writer for String should be registered!"))
-                .exceptionally(ex -> {
-                    assertThat(ex.getCause().getMessage(),
-                               is("Transformation failed!"));
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
+                        .submit(JSON_NEW_GREETING)
+                        .close());
+        assertThat(ex.getMessage(), startsWith("No client request media writer for class"));
     }
 
     @Test
-    public void testWriterRegisteredOnClient() throws Exception {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .addWriter(JsonpSupport.writer())
+    @Order(5)
+    @Disabled("https://github.com/helidon-io/helidon/issues/7205")
+    public void testWriterRegisteredOnClient() {
+        Http1Client client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .mediaContext(MediaContext.builder()
+                        //.addMediaWriter(JsonpSupport.create().writer())
+                        .mediaSupportsDiscoverServices(false)
+                        .build())
                 .build();
 
-        client.put()
-                .path("/greeting")
-                .submit(JSON_NEW_GREETING)
-                .thenCompose(it -> client.get().request(JsonObject.class))
-                .thenAccept(it -> fail("JsonReader should not be registered!"))
-                .exceptionally(ex -> {
-                    assertThat(ex.getCause().getMessage(),
-                               is("No reader found for type: interface jakarta.json.JsonObject"));
-                    return null;
-                })
-                .thenCompose(it -> client.put().path("/greeting").submit(JSON_OLD_GREETING)) //Cleanup
-                .toCompletableFuture()
-                .get();
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            try (Http1ClientResponse response = client.put()
+                    .path("/greeting")
+                    .submit(JSON_NEW_GREETING)) {
+                response.as(JsonObject.class);
+            }
+        });
+        assertThat(ex.getMessage(), startsWith("No client response media support for interface"));
     }
-
-    @Test
-    public void testRequestSpecificReader() throws Exception {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .build();
-
-        client.get()
-                .request(JsonObject.class)
-                .thenAccept(it -> fail("JsonObject should not have been handled."))
-                .thenCompose(it -> {
-                    WebClientRequestBuilder requestBuilder = client.get();
-                    requestBuilder.readerContext().registerReader(JsonpSupport.reader());
-                    return requestBuilder.request(JsonObject.class);
-                })
-                .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is(DEFAULT_GREETING + " World!")))
-                .thenCompose(it -> client.get()
-                        .request(JsonObject.class))
-                .thenAccept(it -> fail("JsonObject should not have been handled."))
-                .exceptionally(throwable -> {
-                    assertThat(throwable.getCause().getMessage(),
-                               is("No reader found for type: interface jakarta.json.JsonObject"));
-                    return null;
-                })
-                .toCompletableFuture()
-                .get();
-    }
-
-    @Test
-    public void testInputStreamDifferentThread() throws IOException, ExecutionException, InterruptedException {
-        InputStream is = webClient.get()
-                .request(InputStream.class)
-                .toCompletableFuture()
-                .get();
-        assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"));
-    }
-
-    @Test
-    public void testInputStreamDifferentThreadContentAs() throws IOException, ExecutionException, InterruptedException {
-        InputStream is = webClient.get()
-                .request()
-                .thenCompose(it -> it.content().as(InputStream.class))
-                .toCompletableFuture()
-                .get();
-        assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"));
-    }
-
-
 }

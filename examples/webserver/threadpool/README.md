@@ -2,20 +2,11 @@
 
 This example shows how to use an application specific threadpool.
 
-With the Helidon WebServer you do not want to block the Netty thread that is executing
-your Handler. So you either need to use WebServer's reactive APIs:
+You can pass the request off to a thread pool dedicated to your business logic.
+This example shows how to do this in `getMessageSlowlyHandler`.
 
-```
- request.content().as(JsonObject.class)
-            .thenAccept(jo -> doSomething(jo, response))
-```
-
-Or pass the request off to a thread pool dedicated to your business logic. This
-example shows how to do this in `getMessageSlowlyHandler`.
-
-Helidon's `ThreadPoolSupplier` provides thread pools that automatically propagate
-request `Context` so that tracing and authentication information is preserved across
-threads.
+`ThreadPoolSupplier` provides thread pools that automatically propagate
+request `Context` so that tracing and authentication information is preserved across threads.
 
 You can use the `Context` registry to propagate your own data across threads. You can
  also do this by passing the information directly to your `Runnable`. The

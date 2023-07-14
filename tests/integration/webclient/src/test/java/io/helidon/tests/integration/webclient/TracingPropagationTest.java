@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,20 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
 import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.config.Config;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.tracing.opentracing.OpenTracing;
 
 import io.opentracing.mock.MockSpan;
@@ -48,40 +49,48 @@ import static org.hamcrest.Matchers.hasSize;
  * Test tracing integration.
  */
 class TracingPropagationTest {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private final MockTracer tracer = new MockTracer();
+    private final WebServer server;
+
+    TracingPropagationTest(WebServer server) {
+        this.server = server;
+    }
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        Config config = Config.create();
+        server.config(config);
+        server.routing(routing -> Main.routing(routing, config, new MockTracer()));
+    }
 
     @Test
-    void testTracingSuccess() throws ExecutionException, InterruptedException {
-        MockTracer mockTracer = new MockTracer();
-
-        WebServer webServer = Main.startServer(mockTracer).await(TIMEOUT);
-
+    void testTracingSuccess() {
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(OpenTracing.create(mockTracer));
+        context.register(OpenTracing.create(tracer));
 
-        String uri = "http://localhost:" + webServer.port() + "/greet";
+        String uri = "http://localhost:" + server.port() + "/greet";
 
-        WebClient client = WebClient.builder()
+        Http1Client client = Http1Client.builder()
                 .baseUri(uri)
-                .context(context)
                 .config(Config.create().get("client"))
-                .addMediaSupport(JsonpSupport.create())
+                .mediaContext(MediaContext.builder()
+                        .addMediaSupport(JsonpSupport.create())
+                        .build())
                 .build();
 
-        WebClientResponse response = client.get()
+        try (Http1ClientResponse response = client.get()
                 .queryParam("some", "value")
                 .fragment("fragment")
-                .request()
-                .await(TIMEOUT);
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.content().as(JsonObject.class).await(TIMEOUT), notNullValue());
-        response.close();
+                .request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.entity().as(JsonObject.class), notNullValue());
+        }
 
         // the server traces asynchronously, some spans may be written after we receive the response.
         // we need to try to wait for such spans
-        MatcherWithRetry.assertThatWithRetry("There should be 3 spans reported", mockTracer::finishedSpans, hasSize(3));
+        MatcherWithRetry.assertThatWithRetry("There should be 3 spans reported", tracer::finishedSpans, hasSize(3));
 
-        List<MockSpan> mockSpans = mockTracer.finishedSpans();
+        List<MockSpan> mockSpans = tracer.finishedSpans();
 
         // we need the first span - parentId 0
         MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
@@ -99,8 +108,6 @@ class TracingPropagationTest {
         assertThat(tags.get(Tags.HTTP_URL.getKey()), is("/greet?some=value#fragment"));
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
         assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-reactive-webserver"));
-
-        webServer.shutdown().toCompletableFuture().get();
     }
 
     private MockSpan findSpanWithParentId(List<MockSpan> mockSpans, long parentId) {
