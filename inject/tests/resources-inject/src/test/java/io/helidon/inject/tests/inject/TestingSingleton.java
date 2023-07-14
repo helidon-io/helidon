@@ -21,8 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.inject.api.Resettable;
 import io.helidon.inject.api.RunLevel;
-import io.helidon.inject.tests.inject.stacking.Intercepted;
-import io.helidon.inject.tests.inject.stacking.InterceptedImpl;
+import io.helidon.inject.tests.inject.stacking.CommonContract;
 import io.helidon.inject.tests.inject.tbox.Awl;
 
 import jakarta.annotation.PostConstruct;
@@ -35,18 +34,18 @@ import jakarta.inject.Singleton;
 @RunLevel(RunLevel.STARTUP)
 @Singleton
 @Named("testing")
-public class TestingSingleton extends InterceptedImpl implements Resettable {
+public class TestingSingleton implements Resettable, CommonContract {
     final static AtomicInteger postConstructCount = new AtomicInteger();
     final static AtomicInteger preDestroyCount = new AtomicInteger();
 
+    CommonContract inner;
     @Inject Provider<Awl> awlProvider;
 
     @Inject
-    TestingSingleton(Optional<Intercepted> inner) {
-        super(inner);
+    TestingSingleton(Optional<CommonContract> inner) {
+        this.inner = inner.orElseThrow();
     }
 
-    @Override
     @PostConstruct
     public void voidMethodWithNoArgs() {
         postConstructCount.incrementAndGet();
@@ -72,4 +71,13 @@ public class TestingSingleton extends InterceptedImpl implements Resettable {
         return true;
     }
 
+    @Override
+    public CommonContract getInner() {
+        return inner;
+    }
+
+    @Override
+    public String sayHello(String arg) {
+        return "TS: " + getInner().sayHello(arg);
+    }
 }

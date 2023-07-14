@@ -16,21 +16,16 @@
 
 package io.helidon.inject.tests.inject.stacking;
 
-import java.util.Optional;
+import io.helidon.inject.api.Contract;
 
-import io.helidon.common.Weight;
-import io.helidon.common.Weighted;
+/**
+ * All implementors will implement this {@link Contract}, but using varying {@link io.helidon.common.Weight}'s.
+ */
+@Contract
+public interface CommonContract {
 
-import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
+    CommonContract getInner();
 
-@Singleton
-@Weight(Weighted.DEFAULT_WEIGHT + 3)
-public class MostOuterInterceptedImpl extends OuterInterceptedImpl {
-
-    @Inject
-    public MostOuterInterceptedImpl(Optional<Intercepted> inner) {
-        super(inner);
-    }
+    String sayHello(String arg);
 
 }

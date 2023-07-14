@@ -34,7 +34,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
-class InterceptorStackingTest {
+/**
+ * Tests cases where service MostOuter injects Outer injects Inner using the same contract.
+ */
+class InjectionOfCommonContractStackingTest {
 
     Config config = InjectionTestingSupport.basicTestableConfig();
     InjectionServices injectionServices;
@@ -56,35 +59,31 @@ class InterceptorStackingTest {
     }
 
     @Test
-    void interceptorStacking() {
-        List<ServiceProvider<Intercepted>> allIntercepted = services.lookupAll(Intercepted.class);
+    void injectionStacking() {
+        List<ServiceProvider<CommonContract>> allIntercepted = services.lookupAll(CommonContract.class);
         List<String> desc = allIntercepted.stream().map(ServiceProvider::description).toList();
         // order matters here
         assertThat(desc, contains(
-                "MostOuterInterceptedImpl:INIT",
-                "OuterInterceptedImpl:INIT",
-                "InterceptedImpl:INIT",
+                "MostOuterCommonContractImpl:INIT",
+                "OuterCommonContractImpl:INIT",
+                "CommonContractImpl:INIT",
                 "TestingSingleton:INIT"));
 
         List<String> injections = allIntercepted.stream()
                 .map(sp -> {
-                    Intercepted inner = sp.get().getInner();
+                    CommonContract inner = sp.get().getInner();
                     return sp.serviceInfo().serviceTypeName().classNameWithEnclosingNames() + " injected with "
                             + (inner == null ? null : inner.getClass().getSimpleName());
                 })
                 .toList();
-        // order matters here
-        // this is currently broken, a follow-up issue was created as part of epic #7023
-        /*
         assertThat(injections,
-                   contains("MostOuterInterceptedImpl injected with OuterInterceptedImpl",
-                            "OuterInterceptedImpl injected with InterceptedImpl",
-                            "InterceptedImpl injected with null",
-                            "TestingSingleton injected with MostOuterInterceptedImpl"));
+                   contains("MostOuterCommonContractImpl injected with OuterCommonContractImpl",
+                            "OuterCommonContractImpl injected with CommonContractImpl",
+                            "CommonContractImpl injected with null",
+                            "TestingSingleton injected with MostOuterCommonContractImpl"));
 
-         */
-        assertThat(services.lookup(Intercepted.class).get().sayHello("arg"),
-                   equalTo("MostOuterInterceptedImpl:OuterInterceptedImpl:InterceptedImpl:arg"));
+        assertThat(services.lookup(CommonContract.class).get().sayHello("arg"),
+                   equalTo("MostOuterCommonContractImpl:OuterCommonContractImpl:CommonContractImpl:arg"));
     }
 
 }
