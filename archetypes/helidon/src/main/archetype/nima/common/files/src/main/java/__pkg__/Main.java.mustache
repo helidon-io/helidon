@@ -35,7 +35,10 @@ public final class Main {
          // load logging configuration
         LogConfig.configureRuntime();
 
+        Config config = Config.create();
+
         WebServer server = WebServer.builder()
+                .config(config.get("server"))
                 .routing(Main::routing)
                 .build()
                 .start();

@@ -107,6 +107,9 @@
                                             </variables>
                                         </template>
                                     </templates>
+                                    <files>
+                                        <file target="cli-data/latest">${project.version}</file>
+                                    </files>
                                 </directory>
                             </directories>
                         </configuration>
