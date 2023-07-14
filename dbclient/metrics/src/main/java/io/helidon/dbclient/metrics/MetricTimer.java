@@ -20,7 +20,6 @@ import java.util.concurrent.CompletionStage;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -69,8 +68,8 @@ final class MetricTimer extends MetricService<Timer> {
     }
 
     @Override
-    protected MetricType metricType() {
-        return MetricType.TIMER;
+    protected Class<Timer> metricType() {
+        return Timer.class;
     }
 
     @Override

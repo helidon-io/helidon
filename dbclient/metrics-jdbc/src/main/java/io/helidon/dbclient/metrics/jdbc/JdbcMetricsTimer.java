@@ -64,26 +64,6 @@ public class JdbcMetricsTimer implements Timer {
     }
 
     @Override
-    public double getFifteenMinuteRate() {
-        return meter.getFifteenMinuteRate();
-    }
-
-    @Override
-    public double getFiveMinuteRate() {
-        return meter.getFiveMinuteRate();
-    }
-
-    @Override
-    public double getMeanRate() {
-        return meter.getMeanRate();
-    }
-
-    @Override
-    public double getOneMinuteRate() {
-        return meter.getOneMinuteRate();
-    }
-
-    @Override
     public Snapshot getSnapshot() {
         return new JdbcMetricsSnapshot(meter.getSnapshot());
     }

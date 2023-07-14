@@ -54,7 +54,6 @@ public class DbClientMetricsProvider implements DbClientServiceProvider {
         String type = config.get("type").asString().orElse("COUNTER");
         return switch (type) {
             case "COUNTER" -> DbClientMetrics.counter().config(config).build();
-            case "METER" -> DbClientMetrics.meter().config(config).build();
             case "TIMER" -> DbClientMetrics.timer().config(config).build();
             default -> throw new DbClientException("Metrics type " + type + " is not supported through service loader");
         };

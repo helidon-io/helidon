@@ -45,17 +45,6 @@ public class DbClientMetrics {
     }
 
     /**
-     * Create a meter builder, to be registered
-     * with {@link io.helidon.dbclient.DbClient.Builder#addService(java.util.function.Supplier)}.
-     *
-     * @return a new meter builder
-     * @see org.eclipse.microprofile.metrics.Meter
-     */
-    public static DbClientMetricBuilder<? extends DbClientMetricBuilder<?, ?>, ? extends DbClientServiceBase> meter() {
-        return MetricMeter.builder();
-    }
-
-    /**
      * Create a timer builder, to be registered
      * with {@link io.helidon.dbclient.DbClient.Builder#addService(java.util.function.Supplier)}.
      *

@@ -22,7 +22,7 @@ import org.eclipse.microprofile.metrics.Gauge;
  *
  * @param <T> metric value type
  */
-public class JdbcMetricsGauge<T> implements Gauge<T> {
+public class JdbcMetricsGauge<T extends Number> implements Gauge<T> {
 
     private final com.codahale.metrics.Gauge<T> gauge;
 

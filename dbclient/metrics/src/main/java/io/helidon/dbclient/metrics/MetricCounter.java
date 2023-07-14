@@ -20,7 +20,6 @@ import java.util.concurrent.CompletionStage;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * {@link MetricService} implementation for {@link Counter}.
@@ -54,8 +53,8 @@ final class MetricCounter extends MetricService<Counter> {
     }
 
     @Override
-    protected MetricType metricType() {
-        return MetricType.COUNTER;
+    protected Class<Counter> metricType() {
+        return Counter.class;
     }
 
     @Override

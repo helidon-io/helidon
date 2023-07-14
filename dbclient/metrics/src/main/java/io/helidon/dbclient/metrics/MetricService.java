@@ -23,13 +23,13 @@ import io.helidon.common.LazyValue;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
+import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
 
 /**
  * Common ancestor for DbClient metrics.
@@ -39,7 +39,7 @@ abstract class MetricService<T extends Metric> extends DbClientServiceBase {
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
     private final LazyValue<MetricRegistry> registry = LazyValue.create(
-            () -> RegistryFactory.getInstance().getRegistry(MetricRegistry.Type.APPLICATION));
+            () -> RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE));
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
@@ -85,7 +85,7 @@ abstract class MetricService<T extends Metric> extends DbClientServiceBase {
         T metric = cache.computeIfAbsent(statementName, s -> {
             String name = nameFunction.apply(statementName, dbStatementType);
             MetadataBuilder builder = (meta == null)
-                    ? Metadata.builder().withName(name).withType(metricType())
+                    ? Metadata.builder().withName(name)
                     : Metadata.builder(meta);
             if (description != null) {
                 builder = builder.withDescription(description);
@@ -129,7 +129,7 @@ abstract class MetricService<T extends Metric> extends DbClientServiceBase {
      *
      * @return metric type
      */
-    protected abstract MetricType metricType();
+    protected abstract Class<? extends Metric> metricType();
 
     /**
      * Create a new metric.
