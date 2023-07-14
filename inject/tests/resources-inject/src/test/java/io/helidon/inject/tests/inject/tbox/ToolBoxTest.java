@@ -34,6 +34,7 @@ import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
+import io.helidon.inject.tests.inject.stacking.CommonContract;
 import io.helidon.inject.tests.inject.tbox.impl.BigHammer;
 import io.helidon.inject.tests.inject.tbox.impl.HandSaw;
 import io.helidon.inject.tests.inject.ASerialProviderImpl;
@@ -41,7 +42,6 @@ import io.helidon.inject.tests.inject.ClassNamedY;
 import io.helidon.inject.tests.inject.TestingSingleton;
 import io.helidon.inject.tests.inject.provider.FakeConfig;
 import io.helidon.inject.tests.inject.provider.FakeServer;
-import io.helidon.inject.tests.inject.stacking.Intercepted;
 import io.helidon.inject.tests.inject.tbox.impl.MainToolBox;
 import io.helidon.inject.tools.Options;
 
@@ -282,7 +282,7 @@ class ToolBoxTest {
         assertThat(TestingSingleton.postConstructCount(), equalTo(0));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
 
-        List<ServiceProvider<Intercepted>> allInterceptedBefore = services.lookupAll(Intercepted.class);
+        List<ServiceProvider<CommonContract>> allInterceptedBefore = services.lookupAll(CommonContract.class);
         assertThat(allInterceptedBefore.size(), greaterThan(0));
         assertThat(TestingSingleton.postConstructCount(), equalTo(0));
         assertThat(TestingSingleton.preDestroyCount(), equalTo(0));
@@ -302,9 +302,9 @@ class ToolBoxTest {
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.Injection$$Module"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.Injection$$TestApplication"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.Injection$$TestModule"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.MostOuterInterceptedImpl"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.OuterInterceptedImpl"), "ACTIVE->DESTROYED"));
-        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.InterceptedImpl"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.MostOuterCommonContractImpl"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.OuterCommonContractImpl"), "ACTIVE->DESTROYED"));
+        assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.stacking.CommonContractImpl"), "ACTIVE->DESTROYED"));
         assertThat(report, hasEntry(create("io.helidon.inject.tests.inject.TestingSingleton"), "ACTIVE->DESTROYED"));
         // ConfigProducer is the 9th
         assertThat(report + " : expected 9 services to be present", report.size(), equalTo(9));
@@ -328,7 +328,7 @@ class ToolBoxTest {
                                           e2 -> e2.getValue().startingActivationPhase().toString()
                                                   + "->" + e2.getValue().finishingActivationPhase()));
         // now contains config as well
-        assertThat(report.toString(), report.size(), is(6));
+        assertThat(report.toString(), report.size(), is(9));
 
         tearDown();
         map = injectionServices.shutdown().orElseThrow();

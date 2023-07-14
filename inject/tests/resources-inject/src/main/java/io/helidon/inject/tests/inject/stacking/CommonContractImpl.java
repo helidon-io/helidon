@@ -28,25 +28,23 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
-//@MyCompileTimeInheritableTestQualifier(value = "InterceptedImpl")
 @RunLevel(1)
 @Named("InterceptedImpl")
-public class InterceptedImpl implements Intercepted {
+public class CommonContractImpl implements CommonContract {
 
-    private final Intercepted inner;
+    private final CommonContract inner;
 
     @Inject
-    public InterceptedImpl(Optional<Intercepted> inner) {
+    public CommonContractImpl(Optional<CommonContract> inner) {
         this.inner = inner.orElse(null);
     }
 
     @Override
-    public Intercepted getInner() {
+    public CommonContract getInner() {
         return inner;
     }
 
     @Override
-//    @MyCompileTimeInheritableTestQualifier(value = "InterceptedImpl method", extendedValue = "ev derived method")
     public String sayHello(String arg) {
         return getClass().getSimpleName() + ":" + (inner != null ? inner.sayHello(arg) : arg);
     }

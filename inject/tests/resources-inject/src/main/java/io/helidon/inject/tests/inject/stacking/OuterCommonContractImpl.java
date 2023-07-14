@@ -26,10 +26,10 @@ import jakarta.inject.Singleton;
 
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 2)
-public class OuterInterceptedImpl extends InterceptedImpl {
+public class OuterCommonContractImpl extends CommonContractImpl {
 
     @Inject
-    public OuterInterceptedImpl(Optional<Intercepted> inner) {
+    public OuterCommonContractImpl(Optional<CommonContract> inner) {
         super(inner);
     }
 
