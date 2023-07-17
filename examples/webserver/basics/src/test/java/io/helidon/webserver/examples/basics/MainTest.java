@@ -19,6 +19,8 @@ package io.helidon.webserver.examples.basics;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaContextConfig;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -44,15 +46,20 @@ public class MainTest {
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        Main.firstRouting(server);
-        Main.mediaReader(server);
-        Main.advancedRouting(server);
-        Main.organiseCode(server);
-        Main.routingAsFilter(server);
-        Main.parametersAndHeaders(server);
-        Main.errorHandling(server);
-        Main.readContentEntity(server);
-        Main.supports(server);
+        MediaContextConfig.Builder mediaContext = MediaContext.builder()
+                        .mediaSupportsDiscoverServices(false);
+        server.routing(routing -> {
+            Main.firstRouting(routing);
+            Main.mediaReader(routing, mediaContext);
+            Main.advancedRouting(routing);
+            Main.organiseCode(routing);
+            Main.routingAsFilter(routing);
+            Main.parametersAndHeaders(routing);
+            Main.errorHandling(routing);
+            Main.readContentEntity(routing);
+            Main.supports(routing, mediaContext);
+        });
+        server.mediaContext(mediaContext.build());
     }
 
     @Test
@@ -144,12 +151,6 @@ public class MainTest {
 
     @Test
     public void supports() {
-        // Jersey
-        try (Http1ClientResponse response = client.get("/supports/api/hw").request()) {
-            assertThat(response.status().code(), is(200));
-            assertThat(response.entity().as(String.class), is("Hello world!"));
-        }
-
         // Static content
         try (Http1ClientResponse response = client.get("/supports/index.html").request()) {
             assertThat(response.status().code(), is(200));

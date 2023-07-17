@@ -19,7 +19,11 @@ package io.helidon.webserver.examples.basics;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
@@ -28,13 +32,12 @@ import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.MediaContextConfig;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.ErrorHandler;
 import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRoute;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -73,14 +76,13 @@ public class Main {
      * The (route) {@link Handler} is a functional interface which process HTTP {@link ServerRequest request} and
      * writes to the {@link ServerResponse response}.
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void firstRouting(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .post("/firstRouting/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
+    public static void firstRouting(HttpRouting.Builder routing) {
+        routing.post("/firstRouting/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
                         .send())
                 .get("/firstRouting/get-endpoint", (req, res) -> res.status(Http.Status.NO_CONTENT_204)
-                        .send("Hello World!")));
+                        .send("Hello World!"));
     }
 
     /**
@@ -101,12 +103,10 @@ public class Main {
      * such thread. If request must be processed by a blocking operation then such processing should be deferred to another
      * thread.
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void routingAsFilter(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .route(HttpRoute.builder())
-                .any("/routingAsFilter/*", (req, res) -> {
+    public static void routingAsFilter(HttpRouting.Builder routing) {
+        routing.any("/routingAsFilter/*", (req, res) -> {
                     System.out.println(req.prologue().method() + " " + req.path());
                     // Filters are just routing handlers which calls next()
                     res.next();
@@ -114,7 +114,7 @@ public class Main {
                 .post("/routingAsFilter/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
                         .send())
                 .get("/routingAsFilter/get-endpoint", (req, res) -> res.status(Http.Status.NO_CONTENT_204)
-                        .send("Hello World!")));
+                        .send("Hello World!"));
     }
 
     /**
@@ -130,46 +130,44 @@ public class Main {
      * WebServer {@link io.helidon.common.parameters.Parameters Parameters} API is used to represent fact, that <i>headers</i> and
      * <i>query parameters</i> can contain multiple values.
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void parametersAndHeaders(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .get("/parametersAndHeaders/context/{id}", (req, res) -> {
-                    StringBuilder sb = new StringBuilder();
-                    // Request headers
-                    req.headers()
-                            .first(FOO_HEADER)
-                            .ifPresent(v -> sb.append("foo: ").append(v).append("\n"));
-                    // Request parameters
-                    req.query()
-                            .first("bar")
-                            .ifPresent(v -> sb.append("bar: ").append(v).append("\n"));
-                    // Path parameters
-                    sb.append("id: ").append(req.path().pathParameters().value("id"));
-                    // Response headers
-                    res.headers().contentType(MediaTypes.TEXT_PLAIN);
-                    // Response entity (payload)
-                    res.send(sb.toString());
-                }));
+    public static void parametersAndHeaders(HttpRouting.Builder routing) {
+        routing.get("/parametersAndHeaders/context/{id}", (req, res) -> {
+            StringBuilder sb = new StringBuilder();
+            // Request headers
+            req.headers()
+                    .first(FOO_HEADER)
+                    .ifPresent(v -> sb.append("foo: ").append(v).append("\n"));
+            // Request parameters
+            req.query()
+                    .first("bar")
+                    .ifPresent(v -> sb.append("bar: ").append(v).append("\n"));
+            // Path parameters
+            sb.append("id: ").append(req.path().pathParameters().value("id"));
+            // Response headers
+            res.headers().contentType(MediaTypes.TEXT_PLAIN);
+            // Response entity (payload)
+            res.send(sb.toString());
+        });
     }
 
     /**
      * Routing rules (routes) are limited on two criteria - <i>HTTP method and path</i>.
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void advancedRouting(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .get("/advancedRouting/foo", (req, res) -> {
-                    ServerRequestHeaders headers = req.headers();
-                    if (headers.isAccepted(HttpMediaType.TEXT_PLAIN)
-                            && headers.contains(BAR_HEADER)) {
+    public static void advancedRouting(HttpRouting.Builder routing) {
+        routing.get("/advancedRouting/foo", (req, res) -> {
+            ServerRequestHeaders headers = req.headers();
+            if (headers.isAccepted(HttpMediaType.TEXT_PLAIN)
+                && headers.contains(BAR_HEADER)) {
 
-                        res.send();
-                    } else {
-                        res.next();
-                    }
-                }));
+                res.send();
+            } else {
+                res.next();
+            }
+        });
     }
 
     /**
@@ -177,11 +175,10 @@ public class Main {
      * defined in a single fluent code. It is possible to register {@link HttpService} and organise
      * the code into services and resources. {@code Service} is an interface which can register more routing rules (routes).
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void organiseCode(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .register("/organiseCode/catalog-context-path", new Catalog()));
+    public static void organiseCode(HttpRouting.Builder routing) {
+        routing.register("/organiseCode/catalog-context-path", new Catalog());
     }
 
     /**
@@ -196,11 +193,10 @@ public class Main {
      * <p>
      * Similar approach is used for the response entity.
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void readContentEntity(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .post("/readContentEntity/foo", (req, res) -> {
+    public static void readContentEntity(HttpRouting.Builder routing) {
+        routing.post("/readContentEntity/foo", (req, res) -> {
                     try {
                         String data = req.content().as(String.class);
                         System.out.println("/foo DATA: " + data);
@@ -213,24 +209,24 @@ public class Main {
                 .post("/readContentEntity/bar", Handler.create(String.class, (data, res) -> {
                     System.out.println("/foo DATA: " + data);
                     res.send(data);
-                })));
+                }));
     }
 
     /**
      * Use a custom {@link EntityReader reader} to convert the request content into an object of a given type.
      *
-     * @param server server builder
+     * @param routing      routing builder
+     * @param mediaContext media context builder
      */
-    public static void mediaReader(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                        .post("/mediaReader/create-record", Handler.create(Name.class, (name, res) -> {
-                            System.out.println("Name: " + name);
-                            res.status(Http.Status.CREATED_201)
-                                    .send(name.toString());
-                        })))
-                // Create a media support that contains the defaults and our custom Name reader
-                .mediaContext(MediaContext.builder()
-                        .addMediaSupport(NameSupport.create()));
+    public static void mediaReader(HttpRouting.Builder routing, MediaContextConfig.Builder mediaContext) {
+        routing.post("/mediaReader/create-record", Handler.create(Name.class, (name, res) -> {
+            System.out.println("Name: " + name);
+            res.status(Http.Status.CREATED_201)
+                    .send(name.toString());
+        }));
+
+        // add our custom Name reader
+        mediaContext.addMediaSupport(NameSupport.create());
     }
 
     /**
@@ -238,19 +234,18 @@ public class Main {
      * can be used by other frameworks for the integration. WebServer is shipped with several integrated libraries (supports)
      * including <i>static content</i>, JSON and Jersey. See {@code POM.xml} for requested dependencies.
      *
-     * @param server server builder
+     * @param routing      routing builder
+     * @param mediaContext mediaContext
      */
-    public static void supports(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                        .register(StaticContentService.create("/static"))
-                        .get("/supports/hello/{what}", (req, res) ->
-                                res.send(JSON.createObjectBuilder()
-                                        .add("message", "Hello " + req.path()
-                                                .pathParameters()
-                                                .value("what"))
-                                        .build())))
-                .mediaContext(MediaContext.builder()
-                        .addMediaSupport(JsonpSupport.create()));
+    public static void supports(HttpRouting.Builder routing, MediaContextConfig.Builder mediaContext) {
+        routing.register("/supports", StaticContentService.create("/static"))
+                .get("/supports/hello/{what}", (req, res) ->
+                        res.send(JSON.createObjectBuilder()
+                                .add("message", "Hello " + req.path()
+                                        .pathParameters()
+                                        .value("what"))
+                                .build()));
+        mediaContext.addMediaSupport(JsonpSupport.create());
     }
 
     /**
@@ -261,11 +256,10 @@ public class Main {
      * It responds with <i>HTTP 500 code</i> unless error is not represented
      * by {@link HttpException HttpException}. In such case it reflects its content.
      *
-     * @param server server builder
+     * @param routing routing builder
      */
-    public static void errorHandling(WebServerConfig.Builder server) {
-        server.routing(routing -> routing
-                .post("/errorHandling/compute", Handler.create(String.class, (str, res) -> {
+    public static void errorHandling(HttpRouting.Builder routing) {
+        routing.post("/errorHandling/compute", Handler.create(String.class, (str, res) -> {
                     int result = 100 / Integer.parseInt(str);
                     res.send("100 / " + str + " = " + result);
                 }))
@@ -276,7 +270,7 @@ public class Main {
                 .error(NumberFormatException.class,
                         (req, res, ex) -> res.status(Http.Status.BAD_REQUEST_400).send())
                 .error(ArithmeticException.class,
-                        (req, res, ex) -> res.status(Http.Status.PRECONDITION_FAILED_412).send()));
+                        (req, res, ex) -> res.status(Http.Status.PRECONDITION_FAILED_412).send());
     }
 
 
@@ -318,7 +312,7 @@ public class Main {
      * @param args Command line arguments.
      */
     public static void main(String[] args) {
-        String exampleName = null;
+        String exampleName;
         if (args.length > 0) {
             exampleName = args[0];
         } else if (System.getProperty(EXAMPLE_NAME_SYS_PROP) != null) {
@@ -327,26 +321,49 @@ public class Main {
             exampleName = System.getenv(EXAMPLE_NAME_ENV_VAR);
         } else {
             System.out.println("Missing example name. It can be provided as a \n"
-                    + "    - first command line argument.\n"
-                    + "    - -D" + EXAMPLE_NAME_SYS_PROP + " jvm property.\n"
-                    + "    - " + EXAMPLE_NAME_ENV_VAR + " environment variable.\n");
+                               + "    - first command line argument.\n"
+                               + "    - -D" + EXAMPLE_NAME_SYS_PROP + " jvm property.\n"
+                               + "    - " + EXAMPLE_NAME_ENV_VAR + " environment variable.\n");
             System.exit(1);
+            return;
         }
         while (exampleName.startsWith("-")) {
             exampleName = exampleName.substring(1);
         }
+        String methodName = exampleName;
+        Method method = Arrays.stream(Main.class.getMethods())
+                .filter(m -> m.getName().equals(methodName))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Missing example method named: " + methodName));
+        HttpRouting.Builder routingBuilder = HttpRouting.builder();
+        MediaContextConfig.Builder mediaContextBuilder = MediaContext.builder()
+                .mediaSupportsDiscoverServices(false);
+        List<Object> params = new ArrayList<>();
+        for (Parameter param : method.getParameters()) {
+            Class<?> paramType = param.getType();
+            if (paramType.isAssignableFrom(routingBuilder.getClass())) {
+                params.add(routingBuilder);
+            } else if (paramType.isAssignableFrom(mediaContextBuilder.getClass())) {
+                params.add(mediaContextBuilder);
+            } else {
+                throw new IllegalStateException("Unsupported parameter type: " + paramType.getName());
+            }
+        }
+        WebServer server;
         try {
-            Method method = Main.class.getMethod(exampleName);
-            WebServerConfig.Builder builder = WebServer.builder();
-            method.invoke(null, builder);
-            WebServer server = builder.build().start();
-            System.out.println("Server is UP: http://localhost:" + server.port());
-        } catch (NoSuchMethodException e) {
-            System.out.println("Missing example method named: " + exampleName);
+            method.invoke(null, params.toArray(new Object[0]));
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
             System.exit(2);
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace(System.out);
             System.exit(100);
         }
+        server = WebServer.builder()
+                .routing(routingBuilder.build())
+                .mediaContext(mediaContextBuilder.build())
+                .build()
+                .start();
+        System.out.println("Server is UP: http://localhost:" + server.port());
     }
 }

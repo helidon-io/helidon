@@ -121,7 +121,6 @@ public interface Handler extends ServerLifecycle {
     static <T> Handler create(Class<T> type, BiConsumer<T, ServerResponse> handler) {
         return (req, res) -> {
             handler.accept(req.content().as(type), res);
-            res.send();
         };
     }
 

@@ -49,7 +49,8 @@ public class NameSupport implements MediaSupport {
     @SuppressWarnings("unchecked")
     @Override
     public <T> ReaderResponse<T> reader(GenericType<T> type, Headers headers) {
-        if (!type.rawType().equals(Name.class)) {
+        if (!type.rawType().equals(Name.class)
+            || !headers.contentType().map(APP_NAME::equals).orElse(false)) {
             return ReaderResponse.unsupported();
         }
         return (ReaderResponse<T>) new ReaderResponse<>(SupportLevel.SUPPORTED, () -> new EntityReader<Name>() {
