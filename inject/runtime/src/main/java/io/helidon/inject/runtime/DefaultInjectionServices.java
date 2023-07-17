@@ -497,7 +497,6 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
         }
 
         private Map<TypeName, ActivationResult> doShutdown() {
-            System.out.println("Started ShutDown of " + services + " on thread " + Thread.currentThread().getName());
             state.currentPhase(Phase.DESTROYED);
 
             ActivationLogQuery query = log.toQuery().orElse(null);
@@ -536,8 +535,6 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
 
             // finally, clear everything
             reset(true);
-
-            System.out.println("Finished ShutDown of " + services + " on thread " + Thread.currentThread().getName());
 
             return map;
         }
