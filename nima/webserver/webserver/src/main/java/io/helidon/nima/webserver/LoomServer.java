@@ -276,8 +276,6 @@ class LoomServer implements WebServer, Startable {
 
     private void startIt() {
         long now = System.currentTimeMillis();
-        // TODO: remove this log statement
-        LOGGER.log(System.Logger.Level.INFO, "Starting listeners in parallel");
         boolean result = parallel("start", ServerListener::start);
         if (!result) {
             LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");

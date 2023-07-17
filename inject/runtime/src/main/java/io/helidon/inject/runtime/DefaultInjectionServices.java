@@ -183,9 +183,9 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
         DefaultServices current = services.get();
         if (services.compareAndSet(current, null) && current != null) {
             State currentState = state.clone().currentPhase(Phase.PRE_DESTROYING);
-            log("started shutdown");
+            log("Started shutdown");
             result = doShutdown(current, currentState);
-            log("finished shutdown");
+            log("Finished shutdown");
         }
         return Optional.ofNullable(result);
     }
