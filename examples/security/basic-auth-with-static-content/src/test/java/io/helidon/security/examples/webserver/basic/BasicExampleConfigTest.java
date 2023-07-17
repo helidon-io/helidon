@@ -16,6 +16,8 @@
 
 package io.helidon.security.examples.webserver.basic;
 
+import java.net.URI;
+
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServerConfig;
 
@@ -24,8 +26,8 @@ import io.helidon.nima.webserver.WebServerConfig;
  */
 public class BasicExampleConfigTest extends BasicExampleTest {
 
-    public BasicExampleConfigTest() {
-        super();
+    public BasicExampleConfigTest(URI uri) {
+        super(uri);
     }
 
     @SetUpServer

@@ -16,6 +16,7 @@
 
 package io.helidon.security.examples.webserver.basic;
 
+import java.net.URI;
 import java.util.Set;
 
 import io.helidon.common.http.Http;
@@ -41,7 +42,7 @@ public abstract class BasicExampleTest {
 
     private final Http1Client client;
 
-    protected BasicExampleTest() {
+    protected BasicExampleTest(URI uri) {
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder())
                 .build();
@@ -49,6 +50,7 @@ public abstract class BasicExampleTest {
         WebClientSecurity securityService = WebClientSecurity.create(security);
 
         client = Http1Client.builder()
+                .baseUri(uri)
                 .addService(securityService)
                 .build();
     }

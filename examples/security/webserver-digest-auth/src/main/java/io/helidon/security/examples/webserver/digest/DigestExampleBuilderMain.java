@@ -24,10 +24,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.nima.SecurityFeature;
@@ -61,11 +64,44 @@ public final class DigestExampleBuilderMain {
      */
     public static void main(String[] args) {
         LogConfig.configureRuntime();
-        DigestExampleUtil.startServer(DigestExampleBuilderMain::routing);
+
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build();
+
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
+
+        System.out.printf("""
+                Server started in %d ms
+
+                Started server on localhost:%2$d
+
+                "Users:
+                jack/password in roles: user, admin
+                jill/password in roles: user
+                john/password in no roles
+
+                ***********************
+                ** Endpoints:        **
+                ***********************
+
+                No authentication: http://localhost:%2$d/public
+                No roles required, authenticated: http://localhost:%2$d/noRoles
+                User role required: http://localhost:%2$d/user
+                Admin role required: http://localhost:%2$d/admin
+                Always forbidden (uses role nobody is in), audited: http://localhost:%2$d/deny
+                Admin role required, authenticated, authentication optional, audited \
+                (always forbidden - challenge is not returned as authentication is optional): http://localhost:%2$d/noAuthn
+
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS), server.port());
     }
 
-    static void routing(HttpRouting.Builder routing) {
-        routing.addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
+    static void setup(WebServerConfig.Builder server) {
+        server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
+                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .get("/noRoles", SecurityFeature.enforce())
                 .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
                 .get("/admin", SecurityFeature.rolesAllowed("admin"))
@@ -81,7 +117,7 @@ public final class DigestExampleBuilderMain {
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
-                });
+                }));
     }
 
     private static SecurityFeature buildWebSecurity() {

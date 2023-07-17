@@ -16,8 +16,9 @@
 
 package io.helidon.examples.openapi;
 
-import java.util.Collections;
+import java.util.Map;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -31,6 +32,7 @@ import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonPointer;
 import jakarta.json.JsonString;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -39,20 +41,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 public class MainTest {
 
+    private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Map.of());
+    private static final JsonObject TEST_JSON_OBJECT = JSON_BF.createObjectBuilder()
+            .add("greeting", "Hola")
+            .build();
 
-    private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonObject TEST_JSON_OBJECT;
+    private final Http1Client client;
 
-    static {
-        TEST_JSON_OBJECT = JSON_BF.createObjectBuilder()
-                .add("greeting", "Hola")
-                .build();
-    }
-
-    private final Http1Client webClient;
-
-    public MainTest(Http1Client webClient) {
-        this.webClient = webClient;
+    public MainTest(Http1Client client) {
+        this.client = client;
     }
 
     @SetUpServer
@@ -62,41 +59,42 @@ public class MainTest {
 
     @Test
     public void testHelloWorld() {
-        try (Http1ClientResponse response = webClient.get("/greet").request()) {
+        try (Http1ClientResponse response = client.get("/greet").request()) {
             JsonObject jsonObject = response.as(JsonObject.class);
             assertThat(jsonObject.getString("greeting"), is("Hello World!"));
         }
 
-        try (Http1ClientResponse response = webClient.get("/greet/Joe").request()) {
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
             JsonObject jsonObject = response.as(JsonObject.class);
             assertThat(jsonObject.getString("greeting"), is("Hello Joe!"));
         }
 
-        try (Http1ClientResponse response = webClient.put("/greet/greeting").submit(TEST_JSON_OBJECT)) {
+        try (Http1ClientResponse response = client.put("/greet/greeting").submit(TEST_JSON_OBJECT)) {
             assertThat(response.status().code(), is(204));
         }
 
-        try (Http1ClientResponse response = webClient.get("/greet/Joe").request()) {
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
             JsonObject jsonObject = response.as(JsonObject.class);
             assertThat(jsonObject.getString("greeting"), is("Hola Joe!"));
         }
 
-        try (Http1ClientResponse response = webClient.get("/observe/health").request()) {
-            assertThat(response.status().code(), is(200));
+        try (Http1ClientResponse response = client.get("/observe/health").request()) {
+            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
 
-        try (Http1ClientResponse response = webClient.get("/observe/metrics").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
             assertThat(response.status().code(), is(200));
         }
     }
 
     @Test
+    @Disabled("https://github.com/helidon-io/helidon/issues/5411")
     public void testOpenAPI() {
         /*
          * If you change the OpenAPI endpoint path in application.yaml, then
          * change the following path also.
          */
-        JsonObject jsonObject = webClient.get("/openapi")
+        JsonObject jsonObject = client.get("/openapi")
                 .accept(MediaTypes.APPLICATION_JSON)
                 .request(JsonObject.class);
         JsonObject paths = jsonObject.getJsonObject("paths");

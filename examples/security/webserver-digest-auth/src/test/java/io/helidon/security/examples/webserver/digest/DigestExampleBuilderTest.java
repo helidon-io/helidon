@@ -16,6 +16,8 @@
 
 package io.helidon.security.examples.webserver.digest;
 
+import java.net.URI;
+
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -27,12 +29,12 @@ import io.helidon.nima.webserver.WebServerConfig;
 @ServerTest
 public class DigestExampleBuilderTest extends DigestExampleTest {
 
-    DigestExampleBuilderTest(Http1Client client) {
-        super(client);
+    DigestExampleBuilderTest(Http1Client client, URI uri) {
+        super(client, uri);
     }
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        server.routing(DigestExampleBuilderMain::routing);
+        DigestExampleBuilderMain.setup(server);
     }
 }

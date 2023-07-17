@@ -27,6 +27,7 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -95,6 +96,7 @@ public final class BasicExampleBuilderMain {
 
     static void setup(WebServerConfig.Builder server) {
         server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
                 // must be configured first, to protect endpoints
                 .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
                 .any("/static[/{*}]", SecurityFeature.rolesAllowed("user"))

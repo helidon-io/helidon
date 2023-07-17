@@ -16,6 +16,7 @@
 
 package io.helidon.security.examples.webserver.digest;
 
+import java.net.URI;
 import java.util.Set;
 
 import io.helidon.common.http.Http;
@@ -24,8 +25,8 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 import org.junit.jupiter.api.Test;
 
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_PASSWORD;
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_USERNAME;
+import static io.helidon.security.examples.webserver.digest.WebClientAuthenticationService.HTTP_AUTHENTICATION_PASSWORD;
+import static io.helidon.security.examples.webserver.digest.WebClientAuthenticationService.HTTP_AUTHENTICATION_USERNAME;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -38,9 +39,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public abstract class DigestExampleTest {
 
     private final Http1Client client;
+    private final Http1Client authClient;
 
-    DigestExampleTest(Http1Client client) {
+    DigestExampleTest(Http1Client client, URI uri) {
         this.client = client;
+        this.authClient = Http1Client.builder()
+                .baseUri(uri)
+                .addService(new WebClientAuthenticationService())
+                .build();
     }
 
     //now for the tests
@@ -130,7 +136,7 @@ public abstract class DigestExampleTest {
 
     private Http1ClientResponse callProtected(String uri, String username, String password) {
         // here we call the endpoint
-        return client
+        return authClient
                 .get(uri)
                 .property(HTTP_AUTHENTICATION_USERNAME, username)
                 .property(HTTP_AUTHENTICATION_PASSWORD, password)
@@ -150,9 +156,10 @@ public abstract class DigestExampleTest {
                                Set<String> invalidRoles) {
 
         try (Http1ClientResponse response = callProtected(uri, username, password)) {
-            String entity = response.entity().as(String.class);
 
             assertThat(response.status().code(), is(200));
+
+            String entity = response.entity().as(String.class);
 
             // check login
             assertThat(entity, containsString("id='" + username + "'"));
@@ -161,4 +168,5 @@ public abstract class DigestExampleTest {
             invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
         }
     }
+
 }

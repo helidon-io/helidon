@@ -24,6 +24,7 @@ import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.nima.SecurityFeature;
@@ -82,6 +83,7 @@ public final class BasicExampleConfigMain {
         Config config = Config.create();
         server.config(config)
                 .routing(routing -> routing
+                        .addFeature(ContextFeature.create())
                         // must be configured first, to protect endpoints
                         .addFeature(SecurityFeature.create(config.get("security")))
                         .register("/static", StaticContentService.create("/WEB"))
