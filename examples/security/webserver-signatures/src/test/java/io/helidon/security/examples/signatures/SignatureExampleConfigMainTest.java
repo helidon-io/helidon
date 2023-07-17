@@ -16,6 +16,8 @@
 
 package io.helidon.security.examples.signatures;
 
+import java.net.URI;
+
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServer;
@@ -27,8 +29,8 @@ import io.helidon.nima.webserver.WebServerConfig;
 @ServerTest
 public class SignatureExampleConfigMainTest extends SignatureExampleTest {
 
-    protected SignatureExampleConfigMainTest(WebServer server) {
-        super(server);
+    protected SignatureExampleConfigMainTest(WebServer server, URI uri) {
+        super(server, uri);
     }
 
     @SetUpServer

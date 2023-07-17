@@ -22,6 +22,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.security.integration.nima.SecurityFeature;
 
@@ -40,12 +41,10 @@ public class SignatureExampleConfigMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // to allow us to set host header explicitly
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
         WebServerConfig.Builder builder = WebServer.builder();
         setup(builder);
         WebServer server = builder.build();
+        server.context().register(server);
 
         long t = System.nanoTime();
         server.start();
@@ -54,9 +53,9 @@ public class SignatureExampleConfigMain {
         System.out.printf("""
                 Server started in %1d ms
 
-                Signature example: from builder
+                Signature example: from config
 
-                "Users:
+                Users:
                 jack/password in roles: user, admin
                 jill/password in roles: user
                 john/password in no roles
@@ -66,19 +65,17 @@ public class SignatureExampleConfigMain {
                 ***********************
 
                 Basic authentication, user role required, will use symmetric signatures for outbound:
-                  http://localhost:9080/service1
+                  http://localhost:%2$d/service1
                 Basic authentication, user role required, will use asymmetric signatures for outbound:
-                  http://localhost:8080/service1-rsa
+                  http://localhost:%3$d/service1-rsa
 
-                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS), server.port(), server.port("service2"));
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.port(9080)
-                .routing(SignatureExampleConfigMain::routing2)
+        server.routing(SignatureExampleConfigMain::routing1)
                 .putSocket("service2", socket -> socket
-                        .port(8080)
-                        .routing(SignatureExampleConfigMain::routing1));
+                        .routing(SignatureExampleConfigMain::routing2));
     }
 
     private static void routing2(HttpRouting.Builder routing) {
@@ -86,7 +83,8 @@ public class SignatureExampleConfigMain {
         Config config = config("service2.yaml");
 
         // helper method to load both security and web server security from configuration
-        routing.addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(config.get("security")))
                 .register(new Service2());
     }
 
@@ -95,7 +93,8 @@ public class SignatureExampleConfigMain {
         Config config = config("service1.yaml");
 
         // helper method to load both security and web server security from configuration
-        routing.addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(config.get("security")))
                 .register(new Service1());
     }
 

@@ -16,10 +16,12 @@
 
 package io.helidon.security.examples.signatures;
 
+import java.net.URI;
 import java.util.Set;
 
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.security.Security;
@@ -31,6 +33,7 @@ import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PR
 import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -38,14 +41,16 @@ public abstract class SignatureExampleTest {
 
     private final Http1Client client;
 
-    protected SignatureExampleTest(WebServer server) {
+    protected SignatureExampleTest(WebServer server, URI uri) {
+        server.context().register(server);
+
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
 
         client = Http1Client.builder()
                 .addService(WebClientSecurity.create(security))
-                .baseUri("http://localhost:" + server.port())
+                .baseUri(uri)
                 .build();
     }
 
@@ -59,19 +64,23 @@ public abstract class SignatureExampleTest {
         test("/service1-rsa", Set.of("user", "admin"), Set.of(), "Service1 - RSA signature");
     }
 
-
     private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
-        String payload = client.get(uri)
+        try (Http1ClientResponse response = client.get(uri)
                 .property(EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class);
+                .request()) {
 
-        // check login
-        assertThat(payload, containsString("id='" + "jack" + "'"));
+            assertThat(response.status().code(), is(200));
 
-        // check roles
-        expectedRoles.forEach(role -> assertThat(payload, containsString(":" + role)));
-        invalidRoles.forEach(role -> assertThat(payload, not(containsString(":" + role))));
-        assertThat(payload, containsString("id='" + service + "'"));
+            String payload = response.as(String.class);
+
+            // check login
+            assertThat(payload, containsString("id='" + "jack" + "'"));
+
+            // check roles
+            expectedRoles.forEach(role -> assertThat(payload, containsString(":" + role)));
+            invalidRoles.forEach(role -> assertThat(payload, not(containsString(":" + role))));
+            assertThat(payload, containsString("id='" + service + "'"));
+        }
     }
 }

@@ -56,7 +56,7 @@ public final class DigestExampleConfigMain {
 
                 Started server on localhost:%2$d
 
-                "Users:
+                Users:
                 jack/password in roles: user, admin
                 jill/password in roles: user
                 john/password in no roles

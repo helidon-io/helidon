@@ -17,7 +17,6 @@
 
 package io.helidon.security.examples.signatures;
 
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,6 +29,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.security.CompositeProviderFlag;
 import io.helidon.security.CompositeProviderSelectionPolicy;
@@ -89,12 +89,10 @@ public class SignatureExampleBuilderMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // to allow us to set host header explicitly
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
         WebServerConfig.Builder builder = WebServer.builder();
         setup(builder);
         WebServer server = builder.build();
+        server.context().register(server);
 
         long t = System.nanoTime();
         server.start();
@@ -105,7 +103,7 @@ public class SignatureExampleBuilderMain {
 
                 Signature example: from builder
 
-                "Users:
+                Users:
                 jack/password in roles: user, admin
                 jill/password in roles: user
                 john/password in no roles
@@ -115,36 +113,34 @@ public class SignatureExampleBuilderMain {
                 ***********************
 
                 Basic authentication, user role required, will use symmetric signatures for outbound:
-                  http://localhost:9080/service1
+                  http://localhost:%2$d/service1
                 Basic authentication, user role required, will use asymmetric signatures for outbound:
-                  http://localhost:8080/service1-rsa
+                  http://localhost:%3$d/service1-rsa
 
-                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS));
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS), server.port(), server.port("service2"));
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.port(9080)
-                .routing(SignatureExampleBuilderMain::routing2)
+        server.routing(SignatureExampleBuilderMain::routing1)
                 .putSocket("service2", socket -> socket
-                        .port(8080)
-                        .routing(SignatureExampleBuilderMain::routing1));
+                        .routing(SignatureExampleBuilderMain::routing2));
     }
 
     private static void routing2(HttpRouting.Builder routing) {
-        // helper method to load both security and web server security from configuration
         SecurityFeature security = SecurityFeature.create(security2())
                 .securityDefaults(SecurityFeature.authenticate());
 
-        routing.addFeature(security)
+        routing.addFeature(ContextFeature.create())
+                .addFeature(security)
                 .get("/service2*", SecurityFeature.rolesAllowed("user"))
                 .register(new Service2());
     }
 
     private static void routing1(HttpRouting.Builder routing) {
-        // build routing (security is loaded from config)
         SecurityFeature security = SecurityFeature.create(security1())
                 .securityDefaults(SecurityFeature.authenticate());
-        routing.addFeature(security)
+        routing.addFeature(ContextFeature.create())
+                .addFeature(security)
                 .get("/service1*", SecurityFeature.rolesAllowed("user"))
                 .register(new Service1());
     }
@@ -172,8 +168,8 @@ public class SignatureExampleBuilderMain {
                                         .principalName("Service1 - RSA signature")
                                         .publicKeyConfig(Keys.builder()
                                                 .keystore(k -> k
-                                                        .keystore(Resource.create(Paths.get("src/main/resources/keystore.p12")))
-                                                        .passphrase("password".toCharArray())
+                                                        .keystore(Resource.create("keystore.p12"))
+                                                        .passphrase("password")
                                                         .certAlias("service_cert")
                                                         .build())
                                                 .build())
@@ -214,10 +210,11 @@ public class SignatureExampleBuilderMain {
                         OutboundTargetDefinition.builder("service1-rsa")
                                 .privateKeyConfig(Keys.builder()
                                         .keystore(k -> k
-                                                .keystore(Resource.create(Paths.get("src/main/resources/keystore.p12")))
-                                                .passphrase("password".toCharArray())
+                                                .keystore(Resource.create("keystore.p12"))
+                                                .passphrase("password")
                                                 .keyAlias("myPrivateKey")
-                                                .build()))
+                                                .build())
+                                        .build())
                                 .build())
                 .build();
     }

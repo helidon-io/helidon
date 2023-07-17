@@ -15,11 +15,13 @@
  */
 package io.helidon.security.examples.signatures;
 
+import io.helidon.common.LazyValue;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -28,10 +30,12 @@ import io.helidon.security.SecurityContext;
 
 class Service1 implements HttpService {
 
-    private final Http1Client client = Http1Client.builder()
-            .addService(WebClientSecurity.create())
-            .baseUri("http://localhost:8080")
-            .build();
+    private final LazyValue<Http1Client> client = LazyValue.create(() -> Contexts.context()
+            .flatMap(c -> c.get(WebServer.class))
+            .map(server -> Http1Client.builder()
+                    .baseUri("http://localhost:" + server.port("service2"))
+                    .build())
+            .orElseThrow(() -> new IllegalStateException("Unable to get server instance from current context")));
 
     @Override
     public void routing(HttpRules rules) {
@@ -52,7 +56,7 @@ class Service1 implements HttpService {
         req.context()
                 .get(SecurityContext.class)
                 .ifPresentOrElse(context -> {
-                    try (Http1ClientResponse clientRes = client.get(path).request()) {
+                    try (Http1ClientResponse clientRes = client.get().get(path).request()) {
                         if (clientRes.status() == Http.Status.OK_200) {
                             res.send(clientRes.entity().as(String.class));
                         } else {
