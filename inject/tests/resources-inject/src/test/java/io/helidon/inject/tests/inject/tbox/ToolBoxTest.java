@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.inject.api.ActivationResult;
-import io.helidon.inject.api.InjectionException;
 import io.helidon.inject.api.InjectionServices;
 import io.helidon.inject.api.ModuleComponent;
 import io.helidon.inject.api.Qualifier;
@@ -34,14 +33,14 @@ import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.Services;
 import io.helidon.inject.testing.InjectionTestingSupport;
-import io.helidon.inject.tests.inject.stacking.CommonContract;
-import io.helidon.inject.tests.inject.tbox.impl.BigHammer;
-import io.helidon.inject.tests.inject.tbox.impl.HandSaw;
 import io.helidon.inject.tests.inject.ASerialProviderImpl;
 import io.helidon.inject.tests.inject.ClassNamedY;
 import io.helidon.inject.tests.inject.TestingSingleton;
 import io.helidon.inject.tests.inject.provider.FakeConfig;
 import io.helidon.inject.tests.inject.provider.FakeServer;
+import io.helidon.inject.tests.inject.stacking.CommonContract;
+import io.helidon.inject.tests.inject.tbox.impl.BigHammer;
+import io.helidon.inject.tests.inject.tbox.impl.HandSaw;
 import io.helidon.inject.tests.inject.tbox.impl.MainToolBox;
 import io.helidon.inject.tools.Options;
 
@@ -50,7 +49,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.types.TypeName.*;
+import static io.helidon.common.types.TypeName.create;
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
 import static io.helidon.inject.testing.InjectionTestingSupport.testableServices;
 import static io.helidon.inject.tests.inject.TestUtils.loadStringFromFile;
@@ -64,7 +63,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Expectation here is that the annotation processor ran, and we can use standard injection and di registry services, etc.
@@ -313,9 +311,6 @@ class ToolBoxTest {
         assertThat(TestingSingleton.preDestroyCount(), equalTo(1));
 
         assertThat(injectionServices.metrics().orElseThrow().lookupCount().orElse(0), equalTo(0));
-
-        InjectionException e = assertThrows(InjectionException.class, () -> injectionServices.services());
-        assertThat(e.getMessage(), equalTo("Must reset() after shutdown()"));
 
         tearDown();
         setUp();

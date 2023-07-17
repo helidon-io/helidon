@@ -34,6 +34,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 import io.helidon.common.config.Config;
@@ -69,6 +71,7 @@ import static io.helidon.inject.runtime.DefaultInjectionServicesConfig.PROVIDER;
 class DefaultInjectionServices implements InjectionServices, Resettable {
     static final System.Logger LOGGER = System.getLogger(DefaultInjectionServices.class.getName());
 
+    private final ReentrantReadWriteLock lifecycleLock = new ReentrantReadWriteLock();
     private final AtomicBoolean initializingServicesStarted = new AtomicBoolean(false);
     private final AtomicBoolean initializingServicesFinished = new AtomicBoolean(false);
     private final AtomicBoolean isBinding = new AtomicBoolean(false);
@@ -149,32 +152,33 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
 
     @Override
     public Optional<DefaultServices> services(boolean initialize) {
-        if (!initialize) {
-            return Optional.ofNullable(services.get());
-        }
-
-        if (!initializingServicesStarted.getAndSet(true)) {
-            try {
-                initializeServices();
-            } catch (Throwable t) {
-                state.lastError(t);
-                initializingServicesStarted.set(false);
-                if (t instanceof InjectionException) {
-                    throw (InjectionException) t;
-                } else {
-                    throw new InjectionException("Failed to initialize: " + t.getMessage(), t);
-                }
-            } finally {
-                state.finished(true);
-                initializingServicesFinished.set(true);
+        boolean isWriteLock = initialize;
+        Lock lock = (isWriteLock) ? lifecycleLock.writeLock() : lifecycleLock.readLock();
+        lock.lock();
+        try {
+            if (!initialize) {
+                return Optional.ofNullable(services.get());
             }
-        }
 
-        DefaultServices thisServices = services.get();
-        if (thisServices == null) {
-            throw new InjectionException("Must reset() after shutdown()");
+            init();
+
+            DefaultServices thisServices = services.get();
+            if (thisServices == null) {
+                lock.unlock();
+                lock = lifecycleLock.writeLock();
+                lock.lock();
+                reset(true);
+                init();
+                thisServices = services.get();
+
+                if (thisServices == null) {
+                    throw new InjectionException("Unable to reset() after shutdown()");
+                }
+            }
+            return Optional.of(thisServices);
+        } finally {
+            lock.unlock();
         }
-        return Optional.of(thisServices);
     }
 
     @Override
@@ -193,6 +197,8 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
     @Override
     // note that this is typically only called during testing, and also in the injection maven-plugin
     public boolean reset(boolean deep) {
+        Lock lock = lifecycleLock.writeLock();
+        lock.lock();
         try {
             assertNotInitializing();
             if (isInitializing() || isInitialized()) {
@@ -228,6 +234,8 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
             throw new InjectionException("Failed to reset (state=" + state
                                             + ", isInitialized=" + isInitialized()
                                             + ", isInitializing=" + isInitializing() + ")", e);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -288,6 +296,25 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
                     ? InjectionExceptions.toErrorMessage(desc)
                     : InjectionExceptions.toErrorMessage(initializationCallingContext, desc);
             throw new InjectionException(msg);
+        }
+    }
+
+    private void init() {
+        if (!initializingServicesStarted.getAndSet(true)) {
+            try {
+                initializeServices();
+            } catch (Throwable t) {
+                state.lastError(t);
+                initializingServicesStarted.set(false);
+                if (t instanceof InjectionException) {
+                    throw (InjectionException) t;
+                } else {
+                    throw new InjectionException("Failed to initialize: " + t.getMessage(), t);
+                }
+            } finally {
+                state.finished(true);
+                initializingServicesFinished.set(true);
+            }
         }
     }
 
@@ -460,6 +487,17 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
 
         @Override
         public Map<TypeName, ActivationResult> call() {
+            Lock lock = lifecycleLock.writeLock();
+            lock.lock();
+            try {
+                return doShutdown();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private Map<TypeName, ActivationResult> doShutdown() {
+            System.out.println("Started ShutDown of " + services + " on thread " + Thread.currentThread().getName());
             state.currentPhase(Phase.DESTROYED);
 
             ActivationLogQuery query = log.toQuery().orElse(null);
@@ -497,7 +535,9 @@ class DefaultInjectionServices implements InjectionServices, Resettable {
             doFinalShutdown(serviceProviders);
 
             // finally, clear everything
-            reset(false);
+            reset(true);
+
+            System.out.println("Finished ShutDown of " + services + " on thread " + Thread.currentThread().getName());
 
             return map;
         }
