@@ -25,6 +25,7 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRoute;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
@@ -61,12 +62,11 @@ public class FrontendTest {
         Config config = Config.create(classpath("frontend-application.yaml"));
         Security security = Security.create(config.get("security"));
 
-        server.putSocket("@default", socket -> socket
-                        .from(server.sockets().get("@default"))
-                        .routing(routing -> routing
-                                .addFeature(SecurityFeature.create(security, config.get("security")))
-                                .register("/env", new EnvHandler(config))
-                                .register("/api", new TodosHandler(bsc, Tracer.noOp()))))
+        server.routing(routing -> routing
+                        .addFeature(ContextFeature.create())
+                        .addFeature(SecurityFeature.create(security, config.get("security")))
+                        .register("/env", new EnvHandler(config))
+                        .register("/api", new TodosHandler(bsc, Tracer.noOp())))
                 .putSocket("backend", socket -> socket
                         .port(8081)
                         .routing(routing -> routing
@@ -77,7 +77,7 @@ public class FrontendTest {
 
         @Override
         public void routing(HttpRules rules) {
-            rules.get((req, res) -> res.send(Json.createArrayBuilder().add(TODO).build()))
+            rules.get("/", (req, res) -> res.send(Json.createArrayBuilder().add(TODO).build()))
                     .post((req, res) -> res.send(req.content().as(JsonObject.class)))
                     .route(HttpRoute.builder()
                             .methods(Http.Method.GET, Http.Method.DELETE, Http.Method.PUT)
@@ -88,65 +88,64 @@ public class FrontendTest {
 
     @Test
     public void testGetList() {
-        JsonArray jsonValues = client.get()
-                .path("/api/todo")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
-                .request(JsonArray.class);
-        assertThat(jsonValues.getJsonObject(0), is(TODO));
+        try (Http1ClientResponse response = client.get("/api/todo")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .request()) {
+
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonArray.class).getJsonObject(0), is(TODO));
+        }
     }
 
     @Test
     public void testPostTodo() {
-        try (Http1ClientResponse response = client.post()
-                .path("/api/todo")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
+        try (Http1ClientResponse response = client.post("/api/todo")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .submit(TODO)) {
 
+            assertThat(response.status().code(), is(200));
             assertThat(response.as(JsonObject.class), is(TODO));
         }
     }
 
     @Test
     public void testGetTodo() {
-        JsonObject jsonObject = client.get()
-                .path("/api/todo/1")
+        try (Http1ClientResponse response = client.get("/api/todo/1")
                 .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
-                .request(JsonObject.class);
+                .request()) {
 
-        assertThat(jsonObject, is(TODO));
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class), is(TODO));
+        }
     }
 
     @Test
     public void testDeleteTodo() {
-        JsonObject jsonObject = client.delete()
-                .path("/api/todo/1")
+        try (Http1ClientResponse response = client.delete("/api/todo/1")
                 .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
-                .request(JsonObject.class);
+                .request()) {
 
-        assertThat(jsonObject, is(TODO));
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class), is(TODO));
+        }
     }
 
     @Test
     public void testUpdateTodo() {
-        try (Http1ClientResponse response = client.put()
-                .path("/api/todo/1")
+        try (Http1ClientResponse response = client.put("/api/todo/1")
                 .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .submit(TODO)) {
 
+            assertThat(response.status().code(), is(200));
             assertThat(response.as(JsonObject.class), is(TODO));
         }
     }
 
     @Test
     public void testEnvHandler() {
-        String env = client.get().path("/env").request(String.class);
-        assertThat(env, is("docker"));
+        try (Http1ClientResponse response = client.get("/env").request()) {
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(String.class), is("docker"));
+        }
     }
-
 }

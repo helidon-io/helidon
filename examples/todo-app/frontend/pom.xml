@@ -66,10 +66,6 @@
             <artifactId>helidon-security-integration-nima</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile</groupId>
-            <artifactId>helidon-microprofile-security</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>

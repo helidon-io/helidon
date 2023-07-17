@@ -49,7 +49,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
  * <code>DELETE /api/todo/{id}</code>: Delete a TODO, deleted TODO is returned
  * <code>PUT /api/todo/{id}</code>: Update a TODO,  updated TODO is returned
  */
-public final class TodosHandler implements HttpService {
+public class TodosHandler implements HttpService {
 
     /**
      * The backend service client.
@@ -92,7 +92,7 @@ public final class TodosHandler implements HttpService {
     }
 
     @Override
-    public void routing(final HttpRules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/todo/{id}", this::getSingle)
              .delete("/todo/{id}", this::delete)
              .put("/todo/{id}", this::update)
@@ -114,7 +114,7 @@ public final class TodosHandler implements HttpService {
      * @param req the server request
      * @param res the server response
      */
-    private void create(final ServerRequest req, final ServerResponse res) {
+    private void create(ServerRequest req, ServerResponse res) {
         createCounter.inc();
         JsonObject json = req.content().as(JsonObject.class);
         bsc.create(json)
@@ -148,7 +148,7 @@ public final class TodosHandler implements HttpService {
      * @param req the server request
      * @param res the server response
      */
-    private void update(final ServerRequest req, final ServerResponse res) {
+    private void update(ServerRequest req, ServerResponse res) {
         updateCounter.inc();
         JsonObject json = req.content().as(JsonObject.class);
         String id = req.path().pathParameters().value("id");
@@ -161,7 +161,7 @@ public final class TodosHandler implements HttpService {
      * @param req the server request
      * @param res the server response
      */
-    private void delete(final ServerRequest req, final ServerResponse res) {
+    private void delete(ServerRequest req, ServerResponse res) {
         deleteCounter.inc();
         String id = req.path().pathParameters().value("id");
         bsc.deleteSingle(id)
@@ -174,7 +174,7 @@ public final class TodosHandler implements HttpService {
      * @param req the server request
      * @param res the server response
      */
-    private void getSingle(final ServerRequest req, final ServerResponse res) {
+    private void getSingle(ServerRequest req, ServerResponse res) {
         String id = req.path().pathParameters().value("id");
         bsc.getSingle(id)
            .ifPresentOrElse(res::send, () -> res.status(Http.Status.NOT_FOUND_404));
