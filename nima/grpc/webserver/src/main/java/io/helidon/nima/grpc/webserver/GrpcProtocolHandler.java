@@ -26,7 +26,6 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2Flag;
 import io.helidon.nima.http2.Http2FrameData;
 import io.helidon.nima.http2.Http2FrameHeader;
@@ -37,6 +36,7 @@ import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.http2.Http2WindowUpdate;
+import io.helidon.nima.http2.StreamFlowControl;
 import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 
 import io.grpc.Metadata;
@@ -44,6 +44,8 @@ import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.Status;
+
+import static java.lang.System.Logger.Level.ERROR;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(GrpcProtocolHandler.class.getName());
@@ -58,9 +60,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final Http2Settings clientSettings;
     private final Grpc<REQ, RES> route;
 
+    private final StreamFlowControl flowControl;
     private Http2StreamState currentStreamState;
     private ServerCall.Listener<REQ> listener;
     private ServerCall<REQ, RES> serverCall;
+
+    private long length;
+    private boolean isCompressed;
+    private BufferData entityBytes = null;
 
     GrpcProtocolHandler(HttpPrologue prologue,
                         Http2Headers headers,
@@ -68,6 +75,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         int streamId,
                         Http2Settings serverSettings,
                         Http2Settings clientSettings,
+                        StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         Grpc<REQ, RES> route) {
 
@@ -77,20 +85,20 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         this.streamId = streamId;
         this.serverSettings = serverSettings;
         this.clientSettings = clientSettings;
+        this.flowControl = flowControl;
         this.currentStreamState = currentStreamState;
         this.route = route;
     }
 
     @Override
     public void init() {
-
         try {
             serverCall = createServerCall();
             ServerCallHandler<REQ, RES> callHandler = route.callHandler();
             listener = callHandler.startCall(serverCall, toMetadata(headers));
             listener.onReady();
         } catch (Throwable e) {
-            LOGGER.log(System.Logger.Level.ERROR, "Failed to initialize grpc protocol handler", e);
+            LOGGER.log(ERROR, "Failed to initialize grpc protocol handler", e);
             throw e;
         }
 
@@ -116,19 +124,28 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         try {
             while (data.available() > 0) {
                 // todo compression support
-                boolean isCompressed = (data.read() == 1);
-                long length = data.readUnsignedInt32(); // if the result is > than data length, wait for next data?
-                byte[] bytes = new byte[(int) length];
-                data.read(bytes);
+                if (entityBytes == null) {
+                    // First frame
+                    isCompressed = (data.read() == 1);
+                    length = data.readUnsignedInt32();
+                    entityBytes = BufferData.create((int) length);
+                    if (length > data.available()) {
+                        // if the result is > than data length, wait for next data frame
+                        entityBytes.write(data);
+                        return;
+                    }
+                }
+                entityBytes.write(data);
+                byte[] bytes = new byte[entityBytes.available()];
+                entityBytes.read(bytes);
                 listener.onMessage(route.method().parseRequest(new ByteArrayInputStream(bytes)));
             }
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listener.onHalfClose();
+                currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
             }
         } catch (Exception e) {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       "Failed to process grpc request: " + data.debugDataHex(true),
-                       e);
+            LOGGER.log(ERROR, "Failed to process grpc request: " + data.debugDataHex(true), e);
         }
     }
 
@@ -151,20 +168,22 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                          FlowControl.Outbound.NOOP);
+                                          flowControl.outbound());
             }
 
             @Override
             public void sendMessage(RES message) {
-                BufferData bufferData = BufferData.growing(1024);
+
+                BufferData bufferData = null;
 
                 try (InputStream inputStream = route.method().streamResponse(message)) {
                     byte[] bytes = inputStream.readAllBytes();
+                    bufferData = BufferData.create(5 + bytes.length);
                     bufferData.write(0);
                     bufferData.writeUnsignedInt32(bytes.length);
                     bufferData.write(bytes);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
                 }
 
                 // todo flags based on method type
@@ -175,8 +194,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                                                   Http2Flag.DataFlags.create(0),
                                                                   streamId);
 
-                //FIXME: FC and MAX_FRAME_SIZE
-                streamWriter.writeData(new Http2FrameData(header, bufferData), FlowControl.Outbound.NOOP);
+                streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
             }
 
             @Override
@@ -188,7 +206,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                          FlowControl.Outbound.NOOP);
+                                          flowControl.outbound());
                 currentStreamState = Http2StreamState.HALF_CLOSED_LOCAL;
             }
 

@@ -212,7 +212,11 @@ class Http2ClientStream implements Http2Stream {
             // §5.1.1 - The identifier of a newly established stream MUST be numerically
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
-            this.flowControl = connection.flowControl().createStreamFlowControl(streamId);
+            // fixme Configurable initial win size, max frame size
+            this.flowControl = connection.flowControl().createStreamFlowControl(
+                    streamId,
+                    1048576,
+                    WindowSize.DEFAULT_MAX_FRAME_SIZE);
             this.connection.addStream(streamId, this);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
             connection.writer().writeHeaders(http2Headers, streamId, flags, flowControl.outbound());

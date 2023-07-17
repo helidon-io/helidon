@@ -36,6 +36,8 @@ public class StreamFlowControl {
 
     StreamFlowControl(ConnectionFlowControl.Type type,
                       int streamId,
+                      int initialWindowSize,
+                      int maxFrameSize,
                       ConnectionFlowControl connectionFlowControl,
                       BiConsumer<Integer, Http2WindowUpdate> writeUpdate) {
 
@@ -47,8 +49,8 @@ public class StreamFlowControl {
         inboundFlowControl =
                 new FlowControlImpl.Inbound(type,
                                             streamId,
-                                            WindowSize.DEFAULT_WIN_SIZE, //FIXME: configurable initial win size
-                                            WindowSize.DEFAULT_MAX_FRAME_SIZE, //FIXME: configurable initial max frame size
+                                            initialWindowSize,
+                                            maxFrameSize,
                                             connectionFlowControl.inbound(),
                                             writeUpdate);
     }

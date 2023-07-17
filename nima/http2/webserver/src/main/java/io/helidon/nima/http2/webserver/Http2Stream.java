@@ -115,7 +115,11 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         this.clientSettings = clientSettings;
         this.writer = writer;
         this.router = ctx.router();
-        this.flowControl = connectionFlowControl.createStreamFlowControl(streamId);
+        this.flowControl = connectionFlowControl.createStreamFlowControl(
+                streamId,
+                http2Config.initialWindowSize(),
+                http2Config.maxFrameSize()
+        );
     }
 
     /**
@@ -345,6 +349,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                                        streamId,
                                                                        serverSettings,
                                                                        clientSettings,
+                                                                       flowControl,
                                                                        state,
                                                                        router);
             if (subProtocolResult.supported()) {
@@ -391,8 +396,11 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                 DataFrame frame;
                 try {
                     frame = inboundData.take();
+                    flowControl.inbound().incrementWindowSize(frame.header().length());
                 } catch (InterruptedException e) {
                     // this stream was interrupted, does not make sense to do anything else
+                    String handlerName = subProtocolHandler.getClass().getSimpleName();
+                    ctx.log(LOGGER, System.Logger.Level.DEBUG, "%s interrupted stream %d", handlerName, streamId);
                     return;
                 }
                 subProtocolHandler.data(frame.header, frame.data);

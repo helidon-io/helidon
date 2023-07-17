@@ -63,7 +63,7 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
     long maxConcurrentStreams();
 
     /**
-     * This setting indicates the sender's maximum window size in bytes for connection-level flow control.
+     * This setting indicates the sender's maximum window size in bytes for stream-level flow control.
      * Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
      * of HTTP/2 connection.
      * Any value greater than 2147483647 causes an error. Any value smaller than initial window size causes an error.
@@ -71,7 +71,7 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
      *
      * @return maximum window size in bytes
      */
-    @ConfiguredOption("65635")
+    @ConfiguredOption("1048576")
     int initialWindowSize();
 
     /**
