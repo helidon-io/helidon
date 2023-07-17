@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.microprofile.security;
+package io.helidon.microprofile.security.spi;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityResponse;

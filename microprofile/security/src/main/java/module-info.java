@@ -39,12 +39,14 @@ module io.helidon.microprofile.security {
     requires io.helidon.security.annotations;
 
     exports io.helidon.microprofile.security;
+    exports io.helidon.microprofile.security.spi;
 
     uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
-    uses io.helidon.microprofile.security.SecurityResponseMapper;
+    uses io.helidon.microprofile.security.spi.SecurityResponseMapper;
 
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.security to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.microprofile.security.spi to io.helidon.microprofile.cdi, weld.core.impl;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.security.SecurityCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.security.ClientSecurityAutoDiscoverable;

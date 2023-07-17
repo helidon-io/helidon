@@ -18,14 +18,19 @@ package io.helidon.tests.integration.webclient;
 
 import java.util.stream.Stream;
 
+import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
+import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 /**
  * Parent class for integration tests.
@@ -37,6 +42,7 @@ class TestParent {
 
     protected WebServer server;
     protected Http1Client client;
+    protected Context context;
 
     TestParent(WebServer server, Http1Client client) {
         this.server = server;
@@ -44,12 +50,22 @@ class TestParent {
     }
 
     @SetUpServer
-    public static void startTheServer(WebServerConfig.Builder builder) {
+    static void startTheServer(WebServerConfig.Builder builder) {
         Main.setup(builder, null);
     }
 
     protected Http1Client createNewClient(WebClientService... clientServices) {
+        Security security = Security.builder()
+                .addProvider(HttpBasicAuthProvider.builder().build())
+                .build();
+
+        SecurityContext securityContext = security.createContext("unit-test");
+
+        context = Context.builder().id("unit-test").build();
+        context.register(securityContext);
+
         Http1ClientBuilder builder = Http1Client.builder()
+                .addService(WebClientSecurity.create(security))
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .config(CONFIG.get("client"));
 

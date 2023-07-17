@@ -190,11 +190,11 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes.length != 1) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
-                                                           + " does not have exactly one parameter (Server.Builder)");
+                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
             }
             if (!parameterTypes[0].equals(WebServerConfig.Builder.class)) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
-                                                           + " does not have exactly one parameter (Server.Builder)");
+                                                           + " does not have exactly one parameter (WebServerConfig.Builder)");
             }
             try {
                 method.setAccessible(true);

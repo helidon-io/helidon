@@ -17,7 +17,7 @@
 package io.helidon.tests.integration.security.mapper;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.microprofile.security.SecurityResponseMapper;
+import io.helidon.microprofile.security.spi.SecurityResponseMapper;
 import io.helidon.security.SecurityResponse;
 
 import jakarta.ws.rs.core.Response;

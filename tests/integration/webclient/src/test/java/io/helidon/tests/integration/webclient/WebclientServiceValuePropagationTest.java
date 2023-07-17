@@ -15,6 +15,9 @@
  */
 package io.helidon.tests.integration.webclient;
 
+import java.net.URI;
+
+import io.helidon.nima.webclient.UriHelper;
 import io.helidon.nima.webclient.WebClientServiceRequest;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -24,8 +27,6 @@ import io.helidon.nima.webserver.WebServer;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.net.URI;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,14 +34,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests propagation of the request parts defined in WebClientService.
  */
-public class WebclientServiceValuePropagationTest extends TestParent {
+class WebclientServiceValuePropagationTest extends TestParent {
 
     WebclientServiceValuePropagationTest(WebServer server, Http1Client client) {
         super(server, client);
     }
 
     @Test
-    @Disabled
     public void testUriPartsPropagation() {
         Http1Client webClient = Http1Client.builder()
                 .baseUri(URI.create("http://invalid"))
@@ -55,7 +55,7 @@ public class WebclientServiceValuePropagationTest extends TestParent {
     }
 
     @Test
-    @Disabled
+    @Disabled("This will be fixed in WebClient refactoring, where we use the scheme to determine TLS or plain")
     public void testInvalidSchema() {
         Http1Client webClient = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port())
@@ -73,10 +73,11 @@ public class WebclientServiceValuePropagationTest extends TestParent {
 
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-            //request.schema("http");
-            //request.host("localhost");
-            //request.port(server.port());
-            //request.path("/greet/valuesPropagated");
+            UriHelper uri = request.uri();
+            uri.scheme("http");
+            uri.host("localhost");
+            uri.port(server.port());
+            uri.path("/greet/valuesPropagated", request.query());
             request.query().add("param", "Hi");
             request.fragment("Test");
             return chain.proceed(request);
@@ -87,7 +88,7 @@ public class WebclientServiceValuePropagationTest extends TestParent {
 
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-            //request.schema("invalid");
+            request.uri().scheme("invalid");
             return chain.proceed(request);
         }
     }

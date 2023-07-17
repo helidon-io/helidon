@@ -49,8 +49,25 @@
             <artifactId>helidon-nima-http2-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.microprofile.websocket</groupId>
-            <artifactId>helidon-microprofile-websocket</artifactId>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.websocket</groupId>
+            <artifactId>helidon-nima-websocket-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.encoding</groupId>
+            <artifactId>helidon-nima-http-encoding-deflate</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.http.encoding</groupId>
+            <artifactId>helidon-nima-http-encoding-gzip</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.logging</groupId>
+            <artifactId>helidon-logging-jul</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
@@ -78,15 +95,21 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${version.plugin.surefire}</version>
-                <configuration>
-                    <useModulePath>true</useModulePath>
-                    <trimStackTrace>false</trimStackTrace>
-                    <!-- DO NOT override argLine instead use surefire.argLine -->
-                    <argLine>${surefire.argLine} ${surefire.coverage.argline}</argLine>
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                </configuration>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <!--
+                            We use HTTP client from tests, and we do not want it as a module dependency
+                             -->
+                            <compilerArgs>
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.net.http</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

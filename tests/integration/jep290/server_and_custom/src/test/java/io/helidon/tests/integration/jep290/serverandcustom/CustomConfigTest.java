@@ -27,6 +27,7 @@ import java.util.Random;
 import io.helidon.common.SerializationConfig;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
@@ -40,7 +41,7 @@ class CustomConfigTest {
     private static String testString;
 
     @SetUpServer
-    static void setup() {
+    static void setup(WebServerConfig.Builder requiredToBeFoundByExtension) {
         // first set up deserialization filter using a builder
         SerializationConfig.builder()
                 .traceSerialization(SerializationConfig.TraceOption.FULL)

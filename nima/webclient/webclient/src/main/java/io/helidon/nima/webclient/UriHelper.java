@@ -229,6 +229,9 @@ public class UriHelper {
      */
     public int port() {
         if (this.port == -1) {
+            if (this.scheme == null) {
+                return -1;
+            }
             return DEFAULT_PORTS.getOrDefault(this.scheme, -1);
         }
         return port;

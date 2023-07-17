@@ -26,5 +26,5 @@ module helidon.tests.integration.webserver.upgrade {
     requires io.helidon.nima.webserver;
     requires io.helidon.common.pki;
     requires io.helidon.nima.http2.webserver;
-    requires io.helidon.microprofile.tyrus;
+    requires io.helidon.nima.websocket.webserver;
 }

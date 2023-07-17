@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,18 +15,8 @@
  */
 
 /**
- * Integration test for routing composition.
+ * Integration of Helidon security with Microprofile server SPI.
+ *
+ * @see io.helidon.microprofile.security.spi.SecurityResponseMapper
  */
-open module helidon.tests.integration.webserver.upgrade.test {
-
-    requires helidon.tests.integration.webserver.upgrade;
-
-    requires java.net.http;
-    requires hamcrest.all;
-    requires org.junit.jupiter.api;
-    requires org.junit.jupiter.params;
-    requires io.helidon.nima.webclient;
-    requires io.helidon.nima.webserver;
-    requires io.helidon.nima.testing.junit5.webserver;
-    requires io.helidon.common.pki;
-}
+package io.helidon.microprofile.security.spi;

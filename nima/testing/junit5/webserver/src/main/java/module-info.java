@@ -41,4 +41,6 @@ module io.helidon.nima.testing.junit5.webserver {
 
     provides io.helidon.nima.testing.junit5.webserver.spi.DirectJunitExtension
             with io.helidon.nima.testing.junit5.webserver.Http1DirectJunitExtension;
+
+    opens io.helidon.nima.testing.junit5.webserver to org.junit.platform.commons;
 }

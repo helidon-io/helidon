@@ -25,6 +25,7 @@ import java.util.ServiceLoader;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
+import io.helidon.microprofile.security.spi.SecurityResponseMapper;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.EndpointConfig;
