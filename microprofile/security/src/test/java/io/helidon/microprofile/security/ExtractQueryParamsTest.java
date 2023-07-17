@@ -18,7 +18,6 @@ package io.helidon.microprofile.security;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddBeans;
-import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -40,8 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
         @AddBean(TestResource1.class),
         @AddBean(TestResource2.class),
 })
-@Configuration(configSources = "bind.yaml")
-@AddExtension(SecurityCdiExtension.class)
+@Configuration(configSources = "bind-query-params.yaml")
 @HelidonTest
 public class ExtractQueryParamsTest {
 
@@ -68,7 +66,7 @@ public class ExtractQueryParamsTest {
                 .request()
                 .get();
 
-        assertThat(response.getStatus(), is(200));
+        assertThat("Should have been successful. Headers: " + response.getHeaders(), response.getStatus(), is(200));
         assertThat(response.readEntity(String.class), containsString(USERNAME));
     }
 

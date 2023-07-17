@@ -128,6 +128,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
     @Override
     public void filter(ContainerRequestContext request) {
         if (featureConfig().shouldUsePrematchingAuthentication() && featureConfig().shouldUsePrematchingAuthorization()) {
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Security handled by pre-matching filter, ignoring.");
+            }
             return;
         }
         // only filter when not pre-matching (see SecurityPreMatchingFilter)
@@ -318,6 +321,9 @@ public class SecurityFilter extends SecurityFilterCommon implements ContainerReq
             }
 
             definition.analyzerResponse(analyzer, analyzerResponse);
+        }
+        if (logger().isLoggable(Level.TRACE)) {
+            logger().log(Level.TRACE, "Security definition for resource {0}: {1}", theClass.getName(), definition);
         }
         return definition;
     }

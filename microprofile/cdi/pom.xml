@@ -40,7 +40,6 @@
             <!-- the actual CDI implementation - repackaged by us -->
             <groupId>io.helidon.microprofile.weld</groupId>
             <artifactId>weld-se-core</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>

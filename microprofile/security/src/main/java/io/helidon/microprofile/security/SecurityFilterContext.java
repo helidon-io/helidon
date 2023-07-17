@@ -28,6 +28,23 @@ public class SecurityFilterContext {
     private Throwable traceThrowable;
     private UriQuery queryParams;
 
+    @Override
+    public String toString() {
+        return "SecurityFilterContext{" +
+                "resourceName='" + resourceName + '\'' +
+                ", resourcePath='" + resourcePath + '\'' +
+                ", method='" + method + '\'' +
+                ", headers=" + headers +
+                ", targetUri=" + targetUri +
+                ", shouldFinish=" + shouldFinish +
+                ", methodSecurity=" + methodSecurity +
+                ", explicitAtz=" + explicitAtz +
+                ", traceSuccess=" + traceSuccess +
+                ", traceDescription='" + traceDescription + '\'' +
+                ", queryParams=" + queryParams +
+                '}';
+    }
+
     String getResourceName() {
         return resourceName;
     }

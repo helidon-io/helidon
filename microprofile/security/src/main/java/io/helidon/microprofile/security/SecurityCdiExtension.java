@@ -144,6 +144,12 @@ public class SecurityCdiExtension implements Extension {
                     .config(jerseyConfig)
                     .build();
 
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Security feature config: {0}. Registered for applications: {1}",
+                           feature.featureConfig(),
+                           jaxrs.applicationsToRun());
+            }
+
             jaxrs.applicationsToRun()
                     .forEach(app -> app.resourceConfig().register(feature));
         } else {

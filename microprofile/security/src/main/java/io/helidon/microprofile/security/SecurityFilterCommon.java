@@ -70,7 +70,16 @@ abstract class SecurityFilterCommon {
 
         SecurityFilterContext filterContext = initRequestFiltering(request);
 
+        if (logger().isLoggable(Level.TRACE)) {
+            logger().log(Level.TRACE, "Endpoint {0} security context: {1}",
+                         request.getUriInfo().getRequestUri(),
+                         filterContext);
+        }
+
         if (filterContext.isShouldFinish()) {
+            if (logger().isLoggable(Level.TRACE)) {
+                logger().log(Level.TRACE, "Endpoint %s not found, no security", request.getUriInfo().getRequestUri());
+            }
             // 404
             tracing.finish();
             return;
@@ -139,6 +148,9 @@ abstract class SecurityFilterCommon {
             SecurityDefinition methodSecurity = context.getMethodSecurity();
 
             if (methodSecurity.requiresAuthentication()) {
+                if (logger().isLoggable(Level.TRACE)) {
+                    logger().log(Level.TRACE, "Endpoint {0} requires authentication", context.getTargetUri());
+                }
                 //authenticate request
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
                         .atnClientBuilder()
@@ -147,6 +159,10 @@ abstract class SecurityFilterCommon {
 
                 clientBuilder.explicitProvider(methodSecurity.getAuthenticator());
                 processAuthentication(context, clientBuilder, methodSecurity, atnTracing);
+            } else {
+                if (logger().isLoggable(Level.TRACE)) {
+                    logger().log(Level.TRACE, "Endpoint {0} does not require authentication", context.getTargetUri());
+                }
             }
         } finally {
             if (context.isTraceSuccess()) {
@@ -246,6 +262,9 @@ abstract class SecurityFilterCommon {
                              AtzTracing atzTracing) {
         if (context.getMethodSecurity().isAtzExplicit()) {
             // authorization is explicitly done by user, we MUST skip it here
+            if (logger().isLoggable(Level.TRACE)) {
+                logger().log(Level.TRACE, "Endpoint {0} uses explicit authorization, skipping", context.getTargetUri());
+            }
             context.setExplicitAtz(true);
             return;
         }
@@ -254,11 +273,20 @@ abstract class SecurityFilterCommon {
             //now authorize (also authorize anonymous requests, as we may have a path-based authorization that allows public
             // access
             if (context.getMethodSecurity().requiresAuthorization()) {
+                if (logger().isLoggable(Level.TRACE)) {
+                    logger().log(Level.TRACE, "Endpoint {0} requires authorization", context.getTargetUri());
+                }
                 SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
                         .tracingSpan(atzTracing.findParent().orElse(null))
                         .explicitProvider(context.getMethodSecurity().getAuthorizer());
 
                 processAuthorization(context, clientBuilder);
+            } else {
+                if (logger().isLoggable(Level.TRACE)) {
+                    logger().log(Level.TRACE, "Endpoint {0} does not require authorization. Method security: {1}",
+                                 context.getTargetUri(),
+                                 context.getMethodSecurity());
+                }
             }
         } finally {
             if (context.isTraceSuccess()) {

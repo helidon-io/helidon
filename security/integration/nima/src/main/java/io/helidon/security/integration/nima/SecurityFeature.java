@@ -406,6 +406,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
         //make sure there is no context
         if (context.get(SecurityContext.class).isEmpty()) {
             SecurityEnvironment env = security.environmentBuilder()
+                    .targetUri(req.requestedUri().toUri())
                     .path(req.path().path())
                     .method(req.prologue().method().text())
                     .addAttribute("remotePeer", req.remotePeer())

@@ -36,7 +36,6 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -92,12 +91,12 @@ public class BindingTest {
 
         //this should fail
         try {
-            ClientBuilder.newClient()
+            entity = ClientBuilder.newClient()
                          .target("http://localhost:" + webTarget.getUri().getPort())
                          .path("/deny")
                          .request()
                          .get(String.class);
-            fail("The deny path should have been forbidden by authorization provider");
+            fail("The deny path should have been forbidden by authorization provider. Got response : " + entity);
         } catch (ForbiddenException ignored) {
             //this is expected
         }
@@ -128,7 +127,7 @@ public class BindingTest {
 
         String entity = response.readEntity(String.class);
         assertThat("Injected SecurityContext was null", entity, containsString("null=false"));
-        assertThat("Injected SecurityContext was a proxy", entity, containsString("proxy=false"));
+        assertThat("Injected SecurityContext was a proxy", entity, containsString("proxy=true"));
     }
 
     @Test

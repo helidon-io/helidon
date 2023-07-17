@@ -192,6 +192,9 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
 
         // validate realm
         if (!realm.equals(token.getRealm())) {
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Invalid realm. Expected " + realm + ", got: " + token.getRealm());
+            }
             return failOrAbstain("Invalid realm");
         }
 
@@ -239,7 +242,13 @@ public final class HttpDigestAuthProvider implements AuthenticationProvider {
         challenge.append(", nonce=\"").append(nonce(System.currentTimeMillis(), random, digestServerSecret)).append("\"");
         challenge.append(", opaque=\"").append(opaque()).append("\"");
 
-        return challenge.toString();
+        String challengeString = challenge.toString();
+
+        if (LOGGER.isLoggable(Level.TRACE)) {
+            LOGGER.log(Level.TRACE, "Sending challenge: {0}", challengeString);
+        }
+
+        return challengeString;
     }
 
     private String opaque() {

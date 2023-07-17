@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@ package io.helidon.microprofile.security;
 
 import java.util.List;
 
+import io.helidon.security.abac.role.RoleAnnotationAnalyzer;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 
 /**
  * Annotation analyzer test.
@@ -33,10 +34,9 @@ class TestAnnotAnalyzers {
     void testAnalyzerOrder() {
         SecurityFilter filter = new SecurityFilter((FeatureConfig) null, null, null);
         List<AnnotationAnalyzer> analyzers = filter.analyzers();
-        assertThat(analyzers, hasSize(2));
 
-        // now make sure analyzers are in the correct order (defined by priority)
-        assertThat(analyzers.get(0), instanceOf(AnalyzerUnitOne.class));
-        assertThat(analyzers.get(1), instanceOf(AnalyzerUnitTwo.class));
+        assertThat(analyzers, hasItems(instanceOf(AnalyzerUnitOne.class),
+                                       instanceOf(RoleAnnotationAnalyzer.class),
+                                       instanceOf(AnalyzerUnitTwo.class)));
     }
 }

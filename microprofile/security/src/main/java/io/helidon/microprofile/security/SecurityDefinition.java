@@ -61,6 +61,27 @@ class SecurityDefinition {
         this.failOnFailureIfOptional = failOnFailureIfOptional;
     }
 
+    @Override
+    public String toString() {
+        return "SecurityDefinition{" +
+                "analyzerResponses=" + analyzerResponses +
+                ", securityLevels=" + securityLevels +
+                ", requiresAuthentication=" + requiresAuthentication +
+                ", failOnFailureIfOptional=" + failOnFailureIfOptional +
+                ", authnOptional=" + authnOptional +
+                ", authorizeByDefault=" + authorizeByDefault +
+                ", atzExplicit=" + atzExplicit +
+                ", authenticator='" + authenticator + '\'' +
+                ", authorizer='" + authorizer + '\'' +
+                ", audited=" + audited +
+                ", auditEventType='" + auditEventType + '\'' +
+                ", auditMessageFormat='" + auditMessageFormat + '\'' +
+                ", auditOkSeverity=" + auditOkSeverity +
+                ", auditErrorSeverity=" + auditErrorSeverity +
+                ", requiresAuthorization=" + requiresAuthorization +
+                '}';
+    }
+
     SecurityDefinition copyMe() {
         SecurityDefinition result = new SecurityDefinition();
         result.requiresAuthentication = this.requiresAuthentication;
@@ -208,10 +229,12 @@ class SecurityDefinition {
             default -> {}
         }
 
-        requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
-            case REQUIRED, OPTIONAL -> true;
-            default -> false;
-        };
+        switch (analyzerResponse.authorizationResponse()) {
+        case REQUIRED, OPTIONAL -> requiresAuthorization = true;
+        case FORBIDDEN -> requiresAuthorization = false;
+        default -> {
+        }
+        }
 
         this.authenticator = analyzerResponse.authenticator().orElse(this.authenticator);
         this.authorizer = analyzerResponse.authorizer().orElse(this.authorizer);

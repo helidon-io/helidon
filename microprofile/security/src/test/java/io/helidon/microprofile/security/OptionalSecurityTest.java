@@ -75,7 +75,7 @@ class OptionalSecurityTest {
                 .build();
 
         clientBuilder = mock(SecurityClientBuilder.class);
-        when(clientBuilder.build().submit()).thenReturn(atr);
+        when(clientBuilder.submit()).thenReturn(atr);
 
         tracing = SecurityTracing.get();
     }

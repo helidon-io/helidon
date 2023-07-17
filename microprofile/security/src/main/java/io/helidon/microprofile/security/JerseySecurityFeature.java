@@ -36,6 +36,8 @@ import org.glassfish.jersey.internal.inject.ReferencingFactory;
 import org.glassfish.jersey.internal.util.collection.Ref;
 import org.glassfish.jersey.process.internal.RequestScoped;
 
+import static java.lang.System.Logger.Level.TRACE;
+
 /**
  * Integration of Security module with Jersey.
  * <p>
@@ -50,6 +52,8 @@ import org.glassfish.jersey.process.internal.RequestScoped;
  */
 @ConstrainedTo(RuntimeType.SERVER)
 public final class JerseySecurityFeature implements Feature {
+    private static final System.Logger LOGGER = System.getLogger(JerseySecurityFeature.class.getName());
+
     private final Security security;
     private final FeatureConfig featureConfig;
 
@@ -95,6 +99,9 @@ public final class JerseySecurityFeature implements Feature {
         //register server
         if (runtimeType != RuntimeType.SERVER) {
             return false;
+        }
+        if (LOGGER.isLoggable(TRACE)) {
+            LOGGER.log(TRACE, "Configuring Security feature in Jersey server runtime");
         }
 
         context.register(SecurityPreMatchingFilter.class);
