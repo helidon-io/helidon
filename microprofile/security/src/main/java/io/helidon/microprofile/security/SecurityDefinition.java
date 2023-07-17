@@ -63,23 +63,23 @@ class SecurityDefinition {
 
     @Override
     public String toString() {
-        return "SecurityDefinition{" +
-                "analyzerResponses=" + analyzerResponses +
-                ", securityLevels=" + securityLevels +
-                ", requiresAuthentication=" + requiresAuthentication +
-                ", failOnFailureIfOptional=" + failOnFailureIfOptional +
-                ", authnOptional=" + authnOptional +
-                ", authorizeByDefault=" + authorizeByDefault +
-                ", atzExplicit=" + atzExplicit +
-                ", authenticator='" + authenticator + '\'' +
-                ", authorizer='" + authorizer + '\'' +
-                ", audited=" + audited +
-                ", auditEventType='" + auditEventType + '\'' +
-                ", auditMessageFormat='" + auditMessageFormat + '\'' +
-                ", auditOkSeverity=" + auditOkSeverity +
-                ", auditErrorSeverity=" + auditErrorSeverity +
-                ", requiresAuthorization=" + requiresAuthorization +
-                '}';
+        return "SecurityDefinition{"
+                + "analyzerResponses=" + analyzerResponses
+                + ", securityLevels=" + securityLevels
+                + ", requiresAuthentication=" + requiresAuthentication
+                + ", failOnFailureIfOptional=" + failOnFailureIfOptional
+                + ", authnOptional=" + authnOptional
+                + ", authorizeByDefault=" + authorizeByDefault
+                + ", atzExplicit=" + atzExplicit
+                + ", authenticator='" + authenticator + '\''
+                + ", authorizer='" + authorizer + '\''
+                + ", audited=" + audited
+                + ", auditEventType='" + auditEventType + '\''
+                + ", auditMessageFormat='" + auditMessageFormat + '\''
+                + ", auditOkSeverity=" + auditOkSeverity
+                + ", auditErrorSeverity=" + auditErrorSeverity
+                + ", requiresAuthorization=" + requiresAuthorization
+                + '}';
     }
 
     SecurityDefinition copyMe() {
@@ -229,12 +229,11 @@ class SecurityDefinition {
             default -> {}
         }
 
-        switch (analyzerResponse.authorizationResponse()) {
-        case REQUIRED, OPTIONAL -> requiresAuthorization = true;
-        case FORBIDDEN -> requiresAuthorization = false;
-        default -> {
-        }
-        }
+        this.requiresAuthorization = switch (analyzerResponse.authorizationResponse()) {
+            case REQUIRED, OPTIONAL -> true;
+            case FORBIDDEN -> false;
+            default -> null;
+        };
 
         this.authenticator = analyzerResponse.authenticator().orElse(this.authenticator);
         this.authorizer = analyzerResponse.authorizer().orElse(this.authorizer);

@@ -59,7 +59,6 @@ public class MicrostreamHealthCheck implements HealthCheck {
     @Override
     public HealthCheckResponse call() {
         HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
-        // .name(name);
 
         try {
             CompletableFuture<Boolean> status = CompletableFuture.supplyAsync(embeddedStorageManager::isRunning)
