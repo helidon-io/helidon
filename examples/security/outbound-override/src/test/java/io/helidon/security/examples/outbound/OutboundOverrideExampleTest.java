@@ -15,10 +15,11 @@
  */
 package io.helidon.security.examples.outbound;
 
+import java.net.URI;
+
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
 import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -26,7 +27,6 @@ import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import org.junit.jupiter.api.Test;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -38,20 +38,20 @@ public class OutboundOverrideExampleTest {
 
     private final Http1Client client;
 
-    OutboundOverrideExampleTest(WebServer server, Http1Client client) {
+    OutboundOverrideExampleTest(WebServer server, URI uri) {
         server.context().register(server);
-        this.client = client;
-    }
-
-    @SetUpServer
-    public static void setup(WebServerConfig.Builder server, Http1ClientBuilder client) {
-        OutboundOverrideExample.setup(server);
-
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
+        client = Http1Client.builder()
+                .baseUri(uri)
+                .addService(WebClientSecurity.create(security))
+                .build();
+    }
 
-        client.addService(WebClientSecurity.create(security));
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        OutboundOverrideExample.setup(server);
     }
 
     @Test

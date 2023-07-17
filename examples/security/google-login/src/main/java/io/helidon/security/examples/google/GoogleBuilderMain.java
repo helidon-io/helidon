@@ -23,6 +23,7 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -56,13 +57,12 @@ public final class GoogleBuilderMain {
 
         System.out.printf("""
                         Server started in %d ms
-                        Started server on localhost: %d
-                        You can access this example at http://localhost:%d/index.html
+                        Started server on localhost: %2$d
+                        You can access this example at http://localhost:%2$d/index.html
 
                         Check application.yaml in case you are behind a proxy to configure it
                         """,
                 TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS),
-                server.port(),
                 server.port());
     }
 
@@ -72,6 +72,7 @@ public final class GoogleBuilderMain {
                         .clientId("your-client-id.apps.googleusercontent.com"))
                 .build();
         server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.create(security))
                 .get("/rest/profile", SecurityFeature.authenticate(),
                         (req, res) -> {

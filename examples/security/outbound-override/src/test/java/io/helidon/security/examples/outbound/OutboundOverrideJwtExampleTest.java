@@ -15,9 +15,13 @@
  */
 package io.helidon.security.examples.outbound;
 
+import java.net.URI;
+
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -37,41 +41,50 @@ public class OutboundOverrideJwtExampleTest {
 
     private final Http1Client client;
 
-    OutboundOverrideJwtExampleTest(WebServer server, Http1Client client) {
+    OutboundOverrideJwtExampleTest(WebServer server, URI uri) {
         server.context().register(server);
-        this.client = client;
-    }
-
-    @SetUpServer
-    public static void setup(WebServerConfig.Builder server, Http1Client.Http1ClientBuilder client) {
-        OutboundOverrideJwtExample.setup(server);
-
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
+        client = Http1Client.builder()
+                .baseUri(uri)
+                .addService(WebClientSecurity.create(security))
+                .build();
+    }
 
-        client.addService(WebClientSecurity.create(security));
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        OutboundOverrideJwtExample.setup(server);
     }
 
     @Test
     public void testOverrideExample() {
-        String value = client.get()
+        try (Http1ClientResponse response = client.get()
                 .path("/override")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class);
+                .request()) {
 
-        assertThat(value, is("You are: jack, backend service returned: jill"));
+            assertThat(response.status().code(), is(200));
+
+            String entity = response.entity().as(String.class);
+            assertThat(entity, is("You are: jack, backend service returned: jill"));
+        }
     }
 
     @Test
     public void testPropagateExample() {
-        String value = client.get()
+        try (Http1ClientResponse response = client.get()
                 .path("/propagate")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class);
+                .request()) {
 
-        assertThat(value, is("You are: jack, backend service returned: jack"));
+            assertThat(response.status().code(), is(200));
+
+            String entity = response.entity().as(String.class);
+            assertThat(entity, is("You are: jack, backend service returned: jack"));
+        }
+
     }
 }

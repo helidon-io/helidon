@@ -24,6 +24,7 @@ import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
@@ -58,13 +59,12 @@ public final class GoogleConfigMain {
 
         System.out.printf("""
                         Server started in %d ms
-                        Started server on localhost: %d
-                        You can access this example at http://localhost:%d/index.html
+                        Started server on localhost: %2$d
+                        You can access this example at http://localhost:%2$d/index.html
 
                         Check application.yaml in case you are behind a proxy to configure it
                         """,
                 TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS),
-                server.port(),
                 server.port());
     }
 
@@ -81,6 +81,7 @@ public final class GoogleConfigMain {
     static void setup(WebServerConfig.Builder server) {
         Config config = buildConfig();
         server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
                 .addFeature(SecurityFeature.create(config.get("security")))
                 .get("/rest/profile", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
