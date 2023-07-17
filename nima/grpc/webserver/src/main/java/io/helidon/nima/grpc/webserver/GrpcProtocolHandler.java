@@ -173,28 +173,25 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void sendMessage(RES message) {
-
-                BufferData bufferData = null;
-
                 try (InputStream inputStream = route.method().streamResponse(message)) {
                     byte[] bytes = inputStream.readAllBytes();
-                    bufferData = BufferData.create(5 + bytes.length);
+                    BufferData bufferData = BufferData.create(5 + bytes.length);
                     bufferData.write(0);
                     bufferData.writeUnsignedInt32(bytes.length);
                     bufferData.write(bytes);
+
+                    // todo flags based on method type
+                    // end flag should be sent when last message is sent (or just rst stream if we cannot determine this)
+
+                    Http2FrameHeader header = Http2FrameHeader.create(bufferData.available(),
+                            Http2FrameTypes.DATA,
+                            Http2Flag.DataFlags.create(0),
+                            streamId);
+
+                    streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
                 } catch (Exception e) {
                     LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
                 }
-
-                // todo flags based on method type
-                // end flag should be sent when last message is sent (or just rst stream if we cannot determine this)
-
-                Http2FrameHeader header = Http2FrameHeader.create(bufferData.available(),
-                                                                  Http2FrameTypes.DATA,
-                                                                  Http2Flag.DataFlags.create(0),
-                                                                  streamId);
-
-                streamWriter.writeData(new Http2FrameData(header, bufferData), flowControl.outbound());
             }
 
             @Override
