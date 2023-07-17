@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,11 @@ import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
+
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
-import org.eclipse.microprofile.health.HealthCheck;
-import org.eclipse.microprofile.health.HealthCheckResponse;
-import org.eclipse.microprofile.health.HealthCheckResponseBuilder;
 
 /**
  * Microstream health check.
@@ -46,22 +47,29 @@ public class MicrostreamHealthCheck implements HealthCheck {
     }
 
     @Override
+    public HealthCheckType type() {
+        return HealthCheckType.LIVENESS;
+    }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
     public HealthCheckResponse call() {
-        HealthCheckResponseBuilder builder = HealthCheckResponse.builder().name(name);
+        HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
+        // .name(name);
 
         try {
-            CompletableFuture<Boolean> status = CompletableFuture.supplyAsync(() -> embeddedStorageManager.isRunning())
+            CompletableFuture<Boolean> status = CompletableFuture.supplyAsync(embeddedStorageManager::isRunning)
                     .orTimeout(timeoutDuration, timeoutUnit);
 
-            if (status.get()) {
-                builder.up();
-            } else {
-                builder.down();
-            }
+            builder.status(status.get());
         } catch (Throwable e) {
-            builder.down();
-            builder.withData("ErrorMessage", e.getMessage());
-            builder.withData("ErrorClass", e.getClass().getName());
+            builder.status(false)
+                .detail("ErrorMessage", e.getMessage())
+                .detail("ErrorClass", e.getClass().getName());
         }
 
         return builder.build();
