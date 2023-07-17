@@ -33,7 +33,6 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -87,7 +86,6 @@ public class MutualTlsTest {
     }
 
     @Test
-    @Disabled
     public void testNoClientCert() {
         Http1Client client = createWebClient(CONFIG.get("no-client-cert"));
 
@@ -96,7 +94,6 @@ public class MutualTlsTest {
     }
 
     @Test
-    @Disabled
     public void testOptionalAuthentication() {
         Http1Client client = createWebClient(CONFIG.get("no-client-cert"));
 
@@ -107,7 +104,6 @@ public class MutualTlsTest {
     }
 
     @Test
-    @Disabled
     public void testServerCertInvalidCn() {
         int port = server.port("invalid-server-cert");
         Http1Client clientOne = createWebClient(CONFIG.get("server-cert-invalid-cn"));
@@ -120,7 +116,6 @@ public class MutualTlsTest {
     }
 
     @Test
-    @Disabled
     public void testClientNoCa() {
         int port = server.port("client-no-ca");
         Http1Client clientOne = createWebClient(CONFIG.get("client-no-ca"));

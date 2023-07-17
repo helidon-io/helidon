@@ -182,7 +182,6 @@ class TlsConfigInterceptor implements Prototype.BuilderInterceptor<TlsConfig.Bui
         switch (target.clientAuth()) {
         case REQUIRED -> {
             parameters.setNeedClientAuth(true);
-            parameters.setWantClientAuth(true);
         }
         case OPTIONAL -> {
             parameters.setWantClientAuth(true);

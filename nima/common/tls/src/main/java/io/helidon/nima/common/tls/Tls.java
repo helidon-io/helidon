@@ -21,7 +21,6 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Arrays;
@@ -40,7 +39,6 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 
 /**
@@ -61,9 +59,6 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @see TlsConfig#endpointIdentificationAlgorithm()
      */
     public static final String ENDPOINT_IDENTIFICATION_NONE = "NONE";
-    // secure random cannot be stored in native image, it must
-    // be initialized at runtime
-    private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
 
     private final SSLContext sslContext;
     private final SSLParameters sslParameters;
