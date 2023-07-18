@@ -17,10 +17,7 @@ package io.helidon.tests.integration.webclient;
 
 import java.io.UncheckedIOException;
 import java.security.Principal;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
@@ -182,25 +179,12 @@ public class MutualTlsTest {
                 .build();
     }
 
-    private static final Pattern CN_PATTERN = Pattern.compile("(.*)CN=(.*?)(,.*)?");
-
-    private static Optional<String> clientCertificateName(String name) {
-        Matcher matcher = CN_PATTERN.matcher(name);
-        if (matcher.matches()) {
-            String cn = matcher.group(2);
-            if (!cn.isBlank()) {
-                return Optional.of(cn);
-            }
-        }
-        return Optional.empty();
-    }
-
     private static void mTlsRouting(HttpRouting.Builder routing) {
         routing.get("/", (req, res) -> {
             String cn = req.remotePeer()
                     .tlsPrincipal()
                     .map(Principal::getName)
-                    .flatMap(MutualTlsTest::clientCertificateName)
+                    .flatMap(CertificateHelper::clientCertificateName)
                     .orElse("Unknown CN");
 
             // close to avoid re-using cached connections on the client side

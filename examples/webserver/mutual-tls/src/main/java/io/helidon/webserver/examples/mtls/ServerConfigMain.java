@@ -15,9 +15,7 @@
  */
 package io.helidon.webserver.examples.mtls;
 
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -57,18 +55,13 @@ public class ServerConfigMain {
     static void setup(WebServerConfig.Builder server, Config config) {
         server.config(config)
                 .routing(ServerConfigMain::plainRouting)
-                .putSocket("secured", ServerConfigMain::securedSocket);
+                .putSocket("secured", socket -> socket
+                        .from(server.sockets().get("secured"))
+                        .routing(routing -> routing
+                                .register("/", new SecureService())));
     }
 
     private static void plainRouting(HttpRouting.Builder routing) {
         routing.get("/", (req, res) -> res.send("Hello world unsecured!"));
-    }
-
-    private static void securedSocket(ListenerConfig.Builder socket) {
-        socket.routing(routing -> routing
-                .get("/", (req, res) -> {
-                    String cn = req.headers().first(Http.Header.X_HELIDON_CN).orElse("Unknown CN");
-                    res.send("Hello " + cn + "!");
-                }));
     }
 }

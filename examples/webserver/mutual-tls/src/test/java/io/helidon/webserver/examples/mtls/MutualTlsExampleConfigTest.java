@@ -16,7 +16,6 @@
 package io.helidon.webserver.examples.mtls;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -25,6 +24,8 @@ import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.examples.mtls.ClientConfigMain.callSecured;
+import static io.helidon.webserver.examples.mtls.ClientConfigMain.callUnsecured;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -34,23 +35,24 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 public class MutualTlsExampleConfigTest {
 
-    private final WebServer server;
     private static Config config;
+    private final WebServer server;
+    private final Http1Client client;
 
     public MutualTlsExampleConfigTest(WebServer server) {
         this.server = server;
+        this.client = Http1Client.builder().config(config.get("client")).build();
     }
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        config = Config.just(() -> ConfigSources.classpath("application-test.yaml").build());
+        config = Config.create();
         ServerConfigMain.setup(server, config);
     }
 
     @Test
     public void testConfigAccessSuccessful() {
-        Http1Client client = Http1Client.builder().config(config.get("client")).build();
-        assertThat(ClientConfigMain.callUnsecured(client, server.port()), is("Hello world unsecured!"));
-        assertThat(ClientConfigMain.callSecured(client, server.port("secured")), is("Hello Helidon-client!"));
+        assertThat(callUnsecured(client, server.port()), is("Hello world unsecured!"));
+        assertThat(callSecured(client, server.port("secured")), is("Hello Helidon-client!"));
     }
 }

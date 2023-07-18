@@ -16,6 +16,7 @@
 package io.helidon.webserver.examples.mtls;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.common.tls.TlsClientAuth;
 import io.helidon.nima.webclient.WebClient;
@@ -51,14 +52,19 @@ public class ClientBuilderMain {
     }
 
     static Http1Client createClient() {
+        Keys keyConfig = Keys.builder()
+                .keystore(store -> store
+                        .trustStore(true)
+                        .keystore(Resource.create("client.p12"))
+                        .passphrase("password"))
+                .build();
         return Http1Client.builder()
                 .tls(Tls.builder()
+                        .endpointIdentificationAlgorithm("NONE")
                         .clientAuth(TlsClientAuth.REQUIRED)
-                        .privateKey(key -> key
-                                .keystore(store -> store
-                                        .trustStore(true)
-                                        .passphrase("password")
-                                        .keystore(Resource.create("client.p12")))))
+                        .privateKey(keyConfig)
+                        .privateKeyCertChain(keyConfig)
+                        .trust(keyConfig))
                 .build();
     }
 

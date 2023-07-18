@@ -23,6 +23,8 @@ import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.examples.mtls.ClientBuilderMain.callSecured;
+import static io.helidon.webserver.examples.mtls.ClientBuilderMain.callUnsecured;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -46,7 +48,7 @@ public class MutualTlsExampleBuilderTest {
     @Test
     public void testBuilderAccessSuccessful() {
         Http1Client client = ClientBuilderMain.createClient();
-        assertThat(ClientBuilderMain.callUnsecured(client, server.port()), is("Hello world unsecured!"));
-        assertThat(ClientBuilderMain.callSecured(client, server.port("secured")), is("Hello Helidon-client!"));
+        assertThat(callUnsecured(client, server.port()), is("Hello world unsecured!"));
+        assertThat(callSecured(client, server.port("secured")), is("Hello Helidon-client!"));
     }
 }

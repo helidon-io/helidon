@@ -16,7 +16,6 @@
 package io.helidon.webserver.examples.mtls;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.Http;
 import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.TlsClientAuth;
 import io.helidon.nima.webserver.ListenerConfig;
@@ -74,15 +73,13 @@ public class ServerBuilderMain {
                         .passphrase("password"))
                 .build();
 
-        socket.port(443)
-                .tls(tls -> tls
+        socket.tls(tls -> tls
+                        .endpointIdentificationAlgorithm("NONE")
                         .clientAuth(TlsClientAuth.REQUIRED)
                         .trust(keyConfig)
-                        .privateKey(keyConfig))
+                        .privateKey(keyConfig)
+                        .privateKeyCertChain(keyConfig))
                 .routing(routing -> routing
-                        .get("/", (req, res) -> {
-                            String cn = req.headers().first(Http.Header.X_HELIDON_CN).orElse("Unknown CN");
-                            res.send("Hello " + cn + "!");
-                        }));
+                        .register("/", new SecureService()));
     }
 }
