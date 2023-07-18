@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.examples.faulttolerance;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
 import io.helidon.nima.testing.junit5.webserver.RoutingTest;
@@ -54,8 +57,9 @@ class MainTest {
         // bulkhead is configured for limit of 1 and queue of 1, so third
         // request should fail
 
-        client.get("/ft/bulkhead/10000").request().close();
-        client.get("/ft/bulkhead/10000").request().close();
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        executor.submit(() -> client.get("/ft/bulkhead/10000").request().close());
+        executor.submit(() -> client.get("/ft/bulkhead/10000").request().close());
 
         // I want to make sure the above is connected
         Thread.sleep(300);
@@ -64,27 +68,29 @@ class MainTest {
             // registered an error handler in Main
             assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
             assertThat(response.as(String.class), is("bulkhead"));
+        } finally {
+            executor.close();
         }
     }
 
     @Test
     void testCircuitBreaker() {
-        try (Http1ClientResponse response = client.get("/circuitBreaker/true").request()) {
+        try (Http1ClientResponse response = client.get("/ft/circuitBreaker/true").request()) {
             assertThat(response.as(String.class), is("blocked for 100 millis"));
         }
 
         // error ratio is 20% within 10 request
         // should work after first
-        try (Http1ClientResponse ignored = client.get("/circuitBreaker/false").request();
-             Http1ClientResponse response = client.get("/circuitBreaker/true").request()) {
+        try (Http1ClientResponse ignored = client.get("/ft/circuitBreaker/false").request();
+             Http1ClientResponse response = client.get("/ft/circuitBreaker/true").request()) {
 
             assertThat(response.as(String.class), is("blocked for 100 millis"));
         }
 
         // should open after second
-        client.get("/circuitBreaker/false").request().close();
+        client.get("/ft/circuitBreaker/false").request().close();
 
-        try (Http1ClientResponse response = client.get("/circuitBreaker/true").request()) {
+        try (Http1ClientResponse response = client.get("/ft/circuitBreaker/true").request()) {
 
             // registered an error handler in Main
             assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
@@ -94,30 +100,30 @@ class MainTest {
 
     @Test
     void testFallback() {
-        try (Http1ClientResponse response = client.get("/fallback/true").request()) {
+        try (Http1ClientResponse response = client.get("/ft/fallback/true").request()) {
             assertThat(response.as(String.class), is("blocked for 100 millis"));
         }
 
-        try (Http1ClientResponse response = client.get("/fallback/false").request()) {
+        try (Http1ClientResponse response = client.get("/ft/fallback/false").request()) {
             assertThat(response.as(String.class), is("Failed back because of failure"));
         }
     }
 
     @Test
     void testRetry() {
-        try (Http1ClientResponse response = client.get("/retry/1").request()) {
-            assertThat(response, is("calls/failures: 1/0"));
+        try (Http1ClientResponse response = client.get("/ft/retry/1").request()) {
+            assertThat(response.as(String.class), is("calls/failures: 1/0"));
         }
 
-        try (Http1ClientResponse response = client.get("/retry/2").request()) {
-            assertThat(response, is("calls/failures: 2/1"));
+        try (Http1ClientResponse response = client.get("/ft/retry/2").request()) {
+            assertThat(response.as(String.class), is("calls/failures: 2/1"));
         }
 
-        try (Http1ClientResponse response = client.get("/retry/3").request()) {
-            assertThat(response, is("calls/failures: 3/2"));
+        try (Http1ClientResponse response = client.get("/ft/retry/3").request()) {
+            assertThat(response.as(String.class), is("calls/failures: 3/2"));
         }
 
-        try (Http1ClientResponse response = client.get("/retry/4").request()) {
+        try (Http1ClientResponse response = client.get("/ft/retry/4").request()) {
             // no error handler specified
             assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
             assertThat(response.as(String.class), is("java.lang.RuntimeException: failure"));
@@ -126,11 +132,11 @@ class MainTest {
 
     @Test
     void testTimeout() {
-        try (Http1ClientResponse response = client.get("/timeout/10").request()) {
-            assertThat(response, is("Slept for 10 ms"));
+        try (Http1ClientResponse response = client.get("/ft/timeout/10").request()) {
+            assertThat(response.as(String.class), is("Slept for 10 ms"));
         }
 
-        try (Http1ClientResponse response = client.get("/timeout/1000").request()) {
+        try (Http1ClientResponse response = client.get("/ft/timeout/1000").request()) {
             // error handler specified in Main
             assertThat(response.status(), is(Http.Status.REQUEST_TIMEOUT_408));
             assertThat(response.as(String.class), is("timeout"));

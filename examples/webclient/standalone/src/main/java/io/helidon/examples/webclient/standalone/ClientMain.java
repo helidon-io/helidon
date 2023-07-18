@@ -135,7 +135,6 @@ public class ClientMain {
         Path file = Paths.get("test.txt");
         try {
             Files.deleteIfExists(file);
-            Files.createFile(file);
         } catch (IOException e) {
             e.printStackTrace();
         }

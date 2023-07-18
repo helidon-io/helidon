@@ -16,12 +16,11 @@
 
 package io.helidon.webserver.examples.faulttolerance;
 
-import java.util.concurrent.TimeoutException;
-
 import io.helidon.common.http.Http;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.faulttolerance.BulkheadException;
 import io.helidon.nima.faulttolerance.CircuitBreakerOpenException;
+import io.helidon.nima.faulttolerance.TimeoutException;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;

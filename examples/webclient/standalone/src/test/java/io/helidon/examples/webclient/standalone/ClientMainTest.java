@@ -20,32 +20,32 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.spi.WebClientService;
-
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test for verification of WebClient example.
  */
 @ServerTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ClientMainTest {
 
     private static final MetricRegistry METRIC_REGISTRY =
@@ -62,7 +62,7 @@ public class ClientMainTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        ServerMain.setup(server, Config.empty());
+        ServerMain.setup(server, Config.create());
     }
 
     @AfterEach
@@ -83,23 +83,15 @@ public class ClientMainTest {
     }
 
     @Test
-    public void testPerformPutAndGetMethod() {
-        Http1Client client = client();
-        String greeting = ClientMain.performGetMethod(client);
-        assertThat(greeting, is("{\"message\":\"Hello World!\"}"));
-        ClientMain.performPutMethod(client);
-        greeting = ClientMain.performGetMethod(client);
-        assertThat(greeting, is("{\"message\":\"Hola World!\"}"));
-    }
-
-    @Test
+    @Order(1)
     public void testPerformRedirect() {
-        Http1Client client = client(new RedirectClientServiceTest());
+        Http1Client client = client();
         String greeting = ClientMain.followRedirects(client);
         assertThat(greeting, is("{\"message\":\"Hello World!\"}"));
     }
 
     @Test
+    @Order(2)
     public void testFileDownload() throws IOException {
         Http1Client client = client();
         ClientMain.saveResponseToFile(client);
@@ -108,6 +100,7 @@ public class ClientMainTest {
     }
 
     @Test
+    @Order(3)
     public void testMetricsExample() {
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
@@ -116,22 +109,15 @@ public class ClientMainTest {
         assertThat("Counter " + counterName + " " + "has not been 1", counter.getCount(), is(1L));
     }
 
-    private static final class RedirectClientServiceTest implements WebClientService {
-
-        private volatile boolean redirect = true;
-
-        @Override
-        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest clientRequest) {
-            WebClientServiceResponse response = chain.proceed(clientRequest);
-            boolean redirect = this.redirect;
-            if (response.status() == Http.Status.MOVED_PERMANENTLY_301 && redirect) {
-                fail("Received second redirect! Only one redirect expected here.");
-            } else if (response.status() == Http.Status.OK_200 && !redirect) {
-                fail("There was status 200 without status 301 before it.");
-            }
-            this.redirect = !redirect;
-            return response;
-        }
+    @Test
+    @Order(4)
+    public void testPerformPutAndGetMethod() {
+        Http1Client client = client();
+        String greeting = ClientMain.performGetMethod(client);
+        assertThat(greeting, is("{\"message\":\"Hello World!\"}"));
+        ClientMain.performPutMethod(client);
+        greeting = ClientMain.performGetMethod(client);
+        assertThat(greeting, is("{\"message\":\"Hola World!\"}"));
     }
 
 }

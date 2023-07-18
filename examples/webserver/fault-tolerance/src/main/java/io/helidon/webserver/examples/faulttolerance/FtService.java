@@ -118,7 +118,7 @@ public class FtService implements HttpService {
     }
 
     private void asyncHandler(ServerRequest request, ServerResponse response) {
-        async.invoke(this::data).thenAccept(response::send);
+        response.send(async.invoke(this::data).join());
     }
 
     private String failure() {
