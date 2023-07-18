@@ -27,8 +27,6 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
-import io.helidon.security.integration.jersey.JerseySecurityFeature;
-import io.helidon.security.integration.jersey.SecurityDisabledFeature;
 import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.spi.AuthenticationProvider;
@@ -95,7 +93,7 @@ public class SecurityCdiExtension implements Extension {
         securityBuilder.config(config.get("security"));
     }
 
-    // security must have priority higher than metrics, openapi and healt
+    // security must have priority higher than metrics, openapi and health
     // so we can protect these endpoints
     private void registerSecurity(@Observes @Priority(LIBRARY_BEFORE) @Initialized(ApplicationScoped.class) Object adv,
                                   BeanManager bm) {
@@ -145,6 +143,12 @@ public class SecurityCdiExtension implements Extension {
             JerseySecurityFeature feature = JerseySecurityFeature.builder(security)
                     .config(jerseyConfig)
                     .build();
+
+            if (LOGGER.isLoggable(Level.TRACE)) {
+                LOGGER.log(Level.TRACE, "Security feature config: {0}. Registered for applications: {1}",
+                           feature.featureConfig(),
+                           jaxrs.applicationsToRun());
+            }
 
             jaxrs.applicationsToRun()
                     .forEach(app -> app.resourceConfig().register(feature));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,25 +16,21 @@
 
 package io.helidon.security.examples.signatures;
 
-import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.Subject;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.security.integration.nima.SecurityFeature;
 
 /**
  * Example of authentication of service with http signatures, using configuration file as much as possible.
  */
+@SuppressWarnings("DuplicatedCode")
 public class SignatureExampleConfigMain {
-
-    // used from unit tests
-    private static WebServer service1Server;
-    private static WebServer service2Server;
 
     private SignatureExampleConfigMain() {
     }
@@ -45,79 +41,66 @@ public class SignatureExampleConfigMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        // to allow us to set host header explicitly
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build();
+        server.context().register(server);
 
-        // start service 2 first, as it is required by service 1
-        service2Server = SignatureExampleUtil.startServer(routing2(), 9080);
-        service1Server = SignatureExampleUtil.startServer(routing1(), 8080);
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
 
-        System.out.println("Signature example: from configuration");
-        System.out.println();
-        System.out.println("Users:");
-        System.out.println("jack/password in roles: user, admin");
-        System.out.println("jill/password in roles: user");
-        System.out.println("john/password in no roles");
-        System.out.println();
-        System.out.println("***********************");
-        System.out.println("** Endpoints:        **");
-        System.out.println("***********************");
-        System.out.println("Basic authentication, user role required, will use symmetric signatures for outbound:");
-        System.out.printf("  http://localhost:%1$d/service1%n", service1Server.port());
-        System.out.println("Basic authentication, user role required, will use asymmetric signatures for outbound:");
-        System.out.printf("  http://localhost:%1$d/service1-rsa%n", service1Server.port());
-        System.out.println();
+        System.out.printf("""
+                Server started in %1d ms
+
+                Signature example: from config
+
+                Users:
+                jack/password in roles: user, admin
+                jill/password in roles: user
+                john/password in no roles
+
+                ***********************
+                ** Endpoints:        **
+                ***********************
+
+                Basic authentication, user role required, will use symmetric signatures for outbound:
+                  http://localhost:%2$d/service1
+                Basic authentication, user role required, will use asymmetric signatures for outbound:
+                  http://localhost:%3$d/service1-rsa
+
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS), server.port(), server.port("service2"));
     }
 
-    private static Routing routing2() {
-        Config config = config("service2.yaml");
+    static void setup(WebServerConfig.Builder server) {
+        server.routing(SignatureExampleConfigMain::routing1)
+                .putSocket("service2", socket -> socket
+                        .routing(SignatureExampleConfigMain::routing2));
+    }
+
+    private static void routing2(HttpRouting.Builder routing) {
         // build routing (security is loaded from config)
-        return Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(config.get("security")))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/{*}", (req, res) -> {
-                    Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-                    res.send("Response from service2, you are: \n" + securityContext
-                            .flatMap(SecurityContext::user)
-                            .map(Subject::toString)
-                            .orElse("Security context is null") + ", service: " + securityContext
-                            .flatMap(SecurityContext::service)
-                            .map(Subject::toString));
-                })
-                .build();
+        Config config = config("service2.yaml");
+
+        // helper method to load both security and web server security from configuration
+        routing.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(config.get("security")))
+                .register(new Service2());
     }
 
-    private static Routing routing1() {
+    private static void routing1(HttpRouting.Builder routing) {
+        // build routing (security is loaded from config)
         Config config = config("service1.yaml");
 
-        // build routing (security is loaded from config)
-        return Routing.builder()
-                // helper method to load both security and web server security from configuration
-                .register(WebSecurity.create(config.get("security")))
-                // web server does not (yet) have possibility to configure routes in config files, so explicit...
-                .get("/service1", (req, res) -> {
-                    SignatureExampleUtil.processService1Request(req, res, "/service2", service2Server.port());
-                })
-                .get("/service1-rsa", (req, res) -> {
-                    SignatureExampleUtil.processService1Request(req, res, "/service2-rsa", service2Server.port());
-                })
-                .build();
+        // helper method to load both security and web server security from configuration
+        routing.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(config.get("security")))
+                .register(new Service1());
     }
 
     private static Config config(String confFile) {
-        // load configuration
         return Config.builder()
                 .sources(ConfigSources.classpath(confFile))
                 .build();
-    }
-
-    static WebServer getService1Server() {
-        return service1Server;
-    }
-
-    static WebServer getService2Server() {
-        return service2Server;
     }
 }

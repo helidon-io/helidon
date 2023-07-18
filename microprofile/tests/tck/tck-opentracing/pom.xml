@@ -33,13 +33,6 @@
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <!-- we must remove security tracing -->
-                    <groupId>io.helidon.security.integration</groupId>
-                    <artifactId>helidon-security-integration-jersey-client</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.opentracing</groupId>

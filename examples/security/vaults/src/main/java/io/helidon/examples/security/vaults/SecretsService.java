@@ -16,27 +16,27 @@
 
 package io.helidon.examples.security.vaults;
 
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.security.Security;
 
-class SecretsService implements Service {
+class SecretsService implements HttpService {
     private final Security security;
 
     SecretsService(Security security) {
         this.security = security;
     }
 
+
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/{name}", this::secret);
     }
 
     private void secret(ServerRequest req, ServerResponse res) {
-        String secretName = req.path().param("name");
-        String secret = security.secret(secretName, "default-" + secretName);
-        res.send(secret);
+        String secretName = req.path().pathParameters().value("name");
+        res.send(security.secret(secretName, "default-" + secretName));
     }
 }

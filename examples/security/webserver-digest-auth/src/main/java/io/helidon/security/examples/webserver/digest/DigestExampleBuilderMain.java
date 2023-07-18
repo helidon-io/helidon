@@ -24,14 +24,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.httpauth.HttpDigest;
 import io.helidon.security.providers.httpauth.HttpDigestAuthProvider;
 import io.helidon.security.providers.httpauth.SecureUserStore;
@@ -39,9 +41,8 @@ import io.helidon.security.providers.httpauth.SecureUserStore;
 /**
  * Example of HTTP digest authentication with WebServer fully configured programmatically.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public final class DigestExampleBuilderMain {
-    // used from unit tests
-    private static WebServer server;
     // simple approach to user storage - for real world, use data store...
     private static final Map<String, MyUser> USERS = new HashMap<>();
 
@@ -57,24 +58,57 @@ public final class DigestExampleBuilderMain {
     }
 
     /**
-     * Starts this example. Programmatical configuration. See standard output for instructions.
+     * Starts this example. Programmatic configuration. See standard output for instructions.
      *
      * @param args ignored
      */
     public static void main(String[] args) {
-        // load logging configuration
         LogConfig.configureRuntime();
 
-        // build routing (same as done in application.conf)
-        Routing routing = Routing.builder()
-                .register(buildWebSecurity().securityDefaults(WebSecurity.authenticate()))
-                .get("/noRoles", WebSecurity.enforce())
-                .get("/user[/{*}]", WebSecurity.rolesAllowed("user"))
-                .get("/admin", WebSecurity.rolesAllowed("admin"))
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build();
+
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
+
+        System.out.printf("""
+                Server started in %d ms
+
+                Started server on localhost:%2$d
+
+                Users:
+                jack/password in roles: user, admin
+                jill/password in roles: user
+                john/password in no roles
+
+                ***********************
+                ** Endpoints:        **
+                ***********************
+
+                No authentication: http://localhost:%2$d/public
+                No roles required, authenticated: http://localhost:%2$d/noRoles
+                User role required: http://localhost:%2$d/user
+                Admin role required: http://localhost:%2$d/admin
+                Always forbidden (uses role nobody is in), audited: http://localhost:%2$d/deny
+                Admin role required, authenticated, authentication optional, audited \
+                (always forbidden - challenge is not returned as authentication is optional): http://localhost:%2$d/noAuthn
+
+                """, TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS), server.port());
+    }
+
+    static void setup(WebServerConfig.Builder server) {
+        server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
+                .addFeature(buildWebSecurity().securityDefaults(SecurityFeature.authenticate()))
+                .get("/noRoles", SecurityFeature.enforce())
+                .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
+                .get("/admin", SecurityFeature.rolesAllowed("admin"))
                 // audit is not enabled for GET methods by default
-                .get("/deny", WebSecurity.rolesAllowed("deny").audit())
+                .get("/deny", SecurityFeature.rolesAllowed("deny").audit())
                 // roles allowed imply authn and authz
-                .any("/noAuthn", WebSecurity.rolesAllowed("admin")
+                .any("/noAuthn", SecurityFeature.rolesAllowed("admin")
                         .authenticationOptional()
                         .audit())
                 .get("/{*}", (req, res) -> {
@@ -83,14 +117,10 @@ public final class DigestExampleBuilderMain {
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));
-                })
-                .build();
-
-        // start server (blocks until started)
-        server = DigestExampleUtil.startServer(routing);
+                }));
     }
 
-    private static WebSecurity buildWebSecurity() {
+    private static SecurityFeature buildWebSecurity() {
         Security security = Security.builder()
                 .addAuthenticationProvider(
                         HttpDigestAuthProvider.builder()
@@ -99,31 +129,14 @@ public final class DigestExampleBuilderMain {
                                 .userStore(buildUserStore()),
                         "digest-auth")
                 .build();
-        return WebSecurity.create(security);
+        return SecurityFeature.create(security);
     }
 
     private static SecureUserStore buildUserStore() {
         return login -> Optional.ofNullable(USERS.get(login));
     }
 
-    static WebServer getServer() {
-        return server;
-    }
-
-    private static class MyUser implements SecureUserStore.User {
-        private String login;
-        private char[] password;
-        private Set<String> roles;
-
-        private MyUser(String login, char[] password, Set<String> roles) {
-            this.login = login;
-            this.password = password;
-            this.roles = roles;
-        }
-
-        private char[] password() {
-            return password;
-        }
+    private record MyUser(String login, char[] password, Set<String> roles) implements SecureUserStore.User {
 
         private static String bytesToHex(byte[] bytes) {
             char[] hexChars = new char[bytes.length * 2];
@@ -154,16 +167,6 @@ public final class DigestExampleBuilderMain {
                 throw new IllegalStateException("MD5 algorithm should be supported", e);
             }
             return Optional.of(bytesToHex(digest.digest(bytes)));
-        }
-
-        @Override
-        public Set<String> roles() {
-            return roles;
-        }
-
-        @Override
-        public String login() {
-            return login;
         }
     }
 }

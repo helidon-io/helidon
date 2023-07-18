@@ -16,44 +16,41 @@
 
 package io.helidon.examples.security.vaults;
 
-import java.nio.charset.StandardCharsets;
-
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.security.Security;
 
-class DigestService implements Service {
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+class DigestService implements HttpService {
     private final Security security;
 
     DigestService(Security security) {
         this.security = security;
     }
 
+
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/digest/{config}/{text}", this::digest)
-                .get("/verify/{config}/{text}/{digest:.*}", this::verify);
+             .get("/verify/{config}/{text}/{digest:.*}", this::verify);
     }
 
     private void digest(ServerRequest req, ServerResponse res) {
-        String configName = req.path().param("config");
-        String text = req.path().param("text");
+        String configName = req.path().pathParameters().value("config");
+        String text = req.path().pathParameters().value("text");
 
-        String toSend = security.digest(configName, text.getBytes(StandardCharsets.UTF_8));
-        res.send(toSend);
+        res.send(security.digest(configName, text.getBytes(UTF_8)));
     }
 
     private void verify(ServerRequest req, ServerResponse res) {
-        String configName = req.path().param("config");
-        String text = req.path().param("text");
-        String digest = req.path().param("digest");
+        String configName = req.path().pathParameters().value("config");
+        String text = req.path().pathParameters().value("text");
+        String digest = req.path().pathParameters().value("digest");
 
-        if (security.verifyDigest(configName, text.getBytes(StandardCharsets.UTF_8), digest)) {
-            res.send("Valid");
-        } else {
-            res.send("Invalid");
-        }
+        boolean valid = security.verifyDigest(configName, text.getBytes(UTF_8), digest);
+        res.send(valid ? "Valid" : "Invalid");
     }
 }

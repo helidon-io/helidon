@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -192,28 +192,28 @@ First thing to do is to open the pom.xml file and add helidon dependencies to us
 ----
 <dependencies>
     <dependency>
-        <groupId>io.helidon.reactive.dbclient</groupId>       <!--1-->
-        <artifactId>helidon-reactive-dbclient</artifactId>
+        <groupId>io.helidon.dbclient</groupId>       <!--1-->
+        <artifactId>helidon-dbclient</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.helidon.reactive.dbclient</groupId>      <!--2-->
-        <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
+        <groupId>io.helidon.dbclient</groupId>      <!--2-->
+        <artifactId>helidon-dbclient-jdbc</artifactId>
     </dependency>
     <dependency>
         <groupId>io.helidon.integrations.db</groupId>   <!--3-->
         <artifactId>h2</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.helidon.reactive.dbclient</groupId>      <!--4-->
-        <artifactId>helidon-reactive-dbclient-health</artifactId>
+        <groupId>io.helidon.dbclient</groupId>      <!--4-->
+        <artifactId>helidon-dbclient-health</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.helidon.reactive.dbclient</groupId>      <!--5-->
-        <artifactId>helidon-reactive-dbclient-metrics</artifactId>
+        <groupId>io.helidon.dbclient</groupId>      <!--5-->
+        <artifactId>helidon-dbclient-metrics</artifactId>
     </dependency>
     <dependency>
-        <groupId>io.helidon.reactive.dbclient</groupId>      <!--6-->
-        <artifactId>helidon-reactive-dbclient-jsonp</artifactId>
+        <groupId>io.helidon.dbclient</groupId>      <!--6-->
+        <artifactId>helidon-dbclient-jsonp</artifactId>
     </dependency>
 </dependencies>
 ----

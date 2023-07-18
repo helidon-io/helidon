@@ -12,7 +12,7 @@ Example:
 ```xml
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-oidc-reactive</artifactId>
+    <artifactId>helidon-security-providers-oidc</artifactId>
 </dependency>
 ```
 

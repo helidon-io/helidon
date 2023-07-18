@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 
 package io.helidon.examples.security.vaults;
 
-import java.util.concurrent.TimeUnit;
-
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.security.Security;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -49,19 +46,18 @@ public final class VaultsExampleMain {
         Config config = buildConfig();
 
         System.out.println("This example requires a valid OCI Vault, Secret and keys configured. It also requires "
-                                   + "a Hashicorp Vault running with preconfigured data. Please see README.md");
+                + "a Hashicorp Vault running with preconfigured data. Please see README.md");
 
         Security security = Security.create(config.get("security"));
 
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
-                .routing(Routing.builder()
-                                 .register("/secrets", new SecretsService(security))
-                                 .register("/encryption", new EncryptionService(security))
-                                 .register("/digests", new DigestService(security)))
+                .routing(routing -> routing
+                        .register("/secrets", new SecretsService(security))
+                        .register("/encryption", new EncryptionService(security))
+                        .register("/digests", new DigestService(security)))
                 .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
+                .start();
 
         System.out.println("Server started on port: " + server.port());
         String baseAddress = "http://localhost:" + server.port() + "/";

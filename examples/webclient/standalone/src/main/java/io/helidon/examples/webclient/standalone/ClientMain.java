@@ -16,25 +16,21 @@
 package io.helidon.examples.webclient.standalone;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.Map;
 
-import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.IoMulti;
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webclient.metrics.WebClientMetrics;
-import io.helidon.reactive.webclient.spi.WebClientService;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.metrics.WebClientMetrics;
+import io.helidon.nima.webclient.spi.WebClientService;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -44,14 +40,14 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * A simple WebClient usage class.
- *
+ * <p>
  * Each of the methods demonstrates different usage of the WebClient.
  */
 public class ClientMain {
 
-    private static final MetricRegistry METRIC_REGISTRY = RegistryFactory.getInstance()
-            .getRegistry(Registry.APPLICATION_SCOPE);
-    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
+    private static final MetricRegistry METRIC_REGISTRY =
+            RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
+    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Map.of());
     private static final JsonObject JSON_NEW_GREETING;
 
     static {
@@ -65,9 +61,9 @@ public class ClientMain {
 
     /**
      * Executes WebClient examples.
-     *
+     * <p>
      * If no argument provided it will take server port from configuration server.port.
-     *
+     * <p>
      * User can override port from configuration by main method parameter with the specific port.
      *
      * @param args main method
@@ -79,100 +75,80 @@ public class ClientMain {
             ConfigValue<Integer> port = config.get("server.port").asInt();
             if (!port.isPresent() || port.get() == -1) {
                 throw new IllegalStateException("Unknown port! Please specify port as a main method parameter "
-                                                        + "or directly to config server.port");
+                        + "or directly to config server.port");
             }
             url = "http://localhost:" + port.get() + "/greet";
         } else {
             url = "http://localhost:" + Integer.parseInt(args[0]) + "/greet";
         }
 
-        WebClient webClient = WebClient.builder()
+        Http1Client client = Http1Client.builder()
                 .baseUri(url)
                 .config(config.get("client"))
-                //Since JSON processing support is not present by default, we have to add it.
-                .addMediaSupport(JsonpSupport.create())
                 .build();
 
-        performPutMethod(webClient)
-                .flatMapSingle(it -> performGetMethod(webClient))
-                .flatMapSingle(it -> followRedirects(webClient))
-                .flatMapSingle(it -> getResponseAsAnJsonObject(webClient))
-                .flatMapSingle(it -> saveResponseToFile(webClient))
-                .flatMapSingle(it -> clientMetricsExample(url, config))
-                //Now we need to wait until all requests are done.
-                .await();
+        performPutMethod(client);
+        performGetMethod(client);
+        followRedirects(client);
+        getResponseAsAnJsonObject(client);
+        saveResponseToFile(client);
+        clientMetricsExample(url, config);
     }
 
-    static Single<Http.Status> performPutMethod(WebClient webClient) {
+    static Http.Status performPutMethod(Http1Client client) {
         System.out.println("Put request execution.");
-        return webClient.put()
-                .path("/greeting")
-                .submit(JSON_NEW_GREETING)
-                .map(WebClientResponse::status)
-                .peek(status -> System.out.println("PUT request executed with status: " + status));
+        try (Http1ClientResponse response = client.put("/greeting").submit(JSON_NEW_GREETING)) {
+            System.out.println("PUT request executed with status: " + response.status());
+            return response.status();
+        }
     }
 
-    static Single<String> performGetMethod(WebClient webClient) {
+    static String performGetMethod(Http1Client client) {
         System.out.println("Get request execution.");
-        return webClient.get()
-                .request(String.class)
-                .peek(string -> {
-                    System.out.println("GET request successfully executed.");
-                    System.out.println(string);
-                });
+        String result = client.get().request(String.class);
+        System.out.println("GET request successfully executed.");
+        System.out.println(result);
+        return result;
     }
 
-    static Single<String> followRedirects(WebClient webClient) {
+    static String followRedirects(Http1Client client) {
         System.out.println("Following request redirection.");
-        return webClient.get()
-                .path("/redirect")
-                .request()
-                .flatMapSingle(response -> {
-                    if (response.status() != Http.Status.OK_200) {
-                        throw new IllegalStateException("Follow redirection failed!");
-                    }
-                    return response.content().as(String.class);
-                })
-                .peek(string -> {
-                    System.out.println("Redirected request successfully followed.");
-                    System.out.println(string);
-                });
+        try (Http1ClientResponse response = client.get("/redirect").request()) {
+            if (response.status() != Http.Status.OK_200) {
+                throw new IllegalStateException("Follow redirection failed!");
+            }
+            String result = response.as(String.class);
+            System.out.println("Redirected request successfully followed.");
+            System.out.println(result);
+            return result;
+        }
     }
 
-    static Single<JsonObject> getResponseAsAnJsonObject(WebClient webClient) {
-        //Support for JsonObject reading from response is not present by default.
-        //In case of this example it was registered at creation time of the WebClient instance.
+    static void getResponseAsAnJsonObject(Http1Client client) {
         System.out.println("Requesting from JsonObject.");
-        return webClient.get()
-                .request(JsonObject.class)
-                .peek(jsonObject -> {
-                    System.out.println("JsonObject successfully obtained.");
-                    System.out.println(jsonObject);
-                });
+        JsonObject jsonObject = client.get().request(JsonObject.class);
+        System.out.println("JsonObject successfully obtained.");
+        System.out.println(jsonObject);
     }
 
-    static Single<Void> saveResponseToFile(WebClient webClient) {
-        //We have to create file subscriber first. This subscriber will save the content of the response to the file.
+    static void saveResponseToFile(Http1Client client) {
         Path file = Paths.get("test.txt");
         try {
             Files.deleteIfExists(file);
-            Files.createFile(file);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         System.out.println("Downloading server response to file: " + file);
-        return webClient.get()
-                .request()
-                .map(WebClientResponse::content)
-                .flatMapSingle(content -> content
-                        .map(DataChunk::data)
-                        .flatMapIterable(Arrays::asList)
-                        .to(IoMulti.writeToFile(file).build()))
-                .peek(path -> System.out.println("Download complete!"));
+        try (Http1ClientResponse response = client.get().request()) {
+            Files.copy(response.entity().inputStream(), file);
+            System.out.println("Download complete!");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    static Single<String> clientMetricsExample(String url, Config config) {
+    static String clientMetricsExample(String url, Config config) {
         //This part here is only for verification purposes, it is not needed to be done for actual usage.
         String counterName = "example.metric.GET.localhost";
         Counter counter = METRIC_REGISTRY.counter(counterName);
@@ -185,15 +161,16 @@ public class ClientMain {
                 .build();
 
         //This newly created metric now needs to be registered to WebClient.
-        WebClient webClient = WebClient.builder()
+        Http1Client client = Http1Client.builder()
                 .baseUri(url)
                 .config(config)
                 .addService(clientService)
                 .build();
 
         //Perform any GET request using this newly created WebClient instance.
-        return performGetMethod(webClient)
-                //Verification for example purposes that metric has been incremented.
-                .peek(s -> System.out.println(counterName + ": " + counter.getCount()));
+        String result = performGetMethod(client);
+        //Verification for example purposes that metric has been incremented.
+        System.out.println(counterName + ": " + counter.getCount());
+        return result;
     }
 }

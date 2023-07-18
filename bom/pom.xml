@@ -26,7 +26,6 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
-    <groupId>io.helidon</groupId>
     <artifactId>helidon-bom</artifactId>
     <packaging>pom</packaging>
     <name>Helidon BOM POM</name>
@@ -42,50 +41,9 @@
                 <artifactId>helidon</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- webserver -->
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-http2</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-jersey</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-access-log</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-static-content</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
+           <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics-prometheus</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-test-support</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-websocket</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver</groupId>
-                <artifactId>helidon-reactive-webserver-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- Helidon Jersey -->
@@ -114,33 +72,6 @@
                 <artifactId>helidon-jersey-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- WebClient -->
-            <dependency>
-                <groupId>io.helidon.reactive.webclient</groupId>
-                <artifactId>helidon-reactive-webclient</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webclient</groupId>
-                <artifactId>helidon-reactive-webclient-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webclient</groupId>
-                <artifactId>helidon-reactive-webclient-tracing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webclient</groupId>
-                <artifactId>helidon-reactive-webclient-security</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <!-- Fault tolerance -->
-            <dependency>
-                <groupId>io.helidon.reactive.fault-tolerance</groupId>
-                <artifactId>helidon-reactive-fault-tolerance</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- gRPC -->
             <dependency>
                 <groupId>io.helidon.grpc</groupId>
@@ -156,11 +87,6 @@
             <dependency>
                 <groupId>io.helidon.nima.graphql</groupId>
                 <artifactId>helidon-nima-graphql-server</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.graphql</groupId>
-                <artifactId>helidon-reactive-graphql-server</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -182,37 +108,6 @@
             <dependency>
                 <groupId>io.helidon.integrations.micronaut</groupId>
                 <artifactId>helidon-integrations-micronaut-cdi-processor</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <!-- media -->
-            <dependency>
-                <groupId>io.helidon.reactive.media</groupId>
-                <artifactId>helidon-reactive-media-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.media</groupId>
-                <artifactId>helidon-reactive-media-jackson</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.media</groupId>
-                <artifactId>helidon-reactive-media-jsonb</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.media</groupId>
-                <artifactId>helidon-reactive-media-jsonp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.media</groupId>
-                <artifactId>helidon-reactive-media-multipart</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.metrics</groupId>
-                <artifactId>helidon-reactive-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <!-- config -->
@@ -309,11 +204,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.security.providers</groupId>
-                <artifactId>helidon-security-providers-oidc-reactive</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.providers</groupId>
                 <artifactId>helidon-security-providers-oidc-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -345,16 +235,6 @@
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-jersey</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-jersey-client</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -416,16 +296,6 @@
             <dependency>
                 <groupId>io.helidon.bundles</groupId>
                 <artifactId>helidon-bundles-config</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.bundles</groupId>
-                <artifactId>helidon-bundles-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.bundles</groupId>
-                <artifactId>helidon-bundles-jersey</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -535,11 +405,6 @@
             <dependency>
                 <groupId>io.helidon.health</groupId>
                 <artifactId>helidon-health-checks</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.health</groupId>
-                <artifactId>helidon-reactive-health</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -657,11 +522,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.reactive.service-common</groupId>
-                <artifactId>helidon-reactive-service-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.common.features</groupId>
                 <artifactId>helidon-common-features-api</artifactId>
                 <version>${helidon.version}</version>
@@ -716,53 +576,6 @@
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
                 <artifactId>helidon-dbclient-tracing</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-
-            <!-- reactive db client -->
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-jdbc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-mongodb</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-jsonp</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-metrics</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-metrics-jdbc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.dbclient</groupId>
-                <artifactId>helidon-reactive-dbclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
@@ -1079,11 +892,6 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.reactive.openapi</groupId>
-                <artifactId>helidon-reactive-openapi</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>io.helidon.microprofile.openapi</groupId>
                 <artifactId>helidon-microprofile-openapi</artifactId>
                 <version>${helidon.version}</version>
@@ -1091,11 +899,6 @@
             <!-- CORS support -->
             <dependency>
                 <groupId>io.helidon.cors</groupId>
-                <artifactId>helidon-cors</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.reactive.webserver.cors</groupId>
                 <artifactId>helidon-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -1194,7 +997,7 @@
                 <artifactId>helidon-microprofile-bean-validation</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- Microstream -->
+            <!-- MicroStream -->
             <dependency>
             	<groupId>io.helidon.integrations.microstream</groupId>
             	<artifactId>helidon-integrations-microstream</artifactId>
@@ -1308,6 +1111,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.webclient</groupId>
+                <artifactId>helidon-nima-webclient-metrics</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.http2</groupId>
                 <artifactId>helidon-nima-http2</artifactId>
                 <version>${helidon.version}</version>
@@ -1355,6 +1163,11 @@
             <dependency>
                 <groupId>io.helidon.nima.testing.junit5</groupId>
                 <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.testing.junit5</groupId>
+                <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

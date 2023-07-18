@@ -64,10 +64,6 @@
             <groupId>io.helidon.nima.observe</groupId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
-        </dependency>
-        <dependency>
             <artifactId>helidon-nima-observe-metrics</artifactId>
             <groupId>io.helidon.nima.observe</groupId>
         </dependency>
@@ -76,8 +72,8 @@
             <artifactId>helidon-health-checks</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.scheduling</groupId>
@@ -102,6 +98,11 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

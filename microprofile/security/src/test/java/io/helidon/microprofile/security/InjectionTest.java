@@ -16,6 +16,7 @@
 package io.helidon.microprofile.security;
 
 import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.Configuration;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.security.Security;
 
@@ -26,6 +27,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
+@Configuration(configSources = "bind-query-params.yaml")
 @AddBean(TestBean.class)
 class InjectionTest {
     @Inject

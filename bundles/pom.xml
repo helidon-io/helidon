@@ -26,8 +26,6 @@
     </parent>
     <modules>
         <module>config</module>
-        <module>webserver</module>
-        <module>jersey</module>
         <module>security</module>
     </modules>
 

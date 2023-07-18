@@ -47,4 +47,12 @@ interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
      */
     @ConfiguredOption
     Optional<MediaContext> fallback();
+
+    /**
+     * Should we register defaults of Helidon, such as String media support.
+     *
+     * @return whether to register default media supports
+     */
+    @ConfiguredOption("true")
+    boolean registerDefaults();
 }

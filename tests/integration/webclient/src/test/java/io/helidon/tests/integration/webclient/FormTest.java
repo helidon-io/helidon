@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,18 @@
  */
 package io.helidon.tests.integration.webclient;
 
+import java.util.List;
+
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.HttpMediaType.TEXT_PLAIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -45,45 +52,48 @@ public class FormTest extends TestParent {
             .add(NO_VALUE)
             .build();
 
+    FormTest(WebServer server) {
+        super(server);
+    }
+
     @Test
     public void testHelloWorld() {
-        webClient.post()
-                .path("/form")
-                .submit(TEST_FORM, String.class)
-                .thenAccept(resp -> assertThat(resp, is("Hi David Tester")))
-                .await();
+        try (Http1ClientResponse res = client.post("/form").submit(TEST_FORM)) {
+            assertThat(res.as(String.class), is("Hi David Tester"));
+        }
     }
 
     @Test
     public void testSpecificContentType() {
-        webClient.post()
-                .path("/form")
-                .contentType(MediaTypes.TEXT_PLAIN)
-                .submit(TEST_FORM, String.class)
-                .thenAccept(resp -> assertThat(resp, is("Hi David Tester")))
-                .await();
+        try (Http1ClientResponse res = client.post("/form")
+                .contentType(TEXT_PLAIN)
+                .submit(TEST_FORM)) {
+            assertThat(res.as(String.class), is("Hi David Tester"));
+        }
     }
 
     @Test
     public void testSpecificContentTypeIncorrect() {
-        Exception ex = assertThrows(IllegalStateException.class, () -> webClient.post()
-                .path("/form")
-                .contentType(MediaTypes.APPLICATION_ATOM_XML)
-                .submit(TEST_FORM).await());
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            try (Http1ClientResponse ignored = client.post()
+                    .path("/form")
+                    .contentType(HttpMediaType.create(MediaTypes.APPLICATION_ATOM_XML))
+                    .submit(TEST_FORM)) {
 
-        assertThat(ex.getCause().getMessage(),
-                   startsWith("No writer found for type: class "));
+                Assertions.fail();
+            }
+        });
+
+        assertThat(ex.getMessage(), startsWith("No client request media writer for class "));
     }
 
     @Test
     public void testFormContent() {
-        Parameters received = webClient.post()
-                .path("/form/content")
-                .submit(ADVANCED_TEST_FORM, Parameters.class)
-                .await();
-
-        assertThat(received.all(SPECIAL), is(ADVANCED_TEST_FORM.all(SPECIAL)));
-        assertThat(received.all(MULTIPLE), is(ADVANCED_TEST_FORM.all(MULTIPLE)));
-        assertThat(received.all(NO_VALUE).size(), is(0));
+        try (Http1ClientResponse res = client.post("/form/content").submit(ADVANCED_TEST_FORM)) {
+            Parameters received = res.as(Parameters.class);
+            assertThat(received.all(SPECIAL, List::of), is(ADVANCED_TEST_FORM.all(SPECIAL)));
+            assertThat(received.all(MULTIPLE), is(ADVANCED_TEST_FORM.all(MULTIPLE)));
+            assertThat(received.all(NO_VALUE).size(), is(0));
+        }
     }
 }

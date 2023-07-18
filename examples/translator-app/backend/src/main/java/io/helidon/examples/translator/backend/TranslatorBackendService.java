@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import io.helidon.common.http.BadRequestException;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.common.http.NotFoundException;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
  * Translator backend service.
  */
-public class TranslatorBackendService implements Service {
+@SuppressWarnings("SpellCheckingInspection")
+public class TranslatorBackendService implements HttpService {
 
     private static final String CZECH = "czech";
     private static final String SPANISH = "spanish";
@@ -129,49 +131,34 @@ public class TranslatorBackendService implements Service {
     }
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get(this::getText);
     }
 
-    private void getText(ServerRequest request, ServerResponse response) {
+    private void getText(ServerRequest req, ServerResponse res) {
 
-        String query = request.queryParams().first("q")
+        String query = req.query().first("q")
                 .orElseThrow(() -> new BadRequestException("missing query parameter 'q'"));
-        String language = request.queryParams().first("lang")
+        String language = req.query().first("lang")
                 .orElseThrow(() -> new BadRequestException("missing query parameter 'lang'"));
         String translation;
-        switch (language) {
-        case CZECH:
-            translation = TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + CZECH);
-            break;
-        case SPANISH:
-            translation = TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + SPANISH);
-            break;
-        case CHINESE:
-            translation = TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + CHINESE);
-            break;
-        case HINDI:
-            translation = TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + HINDI);
-            break;
-        case ITALIAN:
-            translation = TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + ITALIAN);
-            break;
-        case FRENCH:
-            translation = TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + FRENCH);
-            break;
-        default:
-            response.status(404)
-                    .send(String.format(
-                            "Language '%s' not in supported. Supported languages: %s, %s, %s, %s.",
-                            language,
-                            CZECH, SPANISH, CHINESE, HINDI));
-            return;
-        }
+        translation = switch (language) {
+            case CZECH -> TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + CZECH);
+            case SPANISH -> TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + SPANISH);
+            case CHINESE -> TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + CHINESE);
+            case HINDI -> TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + HINDI);
+            case ITALIAN -> TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + ITALIAN);
+            case FRENCH -> TRANSLATED_WORDS_REPOSITORY.get(query + SEPARATOR + FRENCH);
+            default -> throw new NotFoundException(String.format(
+                    "Language '%s' not in supported. Supported languages: %s, %s, %s, %s.",
+                    language,
+                    CZECH, SPANISH, CHINESE, HINDI));
+        };
 
         if (translation != null) {
-            response.send(translation);
+            res.send(translation);
         } else {
-            response.status(404)
+            res.status(404)
                     .send(String.format("Word '%s' not in the dictionary", query));
         }
     }

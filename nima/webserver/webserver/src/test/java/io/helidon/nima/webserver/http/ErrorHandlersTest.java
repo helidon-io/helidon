@@ -155,6 +155,7 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
+        when(res.isSent()).thenReturn(true);
         when(res.reset()).thenReturn(true);
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {

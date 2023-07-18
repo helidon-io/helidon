@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package io.helidon.tests.integration.webserver.gh2631;
 
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.logging.common.LogConfig;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 
 public class Gh2631 {
     public static void main(String[] args) {
@@ -30,31 +30,30 @@ public class Gh2631 {
 
     static WebServer startServer() {
         return WebServer.builder()
-                .routing(routing())
+                .routing(Gh2631::routing)
                 .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
+                .start();
     }
 
-    private static Routing routing() {
-        StaticContentSupport classpath = StaticContentSupport.builder("web")
+    static void routing(HttpRouting.Builder routing) {
+        LogConfig.configureRuntime();
+
+        StaticContentService classpath = StaticContentService.builder("web")
                 .welcomeFileName("index.txt")
                 .build();
-        StaticContentSupport file = StaticContentSupport.builder(Paths.get("src/main/resources/web"))
+        StaticContentService file = StaticContentService.builder(Paths.get("src/main/resources/web"))
                 .welcomeFileName("index.txt")
                 .build();
 
-        return Routing.builder()
-                .register("/simple", classpath)
+        routing.register("/simple", classpath)
                 .register("/fallback", classpath)
-                .register("/fallback", StaticContentSupport.builder("fallback")
+                .register("/fallback", StaticContentService.builder("fallback")
                         .pathMapper(path -> "index.txt")
                         .build())
                 .register("/simpleFile", file)
                 .register("/fallbackFile", file)
-                .register("/fallbackFile", StaticContentSupport.builder(Paths.get("src/main/resources/fallback"))
+                .register("/fallbackFile", StaticContentService.builder(Paths.get("src/main/resources/fallback"))
                         .pathMapper(path -> "index.txt")
-                        .build())
-                .build();
+                        .build());
     }
 }

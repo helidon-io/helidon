@@ -79,14 +79,16 @@ public class WebClientTracing implements WebClientService {
 
         Tracer tracer = tracerFunction.apply(request.context());
 
-        Span.Builder spanBuilder = tracer.spanBuilder(composeName(method, request));
+        UriHelper uriInfo = request.uri();
+        String url = uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path();
+        Span.Builder spanBuilder = tracer.spanBuilder(method + "-" + url);
 
         request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
 
         spanBuilder.kind(Span.Kind.CLIENT);
         spanBuilder.tag(Tag.COMPONENT.create("helidon-webclient"));
         spanBuilder.tag(Tag.HTTP_METHOD.create(method));
-        spanBuilder.tag(Tag.HTTP_URL.create(request.uri().toString()));
+        spanBuilder.tag(Tag.HTTP_URL.create(url));
         Span span = spanBuilder.start();
 
         request.context().register(span.context());

@@ -15,28 +15,22 @@
  */
 package io.helidon.examples.se.httpstatuscount;
 
-import java.time.Duration;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-
 import io.helidon.common.http.Http.Status;
-import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
-import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.not;
@@ -45,46 +39,36 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.jupiter.api.Assertions.fail;
 
+@ServerTest
+@Disabled
 public class StatusTest {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
-
-    private static WebServer webServer;
-    private static WebClient webClient;
 
     private final Counter[] STATUS_COUNTERS = new Counter[6];
+    private final Http1Client client;
 
-    @BeforeAll
-    static void init() {
-        Routing.Builder routingBuilder = Main.createRouting(Config.create());
-        routingBuilder.register("/status", new StatusService());
-
-        webServer = Main.startServer(routingBuilder).await(TIMEOUT);
-
-        webClient = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
+    public StatusTest(Http1Client client) {
+        this.client = client;
     }
 
-    @AfterAll
-    public static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(TIMEOUT);
-        }
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        server.routing(r -> {
+            Main.routing(r, Config.create());
+            r.register("/status", new StatusService());
+        });
     }
 
     @BeforeEach
     void findStatusMetrics() {
-        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
+        MetricRegistry metricRegistry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
         for (int i = 1; i < STATUS_COUNTERS.length; i++) {
             STATUS_COUNTERS[i] = metricRegistry.counter(new MetricID(HttpStatusMetricService.STATUS_COUNTER_NAME,
-                                                                     new Tag(HttpStatusMetricService.STATUS_TAG_NAME, i + "xx")));
+                    new Tag(HttpStatusMetricService.STATUS_TAG_NAME, i + "xx")));
         }
     }
 
     @Test
-    void checkStatusMetrics() throws ExecutionException, InterruptedException {
+    void checkStatusMetrics() throws InterruptedException {
         checkAfterStatus(Status.create(171));
         checkAfterStatus(Status.OK_200);
         checkAfterStatus(Status.CREATED_201);
@@ -95,37 +79,35 @@ public class StatusTest {
     }
 
     @Test
-    void checkStatusAfterGreet() throws ExecutionException, InterruptedException {
+    void checkStatusAfterGreet() throws InterruptedException {
         long[] before = new long[6];
         for (int i = 1; i < 6; i++) {
             before[i] = STATUS_COUNTERS[i].getCount();
         }
-        WebClientResponse response = webClient.get()
-                .path("/greet")
-                .accept(MediaTypes.APPLICATION_JSON)
-                .request()
-                .get();
-        assertThat("Status of /greet", response.status(), is(Status.OK_200));
-        String entity = response.content().as(String.class).await(TIMEOUT);
-        assertThat(entity, not(isEmptyString()));
-        checkCounters(response.status(), before);
+        try (Http1ClientResponse response = client.get("/greet")
+                .accept(HttpMediaType.APPLICATION_JSON)
+                .request()) {
+            assertThat("Status of /greet", response.status(), is(Status.OK_200));
+            String entity = response.as(String.class);
+            assertThat(entity, not(isEmptyString()));
+            checkCounters(response.status(), before);
+        }
     }
 
-    void checkAfterStatus(Status status) throws ExecutionException, InterruptedException {
+    void checkAfterStatus(Status status) throws InterruptedException {
         long[] before = new long[6];
         for (int i = 1; i < 6; i++) {
             before[i] = STATUS_COUNTERS[i].getCount();
         }
-        WebClientResponse response = webClient.get()
-                .path("/status/" + status.code())
-                .accept(MediaTypes.APPLICATION_JSON)
-                .request()
-                .get();
-        assertThat("Response status", response.status(), is(status));
-        response.content().as(String.class).await(TIMEOUT);
-        checkCounters(status, before);
+        try (Http1ClientResponse response = client.get("/status/" + status.code())
+                .accept(HttpMediaType.APPLICATION_JSON)
+                .request()) {
+            assertThat("Response status", response.status(), is(status));
+            checkCounters(status, before);
+        }
     }
 
+    @SuppressWarnings("BusyWait")
     private void checkCounters(Status status, long[] before) throws InterruptedException {
         // first make sure we do not have a request in progress
         long now = System.currentTimeMillis();

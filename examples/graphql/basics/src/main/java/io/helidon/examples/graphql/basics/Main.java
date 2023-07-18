@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,8 @@ package io.helidon.examples.graphql.basics;
 
 import java.util.List;
 
-import io.helidon.reactive.graphql.server.GraphQlSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.graphql.server.GraphQlService;
+import io.helidon.nima.webserver.WebServer;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
@@ -33,6 +32,7 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 /**
  * Main class of Graphql SE integration example.
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class Main {
 
     private Main() {
@@ -45,40 +45,40 @@ public class Main {
      */
     public static void main(String[] args) {
         WebServer server = WebServer.builder()
-                .routing(Routing.builder()
-                                 .register(GraphQlSupport.create(buildSchema()))
-                                 .build())
+                .routing(routing -> routing
+                        .register(GraphQlService.create(buildSchema())))
                 .build();
 
-        server.start()
-               .thenApply(webServer -> {
-                   String endpoint = "http://localhost:" + webServer.port();
-                   System.out.println("GraphQL started on " + endpoint + "/graphql");
-                   System.out.println("GraphQL schema available on " + endpoint + "/graphql/schema.graphql");
-                   return null;
-               });
+        String endpoint = "http://localhost:" + server.port();
+        System.out.printf("""
+                GraphQL started on %1$s/graphql
+                GraphQL schema available on %1$s/graphql/schema.graphql
+                """, endpoint);
     }
 
     /**
      * Generate a {@link GraphQLSchema}.
-     * @return  a {@link GraphQLSchema}
+     *
+     * @return a {@link GraphQLSchema}
      */
     private static GraphQLSchema buildSchema() {
-        String schema = "type Query{\n"
-                + "hello: String \n"
-                + "helloInDifferentLanguages: [String] \n"
-                + "\n}";
+        String schema = """
+                type Query{
+                hello: String\s
+                helloInDifferentLanguages: [String]\s
+
+                }""";
 
         SchemaParser schemaParser = new SchemaParser();
         TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
         // DataFetcher to return various hello's in difference languages
-        DataFetcher<List<String>> hellosDataFetcher = (DataFetcher<List<String>>) environment ->
+        DataFetcher<List<String>> dataFetcher = environment ->
                 List.of("Bonjour", "Hola", "Zdravstvuyte", "Nǐn hǎo", "Salve", "Gudday", "Konnichiwa", "Guten Tag");
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
-                .type("Query", builder -> builder.dataFetcher("helloInDifferentLanguages", hellosDataFetcher))
+                .type("Query", builder -> builder.dataFetcher("helloInDifferentLanguages", dataFetcher))
                 .build();
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();

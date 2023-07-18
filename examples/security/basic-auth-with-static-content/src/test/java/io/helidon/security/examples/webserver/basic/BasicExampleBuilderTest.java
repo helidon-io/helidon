@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,22 @@
 
 package io.helidon.security.examples.webserver.basic;
 
-import io.helidon.reactive.webserver.WebServer;
+import java.net.URI;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
 /**
- * Unit test for {@link io.helidon.security.examples.webserver.basic.BasicExampleBuilderMain}.
+ * Unit test for {@link BasicExampleBuilderMain}.
  */
 public class BasicExampleBuilderTest extends BasicExampleTest {
 
-    private static WebServer server;
-
-    @BeforeAll
-    public static void startServer() {
-        // start the test
-        server = BasicExampleBuilderMain.startServer();
+    public BasicExampleBuilderTest(URI uri) {
+        super(uri);
     }
 
-    @AfterAll
-    public static void stopServer() {
-        stopServer(server);
-    }
-
-    @Override
-    String getServerBase() {
-        return "http://localhost:" + server.port();
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        BasicExampleConfigMain.setup(server);
     }
 }

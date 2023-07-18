@@ -41,17 +41,17 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
+            <groupId>io.helidon.nima.webserver</groupId>
+            <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.media</groupId>
-            <artifactId>helidon-reactive-media-jsonp</artifactId>
+            <groupId>io.helidon.nima.http.media</groupId>
+            <artifactId>helidon-nima-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <!-- Open ID Connect security provider -->
             <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-oidc-reactive</artifactId>
+            <artifactId>helidon-security-providers-oidc</artifactId>
         </dependency>
         <dependency>
             <!-- IDCS Role Mapping security provider -->
@@ -79,7 +79,7 @@
         <dependency>
             <!-- Security integration with web server -->
             <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-webserver</artifactId>
+            <artifactId>helidon-security-integration-nima</artifactId>
         </dependency>
         <dependency>
             <!-- Encryption of secrets -->

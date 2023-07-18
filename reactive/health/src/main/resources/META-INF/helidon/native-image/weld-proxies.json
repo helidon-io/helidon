@@ -1,8 +1,0 @@
-[
-    {
-        "bean-class": "org.eclipse.microprofile.health.HealthCheck",
-        "ifaces": [
-            "org.eclipse.microprofile.health.HealthCheck"
-        ]
-    }
-]

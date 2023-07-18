@@ -34,7 +34,7 @@ import io.helidon.common.features.api.Preview;
         in = HelidonFlavor.SE, 
         invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA})
 @Aot(description = "Incubating support, tested on limited use cases")
-module io.helidon.reactive.graphql.server {
+module io.helidon.nima.graphql.server {
     requires static io.helidon.common.features.api;
     // other module dependencies and configuration
 }

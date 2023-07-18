@@ -67,7 +67,8 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    boolean doHandle(Http.Method method, String requestedPath, ServerRequest req, ServerResponse res) throws IOException {
+    boolean doHandle(Http.Method method, String requestedPath, ServerRequest req, ServerResponse res, boolean mapped)
+            throws IOException {
         Path path = requestedPath(requestedPath);
         if (LOGGER.isLoggable(Level.DEBUG)) {
             LOGGER.log(Level.DEBUG, "Requested file: " + path.toAbsolutePath());
@@ -79,7 +80,12 @@ class FileSystemContentHandler extends FileBasedContentHandler {
         String rawPath = req.prologue().uriPath().rawPath();
 
         String relativePath = root.relativize(path).toString();
-        String requestedResource = rawPath.endsWith("/") ? relativePath + "/" : relativePath;
+        String requestedResource;
+        if (mapped) {
+            requestedResource = relativePath;
+        } else {
+            requestedResource = rawPath.endsWith("/") ? relativePath + "/" : relativePath;
+        }
 
         // we have a resource that we support, let's try to use one from the cache
         Optional<CachedHandler> cached = cacheHandler(requestedResource);

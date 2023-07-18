@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,65 +17,33 @@
 package io.helidon.demo.todos.frontend;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionStage;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.http.Http;
-import io.helidon.config.Config;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.integration.jersey.client.ClientSecurity;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.Entity;
-import jakarta.ws.rs.client.InvocationCallback;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.Response.Status;
-
-import static io.helidon.tracing.jersey.client.ClientTracingFilter.CURRENT_SPAN_CONTEXT_PROPERTY_NAME;
 
 /**
  * Client to invoke the TODO backend service.
  */
 public final class BackendServiceClient {
 
-    /**
-     * Client logger.
-     */
-    private static final Logger LOGGER =
-            Logger.getLogger(BackendServiceClient.class.getName());
-
-    /**
-     * JAXRS client.
-     */
-    private final Client client;
-
-    /**
-     * Configured endpoint for the backend service.
-     */
-    private final String serviceEndpoint;
-
-    /**
-     * Tracer instance.
-     */
+    private final Http1Client client;
     private final Tracer tracer;
 
     /**
      * Create a new {@code BackendServiceClient} instance.
      *
-     * @param restClient the JAXRS {@code Client} to use
-     * @param config     the Helidon {@code Config} to use
+     * @param client the backend HTTP client
      */
-    public BackendServiceClient(final Client restClient, final Config config) {
-        this.client = restClient;
-        this.serviceEndpoint =
-                config.get("services.backend.endpoint").asString().get();
+    public BackendServiceClient(Http1Client client) {
+        this.client = client;
         this.tracer = Tracer.global();
     }
 
@@ -83,30 +51,22 @@ public final class BackendServiceClient {
      * Retrieve all TODO entries from the backend.
      *
      * @param spanContext {@code SpanContext} to use
-     * @return future with all records
+     * @return all records
      */
-    public CompletionStage<JsonArray> getAll(final SpanContext spanContext) {
+    public JsonArray getAll(SpanContext spanContext) {
         Span span = tracer.spanBuilder("todos.get-all")
                 .parent(spanContext)
                 .start();
 
-        CompletionStage<JsonArray> result = client.target(serviceEndpoint + "/api/backend")
-                .request()
-                .property(CURRENT_SPAN_CONTEXT_PROPERTY_NAME, spanContext)
-                .rx()
-                .get(JsonArray.class);
-
-        // I want to finish my span once the result is received, and report error if failed
-        result.thenAccept(ignored -> span.end())
-                .exceptionally(t -> {
-                    span.end(t);
-                    LOGGER.log(Level.WARNING,
-                               "Failed to invoke getAll() on "
-                                       + serviceEndpoint + "/api/backend", t);
-                    return null;
-                });
-
-        return result;
+        try {
+            JsonArray jsonArray = client.get("/api/backend")
+                    .request(JsonArray.class);
+            span.end();
+            return jsonArray;
+        } catch (Throwable t) {
+            span.end(t);
+            throw t;
+        }
     }
 
     /**
@@ -115,13 +75,8 @@ public final class BackendServiceClient {
      * @param id the ID identifying the entry to retrieve
      * @return retrieved entry as a {@code JsonObject}
      */
-    public CompletionStage<Optional<JsonObject>> getSingle(final String id) {
-
-        return client.target(serviceEndpoint + "/api/backend/" + id)
-                .request()
-                .rx()
-                .get()
-                .thenApply(this::processSingleEntityResponse);
+    public Optional<JsonObject> getSingle(String id) {
+        return processSingleEntityResponse(client.get("/api/backend/" + id).request());
     }
 
     /**
@@ -130,85 +85,52 @@ public final class BackendServiceClient {
      * @param id the ID identifying the entry to delete
      * @return deleted entry as a {@code JsonObject}
      */
-    public CompletionStage<Optional<JsonObject>> deleteSingle(final String id) {
-
-        return client
-                .target(serviceEndpoint + "/api/backend/" + id)
-                .request()
-                .rx()
-                .delete()
-                .thenApply(this::processSingleEntityResponse);
+    public Optional<JsonObject> deleteSingle(String id) {
+        return processSingleEntityResponse(client.delete("/api/backend/" + id).request());
     }
 
     /**
      * Create a new TODO entry.
      *
      * @param json the new entry value to create as {@code JsonObject}
-     * @param sc   {@code SecurityContext} to use
      * @return created entry as {@code JsonObject}
      */
-    public CompletionStage<Optional<JsonObject>> create(final JsonObject json, final SecurityContext sc) {
-
-        return client
-                .target(serviceEndpoint + "/api/backend/")
-                .property(ClientSecurity.PROPERTY_CONTEXT, sc)
-                .request()
-                .rx()
-                .post(Entity.json(json))
-                .thenApply(this::processSingleEntityResponse);
+    public Optional<JsonObject> create(JsonObject json) {
+        return processSingleEntityResponse(
+                client.post("/api/backend/")
+                        .submit(json));
     }
 
     /**
      * Update a TODO entry identifying by the given ID.
      *
-     * @param sc   {@code SecurityContext} to use
      * @param id   the ID identifying the entry to update
      * @param json the update entry value as {@code JsonObject}
      * @param res  updated entry as {@code JsonObject}
      */
-    public void update(final SecurityContext sc,
-                       final String id,
-                       final JsonObject json,
-                       final ServerResponse res) {
-
-        client.target(serviceEndpoint + "/api/backend/" + id)
-                .property(ClientSecurity.PROPERTY_CONTEXT, sc)
-                .request()
-                .buildPut(Entity.json(json))
-                .submit(new InvocationCallback<Response>() {
-                    @Override
-                    public void completed(final Response response) {
-                        try (response) {
-                            if (response.getStatusInfo().getFamily() == Status.Family.SUCCESSFUL) {
-                                res.send(response.readEntity(JsonObject.class));
-                            } else {
-                                res.status(response.getStatus());
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void failed(final Throwable throwable) {
-                        res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
-                        res.send();
-                    }
-                });
-
+    public void update(String id, JsonObject json, ServerResponse res) {
+        try (Http1ClientResponse response = client.put("/api/backend/" + id).submit(json)) {
+            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                res.send(response.entity().as(JsonObject.class));
+            } else {
+                res.status(response.status());
+            }
+        }
     }
 
     /**
      * Wrap the response entity in an {@code Optional}.
      *
-     * @param response {@code Reponse} to process
+     * @param response {@code Response} to process
      * @return empty optional if response status is {@code 404}, optional of
-     *         the response entity otherwise
+     * the response entity otherwise
      */
-    private Optional<JsonObject> processSingleEntityResponse(final Response response) {
+    private Optional<JsonObject> processSingleEntityResponse(Http1ClientResponse response) {
         try (response) {
-            if (response.getStatusInfo().toEnum() == Status.NOT_FOUND) {
+            if (response.status() == Http.Status.NOT_FOUND_404) {
                 return Optional.empty();
             }
-            return Optional.of(response.readEntity(JsonObject.class));
+            return Optional.of(response.entity().as(JsonObject.class));
         }
     }
 }

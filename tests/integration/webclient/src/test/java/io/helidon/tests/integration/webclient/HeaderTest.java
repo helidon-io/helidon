@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package io.helidon.tests.integration.webclient;
 import java.util.List;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientRequestBuilder;
-import io.helidon.reactive.webclient.WebClientServiceRequest;
-import io.helidon.reactive.webclient.WebClientServiceResponse;
-import io.helidon.reactive.webclient.spi.WebClientService;
+import io.helidon.nima.webclient.WebClientServiceRequest;
+import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.spi.WebClientService;
+import io.helidon.nima.webserver.WebServer;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -40,85 +40,59 @@ public class HeaderTest extends TestParent {
 
     private static final String TEST_USER = "unit-test-user";
 
+    HeaderTest(WebServer server) {
+        super(server);
+    }
+
     @Test
     public void userAgentNotOverridden() {
-        WebClient webClient = createNewClient(new HeaderTestService(TEST_USER));
+        Http1Client webClient = createNewClient(new HeaderTestService(TEST_USER));
 
         webClient.get()
-                .headers(headers -> {
-                    headers.add(Http.Header.USER_AGENT, TEST_USER);
-                    return headers;
-                })
-                .request(JsonObject.class)
-                .await();
+                .header(Http.Header.USER_AGENT, TEST_USER)
+                .request(JsonObject.class);
     }
 
     @Test
     public void contentLengthSet() {
-        WebClient webClient = createNewClient();
+        Http1Client webClient = createNewClient();
 
-        String contentLength = webClient.post()
-                .path("contentLength")
-                .submit()
-                .flatMapSingle(response -> response.content().as(String.class))
-                .await();
-        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
+        try (Http1ClientResponse res = webClient.post("contentLength").request()) {
+            String contentLength = res.as(String.class);
+            assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
+        }
 
-        contentLength = webClient.put()
-                .path("contentLength")
-                .submit()
-                .flatMapSingle(response -> response.content().as(String.class))
-                .await();
-        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
-
-        contentLength = webClient.get()
-                .path("contentLength")
-                .request()
-                .flatMapSingle(response -> response.content().as(String.class))
-                .await();
-        assertThat(contentLength, is("No " + Http.Header.CONTENT_LENGTH + " has been set"));
+        try (Http1ClientResponse res = webClient.post("contentLength").request()) {
+            String contentLength = res.as(String.class);
+            assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
+        }
 
         String sampleSmallEntity = "Hi there";
-        contentLength = webClient.post()
-                .path("contentLength")
-                .submit(sampleSmallEntity)
-                .flatMapSingle(response -> response.content().as(String.class))
-                .await();
-        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+        try (Http1ClientResponse res = webClient.post("contentLength").submit(sampleSmallEntity)) {
+            String contentLength = res.as(String.class);
+            assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+        }
 
-        contentLength = webClient.post()
+        try (Http1ClientResponse res = webClient.post()
                 .headers(headers -> {
                     headers.contentLength(0);
                     return headers;
                 })
                 .path("contentLength")
-                .submit(sampleSmallEntity)
-                .flatMapSingle(response -> response.content().as(String.class))
-                .await();
-        assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+                .submit(sampleSmallEntity)) {
+            String contentLength = res.as(String.class);
+            assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is " + sampleSmallEntity.length()));
+        }
     }
 
-    private static final class HeaderTestService implements WebClientService {
-
-        private final String user;
-
-        private HeaderTestService(String user) {
-            this.user = user;
-        }
+    private record HeaderTestService(String user) implements WebClientService {
 
         @Override
-        public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
-            return Single.just(request);
-        }
-
-        @Override
-        public Single<WebClientServiceResponse> response(WebClientRequestBuilder.ClientRequest request,
-                                                         WebClientServiceResponse response) {
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
             List<String> userAgent = request.headers().all(Http.Header.USER_AGENT, List::of);
             assertThat(userAgent, hasSize(1));
             assertThat(userAgent, contains(user));
-            return Single.just(response);
+            return chain.proceed(request);
         }
     }
-
 }

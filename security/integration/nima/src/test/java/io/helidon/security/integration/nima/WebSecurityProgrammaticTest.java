@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,51 +19,58 @@ package io.helidon.security.integration.nima;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
+import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.util.TokenHandler;
 
-import org.junit.jupiter.api.BeforeAll;
-
 /**
  * Unit test for {@link SecurityFeature}.
  */
+@ServerTest
 public class WebSecurityProgrammaticTest extends WebSecurityTests {
-    private static String baseUri;
 
-    @BeforeAll
-    public static void initClass() {
+    WebSecurityProgrammaticTest(WebServer server, Http1Client webClient) {
+        super(server, webClient);
+    }
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder serverBuilder) {
+        UnitTestAuditProvider myAuditProvider = new UnitTestAuditProvider();
         WebSecurityTestUtil.auditLogFinest();
-        myAuditProvider = new UnitTestAuditProvider();
 
         Config config = Config.create();
 
         Security security = Security.builder(config.get("security"))
                 .addAuditProvider(myAuditProvider).build();
 
-        server = WebServer.builder()
-                .routing(routing -> routing.addFeature(ContextFeature.create())
-                         .addFeature(SecurityFeature.create(security)
-                                                             .securityDefaults(
-                                                                     SecurityHandler.create()
-                                                                             .queryParam(
-                                                                                     "jwt",
-                                                                                     TokenHandler.builder()
-                                                                                             .tokenHeader("BEARER_TOKEN")
-                                                                                             .tokenPattern(Pattern.compile(
-                                                                                                     "bearer (.*)"))
-                                                                                             .build())
-                                                                             .queryParam(
-                                                                                     "name",
-                                                                                     TokenHandler.builder()
-                                                                                             .tokenHeader("NAME_FROM_REQUEST")
-                                                                                             .build())))
+        Context context = Context.create();
+        context.register(myAuditProvider);
+
+        SecurityFeature securityFeature = SecurityFeature.create(security)
+                .securityDefaults(SecurityHandler.create()
+                        .queryParam("jwt", TokenHandler.builder()
+                                .tokenHeader("BEARER_TOKEN")
+                                .tokenPattern(Pattern.compile("bearer (.*)"))
+                                .build())
+                        .queryParam("name", TokenHandler.builder()
+                                .tokenHeader("NAME_FROM_REQUEST")
+                                .build()));
+
+        serverBuilder.serverContext(context)
+                .routing(routing -> routing
+                        .addFeature(ContextFeature.create())
+                        .addFeature(securityFeature)
                         .get("/noRoles", SecurityFeature.secure())
                         .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
                         .get("/admin", SecurityFeature.rolesAllowed("admin"))
@@ -83,15 +90,6 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                             res.send("Hello, you are: \n" + securityContext
                                     .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                                     .orElse("Security context is null"));
-                        }))
-                .build();
-
-        server.start();
-        baseUri = "http://localhost:" + server.port();
-    }
-
-    @Override
-    String serverBaseUri() {
-        return baseUri;
+                        }));
     }
 }

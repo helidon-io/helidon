@@ -31,11 +31,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.Headers;
+import io.helidon.common.http.ClientRequestHeaders;
+import io.helidon.common.http.Http;
+import io.helidon.common.http.WritableHeaders;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.reactive.webclient.WebClientRequestHeaders;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.metrics.Counter;
@@ -48,10 +49,14 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 class Lra {
+    static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.Header.create(LRA_HTTP_CONTEXT_HEADER);
+    static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER_NAME = Http.Header.create(LRA_HTTP_ENDED_CONTEXT_HEADER);
+    static final Http.HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER_NAME = Http.Header.create(LRA_HTTP_PARENT_CONTEXT_HEADER);
+    static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER_NAME = Http.Header.create(LRA_HTTP_RECOVERY_HEADER);
 
     private static final System.Logger LOGGER = System.getLogger(Lra.class.getName());
-    private final LazyValue<URI> coordinatorURL;
 
+    private final LazyValue<URI> coordinatorURL;
     private long timeout;
     private URI parentId;
     private final Set<String> compensatorLinks = Collections.synchronizedSet(new HashSet<>());
@@ -162,14 +167,14 @@ class Lra {
         lra.isChild = true;
     }
 
-    Function<WebClientRequestHeaders, Headers> headers() {
+    Function<ClientRequestHeaders, WritableHeaders<?>> headers() {
         return headers -> {
-            headers.add(LRA_HTTP_CONTEXT_HEADER, lraContextId());
-            headers.add(LRA_HTTP_ENDED_CONTEXT_HEADER, lraContextId());
+            headers.add(LRA_HTTP_CONTEXT_HEADER_NAME, lraContextId());
+            headers.add(LRA_HTTP_ENDED_CONTEXT_HEADER_NAME, lraContextId());
             Optional.ofNullable(parentId)
                     .map(URI::toASCIIString)
-                    .ifPresent(s -> headers.add(LRA_HTTP_PARENT_CONTEXT_HEADER, s));
-            headers.add(LRA_HTTP_RECOVERY_HEADER, lraContextId() + "/recovery");
+                    .ifPresent(s -> headers.add(LRA_HTTP_PARENT_CONTEXT_HEADER_NAME, s));
+            headers.add(LRA_HTTP_RECOVERY_HEADER_NAME, lraContextId() + "/recovery");
             return headers;
         };
     }

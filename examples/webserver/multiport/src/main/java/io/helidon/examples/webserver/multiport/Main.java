@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package io.helidon.examples.webserver.multiport;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.health.HealthSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
  * The application main class.
@@ -38,89 +36,56 @@ public final class Main {
 
     /**
      * Application main entry point.
+     *
      * @param args command line arguments.
      */
     public static void main(final String[] args) {
-        // By default this will pick up application.yaml from the classpath
-        Config config = Config.create();
-        startServer(config);
-    }
-
-    /**
-     * Start the server.
-     * @return the created {@link WebServer} instance
-     */
-    static Single<WebServer> startServer(Config config) {
         // load logging configuration
         LogConfig.configureRuntime();
 
+        // By default, this will pick up application.yaml from the classpath
+        Config config = Config.create();
+
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder, config);
+        WebServer server = builder.build().start();
+        System.out.println("WEB server is up! http://localhost:" + server.port());
+    }
+
+    /**
+     * Set up the server.
+     */
+    static void setup(WebServerConfig.Builder server, Config config) {
         // Build server using three ports:
         // default public port, admin port, private port
-        WebServer server = WebServer.builder(createPublicRouting())
-                .config(config.get("server"))
+        server.config(config.get("server"))
+                .routing(Main::publicRouting)
                 // Add a set of routes on the named socket "admin"
-                .addNamedRouting("admin", createAdminRouting())
+                .putSocket("admin", socket -> socket.from(server.sockets().get("admin"))
+                        .routing(Main::adminSocket))
                 // Add a set of routes on the named socket "private"
-                .addNamedRouting("private", createPrivateRouting())
-                .build();
-
-        Single<WebServer> webserver = server.start();
-
-        // Try to start the server. If successful, print some info and arrange to
-        // print a message at shutdown. If unsuccessful, print the exception.
-        webserver.thenAccept(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port());
-                    ws.whenShutdown().thenRun(()
-                            -> System.out.println("WEB server is DOWN. Good bye!"));
-                })
-                .exceptionally(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                    return null;
-                });
-
-        // Server threads are not daemon. No need to block. Just react.
-
-        return webserver;
+                .putSocket("private", socket -> socket.from(server.sockets().get("admin"))
+                        .routing(Main::privateSocket));
     }
 
     /**
-     * Creates private {@link Routing}.
-     *
-     * @return routing for use on "private" port
+     * Set up private socket.
      */
-    private static Routing createPrivateRouting() {
-        return Routing.builder()
-                .get("/private/hello", (req, res) -> res.send("Private Hello!!"))
-                .build();
+    static void privateSocket(HttpRouting.Builder routing) {
+        routing.get("/private/hello", (req, res) -> res.send("Private Hello!!"));
     }
 
     /**
-     * Creates public {@link Routing}.
-     *
-     * @return routing for use on "public" port
+     * Set up public routing.
      */
-    private static Routing createPublicRouting() {
-        return Routing.builder()
-                .get("/hello", (req, res) -> res.send("Public Hello!!"))
-                .build();
+    static void publicRouting(HttpRouting.Builder routing) {
+        routing.get("/hello", (req, res) -> res.send("Public Hello!!"));
     }
 
     /**
-     * Creates admin {@link Routing}.
-     *
-     * @return routing for use on admin port
+     * Set up admin socket.
      */
-    private static Routing createAdminRouting() {
-        MetricsSupport metrics = MetricsSupport.create();
-        HealthSupport health = HealthSupport.builder()
-                .add(HealthChecks.healthChecks())   // Adds a convenient set of checks
-                .build();
-
-        return Routing.builder()
-                .register(health)
-                .register(metrics)
-                .build();
+    static void adminSocket(HttpRouting.Builder routing) {
+        routing.addFeature(ObserveFeature.create());
     }
 }

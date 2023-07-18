@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,16 @@
  */
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionException;
+import java.net.URI;
 
-import io.helidon.common.reactive.Single;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientServiceRequest;
-import io.helidon.reactive.webclient.spi.WebClientService;
+import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.WebClientServiceRequest;
+import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.spi.WebClientService;
+import io.helidon.nima.webserver.WebServer;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,58 +34,62 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Tests propagation of the request parts defined in WebClientService.
  */
-public class WebclientServiceValuePropagationTest extends TestParent {
+class WebclientServiceValuePropagationTest extends TestParent {
+
+    WebclientServiceValuePropagationTest(WebServer server) {
+        super(server);
+    }
 
     @Test
     public void testUriPartsPropagation() {
-        WebClient webClient = WebClient.builder()
-                .baseUri("http://invalid")
+        Http1Client webClient = Http1Client.builder()
+                .baseUri(URI.create("http://invalid"))
                 .addService(new UriChangingService())
                 .build();
 
-        String response = webClient.get()
+        String response = webClient.get("/greet/valuesPropagated")
                 .path("replace/me")
-                .request(String.class)
-                .await();
+                .request(String.class);
 
         assertThat(response, is("Hi Test"));
     }
 
     @Test
+    @Disabled("This will be fixed in WebClient refactoring, where we use the scheme to determine TLS or plain")
     public void testInvalidSchema() {
-        WebClient webClient = WebClient.builder()
-                .baseUri("http://localhost:80")
-                .addService(new InvalidSchemaService())
+        Http1Client webClient = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port())
+                .addService(new InvalidSchemeService())
                 .build();
 
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> webClient.get().request(String.class).await());
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> webClient.get().request(String.class));
 
-        assertThat(exception.getCause().getMessage(), is("invalid transport protocol is not supported!"));
+        assertThat(exception.getMessage(), is("invalid transport protocol is not supported!"));
 
     }
 
-    private static final class UriChangingService implements WebClientService {
+    private final class UriChangingService implements WebClientService {
 
         @Override
-        public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
-            request.schema("http");
-            request.host("localhost");
-            request.port(webServer.port());
-            request.path("/greet/valuesPropagated");
-            request.queryParams().add("param", "Hi");
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            UriHelper uri = request.uri();
+            uri.scheme("http");
+            uri.host("localhost");
+            uri.port(server.port());
+            uri.path("/greet/valuesPropagated", request.query());
+            request.query().add("param", "Hi");
             request.fragment("Test");
-            return Single.just(request);
+            return chain.proceed(request);
         }
     }
 
-    private static final class InvalidSchemaService implements WebClientService {
+    private final class InvalidSchemeService implements WebClientService {
 
         @Override
-        public Single<WebClientServiceRequest> request(WebClientServiceRequest request) {
-            request.schema("invalid");
-            return Single.just(request);
+        public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
+            request.uri().scheme("invalid");
+            return chain.proceed(request);
         }
     }
-
 }

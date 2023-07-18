@@ -16,78 +16,73 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
-
+import io.helidon.common.buffers.DataReader.IncorrectNewLineException;
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.pki.Keys;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientException;
-import io.helidon.reactive.webclient.WebClientTls;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.WebServerTls;
+import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * WebClient TLS connection.
  */
+@ServerTest
 public class TlsTest {
 
-    private static WebServer webServer;
-    private static WebClient webClient;
+    private final Http1Client client;
+    private final Http1Client secureClient;
 
-    @BeforeAll
-    public static void setUp() {
-        webServer = WebServer.builder(
-                        Routing.builder()
-                                .any((req, res) -> res.send("It works!")))
-                .tls(WebServerTls.builder()
-                             .privateKey(Keys.builder()
-                                                 .keystore(keystore -> keystore
-                                                         .passphrase("password")
-                                                         .keystore(Resource.create("server.p12")))
-                                                 .build()))
-                .build()
-                .start()
-                .await(10, TimeUnit.SECONDS);
-
-        webClient = WebClient.builder()
-                .baseUri("https://localhost:" + webServer.port())
-                .tls(WebClientTls.builder()
-                             .trustAll(true)
-                             .build())
+    public TlsTest(WebServer server, Http1Client client) {
+        this.client = client;
+        this.secureClient = Http1Client.builder()
+                .baseUri("https://localhost:" + server.port())
+                .tls(Tls.builder().trustAll(true))
                 .build();
+    }
+
+    @SetUpServer
+    public static void setUp(WebServerConfig.Builder builder) {
+        builder.routing(routing -> routing.any((req, res) -> res.send("It works!")))
+                .tls(tls -> tls
+                        .privateKey(key -> key
+                                .keystore(store -> store
+                                        .passphrase("password")
+                                        .keystore(Resource.create("server.p12"))))
+                        .privateKeyCertChain(key -> key
+                                .keystore(store -> store
+                                        .trustStore(true)
+                                        .passphrase("password")
+                                        .keystore(Resource.create("server.p12")))));
+    }
+
+    @Test
+    public void testConnectionOnHttps() {
+        assertThat(secureClient.get().request(String.class), is("It works!"));
     }
 
     @Test
     public void testConnectionOnHttpsWithHttp() {
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> webClient.get()
-                                                             .uri("http://localhost:" + webServer.port())
-                                                             .request(String.class)
-                                                             .await(5, TimeUnit.SECONDS));
-        assertThat(exception.getCause(), instanceOf(WebClientException.class));
-        assertThat(exception.getCause().getMessage(), is("Connection reset by the host"));
+        RuntimeException ex = assertThrows(IncorrectNewLineException.class, () ->
+                client.get().request(String.class));
+        assertThat(ex.getMessage(), startsWith("Found LF (6) without preceding CR."));
     }
 
     @Test
     public void testConnectionOnHttpsWithHttpWithoutKeepAlive() {
-        CompletionException exception = assertThrows(CompletionException.class,
-                                                     () -> webClient.get()
-                                                             .keepAlive(false)
-                                                             .uri("http://localhost:" + webServer.port())
-                                                             .request(String.class)
-                                                             .await(5, TimeUnit.SECONDS));
-        assertThat(exception.getCause(), instanceOf(WebClientException.class));
-        assertThat(exception.getCause().getMessage(), is("Connection reset by the host"));
+        RuntimeException ex = assertThrows(IncorrectNewLineException.class,
+                () -> client.get()
+                        .keepAlive(false)
+                        .request(String.class));
+        assertThat(ex.getMessage(), startsWith("Found LF (6) without preceding CR."));
     }
 
 }

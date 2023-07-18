@@ -46,7 +46,6 @@ module io.helidon.microprofile.jwt.auth {
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
     requires transitive io.helidon.security.jwt;
-    requires io.helidon.security.integration.jersey;
     requires jakarta.annotation;
 
     exports io.helidon.microprofile.jwt.auth;

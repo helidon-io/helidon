@@ -59,8 +59,8 @@
             <artifactId>helidon-microprofile-jwt-auth</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-jersey-client</artifactId>
+            <groupId>io.helidon.microprofile</groupId>
+            <artifactId>helidon-microprofile-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.openapi</groupId>

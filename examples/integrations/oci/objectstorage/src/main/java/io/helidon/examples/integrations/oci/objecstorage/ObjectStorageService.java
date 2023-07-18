@@ -58,7 +58,8 @@ public class ObjectStorageService implements HttpService {
 
     ObjectStorageService(Config config) {
         try {
-            AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
+            ConfigFileReader.ConfigFile configFile = ConfigFileReader.parseDefault();
+            AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(configFile);
             this.objectStorageClient = ObjectStorageClient.builder().build(authProvider);
             this.bucketName = config.get("oci.objectstorage.bucketName")
                     .asString()
@@ -127,7 +128,7 @@ public class ObjectStorageService implements HttpService {
      */
     public void upload(ServerRequest request, ServerResponse response) {
         String fileName = request.path().pathParameters().value("fileName");
-        PutObjectRequest putObjectRequest = null;
+        PutObjectRequest putObjectRequest;
         try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName)) {
             byte[] contents = stream.readAllBytes();
             putObjectRequest =
@@ -136,7 +137,7 @@ public class ObjectStorageService implements HttpService {
                             .bucketName(bucketName)
                             .objectName(fileName)
                             .putObjectBody(new ByteArrayInputStream(contents))
-                            .contentLength(Long.valueOf(contents.length))
+                            .contentLength((long) contents.length)
                             .build();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error creating PutObjectRequest", e);

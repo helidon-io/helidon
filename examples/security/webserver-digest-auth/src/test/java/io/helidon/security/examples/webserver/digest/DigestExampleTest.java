@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,17 @@
 
 package io.helidon.security.examples.webserver.digest;
 
+import java.net.URI;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.common.http.Http;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_PASSWORD;
-import static org.glassfish.jersey.client.authentication.HttpAuthenticationFeature.HTTP_AUTHENTICATION_USERNAME;
+import static io.helidon.security.examples.webserver.digest.WebClientAuthenticationService.HTTP_AUTHENTICATION_PASSWORD;
+import static io.helidon.security.examples.webserver.digest.WebClientAuthenticationService.HTTP_AUTHENTICATION_USERNAME;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -42,138 +37,115 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Abstract class with tests for this example (used by programmatic and config based tests).
  */
 public abstract class DigestExampleTest {
-    private static Client client;
-    private static Client authFeatureClient;
 
-    @BeforeAll
-    public static void classInit() {
-        client = ClientBuilder.newClient();
-        authFeatureClient = ClientBuilder.newClient()
-                .register(HttpAuthenticationFeature.digest());
+    private final Http1Client client;
+    private final Http1Client authClient;
+
+    DigestExampleTest(Http1Client client, URI uri) {
+        this.client = client;
+        this.authClient = Http1Client.builder()
+                .baseUri(uri)
+                .addService(new WebClientAuthenticationService())
+                .build();
     }
-
-    @AfterAll
-    public static void classDestroy() {
-        client.close();
-        authFeatureClient.close();
-    }
-
-    static void stopServer(WebServer server) throws InterruptedException {
-        CountDownLatch cdl = new CountDownLatch(1);
-        long t = System.nanoTime();
-        server.shutdown().thenAccept(webServer -> {
-            long time = System.nanoTime() - t;
-            System.out.println("Server shutdown in " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
-            cdl.countDown();
-        });
-
-        if (!cdl.await(5, TimeUnit.SECONDS)) {
-            throw new IllegalStateException("Failed to shutdown server within 5 seconds");
-        }
-    }
-
-    abstract String getServerBase();
 
     //now for the tests
     @Test
     public void testPublic() {
         //Must be accessible without authentication
-        try (Response response = client.target(getServerBase() + "/public").request().get()) {
-            assertThat(response.getStatus(), is(200));
-            String entity = response.readEntity(String.class);
+        try (Http1ClientResponse response = client.get().path("/public").request()) {
+            assertThat(response.status().code(), is(200));
+            String entity = response.entity().as(String.class);
             assertThat(entity, containsString("<ANONYMOUS>"));
         }
     }
 
     @Test
     public void testNoRoles() {
-        String url = getServerBase() + "/noRoles";
+        String uri = "/noRoles";
 
-        testNotAuthorized(client, url);
+        testNotAuthorized(uri);
 
         //Must be accessible with authentication - to everybody
-        testProtected(url, "jack", "password", Set.of("admin", "user"), Set.of());
-        testProtected(url, "jill", "password", Set.of("user"), Set.of("admin"));
-        testProtected(url, "john", "password", Set.of(), Set.of("admin", "user"));
+        testProtected(uri, "jack", "password", Set.of("admin", "user"), Set.of());
+        testProtected(uri, "jill", "password", Set.of("user"), Set.of("admin"));
+        testProtected(uri, "john", "password", Set.of(), Set.of("admin", "user"));
     }
 
     @Test
     public void testUserRole() {
-        String url = getServerBase() + "/user";
+        String uri = "/user";
 
-        testNotAuthorized(client, url);
+        testNotAuthorized(uri);
 
         //Jack and Jill allowed (user role)
-        testProtected(url, "jack", "password", Set.of("admin", "user"), Set.of());
-        testProtected(url, "jill", "password", Set.of("user"), Set.of("admin"));
-        testProtectedDenied(url, "john", "password");
+        testProtected(uri, "jack", "password", Set.of("admin", "user"), Set.of());
+        testProtected(uri, "jill", "password", Set.of("user"), Set.of("admin"));
+        testProtectedDenied(uri, "john", "password");
     }
 
     @Test
     public void testAdminRole() {
-        String url = getServerBase() + "/admin";
+        String uri = "/admin";
 
-        testNotAuthorized(client, url);
+        testNotAuthorized(uri);
 
         //Only jack is allowed - admin role...
-        testProtected(url, "jack", "password", Set.of("admin", "user"), Set.of());
-        testProtectedDenied(url, "jill", "password");
-        testProtectedDenied(url, "john", "password");
+        testProtected(uri, "jack", "password", Set.of("admin", "user"), Set.of());
+        testProtectedDenied(uri, "jill", "password");
+        testProtectedDenied(uri, "john", "password");
     }
 
     @Test
     public void testDenyRole() {
-        String url = getServerBase() + "/deny";
+        String uri = "/deny";
 
-        testNotAuthorized(client, url);
+        testNotAuthorized(uri);
 
         // nobody has the correct role
-        testProtectedDenied(url, "jack", "password");
-        testProtectedDenied(url, "jill", "password");
-        testProtectedDenied(url, "john", "password");
+        testProtectedDenied(uri, "jack", "password");
+        testProtectedDenied(uri, "jill", "password");
+        testProtectedDenied(uri, "john", "password");
     }
 
     @Test
     public void getNoAuthn() {
-        String url = getServerBase() + "/noAuthn";
+        String uri = "/noAuthn";
         //Must NOT be accessible without authentication
-        try (Response response = client.target(url).request().get()) {
+        try (Http1ClientResponse response = client.get(uri).request()) {
             // authentication is optional, so we are not challenged, only forbidden, as the role can never be there...
-            assertThat(response.getStatus(), is(403));
+            assertThat(response.status().code(), is(403));
 
             // doesn't matter, we are never challenged
-            testProtectedDenied(url, "jack", "password");
-            testProtectedDenied(url, "jill", "password");
-            testProtectedDenied(url, "john", "password");
+            testProtectedDenied(uri, "jack", "password");
+            testProtectedDenied(uri, "jill", "password");
+            testProtectedDenied(uri, "john", "password");
         }
     }
 
-    private void testNotAuthorized(Client client, String uri) {
+    private void testNotAuthorized(String uri) {
         //Must NOT be accessible without authentication
-        try (Response response = client.target(uri).request().get()) {
-            assertThat(response.getStatus(), is(401));
-            String header = response.getHeaderString("WWW-Authenticate");
+        try (Http1ClientResponse response = client.get().path(uri).request()) {
+            assertThat(response.status().code(), is(401));
+            String header = response.headers().first(Http.Header.create("WWW-Authenticate")).orElse(null);
             assertThat(header, notNullValue());
             assertThat(header.toLowerCase(), containsString("digest"));
             assertThat(header, containsString("mic"));
         }
     }
 
-    private Response callProtected(String uri, String username, String password) {
+    private Http1ClientResponse callProtected(String uri, String username, String password) {
         // here we call the endpoint
-        return authFeatureClient.target(uri)
-                .request()
+        return authClient
+                .get(uri)
                 .property(HTTP_AUTHENTICATION_USERNAME, username)
                 .property(HTTP_AUTHENTICATION_PASSWORD, password)
-                .get();
+                .request();
     }
 
-    private void testProtectedDenied(String uri,
-                                     String username,
-                                     String password) {
-
-        try (Response response = callProtected(uri, username, password)) {
-            assertThat(response.getStatus(), is(403));
+    private void testProtectedDenied(String uri, String username, String password) {
+        try (Http1ClientResponse response = callProtected(uri, username, password)) {
+            assertThat(response.status().code(), is(403));
         }
     }
 
@@ -183,10 +155,11 @@ public abstract class DigestExampleTest {
                                Set<String> expectedRoles,
                                Set<String> invalidRoles) {
 
-        try (Response response = callProtected(uri, username, password)) {
-            String entity = response.readEntity(String.class);
+        try (Http1ClientResponse response = callProtected(uri, username, password)) {
 
-            assertThat(response.getStatus(), is(200));
+            assertThat(response.status().code(), is(200));
+
+            String entity = response.entity().as(String.class);
 
             // check login
             assertThat(entity, containsString("id='" + username + "'"));
@@ -195,4 +168,5 @@ public abstract class DigestExampleTest {
             invalidRoles.forEach(role -> assertThat(entity, not(containsString(":" + role))));
         }
     }
+
 }

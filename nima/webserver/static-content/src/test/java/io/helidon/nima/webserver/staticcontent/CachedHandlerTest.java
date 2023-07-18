@@ -97,7 +97,7 @@ class CachedHandlerTest {
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
 
-        boolean result = classpathHandler.doHandle(Http.Method.GET, "favicon.ico", req, res);
+        boolean result = classpathHandler.doHandle(Http.Method.GET, "favicon.ico", req, res, false);
 
         assertThat("Handler should have found favicon.ico", result, is(true));
         assertThat(responseHeaders, hasHeader(ICON_TYPE));
@@ -117,7 +117,7 @@ class CachedHandlerTest {
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = classpathHandler.doHandle(Http.Method.GET, "resource.txt", req, res);
+        boolean result = classpathHandler.doHandle(Http.Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
@@ -150,7 +150,7 @@ class CachedHandlerTest {
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = classpathHandler.doHandle(Http.Method.GET, "/nested", req, res);
+        boolean result = classpathHandler.doHandle(Http.Method.GET, "/nested", req, res, false);
 
         assertThat("Handler should have redirected", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Header.LOCATION, "/nested/"));
@@ -193,7 +193,7 @@ class CachedHandlerTest {
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
 
-        boolean result = fsHandler.doHandle(Http.Method.GET, "nested/resource.txt", req, res);
+        boolean result = fsHandler.doHandle(Http.Method.GET, "nested/resource.txt", req, res, false);
 
         assertThat("Handler should have found nested/resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
@@ -213,7 +213,7 @@ class CachedHandlerTest {
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = fsHandler.doHandle(Http.Method.GET, "resource.txt", req, res);
+        boolean result = fsHandler.doHandle(Http.Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
@@ -246,7 +246,7 @@ class CachedHandlerTest {
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = fsHandler.doHandle(Http.Method.GET, "nested", req, res);
+        boolean result = fsHandler.doHandle(Http.Method.GET, "nested", req, res, false);
 
         assertThat("Handler should have redirected", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Header.LOCATION, "/nested/"));

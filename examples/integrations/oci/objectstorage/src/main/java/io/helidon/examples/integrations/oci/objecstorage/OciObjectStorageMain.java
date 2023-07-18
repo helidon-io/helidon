@@ -37,8 +37,6 @@ import static io.helidon.config.ConfigSources.file;
  */
 public final class OciObjectStorageMain {
 
-    private static Config config;
-
     private OciObjectStorageMain() {
     }
 
@@ -48,22 +46,24 @@ public final class OciObjectStorageMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-
-        config = Config
+        Config config = Config
                 .builder()
                 .sources(examplesConfig())
                 .build();
-
-        WebServer server = WebServer.builder()
-                .routing(OciObjectStorageMain::routing)
+        WebServer.builder()
+                .routing(r -> routing(r, config))
                 .config(config.get("server"))
+                .build()
                 .start();
     }
 
     /**
      * Updates HTTP Routing.
+     *
+     * @param routing routing builder
+     * @param config  config
      */
-    static void routing(HttpRouting.Builder routing) {
+    static void routing(HttpRouting.Builder routing, Config config) {
         ObjectStorageService objectStorageService = new ObjectStorageService(config);
         routing.register("/files", objectStorageService);
     }

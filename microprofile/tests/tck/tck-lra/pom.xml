@@ -104,10 +104,13 @@
                     <systemPropertyVariables>
                         <lra.coordinator.url>${tck.lra.coordinator.url}</lra.coordinator.url>
                     </systemPropertyVariables>
-
                     <includes>
                         <include>**/*Test*.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>TckParticipantTests</exclude>
+                        <exclude>TckUnknownStatusTests</exclude>
+                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>

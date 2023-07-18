@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,67 +16,63 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.spi.WebClientService;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
+import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webclient.spi.WebClientService;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
+import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 
 /**
  * Parent class for integration tests.
  */
+@ServerTest
 class TestParent {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     protected static final Config CONFIG = Config.create();
 
-    protected static WebServer webServer;
-    protected static WebClient webClient;
+    protected final WebServer server;
 
-    @BeforeAll
-    public static void startTheServer() {
-        webServer = Main.startServer().await(TIMEOUT);
-        webClient = createNewClient();
+    protected Http1Client client;
+    protected Context context;
+
+    TestParent(WebServer server) {
+        this.server = server;
+        this.client = createNewClient();
     }
 
-    @AfterAll
-    static void stopServer() throws Exception {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .toCompletableFuture()
-                    .get(10, TimeUnit.SECONDS);
-        }
+    @SetUpServer
+    static void startTheServer(WebServerConfig.Builder builder) {
+        Main.setup(builder, null);
     }
 
-    protected static WebClient createNewClient(WebClientService... clientServices) {
+    protected Http1Client createNewClient(WebClientService... clientServices) {
         Security security = Security.builder()
-                .addProvider(HttpBasicAuthProvider.builder().build())
+                .addProvider(HttpBasicAuthProvider.builder()
+                                     .addOutboundTarget(OutboundTarget.builder("all")
+                                                                .build())
+                                     .build())
                 .build();
 
-        SecurityContext securityContext = security.createContext("unit-test");
-
-        Context context = Context.builder().id("unit-test").build();
-        context.register(securityContext);
-
-        WebClient.Builder builder = WebClient.builder()
-                .baseUri("http://localhost:" + webServer.port() + "/greet")
-                .config(CONFIG.get("client"))
-                .context(context)
-                .addMediaSupport(JsonpSupport.create());
+        Http1ClientBuilder builder = Http1Client.builder()
+                .useSystemServiceLoader(false)
+                .addService(WebClientSecurity.create(security))
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .config(CONFIG.get("client"));
 
         Stream.of(clientServices).forEach(builder::addService);
-        return builder.build();
+
+        client = builder.build();
+        return client;
     }
 
 }

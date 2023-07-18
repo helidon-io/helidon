@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,39 +16,34 @@
 
 package io.helidon.tests.integration.webserver.gh2631;
 
-import java.util.concurrent.TimeUnit;
-
 import io.helidon.common.http.Http;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 class Gh2631Test {
-    private static WebClient client;
-    private static WebServer server;
+    private final Http1Client client;
 
-    @BeforeAll
-    static void beforeAll() {
-        server = Gh2631.startServer();
-        client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port())
-                .followRedirects(true)
-                .build();
+    Gh2631Test(WebServer server) {
+        this.client = Http1Client.builder()
+                               .baseUri("http://localhost:" + server.port())
+                               .followRedirect(true)
+                               .build();
     }
 
-    @AfterAll
-    static void afterAll() {
-        if (server != null) {
-            server.shutdown()
-                    .await(10, TimeUnit.SECONDS);
-        }
+    @SetUpServer
+    static void setup(WebServerConfig.Builder builder) {
+        builder.routing(Gh2631::routing);
     }
 
     @Test
@@ -62,7 +57,7 @@ class Gh2631Test {
 
     @Test
     void testClasspathNoFallbackMissing() {
-        WebClientResponse response = getResponse("/simple/second/");
+        Http1ClientResponse response = getResponse("/simple/second/");
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
@@ -79,8 +74,12 @@ class Gh2631Test {
     void testClasspathFallbackMissing() {
         String value = get("/fallback/second/");
         assertThat(value, is("fallback"));
+    }
 
-        value = get("/fallback/second/any/path/anyFile.txt");
+    @Test
+    void testClasspathFallbackAnyFile() {
+        // we are mapping any path to index.txt
+        String value = get("/fallback/second/any/path/anyFile.txt");
         assertThat(value, is("fallback"));
     }
 
@@ -95,7 +94,7 @@ class Gh2631Test {
 
     @Test
     void testFileNoFallbackMissing() {
-        WebClientResponse response = getResponse("/simpleFile/second/");
+        ClientResponse response = getResponse("/simpleFile/second/");
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
@@ -117,17 +116,15 @@ class Gh2631Test {
         assertThat(value, is("fallback"));
     }
 
-    private WebClientResponse getResponse(String path) {
+    private Http1ClientResponse getResponse(String path) {
         return client.get()
                 .path(path)
-                .request()
-                .await(10, TimeUnit.SECONDS);
+                .request();
     }
 
     private String get(String path) {
         return client.get()
                 .path(path)
-                .request(String.class)
-                .await(10, TimeUnit.SECONDS);
+                .request(String.class);
     }
 }

@@ -92,7 +92,8 @@ public class UriHelper {
 
     @Override
     public String toString() {
-        return scheme + "://" + authority + (path.startsWith("/") ? "" : "/") + path;
+        String encodedPath = skipUriEncoding ? path : UriEncoding.encodeUri(path);
+        return scheme + "://" + authority + (encodedPath.startsWith("/") ? "" : "/") + encodedPath;
     }
 
     /**
@@ -229,6 +230,9 @@ public class UriHelper {
      */
     public int port() {
         if (this.port == -1) {
+            if (this.scheme == null) {
+                return -1;
+            }
             return DEFAULT_PORTS.getOrDefault(this.scheme, -1);
         }
         return port;

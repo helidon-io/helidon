@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 
 package io.helidon.examples.translator.backend;
 
-import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.tracing.TracingFeature;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
 
 /**
@@ -32,37 +33,19 @@ public class Main {
     private Main() {
     }
 
-    /**
-     * Start the server.
-     * @return the created {@link WebServer} instance
-     */
-    public static Single<WebServer> startBackendServer() {
-        // configure logging in order to not have the standard JVM defaults
-        LogConfig.configureRuntime();
-
+    static void setup(WebServerConfig.Builder server) {
         Config config = Config.builder()
                 .sources(ConfigSources.environmentVariables())
                 .build();
 
-        WebServer webServer = WebServer.builder(
-                Routing.builder()
-                        .register(new TranslatorBackendService()))
-                .port(9080)
-                .tracer(TracerBuilder.create(config.get("tracing"))
-                                .serviceName("helidon-reactive-webserver-translator-backend")
-                                .build())
+        Tracer tracer = TracerBuilder.create(config.get("tracing"))
+                .serviceName("helidon-webserver-translator-backend")
                 .build();
 
-        return webServer.start()
-                .peek(ws -> {
-                    System.out.println(
-                            "WEB server is up! http://localhost:" + ws.port());
-                    ws.whenShutdown().thenRun(()
-                                                      -> System.out.println("WEB server is DOWN. Good bye!"));
-                }).onError(t -> {
-                    System.err.println("Startup failed: " + t.getMessage());
-                    t.printStackTrace(System.err);
-                });
+        server.port(9080)
+                .routing(routing -> routing
+                        .addFeature(TracingFeature.create(tracer))
+                        .register(new TranslatorBackendService()));
     }
 
     /**
@@ -71,6 +54,13 @@ public class Main {
      * @param args command-line args, currently ignored.
      */
     public static void main(String[] args) {
-        startBackendServer();
+        // configure logging in order to not have the standard JVM defaults
+        LogConfig.configureRuntime();
+
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build().start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port());
     }
 }

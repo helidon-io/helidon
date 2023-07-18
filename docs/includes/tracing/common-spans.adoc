@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ There are also tags that are set by Helidon components. These are not configurab
 |===
 |span name          |tag name           |description
 
-|`HTTP Request`         |`component`        |name of the component - `helidon-reactive-webserver`, or `jaxrs` when using MP
+|`HTTP Request`         |`component`        |name of the component - `helidon-webserver`, or `jaxrs` when using MP
 |`HTTP Request`         |`http.method`      |HTTP method of the request, such as `GET`, `POST`
 |`HTTP Request`         |`http.status_code` |HTTP status code of the response
 |`HTTP Request`         |`http.url`         |The path of the request (for SE without protocol, host and port)

@@ -427,6 +427,9 @@ public final class HttpRouting implements Routing, Prototype.Api {
 
             // now we need to do the final setup in the correct order
             for (HttpFeature feature : features) {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Setting up feature: " + feature.getClass().getName());
+                }
                 feature.setup(realBuilder);
             }
 

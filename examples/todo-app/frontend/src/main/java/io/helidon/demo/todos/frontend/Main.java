@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,26 +17,21 @@
 package io.helidon.demo.todos.frontend;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.metrics.MetricsSupport;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.accesslog.AccessLogSupport;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.nima.observe.ObserveFeature;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.accesslog.AccessLogFeature;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.Security;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
-
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import org.glassfish.jersey.logging.LoggingFeature;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
@@ -74,81 +69,43 @@ public final class Main {
         // to allow our headers to be set
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
-        Config config = buildConfig();
+        // to allow us to set host header explicitly
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
 
-        // build a client (Jersey)
-        // and apply security and tracing features on it
-        Client client = ClientBuilder.newClient();
-        client.register(new LoggingFeature(Logger.getGlobal(), Level.FINE, LoggingFeature.Verbosity.PAYLOAD_ANY, 8192));
-
-        BackendServiceClient bsc = new BackendServiceClient(client, config);
-
-        // create a web server
-        WebServer server = WebServer.builder(createRouting(
-                    Security.create(config.get("security")),
-                    config,
-                    bsc))
-                .config(config.get("webserver"))
-                .addMediaSupport(JsonpSupport.create())
-                .tracer(registerTracer(config))
-                .build();
+        WebServerConfig.Builder builder = WebServer.builder();
+        setup(builder);
+        WebServer server = builder.build();
 
         // start the web server
-        server.start()
-                .whenComplete(Main::started);
+        server.start();
+        System.out.println("WEB server is up! http://localhost:" + server.port());
     }
 
-    /**
-     * Create a {@code Tracer} instance using the given {@code Config}.
-     * @param config the configuration root
-     * @return the created {@code Tracer}
-     */
-    private static Tracer registerTracer(final Config config) {
-        return TracerBuilder.create(config.get("tracing")).build();
-    }
+    private static void setup(WebServerConfig.Builder server) {
 
-    /**
-     * Create the web server routing and register all handlers.
-     * @param security the security features
-     * @param config the configuration root
-     * @param bsc the backend service client to use
-     * @return the created {@code Routing}
-     */
-    private static Routing createRouting(final Security security,
-                                         final Config config,
-                                         final BackendServiceClient bsc) {
+        Config config = buildConfig();
 
-        return Routing.builder()
-                .register(AccessLogSupport.create())
-                // register metrics features (on "/metrics")
-                .register(MetricsSupport.create())
-                // register security features
-                .register(WebSecurity.create(security, config.get("security")))
-                // register static content support (on "/")
-                .register(StaticContentSupport.builder("/WEB").welcomeFileName("index.html"))
-                // register API handler (on "/api") - this path is secured (see application.yaml)
-                .register("/api", new TodosHandler(bsc))
-                // and a simple environment handler to see where we are
-                .register("/env", new EnvHandler(config))
-                .build();
-    }
+        Security security = Security.create(config.get("security"));
 
-    /**
-     * Handle web server started event: if successful print server started
-     * message in the console with the corresponding URL, otherwise print an
-     * error message and exit the application.
-     * @param webServer the {@code WebServer} instance
-     * @param throwable if non {@code null}, indicate a server startup error
-     */
-    private static void started(final WebServer webServer,
-                                final Throwable throwable) {
+        Http1Client client = Http1Client.builder().baseUri(config.get("services.backend.endpoint").asString().get())
+                                        .addService(WebClientSecurity.create())
+                                        .build();
 
-        if (throwable == null) {
-            System.out.println("WEB server is up! http://localhost:" + webServer.port());
-        } else {
-            throwable.printStackTrace(System.out);
-            System.exit(1);
-        }
+        BackendServiceClient bsc = new BackendServiceClient(client);
+
+        Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+
+        server.config(config.get("webserver"))
+                .routing(routing -> routing
+                        .addFeature(AccessLogFeature.create())
+                        .addFeature(ObserveFeature.create())
+                        .addFeature(SecurityFeature.create(security, config.get("security")))
+                        // register static content support (on "/")
+                        .register(StaticContentService.builder("/WEB").welcomeFileName("index.html"))
+                        // register API handler (on "/api") - this path is secured (see application.yaml)
+                        .register("/api", new TodosHandler(bsc, tracer))
+                        // and a simple environment handler to see where we are
+                        .register("/env", new EnvHandler(config)));
     }
 
     /**

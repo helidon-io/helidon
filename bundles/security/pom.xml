@@ -23,6 +23,7 @@
         <groupId>io.helidon.bundles</groupId>
         <artifactId>helidon-bundles-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>helidon-bundles-security</artifactId>
@@ -75,7 +76,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.security.providers</groupId>
-            <artifactId>helidon-security-providers-oidc-reactive</artifactId>
+            <artifactId>helidon-security-providers-oidc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.security.abac</groupId>

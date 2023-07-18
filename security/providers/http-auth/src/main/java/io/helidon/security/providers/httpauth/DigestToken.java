@@ -238,6 +238,11 @@ class DigestToken {
         return user.digestHa1(realm, algorithm)
                 .map(ha1 -> {
                     String digest = digestFromHa1(ha1);
+
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, "Invalid h1 digest. Expected: {0}, got: {1}", ha1, digest);
+                    }
+
                     return MessageDigest.isEqual(response.getBytes(StandardCharsets.UTF_8),
                             digest.getBytes(StandardCharsets.UTF_8));
                 })

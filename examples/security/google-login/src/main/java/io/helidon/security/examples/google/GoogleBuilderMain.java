@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,27 @@
 package io.helidon.security.examples.google;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.HttpMediaType;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.staticcontent.StaticContentSupport;
+import io.helidon.logging.common.LogConfig;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
+import io.helidon.nima.webserver.staticcontent.StaticContentService;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.google.login.GoogleTokenProvider;
 
 /**
  * Google login button example main class using builders.
  */
+@SuppressWarnings({"SpellCheckingInspection", "DuplicatedCode"})
 public final class GoogleBuilderMain {
-    private static volatile WebServer theServer;
 
     private GoogleBuilderMain() {
-    }
-
-    public static WebServer getTheServer() {
-        return theServer;
     }
 
     /**
@@ -47,33 +46,44 @@ public final class GoogleBuilderMain {
      * @param args ignored
      */
     public static void main(String[] args) {
-        start(GoogleUtil.PORT);
+        LogConfig.configureRuntime();
+        WebServerConfig.Builder builder = WebServerConfig.builder();
+        setup(builder);
+        WebServer server = builder.build();
+
+        long t = System.nanoTime();
+        server.start();
+        long time = System.nanoTime() - t;
+
+        System.out.printf("""
+                        Server started in %d ms
+                        Started server on localhost: %2$d
+                        You can access this example at http://localhost:%2$d/index.html
+
+                        Check application.yaml in case you are behind a proxy to configure it
+                        """,
+                TimeUnit.MILLISECONDS.convert(time, TimeUnit.NANOSECONDS),
+                server.port());
     }
 
-    static int start(int port) {
+    static void setup(WebServerConfig.Builder server) {
         Security security = Security.builder()
                 .addProvider(GoogleTokenProvider.builder()
-                                     .clientId("your-client-id.apps.googleusercontent.com"))
+                        .clientId("your-client-id.apps.googleusercontent.com"))
                 .build();
-        WebSecurity ws = WebSecurity.create(security);
-
-        Routing.Builder routing = Routing.builder()
-                .register(ws)
-                .get("/rest/profile",
-                     WebSecurity.authenticate(),
-                     (req, res) -> {
-                         Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                         res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-                         res.send("Response from builder based service, you are: \n" + securityContext
-                                 .flatMap(SecurityContext::user)
-                                 .map(Subject::toString)
-                                 .orElse("Security context is null"));
-                         req.next();
-                     })
-                .register(StaticContentSupport.create("/WEB"));
-
-        theServer = GoogleUtil.startIt(port, routing);
-
-        return theServer.port();
+        server.routing(routing -> routing
+                .addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(security))
+                .get("/rest/profile", SecurityFeature.authenticate(),
+                        (req, res) -> {
+                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.send("Response from builder based service, you are: \n" + securityContext
+                                    .flatMap(SecurityContext::user)
+                                    .map(Subject::toString)
+                                    .orElse("Security context is null"));
+                            res.next();
+                        })
+                .register(StaticContentService.create("/WEB")));
     }
 }

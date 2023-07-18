@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2020, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ server:
   sockets:
     - name: "secured"
       port: 0
-      ssl:
-        client-auth: "REQUIRE"
+      tls:
+        client-auth: "REQUIRED"
+        endpoint-identification-algorithm: "NONE"
         trust:
           keystore:
             passphrase: "password"
@@ -36,7 +37,8 @@ server:
     - name: "invalid-server-cert"
       port: 0
       tls:
-        client-auth: "REQUIRE"
+        client-auth: "REQUIRED"
+        endpoint-identification-algorithm: "NONE"
         trust:
           keystore:
             passphrase: "password"
@@ -51,7 +53,8 @@ server:
     - name: "client-no-ca"
       port: 0
       tls:
-        client-auth: "REQUIRE"
+        client-auth: "REQUIRED"
+        endpoint-identification-algorithm: "NONE"
         trust:
           keystore:
             passphrase: "password"
@@ -67,6 +70,7 @@ server:
       port: 0
       tls:
         client-auth: "OPTIONAL"
+        endpoint-identification-algorithm: "NONE"
         trust:
           keystore:
             passphrase: "password"
@@ -81,13 +85,13 @@ server:
 
 success:
   tls:
-    server:
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
           resource-path: "client.p12"
-    client:
+    private-key:
       keystore:
         passphrase: "password"
         resource:
@@ -95,7 +99,7 @@ success:
 
 no-client-cert:
   tls:
-    server:
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
@@ -104,13 +108,13 @@ no-client-cert:
 
 server-cert-invalid-cn:
   tls:
-    server:
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
           resource-path: "server-invalid/client.p12"
-    client:
+    private-key:
       keystore:
         passphrase: "password"
         resource:
@@ -118,14 +122,14 @@ server-cert-invalid-cn:
 
 client-disable-hostname-verification:
   tls:
-    server:
-      disable-hostname-verification: true
+    endpoint-identification-algorithm: "NONE"
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
           resource-path: "server-invalid/client.p12"
-    client:
+    private-key:
       keystore:
         passphrase: "password"
         resource:
@@ -133,13 +137,13 @@ client-disable-hostname-verification:
 
 client-no-ca:
   tls:
-    server:
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
           resource-path: "client-no-ca/client.p12"
-    client:
+    private-key:
       keystore:
         passphrase: "password"
         resource:
@@ -147,14 +151,14 @@ client-no-ca:
 
 client-trust-all:
   tls:
-    server:
-      trust-all: true
+    trust-all: true
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
           resource-path: "client-no-ca/client.p12"
-    client:
+    private-key:
       keystore:
         passphrase: "password"
         resource:
@@ -162,7 +166,7 @@ client-trust-all:
 
 server-second-valid:
   tls:
-    client-auth: "REQUIRE"
+    client-auth: "REQUIRED"
     trust:
       keystore:
         passphrase: "password"
@@ -177,13 +181,13 @@ server-second-valid:
 
 client-second-valid:
   tls:
-    server:
+    trust:
       keystore:
         passphrase: "password"
         trust-store: true
         resource:
           resource-path: "second-valid/client.p12"
-    client:
+    private-key:
       keystore:
         passphrase: "password"
         resource:

@@ -33,10 +33,7 @@
     <name>Helidon Security Integration Project</name>
 
     <modules>
-        <module>jersey</module>
-        <module>webserver</module>
         <module>common</module>
-        <module>jersey-client</module>
         <module>nima</module>
     </modules>
 </project>

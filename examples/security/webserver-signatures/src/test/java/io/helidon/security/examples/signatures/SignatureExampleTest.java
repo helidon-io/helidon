@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,101 +16,71 @@
 
 package io.helidon.security.examples.signatures;
 
+import java.net.URI;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.security.WebClientSecurity;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.security.WebClientSecurity;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD;
 import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-/**
- * Actual unit tests are shared by config and builder example.
- */
+@ServerTest
 public abstract class SignatureExampleTest {
-    private static WebClient client;
 
-    @BeforeAll
-    public static void classInit() {
+    private final Http1Client client;
+
+    protected SignatureExampleTest(WebServer server, URI uri) {
+        server.context().register(server);
+
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder().build())
                 .build();
 
-        client = WebClient.builder()
+        client = Http1Client.builder()
                 .addService(WebClientSecurity.create(security))
+                .baseUri(uri)
                 .build();
     }
 
-    static void stopServer(WebServer server) throws InterruptedException {
-        CountDownLatch cdl = new CountDownLatch(1);
-        long t = System.nanoTime();
-        server.shutdown().thenAccept(webServer -> {
-            long time = System.nanoTime() - t;
-            System.out.println("Server shutdown in " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
-            cdl.countDown();
-        });
-
-        if (!cdl.await(5, TimeUnit.SECONDS)) {
-            throw new IllegalStateException("Failed to shutdown server within 5 seconds");
-        }
-    }
-
-    abstract int getService1Port();
-
-    abstract int getService2Port();
-
     @Test
     public void testService1Hmac() {
-        testProtected("http://localhost:" + getService1Port() + "/service1",
-                      "jack",
-                      "password",
-                      Set.of("user", "admin"),
-                      Set.of(),
-                      "Service1 - HMAC signature");
+        test("/service1", Set.of("user", "admin"), Set.of(), "Service1 - HMAC signature");
     }
 
     @Test
     public void testService1Rsa() {
-        testProtected("http://localhost:" + getService1Port() + "/service1-rsa",
-                      "jack",
-                      "password",
-                      Set.of("user", "admin"),
-                      Set.of(),
-                      "Service1 - RSA signature");
+        test("/service1-rsa", Set.of("user", "admin"), Set.of(), "Service1 - RSA signature");
     }
 
+    private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
+        try (Http1ClientResponse response = client.get(uri)
+                .property(EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .request()) {
 
-    private void testProtected(String uri,
-                               String username,
-                               String password,
-                               Set<String> expectedRoles,
-                               Set<String> invalidRoles,
-                               String service) {
-        client.get()
-                .uri(uri)
-                .property(EP_PROPERTY_OUTBOUND_USER, username)
-                .property(EP_PROPERTY_OUTBOUND_PASSWORD, password)
-                .request(String.class)
-                .thenAccept(it -> {
-                    // check login
-                    assertThat(it, containsString("id='" + username + "'"));
-                    // check roles
-                    expectedRoles.forEach(role -> assertThat(it, containsString(":" + role)));
-                    invalidRoles.forEach(role -> assertThat(it, not(containsString(":" + role))));
+            assertThat(response.status().code(), is(200));
 
-                    assertThat(it, containsString("id='" + service + "'"));
-                })
-                .await();
+            String payload = response.as(String.class);
+
+            // check login
+            assertThat(payload, containsString("id='" + "jack" + "'"));
+
+            // check roles
+            expectedRoles.forEach(role -> assertThat(payload, containsString(":" + role)));
+            invalidRoles.forEach(role -> assertThat(payload, not(containsString(":" + role))));
+            assertThat(payload, containsString("id='" + service + "'"));
+        }
     }
 }

@@ -58,20 +58,8 @@
             <artifactId>simpleclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.webserver</groupId>
-            <artifactId>helidon-reactive-webserver-cors</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.service-common</groupId>
-            <artifactId>helidon-reactive-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -101,8 +89,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.reactive.webclient</groupId>
-            <artifactId>helidon-reactive-webclient</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

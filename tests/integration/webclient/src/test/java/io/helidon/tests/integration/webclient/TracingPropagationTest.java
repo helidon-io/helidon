@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,28 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.time.Duration;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.http.Http;
-import io.helidon.common.testing.junit5.MatcherWithRetry;
 import io.helidon.config.Config;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webclient.WebClientResponse;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.http.media.MediaContext;
+import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.tracing.WebClientTracing;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.opentracing.OpenTracing;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
 import jakarta.json.JsonObject;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -43,45 +45,57 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test tracing integration.
  */
+@ServerTest
 class TracingPropagationTest {
-    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static MockTracer tracer;
+    private final Http1Client client;
+    private final URI uri;
+
+    TracingPropagationTest(URI uri) {
+        Tracer tracer = OpenTracing.create(this.tracer);
+        this.uri = uri.resolve("/greet");
+        this.client = Http1Client.builder()
+                .baseUri(this.uri)
+                .config(Config.create().get("client"))
+                .useSystemServiceLoader(false)
+                .addService(WebClientTracing.create(tracer))
+                .mediaContext(MediaContext.builder()
+                        .addMediaSupport(JsonpSupport.create())
+                        .build())
+                .build();
+    }
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        tracer = new MockTracer();
+        Config config = Config.create();
+        server.config(config);
+        server.routing(routing -> Main.routing(routing, config, tracer));
+    }
 
     @Test
-    void testTracingSuccess() throws ExecutionException, InterruptedException {
-        MockTracer mockTracer = new MockTracer();
-
-        WebServer webServer = Main.startServer(mockTracer).await(TIMEOUT);
-
+    void testTracingSuccess() {
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(OpenTracing.create(mockTracer));
+        context.register(tracer);
 
-        String uri = "http://localhost:" + webServer.port() + "/greet";
-
-        WebClient client = WebClient.builder()
-                .baseUri(uri)
-                .context(context)
-                .config(Config.create().get("client"))
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-
-        WebClientResponse response = client.get()
+        try (Http1ClientResponse response = client.get()
                 .queryParam("some", "value")
                 .fragment("fragment")
-                .request()
-                .await(TIMEOUT);
-        assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.content().as(JsonObject.class).await(TIMEOUT), notNullValue());
-        response.close();
+                .request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.entity().as(JsonObject.class), notNullValue());
+        }
+
+        List<MockSpan> mockSpans = tracer.finishedSpans();
 
         // the server traces asynchronously, some spans may be written after we receive the response.
         // we need to try to wait for such spans
-        MatcherWithRetry.assertThatWithRetry("There should be 3 spans reported", mockTracer::finishedSpans, hasSize(3));
-
-        List<MockSpan> mockSpans = mockTracer.finishedSpans();
+        assertThat("There should be 2 spans reported", tracer.finishedSpans(), hasSize(2));
 
         // we need the first span - parentId 0
         MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
@@ -96,11 +110,9 @@ class TracingPropagationTest {
         assertThat(wsSpan.operationName(), is("HTTP Request"));
         tags = wsSpan.tags();
         assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
-        assertThat(tags.get(Tags.HTTP_URL.getKey()), is("/greet?some=value#fragment"));
+        assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri.toString()));
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
-        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-reactive-webserver"));
-
-        webServer.shutdown().toCompletableFuture().get();
+        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-nima-webserver"));
     }
 
     private MockSpan findSpanWithParentId(List<MockSpan> mockSpans, long parentId) {
@@ -108,6 +120,6 @@ class TracingPropagationTest {
                 .stream()
                 .filter(it -> it.parentId() == parentId)
                 .findFirst()
-                .orElseGet(() -> Assertions.fail("Could not find span with parent id " + parentId + " in " + mockSpans));
+                .orElseGet(() -> fail("Could not find span with parent id " + parentId + " in " + mockSpans));
     }
 }

@@ -57,7 +57,8 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    boolean doHandle(Http.Method method, String requestedPath, ServerRequest req, ServerResponse res) throws IOException {
+    boolean doHandle(Http.Method method, String requestedPath, ServerRequest req, ServerResponse res, boolean mapped)
+            throws IOException {
         if ("".equals(requestedPath) || "/".equals(requestedPath)) {
             Optional<CachedHandler> cachedHandler = cacheHandler(".");
             if (cachedHandler.isPresent()) {

@@ -232,7 +232,15 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @see #request()
      */
     default <T> T request(Class<T> type) {
-        return request().as(type);
+        try (R response = request()) {
+            if (response.status() == Http.Status.BAD_REQUEST_400) {
+                throw new IllegalArgumentException("Bad request");
+            }
+            if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
+                throw new IllegalStateException(response.status() + ": not a successful response, cannot read entity");
+            }
+            return response.as(type);
+        }
     }
 
     /**

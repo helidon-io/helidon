@@ -18,6 +18,3 @@ server:
 
 app:
   greeting: "Hello"
-
-security:
-  enabled: false

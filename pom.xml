@@ -202,7 +202,6 @@
         <module>logging</module>
         <module>scheduling</module>
         <module>nima</module>
-        <module>reactive</module>
         <module>cors</module>
         <module>inject</module>
         <module>builder</module>
@@ -1235,7 +1234,7 @@
                         <configuration>
                             <skip>false</skip>
                             <skippedModules>
-helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension,helidon-reactive-webserver-test-support
+helidon-parent,helidon-dependencies,helidon-bom,helidon-se,helidon-mp,io.grpc,helidon-mp-graal-native-image-extension,helidon-graal-native-image-extension
                             </skippedModules>
                             <excludePackageNames>io.grpc</excludePackageNames>
                             <sourceFileExcludes>

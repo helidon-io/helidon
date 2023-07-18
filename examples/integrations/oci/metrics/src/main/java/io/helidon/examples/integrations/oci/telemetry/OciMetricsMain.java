@@ -18,9 +18,8 @@ package io.helidon.examples.integrations.oci.telemetry;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -31,7 +30,11 @@ import com.oracle.bmc.auth.AuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.MonitoringClient;
-import com.oracle.bmc.monitoring.model.*;
+import com.oracle.bmc.monitoring.model.Datapoint;
+import com.oracle.bmc.monitoring.model.FailedMetricRecord;
+import com.oracle.bmc.monitoring.model.MetricDataDetails;
+import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
+import com.oracle.bmc.monitoring.model.PostMetricDataResponseDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
 
@@ -71,7 +74,8 @@ public final class OciMetricsMain {
 
             // Invoke the API call.
             PostMetricDataResponse postMetricDataResponse = monitoringClient.postMetricData(postMetricDataRequest);
-            PostMetricDataResponseDetails postMetricDataResponseDetails = postMetricDataResponse.getPostMetricDataResponseDetails();
+            PostMetricDataResponseDetails postMetricDataResponseDetails = postMetricDataResponse
+                    .getPostMetricDataResponseDetails();
             int count = postMetricDataResponseDetails.getFailedMetricsCount();
             System.out.println("Failed count: " + count);
             if (count > 0) {
@@ -87,31 +91,27 @@ public final class OciMetricsMain {
         String compartmentId = config.get("oci.metrics.compartment-ocid").asString().get();
         Instant now = Instant.now();
         return PostMetricDataDetails.builder()
-                .metricData(
-                        Arrays.asList(
-                                MetricDataDetails.builder()
-                                        .compartmentId(compartmentId)
-                                        // Add a few data points to see something in the console
-                                        .datapoints(
-                                                Arrays.asList(
-                                                        Datapoint.builder()
-                                                                .timestamp(Date.from(
-                                                                        now.minus(10, ChronoUnit.SECONDS)
-                                                                ))
-                                                                .value(101.00)
-                                                                .build(),
-                                                        Datapoint.builder()
-                                                                .timestamp(Date.from(now))
-                                                                .value(149.00)
-                                                                .build()
-                                                ))
-                                        .dimensions(
-                                                makeMap("resourceId", "myresourceid",
-                                                        "unit", "cm"))
-                                        .name("my_app.jump")
-                                        .namespace("helidon_examples")
-                                        .build()
-                        ))
+                .metricData(List.of(
+                        MetricDataDetails.builder()
+                                .compartmentId(compartmentId)
+                                // Add a few data points to see something in the console
+                                .datapoints(List.of(
+                                        Datapoint.builder()
+                                                .timestamp(Date.from(now.minus(10, ChronoUnit.SECONDS)))
+                                                .value(101.00)
+                                                .build(),
+                                        Datapoint.builder()
+                                                .timestamp(Date.from(now))
+                                                .value(149.00)
+                                                .build()
+                                ))
+                                .dimensions(Map.of(
+                                        "resourceId", "myresourceid",
+                                        "unit", "cm"))
+                                .name("my_app.jump")
+                                .namespace("helidon_examples")
+                                .build()
+                ))
                 .batchAtomicity(PostMetricDataDetails.BatchAtomicity.NonAtomic).build();
     }
 
@@ -123,13 +123,5 @@ public final class OciMetricsMain {
                         // in jar file (see src/main/resources/application.yaml)
                         classpath("application.yaml"))
                 .build();
-    }
-
-    private static Map<String, String> makeMap(String... data) {
-        Map<String, String> map = new HashMap<>();
-        for (int i = 0; i < data.length; i += 2) {
-            map.put(data[i], data[i + 1]);
-        }
-        return map;
     }
 }

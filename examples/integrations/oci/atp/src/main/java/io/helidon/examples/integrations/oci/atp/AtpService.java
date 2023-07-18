@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.sql.SQLException;
-import java.time.Duration;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -34,18 +34,15 @@ import javax.net.ssl.TrustManagerFactory;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.DbRow;
+import io.helidon.dbclient.jdbc.JdbcClientProvider;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.reactive.dbclient.DbClient;
-import io.helidon.reactive.dbclient.jdbc.JdbcDbClientProvider;
 
-import com.oracle.bmc.ConfigFileReader;
-import com.oracle.bmc.auth.AuthenticationDetailsProvider;
-import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
-import com.oracle.bmc.database.DatabaseClient;
+import com.oracle.bmc.database.Database;
 import com.oracle.bmc.database.model.GenerateAutonomousDatabaseWalletDetails;
 import com.oracle.bmc.database.requests.GenerateAutonomousDatabaseWalletRequest;
 import com.oracle.bmc.database.responses.GenerateAutonomousDatabaseWalletResponse;
@@ -57,45 +54,34 @@ import oracle.ucp.jdbc.PoolDataSourceFactory;
 class AtpService implements HttpService {
     private static final Logger LOGGER = Logger.getLogger(AtpService.class.getName());
 
-    private final DatabaseClient databaseClient;
+    private final Database databaseClient;
     private final Config config;
 
-    AtpService(Config config) {
-        try {
-            // this requires OCI configuration in the usual place
-            // ~/.oci/config
-            AuthenticationDetailsProvider authProvider = new ConfigFileAuthenticationDetailsProvider(ConfigFileReader.parseDefault());
-            databaseClient = DatabaseClient.builder().build(authProvider);
-            this.config = config;
-        } catch (IOException e) {
-            throw new ConfigException("Failed to read configuration properties", e);
-        }
+    AtpService(Database databaseClient, Config config) {
+        this.databaseClient = databaseClient;
+        this.config = config;
     }
 
-    /**
-     * A service registers itself by updating the routine rules.
-     *
-     * @param rules the routing rules.
-     */
+    @Override
     public void routing(HttpRules rules) {
         rules.get("/wallet", this::generateWallet);
     }
 
     /**
      * Generate wallet file for the configured ATP.
-     *
-     * @param req request
-     * @param res response
      */
     private void generateWallet(ServerRequest req, ServerResponse res) {
-        GenerateAutonomousDatabaseWalletResponse walletResponse = databaseClient.generateAutonomousDatabaseWallet(
-                GenerateAutonomousDatabaseWalletRequest.builder()
-                        .autonomousDatabaseId(config.get("oci.atp.ocid").asString().get())
-                        .generateAutonomousDatabaseWalletDetails(
-                                GenerateAutonomousDatabaseWalletDetails.builder()
-                                        .password(config.get("oci.atp.walletPassword").asString().get())
-                                        .build())
-                        .build());
+        String ocid = config.get("oci.atp.ocid").asString().get();
+        GenerateAutonomousDatabaseWalletDetails walletDetails =
+                GenerateAutonomousDatabaseWalletDetails.builder()
+                        .password(ocid)
+                        .build();
+        GenerateAutonomousDatabaseWalletResponse walletResponse = databaseClient
+                .generateAutonomousDatabaseWallet(
+                        GenerateAutonomousDatabaseWalletRequest.builder()
+                                .autonomousDatabaseId(ocid)
+                                .generateAutonomousDatabaseWalletDetails(walletDetails)
+                                .build());
 
         if (walletResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GenerateAutonomousDatabaseWalletResponse is empty");
@@ -103,28 +89,21 @@ class AtpService implements HttpService {
             return;
         }
 
-        byte[] walletContent = null;
+        byte[] walletContent;
         try {
             walletContent = walletResponse.getInputStream().readAllBytes();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GenerateAutonomousDatabaseWalletResponse", e);
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(e.getMessage());
+            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
 
-        try {
-            String result = createDbClient(walletContent)
-                    .execute(exec -> exec.query("SELECT 'Hello world!!' FROM DUAL"))
-                    .first()
-                    .map(dbRow -> dbRow.column(1).as(String.class))
-                    .await(Duration.ofSeconds(60));
-            if (result == null || result.isEmpty()) {
-                res.status(Http.Status.NOT_FOUND_404).send();
-            } else {
-                res.send(result);
-            }
-        } catch (Exception e) {
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(e.getMessage());
+        DbClient dbClient = createDbClient(walletContent);
+        Optional<DbRow> row = dbClient.execute().query("SELECT 'Hello world!!' FROM DUAL").findFirst();
+        if (row.isPresent()) {
+            res.send(row.get().column(1).as(String.class));
+        } else {
+            res.status(404).send();
         }
     }
 
@@ -144,8 +123,7 @@ class AtpService implements HttpService {
             LOGGER.log(Level.SEVERE, "Error setting up PoolDataSource", e);
             throw new RuntimeException(e);
         }
-
-        return new JdbcDbClientProvider().builder()
+        return new JdbcClientProvider().builder()
                 .connectionPool(() -> {
                     try {
                         return pds.getConnection();
@@ -164,7 +142,7 @@ class AtpService implements HttpService {
     private static SSLContext getSSLContext(byte[] walletContent) throws IllegalStateException {
         SSLContext sslContext = null;
         try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new ByteArrayInputStream(walletContent)))) {
-            ZipEntry entry = null;
+            ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("cwallet.sso")) {
                     KeyStore keyStore = KeyStore.getInstance("SSO", new OraclePKIProvider());
@@ -187,7 +165,7 @@ class AtpService implements HttpService {
     }
 
     /**
-     * Returns JDBC URL with connection description for the given service based on tnsnames.ora in wallet.
+     * Returns JDBC URL with connection description for the given service based on {@code tnsnames.ora} in wallet.
      *
      * @param walletContent     walletContent
      * @param tnsNetServiceName tnsNetServiceName
@@ -196,7 +174,7 @@ class AtpService implements HttpService {
     private static String getJdbcUrl(byte[] walletContent, String tnsNetServiceName) throws IllegalStateException {
         String jdbcUrl = null;
         try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(new ByteArrayInputStream(walletContent)))) {
-            ZipEntry entry = null;
+            ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
                 if (entry.getName().equals("tnsnames.ora")) {
                     jdbcUrl = new String(zis.readAllBytes(), StandardCharsets.UTF_8)

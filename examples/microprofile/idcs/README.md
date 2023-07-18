@@ -46,9 +46,9 @@ java -jar target/helidon-examples-microprofile-security-idcs.jar
 
 Try the endpoints:
 
-| Endpoint                | Description                                                                            |
-|:------------------------|:---------------------------------------------------------------------------------------|
-| `rest/login`            | Login                                                                                  |
-| `rest/scopes`           | Full security with scopes and roles (see IdcsResource.java)                            |
-| `rest/reactive`         | Protected reactive service (see application.yaml - security.web-server)                |
-| `web/resource.html`     | Protected static resource (see application.yaml - security.web-server)             |
+| Endpoint            | Description                                                            |
+|:--------------------|:-----------------------------------------------------------------------|
+| `rest/login`        | Login                                                                  |
+| `rest/scopes`       | Full security with scopes and roles (see IdcsResource.java)            |
+| `rest/nima`         | Protected nima service (see application.yaml - security.web-server)    |
+| `web/resource.html` | Protected static resource (see application.yaml - security.web-server) |

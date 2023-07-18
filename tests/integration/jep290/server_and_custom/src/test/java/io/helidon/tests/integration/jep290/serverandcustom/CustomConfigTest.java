@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,49 +22,33 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.time.Duration;
 import java.util.Random;
 
 import io.helidon.common.SerializationConfig;
-import io.helidon.reactive.webserver.WebServer;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webserver.WebServerConfig;
 
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@ServerTest
 class CustomConfigTest {
-    private static WebServer webServer;
     private static String testString;
 
-    @BeforeAll
-    static void init() {
+    @SetUpServer
+    static void setup(WebServerConfig.Builder requiredToBeFoundByExtension) {
         // first set up deserialization filter using a builder
         SerializationConfig.builder()
                 .traceSerialization(SerializationConfig.TraceOption.FULL)
                 .filterPattern(ConfiguredInBuilder.class.getName())
                 .build()
                 .configure();
-
         testString = "Hello_" + new Random().nextInt(10);
-
-        // then start web server
-        webServer = WebServer.builder()
-                .build()
-                .start()
-                .await(Duration.ofSeconds(10));
-    }
-
-    @AfterAll
-    static void stop() {
-        if (webServer != null) {
-            webServer.shutdown()
-                    .await(Duration.ofSeconds(5));
-        }
     }
 
     @Test

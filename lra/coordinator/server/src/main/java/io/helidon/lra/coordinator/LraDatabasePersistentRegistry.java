@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
@@ -68,8 +68,8 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
     }
 
     @Override
-    public Multi<Lra> stream() {
-        return Multi.create(lraMap.values().stream());
+    public Stream<Lra> stream() {
+        return lraMap.values().stream();
     }
 
     @Override

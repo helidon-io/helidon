@@ -401,7 +401,7 @@ public interface WebClient {
             return this.mediaTypeParserMode;
         }
 
-        Tls tls() {
+        protected Tls tls() {
             return tls;
         }
 

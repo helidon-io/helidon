@@ -20,11 +20,11 @@
 module io.helidon.lra.coordinator {
     requires jakarta.json;
     requires microprofile.lra.api;
-    requires io.helidon.common.reactive;
-    requires io.helidon.reactive.webclient;
+    requires io.helidon.nima.webclient;
     requires io.helidon.nima.webserver;
     requires io.helidon.nima.observe.metrics;
     requires io.helidon.nima.observe.health;
+    requires io.helidon.nima.http.media.jsonp;
     requires io.helidon.scheduling;
     requires io.helidon.dbclient;
     requires io.helidon.dbclient.jdbc;

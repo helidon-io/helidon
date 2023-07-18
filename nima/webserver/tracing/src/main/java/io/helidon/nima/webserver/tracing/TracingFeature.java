@@ -26,6 +26,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.http.Filter;
 import io.helidon.nima.webserver.http.FilterChain;
@@ -309,7 +310,8 @@ public class TracingFeature implements HttpFeature, Weighted {
             try (Scope ignored = span.activate()) {
                 span.tag(Tag.COMPONENT.create("helidon-nima-webserver"));
                 span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
-                span.tag(Tag.HTTP_URL.create(prologue.protocol() + "://" + req.authority() + "/" + prologue.uriPath().path()));
+                UriInfo uriInfo = req.requestedUri();
+                span.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path()));
                 span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
 
                 Contexts.runInContext(context, chain::proceed);

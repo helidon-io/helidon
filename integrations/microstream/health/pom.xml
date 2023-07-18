@@ -39,13 +39,8 @@
             <artifactId>helidon-integrations-microstream</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.health</groupId>
-            <artifactId>microprofile-health-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.reactive.health</groupId>
-            <artifactId>helidon-reactive-health</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.nima.observe</groupId>
+            <artifactId>helidon-nima-observe-health</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

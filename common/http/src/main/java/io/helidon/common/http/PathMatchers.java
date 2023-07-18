@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -275,9 +275,11 @@ public final class PathMatchers {
 
     static final class ExactPathMatcher implements PathMatcher {
         private final String path;
+        private final String pathWithTrailingSlash;
 
         ExactPathMatcher(String path) {
             this.path = path;
+            this.pathWithTrailingSlash = path + "/";
         }
 
         @Override
@@ -303,7 +305,7 @@ public final class PathMatchers {
             }
 
             String actualPath = uriPath.path();
-            if (actualPath.startsWith(path)) {
+            if (actualPath.startsWith(pathWithTrailingSlash) || actualPath.equals(path)) {
                 // we have /test
                 String remaining = actualPath.substring(path.length());
                 if (remaining.isEmpty()) {

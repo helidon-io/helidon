@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.tests.integration.security.mapper;
 
-import jakarta.ws.rs.core.Response;
-
 import io.helidon.common.context.Contexts;
+import io.helidon.microprofile.security.spi.SecurityResponseMapper;
 import io.helidon.security.SecurityResponse;
-import io.helidon.security.integration.jersey.SecurityResponseMapper;
+
+import jakarta.ws.rs.core.Response;
 
 /**
  * Mapper that intercepts creation of {@link Response} when a security

@@ -19,12 +19,11 @@ import java.util.Collections;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.ServerRequest;
-import io.helidon.reactive.webserver.ServerResponse;
-import io.helidon.reactive.webserver.Service;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -34,19 +33,18 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * A simple service to greet you. Examples:
- *
+ * <p>
  * Get default greeting message:
  * curl -X GET http://localhost:8080/simple-greet
- *
+ * <p>
  * The message is returned as a JSON object
  */
-public class SimpleGreetService implements Service {
+public class SimpleGreetService implements HttpService {
 
     private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    private final MetricRegistry registry = RegistryFactory.getInstance()
-            .getRegistry(Registry.APPLICATION_SCOPE);
+    private final MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
     private final Counter accessCtr = registry.counter("accessctr");
 
     private final String greeting;
@@ -62,7 +60,7 @@ public class SimpleGreetService implements Service {
      * @param rules the routing rules.
      */
     @Override
-    public void update(Routing.Rules rules) {
+    public void routing(HttpRules rules) {
         rules.get("/", this::getDefaultMessageHandler);
         rules.get("/greet-count", this::countAccess, this::getDefaultMessageHandler);
     }
@@ -70,7 +68,7 @@ public class SimpleGreetService implements Service {
     /**
      * Return a worldly greeting message.
      *
-     * @param request the server request
+     * @param request  the server request
      * @param response the server response
      */
     private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
@@ -85,6 +83,6 @@ public class SimpleGreetService implements Service {
 
     private void countAccess(ServerRequest request, ServerResponse response) {
         accessCtr.inc();
-        request.next();
+        response.next();
     }
 }

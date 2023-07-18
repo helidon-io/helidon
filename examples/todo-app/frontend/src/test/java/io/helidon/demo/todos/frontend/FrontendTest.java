@@ -17,38 +17,25 @@
 package io.helidon.demo.todos.frontend;
 
 import java.util.Base64;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-import io.helidon.reactive.media.jsonp.JsonpSupport;
-import io.helidon.reactive.webclient.WebClient;
-import io.helidon.reactive.webserver.Routing;
-import io.helidon.reactive.webserver.WebServer;
-import io.helidon.reactive.webserver.jersey.JerseySupport;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
+import io.helidon.nima.webserver.http.HttpRoute;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.security.Security;
-import io.helidon.security.integration.webserver.WebSecurity;
+import io.helidon.security.integration.nima.SecurityFeature;
+import io.helidon.tracing.Tracer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -56,216 +43,109 @@ import static io.helidon.config.ConfigSources.classpath;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@ServerTest
 public class FrontendTest {
 
-    private static WebServer serverBackend;
-    private static WebServer serverFrontend;
-    private static WebClient client;
     private static final JsonObject TODO = Json.createObjectBuilder().add("msg", "todo").build();
     private static final String ENCODED_ID = Base64.getEncoder().encodeToString("john:password".getBytes());
 
-    @Path("/api/backend")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public static class FakeBackendService {
+    private final Http1Client client;
 
-        @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        public Response getAllTodo() {
-            JsonArray jsonArray = Json.createArrayBuilder().add(TODO).build();
-            return Response.ok(jsonArray, MediaType.APPLICATION_JSON).build();
-        }
+    FrontendTest(Http1Client client) {
+        this.client = client;
+    }
 
-        @POST
-        @Consumes(MediaType.APPLICATION_JSON)
-        @Produces(MediaType.APPLICATION_JSON)
-        public Response createTodo(JsonObject object) {
-            return Response.ok(object, MediaType.APPLICATION_JSON).build();
-        }
+    @SetUpServer
+    static void setup(WebServerConfig.Builder server) {
+        Http1Client client = Http1Client.builder().baseUri("http://localhost:8081").build();
+        BackendServiceClient bsc = new BackendServiceClient(client);
+        Config config = Config.create(classpath("frontend-application.yaml"));
+        Security security = Security.create(config.get("security"));
 
-        @GET
-        @Path("/{id}")
-        @Produces(MediaType.APPLICATION_JSON)
-        public Response getTodo() {
-            return Response.ok(TODO, MediaType.APPLICATION_JSON).build();
-        }
+        server.routing(routing -> routing
+                        .addFeature(ContextFeature.create())
+                        .addFeature(SecurityFeature.create(security, config.get("security")))
+                        .register("/env", new EnvHandler(config))
+                        .register("/api", new TodosHandler(bsc, Tracer.noOp())))
+                .putSocket("backend", socket -> socket
+                        .port(8081)
+                        .routing(routing -> routing
+                                .register("/api/backend", new FakeBackendService())));
+    }
 
-        @DELETE
-        @Path("/{id}")
-        @Produces(MediaType.APPLICATION_JSON)
-        public Response deleteTodo() {
-            return Response.ok(TODO, MediaType.APPLICATION_JSON).build();
-        }
+    public static class FakeBackendService implements HttpService {
 
-        @PUT
-        @Path("/{id}")
-        @Consumes(MediaType.APPLICATION_JSON)
-        @Produces(MediaType.APPLICATION_JSON)
-        public Response updateTodo(JsonObject object) {
-            return Response.ok(object, MediaType.APPLICATION_JSON).build();
+        @Override
+        public void routing(HttpRules rules) {
+            rules.get("/", (req, res) -> res.send(Json.createArrayBuilder().add(TODO).build()))
+                    .post((req, res) -> res.send(req.content().as(JsonObject.class)))
+                    .route(HttpRoute.builder()
+                            .methods(Http.Method.GET, Http.Method.DELETE, Http.Method.PUT)
+                            .path("/{id}")
+                            .handler((req, res) -> res.send(TODO)));
         }
     }
 
-    @BeforeAll
-    public static void init() {
-        startBackendServer();
-        startFrontendServer();
-        client = WebClient.builder()
-                .baseUri("http://localhost:" + serverFrontend.port())
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-    }
+    @Test
+    public void testGetList() {
+        try (Http1ClientResponse response = client.get("/api/todo")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .request()) {
 
-    @AfterAll
-    public static void stopServers() {
-        serverBackend.shutdown();
-        serverFrontend.shutdown();
-    }
-
-    private static void startBackendServer() {
-        serverBackend = WebServer.builder(createRouting())
-                .port(0)
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-
-        serverBackend.start();
-
-        try {
-            TimeUnit.SECONDS.sleep(5);
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonArray.class).getJsonObject(0), is(TODO));
         }
     }
 
-    private static Routing createRouting() {
-        return Routing.builder()
-                .register("/", JerseySupport.builder()
-                        .register(FakeBackendService.class)
-                        .build())
-                .build();
-    }
+    @Test
+    public void testPostTodo() {
+        try (Http1ClientResponse response = client.post("/api/todo")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .submit(TODO)) {
 
-    private static void startFrontendServer() {
-        Properties prop = new Properties();
-        prop.put("services.backend.endpoint", "http://127.0.0.1:" + serverBackend.port());
-        Config config = Config.builder()
-                .sources(List.of(
-                        classpath("frontend-application.yaml"),
-                        ConfigSources.create(prop)
-                ))
-                .build();
-        Client client = ClientBuilder.newClient();
-        BackendServiceClient bsc = new BackendServiceClient(client, config);
-
-        serverFrontend = WebServer.builder(createRouting(
-                Security.create(config.get("security")),
-                config,
-                bsc))
-                .config(config.get("webserver"))
-                .addMediaSupport(JsonpSupport.create())
-                .build();
-
-        serverFrontend.start();
-    }
-
-    private static Routing createRouting(Security security, Config config, BackendServiceClient bsc) {
-        return Routing.builder()
-                .register(WebSecurity.create(security, config.get("security")))
-                .register("/env", new EnvHandler(config))
-                .register("/api", new TodosHandler(bsc))
-                .build();
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class), is(TODO));
+        }
     }
 
     @Test
-    public void testGetList() throws ExecutionException, InterruptedException {
-        client.get()
-                .path("/api/todo")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
-                .request(JsonArray.class)
-                .thenAccept(jsonValues -> {
-                    assertThat(jsonValues.getJsonObject(0), is(TODO));
-                })
-                .toCompletableFuture()
-                .get();
+    public void testGetTodo() {
+        try (Http1ClientResponse response = client.get("/api/todo/1")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .request()) {
+
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class), is(TODO));
+        }
     }
 
     @Test
-    public void testPostTodo() throws ExecutionException, InterruptedException {
-        client.post()
-                .path("/api/todo")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
-                .submit(TODO, JsonObject.class)
-                .thenAccept(jsonObject -> {
-                    assertThat(jsonObject, is(TODO));
-                })
-                .toCompletableFuture()
-                .get();
+    public void testDeleteTodo() {
+        try (Http1ClientResponse response = client.delete("/api/todo/1")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .request()) {
+
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class), is(TODO));
+        }
     }
 
     @Test
-    public void testGetTodo() throws ExecutionException, InterruptedException {
-        client.get()
-                .path("/api/todo/1")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> {
-                    assertThat(jsonObject, is(TODO));
-                })
-                .toCompletableFuture()
-                .get();
+    public void testUpdateTodo() {
+        try (Http1ClientResponse response = client.put("/api/todo/1")
+                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .submit(TODO)) {
+
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class), is(TODO));
+        }
     }
 
     @Test
-    public void testDeleteTodo() throws ExecutionException, InterruptedException {
-        client.delete()
-                .path("/api/todo/1")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
-                .request(JsonObject.class)
-                .thenAccept(jsonObject -> {
-                    assertThat(jsonObject, is(TODO));
-                })
-                .toCompletableFuture()
-                .get();
+    public void testEnvHandler() {
+        try (Http1ClientResponse response = client.get("/env").request()) {
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(String.class), is("docker"));
+        }
     }
-
-    @Test
-    public void testUpdateTodo() throws ExecutionException, InterruptedException {
-        client.put()
-                .path("/api/todo/1")
-                .headers(headers -> {
-                    headers.add(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID);
-                    return headers;
-                })
-                .submit(TODO, JsonObject.class)
-                .thenAccept(jsonObject -> {
-                    assertThat(jsonObject, is(TODO));
-                })
-                .toCompletableFuture()
-                .get();
-    }
-
-    @Test
-    public void testEnvHandler() throws ExecutionException, InterruptedException {
-        client.get()
-                .path("/env")
-                .request(String.class)
-                .thenAccept(s -> {
-                    assertThat(s, is("docker"));
-                })
-                .toCompletableFuture()
-                .get();
-    }
-
 }

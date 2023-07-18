@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,23 @@
 
 package io.helidon.security.examples.google;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServerConfig;
 
 /**
  * Unit test for {@link GoogleBuilderMain}.
  */
+@ServerTest
 public class GoogleBuilderMainTest extends GoogleMainTest {
-    static int port;
 
-    @BeforeAll
-    public static void initClass() throws InterruptedException {
-        port = GoogleBuilderMain.start(0);
+    GoogleBuilderMainTest(Http1Client client) {
+        super(client);
     }
 
-    @AfterAll
-    public static void destroyClass() throws InterruptedException {
-        stopServer(GoogleBuilderMain.getTheServer());
-    }
-
-    @Override
-    int port() {
-        return port;
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        GoogleBuilderMain.setup(server);
     }
 }

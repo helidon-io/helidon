@@ -17,9 +17,9 @@ java -jar zipkin.jar
 
 With Docker:
 ```bash
-docker build -t helidon-reactive-webserver-opentracing-example .
-docker run --rm -d --link zipkin --name helidon-reactive-webserver-opentracing-example \
-    -p 8080:8080 helidon-reactive-webserver-opentracing-example:latest
+docker build -t helidon-webserver-opentracing-example .
+docker run --rm -d --link zipkin --name helidon-webserver-opentracing-example \
+    -p 8080:8080 helidon-webserver-opentracing-example:latest
 ```
 
 With Java 8+:
@@ -37,5 +37,5 @@ Then check out the traces at http://localhost:9411.
 
 Stop the docker containers:
 ```bash
-docker stop zipkin helidon-reactive-webserver-opentracing-example
+docker stop zipkin helidon-webserver-opentracing-example
 ```
