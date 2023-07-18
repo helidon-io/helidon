@@ -123,22 +123,24 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     public void data(Http2FrameHeader header, BufferData data) {
         try {
             while (data.available() > 0) {
-                // todo compression support
+                // Start of the chunk
                 if (entityBytes == null) {
-                    // First frame
+                    // fixme compression support
                     isCompressed = (data.read() == 1);
                     length = data.readUnsignedInt32();
                     entityBytes = BufferData.create((int) length);
-                    if (length > data.available()) {
-                        // if the result is > than data length, wait for next data frame
-                        entityBytes.write(data);
-                        return;
-                    }
                 }
+
+                // Append to chunk in progress
                 entityBytes.write(data);
-                byte[] bytes = new byte[entityBytes.available()];
-                entityBytes.read(bytes);
-                listener.onMessage(route.method().parseRequest(new ByteArrayInputStream(bytes)));
+
+                // Whole chunk
+                if (entityBytes.capacity() == 0) {
+                    byte[] bytes = new byte[entityBytes.available()];
+                    entityBytes.read(bytes);
+                    listener.onMessage(route.method().parseRequest(new ByteArrayInputStream(bytes)));
+                    entityBytes = null;
+                }
             }
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listener.onHalfClose();

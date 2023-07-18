@@ -419,8 +419,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         connectionWriter.write(serverSettings.toFrameData(serverSettings, 0, Http2Flag.SettingsFlags.create(0)));
 
         // Initial window size for connection is not configurable, subsequent update win update is needed
-        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(http2Config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE);
-        connectionWriter.write(windowUpdate.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+        int connectionWinSizeUpd = http2Config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE;
+        if (connectionWinSizeUpd > 0) {
+            Http2WindowUpdate windowUpdate = new Http2WindowUpdate(http2Config.initialWindowSize() - WindowSize.DEFAULT_WIN_SIZE);
+            connectionWriter.write(windowUpdate.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+        }
 
         state = State.READ_FRAME;
     }
