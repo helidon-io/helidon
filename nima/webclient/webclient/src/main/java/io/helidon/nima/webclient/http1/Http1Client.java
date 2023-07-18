@@ -105,12 +105,14 @@ public interface Http1Client extends HttpClient<Http1ClientRequest, Http1ClientR
         public Http1Client doBuild() {
             configBuilder.defaultHeaders(defaultHeaders());
             configBuilder.socketOptions(super.channelOptions());
-
             if (mediaContextBuilder != null) {
                 configBuilder.mediaContext(mediaContextBuilder.fallback(configBuilder.mediaContext())
                                                    .build());
             }
-
+            Tls tls = tls();
+            if (tls != null) {
+                configBuilder.tls(tls);
+            }
             return new Http1ClientImpl(configBuilder.build());
         }
 

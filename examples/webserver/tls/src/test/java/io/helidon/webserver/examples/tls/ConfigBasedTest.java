@@ -17,19 +17,21 @@
 package io.helidon.webserver.examples.tls;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 
 class ConfigBasedTest extends TestBase {
 
-    ConfigBasedTest(Http1Client.Http1ClientBuilder clientBuilder) {
-        super(clientBuilder);
+    ConfigBasedTest(WebServer server) {
+        super(server);
     }
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        Config config = createConfig();
+        Config config = Config.create(ConfigSources.classpath("test-application.yaml"),
+                ConfigSources.classpath("application.yaml"));
         Main.setupConfigBased(server, config.get("config-based"));
     }
 }

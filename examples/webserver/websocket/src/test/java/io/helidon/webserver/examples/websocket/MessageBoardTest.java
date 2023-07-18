@@ -25,7 +25,6 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.websocket.WsCloseCodes;
 import io.helidon.nima.websocket.WsListener;
@@ -45,12 +44,12 @@ public class MessageBoardTest {
     private static final Logger LOGGER = Logger.getLogger(MessageBoardTest.class.getName());
 
     private static final String[] MESSAGES = {"Whisky", "Tango", "Foxtrot"};
+    private final WsClient wsClient;
     private final Http1Client client;
-    private final WebServer server;
 
-    MessageBoardTest(WebServer server, Http1Client client) {
-        this.server = server;
+    MessageBoardTest(Http1Client client, WsClient wsClient) {
         this.client = client;
+        this.wsClient = wsClient;
     }
 
     @SetUpServer
@@ -62,9 +61,7 @@ public class MessageBoardTest {
     public void testBoard() throws InterruptedException {
         // Post messages using REST resource
         for (String message : MESSAGES) {
-            try (Http1ClientResponse response = client.post("/rest/board")
-                    .submit(message)) {
-
+            try (Http1ClientResponse response = client.post("/rest/board").submit(message)) {
                 assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
                 LOGGER.info("Posting message '" + message + "'");
             }
@@ -74,11 +71,7 @@ public class MessageBoardTest {
 
         CountDownLatch messageLatch = new CountDownLatch(MESSAGES.length);
 
-        WsClient wsClient = WsClient.builder()
-                .baseUri("ws://localhost:" + server.port() + "/websocket")
-                .build();
-
-        wsClient.connect("/board", new WsListener() {
+        wsClient.connect("/websocket/board", new WsListener() {
             @Override
             public void onMessage(WsSession session, String text, boolean last) {
                 LOGGER.info("Client OnMessage called '" + text + "'");
@@ -90,7 +83,7 @@ public class MessageBoardTest {
 
             @Override
             public void onOpen(WsSession session) {
-                session.send("SEND", false);
+                session.send("send", false);
             }
         });
 

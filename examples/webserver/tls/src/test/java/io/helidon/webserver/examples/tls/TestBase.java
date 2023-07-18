@@ -16,12 +16,10 @@
 
 package io.helidon.webserver.examples.tls;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
+import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,13 +31,11 @@ abstract class TestBase {
 
     private final Http1Client client;
 
-    TestBase(Http1ClientBuilder clientBuilder) {
-        this.client = clientBuilder.tls(Tls.builder().trustAll(true)).build();
-    }
-
-    static Config createConfig() {
-        return Config.create(ConfigSources.classpath("test-application.yaml"),
-                ConfigSources.classpath("application.yaml"));
+    TestBase(WebServer server) {
+        this.client = Http1Client.builder()
+                .baseUri("https://localhost:" + server.port())
+                .tls(Tls.builder().trustAll(true))
+                .build();
     }
 
     @Test

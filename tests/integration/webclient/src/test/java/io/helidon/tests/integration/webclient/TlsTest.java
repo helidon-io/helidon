@@ -16,19 +16,18 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionException;
-
+import io.helidon.common.buffers.DataReader.IncorrectNewLineException;
 import io.helidon.common.configurable.Resource;
-
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -39,12 +38,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 public class TlsTest {
 
-    private final WebServer server;
-    private final Http1Client webClient;
+    private final Http1Client client;
+    private final Http1Client secureClient;
 
-    public TlsTest(WebServer server) {
-        this.server = server;
-        this.webClient = Http1Client.builder()
+    public TlsTest(WebServer server, Http1Client client) {
+        this.client = client;
+        this.secureClient = Http1Client.builder()
                 .baseUri("https://localhost:" + server.port())
                 .tls(Tls.builder().trustAll(true))
                 .build();
@@ -57,28 +56,33 @@ public class TlsTest {
                         .privateKey(key -> key
                                 .keystore(store -> store
                                         .passphrase("password")
+                                        .keystore(Resource.create("server.p12"))))
+                        .privateKeyCertChain(key -> key
+                                .keystore(store -> store
+                                        .trustStore(true)
+                                        .passphrase("password")
                                         .keystore(Resource.create("server.p12")))));
     }
 
     @Test
+    public void testConnectionOnHttps() {
+        assertThat(secureClient.get().request(String.class), is("It works!"));
+    }
+
+    @Test
     public void testConnectionOnHttpsWithHttp() {
-        RuntimeException ex = assertThrows(CompletionException.class, () ->
-                webClient.get()
-                        .uri("http://localhost:" + server.port())
-                        .request(String.class));
-        assertThat(ex, instanceOf(RuntimeException.class));
-        assertThat(ex.getMessage(), is("Connection reset by the host"));
+        RuntimeException ex = assertThrows(IncorrectNewLineException.class, () ->
+                client.get().request(String.class));
+        assertThat(ex.getMessage(), startsWith("Found LF (6) without preceding CR."));
     }
 
     @Test
     public void testConnectionOnHttpsWithHttpWithoutKeepAlive() {
-        RuntimeException ex = assertThrows(CompletionException.class,
-                () -> webClient.get()
-                        //.keepAlive(false)
-                        .uri("http://localhost:" + server.port())
+        RuntimeException ex = assertThrows(IncorrectNewLineException.class,
+                () -> client.get()
+                        .keepAlive(false)
                         .request(String.class));
-        assertThat(ex, instanceOf(RuntimeException.class));
-        assertThat(ex.getMessage(), is("Connection reset by the host"));
+        assertThat(ex.getMessage(), startsWith("Found LF (6) without preceding CR."));
     }
 
 }

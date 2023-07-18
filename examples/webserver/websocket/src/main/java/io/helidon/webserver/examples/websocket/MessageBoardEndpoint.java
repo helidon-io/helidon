@@ -16,8 +16,6 @@
 
 package io.helidon.webserver.examples.websocket;
 
-import java.util.logging.Logger;
-
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.WsSession;
 
@@ -25,8 +23,6 @@ import io.helidon.nima.websocket.WsSession;
  * Class MessageBoardEndpoint.
  */
 public class MessageBoardEndpoint implements WsListener {
-    private static final Logger LOGGER = Logger.getLogger(MessageBoardEndpoint.class.getName());
-
     private final MessageQueue messageQueue = MessageQueue.instance();
 
     @Override

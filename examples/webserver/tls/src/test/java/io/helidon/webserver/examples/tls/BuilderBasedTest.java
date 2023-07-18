@@ -16,20 +16,18 @@
 
 package io.helidon.webserver.examples.tls;
 
-import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 
 class BuilderBasedTest extends TestBase {
 
-    BuilderBasedTest(Http1Client.Http1ClientBuilder clientBuilder) {
-        super(clientBuilder);
+    BuilderBasedTest(WebServer server) {
+        super(server);
     }
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        Config config = createConfig();
-        Main.setupBuilderBased(server, config.get("config-based"));
+        Main.setupBuilderBased(server);
     }
 }

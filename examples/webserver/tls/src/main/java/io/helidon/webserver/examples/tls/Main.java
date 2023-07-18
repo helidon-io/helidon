@@ -47,22 +47,25 @@ public final class Main {
         WebServerConfig.Builder builder1 = WebServer.builder();
         setupConfigBased(builder1, config);
         WebServer server1 = builder1.build().start();
-        System.out.println("Started config based WebServer on http://localhost:" + server1.port());
+        System.out.println("Started config based WebServer on https://localhost:" + server1.port());
 
         WebServerConfig.Builder builder2 = WebServer.builder();
-        setupBuilderBased(builder2, config);
+        setupBuilderBased(builder2);
         WebServer server2 = builder2.build().start();
         System.out.println("Started builder based WebServer on http://localhost:" + server2.port());
     }
 
-    static void setupBuilderBased(WebServerConfig.Builder server, Config config) {
-        server.config(config)
-                .routing(Main::routing)
+    static void setupBuilderBased(WebServerConfig.Builder server) {
+        server.routing(Main::routing)
                 .tls(tls -> tls
                         .privateKey(key -> key
                                 .keystore(store -> store
-                                        .keystore(Resource.create("certificate.p12"))
-                                        .passphrase("helidon"))));
+                                        .passphrase("password")
+                                        .keystore(Resource.create("server.p12"))))
+                        .privateKeyCertChain(key -> key
+                                .keystore(store -> store
+                                        .passphrase("password")
+                                        .keystore(Resource.create("server.p12")))));
     }
 
     static void setupConfigBased(WebServerConfig.Builder server, Config config) {

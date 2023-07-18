@@ -1166,6 +1166,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.nima.testing.junit5</groupId>
+                <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.nima.grpc</groupId>
                 <artifactId>helidon-nima-grpc-webserver</artifactId>
                 <version>${helidon.version}</version>
