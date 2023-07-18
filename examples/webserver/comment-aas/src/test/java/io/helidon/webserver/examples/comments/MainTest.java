@@ -49,8 +49,9 @@ public class MainTest {
     @Test
     public void argot() {
         try (Http1ClientResponse response = client.post("/comments/one")
-                                                  .contentType(HttpMediaType.TEXT_PLAIN)
-                                                  .submit("Spring framework is the BEST!")) {
+                .header(Main.USER_IDENTITY_HEADER, "Joe")
+                .contentType(HttpMediaType.TEXT_PLAIN)
+                .submit("Spring framework is the BEST!")) {
 
             assertThat(response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
         }

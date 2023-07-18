@@ -19,11 +19,12 @@ package io.helidon.webserver.examples.tutorial;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
-import io.helidon.nima.testing.junit5.webserver.RoutingTest;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.nima.webserver.WebServerConfig;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,22 +32,21 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
-
 /**
  * Tests {@link CommentService}.
  */
-@RoutingTest
+@ServerTest
 class CommentServiceTest {
 
-    private final DirectClient client;
+    private final Http1Client client;
 
-    CommentServiceTest(DirectClient client) {
+    CommentServiceTest(Http1Client client) {
         this.client = client;
     }
 
-    @BeforeAll
-    static void setup(HttpRouting.Builder routing) {
-        Main.routing(routing);
+    @SetUpServer
+    static void setup(WebServerConfig.Builder server) {
+        Main.setup(server);
     }
 
     @Test
@@ -67,33 +67,33 @@ class CommentServiceTest {
 
     @Test
     void testRouting() {
-        try (Http1ClientResponse response = client.get("one").request()) {
+        try (Http1ClientResponse response = client.get("/article/one").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
         }
 
         // Add first comment
-        try (Http1ClientResponse response = client.post("one")
+        try (Http1ClientResponse response = client.post("/article/one")
                                                   .contentType(HttpMediaType.TEXT_PLAIN)
                                                   .submit("aaa")) {
             assertThat(response.status(), is(Http.Status.OK_200));
         }
 
-        try (Http1ClientResponse response = client.get("one").request()) {
+        try (Http1ClientResponse response = client.get("/article/one").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.entity().as(String.class), is("anonymous: aaa\n"));
+            assertThat(response.entity().as(String.class), is("anonymous: aaa"));
         }
 
 
         // Add second comment
-        try (Http1ClientResponse response = client.post("one")
+        try (Http1ClientResponse response = client.post("/article/one")
                                                   .contentType(HttpMediaType.TEXT_PLAIN)
                                                   .submit("bbb")) {
             assertThat(response.status(), is(Http.Status.OK_200));
         }
 
-        try (Http1ClientResponse response = client.get("one").request()) {
+        try (Http1ClientResponse response = client.get("/article/one").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.entity().as(String.class), is("anonymous: aaa\nanonymous: bbb\n"));
+            assertThat(response.entity().as(String.class), is("anonymous: aaa\nanonymous: bbb"));
         }
     }
 }

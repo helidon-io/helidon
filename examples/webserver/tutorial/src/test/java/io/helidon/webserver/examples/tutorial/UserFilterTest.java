@@ -19,10 +19,10 @@ package io.helidon.webserver.examples.tutorial;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
 import io.helidon.nima.testing.junit5.webserver.RoutingTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -40,7 +40,7 @@ public class UserFilterTest {
         this.client = client;
     }
 
-    @BeforeAll
+    @SetUpRoute
     static void setup(HttpRouting.Builder routing) {
         routing.any(new UserFilter())
                .any((req, res) -> res.send(req.context()

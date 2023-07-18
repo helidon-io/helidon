@@ -39,6 +39,7 @@ public class MainTest {
     private final Http1Client client;
 
     public MainTest(WebServer server, Http1Client client) {
+        server.context().register(server);
         this.server = server;
         this.client = client;
     }

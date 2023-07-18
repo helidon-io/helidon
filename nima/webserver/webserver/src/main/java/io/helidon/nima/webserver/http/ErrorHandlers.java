@@ -214,11 +214,11 @@ public final class ErrorHandlers {
         }
         try {
             it.handle(request, response, e);
+            response.commit();
             if (!response.isSent()) {
                 ctx.log(LOGGER, System.Logger.Level.TRACE, "Exception not handled.", e);
                 unhandledError(ctx, request, response, e);
             }
-            response.commit();
         } catch (Exception ex) {
             ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to handle exception.", ex);
             unhandledError(ctx, request, response, e);

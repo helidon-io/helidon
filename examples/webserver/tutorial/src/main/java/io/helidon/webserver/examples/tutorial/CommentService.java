@@ -21,13 +21,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.http.spi.Sink;
 
 /**
  * Basic service for comments.
@@ -35,19 +33,17 @@ import io.helidon.nima.webserver.http.spi.Sink;
 class CommentService implements HttpService {
 
     private final ConcurrentHashMap<String, List<Comment>> data = new ConcurrentHashMap<>();
-    private static final GenericType<Sink<Comment>> COMMENT_SINK_TYPE = new GenericType<>() {};
 
     @Override
     public void routing(HttpRules rules) {
         rules.get("/{room-id}", this::getComments)
-             .post("/{room-id}", this::addComment);
+                .post("/{room-id}", this::addComment);
     }
 
     private void getComments(ServerRequest req, ServerResponse resp) {
         String roomId = req.path().pathParameters().value("room-id");
         resp.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
-        Sink<Comment> sink = resp.sink(COMMENT_SINK_TYPE);
-        getComments(roomId).forEach(sink::emit);
+        resp.send(getComments(roomId));
     }
 
     /**

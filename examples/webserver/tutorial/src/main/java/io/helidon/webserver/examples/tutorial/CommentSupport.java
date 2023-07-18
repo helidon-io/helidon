@@ -15,18 +15,23 @@
  */
 package io.helidon.webserver.examples.tutorial;
 
+import java.util.List;
+
 import io.helidon.common.GenericType;
+import io.helidon.common.http.Headers;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.MediaSupport;
 
 class CommentSupport implements MediaSupport {
 
-    private static final GenericType<Comment> COMMENT_TYPE = new GenericType<>() {};
+    private static final GenericType<List<Comment>> COMMENT_TYPE = new GenericType<>() {};
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (!type.equals(COMMENT_TYPE)) {
+    public <T> WriterResponse<T> writer(GenericType<T> type,
+                                        Headers requestHeaders,
+                                        WritableHeaders<?> responseHeaders) {
+        if (!COMMENT_TYPE.rawType().isAssignableFrom(type.rawType())) {
             return WriterResponse.unsupported();
         }
         return (WriterResponse<T>) new WriterResponse<>(SupportLevel.SUPPORTED, CommentWriter::new);

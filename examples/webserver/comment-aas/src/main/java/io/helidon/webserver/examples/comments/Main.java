@@ -36,7 +36,7 @@ import io.helidon.nima.webserver.http.HttpRouting;
  */
 public final class Main {
 
-    private static final Http.HeaderName USER_IDENTITY_HEADER = Http.Header.create("user-identity");
+    static final Http.HeaderName USER_IDENTITY_HEADER = Http.Header.create("user-identity");
 
     private Main() {
     }

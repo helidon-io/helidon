@@ -45,7 +45,7 @@ public class CommentsServiceTest {
 
     @SetUpRoute
     static void setup(HttpRouting.Builder routing) {
-        Main.routing(routing, false);
+        Main.routing(routing, true);
     }
 
     @Test
@@ -69,17 +69,17 @@ public class CommentsServiceTest {
 
     @Test
     public void testRouting() {
-        try (Http1ClientResponse response = client.get("one").request()) {
+        try (Http1ClientResponse response = client.get("/comments/one").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
         }
-        try (Http1ClientResponse response = client.post("one")
+        try (Http1ClientResponse response = client.post("/comments/one")
                                                   .contentType(HttpMediaType.TEXT_PLAIN)
                                                   .submit("aaa")) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
         }
 
-        try (Http1ClientResponse response = client.get("one").request()) {
+        try (Http1ClientResponse response = client.get("/comments/one").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.entity().as(String.class), is("anonymous: aaa"));
         }

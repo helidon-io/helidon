@@ -60,7 +60,8 @@ public final class Main {
         server.routing(Main::routing)
                 .contentEncoding(encoding -> encoding.addContentEncoding(new UpperXEncodingProvider()))
                 .mediaContext(MediaContext.builder()
-                        .addMediaSupport(new CommentSupport()));
+                        .addMediaSupport(new CommentSupport())
+                        .build());
     }
 
     /**
