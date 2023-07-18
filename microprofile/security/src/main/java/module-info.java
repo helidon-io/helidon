@@ -45,7 +45,7 @@ module io.helidon.microprofile.security {
     uses io.helidon.microprofile.security.spi.SecurityResponseMapper;
 
     // this is needed for CDI extensions that use non-public observer methods
-    opens io.helidon.microprofile.security to weld.core.impl, io.helidon.microprofile.cdi;
+    opens io.helidon.microprofile.security to weld.core.impl, io.helidon.microprofile.cdi, org.glassfish.hk2.locator;
     opens io.helidon.microprofile.security.spi to io.helidon.microprofile.cdi, weld.core.impl;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.security.SecurityCdiExtension;
