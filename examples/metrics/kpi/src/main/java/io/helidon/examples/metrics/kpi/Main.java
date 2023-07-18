@@ -20,7 +20,9 @@ import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
+import io.helidon.nima.observe.metrics.MetricsObserveProvider;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -65,7 +67,7 @@ public final class Main {
         Config config = Config.create();
 
         server.routing(r -> routing(r, config))
-              .config(config.get("server"));
+                .config(config.get("server"));
 
     }
 
@@ -88,8 +90,9 @@ public final class Main {
 
         GreetService greetService = new GreetService(config);
 
-        routing.addFeature(metricsSupport)
-               .register("/greet", greetService);
+        routing.addFeature(ObserveFeature.create(
+                        MetricsObserveProvider.create(metricsSupport)))
+                .register("/greet", greetService);
     }
 
     /**
@@ -115,7 +118,7 @@ public final class Main {
                         .longRunningRequestThresholdMs(2000);
         return MetricsFeature.builder()
                 .metricsSettings(MetricsSettings.builder()
-                                         .keyPerformanceIndicatorSettings(settingsBuilder))
+                        .keyPerformanceIndicatorSettings(settingsBuilder))
                 .build();
     }
 }

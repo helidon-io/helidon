@@ -72,7 +72,7 @@ public final class Main {
      * @param routing routing builder
      * @param config  configuration of this server
      */
-    private static void routing(HttpRouting.Builder routing, Config config) {
+    static void routing(HttpRouting.Builder routing, Config config) {
         Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
         routing.addFeature(ObserveFeature.create())
                 .addFeature(TracingFeature.create(tracer))

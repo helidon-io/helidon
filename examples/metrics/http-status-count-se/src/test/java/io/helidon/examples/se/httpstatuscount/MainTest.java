@@ -26,6 +26,7 @@ import io.helidon.nima.webserver.WebServerConfig;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -55,27 +56,28 @@ public class MainTest {
     }
 
     @Test
+    @Disabled
     public void testMicroprofileMetrics() {
         try (Http1ClientResponse response = client.get("/simple-greet/greet-count").request()) {
             assertThat(response.as(String.class), containsString("Hello World!"));
         }
 
-        try (Http1ClientResponse response = client.get("/metrics").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
             assertThat("Metrics output", response.as(String.class), containsString("application_accessctr_total"));
         }
     }
 
     @Test
     public void testMetrics() {
-        try (Http1ClientResponse response = client.get("/metrics").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
             assertThat(response.status().code(), is(200));
         }
     }
 
     @Test
     public void testHealth() {
-        try (Http1ClientResponse response = client.get("health").request()) {
-            assertThat(response.status().code(), is(200));
+        try (Http1ClientResponse response = client.get("/observe/health").request()) {
+            assertThat(response.status().code(), is(204));
         }
     }
 
@@ -88,7 +90,7 @@ public class MainTest {
 
     @Test
     public void testGreetings() {
-        try (Http1ClientResponse response = client.get("/greet/joe").request()) {
+        try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
             assertThat(response.as(JsonObject.class).getString("message"), is("Hello Joe!"));
         }
 

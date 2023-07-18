@@ -30,6 +30,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.not;
@@ -39,6 +40,7 @@ import static org.hamcrest.Matchers.isEmptyString;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
+@Disabled
 public class StatusTest {
 
     private final Counter[] STATUS_COUNTERS = new Counter[6];

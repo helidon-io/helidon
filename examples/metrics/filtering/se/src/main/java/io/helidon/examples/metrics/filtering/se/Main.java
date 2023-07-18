@@ -23,7 +23,9 @@ import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
+import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
+import io.helidon.nima.observe.metrics.MetricsObserveProvider;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -98,7 +100,7 @@ public final class Main {
 
         GreetService greetService = new GreetService(config, appRegistry);
 
-        routing.addFeature(metrics)
+        routing.addFeature(ObserveFeature.create(MetricsObserveProvider.create(metrics)))
                 .register("/greet", greetService);
     }
 }

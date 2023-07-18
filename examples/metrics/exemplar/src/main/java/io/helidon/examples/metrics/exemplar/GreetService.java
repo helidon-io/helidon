@@ -90,8 +90,8 @@ public class GreetService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         rules.get("/", this::timeGet, this::getDefaultMessageHandler)
-             .get("/{name}", this::countPersonalized, this::getMessageHandler)
-             .put("/greeting", this::updateGreetingHandler);
+                .get("/{name}", this::countPersonalized, this::getMessageHandler)
+                .put("/greeting", this::updateGreetingHandler);
     }
 
     /**

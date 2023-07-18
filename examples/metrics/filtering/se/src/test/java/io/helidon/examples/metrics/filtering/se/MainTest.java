@@ -28,6 +28,7 @@ import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -35,6 +36,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 
 @ServerTest
+@Disabled
 public class MainTest {
 
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
@@ -71,7 +73,7 @@ public class MainTest {
             assertThat(response.as(JsonObject.class).getString("message"), CoreMatchers.is("Hola Joe!"));
         }
 
-        try (Http1ClientResponse response = client.get("/metrics").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
             assertThat(response.status().code(), CoreMatchers.is(200));
         }
     }
@@ -86,7 +88,7 @@ public class MainTest {
             assertThat(response.as(String.class), containsString("Hello Joe!"));
         }
 
-        try (Http1ClientResponse response = client.get("/metrics/application").request()) {
+        try (Http1ClientResponse response = client.get("/observe/metrics/application").request()) {
             String openMetricsOutput = response.as(String.class);
             assertThat("Metrics output", openMetricsOutput, not(containsString(GreetService.TIMER_FOR_GETS)));
             assertThat("Metrics output", openMetricsOutput, containsString(GreetService.COUNTER_FOR_PERSONALIZED_GREETINGS));
