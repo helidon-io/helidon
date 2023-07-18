@@ -215,7 +215,7 @@ class Http2ClientStream implements Http2Stream {
             // fixme Configurable initial win size, max frame size
             this.flowControl = connection.flowControl().createStreamFlowControl(
                     streamId,
-                    1048576,
+                    WindowSize.DEFAULT_WIN_SIZE,
                     WindowSize.DEFAULT_MAX_FRAME_SIZE);
             this.connection.addStream(streamId, this);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
