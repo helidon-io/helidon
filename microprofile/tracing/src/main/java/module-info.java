@@ -47,6 +47,7 @@ module io.helidon.microprofile.tracing {
     requires io.helidon.jersey.common;
     requires io.helidon.nima.webserver.tracing;
     requires transitive io.helidon.tracing;
+    requires io.helidon.tracing.config;
     requires transitive io.helidon.tracing.jersey;
     requires io.helidon.tracing.tracerresolver;
     requires io.helidon.tracing.opentelemetry;

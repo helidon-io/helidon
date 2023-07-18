@@ -27,6 +27,7 @@ import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.tracing.config.TracingConfig;
 
 import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentracing.Tracer;
@@ -71,6 +72,8 @@ public class TracingCdiExtension implements Extension {
         tracer = TracerBuilder.create(serviceName)
                 .config(config)
                 .build();
+        TracingConfig tracingConfig = TracingConfig.create(config);
+        Contexts.globalContext().register(tracingConfig);
 
         if (!tracer.enabled()) {
             LOGGER.log(Level.WARNING, "helidon-microprofile-tracing is on the classpath, yet there is no tracer "
