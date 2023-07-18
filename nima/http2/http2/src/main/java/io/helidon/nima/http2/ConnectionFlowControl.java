@@ -81,10 +81,21 @@ public class ConnectionFlowControl {
      * Create stream specific inbound and outbound flow control.
      *
      * @param streamId stream id
+     * @param outboundInitialWindowSize initial window size for inbound flow control.
+     * @param outboundMaxFrameSize max frame size for inbound flow control.
      * @return stream flow control
      */
-    public StreamFlowControl createStreamFlowControl(int streamId) {
-        return new StreamFlowControl(type, streamId, this, windowUpdateWriter);
+    public StreamFlowControl createStreamFlowControl(int streamId,
+                                                     int outboundInitialWindowSize,
+                                                     int outboundMaxFrameSize) {
+        return new StreamFlowControl(
+                type,
+                streamId,
+                outboundInitialWindowSize,
+                outboundMaxFrameSize,
+                this,
+                windowUpdateWriter
+        );
     }
 
     /**

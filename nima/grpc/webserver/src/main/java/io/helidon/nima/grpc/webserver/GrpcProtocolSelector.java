@@ -23,6 +23,7 @@ import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2StreamWriter;
+import io.helidon.nima.http2.StreamFlowControl;
 import io.helidon.nima.http2.webserver.spi.Http2SubProtocolSelector;
 import io.helidon.nima.http2.webserver.spi.SubProtocolResult;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -52,6 +53,7 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                          int streamId,
                                          Http2Settings serverSettings,
                                          Http2Settings clientSettings,
+                                         StreamFlowControl flowControl,
                                          Http2StreamState currentStreamState,
                                          Router router) {
         if (prologue.method() != Http.Method.POST) {
@@ -80,6 +82,7 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                                                      streamId,
                                                                      serverSettings,
                                                                      clientSettings,
+                                                                     flowControl,
                                                                      currentStreamState,
                                                                      route));
             }

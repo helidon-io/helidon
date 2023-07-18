@@ -25,6 +25,7 @@ import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2StreamWriter;
 import io.helidon.nima.http2.Http2WindowUpdate;
+import io.helidon.nima.http2.StreamFlowControl;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 
@@ -47,6 +48,7 @@ public interface Http2SubProtocolSelector {
      * @param streamId           stream id
      * @param serverSettings     server settings
      * @param clientSettings     client settings
+     * @param streamFlowControl  stream flow control
      * @param currentStreamState current stream state
      * @param router             router
      * @return sub-protocol result
@@ -58,6 +60,7 @@ public interface Http2SubProtocolSelector {
                                   int streamId,
                                   Http2Settings serverSettings,
                                   Http2Settings clientSettings,
+                                  StreamFlowControl streamFlowControl,
                                   Http2StreamState currentStreamState,
                                   Router router);
 
