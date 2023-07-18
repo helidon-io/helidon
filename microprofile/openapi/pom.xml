@@ -150,7 +150,6 @@
                         </goals>
                         <phase>process-test-classes</phase>
                         <configuration>
-                            <classesDir>${project.build.directory}/test-classes</classesDir>
                             <fileSets>
                                 <fileSet>
                                     <directory>${project.build.directory}/test-classes</directory>
@@ -169,7 +168,6 @@
                         </goals>
                         <phase>process-test-classes</phase>
                         <configuration>
-                            <classesDir>${project.build.directory}/test-classes</classesDir>
                             <indexName>other.idx</indexName>
                             <fileSets>
                                 <fileSet>

@@ -38,9 +38,9 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
-        <version.plugin.compiler>3.8.1</version.plugin.compiler>
+        <version.plugin.compiler>3.11.0</version.plugin.compiler>
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
-        <version.plugin.exec>1.6.0</version.plugin.exec>
+        <version.plugin.exec>3.1.0</version.plugin.exec>
         <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
         <version.plugin.helidon>3.0.3</version.plugin.helidon>
         <version.plugin.helidon-cli>3.0.3</version.plugin.helidon-cli>
@@ -48,7 +48,7 @@
         <version.plugin.nativeimage>0.9.16</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
-        <version.plugin.resources>2.7</version.plugin.resources>
+        <version.plugin.resources>3.3.1</version.plugin.resources>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
     </properties>
 
