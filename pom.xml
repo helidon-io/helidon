@@ -35,7 +35,7 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
-        <version.java>20</version.java>
+        <version.java>21</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

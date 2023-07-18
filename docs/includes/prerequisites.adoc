@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ ifndef::h1-prefix[:h1-prefix: SE]
 |A Helidon {flavor-uc} Application | You can use your own application or use the
  xref:{rootdir}/{flavor-lc}/guides/quickstart.adoc[Helidon {flavor-uc} Quickstart] to create a sample application.
 // tag::prerequisites-table-details[]
-|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}17] (http://jdk.java.net[Open{nbsp}JDK{nbsp}17]) |Helidon requires Java 17+.
+|https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}21] (http://jdk.java.net[Open{nbsp}JDK{nbsp}21]) |Helidon requires Java 21+.
 |https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
 |https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you
 want to build and deploy Docker containers.

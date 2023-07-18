@@ -1,7 +1,7 @@
 # Helidon Messaging with JMS Example
 
 ## Prerequisites
-* Java 17+ 
+* Java 21+ 
 * Docker
 * [ActiveMQ server](../README.md) running on `localhost:61616`
 

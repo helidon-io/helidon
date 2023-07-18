@@ -80,8 +80,7 @@ You can build a native executable in 2 different ways:
 
 ### Local build
 
-Download Graal VM at https://www.graalvm.org/downloads. We recommend
-version `20.1.0` or later.
+Download Graal VM at https://www.graalvm.org/downloads.
 
 ```
 # Setup the environment

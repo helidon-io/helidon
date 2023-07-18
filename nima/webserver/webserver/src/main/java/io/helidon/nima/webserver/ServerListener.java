@@ -128,7 +128,6 @@ class ServerListener implements ListenerContext {
                 .build());
 
         this.serverThread = Thread.ofPlatform()
-                .allowSetThreadLocals(true)
                 .inheritInheritableThreadLocals(true)
                 .daemon(false)
                 .name("server-" + socketName + "-listener")
@@ -136,12 +135,10 @@ class ServerListener implements ListenerContext {
 
         // to read requests and execute tasks
         this.readerExecutor = ThreadPerTaskExecutor.create(Thread.ofVirtual()
-                                                                   .allowSetThreadLocals(true)
                                                                    .factory());
 
         // to do anything else (writers etc.)
         this.sharedExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                                         .allowSetThreadLocals(true)
                                                                          .factory());
 
         this.closeFuture = new CompletableFuture<>();
@@ -375,13 +372,13 @@ class ServerListener implements ListenerContext {
                 }
             } catch (SocketException e) {
                 if (!e.getMessage().contains("Socket closed")) {
-                    e.printStackTrace();
+                    LOGGER.log(ERROR, "Got a socket exception while listening, this server socket is terminating now", e);
                 }
                 if (running) {
                     stop();
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
+                LOGGER.log(ERROR, "Got a throwable while listening, this server socket is terminating now", e);
                 if (running) {
                     stop();
                 }

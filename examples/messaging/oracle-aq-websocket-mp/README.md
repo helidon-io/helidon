@@ -1,7 +1,7 @@
 # Helidon Messaging with Oracle AQ Example
 
 ## Prerequisites
-* Java 17+ 
+* Java 21+ 
 * Docker
 * [Oracle database](../README.md) running on `localhost:1521`
 
