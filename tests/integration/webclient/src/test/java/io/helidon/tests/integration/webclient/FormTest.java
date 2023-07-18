@@ -15,6 +15,8 @@
  */
 package io.helidon.tests.integration.webclient;
 
+import java.util.List;
+
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
@@ -57,22 +59,23 @@ public class FormTest extends TestParent {
 
     @Test
     public void testHelloWorld() {
-        try (Http1ClientResponse res = client.post("/form").submit(TEST_FORM)) {
-
+        try (Http1ClientResponse res = client.post("/greet/form").submit(TEST_FORM)) {
             assertThat(res.as(String.class), is("Hi David Tester"));
         }
     }
 
     @Test
     public void testSpecificContentType() {
-        try (Http1ClientResponse res = client.post("/form").submit(TEXT_PLAIN)) {
+        try (Http1ClientResponse res = client.post("/greet/form")
+                .contentType(TEXT_PLAIN)
+                .submit(TEST_FORM)) {
             assertThat(res.as(String.class), is("Hi David Tester"));
         }
     }
 
     @Test
     public void testSpecificContentTypeIncorrect() {
-        Exception ex = assertThrows(IllegalStateException.class, () -> {
+        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
             try (Http1ClientResponse ignored = client.post()
                     .path("/form")
                     .contentType(HttpMediaType.create(MediaTypes.APPLICATION_ATOM_XML))
@@ -81,15 +84,15 @@ public class FormTest extends TestParent {
                 Assertions.fail();
             }
         });
-
-        assertThat(ex.getCause().getMessage(), startsWith("No writer found for type: class "));
+        assertThat(ex.getMessage(), startsWith("No client request media writer for class "));
     }
 
     @Test
     public void testFormContent() {
-        try (Http1ClientResponse res = client.post("/form/content").submit(ADVANCED_TEST_FORM)) {
+        try (Http1ClientResponse res = client.post("/greet/form/content")
+                .submit(ADVANCED_TEST_FORM)) {
             Parameters received = res.as(Parameters.class);
-            assertThat(received.all(SPECIAL), is(ADVANCED_TEST_FORM.all(SPECIAL)));
+            assertThat(received.all(SPECIAL, List::of), is(ADVANCED_TEST_FORM.all(SPECIAL)));
             assertThat(received.all(MULTIPLE), is(ADVANCED_TEST_FORM.all(MULTIPLE)));
             assertThat(received.all(NO_VALUE).size(), is(0));
         }

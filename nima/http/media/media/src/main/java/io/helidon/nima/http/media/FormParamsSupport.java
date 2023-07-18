@@ -227,9 +227,16 @@ public class FormParamsSupport implements MediaSupport {
             // a=b&c=d,e
             List<String> allParams = new ArrayList<>(toWrite.size());
             for (String name : toWrite.names()) {
-                List<String> all = toWrite.all(name);
-                all.replaceAll(valueEncoder::apply);
-                allParams.add(nameEncoder.apply(name) + "=" + String.join(",", all));
+                List<String> values = new ArrayList<>(toWrite.all(name));
+                values.replaceAll(valueEncoder::apply);
+                String encodedName = nameEncoder.apply(name);
+                if (values.isEmpty()) {
+                    allParams.add(encodedName);
+                } else {
+                    for (String value : values) {
+                        allParams.add(encodedName + "=" + value);
+                    }
+                }
             }
             try (outputStream) {
                 outputStream.write(String.join(separator, allParams).getBytes(charset));
@@ -303,10 +310,11 @@ public class FormParamsSupport implements MediaSupport {
                 Matcher matcher = pattern.matcher(encodedString);
                 while (matcher.find()) {
                     String key = decoder.apply(charset, matcher.group(1));
-                    String value = decoder.apply(charset, matcher.group(2));
-                    if (value == null) {
+                    String encodedValue = matcher.group(2);
+                    if (encodedValue == null) {
                         builder.add(key);
                     } else {
+                        String value = decoder.apply(charset, encodedValue);
                         builder.add(key, value);
                     }
                 }
@@ -318,7 +326,7 @@ public class FormParamsSupport implements MediaSupport {
     }
 
     private static final class FormParamsUrlReader extends FormParamsReader {
-        private static final Pattern PATTERN = Pattern.compile("([^=]+)=([^&]+)&?");
+        private static final Pattern PATTERN = Pattern.compile("([^=&]+)=?([^&]+)?&?");
         private static final BiFunction<Charset, String, String> DECODER = (charset, value) -> URLDecoder.decode(value, charset);
 
         private FormParamsUrlReader() {
