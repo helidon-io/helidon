@@ -20,7 +20,7 @@ import java.net.URI;
 import java.util.Collections;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -54,8 +54,8 @@ class RequestTest extends TestParent {
                 .build();
     }
 
-    RequestTest(WebServer server, Http1Client client) {
-        super(server, client);
+    RequestTest(WebServer server) {
+        super(server);
     }
 
     @Test
@@ -100,7 +100,7 @@ class RequestTest extends TestParent {
             client.get("/redirect/infinite").request(JsonObject.class);
             fail("This should have failed!");
         } catch (Throwable ex) {
-            assertThat(ex.getMessage(), startsWith("Max number of redirects extended! (5)"));
+            assertThat(ex.getMessage(), startsWith("Maximum number of request redirections (5) reached."));
         }
     }
 
@@ -120,11 +120,8 @@ class RequestTest extends TestParent {
 
     @Test
     public void testEntityNotHandled() {
-        try {
-            client.get("/incorrect").request(JsonObject.class);
-            fail("This request entity process should have failed.");
-        } catch (Throwable ex) {
-            assertThat(ex.getMessage(), startsWith("Request failed with code 404"));
+        try (ClientResponse response = client.get("/incorrect").request()) {
+            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
         }
     }
 

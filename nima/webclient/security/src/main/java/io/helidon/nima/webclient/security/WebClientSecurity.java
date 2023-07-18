@@ -16,7 +16,6 @@
 package io.helidon.nima.webclient.security;
 
 import java.lang.System.Logger.Level;
-import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -123,7 +122,7 @@ public class WebClientSecurity implements WebClientService {
 
             outboundEnv.method(request.method().text())
                     .path(request.uri().path())
-                    .targetUri(URI.create(request.uri().toString()))
+                    .targetUri(request.uri().toUri())
                     .queryParams(request.query());
 
             request.headers()

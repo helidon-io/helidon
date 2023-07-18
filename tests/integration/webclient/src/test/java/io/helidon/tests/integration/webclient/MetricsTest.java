@@ -18,10 +18,10 @@ package io.helidon.tests.integration.webclient;
 import io.helidon.common.http.Http;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webclient.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.metrics.WebClientMetrics;
+import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webserver.WebServer;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -39,8 +39,8 @@ public class MetricsTest extends TestParent {
 
     private static final MetricRegistry FACTORY = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
 
-    MetricsTest(WebServer server, Http1Client client) {
-        super(server, client);
+    MetricsTest(WebServer server) {
+        super(server);
     }
 
     @Test

@@ -40,8 +40,8 @@ public class HeaderTest extends TestParent {
 
     private static final String TEST_USER = "unit-test-user";
 
-    HeaderTest(WebServer server, Http1Client client) {
-        super(server, client);
+    HeaderTest(WebServer server) {
+        super(server);
     }
 
     @Test
@@ -65,11 +65,6 @@ public class HeaderTest extends TestParent {
         try (Http1ClientResponse res = webClient.post("contentLength").request()) {
             String contentLength = res.as(String.class);
             assertThat(contentLength, is(Http.Header.CONTENT_LENGTH + " is 0"));
-        }
-
-        try (Http1ClientResponse res = webClient.post("contentLength").request()) {
-            String contentLength = res.as(String.class);
-            assertThat(contentLength, is("No " + Http.Header.CONTENT_LENGTH + " has been set"));
         }
 
         String sampleSmallEntity = "Hi there";

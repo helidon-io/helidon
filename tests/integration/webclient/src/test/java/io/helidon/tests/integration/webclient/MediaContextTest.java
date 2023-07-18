@@ -15,10 +15,10 @@
  */
 package io.helidon.tests.integration.webclient;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 
+import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -38,6 +38,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -63,16 +64,19 @@ public class MediaContextTest extends TestParent {
                 .build();
     }
 
-    MediaContextTest(WebServer server, Http1Client client) {
-        super(server, client);
+    MediaContextTest(WebServer server) {
+        super(server);
     }
 
     @Test
     @Order(1)
-    public void testInputStreamDifferentThreadContentAs() throws IOException {
-        try (Http1ClientResponse res = client.get("/greet").request()) {
+    public void testInputStream() {
+        try (Http1ClientResponse res = client.get().request()) {
             InputStream is = res.inputStream();
-            assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"));
+            assertAll(
+                    () -> assertThat(res.status(), is(Http.Status.OK_200)),
+                    () -> assertThat(new String(is.readAllBytes()), is("{\"message\":\"Hello World!\"}"))
+            );
         }
     }
 
@@ -89,12 +93,12 @@ public class MediaContextTest extends TestParent {
 
     @Test
     @Order(3)
-    @Disabled("https://github.com/helidon-io/helidon/issues/7204")
     public void testMediaSupportWithoutDefaults() {
         Http1Client client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .mediaContext(MediaContext.builder()
-                        //.registerDefaults(false)
+                                      .registerDefaults(false)
+                                      .mediaSupportsDiscoverServices(false)
                         .build())
                 .build();
 

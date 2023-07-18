@@ -92,7 +92,8 @@ public class UriHelper {
 
     @Override
     public String toString() {
-        return scheme + "://" + authority + (path.startsWith("/") ? "" : "/") + path;
+        String encodedPath = skipUriEncoding ? path : UriEncoding.encodeUri(path);
+        return scheme + "://" + authority + (encodedPath.startsWith("/") ? "" : "/") + encodedPath;
     }
 
     /**

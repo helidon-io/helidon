@@ -20,7 +20,6 @@ import java.util.List;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 
@@ -53,20 +52,20 @@ public class FormTest extends TestParent {
             .add(NO_VALUE)
             .build();
 
-    FormTest(WebServer server, Http1Client client) {
-        super(server, client);
+    FormTest(WebServer server) {
+        super(server);
     }
 
     @Test
     public void testHelloWorld() {
-        try (Http1ClientResponse res = client.post("/greet/form").submit(TEST_FORM)) {
+        try (Http1ClientResponse res = client.post("/form").submit(TEST_FORM)) {
             assertThat(res.as(String.class), is("Hi David Tester"));
         }
     }
 
     @Test
     public void testSpecificContentType() {
-        try (Http1ClientResponse res = client.post("/greet/form")
+        try (Http1ClientResponse res = client.post("/form")
                 .contentType(TEXT_PLAIN)
                 .submit(TEST_FORM)) {
             assertThat(res.as(String.class), is("Hi David Tester"));
@@ -75,7 +74,7 @@ public class FormTest extends TestParent {
 
     @Test
     public void testSpecificContentTypeIncorrect() {
-        Exception ex = assertThrows(IllegalArgumentException.class, () -> {
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
             try (Http1ClientResponse ignored = client.post()
                     .path("/form")
                     .contentType(HttpMediaType.create(MediaTypes.APPLICATION_ATOM_XML))
@@ -84,13 +83,13 @@ public class FormTest extends TestParent {
                 Assertions.fail();
             }
         });
+
         assertThat(ex.getMessage(), startsWith("No client request media writer for class "));
     }
 
     @Test
     public void testFormContent() {
-        try (Http1ClientResponse res = client.post("/greet/form/content")
-                .submit(ADVANCED_TEST_FORM)) {
+        try (Http1ClientResponse res = client.post("/form/content").submit(ADVANCED_TEST_FORM)) {
             Parameters received = res.as(Parameters.class);
             assertThat(received.all(SPECIAL, List::of), is(ADVANCED_TEST_FORM.all(SPECIAL)));
             assertThat(received.all(MULTIPLE), is(ADVANCED_TEST_FORM.all(MULTIPLE)));

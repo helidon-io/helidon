@@ -36,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 class WebclientServiceValuePropagationTest extends TestParent {
 
-    WebclientServiceValuePropagationTest(WebServer server, Http1Client client) {
-        super(server, client);
+    WebclientServiceValuePropagationTest(WebServer server) {
+        super(server);
     }
 
     @Test

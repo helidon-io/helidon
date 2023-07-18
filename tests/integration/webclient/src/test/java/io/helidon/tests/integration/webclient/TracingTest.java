@@ -45,8 +45,8 @@ import static org.hamcrest.Matchers.iterableWithSize;
  */
 class TracingTest extends TestParent {
 
-    TracingTest(WebServer server, Http1Client client) {
-        super(server, client);
+    TracingTest(WebServer server) {
+        super(server);
     }
 
     @Test

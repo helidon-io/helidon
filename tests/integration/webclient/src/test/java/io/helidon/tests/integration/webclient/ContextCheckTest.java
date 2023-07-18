@@ -29,8 +29,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ContextCheckTest extends TestParent {
 
-    ContextCheckTest(WebServer server, Http1Client client) {
-        super(server, client);
+    ContextCheckTest(WebServer server) {
+        super(server);
     }
 
     @Test

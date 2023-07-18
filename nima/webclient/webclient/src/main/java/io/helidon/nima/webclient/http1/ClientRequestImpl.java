@@ -397,7 +397,7 @@ class ClientRequestImpl implements Http1ClientRequest {
                                                                         method,
                                                                         Http.Version.V1_1,
                                                                         query,
-                                                                        UriFragment.empty(),
+                                                                        fragment,
                                                                         headers,
                                                                         Contexts.context().orElseGet(Context::create),
                                                                         requestId,

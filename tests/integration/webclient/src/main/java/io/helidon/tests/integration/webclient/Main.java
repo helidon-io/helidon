@@ -23,8 +23,8 @@ import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.security.integration.nima.SecurityFeature;
-
 import io.helidon.tracing.opentracing.OpenTracing;
+
 import io.opentracing.Tracer;
 
 /**

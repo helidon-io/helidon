@@ -25,6 +25,7 @@ import java.util.function.Function;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
@@ -232,7 +233,15 @@ public interface ClientRequest<B extends ClientRequest<B, R>, R extends ClientRe
      * @see #request()
      */
     default <T> T request(Class<T> type) {
-        return request().as(type);
+        try (R response = request()) {
+            if (response.status() == Http.Status.BAD_REQUEST_400) {
+                throw new IllegalArgumentException("Bad request");
+            }
+            if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
+                throw new HttpException("Invalid response, cannot read entity", response.status());
+            }
+            return response.as(type);
+        }
     }
 
     /**

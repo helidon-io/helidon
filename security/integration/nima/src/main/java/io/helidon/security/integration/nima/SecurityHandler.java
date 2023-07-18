@@ -265,7 +265,7 @@ public final class SecurityHandler implements Handler {
     public void handle(ServerRequest req, ServerResponse res) {
         Context context = Contexts.context()
                 .orElseThrow(() -> new SecurityException(
-                        "Security requires Context filter to be registered (modules helidon-security-context and "
+                        "Security requires Context feature to be registered (modules helidon-security-context and "
                                 + "helidon-nima-webserver-context)"));
         //process security
         SecurityContext securityContext = context

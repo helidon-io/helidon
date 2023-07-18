@@ -227,13 +227,17 @@ public class FormParamsSupport implements MediaSupport {
             // a=b&c=d,e
             List<String> allParams = new ArrayList<>(toWrite.size());
             for (String name : toWrite.names()) {
-                List<String> values = new ArrayList<>(toWrite.all(name));
-                values.replaceAll(valueEncoder::apply);
+                List<String> all = toWrite.all(name)
+                        .stream()
+                        .map(valueEncoder)
+                        .toList();
+                // write each value as a separate line, so we can support multiple values that contain commas
+                // and so we can safely parse multiple values without splitting by comma
                 String encodedName = nameEncoder.apply(name);
-                if (values.isEmpty()) {
-                    allParams.add(encodedName);
+                if (all.isEmpty()) {
+                    allParams.add(encodedName + "=");
                 } else {
-                    for (String value : values) {
+                    for (String value : all) {
                         allParams.add(encodedName + "=" + value);
                     }
                 }
@@ -277,10 +281,12 @@ public class FormParamsSupport implements MediaSupport {
     }
 
     private static class FormParamsReader implements EntityReader<Parameters> {
+        private final System.Logger logger;
         private final Pattern pattern;
         private final BiFunction<Charset, String, String> decoder;
 
-        private FormParamsReader(Pattern pattern, BiFunction<Charset, String, String> decoder) {
+        private FormParamsReader(System.Logger logger, Pattern pattern, BiFunction<Charset, String, String> decoder) {
+            this.logger = logger;
             this.pattern = pattern;
             this.decoder = decoder;
         }
@@ -307,11 +313,14 @@ public class FormParamsSupport implements MediaSupport {
             try (stream) {
                 Parameters.Builder builder = Parameters.builder("form-params");
                 String encodedString = new String(stream.readAllBytes(), charset);
+                if (logger.isLoggable(System.Logger.Level.DEBUG)) {
+                    logger.log(System.Logger.Level.DEBUG, "Reading encoded form parameters: {0}", encodedString);
+                }
                 Matcher matcher = pattern.matcher(encodedString);
                 while (matcher.find()) {
                     String key = decoder.apply(charset, matcher.group(1));
                     String encodedValue = matcher.group(2);
-                    if (encodedValue == null) {
+                    if (encodedValue == null || encodedValue.isEmpty()) {
                         builder.add(key);
                     } else {
                         String value = decoder.apply(charset, encodedValue);
@@ -325,21 +334,23 @@ public class FormParamsSupport implements MediaSupport {
         }
     }
 
-    private static final class FormParamsUrlReader extends FormParamsReader {
-        private static final Pattern PATTERN = Pattern.compile("([^=&]+)=?([^&]+)?&?");
+    static final class FormParamsUrlReader extends FormParamsReader {
+        static final Pattern PATTERN = Pattern.compile("([^=&]+)=([^&]*)&?");
+        private static final System.Logger LOGGER = System.getLogger(FormParamsUrlReader.class.getName());
         private static final BiFunction<Charset, String, String> DECODER = (charset, value) -> URLDecoder.decode(value, charset);
 
         private FormParamsUrlReader() {
-            super(PATTERN, DECODER);
+            super(LOGGER, PATTERN, DECODER);
         }
     }
 
     private static final class FormParamsPlaintextReader extends FormParamsReader {
-        private static final Pattern PATTERN = Pattern.compile("([^=]+)=([^\\n]+)\\n?");
+        private static final System.Logger LOGGER = System.getLogger(FormParamsPlaintextReader.class.getName());
+        private static final Pattern PATTERN = Pattern.compile("([^=]+)=([^\\n]*)\\n?");
         private static final BiFunction<Charset, String, String> DECODER = (charset, value) -> value;
 
         private FormParamsPlaintextReader() {
-            super(PATTERN, DECODER);
+            super(LOGGER, PATTERN, DECODER);
         }
     }
 

@@ -16,8 +16,6 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.security.Principal;
 import java.util.Collections;
@@ -29,6 +27,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.config.Config;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -68,6 +67,10 @@ public class GreetService implements HttpService {
      * The config value for the key {@code greeting}.
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
+    private final Http1Client outboundClient = Http1Client.builder()
+            .useSystemServiceLoader(false)
+            .addService(WebClientSecurity.create())
+            .build();
 
     GreetService(Config config) {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
@@ -106,16 +109,17 @@ public class GreetService implements HttpService {
     }
 
     private void basicAuthOutbound(ServerRequest request, ServerResponse response) {
-        Http1Client webClient = Http1Client.builder()
-                .baseUri("http://localhost:" + request.requestedUri().port() + "/greet/secure/basic")
-                .addService(WebClientSecurity.create())
-                .build();
 
-        try (Http1ClientResponse clientResponse = webClient.get().request()) {
+        try (Http1ClientResponse clientResponse = outboundClient.get("http://localhost:"
+                                                                             + request.requestedUri().port()
+                                                                             + "/greet/secure/basic")
+                .request()) {
             response.status(clientResponse.status());
-            clientResponse.entity().inputStream().transferTo(response.outputStream());
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+            if (clientResponse.status() == Http.Status.OK_200) {
+                response.send(clientResponse.entity().as(String.class));
+            } else {
+                response.send();
+            }
         }
     }
 
@@ -129,7 +133,8 @@ public class GreetService implements HttpService {
     private void obtainedQuery(ServerRequest serverRequest, ServerResponse serverResponse) {
         String queryParam = serverRequest.query().first("param").orElse("Query param not present");
         String queryValue = serverRequest.query().first(queryParam).orElse("Query " + queryParam + " param not present");
-        String fragment = serverRequest.prologue().fragment().rawValue();
+        UriFragment uriFragment = serverRequest.prologue().fragment();
+        String fragment = uriFragment.hasValue() ? uriFragment.value() : null;
         serverResponse.status(Http.Status.OK_200);
         serverResponse.send(queryValue + " " + (fragment == null ? "" : fragment));
     }
@@ -227,7 +232,7 @@ public class GreetService implements HttpService {
         }
 
         greeting.set(jo.getString("greeting"));
-        response.send(jo);
+        response.status(Http.Status.NO_CONTENT_204).send();
     }
 
     /**

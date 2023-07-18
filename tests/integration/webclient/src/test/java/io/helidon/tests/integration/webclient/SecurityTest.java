@@ -16,13 +16,10 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.net.URI;
-
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import jakarta.json.JsonObject;
@@ -36,18 +33,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 public class SecurityTest extends TestParent {
 
-    private final Http1Client client;
-
-    SecurityTest(WebServer server, Http1Client client, URI uri) {
-        super(server, client);
-        this.client = Http1Client.builder()
-                .useSystemServiceLoader(false)
-                .addService(WebClientSecurity.create(
-                        Security.builder()
-                                .addProvider(HttpBasicAuthProvider.builder())
-                                .build()))
-                .baseUri(uri)
-                .build();
+    SecurityTest(WebServer server) {
+        super(server);
     }
 
     @Test
@@ -62,13 +49,13 @@ public class SecurityTest extends TestParent {
     }
 
     private void performOperation(String path) {
-        try (Http1ClientResponse response = client.get("/greet")
+        try (Http1ClientResponse response = client.get()
                 .path(path)
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
                 .request()) {
 
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(JsonObject.class).getString("message"), is("Hello jack!"));
         }
     }

@@ -27,8 +27,8 @@ import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

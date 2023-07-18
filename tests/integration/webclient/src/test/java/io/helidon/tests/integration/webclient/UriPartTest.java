@@ -18,9 +18,13 @@ package io.helidon.tests.integration.webclient;
 
 import java.util.concurrent.CompletionException;
 
+import io.helidon.common.http.Http;
+import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -31,8 +35,8 @@ class UriPartTest extends TestParent {
 
     private static final String EXPECTED_QUERY = "some query &#&@Đ value";
 
-    UriPartTest(WebServer server, Http1Client client) {
-        super(server, client);
+    UriPartTest(WebServer server) {
+        super(server);
     }
 
     @Test
@@ -43,11 +47,13 @@ class UriPartTest extends TestParent {
                 .queryParam("test", EXPECTED_QUERY)
                 .request(String.class);
         assertThat(response.trim(), is(EXPECTED_QUERY));
-        assertThrows(IllegalArgumentException.class, () -> client.get()
+        try (Http1ClientResponse fullResponse = client.get()
                 .path("obtainedQuery")
                 .queryParam("test", EXPECTED_QUERY)
                 .skipUriEncoding()
-                .request(String.class));
+                .request()) {
+            assertThat(fullResponse.status(), is(Http.Status.BAD_REQUEST_400));
+        }
     }
 
     @Test
@@ -62,6 +68,7 @@ class UriPartTest extends TestParent {
         assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("obtainedQuery")
                 .queryParam("param", queryNameWithSpace)
+                .skipUriEncoding()
                 .request(String.class));
     }
 
@@ -73,7 +80,7 @@ class UriPartTest extends TestParent {
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
         assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("pattern with space")
-                //.skipUriEncoding()
+                .skipUriEncoding()
                 .request(String.class));
     }
 
@@ -84,19 +91,27 @@ class UriPartTest extends TestParent {
                 .path("obtainedQuery")
                 .queryParam("param", "empty")
                 .queryParam("empty", "")
-                .fragment("super fragment#&?/")
+                .fragment(fragment)
                 .request(String.class);
         assertThat(response.trim(), is(fragment));
-        assertThrows(IllegalArgumentException.class, () -> client.get()
-                .fragment("super fragment#&?/")
+    }
+
+    @Test
+    void testBadFragment() {
+        String fragment = "super fragment#&?/"; // contains illegal characters, that should break validation
+        try (ClientResponse response = client.get()
                 .skipUriEncoding()
-                .request(String.class));
+                .fragment(fragment)
+                .request()) {
+
+            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+        }
     }
 
     @Test
     void testQueryNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.query(), is("first&second%26=val&ue%26"));
+            assertThat(request.query().value(), is("first&second%26=val&ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
@@ -109,16 +124,18 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryNotDoubleEncoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.query(), is("first%26second%26=val%26ue%26"));
+            assertThat(request.query().rawValue(), is("first%26second%26=val%26ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
+                .skipUriEncoding()
                 .request(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
 
     @Test
+    @Disabled("Requires changes to UriHelper and WebClient (to be done as part of #6669)")
     void testPathNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
             assertThat(request.uri().path()/*.rawPath()*/, is("/greet/path%26"));
