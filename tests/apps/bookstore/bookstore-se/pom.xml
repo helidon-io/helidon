@@ -123,11 +123,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgs>
-                        <compilerArg>--enable-preview</compilerArg>
-                    </compilerArgs>
-                </configuration>
                 <executions>
                     <execution>
                         <id>default-testCompile</id>
@@ -136,7 +131,6 @@
                             We use HTTP client from tests, and we do not want it as a module dependency
                              -->
                             <compilerArgs>
-                                <compilerArg>--enable-preview</compilerArg>
                                 <compilerArg>--add-modules</compilerArg>
                                 <compilerArg>java.net.http</compilerArg>
                             </compilerArgs>

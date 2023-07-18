@@ -11,7 +11,7 @@ It contains a much richer definition to exercise YAML parsing a bit more.
 With JDK19+
  ```bash
  mvn package
-java --enable-preview -jar target/helidon-tests-integration-yaml-parsing.jar
+java -jar target/helidon-tests-integration-yaml-parsing.jar
  ```
 
 ## Try OpenAPI

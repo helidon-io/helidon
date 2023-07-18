@@ -32,7 +32,7 @@
     <description>Helidon MP integration with Tyrus</description>
 
     <properties>
-        <surefire.argLine>-Dmp.initializer.allow=true --enable-preview</surefire.argLine>
+        <surefire.argLine>-Dmp.initializer.allow=true</surefire.argLine>
     </properties>
 
     <dependencies>
@@ -114,9 +114,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs>
-                        <compilerArg>--enable-preview</compilerArg>
-                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.common.features</groupId>

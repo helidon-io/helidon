@@ -90,15 +90,11 @@
                         <exclude>**/*$*</exclude>
                         <exclude>io/helidon/microprofile/example/staticc/StaticContentTest.java</exclude>
                     </excludes>
-                    <argLine>--enable-preview</argLine>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <argLine>--enable-preview</argLine>
-                </configuration>
                 <executions>
                     <execution>
                         <id>Run integration tests</id>

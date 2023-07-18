@@ -45,11 +45,10 @@ cd ${WS_DIR}/tests/integration/native-image/mp-1
 jri_dir=${WS_DIR}/tests/integration/native-image/mp-1/target/helidon-tests-native-image-mp-1-jri
 
 # Classpath
-${jri_dir}/bin/start --jvm --enable-preview
+${jri_dir}/bin/start
 
 # Module Path
 ${jri_dir}/bin/java \
-  --enable-preview \
   --module-path ${jri_dir}/app/helidon-tests-native-image-mp-1.jar:${jri_dir}/app/libs \
   --module helidon.tests.nimage.mp/io.helidon.tests.integration.nativeimage.mp1.Mp1Main
 
@@ -58,11 +57,10 @@ cd ${WS_DIR}/tests/integration/native-image/mp-3
 jri_dir=${WS_DIR}/tests/integration/native-image/mp-3/target/helidon-tests-native-image-mp-3-jri
 
 # Classpath
-${jri_dir}/bin/start --test --jvm --enable-preview
+${jri_dir}/bin/start --test
 
 # Module Path
 ${jri_dir}/bin/java -Dexit.on.started=! \
-   --enable-preview \
    --module-path ${jri_dir}/app/helidon-tests-native-image-mp-3.jar:${jri_dir}/app/libs \
    --add-modules helidon.tests.nimage.quickstartmp \
    --module io.helidon.microprofile.cdi/io.helidon.microprofile.cdi.Main

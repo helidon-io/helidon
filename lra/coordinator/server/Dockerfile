@@ -47,6 +47,6 @@ WORKDIR /helidon
 COPY --from=build /helidon/lra/coordinator/server/target/helidon-lra-coordinator-server.jar ./
 COPY --from=build /helidon/lra/coordinator/server/target/libs ./libs
 
-CMD ["java", "--enable-preview", "-jar", "helidon-lra-coordinator-server.jar"]
+CMD ["java", "-jar", "helidon-lra-coordinator-server.jar"]
 
 EXPOSE 8070

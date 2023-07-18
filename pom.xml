@@ -41,8 +41,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</surefire.argLine>
-        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</failsafe.argLine>
+        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
+        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
         <surefire.coverage.argline />
         <failsafe.coverage.argline />
 
@@ -398,9 +398,6 @@
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
                         </additionalJOptions>
-                        <additionalOptions>
-                            <additionalOption>--enable-preview</additionalOption>
-                        </additionalOptions>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>

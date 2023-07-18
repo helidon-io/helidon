@@ -40,9 +40,9 @@
         <version.lib.animal-sniffer>1.18</version.lib.animal-sniffer>
         <version.lib.annotation-api>1.3.5</version.lib.annotation-api>
         <version.lib.brave-opentracing>1.0.0</version.lib.brave-opentracing>
-        <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
+        <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
         <version.lib.eclipselink>4.0.1</version.lib.eclipselink>
         <version.lib.el-impl>4.0.2</version.lib.el-impl>
@@ -61,7 +61,7 @@
         <version.lib.h2>2.1.212</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.3.1</version.lib.handlebars>
-        <version.lib.hibernate>6.1.7.Final</version.lib.hibernate>
+        <version.lib.hibernate>6.2.6.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
@@ -129,7 +129,6 @@
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.8.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
-        <version.lib.database.messaging>19.3.0.0</version.lib.database.messaging>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
         <version.lib.okio>1.17.5</version.lib.okio>
         <version.lib.opentelemetry.semconv>1.22.0-alpha</version.lib.opentelemetry.semconv>
@@ -143,6 +142,7 @@
         <version.lib.parsson>1.0.2</version.lib.parsson>
         <version.lib.postgresql>42.4.3</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
+        <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.0</version.lib.slf4j>
         <version.lib.smallrye-openapi>3.3.4</version.lib.smallrye-openapi>
         <version.lib.snakeyaml>2.0</version.lib.snakeyaml>

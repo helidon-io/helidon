@@ -24,7 +24,12 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -265,7 +270,6 @@ public class HelidonProcessRunner {
 
         List<String> command = new ArrayList<>(6);
         command.add(java);
-        command.add("--enable-preview");
         command.add("--module-path");
         command.add(location + "/" + finalName + ".jar" + File.pathSeparator + "target/libs");
         command.add("--module");
@@ -287,14 +291,13 @@ public class HelidonProcessRunner {
         processBuilder.command(
                 buildCommand(builder.args,
                         jriDir + "/bin/java",
-                        "--enable-preview",
                         "-jar",
                         jriDir + "/app/" + builder.finalName + ".jar"));
     }
 
     private static void addClasspathCommand(Builder builder, ProcessBuilder processBuilder) {
         processBuilder.command(
-                buildCommand(builder.args, "java", "--enable-preview", "-jar", "target/" + builder.finalName + ".jar"));
+                buildCommand(builder.args, "java", "-jar", "target/" + builder.finalName + ".jar"));
     }
 
     private static void addNativeCommand(Builder builder, ProcessBuilder processBuilder) {

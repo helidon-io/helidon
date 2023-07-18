@@ -66,7 +66,6 @@
                     <argLine>
                         --add-opens=java.base/java.lang=ALL-UNNAMED
                         --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
-                        --enable-preview
                     </argLine>
                     <suiteXmlFiles>
                         <suiteXmlFile>src/test/tck-suite.xml</suiteXmlFile>
