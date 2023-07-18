@@ -45,7 +45,9 @@ public class ServerBuilderMain {
      * @param args start arguments are ignored
      */
     public static void main(String[] args) {
-        WebServerConfig.Builder builder = WebServer.builder().port(8080);
+        WebServerConfig.Builder builder = WebServer.builder()
+                .port(8080)
+                .putSocket("secured", socket -> socket.port(443));
         setup(builder);
         WebServer server = builder.build().start();
         System.out.printf("""
@@ -56,16 +58,15 @@ public class ServerBuilderMain {
     }
 
     static void setup(WebServerConfig.Builder server) {
-        server.port(8080)
-                .routing(ServerBuilderMain::plainRouting)
-                .putSocket("secured", ServerBuilderMain::securedSocket);
+        server.routing(ServerBuilderMain::plainRouting)
+                .putSocket("secured", socket -> securedSocket(server, socket));
     }
 
     static void plainRouting(HttpRouting.Builder routing) {
         routing.get("/", (req, res) -> res.send("Hello world unsecured!"));
     }
 
-    private static void securedSocket(ListenerConfig.Builder socket) {
+    private static void securedSocket(WebServerConfig.Builder server, ListenerConfig.Builder socket) {
         Keys keyConfig = Keys.builder()
                 .keystore(store -> store
                         .trustStore(true)
@@ -73,7 +74,8 @@ public class ServerBuilderMain {
                         .passphrase("password"))
                 .build();
 
-        socket.tls(tls -> tls
+        socket.from(server.sockets().get("secured"))
+                .tls(tls -> tls
                         .endpointIdentificationAlgorithm("NONE")
                         .clientAuth(TlsClientAuth.REQUIRED)
                         .trust(keyConfig)
