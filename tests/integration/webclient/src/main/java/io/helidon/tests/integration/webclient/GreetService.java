@@ -16,6 +16,8 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 import java.security.Principal;
 import java.util.Collections;
@@ -109,10 +111,11 @@ public class GreetService implements HttpService {
                 .addService(WebClientSecurity.create())
                 .build();
 
-        try (Http1ClientResponse clientResponse = webClient.get()
-                .request()) {
+        try (Http1ClientResponse clientResponse = webClient.get().request()) {
             response.status(clientResponse.status());
-            response.send(clientResponse.entity().inputStream());
+            clientResponse.entity().inputStream().transferTo(response.outputStream());
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         }
     }
 
@@ -126,7 +129,7 @@ public class GreetService implements HttpService {
     private void obtainedQuery(ServerRequest serverRequest, ServerResponse serverResponse) {
         String queryParam = serverRequest.query().first("param").orElse("Query param not present");
         String queryValue = serverRequest.query().first(queryParam).orElse("Query " + queryParam + " param not present");
-        String fragment = serverRequest.requestedUri().toUri().getFragment();
+        String fragment = serverRequest.prologue().fragment().rawValue();
         serverResponse.status(Http.Status.OK_200);
         serverResponse.send(queryValue + " " + (fragment == null ? "" : fragment));
     }

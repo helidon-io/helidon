@@ -19,6 +19,7 @@ package io.helidon.tests.integration.webclient;
 import io.helidon.config.Config;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.nima.webserver.context.ContextFeature;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.security.integration.nima.SecurityFeature;
@@ -84,7 +85,8 @@ public final class Main {
      */
     static void routing(HttpRouting.Builder routing, Config config, Tracer tracer) {
         GreetService greetService = new GreetService(config);
-        routing.addFeature(SecurityFeature.create(config.get("security")))
+        routing.addFeature(ContextFeature.create())
+                .addFeature(SecurityFeature.create(config.get("security")))
                 .register("/greet", greetService);
         if (tracer != null) {
             routing.addFeature(TracingFeature.create(OpenTracing.create(tracer)));

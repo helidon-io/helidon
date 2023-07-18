@@ -16,9 +16,13 @@
 
 package io.helidon.tests.integration.webclient;
 
+import java.net.URI;
+
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import jakarta.json.JsonObject;
@@ -26,15 +30,24 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for {@link WebClientSecurity}.
  */
 public class SecurityTest extends TestParent {
 
-    SecurityTest(WebServer server, Http1Client client) {
+    private final Http1Client client;
+
+    SecurityTest(WebServer server, Http1Client client, URI uri) {
         super(server, client);
+        this.client = Http1Client.builder()
+                .useSystemServiceLoader(false)
+                .addService(WebClientSecurity.create(
+                        Security.builder()
+                                .addProvider(HttpBasicAuthProvider.builder())
+                                .build()))
+                .baseUri(uri)
+                .build();
     }
 
     @Test
@@ -49,15 +62,14 @@ public class SecurityTest extends TestParent {
     }
 
     private void performOperation(String path) {
-        try {
-            JsonObject jsonObject = client.get()
-                    .path(path)
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                    .request(JsonObject.class);
-            assertThat(jsonObject.getString("message"), is("Hello jack!"));
-        } catch (Exception e) {
-            fail(e);
+        try (Http1ClientResponse response = client.get("/greet")
+                .path(path)
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
+                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .request()) {
+
+            assertThat(response.status().code(), is(200));
+            assertThat(response.as(JsonObject.class).getString("message"), is("Hello jack!"));
         }
     }
 

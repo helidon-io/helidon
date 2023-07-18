@@ -24,7 +24,9 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.tracing.WebClientTracing;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.opentracing.OpenTracing;
 
 import io.opentracing.mock.MockSpan;
@@ -52,20 +54,24 @@ class TracingTest extends TestParent {
         MockTracer mockTracer = new MockTracer();
         String uri = "http://localhost:" + server.port() + "/greet";
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(OpenTracing.create(mockTracer));
+        Tracer tracer = OpenTracing.create(mockTracer);
+        context.register(tracer);
 
         Http1Client client = Http1Client.builder()
                 .baseUri(uri)
+                .useSystemServiceLoader(false)
+                .addService(WebClientTracing.create(tracer))
                 .mediaContext(MediaContext.builder()
                         .addMediaSupport(JsonpSupport.create())
                         .build())
                 .config(CONFIG.get("client"))
                 .build();
 
-        Http1ClientResponse response = client.get().request();
+        try (Http1ClientResponse response = client.get().request()) {
 
-        // we must fully read entity for tracing to finish
-        response.entity().as(JsonObject.class);
+            // we must fully read entity for tracing to finish
+            response.entity().as(JsonObject.class);
+        }
 
         List<MockSpan> mockSpans = mockTracer.finishedSpans();
         assertThat(mockSpans, iterableWithSize(1));
@@ -81,18 +87,19 @@ class TracingTest extends TestParent {
         assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
         assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
         assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri));
-        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-reactive-webclient"));
+        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webclient"));
     }
 
     @Test
     void testTracingNoServerFailure() {
         MockTracer mockTracer = new MockTracer();
-
         Context context = Context.builder().id("tracing-unit-test").build();
-        context.register(OpenTracing.create(mockTracer));
-
+        Tracer tracer = OpenTracing.create(mockTracer);
+        context.register(tracer);
         Http1Client client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port() + "/greet")
+                .useSystemServiceLoader(false)
+                .addService(WebClientTracing.create(tracer))
                 .mediaContext(MediaContext.builder()
                         .addMediaSupport(JsonpSupport.create())
                         .build())
@@ -116,7 +123,7 @@ class TracingTest extends TestParent {
         MockSpan.LogEntry logEntry = logEntries.get(0);
         Map<String, ?> fields = logEntry.fields();
         assertThat(fields.get("event"), is("error"));
-        assertThat(fields.get("message"), is("Response HTTP status: 404"));
+        assertThat(fields.get("message"), is("Response HTTP status: 404 Not Found"));
         assertThat(fields.get("error.kind"), is("ClientError"));
 
         Map<String, Object> tags = theSpan.tags();
