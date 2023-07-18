@@ -69,60 +69,49 @@ public class MainTest {
     @Order(1) // Make sure this runs before the greeting message changes so responses are deterministic.
     @Test
     public void testHelloWorld() {
-
-        try (Http1ClientResponse response = client.get()
-                .path("/greet")
+        try (Http1ClientResponse response = client.get("/greet")
                 .accept(HttpMediaType.APPLICATION_JSON)
                 .request()) {
 
-            assertThat("HTTP response1", response.status().code(), is(200));
+            assertThat(response.status().code(), is(200));
 
             String payload = GreetingMessage.fromRest(response.entity().as(JsonObject.class)).getMessage();
-            assertThat("default message", payload, is("Hello World!"));
+            assertThat(payload, is("Hello World!"));
         }
 
-        try (Http1ClientResponse response = client.get()
-                .path("/greet/Joe")
+        try (Http1ClientResponse response = client.get("/greet/Joe")
                 .accept(HttpMediaType.APPLICATION_JSON)
                 .request()) {
 
-            assertThat("HTTP response2", response.status().code(), is(200));
+            assertThat(response.status().code(), is(200));
 
             String payload = GreetingMessage.fromRest(response.entity().as(JsonObject.class)).getMessage();
-            assertThat("default message", payload, is("Hello Joe!"));
+            assertThat(payload, is("Hello Joe!"));
         }
 
-        try (Http1ClientResponse response = client.put()
-                .path("/greet/greeting")
+        try (Http1ClientResponse response = client.put("/greet/greeting")
                 .accept(HttpMediaType.APPLICATION_JSON)
                 .submit(new GreetingMessage("Hola").forRest())) {
 
-            assertThat("HTTP response3", response.status().code(), is(204));
+            assertThat(response.status().code(), is(204));
         }
 
-        try (Http1ClientResponse response = client.get()
-                .path("/greet/Jose")
+        try (Http1ClientResponse response = client.get("/greet/Jose")
                 .accept(HttpMediaType.APPLICATION_JSON)
                 .request()) {
 
-            assertThat("HTTP response4", response.status().code(), is(200));
+            assertThat(response.status().code(), is(200));
 
             String payload = GreetingMessage.fromRest(response.entity().as(JsonObject.class)).getMessage();
-            assertThat("hola Jose message", payload, is("Hola Jose!"));
+            assertThat(payload, is("Hola Jose!"));
         }
 
-        try (Http1ClientResponse response = client.get()
-                .path("/observe/health")
-                .request()) {
-
-            assertThat("HTTP response5", response.status().code(), is(200));
+        try (Http1ClientResponse response = client.get("/observe/health").request()) {
+            assertThat(response.status().code(), is(204));
         }
 
-        try (Http1ClientResponse response = client.get()
-                .path("/observe/metrics")
-                .request()) {
-
-            assertThat("HTTP response6", response.status().code(), is(200));
+        try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
+            assertThat(response.status().code(), is(200));
         }
     }
 
@@ -130,19 +119,17 @@ public class MainTest {
     // Run after the non-CORS tests (so the greeting is Hola) but before the CORS test that changes the greeting again.
     @Test
     void testAnonymousGreetWithCors() {
-        Http1ClientRequest request = client.get()
+        try (Http1ClientResponse response = client.get()
                 .path("/greet")
-                .accept(HttpMediaType.APPLICATION_JSON);
-        request.headers(headers -> {
-            headers.set(ORIGIN, "http://foo.com");
-            headers.set(HOST, "here.com");
-            return headers;
-        });
-        try (Http1ClientResponse response = request.request()) {
-            assertThat("HTTP response", response.status().code(), is(200));
-            String payload = GreetingMessage.fromRest(response.entity().as(JsonObject.class))
-                    .getMessage();
-            assertThat("HTTP response payload was " + payload, payload, containsString("Hola World"));
+                .accept(HttpMediaType.APPLICATION_JSON)
+                .headers(it -> it
+                        .set(ORIGIN, "http://foo.com")
+                        .set(HOST, "here.com"))
+                .request()) {
+
+            assertThat(response.status().code(), is(200));
+            String payload = GreetingMessage.fromRest(response.entity().as(JsonObject.class)).getMessage();
+            assertThat(payload, containsString("Hola World"));
             Headers responseHeaders = response.headers();
             Optional<String> allowOrigin = responseHeaders.value(ACCESS_CONTROL_ALLOW_ORIGIN);
             assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " is absent",
@@ -154,20 +141,15 @@ public class MainTest {
     @Order(11) // Run after the non-CORS tests but before other CORS tests.
     @Test
     void testGreetingChangeWithCors() {
-
         // Send the pre-flight request and check the response.
-
-        Http1ClientRequest request = client.options()
-                .path("/greet/greeting");
-        request.headers(headers -> {
-            headers.set(ORIGIN, "http://foo.com");
-            headers.set(HOST, "here.com");
-            headers.set(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-            return headers;
-        });
-
         WritableHeaders<?> preFlightHeaders = WritableHeaders.create();
-        try (Http1ClientResponse response = request.request()) {
+        try (Http1ClientResponse response = client.options()
+                .path("/greet/greeting")
+                .headers(it -> it
+                        .set(ORIGIN, "http://foo.com")
+                        .set(HOST, "here.com")
+                        .set(ACCESS_CONTROL_REQUEST_METHOD, "PUT"))
+                .request()) {
             response.headers().forEach(preFlightHeaders::add);
             List<String> allowMethods = preFlightHeaders.values(ACCESS_CONTROL_ALLOW_METHODS);
             assertThat("pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_METHODS,
@@ -177,30 +159,27 @@ public class MainTest {
             assertThat("pre-flight response does not include " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN,
                     allowOrigins, not(empty()));
             assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
-                            + " should contain '*' but does not; " + allowOrigins,
+                       + " should contain '*' but does not; " + allowOrigins,
                     allowOrigins, hasItem("http://foo.com"));
         }
 
         // Send the follow-up request.
-        request = client.put("/greet/greeting")
-                .accept(HttpMediaType.APPLICATION_JSON);
-
-        request.headers(headers -> {
-            headers.set(ORIGIN, "http://foo.com");
-            headers.set(HOST, "here.com");
-            preFlightHeaders.forEach(headers::add);
-            return headers;
-        });
-
         GreetingMessage payload = new GreetingMessage("Cheers");
-        try (Http1ClientResponse response = request.submit(payload.forRest())) {
+        try (Http1ClientResponse response = client.put("/greet/greeting")
+                .accept(HttpMediaType.APPLICATION_JSON)
+                .headers(headers -> {
+                    headers.set(ORIGIN, "http://foo.com");
+                    headers.set(HOST, "here.com");
+                    preFlightHeaders.forEach(headers::add);
+                    return headers;
+                }).submit(payload.forRest())) {
 
-            assertThat("HTTP response3", response.status().code(), is(204));
+            assertThat(response.status().code(), is(204));
             List<String> allowOrigins = preFlightHeaders.values(ACCESS_CONTROL_ALLOW_ORIGIN);
             assertThat("Expected CORS header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN + " has no value(s)",
                     allowOrigins, not(empty()));
             assertThat("Header " + CrossOriginConfig.ACCESS_CONTROL_ALLOW_ORIGIN
-                            + " should contain '*' but does not; " + allowOrigins,
+                       + " should contain '*' but does not; " + allowOrigins,
                     allowOrigins, hasItem("http://foo.com"));
         }
     }
@@ -208,15 +187,12 @@ public class MainTest {
     @Order(12) // Run after CORS test changes greeting to Cheers.
     @Test
     void testNamedGreetWithCors() {
-        Http1ClientRequest request = client.get()
-                .path("/greet/Maria");
-        request.headers(headers -> {
-            headers.set(ORIGIN, "http://foo.com");
-            headers.set(HOST, "here.com");
-            return headers;
-        });
-
-        try (Http1ClientResponse response = request.request()) {
+        try (Http1ClientResponse response = client.get()
+                .path("/greet/Maria")
+                .headers(headers -> headers
+                        .set(ORIGIN, "http://foo.com")
+                        .set(HOST, "here.com"))
+                .request()) {
             assertThat("HTTP response", response.status().code(), is(200));
             String payload = GreetingMessage.fromRest(response.entity().as(JsonObject.class)).getMessage();
             assertThat(payload, containsString("Cheers Maria"));

@@ -23,6 +23,7 @@ import io.helidon.cors.CrossOriginConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.observe.ObserveFeature;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.cors.CorsSupport;
 import io.helidon.nima.webserver.http.HttpRouting;
 
@@ -50,11 +51,10 @@ public final class Main {
         Config config = Config.create();
 
         // Get webserver config from the "server" section of application.yaml
-        WebServer server = WebServer.builder()
+        WebServerConfig.Builder builder = WebServer.builder();
+        WebServer server = builder
                 .config(config.get("server"))
-                .putSocket("@default", socket -> socket
-                        .port(8080)
-                        .routing(routing -> routing(routing, config)))
+                .routing(it -> routing(it, config))
                 .build()
                 .start();
 
@@ -71,10 +71,9 @@ public final class Main {
 
         GreetService greetService = new GreetService(config);
 
-
         // Note: Add the CORS routing *before* registering the GreetService routing.
         routing.register("/greet", corsSupportForGreeting(config), greetService)
-                .addFeature(ObserveFeature.create(config));
+                .addFeature(ObserveFeature.create());
     }
 
     private static CorsSupport corsSupportForGreeting(Config config) {
