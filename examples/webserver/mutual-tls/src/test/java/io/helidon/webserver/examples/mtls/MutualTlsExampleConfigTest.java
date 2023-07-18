@@ -24,7 +24,6 @@ import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.webserver.examples.mtls.ClientConfigMain.callSecured;
 import static io.helidon.webserver.examples.mtls.ClientConfigMain.callUnsecured;
 import static org.hamcrest.CoreMatchers.is;
@@ -47,7 +46,7 @@ public class MutualTlsExampleConfigTest {
 
     @SetUpServer
     static void setup(WebServerConfig.Builder server) {
-        config = Config.create(classpath("application.yaml"), classpath("application-test.yaml"));
+        config = Config.create();
         ServerConfigMain.setup(server, config);
     }
 

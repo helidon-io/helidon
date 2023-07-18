@@ -21,7 +21,6 @@ server:
       port: 443
       tls:
         client-auth: "REQUIRED"
-        endpoint-identification-algorithm: "NONE"
         trust:
           keystore:
             passphrase: "password"
@@ -36,6 +35,8 @@ server:
 
 client:
   tls:
+    endpoint-identification-algorithm: "NONE"
+    client-auth: "REQUIRED"
     trust:
       keystore:
         passphrase: "password"

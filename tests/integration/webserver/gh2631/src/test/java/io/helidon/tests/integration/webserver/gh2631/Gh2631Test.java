@@ -19,6 +19,7 @@ package io.helidon.tests.integration.webserver.gh2631;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -73,8 +74,12 @@ class Gh2631Test {
     void testClasspathFallbackMissing() {
         String value = get("/fallback/second/");
         assertThat(value, is("fallback"));
+    }
 
-        value = get("/fallback/second/any/path/anyFile.txt");
+    @Test
+    void testClasspathFallbackAnyFile() {
+        // we are mapping any path to index.txt
+        String value = get("/fallback/second/any/path/anyFile.txt");
         assertThat(value, is("fallback"));
     }
 
@@ -89,7 +94,7 @@ class Gh2631Test {
 
     @Test
     void testFileNoFallbackMissing() {
-        Http1ClientResponse response = getResponse("/simpleFile/second/");
+        ClientResponse response = getResponse("/simpleFile/second/");
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 

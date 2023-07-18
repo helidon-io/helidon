@@ -207,11 +207,13 @@ abstract class StaticContentHandler implements StaticContentService {
         if (requestPath.startsWith("/")) {
             requestPath = requestPath.substring(1);
         }
+        String origPath = requestPath;
         requestPath = resolvePathFunction.apply(requestPath);
+        boolean mapped = !requestPath.equals(origPath);
 
         // Call doHandle
         try {
-            if (!doHandle(method, requestPath, request, response)) {
+            if (!doHandle(method, requestPath, request, response, mapped)) {
                 response.next();
             }
         } catch (HttpException httpException) {
@@ -234,11 +236,16 @@ abstract class StaticContentHandler implements StaticContentService {
      * @param requestedPath path to the requested resource
      * @param request       an HTTP request
      * @param response      an HTTP response
+     * @param mapped        whether the requestedPath is mapped using a mapping function (and differs from defined path)
      * @return {@code true} only if static content was found and processed.
      * @throws java.io.IOException                          if resource is not acceptable
      * @throws io.helidon.common.http.RequestException if some known WEB error
      */
-    abstract boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
+    abstract boolean doHandle(Http.Method method,
+                              String requestedPath,
+                              ServerRequest request,
+                              ServerResponse response,
+                              boolean mapped)
             throws IOException, URISyntaxException;
 
     String welcomePageName() {

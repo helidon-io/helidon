@@ -19,3 +19,17 @@ server:
   sockets:
     - name: "secured"
       port: 0
+      tls:
+        endpoint-identification-algorithm: "NONE"
+        client-auth: "REQUIRED"
+        trust:
+          keystore:
+            passphrase: "password"
+            trust-store: true
+            resource:
+              resource-path: "server.p12"
+        private-key:
+          keystore:
+            passphrase: "password"
+            resource:
+              resource-path: "server.p12"

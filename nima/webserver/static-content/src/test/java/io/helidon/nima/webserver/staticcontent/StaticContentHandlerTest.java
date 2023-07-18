@@ -316,9 +316,9 @@ class StaticContentHandlerTest {
         }
 
         @Override
-        boolean doHandle(Http.Method method, String path, ServerRequest request, ServerResponse response)
+        boolean doHandle(Http.Method method, String path, ServerRequest request, ServerResponse response, boolean mapped)
                 throws IOException, URISyntaxException {
-            super.doHandle(method, path, request, response);
+            super.doHandle(method, path, request, response, mapped);
             this.counter.incrementAndGet();
             return returnValue;
         }

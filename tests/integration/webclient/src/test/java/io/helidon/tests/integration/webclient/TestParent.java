@@ -19,12 +19,12 @@ package io.helidon.tests.integration.webclient;
 import java.util.stream.Stream;
 
 import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
+import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -62,9 +62,10 @@ class TestParent {
                                                                 .build())
                                      .build())
                 .build();
-        Contexts.globalContext().register(security);
 
         Http1ClientBuilder builder = Http1Client.builder()
+                .useSystemServiceLoader(false)
+                .addService(WebClientSecurity.create(security))
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .config(CONFIG.get("client"));
 

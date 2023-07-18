@@ -120,11 +120,11 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     @Override
-    boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response)
+    boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException, URISyntaxException {
 
         String rawPath = request.prologue().uriPath().rawPath();
-        String requestedResource = requestedResource(rawPath, requestedPath);
+        String requestedResource = requestedResource(rawPath, requestedPath, mapped);
 
         if (!requestedResource.equals(root) && !requestedResource.startsWith(rootWithTrailingSlash)) {
             // trying to get path outside of project root (such as requesting ../../etc/hosts)
@@ -209,8 +209,8 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return cachedHandler.handle(handlerCache(), method, request, response, requestedResource);
     }
 
-    private String requestedResource(String rawPath, String requestedPath) throws URISyntaxException {
-        String resource = requestedPath.isEmpty() ? root : (rootWithTrailingSlash + requestedPath);
+    private String requestedResource(String rawPath, String requestedPath, boolean mapped) throws URISyntaxException {
+        String resource = requestedPath.isEmpty() || "/".equals(requestedPath) ? root : (rootWithTrailingSlash + requestedPath);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
             LOGGER.log(Level.TRACE, "Requested class path resource: " + resource);
@@ -221,6 +221,9 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         URI myuri = new URI(null, null, resource, null);
 
         String result = myuri.normalize().getPath();
+        if (mapped) {
+            return result;
+        }
         return rawPath.endsWith("/") ? result + "/" : result;
     }
 
@@ -304,7 +307,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
         String requestedResource;
         try {
-            requestedResource = requestedResource("", resource);
+            requestedResource = requestedResource("", resource, true);
         } catch (URISyntaxException e) {
             LOGGER.log(Level.WARNING, "Resource " + resource + " cannot be added to in memory cache, as it is not a valid"
                     + " identifier", e);

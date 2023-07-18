@@ -16,11 +16,12 @@
 
 package io.helidon.tests.integration.webserver.gh2631;
 
+import java.nio.file.Paths;
+
+import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
-
-import java.nio.file.Paths;
 
 public class Gh2631 {
     public static void main(String[] args) {
@@ -35,6 +36,8 @@ public class Gh2631 {
     }
 
     static void routing(HttpRouting.Builder routing) {
+        LogConfig.configureRuntime();
+
         StaticContentService classpath = StaticContentService.builder("web")
                 .welcomeFileName("index.txt")
                 .build();
@@ -51,6 +54,6 @@ public class Gh2631 {
                 .register("/fallbackFile", file)
                 .register("/fallbackFile", StaticContentService.builder(Paths.get("src/main/resources/fallback"))
                         .pathMapper(path -> "index.txt")
-                                                              .build());
+                        .build());
     }
 }
