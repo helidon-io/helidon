@@ -25,7 +25,7 @@ jobs:
        with:
          fetch-depth: 0
      - name: Set up JDK ${{ env.JAVA_VERSION }}
-       uses: oracle-actions/setup-java@v1
+       uses: oracle-actions/setup-java@v1.3.1
        with:
          website: ${{ env.JAVA_DISTRO }}
          release: ${{ env.JAVA_RELEASE }}
@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -51,7 +51,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -64,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -80,7 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -116,7 +116,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -132,7 +132,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
@@ -148,7 +148,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: oracle-actions/setup-java@v1
+        uses: oracle-actions/setup-java@v1.3.1
         with:
           website: ${{ env.JAVA_DISTRO }}
           release: ${{ env.JAVA_RELEASE }}
