@@ -35,6 +35,7 @@ import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.Proxy;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
@@ -45,16 +46,20 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final ClientRequest.OutputStreamHandler osHandler;
 
-    HttpCallOutputStreamChain(ClientRequestImpl clientRequest,
+    HttpCallOutputStreamChain(WebClient webClient,
+                              ClientRequestImpl clientRequest,
                               HttpClientConfig clientConfig,
                               Http1ClientProtocolConfig protocolConfig,
-                              ClientConnection connection,
-                              Tls tls,
-                              Proxy proxy,
                               CompletableFuture<WebClientServiceRequest> whenSent,
                               CompletableFuture<WebClientServiceResponse> whenComplete,
                               ClientRequest.OutputStreamHandler osHandler) {
-        super(clientConfig, protocolConfig, connection, tls, proxy, clientRequest.keepAlive());
+        super(webClient,
+              clientConfig,
+              protocolConfig,
+              clientRequest.connection().orElse(null),
+              clientRequest.tls(),
+              clientRequest.proxy(),
+              clientRequest.keepAlive());
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
         this.whenSent = whenSent;
@@ -234,7 +239,7 @@ class HttpCallOutputStreamChain extends HttpCallChainBase {
         }
 
         private void sendPrologueAndHeader() {
-            boolean expects100Continue = protocolConfig.sendExpectContinue() && chunked && !noData;
+            boolean expects100Continue = clientConfig.sendExpectContinue() && !noData;
             if (expects100Continue) {
                 headers.add(Http.HeaderValues.EXPECT_100);
             }

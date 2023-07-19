@@ -60,11 +60,11 @@ class Http2ClientTest {
                 .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
                 .trustAll(true)
                 .build();
-        this.tlsClient = WebClient.builder(Http2.PROTOCOL)
+        this.tlsClient = Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
                 .tls(insecureTls)
                 .build();
-        this.plainClient = WebClient.builder(Http2.PROTOCOL)
+        this.plainClient = Http2Client.builder()
                 .baseUri("http://localhost:" + plainPort + "/")
                 .build();
     }

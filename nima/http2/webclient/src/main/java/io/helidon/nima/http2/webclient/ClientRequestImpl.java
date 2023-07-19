@@ -16,142 +16,113 @@
 
 package io.helidon.nima.http2.webclient;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
-import io.helidon.common.Version;
+import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientRequest;
-import io.helidon.nima.webclient.api.Proxy;
+import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.ConnectionKey;
+import io.helidon.nima.webclient.api.HttpClientConfig;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
+import io.helidon.nima.webclient.spi.WebClientService;
 
-class ClientRequestImpl implements Http2ClientRequest {
-    static final HeaderValue USER_AGENT_HEADER = Header.create(Header.USER_AGENT, "Helidon Nima " + Version.VERSION);
-    //todo Gracefully close connections in channel cache
-    private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
-    private final Http2ClientImpl client;
+class ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse> implements Http2ClientRequest {
+
+    private final Http2ClientProtocolConfig protocolConfig;
     private final ExecutorService executor;
-    private final Http.Method method;
-    private final ClientUri uri;
-    private final UriQueryWriteable query;
     private final int initialWindowSize;
     private final int maxFrameSize;
     private final long maxHeaderListSize;
     private final int connectionPrefetch;
-    private final Map<String, String> properties;
 
-    private WritableHeaders<?> explicitHeaders;
-    private Tls tls;
     private int priority;
     private boolean priorKnowledge;
-    private boolean followRedirects;
     private int requestPrefetch = 0;
-    private int maxRedirects;
-    private ClientConnection explicitConnection;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
-    private UriFragment fragment = UriFragment.empty();
 
-    ClientRequestImpl(Http2ClientImpl client,
-                      ExecutorService executor,
+    ClientRequestImpl(WebClient webClient,
+                      HttpClientConfig clientConfig,
+                      Http2ClientProtocolConfig protocolConfig,
                       Http.Method method,
-                      ClientUri helper,
-                      Tls tls,
+                      ClientUri clientUri,
                       UriQueryWriteable query) {
-        this.client = client;
-        this.executor = executor;
-        this.method = method;
-        this.uri = helper;
-        this.priorKnowledge = client.priorKnowledge();
-        this.initialWindowSize = client.initialWindowSize();
-        this.maxFrameSize = client.maxFrameSize();
-        this.maxHeaderListSize = client.maxHeaderListSize();
-        this.connectionPrefetch = client.prefetch();
-        this.properties = client.properties();
-        this.tls = tls == null || !tls.enabled() ? null : tls;
-        this.query = query;
-        this.followRedirects = client.followRedirects();
-        this.maxRedirects = client.maxRedirects();
-        this.explicitHeaders = WritableHeaders.create(client.defaultHeaders());
+        super(clientConfig, Http2Client.PROTOCOL_ID, method, clientUri, query, clientConfig.properties());
+        this.protocolConfig = protocolConfig;
+        this.executor = clientConfig.executor();
+
+        this.priorKnowledge = protocolConfig.priorKnowledge();
+        this.initialWindowSize = protocolConfig.initialWindowSize();
+        this.maxFrameSize = protocolConfig.maxFrameSize();
+        this.maxHeaderListSize = protocolConfig.maxHeaderListSize();
+        this.connectionPrefetch = protocolConfig.prefetch();
     }
 
     @Override
-    public Http2ClientRequest tls(Tls tls) {
-        this.tls = tls == null || !tls.enabled() ? null : tls;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest uri(URI uri) {
-        this.uri.resolve(uri, query);
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest header(HeaderValue header) {
-        this.explicitHeaders.add(header);
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest headers(Headers headers) {
-        for (HeaderValue header : headers) {
-            this.explicitHeaders.add(header);
+    public Http2ClientRequest priority(int priority) {
+        if (priority < 1 || priority > 256) {
+            throw new IllegalArgumentException("Priority must be between 1 and 256 (inclusive)");
         }
+        this.priority = priority;
         return this;
     }
 
     @Override
-    public Http2ClientRequest headers(Function<ClientRequestHeaders, WritableHeaders<?>> headersConsumer) {
-        this.explicitHeaders = headersConsumer.apply(ClientRequestHeaders.create(explicitHeaders));
+    public Http2ClientRequest priorKnowledge(boolean priorKnowledge) {
+        this.priorKnowledge = priorKnowledge;
         return this;
     }
 
     @Override
-    public Http2ClientRequest pathParam(String name, String value) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public Http2ClientRequest queryParam(String name, String... values) {
-        query.set(name, values);
+    public Http2ClientRequest requestPrefetch(int requestPrefetch) {
+        this.requestPrefetch = requestPrefetch;
         return this;
     }
 
     @Override
-    public Http2ClientResponse request() {
-        return submit(BufferData.EMPTY_BYTES);
+    public Http2ClientRequest timeout(Duration timeout) {
+        this.timeout = timeout;
+        return this;
     }
 
     @Override
-    public ClientRequestHeaders headers() {
-        return ClientRequestHeaders.create(explicitHeaders);
+    public Http2ClientRequest flowControlTimeout(Duration timeout) {
+        this.flowControlTimeout = timeout;
+        return this;
     }
 
     @Override
-    public Http2ClientResponse submit(Object entity) {
-        // todo validate request ok
+    public Http2ClientResponse doSubmit(Object entity) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientService.Chain httpCall = new Http2CallEntityChain(webClient,
+                                                                  this,
+                                                                  protocolConfig,
+                                                                  connection().orElse(null),
+                                                                  whenSent,
+                                                                  whenComplete,
+                                                                  entity);
 
+        return invokeWithServices(httpCall, whenSent, whenComplete);
         WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
 
         Http2ClientStream stream = reserveStream();
@@ -204,115 +175,33 @@ class ClientRequestImpl implements Http2ClientRequest {
         return readResponse(stream);
     }
 
-    @Override
-    public URI resolvedUri() {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    @Override
-    public Http2ClientRequest connection(ClientConnection connection) {
-        this.explicitConnection = connection;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest skipUriEncoding() {
-        this.uri.skipUriEncoding(true);
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest property(String propertyName, String propertyValue) {
-        properties.put(propertyName, propertyValue);
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest keepAlive(boolean keepAlive) {
-        //NOOP
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest priority(int priority) {
-        if (priority < 1 || priority > 256) {
-            throw new IllegalArgumentException("Priority must be between 1 and 256 (inclusive)");
-        }
-        this.priority = priority;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest priorKnowledge(boolean priorKnowledge) {
-        this.priorKnowledge = priorKnowledge;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest requestPrefetch(int requestPrefetch) {
-        this.requestPrefetch = requestPrefetch;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest timeout(Duration timeout) {
-        this.timeout = timeout;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest flowControlTimeout(Duration timeout) {
-        this.flowControlTimeout = timeout;
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest fragment(String fragment) {
-        this.fragment = UriFragment.create(fragment);
-        return this;
-    }
-
-    @Override
-    public Http2ClientRequest followRedirects(boolean followRedirects) {
-        //        this.followRedirects = followRedirects;
-        //        return this;
-        throw new UnsupportedOperationException("Not supported in HTTP2 yet");
-    }
-
-    @Override
-    public Http2ClientRequest maxRedirects(int maxRedirects) {
-        //        this.maxRedirects = maxRedirects;
-        //        return this;
-        throw new UnsupportedOperationException("Not supported in HTTP2 yet");
-    }
-
-    ClientUri uriHelper() {
-        return uri;
-    }
-
     private Http2ClientResponse readResponse(Http2ClientStream stream) {
         Http2Headers headers = stream.readHeaders();
 
-        return new ClientResponseImpl(headers, stream, uri);
+        return new ClientResponseImpl(headers, stream, clientUri);
     }
 
     private byte[] entityBytes(Object entity) {
-        if (entity instanceof byte[]) {
-            return (byte[]) entity;
+        if (entity instanceof byte[] bytes) {
+            return bytes;
         }
-        if (entity instanceof String) {
-            return ((String) entity).getBytes(StandardCharsets.UTF_8);
-        }
-        // todo entity handlers
-        throw new IllegalArgumentException("Only string and byte array supported now");
+
+        GenericType<Object> genericType = GenericType.create(entity);
+        EntityWriter<Object> writer = mediaContext.writer(genericType, explicitHeaders);
+
+        // This uses an in-memory buffer, which would cause damage for writing big objects (such as Path)
+        // we have a follow-up issue to make sure this is fixed
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        writer.write(genericType, entity, bos, explicitHeaders);
+        return bos.toByteArray();
     }
 
     private Http2Headers prepareHeaders(WritableHeaders<?> headers) {
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.method(this.method);
-        http2Headers.authority(this.uri.authority());
-        http2Headers.scheme(this.uri.scheme());
-        http2Headers.path(this.uri.pathWithQueryAndFragment(query, fragment));
+        http2Headers.authority(this.clientUri.authority());
+        http2Headers.scheme(this.clientUri.scheme());
+        http2Headers.path(this.clientUri.pathWithQueryAndFragment(query, fragment));
 
         headers.remove(Header.HOST, LogHeaderConsumer.INSTANCE);
         headers.remove(Header.TRANSFER_ENCODING, LogHeaderConsumer.INSTANCE);
@@ -322,7 +211,7 @@ class ClientRequestImpl implements Http2ClientRequest {
 
     private Http2ClientStream reserveStream() {
         if (explicitConnection == null) {
-            return newStream(uri);
+            return newStream(clientUri);
         } else {
             throw new UnsupportedOperationException("Explicit connection not (yet) supported for HTTP/2 client");
         }
@@ -336,8 +225,8 @@ class ClientRequestImpl implements Http2ClientRequest {
                                                             uri.port(),
                                                             priorKnowledge,
                                                             tls,
-                                                            client.dnsResolver(),
-                                                            client.dnsAddressLookup());
+                                                            clientConfig.dnsResolver(),
+                                                            clientConfig.dnsAddressLookup());
 
             // this statement locks all threads - must not do anything complicated (just create a new instance)
             return CHANNEL_CACHE.computeIfAbsent(connectionKey,
@@ -371,10 +260,5 @@ class ClientRequestImpl implements Http2ClientRequest {
                            "HTTP/2 request contains wrong header, removing: " + httpHeader);
             }
         }
-    }
-
-    @Override
-    public Http2ClientRequest proxy(Proxy proxy) {
-        throw new UnsupportedOperationException("Proxy is not supported in HTTP2");
     }
 }

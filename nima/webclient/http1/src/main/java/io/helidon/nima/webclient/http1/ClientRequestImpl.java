@@ -17,83 +17,36 @@
 package io.helidon.nima.webclient.http1;
 
 import java.net.URI;
-import java.time.Duration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.context.Context;
-import io.helidon.common.context.Contexts;
-import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.uri.UriEncoding;
-import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webclient.api.ClientConnection;
+import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.api.WebClientConfig;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
-class ClientRequestImpl implements Http1ClientRequest {
-    private static final AtomicLong COUNTER = new AtomicLong();
+class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
 
-    private final HttpClientConfig clientConfig;
+    private final WebClient webClient;
     private final Http1ClientProtocolConfig protocolConfig;
-    private final UriQueryWriteable query;
-    private final ClientRequestHeaders headers;
-    private final ClientUri clientUri;
-    private final Map<String, String> pathParams = new HashMap<>();
-    private final Http.Method method;
-    private final String requestId;
-    private final MediaContext mediaContext;
-    private final Map<String, String> properties;
 
-    private UriFragment fragment = UriFragment.empty();
-    private boolean followRedirects;
-    private int maxRedirects;
-    private Duration readTimeout;
-    private Tls tls;
-    private String uriTemplate;
-    private ClientConnection connection;
-    private Proxy proxy;
-    private boolean skipUriEncoding = false;
-    private boolean keepAlive;
-
-    ClientRequestImpl(HttpClientConfig clientConfig,
+    ClientRequestImpl(WebClient webClient,
+                      HttpClientConfig clientConfig,
                       Http1ClientProtocolConfig protocolConfig,
                       Http.Method method,
                       ClientUri clientUri,
                       UriQueryWriteable query,
                       Map<String, String> properties) {
-        this.clientConfig = clientConfig;
-        this.protocolConfig = protocolConfig;
-        this.method = method;
-        this.headers = clientConfig.defaultRequestHeaders();
-        this.properties = new HashMap<>(properties);
-        this.readTimeout = clientConfig.socketOptions().readTimeout();
-        this.mediaContext = clientConfig.mediaContext();
-        this.followRedirects = clientConfig.followRedirects();
-        this.maxRedirects = clientConfig.maxRedirects();
-        this.tls = clientConfig.tls();
-        this.keepAlive = clientConfig.keepAlive();
-        this.clientUri = clientUri;
-        this.query = query;
+        super(clientConfig, Http1Client.PROTOCOL_ID, method, clientUri, query, properties);
 
-        this.requestId = "http1-client-" + COUNTER.getAndIncrement();
+        this.webClient = webClient;
+        this.protocolConfig = protocolConfig;
     }
 
     //Copy constructor for redirection purposes
@@ -102,198 +55,35 @@ class ClientRequestImpl implements Http1ClientRequest {
                               ClientUri clientUri,
                               UriQueryWriteable query,
                               Map<String, String> properties) {
-        this(request.clientConfig, request.protocolConfig, method, clientUri, query, properties);
+        this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, query, properties);
 
-        this.followRedirects = request.followRedirects;
-        this.maxRedirects = request.maxRedirects;
-        this.tls = request.tls;
-        this.connection = request.connection;
+        followRedirects(request.followRedirects());
+        maxRedirects(request.maxRedirects());
+        tls(request.tls());
+        request.connection().ifPresent(this::connection);
     }
 
     @Override
-    public Http1ClientRequest uri(String uri) {
-        if (uri.indexOf('{') > -1) {
-            this.uriTemplate = uri;
-        } else {
-            if (skipUriEncoding) {
-                uri(URI.create(uri));
-            } else {
-                uri(URI.create(UriEncoding.encodeUri(uri)));
-            }
-        }
-
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest tls(Tls tls) {
-        this.tls = tls;
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest uri(URI uri) {
-        this.uriTemplate = null;
-        this.clientUri.resolve(uri, query);
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest header(HeaderValue header) {
-        this.headers.set(header);
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest headers(Headers headers) {
-        for (HeaderValue header : headers) {
-            this.headers.add(header);
-        }
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest headers(Consumer<ClientRequestHeaders> headersConsumer) {
-        headersConsumer.accept(headers);
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest pathParam(String name, String value) {
-        pathParams.put(name, value);
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest queryParam(String name, String... values) {
-        query.set(name, values);
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest fragment(UriFragment fragment) {
-        this.fragment = fragment;
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest followRedirects(boolean followRedirects) {
-        this.followRedirects = followRedirects;
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest maxRedirects(int maxRedirects) {
-        this.maxRedirects = maxRedirects;
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest skipUriEncoding(boolean skip) {
-        this.skipUriEncoding = skip;
-        this.clientUri.skipUriEncoding(skip);
-        return this;
-    }
-
-    @Override
-    public Http1ClientResponse request() {
-        return submit(BufferData.EMPTY_BYTES);
-    }
-
-    @Override
-    public Http1ClientResponse submit(Object entity) {
-        if (entity != BufferData.EMPTY_BYTES) {
-            rejectHeadWithEntity();
-        }
-        if (followRedirects) {
+    public Http1ClientResponse doSubmit(Object entity) {
+        if (followRedirects()) {
             return invokeWithFollowRedirectsEntity(entity);
         }
         return invokeRequestWithEntity(entity);
     }
 
     @Override
-    public Http1ClientResponse outputStream(OutputStreamHandler streamHandler) {
-        rejectHeadWithEntity();
+    public Http1ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallOutputStreamChain(this,
-                                                                         clientConfig,
+        WebClientService.Chain callChain = new HttpCallOutputStreamChain(webClient,
+                                                                         this,
+                                                                         clientConfig(),
                                                                          protocolConfig,
-                                                                         connection,
-                                                                         tls,
-                                                                         proxy,
                                                                          whenSent,
                                                                          whenComplete,
                                                                          streamHandler);
 
-        return invokeServices(callChain, whenSent, whenComplete);
-    }
-
-    @Override
-    public ClientUri resolvedUri() {
-        if (uriTemplate != null) {
-            String resolved = resolvePathParams(uriTemplate);
-            if (skipUriEncoding) {
-                this.clientUri.resolve(URI.create(resolved), query);
-            } else {
-                this.clientUri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
-            }
-        }
-        return ClientUri.create(clientUri);
-
-    }
-
-    @Override
-    public Http1ClientRequest connection(ClientConnection connection) {
-        this.connection = connection;
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest property(String propertyName, String propertyValue) {
-        this.properties.put(propertyName, propertyValue);
-        return this;
-    }
-
-    @Override
-    public Http1ClientRequest keepAlive(boolean keepAlive) {
-        this.keepAlive = keepAlive;
-        return this;
-    }
-
-    /**
-     * Read timeout for this request.
-     *
-     * @param readTimeout response read timeout
-     * @return updated client request
-     */
-    public Http1ClientRequest readTimeout(Duration readTimeout) {
-        this.readTimeout = readTimeout;
-        return this;
-    }
-
-    boolean keepAlive() {
-        return keepAlive;
-    }
-
-    @Override
-    public boolean followRedirects() {
-        return followRedirects;
-    }
-
-    @Override
-    public ClientRequestHeaders headers() {
-        return headers;
-    }
-
-    @Override
-    public Http1ClientRequest proxy(Proxy proxy) {
-        this.proxy = Objects.requireNonNull(proxy);
-        return this;
-    }
-
-    Duration readTimeout() {
-        return readTimeout;
+        return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
     private ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {
@@ -301,7 +91,7 @@ class ClientRequestImpl implements Http1ClientRequest {
         ClientRequestImpl clientRequest = this;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
         Object entityToBeSent = entity;
-        for (int i = 0; i < maxRedirects; i++) {
+        for (int i = 0; i < maxRedirects(); i++) {
             ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
             int code = clientResponse.status().code();
             if (code < 300 || code >= 400) {
@@ -324,73 +114,47 @@ class ClientRequestImpl implements Http1ClientRequest {
                 //request -> my-test.com -> response redirect -> my-example.com
                 //new request -> my-example.com -> response redirect -> /login
                 //with using the last request uri host etc, we prevent my-test.com/login from happening
-                redirectUri.scheme(clientRequest.clientUri.scheme());
-                redirectUri.host(clientRequest.clientUri.host());
-                redirectUri.port(clientRequest.clientUri.port());
+                ClientUri resolvedUri = clientRequest.resolvedUri();
+                redirectUri.scheme(resolvedUri.scheme());
+                redirectUri.host(resolvedUri.host());
+                redirectUri.port(resolvedUri.port());
             }
             //Method and entity is required to be the same as with original request with 307 and 308 requests
             if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
                     || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
-                clientRequest = new ClientRequestImpl(this, method, redirectUri, newQuery, properties);
+                clientRequest = new ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, newQuery, properties());
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new ClientRequestImpl(this, Http.Method.GET, redirectUri, newQuery, properties);
+                clientRequest = new ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, newQuery, properties());
             }
         }
         throw new IllegalStateException("Maximum number of request redirections ("
-                                                + clientConfig.maxRedirects() + ") reached.");
+                                                + clientConfig().maxRedirects() + ") reached.");
     }
 
     private ClientResponseImpl invokeRequestWithEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallEntityChain(this,
-                                                                   clientConfig,
+        WebClientService.Chain callChain = new HttpCallEntityChain(webClient,
+                                                                   this,
+                                                                   clientConfig(),
                                                                    protocolConfig,
-                                                                   connection,
-                                                                   tls,
-                                                                   proxy,
                                                                    whenSent,
                                                                    whenComplete,
                                                                    entity);
 
-        return invokeServices(callChain, whenSent, whenComplete);
+        return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
-    private ClientResponseImpl invokeServices(WebClientService.Chain callChain,
-                                              CompletableFuture<WebClientServiceRequest> whenSent,
-                                              CompletableFuture<WebClientServiceResponse> whenComplete) {
-        if (uriTemplate != null) {
-            String resolved = resolvePathParams(uriTemplate);
-            if (skipUriEncoding) {
-                this.clientUri.resolve(URI.create(resolved), query);
-            } else {
-                this.clientUri.resolve(URI.create(UriEncoding.encodeUri(resolved)), query);
-            }
-        }
+    private ClientResponseImpl invokeWithServices(WebClientService.Chain callChain,
+                                                  CompletableFuture<WebClientServiceRequest> whenSent,
+                                                  CompletableFuture<WebClientServiceResponse> whenComplete) {
 
-        WebClientServiceRequest serviceRequest = new ServiceRequestImpl(clientUri,
-                                                                        method,
-                                                                        Http.Version.V1_1,
-                                                                        query,
-                                                                        fragment,
-                                                                        headers,
-                                                                        Contexts.context().orElseGet(Context::create),
-                                                                        requestId,
-                                                                        whenComplete,
-                                                                        whenSent,
-                                                                        properties);
+        // will create a copy, so we could invoke this method multiple times
+        ClientUri resolvedUri = resolvedUri();
 
-        WebClientService.Chain last = callChain;
-
-        List<WebClientService> services = clientConfig.services();
-        ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
-        while (serviceIterator.hasPrevious()) {
-            last = new ServiceChainImpl(last, serviceIterator.previous());
-        }
-
-        WebClientServiceResponse serviceResponse = last.proceed(serviceRequest);
+        WebClientServiceResponse serviceResponse = invokeServices(callChain, whenSent, whenComplete, resolvedUri);
 
         CompletableFuture<Void> complete = new CompletableFuture<>();
         complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
@@ -404,32 +168,10 @@ class ClientRequestImpl implements Http1ClientRequest {
                                       serviceResponse.headers(),
                                       serviceResponse.connection(),
                                       serviceResponse.reader(),
-                                      mediaContext,
-                                      clientConfig.mediaTypeParserMode(),
-                                      clientUri,
+                                      mediaContext(),
+                                      clientConfig().mediaTypeParserMode(),
+                                      resolvedUri,
                                       complete);
     }
 
-    private String resolvePathParams(String path) {
-        String result = path;
-        for (Map.Entry<String, String> entry : pathParams.entrySet()) {
-            String name = entry.getKey();
-            String value = entry.getValue();
-
-            result = result.replace("{" + name + "}", value);
-        }
-
-        if (result.contains("{")) {
-            throw new IllegalArgumentException("Not all path parameters are defined. Template after resolving parameters: "
-                                                       + result);
-        }
-
-        return result;
-    }
-
-    private void rejectHeadWithEntity() {
-        if (this.method.equals(Http.Method.HEAD)) {
-            throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
-        }
-    }
 }

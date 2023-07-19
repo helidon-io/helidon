@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
 import io.helidon.nima.webclient.api.HttpClient;
-import io.helidon.nima.webclient.spi.HttpClientSpi;
+import io.helidon.nima.webclient.api.WebClient;
 
 /**
  * HTTP/1.1 client.
@@ -29,11 +29,13 @@ import io.helidon.nima.webclient.spi.HttpClientSpi;
 @RuntimeType.PrototypedBy(Http1ClientConfig.class)
 public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType.Api<Http1ClientConfig> {
 
+    String PROTOCOL_ID = "http/1.1";
+
     static Http1ClientConfig.Builder builder() {
         return Http1ClientConfig.builder();
     }
     static Http1Client create(Http1ClientConfig clientConfig) {
-        return new Http1ClientImpl(clientConfig);
+        return new Http1ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
     }
 
     static Http1Client create(Consumer<Http1ClientConfig.Builder> consumer) {

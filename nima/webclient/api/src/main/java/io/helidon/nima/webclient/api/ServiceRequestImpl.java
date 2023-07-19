@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webclient.http1;
+package io.helidon.nima.webclient.api;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,9 +31,10 @@ import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
 class ServiceRequestImpl implements WebClientServiceRequest {
     private final Map<String, String> properties;
+    private final String protocolId;
+
     private ClientUri uri;
     private Http.Method method;
-    private Http.Version version;
     private UriQueryWriteable query;
     private UriFragment fragment;
     private ClientRequestHeaders headers;
@@ -44,7 +45,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
 
     ServiceRequestImpl(ClientUri uri,
                        Http.Method method,
-                       Http.Version version,
+                       String protocolId,
                        UriQueryWriteable query,
                        UriFragment fragment,
                        ClientRequestHeaders headers,
@@ -55,7 +56,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
                        Map<String, String> properties) {
         this.uri = uri;
         this.method = method;
-        this.version = version;
+        this.protocolId = protocolId;
         this.query = query;
         this.fragment = fragment;
         this.headers = headers;
@@ -77,8 +78,8 @@ class ServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public Http.Version version() {
-        return version;
+    public String protocolId() {
+        return protocolId;
     }
 
     @Override

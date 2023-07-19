@@ -16,23 +16,22 @@
 
 package io.helidon.nima.webclient.http1;
 
-import java.util.Optional;
-
-import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.api.ClientRequest;
-import io.helidon.nima.webclient.api.ClientRequestConfig;
 import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.FullClientRequest;
 import io.helidon.nima.webclient.api.HttpClientConfig;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
 class Http1ClientImpl implements Http1Client, HttpClientSpi {
+    private final WebClient client;
     private final Http1ClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
 
-    Http1ClientImpl(Http1ClientConfig clientConfig) {
+    Http1ClientImpl(WebClient client, Http1ClientConfig clientConfig) {
+        this.client = client;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
     }
@@ -46,7 +45,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         UriQueryWriteable query = UriQueryWriteable.create();
         clientConfig.baseQuery().ifPresent(query::from);
 
-        return new ClientRequestImpl(clientConfig, protocolConfig, method, clientUri, query, clientConfig.properties());
+        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, query, clientConfig.properties());
     }
 
     @Override
@@ -55,35 +54,35 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     }
 
     @Override
-    public Optional<ClientRequest<?>> clientRequest(ClientRequestConfig clientRequestConfig,
-                                                    ClientUri clientUri,
-                                                    ClientRequestHeaders headers,
-                                                    UriQueryWriteable query,
-                                                    UriFragment fragment) {
+    public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        // HTTP/1.1 is compatible with ANY HTTP request
+        return SupportLevel.COMPATIBLE;
+    }
 
+    @Override
+    public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         // this is HTTP/1.1 - it should support any and all HTTP requests
         // this method is called from the "generic" HTTP client, that can support any version (that is on classpath).
         // usually HTTP/1.1 is either the only available, or a fallback if other versions cannot be used
-        Http1ClientRequest request = new ClientRequestImpl(clientConfig,
+        Http1ClientRequest request = new ClientRequestImpl(client,
+                                                           clientConfig,
                                                            protocolConfig,
-                                                           clientRequestConfig.method(),
+                                                           clientRequest.method(),
                                                            clientUri,
-                                                           query,
-                                                           clientRequestConfig.properties());
+                                                           clientRequest.query(),
+                                                           clientRequest.properties());
 
-        clientRequestConfig.connection().ifPresent(request::connection);
-        clientRequestConfig.pathParams().forEach(request::pathParam);
-        clientRequestConfig.readTimeout().ifPresent(request::readTimeout);
+        clientRequest.connection().ifPresent(request::connection);
+        clientRequest.pathParams().forEach(request::pathParam);
 
-        request.followRedirects(clientRequestConfig.followRedirects())
-                .maxRedirects(clientRequestConfig.maxRedirects())
-                .keepAlive(clientRequestConfig.keepAlive())
-                .proxy(clientRequestConfig.proxy())
-                .tls(clientRequestConfig.tls())
-                .headers(headers)
-                .fragment(fragment);
-
-        return Optional.of(request);
+        return request.readTimeout(clientRequest.readTimeout())
+                .followRedirects(clientRequest.followRedirects())
+                .maxRedirects(clientRequest.maxRedirects())
+                .keepAlive(clientRequest.keepAlive())
+                .proxy(clientRequest.proxy())
+                .tls(clientRequest.tls())
+                .headers(clientRequest.headers())
+                .fragment(clientRequest.fragment());
     }
 
     HttpClientConfig clientConfig() {

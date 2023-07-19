@@ -26,12 +26,10 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.api.WebClientConfig;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
@@ -42,16 +40,20 @@ class HttpCallEntityChain extends HttpCallChainBase {
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Object entity;
 
-    HttpCallEntityChain(ClientRequestImpl request,
+    HttpCallEntityChain(WebClient webClient,
+                        ClientRequestImpl request,
                         HttpClientConfig clientConfig,
                         Http1ClientProtocolConfig protocolConfig,
-                        ClientConnection connection,
-                        Tls tls,
-                        Proxy proxy,
                         CompletableFuture<WebClientServiceRequest> whenSent,
                         CompletableFuture<WebClientServiceResponse> whenComplete,
                         Object entity) {
-        super(clientConfig, protocolConfig, connection, tls, proxy, request.keepAlive());
+        super(webClient,
+              clientConfig,
+              protocolConfig,
+              request.connection().orElse(null),
+              request.tls(),
+              request.proxy(),
+              request.keepAlive());
 
         this.request = request;
         this.whenSent = whenSent;

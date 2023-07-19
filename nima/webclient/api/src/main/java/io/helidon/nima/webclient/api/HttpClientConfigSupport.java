@@ -135,6 +135,10 @@ class HttpClientConfigSupport {
                 target.executor(LoomClient.EXECUTOR.get());
             }
 
+            if (target.proxy() == null) {
+                target.proxy(Proxy.noProxy());
+            }
+
             return target;
         }
     }

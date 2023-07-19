@@ -62,17 +62,6 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     int maxStatusLineLength();
 
     /**
-     * Sets whether Expect-100-Continue header is sent to verify server availability for a chunked transfer.
-     * <p>
-     *     Defaults to {@code true}.
-     * </p>
-     *
-     * @return whether Expect:100-Continue header should be sent on chunked or bigger transfers
-     */
-    @ConfiguredOption("false")
-    boolean sendExpectContinue();
-
-    /**
      * Sets whether the header format is validated or not.
      * <p>
      *     Defaults to {@code true}.

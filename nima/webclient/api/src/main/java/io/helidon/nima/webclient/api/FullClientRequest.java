@@ -1,0 +1,108 @@
+package io.helidon.nima.webclient.api;
+
+import java.time.Duration;
+import java.util.Map;
+import java.util.Optional;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.http.Http;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.nima.common.tls.Tls;
+
+/**
+ * Client request with getters for all configurable options, used for integration with HTTP version implementations.
+ */
+public interface FullClientRequest<T extends ClientRequest<T>> extends ClientRequest<T> {
+    /**
+     * Replace a placeholder in URI with an actual value.
+     *
+     * @return a map of path parameters
+     */
+    Map<String, String> pathParams();
+
+    /**
+     * HTTP method of this request.
+     *
+     * @return method
+     */
+    Http.Method method();
+
+    /**
+     * Query of this request.
+     *
+     * @return query
+     */
+    UriQueryWriteable query();
+
+    /**
+     * Fragment of this request.
+     *
+     * @return fragment
+     */
+    UriFragment fragment();
+
+    /**
+     * Configured properties.
+     *
+     * @return properties
+     */
+    Map<String, String> properties();
+
+    /**
+     * Request ID.
+     *
+     * @return id of this request
+     */
+    String requestId();
+
+    /**
+     * Possible explicit connection to use (such as when using a proxy).
+     *
+     * @return client connection if explicitly defined
+     */
+    Optional<ClientConnection> connection();
+
+    /**
+     * Whether to follow redirects.
+     *
+     * @return follow redirects
+     */
+    boolean followRedirects();
+
+    /**
+     * Maximal number of redirects to follow. This is to prevent infinite redirects.
+     *
+     * @return max number of redirects
+     */
+    int maxRedirects();
+
+    /**
+     * Read timeout.
+     *
+     * @return read timeout of this request
+     */
+    Duration readTimeout();
+
+    /**
+     * TLS configuration (may be disabled - e.g. use plaintext).
+     *
+     * @return TLS configuration
+     */
+    Tls tls();
+
+    /**
+     * Proxy configuration (may be no-proxy).
+     *
+     * @return proxy
+     */
+    Proxy proxy();
+
+    /**
+     * Whether to use keep-alive connection (if relevant for the used HTTP version).
+     *
+     * @return whether to use keep alive
+     */
+    boolean keepAlive();
+}

@@ -181,8 +181,8 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return whether Expect:100-Continue header should be sent on streamed transfers
      */
-    @ConfiguredOption("false")
-    boolean sendExpect100Continue();
+    @ConfiguredOption("true")
+    boolean sendExpectContinue();
 
     /**
      * Maximal size of the connection cache.

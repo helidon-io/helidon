@@ -63,7 +63,7 @@ class Http2WebClientTest {
     private static ExecutorService executorService;
     private static int plainPort;
     private static final LazyValue<Http2Client> priorKnowledgeClient = LazyValue.create(() -> Http2Client.builder()
-            .priorKnowledge(true)
+            .protocolConfig(pc -> pc.priorKnowledge(true))
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
             .build());
     private static final LazyValue<Http2Client> upgradeClient = LazyValue.create(() -> Http2Client.builder()

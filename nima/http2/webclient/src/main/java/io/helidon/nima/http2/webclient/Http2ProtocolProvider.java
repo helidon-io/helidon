@@ -16,11 +16,32 @@
 
 package io.helidon.nima.http2.webclient;
 
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.ProtocolProvider;
 
-class Http2ProtocolProvider implements ProtocolProvider<Http2Client.Http2ClientBuilder> {
+class Http2ProtocolProvider implements ProtocolProvider<Http2Client, Http2ClientProtocolConfig> {
+    static final String CONFIG_KEY = "h2";
+
     @Override
-    public Http2Client.Http2ClientBuilder protocolBuilder() {
-        return Http2Client.builder();
+    public String protocolId() {
+        return Http2Client.PROTOCOL_ID;
+    }
+
+    @Override
+    public Class<Http2ClientProtocolConfig> configType() {
+        return Http2ClientProtocolConfig.class;
+    }
+
+    @Override
+    public Http2ClientProtocolConfig defaultConfig() {
+        return Http2ClientProtocolConfig.create();
+    }
+
+    @Override
+    public Http2Client protocol(WebClient client, Http2ClientProtocolConfig config) {
+        return new Http2ClientImpl(Http2ClientConfig.builder()
+                                           .from(client.prototype())
+                                           .protocolConfig(config)
+                                           .buildPrototype());
     }
 }

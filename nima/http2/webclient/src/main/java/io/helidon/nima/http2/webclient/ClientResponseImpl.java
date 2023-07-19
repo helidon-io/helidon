@@ -44,7 +44,7 @@ class ClientResponseImpl implements Http2ClientResponse {
     }
 
     @Override
-    public Headers headers() {
+    public ClientResponseHeaders headers() {
         return responseHeaders;
     }
 
@@ -54,8 +54,8 @@ class ClientResponseImpl implements Http2ClientResponse {
     }
 
     @Override
-    public URI lastEndpointUri() {
-        return lastEndpointUri.toUri();
+    public ClientUri lastEndpointUri() {
+        return lastEndpointUri;
     }
 
     @Override

@@ -16,53 +16,69 @@
 
 package io.helidon.nima.http2.webclient;
 
+import java.util.Optional;
+
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.webclient.LoomClient;
+import io.helidon.nima.webclient.api.ClientRequest;
+import io.helidon.nima.webclient.api.ClientRequestConfig;
 import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.FullClientRequest;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.spi.HttpClientSpi;
 
-class Http2ClientImpl extends LoomClient implements Http2Client {
+class Http2ClientImpl implements Http2Client, HttpClientSpi {
+    private final WebClient client;
+    private final Http2ClientConfig clientConfig;
+    private final Http2ClientProtocolConfig protocolConfig;
 
-    private final int maxFrameSize;
-    private final long maxHeaderListSize;
-    private final int initialWindowSize;
-    private final int prefetch;
-    private final boolean priorKnowledge;
-
-    Http2ClientImpl(Http2ClientBuilder builder) {
-        super(builder);
-        this.priorKnowledge = builder.priorKnowledge();
-        this.maxFrameSize = builder.maxFrameSize();
-        this.maxHeaderListSize = builder.maxHeaderListSize();
-        this.initialWindowSize = builder.initialWindowSize();
-        this.prefetch = builder.prefetch();
+    Http2ClientImpl(WebClient client, Http2ClientConfig clientConfig) {
+        this.client = client;
+        this.clientConfig = clientConfig;
+        this.protocolConfig = clientConfig.protocolConfig();
     }
 
     @Override
     public Http2ClientRequest method(Http.Method method) {
+        ClientUri clientUri = clientConfig.baseUri()
+                .map(ClientUri::create) // create from base config
+                .orElseGet(ClientUri::create); // create as empty
+
         UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = (uri() == null) ? ClientUri.create() : ClientUri.create(uri(), query);
+        clientConfig.baseQuery().ifPresent(query::from);
 
-        return new ClientRequestImpl(this, executor(), method, helper, tls(), query);
+        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.tls());
     }
 
-    long maxHeaderListSize() {
-        return maxHeaderListSize;
+    @Override
+    public Http2ClientConfig prototype() {
+        return clientConfig;
     }
 
-    int initialWindowSize() {
-        return initialWindowSize;
+    @Override
+    public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        return null;
     }
 
-    int prefetch() {
-        return prefetch;
+    @Override
+    public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        return null;
     }
 
-    boolean priorKnowledge() {
-        return priorKnowledge;
-    }
+    @Override
+    public Optional<ClientRequest<?>> clientRequest(ClientRequestConfig clientRequestConfig,
+                                                    ClientUri clientUri,
+                                                    ClientRequestHeaders headers,
+                                                    UriQueryWriteable query,
+                                                    UriFragment fragment) {
 
-    int maxFrameSize() {
-        return this.maxFrameSize;
+        /*
+        this is only available for non-tls requests - for TLS we use ALPN
+        0. MUST BE DONE IN WEBCLIENT: check cache if we tried this request before (same connection key)
+        1. check if we have prior knowledge configured - if yes, just do it
+        2. try to upgrade, falling back to HTTP/1.1
+         */
     }
 }

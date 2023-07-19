@@ -166,7 +166,7 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1Client client = Http1Client.builder()
-                .sendExpect100Continue(true)
+                .sendExpectContinue(true)
                 .build();
         Http1ClientRequest request = client.put("http://localhost:" + dummyPort + "/test");
         request.connection(new FakeHttp1ClientConnection());

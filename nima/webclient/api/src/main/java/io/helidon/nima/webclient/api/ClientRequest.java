@@ -299,7 +299,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
     }
 
     /**
-     * Resolved URI that will be used (or was used) to invoke this request.
+     * Resolved URI that will be used to invoke this request.
      *
      * @return URI to invoke
      */

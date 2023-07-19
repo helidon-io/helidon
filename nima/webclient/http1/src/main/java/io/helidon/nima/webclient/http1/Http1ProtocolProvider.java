@@ -21,11 +21,10 @@ import io.helidon.nima.webclient.spi.ProtocolProvider;
 
 class Http1ProtocolProvider implements ProtocolProvider<Http1Client, Http1ClientProtocolConfig> {
     static final String CONFIG_KEY = "http_1_1";
-    static final String PROTOCOL_ID = "http/1.1";
 
     @Override
     public String protocolId() {
-        return PROTOCOL_ID;
+        return Http1Client.PROTOCOL_ID;
     }
 
     @Override
@@ -40,7 +39,7 @@ class Http1ProtocolProvider implements ProtocolProvider<Http1Client, Http1Client
 
     @Override
     public Http1Client protocol(WebClient client, Http1ClientProtocolConfig config) {
-        return new Http1ClientImpl(Http1ClientConfig.builder()
+        return new Http1ClientImpl(client, Http1ClientConfig.builder()
                                            .from(client.prototype())
                                            .protocolConfig(config)
                                            .buildPrototype());

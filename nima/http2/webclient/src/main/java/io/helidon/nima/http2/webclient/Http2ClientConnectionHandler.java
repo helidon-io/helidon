@@ -23,6 +23,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.nima.webclient.api.ConnectionKey;
 
 // a representation of a single remote endpoint
 // this may use one or more connections (depending on parallel streams)

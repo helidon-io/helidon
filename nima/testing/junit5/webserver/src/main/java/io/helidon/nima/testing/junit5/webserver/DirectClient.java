@@ -22,15 +22,8 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Optional;
 
-import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.webclient.api.ClientRequest;
-import io.helidon.nima.webclient.api.ClientRequestConfig;
-import io.helidon.nima.webclient.api.ClientUri;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;

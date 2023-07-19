@@ -45,16 +45,15 @@ public interface WebClientServiceRequest {
     Http.Method method();
 
     /**
-     * Returns an HTTP version from the request line.
-     * <p>
-     * See {@link io.helidon.common.http.Http.Version HTTP Version} enumeration for supported versions.
+     * Returns an HTTP protocol ID, mapped to a specific version. This is the same ID that is used for ALPN
+     * (protocol negotiation) - {@code http/1.1} for HTTP/1.1 and {@code h2} for HTTP/2.
      * <p>
      * If communication starts as a {@code HTTP/1.1} with {@code h2c} upgrade, then it will be automatically
      * upgraded and this method returns {@code HTTP/2.0}.
      *
      * @return an HTTP version
      */
-    Http.Version version();
+    String protocolId();
 
     /**
      * Returns query parameters.

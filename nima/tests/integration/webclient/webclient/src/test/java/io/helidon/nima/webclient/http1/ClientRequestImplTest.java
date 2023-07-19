@@ -32,6 +32,9 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.pki.Keys;
+import io.helidon.common.pki.KeystoreKeys;
+import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -91,31 +94,31 @@ class ClientRequestImplTest {
 
     @Test
     void testMaxHeaderSizeFail() {
-        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI),
-                                                httpConfig -> httpConfig.maxHeaderSize(15));
+        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
+                .protocolConfig(it -> it.maxHeaderSize(15)));
 
         validateFailedResponse(client, "Header size exceeded");
     }
 
     @Test
     void testMaxHeaderSizeSuccess() {
-        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI),
-                                                httpConfig -> httpConfig.maxHeaderSize(500));
+        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
+                .protocolConfig(it -> it.maxHeaderSize(500)));
         validateSuccessfulResponse(client);
     }
 
     @Test
     void testMaxStatusLineLengthFail() {
-        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI),
-                                                httpConfig -> httpConfig.maxStatusLineLength(1));
+        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
+                .protocolConfig(it -> it.maxStatusLineLength(1)));
 
         validateFailedResponse(client, "HTTP Response did not contain HTTP status line");
     }
 
     @Test
     void testMaxHeaderLineLengthSuccess() {
-        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI),
-                                                httpConfig -> httpConfig.maxStatusLineLength(20500));
+        Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
+                .protocolConfig(it -> it.maxStatusLineLength(20500)));
 
         validateSuccessfulResponse(client);
     }
@@ -123,9 +126,7 @@ class ClientRequestImplTest {
     @Test
     void testMediaContext() {
         Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
-                                                        .mediaContext(new CustomizedMediaContext()),
-                                                httpConfig -> {
-                                                });
+                .mediaContext(new CustomizedMediaContext()));
 
         validateSuccessfulResponse(client);
     }
@@ -190,7 +191,7 @@ class ClientRequestImplTest {
 
         WebClient client = WebClient.builder()
                 .baseUri(baseURI)
-                .sendExpect100Continue(true)
+                .sendExpectContinue(true)
                 .build();
         HttpClientRequest request = client.put("/test");
 
@@ -221,7 +222,7 @@ class ClientRequestImplTest {
         for (int i = 0; i < 5; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
             // connection will be dequeued if queue is not empty
-            connectionNow = ConnectionCache.connection(injectedHttp1client.prototype(),
+            connectionNow = ConnectionCache.connection(WebClient.create(),
                                                        Http1ClientConfig.create(),
                                                        injectedHttp1client.prototype().tls(),
                                                        Proxy.noProxy(),
@@ -249,8 +250,8 @@ class ClientRequestImplTest {
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
 
-            connectionList.add(ConnectionCache.connection(injectedHttp1client.prototype(),
-                                                          io.helidon.nima.webclient.http1.Http1ClientConfig.create(),
+            connectionList.add(ConnectionCache.connection(WebClient.create(),
+                                                          injectedHttp1client.prototype(),
                                                           injectedHttp1client.prototype().tls(),
                                                           Proxy.noProxy(),
                                                           request.resolvedUri(),
@@ -270,8 +271,8 @@ class ClientRequestImplTest {
         HttpClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
-            connection = ConnectionCache.connection(injectedHttp1client.prototype(),
-                                                    Http1ClientConfig.create(),
+            connection = ConnectionCache.connection(WebClient.create(),
+                                                    injectedHttp1client.prototype(),
                                                     injectedHttp1client.prototype().tls(),
                                                     Proxy.noProxy(),
                                                     request.resolvedUri(),
@@ -291,8 +292,8 @@ class ClientRequestImplTest {
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
         HttpClientRequest request = injectedHttp1client.put("/test");
-        ClientConnection connectionNow = ConnectionCache.connection(injectedHttp1client.prototype(),
-                                                                    Http1ClientConfig.create(),
+        ClientConnection connectionNow = ConnectionCache.connection(WebClient.create(),
+                                                                    injectedHttp1client.prototype(),
                                                                     injectedHttp1client.prototype().tls(),
                                                                     Proxy.noProxy(),
                                                                     request.resolvedUri(),

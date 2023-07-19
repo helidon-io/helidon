@@ -26,9 +26,8 @@ import java.util.concurrent.Executors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 import io.helidon.nima.webclient.spi.Protocol;
@@ -61,9 +60,12 @@ class LoomClient implements WebClient {
     }
 
     private final WebClientConfig config;
-    private final Headers defaultHeaders;
-    private final List<HttpClientSpi> clients;
+    // a map of protocol ids to the client SPI implementing them
+    private final Map<String, ProtocolSpi> protocolsToClients;
+    private final List<ProtocolSpi> protocols;
+    private final List<ProtocolSpi> tcpProtocols;
     private final ProtocolConfigs protocolConfigs;
+    private final List<String> tcpProtocolIds;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -75,8 +77,6 @@ class LoomClient implements WebClient {
     protected LoomClient(WebClientConfig config) {
         this.config = config;
         this.protocolConfigs = ProtocolConfigs.create(config.protocolConfigs());
-        // these headers must be readonly (even though they are client request headers
-        this.defaultHeaders = ClientResponseHeaders.create(config.defaultRequestHeaders());
 
         List<HttpClientSpiProvider> providers;
         List<String> protocolPreference = config.protocolPreference();
@@ -97,21 +97,51 @@ class LoomClient implements WebClient {
             throw new IllegalStateException("WebClient requires at least one protocol provider to be present on classpath,"
                                                     + " or configured through protocolPreference (such as http1)");
         }
-        List<HttpClientSpi> clients = new ArrayList<>();
+
+        Map<String, ProtocolSpi> clients = new HashMap<>();
+        List<ProtocolSpi> protocols = new ArrayList<>();
+        List<ProtocolSpi> tcpProtocols = new ArrayList<>();
         for (HttpClientSpiProvider provider : providers) {
             Object protocolConfig = protocolConfigs.config(provider.protocolId(),
                                                            provider.configType(),
                                                            () -> (ProtocolConfig) provider.defaultConfig());
 
-            clients.add((HttpClientSpi) provider.protocol(this, protocolConfig));
+            HttpClientSpi clientSpi = (HttpClientSpi) provider.protocol(this, protocolConfig);
+            String protocolId = provider.protocolId();
+            ProtocolSpi spi = new ProtocolSpi(protocolId, clientSpi);
+            clients.putIfAbsent(protocolId, spi);
+            protocols.add(spi);
+            if (clientSpi.isTcp()) {
+                tcpProtocols.add(spi);
+            }
         }
 
-        this.clients = clients;
+        this.protocolsToClients = clients;
+        this.protocols = protocols;
+        this.tcpProtocols = tcpProtocols;
+        this.tcpProtocolIds = tcpProtocols.stream()
+                .map(ProtocolSpi::id)
+                .toList();
     }
 
     @Override
     public HttpClientRequest method(Http.Method method) {
-        return new HttpClientRequest(this.prototype(), method, clients);
+        ClientUri clientUri = prototype().baseUri()
+                .map(ClientUri::create) // create from base config
+                .orElseGet(ClientUri::create);// create as empty
+
+        UriQueryWriteable query = UriQueryWriteable.create();
+        prototype().baseQuery().ifPresent(query::from);
+
+        return new HttpClientRequest(this,
+                                     this.prototype(),
+                                     method,
+                                     clientUri,
+                                     query,
+                                     protocolsToClients,
+                                     protocols,
+                                     tcpProtocols,
+                                     tcpProtocolIds);
     }
 
     @Override
@@ -137,5 +167,8 @@ class LoomClient implements WebClient {
     @Override
     public ExecutorService executor() {
         return EXECUTOR.get();
+    }
+
+    record ProtocolSpi(String id, HttpClientSpi spi) {
     }
 }

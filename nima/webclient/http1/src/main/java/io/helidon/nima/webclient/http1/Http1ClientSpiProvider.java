@@ -7,7 +7,7 @@ import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 public class Http1ClientSpiProvider implements HttpClientSpiProvider<Http1ClientProtocolConfig> {
     @Override
     public String protocolId() {
-        return Http1ProtocolProvider.PROTOCOL_ID;
+        return Http1Client.PROTOCOL_ID;
     }
 
     @Override
@@ -22,7 +22,8 @@ public class Http1ClientSpiProvider implements HttpClientSpiProvider<Http1Client
 
     @Override
     public HttpClientSpi protocol(WebClient client, Http1ClientProtocolConfig config) {
-        return new Http1ClientImpl(Http1ClientConfig.builder()
+        return new Http1ClientImpl(client,
+                                   Http1ClientConfig.builder()
                                            .from(client.prototype())
                                            .protocolConfig(config)
                                            .buildPrototype());

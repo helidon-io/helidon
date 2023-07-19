@@ -31,13 +31,14 @@ import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.api.WebClientConfig;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
 abstract class HttpCallChainBase implements WebClientService.Chain {
     private final BufferData writeBuffer = BufferData.growing(128);
+    private final WebClient webClient;
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
@@ -45,12 +46,14 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     private final Proxy proxy;
     private final boolean keepAlive;
 
-    HttpCallChainBase(HttpClientConfig clientConfig,
+    HttpCallChainBase(WebClient webClient,
+                      HttpClientConfig clientConfig,
                       Http1ClientProtocolConfig protocolConfig,
                       ClientConnection connection,
                       Tls tls,
                       Proxy proxy,
                       boolean keepAlive) {
+        this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
         this.connection = connection;
@@ -122,8 +125,8 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
-        return ConnectionCache.connection(clientConfig,
-                                          protocolConfig,
+        return ConnectionCache.connection(webClient,
+                                          clientConfig,
                                           tls,
                                           proxy,
                                           request.uri(),

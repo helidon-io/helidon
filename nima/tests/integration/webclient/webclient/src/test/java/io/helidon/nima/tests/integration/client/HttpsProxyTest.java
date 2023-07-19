@@ -16,10 +16,6 @@
 
 package io.helidon.nima.tests.integration.client;
 
-import static io.helidon.common.http.Http.Method.GET;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
@@ -33,7 +29,6 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.api.Proxy;
 import io.helidon.nima.webclient.api.Proxy.ProxyType;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -44,6 +39,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Method.GET;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 @ServerTest
 class HttpsProxyTest {
 
@@ -52,6 +51,32 @@ class HttpsProxyTest {
     private static HttpProxy httpProxy;
 
     private final Http1Client client;
+
+    HttpsProxyTest(WebServer server) {
+        int port = server.port();
+
+        Tls tls = Tls.builder()
+                .trustAll(true)
+                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                .build();
+
+        client = Http1Client.builder()
+                .baseUri("https://localhost:" + port)
+                .tls(tls)
+                .build();
+    }
+
+    @BeforeAll
+    public static void beforeAll() throws IOException {
+        httpProxy = new HttpProxy(0);
+        httpProxy.start();
+        PROXY_PORT = httpProxy.connectedPort();
+    }
+
+    @AfterAll
+    public static void afterAll() {
+        httpProxy.stop();
+    }
 
     @SetUpServer
     static void server(Builder builder) {
@@ -74,32 +99,6 @@ class HttpsProxyTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         router.route(GET, "/get", Routes::get);
-    }
-
-    @BeforeAll
-    public static void beforeAll() throws IOException {
-        httpProxy = new HttpProxy(0);
-        httpProxy.start();
-        PROXY_PORT = httpProxy.connectedPort();
-    }
-
-    @AfterAll
-    public static void afterAll() {
-        httpProxy.stop();
-    }
-
-    HttpsProxyTest(WebServer server) {
-        int port = server.port();
-
-        Tls tls = Tls.builder()
-                .trustAll(true)
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-                .build();
-
-        client = WebClient.builder()
-                .baseUri("https://localhost:" + port)
-                .tls(tls)
-                .build();
     }
 
     @Test

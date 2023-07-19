@@ -16,9 +16,14 @@
 
 package io.helidon.nima.webclient.api;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.Socket;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -33,14 +38,19 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.nima.common.tls.Tls;
 
 /**
  * A definition of a proxy server to use for outgoing requests.
  */
 public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
+    private static final Tls NO_TLS = Tls.builder().enabled(false).build();
 
     /**
      * No proxy instance.
@@ -68,7 +78,7 @@ public class Proxy {
     private final ProxyType type;
     private final String host;
     private final int port;
-    private final Function<ClientUri, Boolean> noProxy;
+    private final Function<InetSocketAddress, Boolean> noProxy;
     private final Optional<String> username;
     private final Optional<char[]> password;
 
@@ -138,7 +148,7 @@ public class Proxy {
         return SYSTEM_PROXY;
     }
 
-    static Function<ClientUri, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
+    static Function<InetSocketAddress, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
         if (noProxyHosts.isEmpty()) {
             // if no exceptions, then simple
             return address -> false;
@@ -154,8 +164,8 @@ public class Proxy {
         }
 
         if (simple) {
-            return address -> noProxyHosts.contains(address.host())
-                    || noProxyHosts.contains(address.host() + ":" + address.port());
+            return address -> noProxyHosts.contains(address.getHostName())
+                    || noProxyHosts.contains(address.getHostName() + ":" + address.getPort());
         }
 
         List<BiFunction<String, Integer, Boolean>> hostMatchers = new LinkedList<>();
@@ -194,32 +204,146 @@ public class Proxy {
 
         // complicated - must check for . prefixes
         return address -> {
-            String host = resolveHost(address.host());
-            int port = address.port();
-
-            // first need to make sure whether I have an IP address or a hostname
-            if (isIpV4(host) || isIpV6Host(host)) {
-                // we have an IP address
-                for (BiFunction<String, Integer, Boolean> ipMatcher : ipMatchers) {
-                    if (ipMatcher.apply(host, port)) {
-                        LOGGER.log(Level.TRACE, () -> "IP Address " + host + " bypasses proxy");
-                        return true;
-                    }
-                }
-                LOGGER.log(Level.TRACE, () -> "IP Address " + host + " uses proxy");
+            InetAddress inetAddress = address.getAddress();
+            Set<String> toCheck;
+            if (inetAddress == null) {
+                toCheck = Set.of(address.getHostString());
             } else {
-                // we have a host name
-                for (BiFunction<String, Integer, Boolean> hostMatcher : hostMatchers) {
-                    if (hostMatcher.apply(host, port)) {
-                        LOGGER.log(Level.TRACE, () -> "Host " + host + " bypasses proxy");
-                        return true;
+                toCheck = new HashSet<>();
+                // if the address was created with an IP address, both may be the same
+                toCheck.add(resolveHost(inetAddress.getHostName()));
+                toCheck.add(resolveHost(inetAddress.getHostAddress()));
+            }
+
+            int port = address.getPort();
+
+            // we need to check both IP address and host name (if set)
+            for (String host : toCheck) {
+                // first need to make sure whether I have an IP address or a hostname
+                if (isIpV4(host) || isIpV6Host(host)) {
+                    // we have an IP address
+                    for (BiFunction<String, Integer, Boolean> ipMatcher : ipMatchers) {
+                        if (ipMatcher.apply(host, port)) {
+                            LOGGER.log(Level.TRACE, () -> "IP Address " + host + " bypasses proxy");
+                            return true;
+                        }
                     }
+                    LOGGER.log(Level.TRACE, () -> "IP Address " + host + " uses proxy");
+                } else {
+                    // we have a host name
+                    for (BiFunction<String, Integer, Boolean> hostMatcher : hostMatchers) {
+                        if (hostMatcher.apply(host, port)) {
+                            LOGGER.log(Level.TRACE, () -> "Host " + host + " bypasses proxy");
+                            return true;
+                        }
+                    }
+                    LOGGER.log(Level.TRACE, () -> "Host " + host + " uses proxy");
                 }
-                LOGGER.log(Level.TRACE, () -> "Host " + host + " uses proxy");
             }
 
             return false;
         };
+    }
+
+    public Socket tcpSocket(WebClient webClient,
+                            InetSocketAddress inetSocketAddress,
+                            SocketOptions socketOptions,
+                            boolean tls) {
+        return type.connect(webClient, this, inetSocketAddress, socketOptions, tls);
+    }
+
+    /**
+     * Get proxy type.
+     *
+     * @return the proxy type
+     */
+    public ProxyType type() {
+        return type;
+    }
+
+    /**
+     * Verifies whether the current host is inside noHosts.
+     *
+     * @param uri the uri
+     * @return true if it is in no hosts, otherwise false
+     */
+    private boolean isNoHosts(InetSocketAddress uri) {
+        return noProxy.apply(uri);
+    }
+
+    /**
+     * Creates an Optional with the InetSocketAddress of the server proxy for the specified uri.
+     *
+     * @param uri the uri
+     * @return the InetSocketAddress
+     */
+    private Optional<InetSocketAddress> address(InetSocketAddress uri) {
+        if (type == null || type == ProxyType.NONE || type == ProxyType.SYSTEM) {
+            return Optional.empty();
+        }
+
+        if (isNoHosts(uri)) {
+            return Optional.empty();
+        }
+        return Optional.of(new InetSocketAddress(host, port));
+    }
+
+    /**
+     * Returns the port.
+     *
+     * @return proxy port
+     */
+    public int port() {
+        return port;
+    }
+
+    /**
+     * Returns the host.
+     *
+     * @return proxy host
+     */
+    public String host() {
+        return host;
+    }
+
+    /**
+     * Returns an Optional with the username.
+     *
+     * @return the username
+     */
+    public Optional<String> username() {
+        return username;
+    }
+
+    /**
+     * Returns an Optional with the password.
+     *
+     * @return the password
+     */
+    public Optional<char[]> password() {
+        return password;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Proxy proxy = (Proxy) o;
+        return port == proxy.port
+                && type == proxy.type
+                && Objects.equals(host, proxy.host)
+                && Objects.equals(noProxy, proxy.noProxy)
+                && Objects.equals(username, proxy.username)
+                && Objects.equals(password, proxy.password);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, host, port, noProxy, username, password);
     }
 
     private static String resolveHost(String host) {
@@ -277,103 +401,114 @@ public class Proxy {
         return Optional.of(IP_V6_HOST.matcher(host).matches() || IP_V6_HEX_HOST.matcher(host).matches());
     }
 
-    /**
-     * Get proxy type.
-     *
-     * @return the proxy type
-     */
-    public ProxyType type() {
-        return type;
+    private static Socket connectToProxy(WebClient webClient,
+                                         InetSocketAddress proxyAddress,
+                                         InetSocketAddress targetAddress) {
+
+        WebClientConfig clientConfig = webClient.prototype();
+        TcpClientConnection connection = TcpClientConnection.create(webClient,
+                                                                    new ConnectionKey("http",
+                                                                          proxyAddress.getHostName(),
+                                                                          proxyAddress.getPort(),
+                                                                          NO_TLS,
+                                                                          clientConfig.dnsResolver(),
+                                                                          clientConfig.dnsAddressLookup(),
+                                                                          NO_PROXY),
+                                                                    List.of(),
+                                                        it -> false,
+                                                        it -> {})
+                .connect();
+
+        try (HttpClientResponse response = webClient.method(Http.Method.CONNECT)
+                .connection(connection)
+                .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())
+                .protocolId("http/1.1") // MUST be 1.1, if not available, proxy connection will fail
+                .header(Http.Header.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
+                .accept(MediaTypes.WILDCARD)
+                .request()) {
+            if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
+                throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
+            }
+        }
+        return connection.socket();
     }
 
-    Function<ClientUri, Boolean> noProxyPredicate() {
-        return noProxy;
-    }
-
     /**
-     * Verifies whether the current host is inside noHosts.
-     *
-     * @param uri the uri
-     * @return true if it is in no hosts, otherwise false
+     * Type of the proxy.
      */
-    public boolean isNoHosts(ClientUri uri) {
-        return noProxy.apply(uri);
-    }
+    public enum ProxyType {
 
-    /**
-     * Creates an Optional with the InetSocketAddress of the server proxy for the specified uri.
-     * @param uri the uri
-     * @return the InetSocketAddress
-     */
-    public Optional<InetSocketAddress> address(ClientUri uri) {
-        if (type == null || type == ProxyType.NONE) {
-            return Optional.empty();
-        } else if (type == ProxyType.SYSTEM) {
-            for (java.net.Proxy netProxy : ProxySelector.getDefault().select(uri.toUri())) {
-                if (netProxy.type() == java.net.Proxy.Type.HTTP) {
-                    return Optional.of((InetSocketAddress) netProxy.address());
+        /**
+         * No proxy.
+         */
+        NONE {
+            @Override
+            Socket connect(WebClient webClient,
+                           Proxy proxy,
+                           InetSocketAddress targetAddress,
+                           SocketOptions socketOptions,
+                           boolean tls) {
+                try {
+                    Socket socket = new Socket();
+                    socketOptions.configureSocket(socket);
+                    socket.connect(targetAddress, (int) socketOptions.connectTimeout().toMillis());
+                    return socket;
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
             }
-            return Optional.empty();
-        } else {
-            return Optional.of(new InetSocketAddress(host, port));
-        }
-    }
+        },
 
-    /**
-     * Returns the port.
-     *
-     * @return proxy port
-     */
-    public int port() {
-        return port;
-    }
+        /**
+         * Proxy obtained from system.
+         */
+        SYSTEM {
+            @Override
+            Socket connect(WebClient webClient,
+                           Proxy proxy,
+                           InetSocketAddress targetAddress,
+                           SocketOptions socketOptions,
+                           boolean tls) {
+                String scheme = tls ? "https" : "http";
+                List<java.net.Proxy> proxies = ProxySelector.getDefault()
+                        .select(URI.create(scheme + "://" + targetAddress.getHostName() + ":" + targetAddress.getPort()));
+                if (proxies.isEmpty()) {
+                    return NONE.connect(webClient, proxy, targetAddress, socketOptions, tls);
+                }
+                try {
+                    Socket socket = new Socket(proxies.get(0));
+                    socketOptions.configureSocket(socket);
+                    socket.connect(targetAddress, (int) socketOptions.connectTimeout().toMillis());
+                    return socket;
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        },
 
-    /**
-     * Returns the host.
-     *
-     * @return proxy host
-     */
-    public String host() {
-        return host;
-    }
+        /**
+         * HTTP proxy.
+         */
+        HTTP {
+            @Override
+            Socket connect(WebClient webClient,
+                           Proxy proxy,
+                           InetSocketAddress targetAddress,
+                           SocketOptions socketOptions,
+                           boolean tls) {
+                return proxy.address(targetAddress)
+                        .map(proxyAddress -> connectToProxy(webClient,
+                                                        proxyAddress,
+                                                        targetAddress))
+                        .orElseGet(() -> NONE.connect(webClient, proxy, targetAddress, socketOptions, tls));
+            }
+        };
 
-    /**
-     * Returns an Optional with the username.
-     * @return the username
-     */
-    public Optional<String> username() {
-        return username;
-    }
-
-    /**
-     * Returns an Optional with the password.
-     * @return the password
-     */
-    public Optional<char[]> password() {
-        return password;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Proxy proxy = (Proxy) o;
-        return port == proxy.port
-                && type == proxy.type
-                && Objects.equals(host, proxy.host)
-                && Objects.equals(noProxy, proxy.noProxy)
-                && Objects.equals(username, proxy.username)
-                && Objects.equals(password, proxy.password);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(type, host, port, noProxy, username, password);
+        abstract Socket connect(WebClient webClient,
+                                Proxy proxy,
+                                InetSocketAddress targetAddress,
+                                SocketOptions socketOptions,
+                                boolean tls);
     }
 
     /**
@@ -569,24 +704,4 @@ public class Proxy {
         }
     }
 
-    /**
-     * Type of the proxy.
-     */
-    public enum ProxyType {
-
-        /**
-         * No proxy.
-         */
-        NONE,
-
-        /**
-         * Proxy obtained from system.
-         */
-        SYSTEM,
-
-        /**
-         * HTTP proxy.
-         */
-        HTTP;
-    }
 }

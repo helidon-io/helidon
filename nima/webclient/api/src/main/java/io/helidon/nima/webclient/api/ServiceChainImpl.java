@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webclient.http1;
+package io.helidon.nima.webclient.api;
 
-import io.helidon.nima.webclient.api.WebClientServiceRequest;
-import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
 class ServiceChainImpl implements WebClientService.Chain {

@@ -18,12 +18,13 @@ package io.helidon.nima.http2.webclient;
 
 import java.time.Duration;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.nima.webclient.api.ClientRequest;
 
 /**
  * Request of HTTP/2 client.
  */
-public interface Http2ClientRequest extends ClientRequest<Http2ClientRequest, Http2ClientResponse> {
+public interface Http2ClientRequest extends ClientRequest<Http2ClientRequest> {
     /**
      * Priority defines a weight between 1 and 256 (inclusive) to prioritize this stream by the server.
      * Priorities are a suggestion.
@@ -66,4 +67,15 @@ public interface Http2ClientRequest extends ClientRequest<Http2ClientRequest, Ht
      * @return updated request
      */
     Http2ClientRequest flowControlTimeout(Duration timeout);
+
+    @Override
+    default Http2ClientResponse request() {
+        return submit(BufferData.EMPTY_BYTES);
+    }
+
+    @Override
+    Http2ClientResponse submit(Object entity);
+
+    @Override
+    Http2ClientResponse outputStream(OutputStreamHandler outputStreamConsumer);
 }
