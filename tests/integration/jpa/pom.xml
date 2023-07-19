@@ -37,10 +37,10 @@
         A set of tests that validate JPA API implementation
     </description>
 
-<!--    <modules>-->
-<!--        <module>model</module>-->
-<!--        <module>simple</module>-->
-<!--        <module>appl</module>-->
-<!--    </modules>-->
+    <modules>
+        <module>model</module>
+        <module>simple</module>
+        <module>appl</module>
+    </modules>
 
 </project>

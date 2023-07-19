@@ -58,10 +58,10 @@
         <version.lib.gson>2.9.0</version.lib.gson>
         <version.lib.grpc>1.56.0</version.lib.grpc>
         <version.lib.guava>32.0.1-jre</version.lib.guava>
-        <version.lib.h2>2.1.212</version.lib.h2>
+        <version.lib.h2>2.2.220</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.3.1</version.lib.handlebars>
-        <version.lib.hibernate>6.2.6.Final</version.lib.hibernate>
+        <version.lib.hibernate>6.1.7.Final</version.lib.hibernate>
         <version.lib.hibernate-validator>7.0.2.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
@@ -123,7 +123,7 @@
         <version.lib.mongodb>4.9.1</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-java>8.0.28</version.lib.mysql-connector-java>
-        <version.lib.narayana>5.12.0.Final</version.lib.narayana>
+        <version.lib.narayana>5.13.1.Final</version.lib.narayana>
         <version.lib.neo4j>4.4.11</version.lib.neo4j>
         <version.lib.netty>4.1.94.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
