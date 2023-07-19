@@ -181,6 +181,10 @@ class OciMetricsCdiExtensionTest {
         }
 
         @Override
+        public void useRealmSpecificEndpointTemplate(boolean b) {
+        }
+
+        @Override
         public void refreshClient() {
         }
 
