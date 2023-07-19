@@ -68,7 +68,7 @@ public class GreetService implements HttpService {
      */
     private final AtomicReference<String> greeting = new AtomicReference<>();
     private final Http1Client outboundClient = Http1Client.builder()
-            .useSystemServiceLoader(false)
+            .servicesDiscoverServices(false)
             .addService(WebClientSecurity.create())
             .build();
 

@@ -64,6 +64,7 @@ import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.WindowSize;
+import io.helidon.nima.webclient.api.ConnectionKey;
 import io.helidon.nima.webclient.spi.DnsResolver;
 
 import static java.lang.System.Logger.Level.DEBUG;

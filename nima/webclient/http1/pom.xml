@@ -80,13 +80,13 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-api</artifactId>
+            <groupId>io.helidon.inject.configdriven</groupId>
+            <artifactId>helidon-inject-configdriven-api</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.pico.configdriven</groupId>
-            <artifactId>helidon-pico-configdriven-runtime</artifactId>
+            <groupId>io.helidon.inject.configdriven</groupId>
+            <artifactId>helidon-inject-configdriven-runtime</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -129,16 +129,16 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
-                            <groupId>io.helidon.pico.configdriven</groupId>
-                            <artifactId>helidon-pico-configdriven-processor</artifactId>
+                            <groupId>io.helidon.inject.configdriven</groupId>
+                            <artifactId>helidon-inject-configdriven-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>io.helidon.pico.configdriven</groupId>
-                        <artifactId>helidon-pico-configdriven-processor</artifactId>
+                        <groupId>io.helidon.inject.configdriven</groupId>
+                        <artifactId>helidon-inject-configdriven-processor</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

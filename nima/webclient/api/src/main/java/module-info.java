@@ -31,8 +31,8 @@ module io.helidon.nima.webclient.api {
     requires static io.helidon.common.features.api;
     // @ConfiguredOption etc
     requires static io.helidon.config.metadata;
-    requires static io.helidon.pico.configdriven.api;
-    requires static io.helidon.pico.configdriven.runtime;
+    requires static io.helidon.inject.configdriven.api;
+    requires static io.helidon.inject.configdriven.runtime;
     // Injection support
     requires static jakarta.inject;
 

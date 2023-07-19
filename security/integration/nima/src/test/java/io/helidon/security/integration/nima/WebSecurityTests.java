@@ -19,7 +19,8 @@ package io.helidon.security.integration.nima;
 import java.util.Set;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.security.WebClientSecurity;
@@ -46,7 +47,7 @@ abstract class WebSecurityTests {
     static final String AUDIT_MESSAGE_FORMAT = "Unit test message format";
 
     private final UnitTestAuditProvider myAuditProvider;
-    private final Http1Client securityClient;
+    private final WebClient securityClient;
     private final Http1Client webClient;
 
     WebSecurityTests(WebServer server, Http1Client webClient) {
@@ -108,7 +109,7 @@ abstract class WebSecurityTests {
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
 
-        try (Http1ClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
+        try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
 
             String header = response.headers()
@@ -133,7 +134,7 @@ abstract class WebSecurityTests {
     }
 
     private void testForbidden(String uri, String username, String password) {
-        try (Http1ClientResponse response = callProtected(uri, username, password)) {
+        try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
                     response.status(),
                     is(Http.Status.FORBIDDEN_403));
@@ -146,7 +147,7 @@ abstract class WebSecurityTests {
                                Set<String> expectedRoles,
                                Set<String> invalidRoles) {
 
-        try (Http1ClientResponse response = callProtected(uri, username, password)) {
+        try (HttpClientResponse response = callProtected(uri, username, password)) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
 
@@ -160,7 +161,7 @@ abstract class WebSecurityTests {
         }
     }
 
-    private Http1ClientResponse callProtected(String uri, String username, String password) {
+    private HttpClientResponse callProtected(String uri, String username, String password) {
         return securityClient.get(uri)
                 .property(EP_PROPERTY_OUTBOUND_USER, username)
                 .property(EP_PROPERTY_OUTBOUND_PASSWORD, password)

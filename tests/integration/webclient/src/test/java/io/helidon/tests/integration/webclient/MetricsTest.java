@@ -18,7 +18,7 @@ package io.helidon.tests.integration.webclient;
 import io.helidon.common.http.Http;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.metrics.WebClientMetrics;
 import io.helidon.nima.webclient.spi.WebClientService;

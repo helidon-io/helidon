@@ -33,7 +33,7 @@ import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 import io.helidon.nima.webclient.spi.Protocol;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
 import io.helidon.nima.webclient.spi.ProtocolProvider;
-import io.helidon.pico.configdriven.api.ConfigDriven;
+import io.helidon.inject.configdriven.api.ConfigDriven;
 
 import jakarta.inject.Inject;
 

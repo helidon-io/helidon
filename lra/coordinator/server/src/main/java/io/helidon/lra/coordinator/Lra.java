@@ -27,13 +27,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
@@ -167,7 +166,7 @@ class Lra {
         lra.isChild = true;
     }
 
-    Function<ClientRequestHeaders, WritableHeaders<?>> headers() {
+    Consumer<ClientRequestHeaders> headers() {
         return headers -> {
             headers.add(LRA_HTTP_CONTEXT_HEADER_NAME, lraContextId());
             headers.add(LRA_HTTP_ENDED_CONTEXT_HEADER_NAME, lraContextId());
@@ -175,7 +174,6 @@ class Lra {
                     .map(URI::toASCIIString)
                     .ifPresent(s -> headers.add(LRA_HTTP_PARENT_CONTEXT_HEADER_NAME, s));
             headers.add(LRA_HTTP_RECOVERY_HEADER_NAME, lraContextId() + "/recovery");
-            return headers;
         };
     }
 

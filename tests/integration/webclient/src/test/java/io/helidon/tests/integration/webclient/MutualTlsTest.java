@@ -76,7 +76,7 @@ public class MutualTlsTest {
         Http1Client webClient = createWebClient(CONFIG.get("success"));
         String result = webClient.get()
                 .uri("http://localhost:" + server.port())
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(result, is("Hello world unsecured!"));
         assertThat(exec(webClient, "https", server.port("secured")), is("Hello Helidon-client!"));
@@ -136,7 +136,7 @@ public class MutualTlsTest {
         UncheckedIOException ex = assertThrows(UncheckedIOException.class, () -> exec(clientSecond, "https", portSecured));
         assertThat(ex.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
 
-        String response = clientFirst.get().uri("http://localhost:" + portDefault + "/reload").request(String.class);
+        String response = clientFirst.get().uri("http://localhost:" + portDefault + "/reload").requestEntity(String.class);
         assertThat(response, is("SslContext reloaded. Affected named socket: secured"));
 
         assertThat(exec(clientSecond, "https", portSecured), is("Hello Oracle-client!"));
@@ -144,7 +144,7 @@ public class MutualTlsTest {
         ex = assertThrows(UncheckedIOException.class, () -> exec(clientFirst, "https", portSecured));
         assertThat(ex.getCause().getMessage(), endsWith("unable to find valid certification path to requested target"));
 
-        response = clientFirst.get().uri("http://localhost:" + portDefault + "/reload").request(String.class);
+        response = clientFirst.get().uri("http://localhost:" + portDefault + "/reload").requestEntity(String.class);
         assertThat(response, is("SslContext reloaded. Affected named socket: secured"));
 
         assertThat(exec(clientFirst, "https", portSecured), is("Hello Helidon-client!"));
@@ -161,7 +161,7 @@ public class MutualTlsTest {
     }
 
     private String exec(Http1Client webClient, String scheme, int port) {
-        return webClient.get(scheme + "://localhost:" + port).request(String.class);
+        return webClient.get(scheme + "://localhost:" + port).requestEntity(String.class);
     }
 
     private static void plainRouting(HttpRouting.Builder routing) {

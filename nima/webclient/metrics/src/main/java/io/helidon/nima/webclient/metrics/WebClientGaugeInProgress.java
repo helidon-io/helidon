@@ -17,8 +17,8 @@ package io.helidon.nima.webclient.metrics;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
 /**
  * Gauge which counts all requests in progress.

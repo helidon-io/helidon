@@ -7,7 +7,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
 import io.helidon.nima.webclient.spi.ProtocolConfigProvider;
-import io.helidon.pico.configdriven.api.ConfigBean;
+import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * Web client configuration.

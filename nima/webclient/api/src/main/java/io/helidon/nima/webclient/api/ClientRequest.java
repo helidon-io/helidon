@@ -253,7 +253,10 @@ public interface ClientRequest<T extends ClientRequest<T>> {
         if (typedResponse.status().family() == Http.Status.Family.SUCCESSFUL) {
             return typedResponse.entity();
         }
-        throw new HttpException("Failed to read entity, as response status is not success", typedResponse.status(), true);
+        if (typedResponse.status() == Http.Status.BAD_REQUEST_400) {
+            throw new IllegalArgumentException("Failed to read entity, received bad request");
+        }
+        throw new IllegalStateException(typedResponse.status() + ": Failed to read entity, as response status is not success");
     }
 
     /**

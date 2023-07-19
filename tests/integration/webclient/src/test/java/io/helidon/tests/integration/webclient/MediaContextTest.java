@@ -87,7 +87,7 @@ public class MediaContextTest extends TestParent {
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .build();
 
-        String greeting = client.get().request(String.class);
+        String greeting = client.get().requestEntity(String.class);
         assertThat(greeting, is(JSON_GREETING.toString()));
     }
 
@@ -119,7 +119,7 @@ public class MediaContextTest extends TestParent {
                         .build())
                 .build();
 
-        JsonObject jsonObject = client.get().request(JsonObject.class);
+        JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
         assertThat(jsonObject, is(not(nullValue())));
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->

@@ -16,9 +16,6 @@
 
 package io.helidon.jersey.connector;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
@@ -42,7 +39,6 @@ import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
-import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
@@ -54,7 +50,6 @@ import org.glassfish.jersey.internal.util.PropertiesHelper;
 
 import static org.glassfish.jersey.client.ClientProperties.CONNECT_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS;
-import static org.glassfish.jersey.client.ClientProperties.OUTBOUND_CONTENT_LENGTH_BUFFER;
 import static org.glassfish.jersey.client.ClientProperties.READ_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.getValue;
 
@@ -95,7 +90,7 @@ class HelidonConnector implements Connector {
             builder.readTimeout(Duration.ofMillis(getValue(properties, READ_TIMEOUT, DEFAULT_TIMEOUT)));
         }
         if (properties.containsKey(FOLLOW_REDIRECTS)) {
-            builder.followRedirect(getValue(properties, FOLLOW_REDIRECTS, true));
+            builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
         }
         httpClient = builder.build();
     }
@@ -218,22 +213,10 @@ class HelidonConnector implements Connector {
         Http1ClientRequest httpRequest = mapRequest(request);
 
         if (request.hasEntity()) {
-            // if following redirects we need to buffer entity for WebClient
-            if (httpRequest.followRedirects()) {
-                int bufferSize = request.resolveProperty(OUTBOUND_CONTENT_LENGTH_BUFFER, 8 * 1024);
-                try (ByteArrayOutputStream baos = new ByteArrayOutputStream(bufferSize)) {
-                    request.setStreamProvider(contentLength -> baos);
-                    ((ProcessingRunnable) request::writeEntity).run();
-                    httpResponse = httpRequest.submit(baos.toByteArray());
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            } else {
-                httpResponse = httpRequest.outputStream(os -> {
-                    request.setStreamProvider(length -> os);
-                    request.writeEntity();
-                });
-            }
+            httpResponse = httpRequest.outputStream(os -> {
+                request.setStreamProvider(length -> os);
+                request.writeEntity();
+            });
         } else {
             httpResponse = httpRequest.request();
         }
@@ -293,19 +276,5 @@ class HelidonConnector implements Connector {
             }
         }
         return Optional.empty();
-    }
-
-    @FunctionalInterface
-    private interface ProcessingRunnable extends Runnable {
-        void runOrThrow() throws IOException;
-
-        @Override
-        default void run() {
-            try {
-                runOrThrow();
-            } catch (IOException e) {
-                throw new ProcessingException("Error writing entity:", e);
-            }
-        }
     }
 }

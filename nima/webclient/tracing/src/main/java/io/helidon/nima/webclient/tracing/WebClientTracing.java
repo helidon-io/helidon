@@ -79,7 +79,7 @@ public class WebClientTracing implements WebClientService {
 
         Tracer tracer = tracerFunction.apply(request.context());
 
-        UriHelper uriInfo = request.uri();
+        ClientUri uriInfo = request.uri();
         String url = uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path();
         Span.Builder spanBuilder = tracer.spanBuilder(method + "-" + url);
 

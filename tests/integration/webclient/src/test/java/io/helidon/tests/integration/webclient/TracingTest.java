@@ -59,7 +59,7 @@ class TracingTest extends TestParent {
 
         Http1Client client = Http1Client.builder()
                 .baseUri(uri)
-                .useSystemServiceLoader(false)
+                .servicesDiscoverServices(false)
                 .addService(WebClientTracing.create(tracer))
                 .mediaContext(MediaContext.builder()
                         .addMediaSupport(JsonpSupport.create())
@@ -98,7 +98,7 @@ class TracingTest extends TestParent {
         context.register(tracer);
         Http1Client client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port() + "/greet")
-                .useSystemServiceLoader(false)
+                .servicesDiscoverServices(false)
                 .addService(WebClientTracing.create(tracer))
                 .mediaContext(MediaContext.builder()
                         .addMediaSupport(JsonpSupport.create())

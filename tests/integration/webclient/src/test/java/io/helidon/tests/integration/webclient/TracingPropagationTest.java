@@ -62,7 +62,7 @@ class TracingPropagationTest {
         this.client = Http1Client.builder()
                 .baseUri(this.uri)
                 .config(Config.create().get("client"))
-                .useSystemServiceLoader(false)
+                .servicesDiscoverServices(false)
                 .addService(WebClientTracing.create(tracer))
                 .mediaContext(MediaContext.builder()
                         .addMediaSupport(JsonpSupport.create())

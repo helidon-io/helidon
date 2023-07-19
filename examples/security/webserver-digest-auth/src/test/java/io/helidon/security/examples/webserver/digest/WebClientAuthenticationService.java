@@ -18,8 +18,8 @@ package io.helidon.security.examples.webserver.digest;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
 /**

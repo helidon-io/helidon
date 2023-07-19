@@ -17,9 +17,9 @@ package io.helidon.tests.integration.webclient;
 
 import java.net.URI;
 
-import io.helidon.nima.webclient.UriHelper;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webserver.WebServer;
@@ -49,7 +49,7 @@ class WebclientServiceValuePropagationTest extends TestParent {
 
         String response = webClient.get("/greet/valuesPropagated")
                 .path("replace/me")
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, is("Hi Test"));
     }
@@ -73,7 +73,7 @@ class WebclientServiceValuePropagationTest extends TestParent {
 
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-            UriHelper uri = request.uri();
+            ClientUri uri = request.uri();
             uri.scheme("http");
             uri.host("localhost");
             uri.port(server.port());

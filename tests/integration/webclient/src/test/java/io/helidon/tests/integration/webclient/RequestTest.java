@@ -20,7 +20,7 @@ import java.net.URI;
 import java.util.Collections;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -60,7 +60,7 @@ class RequestTest extends TestParent {
 
     @Test
     public void testHelloWorld() {
-        JsonObject jsonObject = client.get().request(JsonObject.class);
+        JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
     }
 
@@ -77,7 +77,7 @@ class RequestTest extends TestParent {
     public void testFollowRedirect() {
         JsonObject jsonObject = client.get()
                 .path("/redirect")
-                .request(JsonObject.class);
+                .requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
 
         try (Http1ClientResponse response = client.get()
@@ -90,7 +90,7 @@ class RequestTest extends TestParent {
 
     @Test
     public void testFollowRedirectPath() {
-        JsonObject jsonObject = client.get("/redirectPath").request(JsonObject.class);
+        JsonObject jsonObject = client.get("/redirectPath").requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello World!"));
     }
 
@@ -110,7 +110,7 @@ class RequestTest extends TestParent {
             assertThat(response.status().code(), is(204));
         }
 
-        JsonObject jsonObject = client.get().request(JsonObject.class);
+        JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hola World!"));
 
         try (Http1ClientResponse response = client.put("/greeting").submit(JSON_OLD_GREETING)) {
@@ -120,7 +120,7 @@ class RequestTest extends TestParent {
 
     @Test
     public void testEntityNotHandled() {
-        try (ClientResponse response = client.get("/incorrect").request()) {
+        try (HttpClientResponse response = client.get("/incorrect").request()) {
             assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
         }
     }
@@ -150,10 +150,10 @@ class RequestTest extends TestParent {
     @Test
     public void reuseRequestBuilder() {
         Http1ClientRequest request = client.get();
-        JsonObject response = request.request(JsonObject.class);
+        JsonObject response = request.requestEntity(JsonObject.class);
         assertThat(response, notNullValue());
         assertThat(response.getString("message"), is("Hello World!"));
-        response = request.request(JsonObject.class);
+        response = request.requestEntity(JsonObject.class);
         assertThat(response, notNullValue());
         assertThat(response.getString("message"), is("Hello World!"));
     }
