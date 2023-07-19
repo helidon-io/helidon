@@ -437,15 +437,15 @@ class DefaultServices implements Services, ServiceBinder, Resettable {
               DefaultInjectionPlanBinder binder,
               Application app) {
         String appName = app.named().orElse(app.getClass().getName());
-        boolean isLoggable = DefaultInjectionServices.LOGGER.isLoggable(System.Logger.Level.INFO);
+        boolean isLoggable = DefaultInjectionServices.LOGGER.isLoggable(System.Logger.Level.DEBUG);
         if (isLoggable) {
-            DefaultInjectionServices.LOGGER.log(System.Logger.Level.INFO, "starting binding application: " + appName);
+            DefaultInjectionServices.LOGGER.log(System.Logger.Level.DEBUG, "Starting binding application: " + appName);
         }
         try {
             app.configure(binder);
             bind(createServiceProvider(app, injectionServices));
             if (isLoggable) {
-                DefaultInjectionServices.LOGGER.log(System.Logger.Level.INFO, "finished binding application: " + appName);
+                DefaultInjectionServices.LOGGER.log(System.Logger.Level.DEBUG, "Finished binding application: " + appName);
             }
         } catch (Exception e) {
             throw new InjectionException("Failed to process: " + app, e);

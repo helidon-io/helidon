@@ -184,7 +184,7 @@ public interface InjectionServices {
      * <p>
      * If the service provider does not support shutdown an empty is returned.
      * <p>
-     * The default reference implementation for Injection will return a map of all service types that were deactivated to any
+     * The default reference implementation will return a map of all service types that were deactivated to any
      * throwable that was observed during that services shutdown sequence.
      * <p>
      * The order in which services are deactivated is dependent upon whether the {@link #activationLog()} is available.
@@ -194,6 +194,8 @@ public interface InjectionServices {
      * the same {@link RunLevel} value then the ordering will be based upon the implementation's comparator.
      * <p>
      * When shutdown returns, it is guaranteed that all services were shutdown, or failed to achieve shutdown.
+     * <p>
+     * The shutdown timeout from {@link InjectionServicesConfigBlueprint#shutdownTimeout()} will be applied as the default.
      *
      * @return a map of all managed service types deactivated to results of deactivation, or empty if shutdown is not supported
      */
