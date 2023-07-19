@@ -30,7 +30,7 @@ cd ${WS_DIR}/tests/integration/native-image
 # Prime build all native-image tests
 mvn ${MAVEN_ARGS} -e clean install
 
-echo Skipping jlink tests, until we switch to Smallrye based Jandex in build tools (org.jboss fails with NPE on Java 21)
+echo Skipping jlink tests, until we switch to Smallrye based Jandex in build tools - org.jboss fails with NPE on Java 21
 exit 0
 
 # Build jlink images
