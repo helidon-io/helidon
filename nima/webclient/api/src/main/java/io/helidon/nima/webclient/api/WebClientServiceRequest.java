@@ -22,8 +22,6 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQueryWriteable;
 
 /**
  * Request to SPI {@link io.helidon.nima.webclient.spi.WebClientService} that supports modification of the outgoing request.
@@ -54,20 +52,6 @@ public interface WebClientServiceRequest {
      * @return an HTTP version
      */
     String protocolId();
-
-    /**
-     * Returns query parameters.
-     *
-     * @return an parameters representing query parameters
-     */
-    UriQueryWriteable query();
-
-    /**
-     * Returns a decoded request URI fragment without leading hash '#' character.
-     *
-     * @return a decoded URI fragment
-     */
-    UriFragment fragment();
 
     /**
      * Configured request headers.
@@ -117,11 +101,4 @@ public interface WebClientServiceRequest {
      * @return properties that were configured (mutable)
      */
     Map<String, String> properties();
-
-    /**
-     * Set the new fragment of the request (decoded).
-     *
-     * @param fragment new request fragment
-     */
-    void fragment(String fragment);
 }

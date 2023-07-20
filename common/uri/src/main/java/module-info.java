@@ -21,5 +21,8 @@ module io.helidon.common.uri {
     // Parameters used in public API
     requires transitive io.helidon.common.parameters;
 
+    requires io.helidon.builder.api;
+    requires static io.helidon.config.metadata;
+
     exports io.helidon.common.uri;
 }

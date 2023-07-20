@@ -30,18 +30,11 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
     Http.Method method();
 
     /**
-     * Query of this request.
+     * URI of this request.
      *
-     * @return query
+     * @return client URI
      */
-    UriQueryWriteable query();
-
-    /**
-     * Fragment of this request.
-     *
-     * @return fragment
-     */
-    UriFragment fragment();
+    ClientUri uri();
 
     /**
      * Configured properties.
@@ -63,20 +56,6 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      * @return client connection if explicitly defined
      */
     Optional<ClientConnection> connection();
-
-    /**
-     * Whether to follow redirects.
-     *
-     * @return follow redirects
-     */
-    boolean followRedirects();
-
-    /**
-     * Maximal number of redirects to follow. This is to prevent infinite redirects.
-     *
-     * @return max number of redirects
-     */
-    int maxRedirects();
 
     /**
      * Read timeout.

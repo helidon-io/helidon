@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.tests.integration.client;
+package io.helidon.nima.tests.integration.webclient;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

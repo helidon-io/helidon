@@ -105,7 +105,7 @@ class CoordinatorTest {
     }
 
     private String start() {
-        return client.post("/lra-coordinator/start").request(String.class);
+        return client.post("/lra-coordinator/start").requestEntity(String.class);
     }
 
     private static LRAStatus getParsedStatusOfLra(String lraId) {
@@ -115,7 +115,7 @@ class CoordinatorTest {
                 .baseUri(lraId)
                 .build()
                 .get()
-                .request(JsonArray.class)
+                .requestEntity(JsonArray.class)
                 .stream()
                 .map(JsonValue::asJsonObject)
                 .map(jo -> jo.getString("status"))
@@ -131,7 +131,7 @@ class CoordinatorTest {
                 .baseUri(lraId + "/status")
                 .build()
                 .get()
-                .request(String.class);
+                .requestEntity(String.class);
         return LRAStatus.valueOf(lraStatus);
     }
 

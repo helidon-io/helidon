@@ -52,6 +52,30 @@ public interface UriPath {
     }
 
     /**
+     * Create a new path from its decoded representation.
+     *
+     * @param decodedPath path as used in routing
+     * @return a new HTTP path
+     */
+    static UriPath createFromDecoded(String decodedPath) {
+        String pathNoParams = UriPathHelper.stripMatrixParams(decodedPath);
+        if (pathNoParams.length() == decodedPath.length()) {
+            return new UriPathNoParam(UriEncoding.encode(decodedPath, UriEncoding.Type.PATH));
+        }
+        return new UriPathMatrix(UriEncoding.encode(decodedPath, UriEncoding.Type.PATH),
+                                 UriEncoding.encode(pathNoParams, UriEncoding.Type.PATH));
+    }
+
+    /**
+     * Create a new root path.
+     *
+     * @return a new HTTP path
+     */
+    static UriPath root() {
+        return create("/");
+    }
+
+    /**
      * Path as it was received on the wire (Server request), or path as it will be sent
      * over the wire (Client request). This path may include path parameters.
      *

@@ -208,5 +208,15 @@ class HttpClientTest {
         public FakeHttpClientRequest keepAlive(boolean keepAlive) {
             return this;
         }
+
+        @Override
+        public boolean followRedirects() {
+            return true;
+        }
+
+        @Override
+        public int maxRedirects() {
+            return 5;
+        }
     }
 }

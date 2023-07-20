@@ -17,57 +17,34 @@
 package io.helidon.nima.webclient.api;
 
 import java.net.URI;
-import java.util.Map;
+import java.net.URISyntaxException;
 
-import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriInfo;
+import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 
 /**
  * URI abstraction for WebClient.
  */
-public class ClientUri {
+public class ClientUri implements UriInfo {
+    private final UriInfo base;
+    private final UriQueryWriteable query;
 
-    private static final Map<String, Integer> DEFAULT_PORTS = Map.of(
-            "http", 80,
-            "https", 443
-    );
-    private static final String EMPTY_STRING = "";
-    private final String baseScheme;
-    private final String baseAuthority;
-    private final String basePath;
-    private final String baseHost;
-    private final int basePort;
-
-    private String scheme;
-    private String authority;
-    private String path = EMPTY_STRING;
-    private String host;
-    private int port;
+    private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
 
     private ClientUri() {
-        this.baseScheme = null;
-        this.baseAuthority = null;
-        this.basePath = null;
-        this.baseHost = null;
-        this.basePort = -1;
+        this.base = null;
+        this.query = UriQueryWriteable.create();
     }
 
     private ClientUri(ClientUri baseUri) {
-        this.baseScheme = baseUri.scheme();
-        this.baseAuthority = baseUri.authority();
-        this.basePath = baseUri.path();
-        this.baseHost = baseUri.host();
-        this.basePort = baseUri.port();
+        this.base = baseUri;
+        this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
-
-        this.scheme = baseScheme;
-        this.authority = baseAuthority;
-        this.path = basePath;
-        this.host = baseHost;
-        this.port = basePort;
+        this.query = UriQueryWriteable.create().from(baseUri.query());
     }
 
     /**
@@ -93,17 +70,19 @@ public class ClientUri {
      * Create a new client URI from an existing URI.
      *
      * @param baseUri base URI
-     * @param query query to update with data from the URI
      * @return a new client uri
      */
-    public static ClientUri create(URI baseUri, UriQueryWriteable query) {
-        return create().resolve(baseUri, query);
+    public static ClientUri create(URI baseUri) {
+        return create().resolve(baseUri);
     }
 
     @Override
     public String toString() {
-        String encodedPath = skipUriEncoding ? path : UriEncoding.encodeUri(path);
-        return scheme + "://" + authority + (encodedPath.startsWith("/") ? "" : "/") + encodedPath;
+        UriInfo info = uriBuilder.query(this.query).build();
+        String encodedPath = pathWithQueryAndFragment();
+        return info.scheme() + "://"
+                + info.authority()
+                + (encodedPath.startsWith("/") ? "" : "/") + encodedPath;
     }
 
     /**
@@ -112,184 +91,178 @@ public class ClientUri {
      * @return the converted URI
      */
     public URI toUri() {
-        return URI.create(toString());
+        UriInfo info = uriBuilder.build();
+        return URI.create(info.scheme() + "://"
+                + info.authority()
+                + pathWithQueryAndFragment());
     }
 
     /**
      * Scheme of this URI.
      *
      * @param scheme to use (such as {@code http})
+     * @return updated instance
      */
-    public void scheme(String scheme) {
-        this.scheme = scheme;
+    public ClientUri scheme(String scheme) {
+        uriBuilder.scheme(scheme);
+        return this;
     }
 
     /**
      * Host of this URI.
      *
      * @param host to connect to
+     * @return updated instance
      */
-    public void host(String host) {
-        this.host = host;
-        authority(host, port);
+    public ClientUri host(String host) {
+        uriBuilder.host(host);
+        return this;
     }
 
     /**
      * Port of this URI.
      *
      * @param port to connect to
+     * @return updated instance
      */
-    public void port(int port) {
-        this.port = port;
-        authority(host, port);
+    public ClientUri port(int port) {
+        uriBuilder.port(port);
+        return this;
     }
 
     /**
      * Path of this URI.
      *
      * @param path path to use
-     * @param query writable query to extract query parameters to
+     * @return updated instance
      */
-    public void path(String path, UriQueryWriteable query) {
-        this.path = extractQuery(path, query);
+    public ClientUri path(String path) {
+        uriBuilder.path(extractQuery(path));
+        return this;
     }
 
     /**
      * Whether to skip uri encoding.
      *
      * @param skipUriEncoding skip uri encoding
+     * @return updated instance
      */
-    public void skipUriEncoding(boolean skipUriEncoding) {
+    public ClientUri skipUriEncoding(boolean skipUriEncoding) {
         this.skipUriEncoding = skipUriEncoding;
+        return this;
     }
 
     /**
      * Resolve the provided URI against this URI and extract query from it.
      *
-     * @param uri   URI to use
-     * @param query query to configure from the provided URI
+     * @param uri URI to use
      * @return updated instance
      */
-    public ClientUri resolve(URI uri, UriQueryWriteable query) {
+    public ClientUri resolve(URI uri) {
         if (uri.isAbsolute()) {
-            this.scheme = uri.getScheme();
-            this.path = extractQuery(uri.getPath(), query);
-            this.host = uri.getHost();
-            this.port = uri.getPort();
-            authority(host, port);
-            return this;
+            this.uriBuilder = UriInfo.builder();
+            this.query.clear();
         }
-        String uriPath = extractQuery(uri.getPath(), query);
 
-        if (this.scheme == null) {
-            this.scheme = resolve(baseScheme, uri.getScheme());
-            this.path = resolvePath(basePath, uriPath);
-            this.host = resolve(baseHost, uri.getHost());
-            this.port = resolvePort(basePort, uri.getPort());
-            if (host == null) {
-                return this;
-            }
-            if (uri.getHost() == null && uri.getPort() == -1) {
-                this.authority = baseAuthority;
-            } else {
-                authority(host, port);
-            }
-        } else {
-            // we already have a custom URI
-            this.scheme = resolve(this.scheme, uri.getScheme());
-            this.path = resolvePath(this.path, uriPath);
-            this.host = resolve(this.host, uri.getHost());
-            this.port = resolvePort(this.port, uri.getPort());
-
-            if (uri.getHost() != null || uri.getPort() != -1) {
-                authority(host, port);
-            }
+        if (uri.getScheme() != null) {
+            uriBuilder.scheme(uri.getScheme());
         }
+        if (uri.getHost() != null) {
+            uriBuilder.host(uri.getHost());
+        }
+        if (uri.getPort() != -1) {
+            uriBuilder.port(uri.getPort());
+        }
+
+        String uriPath = extractQuery(uri.getPath());
+        uriBuilder.path(resolvePath(uriBuilder.path().path(), uriPath));
+
+        if (uri.getRawFragment() != null) {
+            uriBuilder.fragment(UriFragment.create(uri.getRawFragment()));
+        }
+
+        return this;
+    }
+
+    @Override
+    public String scheme() {
+        return uriBuilder.scheme();
+    }
+
+    @Override
+    public String host() {
+        return uriBuilder.host();
+    }
+
+    @Override
+    public UriQuery query() {
+        return query;
+    }
+
+    @Override
+    public UriFragment fragment() {
+        return uriBuilder.fragment();
+    }
+
+    @Override
+    public String authority() {
+        return uriBuilder.build().authority();
+    }
+
+    @Override
+    public int port() {
+        return uriBuilder.build().port();
+    }
+
+    @Override
+    public UriPath path() {
+        return uriBuilder.path();
+    }
+
+    public ClientUri fragment(UriFragment fragment) {
+        uriBuilder.fragment(fragment);
         return this;
     }
 
     /**
-     * Scheme of this URI.
+     * URI query that can update values.
      *
-     * @return scheme
+     * @return writeable query
      */
-    public String scheme() {
-        return scheme;
-    }
-
-    /**
-     * Authority of this URI.
-     *
-     * @return authority
-     */
-    public String authority() {
-        return authority;
-    }
-
-    /**
-     * Host of this URI.
-     *
-     * @return host
-     */
-    public String host() {
-        return host;
-    }
-
-    /**
-     * Port of this URI.
-     *
-     * @return port
-     */
-    public int port() {
-        if (this.port == -1) {
-            if (this.scheme == null) {
-                return -1;
-            }
-            return DEFAULT_PORTS.getOrDefault(this.scheme, -1);
-        }
-        return port;
-    }
-
-    /**
-     * Path of this URI.
-     *
-     * @return path
-     */
-    public String path() {
-        return path;
+    public UriQueryWriteable writeableQuery() {
+        return query;
     }
 
     /**
      * Encoded path with query and fragment.
      *
-     * @param query query to use (may be empty)
-     * @param fragment fragment to use (may be empty)
      * @return string containing encoded path with query
      */
-    public String pathWithQueryAndFragment(UriQuery query, UriFragment fragment) {
-        String queryString = skipUriEncoding ? query.value() : query.rawValue();
+    public String pathWithQueryAndFragment() {
+        UriInfo info = uriBuilder.query(query).build();
+
+        String queryString = skipUriEncoding ? info.query().value() : info.query().rawValue();
+        String path = skipUriEncoding ? info.path().path() : info.path().rawPath();
 
         boolean hasQuery = !queryString.isEmpty();
 
-        String path;
-        if (this.path.isEmpty()) {
+        if (path.isEmpty()) {
             path = "/";
-        } else {
-            path = skipUriEncoding ? this.path : UriEncoding.encodeUri(this.path);
         }
 
         if (hasQuery) {
             path = path + '?' + queryString;
         }
-        if (fragment.hasValue()) {
-            String fragmentValue = skipUriEncoding ? fragment.value() : fragment.rawValue();
+
+        if (info.fragment().hasValue()) {
+            String fragmentValue = skipUriEncoding ? info.fragment().value() : info.fragment().rawValue();
             path = path + '#' + fragmentValue;
         }
 
         return path;
     }
 
-    private static String extractQuery(String path, UriQueryWriteable query) {
+    private String extractQuery(String path) {
         if (path != null) {
             int i = path.indexOf('?');
             if (i > -1) {
@@ -299,21 +272,6 @@ public class ClientUri {
             }
         }
         return path;
-    }
-
-    private void authority(String host, int port) {
-        if (port == -1) {
-            this.authority = host;
-        } else {
-            this.authority = host + ":" + port;
-        }
-    }
-
-    private int resolvePort(int port, int resolvePort) {
-        if (resolvePort == -1) {
-            return port;
-        }
-        return resolvePort;
     }
 
     private String resolvePath(String path, String resolvePath) {
@@ -341,12 +299,5 @@ public class ClientUri {
         return path
                 + "/"
                 + resolvePath;
-    }
-
-    private String resolve(String originalValue, String resolveValue) {
-        if (resolveValue == null) {
-            return originalValue;
-        }
-        return resolveValue;
     }
 }

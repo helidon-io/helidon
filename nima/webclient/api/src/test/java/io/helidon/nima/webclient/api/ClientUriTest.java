@@ -18,7 +18,7 @@ package io.helidon.nima.webclient.api;
 
 import java.net.URI;
 
-import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.common.uri.UriPath;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,68 +28,62 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ClientUriTest {
     @Test
     void testDefaults() {
-        UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = ClientUri.create(URI.create("http://localhost"), query);
+        ClientUri helper = ClientUri.create(URI.create("http://localhost"));
 
-        assertThat(helper.authority(), is("localhost"));
+        assertThat(helper.authority(), is("localhost:80"));
         assertThat(helper.host(), is("localhost"));
-        assertThat(helper.path(), is(""));
+        assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("http"));
     }
 
     @Test
     void testDefaultsHttps() {
-        UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = ClientUri.create(URI.create("https://localhost"), query);
+        ClientUri helper = ClientUri.create(URI.create("https://localhost"));
 
-        assertThat(helper.authority(), is("localhost"));
+        assertThat(helper.authority(), is("localhost:443"));
         assertThat(helper.host(), is("localhost"));
-        assertThat(helper.path(), is(""));
+        assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(443));
         assertThat(helper.scheme(), is("https"));
     }
 
     @Test
     void testNonDefaults() {
-        UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"), query);
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"));
 
         assertThat(helper.authority(), is("localhost:8080"));
         assertThat(helper.host(), is("localhost"));
-        assertThat(helper.path(), is("/loom/quick"));
+        assertThat(helper.path(), is(UriPath.create("/loom/quick")));
         assertThat(helper.port(), is(8080));
         assertThat(helper.scheme(), is("http"));
     }
 
     @Test
     void testResolvePath() {
-        UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom"), query);
-        helper.resolve(URI.create("/quick"), query);
-        assertThat(helper.path(), is("/loom/quick"));
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom"));
+        helper.resolve(URI.create("/quick"));
+        assertThat(helper.path(), is(UriPath.create("/loom/quick")));
     }
 
     @Test
     void testResolveSchemeAndAuthority() {
-        UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"), query);
-        helper.resolve(URI.create("https://www.example.com:80"), query);
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"));
+        helper.resolve(URI.create("https://www.example.com:80"));
         assertThat(helper.authority(), is("www.example.com:80"));
         assertThat(helper.host(), is("www.example.com"));
-        assertThat(helper.path(), is(""));
+        assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("https"));
     }
 
     @Test
     void testResolveAll() {
-        UriQueryWriteable query = UriQueryWriteable.create();
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"), query);
-        helper.resolve(URI.create("https://www.example.com:80/"), query);
+        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick"));
+        helper.resolve(URI.create("https://www.example.com:80/"));
         assertThat(helper.authority(), is("www.example.com:80"));
         assertThat(helper.host(), is("www.example.com"));
-        assertThat(helper.path(), is("/"));
+        assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("https"));
     }

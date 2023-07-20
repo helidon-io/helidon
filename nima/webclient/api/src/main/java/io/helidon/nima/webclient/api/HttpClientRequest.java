@@ -4,13 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.net.ssl.SSLSocket;
-
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
 import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.socket.TlsSocket;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.api.LoomClient.ProtocolSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
@@ -29,12 +25,11 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                       WebClientConfig clientConfig,
                       Http.Method method,
                       ClientUri clientUri,
-                      UriQueryWriteable query,
                       Map<String, ProtocolSpi> protocolsToClients,
                       List<ProtocolSpi> protocols,
                       List<ProtocolSpi> tcpProtocols,
                       List<String> tcpProtocolIds) {
-        super(clientConfig, "any", method, clientUri, query, clientConfig.properties());
+        super(clientConfig, "any", method, clientUri, clientConfig.properties());
         this.webClient = webClient;
         this.clients = protocolsToClients;
         this.protocols = protocols;

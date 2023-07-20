@@ -27,13 +27,12 @@ import java.util.concurrent.Executors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.inject.configdriven.api.ConfigDriven;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 import io.helidon.nima.webclient.spi.Protocol;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
 import io.helidon.nima.webclient.spi.ProtocolProvider;
-import io.helidon.inject.configdriven.api.ConfigDriven;
 
 import jakarta.inject.Inject;
 
@@ -130,14 +129,13 @@ class LoomClient implements WebClient {
                 .map(ClientUri::create) // create from base config
                 .orElseGet(ClientUri::create);// create as empty
 
-        UriQueryWriteable query = UriQueryWriteable.create();
-        prototype().baseQuery().ifPresent(query::from);
+        prototype().baseQuery().ifPresent(clientUri.writeableQuery()::from);
+        prototype().baseFragment().ifPresent(clientUri::fragment);
 
         return new HttpClientRequest(this,
                                      this.prototype(),
                                      method,
                                      clientUri,
-                                     query,
                                      protocolsToClients,
                                      protocols,
                                      tcpProtocols,

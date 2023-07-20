@@ -22,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientConfig;
@@ -41,9 +40,8 @@ class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1Clien
                       Http1ClientProtocolConfig protocolConfig,
                       Http.Method method,
                       ClientUri clientUri,
-                      UriQueryWriteable query,
                       Map<String, String> properties) {
-        super(clientConfig, Http1Client.PROTOCOL_ID, method, clientUri, query, properties);
+        super(clientConfig, Http1Client.PROTOCOL_ID, method, clientUri, properties);
 
         this.webClient = webClient;
         this.protocolConfig = protocolConfig;
@@ -53,9 +51,8 @@ class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1Clien
     private ClientRequestImpl(ClientRequestImpl request,
                               Http.Method method,
                               ClientUri clientUri,
-                              UriQueryWriteable query,
                               Map<String, String> properties) {
-        this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, query, properties);
+        this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, properties);
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -102,12 +99,8 @@ class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1Clien
             }
             String redirectedUri = clientResponse.headers().get(Http.Header.LOCATION).value();
             URI newUri = URI.create(redirectedUri);
-            UriQueryWriteable newQuery = UriQueryWriteable.create();
-            ClientUri redirectUri = ClientUri.create(newUri, newQuery);
-            String uriQuery = newUri.getQuery();
-            if (uriQuery != null) {
-                newQuery.fromQueryString(uriQuery);
-            }
+            ClientUri redirectUri = ClientUri.create(newUri);
+
             if (newUri.getHost() == null) {
                 //To keep the information about the latest host, we need to use uri from the last performed request
                 //Example:
@@ -122,11 +115,11 @@ class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1Clien
             //Method and entity is required to be the same as with original request with 307 and 308 requests
             if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
                     || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
-                clientRequest = new ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, newQuery, properties());
+                clientRequest = new ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, newQuery, properties());
+                clientRequest = new ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, properties());
             }
         }
         throw new IllegalStateException("Maximum number of request redirections ("

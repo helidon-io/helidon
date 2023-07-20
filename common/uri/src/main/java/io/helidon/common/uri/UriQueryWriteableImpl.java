@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
@@ -29,6 +30,31 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     private final Map<String, List<String>> decodedQueryParams = new HashMap<>();
 
     UriQueryWriteableImpl() {
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof UriQuery that)) {
+            return false;
+        }
+        if (!Objects.equals(this.names(), that.names())) {
+            return false;
+        }
+
+        for (String name : this.names()) {
+            if (!Objects.equals(this.all(name), that.all(name))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(decodedQueryParams);
     }
 
     @Override

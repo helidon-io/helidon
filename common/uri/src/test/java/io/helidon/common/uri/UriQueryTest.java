@@ -40,7 +40,7 @@ class UriQueryTest {
 
     @Test
     void testEncoded() throws UnsupportedEncodingException {
-        UriQuery uriQuery = UriQuery.create("a=" + URLEncoder.encode("1&b=2", US_ASCII.name()));
+        UriQuery uriQuery = UriQuery.create("a=" + URLEncoder.encode("1&b=2", US_ASCII));
         assertThat(uriQuery.value("a"), is("1&b=2"));
     }
 

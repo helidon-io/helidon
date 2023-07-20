@@ -17,7 +17,6 @@
 package io.helidon.common.uri;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**

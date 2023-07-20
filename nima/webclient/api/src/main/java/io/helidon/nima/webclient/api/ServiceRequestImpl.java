@@ -23,31 +23,22 @@ import java.util.concurrent.CompletionStage;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.webclient.api.ClientUri;
-import io.helidon.nima.webclient.api.WebClientServiceRequest;
-import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
 class ServiceRequestImpl implements WebClientServiceRequest {
     private final Map<String, String> properties;
     private final String protocolId;
+    private final ClientUri uri;
+    private final Http.Method method;
+    private final ClientRequestHeaders headers;
+    private final Context context;
+    private final CompletionStage<WebClientServiceResponse> whenComplete;
+    private final CompletionStage<WebClientServiceRequest> whenSent;
 
-    private ClientUri uri;
-    private Http.Method method;
-    private UriQueryWriteable query;
-    private UriFragment fragment;
-    private ClientRequestHeaders headers;
-    private Context context;
     private String requestId;
-    private CompletionStage<WebClientServiceResponse> whenComplete;
-    private CompletionStage<WebClientServiceRequest> whenSent;
 
     ServiceRequestImpl(ClientUri uri,
                        Http.Method method,
                        String protocolId,
-                       UriQueryWriteable query,
-                       UriFragment fragment,
                        ClientRequestHeaders headers,
                        Context context,
                        String requestId,
@@ -57,8 +48,6 @@ class ServiceRequestImpl implements WebClientServiceRequest {
         this.uri = uri;
         this.method = method;
         this.protocolId = protocolId;
-        this.query = query;
-        this.fragment = fragment;
         this.headers = headers;
         this.context = context;
         this.requestId = requestId;
@@ -80,16 +69,6 @@ class ServiceRequestImpl implements WebClientServiceRequest {
     @Override
     public String protocolId() {
         return protocolId;
-    }
-
-    @Override
-    public UriQueryWriteable query() {
-        return query;
-    }
-
-    @Override
-    public UriFragment fragment() {
-        return fragment;
     }
 
     @Override
@@ -125,10 +104,5 @@ class ServiceRequestImpl implements WebClientServiceRequest {
     @Override
     public Map<String, String> properties() {
         return properties;
-    }
-
-    @Override
-    public void fragment(String fragment) {
-        this.fragment = UriFragment.createFromDecoded(fragment);
     }
 }

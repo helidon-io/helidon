@@ -16,14 +16,9 @@
 
 package io.helidon.nima.http2.webclient;
 
-import java.util.Optional;
-
-import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.api.ClientRequest;
-import io.helidon.nima.webclient.api.ClientRequestConfig;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.FullClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
@@ -49,7 +44,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
         UriQueryWriteable query = UriQueryWriteable.create();
         clientConfig.baseQuery().ifPresent(query::from);
 
-        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.tls());
+        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri);
     }
 
     @Override
@@ -65,20 +60,5 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
     @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
         return null;
-    }
-
-    @Override
-    public Optional<ClientRequest<?>> clientRequest(ClientRequestConfig clientRequestConfig,
-                                                    ClientUri clientUri,
-                                                    ClientRequestHeaders headers,
-                                                    UriQueryWriteable query,
-                                                    UriFragment fragment) {
-
-        /*
-        this is only available for non-tls requests - for TLS we use ALPN
-        0. MUST BE DONE IN WEBCLIENT: check cache if we tried this request before (same connection key)
-        1. check if we have prior knowledge configured - if yes, just do it
-        2. try to upgrade, falling back to HTTP/1.1
-         */
     }
 }

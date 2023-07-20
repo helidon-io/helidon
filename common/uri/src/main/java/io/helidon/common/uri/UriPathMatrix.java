@@ -17,6 +17,7 @@
 package io.helidon.common.uri;
 
 import java.net.URI;
+import java.util.Objects;
 
 import io.helidon.common.parameters.Parameters;
 
@@ -27,6 +28,26 @@ class UriPathMatrix extends UriPathNoParam {
     UriPathMatrix(String rawPath, String noParamPath) {
         super(noParamPath);
         this.rawPath = rawPath;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        UriPathMatrix that = (UriPathMatrix) o;
+        return Objects.equals(rawPath, that.rawPath) && Objects.equals(matrixParameters(), that.matrixParameters());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), rawPath, matrixParameters());
     }
 
     @Override

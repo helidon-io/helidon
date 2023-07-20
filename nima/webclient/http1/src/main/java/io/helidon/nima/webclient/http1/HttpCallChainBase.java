@@ -104,7 +104,7 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
         nonEntityData.writeAscii(request.method().text()
                                          + " "
                                          + schemeHostPort
-                                         + uri.pathWithQueryAndFragment(request.query(), request.fragment())
+                                         + uri.pathWithQueryAndFragment()
                                          + " HTTP/1.1\r\n");
     }
 

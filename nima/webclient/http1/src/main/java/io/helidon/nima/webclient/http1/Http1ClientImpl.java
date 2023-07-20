@@ -17,11 +17,9 @@
 package io.helidon.nima.webclient.http1;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.FullClientRequest;
-import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
@@ -42,10 +40,10 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
                 .map(ClientUri::create) // create from base config
                 .orElseGet(ClientUri::create); // create as empty
 
-        UriQueryWriteable query = UriQueryWriteable.create();
-        clientConfig.baseQuery().ifPresent(query::from);
+        clientConfig.baseFragment().ifPresent(clientUri::fragment);
+        clientConfig.baseQuery().ifPresent(clientUri.writeableQuery()::from);
 
-        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, query, clientConfig.properties());
+        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
     }
 
     @Override
@@ -69,7 +67,6 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
                                                            protocolConfig,
                                                            clientRequest.method(),
                                                            clientUri,
-                                                           clientRequest.query(),
                                                            clientRequest.properties());
 
         clientRequest.connection().ifPresent(request::connection);
@@ -82,14 +79,6 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
                 .proxy(clientRequest.proxy())
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
-                .fragment(clientRequest.fragment());
-    }
-
-    HttpClientConfig clientConfig() {
-        return clientConfig;
-    }
-
-    Http1ClientProtocolConfig protocolConfig() {
-        return protocolConfig;
+                .fragment(clientUri.fragment());
     }
 }

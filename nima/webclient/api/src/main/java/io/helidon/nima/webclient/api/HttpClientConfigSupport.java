@@ -35,13 +35,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void baseUri(HttpClientConfig.BuilderBase<?, ?> builder, URI baseUri) {
-            UriQueryWriteable uriQuery = UriQueryWriteable.create();
-            ClientUri clientUri = ClientUri.create();
-            clientUri.resolve(baseUri, uriQuery);
-            builder.baseUri(clientUri);
-            if (!uriQuery.isEmpty()) {
-                builder.baseQuery(uriQuery);
-            }
+            builder.baseUri(ClientUri.create().resolve(baseUri));
         }
 
         /**

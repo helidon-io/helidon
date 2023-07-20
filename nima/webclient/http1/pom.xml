@@ -28,6 +28,10 @@
     <artifactId>helidon-nima-webclient-http1</artifactId>
     <name>Helidon Níma WebClient HTTP/1.1</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.nima.webclient</groupId>

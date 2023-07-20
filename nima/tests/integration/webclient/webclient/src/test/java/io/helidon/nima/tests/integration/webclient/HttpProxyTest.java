@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.tests.integration.client;
+package io.helidon.nima.tests.integration.webclient;
 
 import static io.helidon.common.http.Http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;

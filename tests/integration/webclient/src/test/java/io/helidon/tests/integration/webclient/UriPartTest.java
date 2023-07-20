@@ -110,7 +110,7 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.query().value(), is("first&second%26=val&ue%26"));
+            assertThat(request.uri().query().value(), is("first&second%26=val&ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
@@ -123,7 +123,7 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryNotDoubleEncoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.query().rawValue(), is("first%26second%26=val%26ue%26"));
+            assertThat(request.uri().query().rawValue(), is("first%26second%26=val%26ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
@@ -136,7 +136,7 @@ class UriPartTest extends TestParent {
     @Test
     void testPathNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.uri().path()/*.rawPath()*/, is("/greet/path%26"));
+            assertThat(request.uri().path().rawPath(), is("/greet/path%26"));
             return chain.proceed(request);
         });
         assertThrows(CompletionException.class, () -> webClient.get()

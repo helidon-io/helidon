@@ -27,6 +27,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
@@ -71,7 +72,9 @@ class ClientRequestImplTest {
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
     private static final Http.HeaderName BAD_HEADER_NAME = Http.Header.create("Bad-Header");
     private static final long NO_CONTENT_LENGTH = -1L;
-    private static final Http1Client client = Http1Client.create();
+    private static final Http1Client client = Http1Client.builder()
+            .sendExpectContinue(false)
+            .build();
     private static final int dummyPort = 1234;
 
     @Test
@@ -586,7 +589,10 @@ class ClientRequestImplTest {
                 }
                 byte[] data;
                 try {
-                    data = queue.take();
+                    data = queue.poll(5, TimeUnit.SECONDS);
+                    if (data == null) {
+                        return null;
+                    }
                 } catch (InterruptedException e) {
                     throw new IllegalArgumentException("Thread interrupted", e);
                 }

@@ -22,8 +22,6 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQuery;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.spi.WebClientService;
@@ -42,7 +40,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final String protocolId;
     private final Http.Method method;
     private final ClientUri clientUri;
-    private final UriQueryWriteable query;
     private final Map<String, String> properties;
     private final ClientRequestHeaders headers;
     private final String requestId;
@@ -50,7 +47,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private String uriTemplate;
     private boolean skipUriEncoding;
-    private UriFragment fragment = UriFragment.empty();
     private boolean followRedirects;
     private int maxRedirects;
     private Duration readTimeout;
@@ -63,13 +59,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                 String protocolId,
                                 Http.Method method,
                                 ClientUri clientUri,
-                                UriQueryWriteable query,
                                 Map<String, String> properties) {
         this.clientConfig = clientConfig;
         this.protocolId = protocolId;
         this.method = method;
         this.clientUri = clientUri;
-        this.query = query;
         this.properties = new HashMap<>(properties);
 
         this.headers = clientConfig.defaultRequestHeaders();
@@ -93,7 +87,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public T uri(URI uri) {
         this.uriTemplate = null;
-        this.clientUri.resolve(uri, query);
+        this.clientUri.resolve(uri);
         return identity();
     }
 
@@ -115,7 +109,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public ClientUri resolvedUri() {
         // we do not want to update our own URI, as this method may be called multiple times
-        return resolveUri(ClientUri.create(this.clientUri), UriQueryWriteable.create());
+        return resolveUri(ClientUri.create(this.clientUri));
     }
 
     @Override
@@ -145,7 +139,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T fragment(UriFragment fragment) {
-        this.fragment = fragment;
+        this.clientUri.fragment(fragment);
         return identity();
     }
 
@@ -158,7 +152,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T queryParam(String name, String... values) {
-        query.set(name, values);
+        clientUri.writeableQuery().set(name, values);
         return identity();
     }
 
@@ -288,13 +282,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
-    public UriQueryWriteable query() {
-        return query;
-    }
-
-    @Override
-    public UriFragment fragment() {
-        return fragment;
+    public ClientUri uri() {
+        return clientUri;
     }
 
     @Override
@@ -332,8 +321,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         WebClientServiceRequest serviceRequest = new ServiceRequestImpl(usedUri,
                                                                         method,
                                                                         protocolId,
-                                                                        query,
-                                                                        fragment,
                                                                         headers,
                                                                         Contexts.context().orElseGet(Context::create),
                                                                         requestId,
@@ -375,16 +362,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * extracting possible query information into the provided writable query.
      *
      * @param toResolve         client uri to update from the template
-     * @param uriQueryWriteable query to extract values into
      * @return updated client uri
      */
-    protected ClientUri resolveUri(ClientUri toResolve, UriQueryWriteable uriQueryWriteable) {
+    protected ClientUri resolveUri(ClientUri toResolve) {
         if (uriTemplate != null) {
             String resolved = resolvePathParams(uriTemplate);
             if (skipUriEncoding) {
-                toResolve.resolve(URI.create(resolved), uriQueryWriteable);
+                toResolve.resolve(URI.create(resolved));
             } else {
-                toResolve.resolve(URI.create(UriEncoding.encodeUri(resolved)), uriQueryWriteable);
+                toResolve.resolve(URI.create(UriEncoding.encodeUri(resolved)));
             }
         }
         return toResolve;

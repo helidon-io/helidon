@@ -121,9 +121,9 @@ public class WebClientSecurity implements WebClientService {
                     .clearQueryParams();
 
             outboundEnv.method(request.method().text())
-                    .path(request.uri().path())
+                    .path(request.uri().path().path())
                     .targetUri(request.uri().toUri())
-                    .queryParams(request.query());
+                    .queryParams(request.uri().query());
 
             request.headers()
                     .stream()
@@ -201,7 +201,7 @@ public class WebClientSecurity implements WebClientService {
                 .endpointConfig(EndpointConfig.builder()
                                         .build())
                 .env(SecurityEnvironment.builder()
-                             .path(request.uri().path())
+                             .path(request.uri().path().path())
                              .build());
         request.context().get(Tracer.class).ifPresent(builder::tracingTracer);
         request.context().get(SpanContext.class).ifPresent(builder::tracingSpan);

@@ -32,6 +32,7 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.nima.common.tls.Tls;
 
 /**
@@ -184,7 +185,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     default T fragment(String fragment) {
-        return fragment(UriFragment.create(fragment));
+        return fragment(UriFragment.createFromDecoded(fragment));
     }
 
     /**
@@ -210,6 +211,20 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     T maxRedirects(int maxRedirects);
+
+    /**
+     * Whether to follow redirects.
+     *
+     * @return follow redirects
+     */
+    boolean followRedirects();
+
+    /**
+     * Maximal number of redirects to follow. This is to prevent infinite redirects.
+     *
+     * @return max number of redirects
+     */
+    int maxRedirects();
 
     /**
      * Request without an entity.
@@ -306,7 +321,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      *
      * @return URI to invoke
      */
-    ClientUri resolvedUri();
+    UriInfo resolvedUri();
 
     /**
      * This method is for explicit connection use by this request.

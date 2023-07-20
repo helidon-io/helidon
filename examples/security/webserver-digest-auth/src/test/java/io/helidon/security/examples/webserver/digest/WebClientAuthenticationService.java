@@ -56,7 +56,7 @@ class WebClientAuthenticationService implements WebClientService {
         if (challenge == null) {
             return response;
         }
-        String uri = request.uri().path();
+        String uri = request.uri().path().path();
         String method = request.method().text();
         String atz = digestAuth.authorization(challenge, uri, method, username, password);
         if (atz == null) {

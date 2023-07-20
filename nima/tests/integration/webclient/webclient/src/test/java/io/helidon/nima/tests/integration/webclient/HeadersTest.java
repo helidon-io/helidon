@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webclient.http1;
+package io.helidon.nima.tests.integration.webclient;
 
 import java.util.Optional;
 
@@ -23,47 +23,41 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.ParserMode;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
+@ServerTest
 class HeadersTest {
 
-    private static WebServer server;
+    private final WebClient client;
 
-    @BeforeAll
-    static void beforeAll() {
-        server = WebServer.builder()
-                .routing(routing -> routing.register("/test", new TestService()).build())
-                .build()
-                .start();
+    HeadersTest(WebClient client) {
+        this.client = client;
     }
 
-    @AfterAll
-    static void afterAll() {
-        server.stop();
+    @SetUpRoute
+    static void routing(HttpRules rules) {
+        rules.register("/test", new TestService());
     }
+
 
     // Verify that invalid content type is present in response headers and is accessible
     @Test
     public void testInvalidContentType() {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port() + "/test")
-                .build();
         try (HttpClientResponse res = client.method(Http.Method.GET)
-                .path("/invalidContentType")
+                .path("/test/invalidContentType")
                 .request()) {
             ClientResponseHeaders h = res.headers();
             Http.HeaderValue contentType = h.get(Http.Header.CONTENT_TYPE);
@@ -75,23 +69,21 @@ class HeadersTest {
     // Verify that "Content-Type: text" header parsing fails in strict mode
     @Test
     public void testInvalidTextContentTypeStrict() {
-        WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port() + "/test")
-                .build();
-        HttpClientResponse res = client.method(Http.Method.GET)
-                .path("/invalidTextContentType")
-                .request();
-        assertThat(res.status(), is(Http.Status.OK_200));
-        Headers h = res.headers();
-        // Raw protocol data value
-        Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
-        assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
-        // Media type parsed value is invalid, IllegalArgumentException shall be thrown
-        try {
-            h.contentType();
-            Assertions.fail("Content-Type: text parsing must throw an exception in strict mode");
-        } catch (IllegalArgumentException ex) {
-            assertThat(ex.getMessage(), is("Cannot parse media type: text"));
+        try (HttpClientResponse res = client.method(Http.Method.GET)
+                .path("/test/invalidTextContentType")
+                .request()) {
+            assertThat(res.status(), is(Http.Status.OK_200));
+            Headers h = res.headers();
+            // Raw protocol data value
+            Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
+            assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
+            // Media type parsed value is invalid, IllegalArgumentException shall be thrown
+            try {
+                h.contentType();
+                Assertions.fail("Content-Type: text parsing must throw an exception in strict mode");
+            } catch (IllegalArgumentException ex) {
+                assertThat(ex.getMessage(), is("Cannot parse media type: text"));
+            }
         }
     }
 
@@ -99,21 +91,22 @@ class HeadersTest {
     @Test
     public void testInvalidTextContentTypeRelaxed() {
         WebClient client = WebClient.builder()
-                .baseUri("http://localhost:" + server.port() + "/test")
+                .from(this.client.prototype())
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
-        HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Http.Method.GET)
                 .path("/invalidTextContentType")
-                .request();
-        assertThat(res.status(), is(Http.Status.OK_200));
-        Headers h = res.headers();
-        // Raw protocol data value
-        Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
-        assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
-        // Media type parsed value
-        Optional<HttpMediaType> contentType = h.contentType();
-        assertThat(contentType.isPresent(), is(true));
-        assertThat(contentType.get().text(), is(TestService.RELAXED_CONTENT_TYPE_TEXT));
+                .request()) {
+            assertThat(res.status(), is(Http.Status.OK_200));
+            Headers h = res.headers();
+            // Raw protocol data value
+            Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
+            assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
+            // Media type parsed value
+            Optional<HttpMediaType> contentType = h.contentType();
+            assertThat(contentType.isPresent(), is(true));
+            assertThat(contentType.get().text(), is(TestService.RELAXED_CONTENT_TYPE_TEXT));
+        }
     }
 
     static final class TestService implements HttpService {

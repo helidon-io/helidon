@@ -32,9 +32,6 @@ import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.pki.Keys;
-import io.helidon.common.pki.KeystoreKeys;
-import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -63,6 +60,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+/*
+This class uses package local API to validate connection cache, and at the same time benefits from @ServerTest
+that is why this tests is in this module, but in the wrong package
+ */
 @ServerTest
 class ClientRequestImplTest {
     private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.createCached(
@@ -118,7 +119,7 @@ class ClientRequestImplTest {
     @Test
     void testMaxHeaderLineLengthSuccess() {
         Http1Client client = Http1Client.create(clientConfig -> clientConfig.baseUri(baseURI)
-                .protocolConfig(it -> it.maxStatusLineLength(20500)));
+                .protocolConfig(it -> it.maxStatusLineLength(20)));
 
         validateSuccessfulResponse(client);
     }

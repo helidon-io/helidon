@@ -64,9 +64,8 @@ class ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2Clien
                       HttpClientConfig clientConfig,
                       Http2ClientProtocolConfig protocolConfig,
                       Http.Method method,
-                      ClientUri clientUri,
-                      UriQueryWriteable query) {
-        super(clientConfig, Http2Client.PROTOCOL_ID, method, clientUri, query, clientConfig.properties());
+                      ClientUri clientUri) {
+        super(clientConfig, Http2Client.PROTOCOL_ID, method, clientUri, clientConfig.properties());
         this.protocolConfig = protocolConfig;
         this.executor = clientConfig.executor();
 
