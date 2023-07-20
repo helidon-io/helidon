@@ -27,7 +27,6 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>io.helidon.tests.integration.jpa</groupId>
     <artifactId>helidon-tests-integration-jpa-simple</artifactId>
     <name>Integration Tests: JPA Simple Tests</name>
 
@@ -36,6 +35,10 @@
             <groupId>io.helidon.tests.integration.jpa</groupId>
             <artifactId>helidon-tests-integration-jpa-model</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.cdi</groupId>
@@ -113,7 +116,11 @@
             <artifactId>jandex</artifactId>
             <scope>runtime</scope>
         </dependency>
-
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -150,7 +157,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${version.plugin.surefire}</version>
                 <configuration>
                     <parallel>methods</parallel>
                     <threadCount>10</threadCount>

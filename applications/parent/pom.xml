@@ -35,7 +35,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
         <version.plugin.compiler>3.8.1</version.plugin.compiler>
@@ -77,7 +77,6 @@
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
-                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -87,7 +86,6 @@
                     <configuration>
                         <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -158,9 +156,6 @@
                             <version>${helidon.version}</version>
                         </dependency>
                     </dependencies>
-                    <configuration>
-                        <defaultJvmOptions>--enable-preview</defaultJvmOptions>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>io.helidon.build-tools</groupId>
@@ -205,7 +200,6 @@
                                 <buildArgs>
                                     <!-- Some native image features use the svm dependencies which require additional exports -->
                                     <arg>--add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.configure=ALL-UNNAMED</arg>
-                                    <arg>--enable-preview</arg>
                                 </buildArgs>
                             </configuration>
                         </execution>

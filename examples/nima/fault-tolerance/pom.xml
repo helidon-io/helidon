@@ -109,7 +109,6 @@
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>-Aio.helidon.inject.autoAddNonContractInterfaces=true</arg>
-                        <arg>--enable-preview</arg>
                     </compilerArgs>
                 </configuration>
             </plugin>

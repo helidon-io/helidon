@@ -83,8 +83,6 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         WebServerConfig.Builder builder = WebServer.builder()
                 .config(GlobalConfig.config().get("server"))
-                .port(0)
-                .shutdownHook(false)
                 .host("localhost");
 
         extensions.forEach(it -> it.beforeAll(context));
@@ -92,6 +90,10 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         setupServer(builder);
         addRouting(builder);
+
+        // port will be random
+        builder.port(0)
+                .shutdownHook(false);
 
         server = builder.build().start();
         uris.put(DEFAULT_SOCKET_NAME, URI.create("http://localhost:" + server.port() + "/"));

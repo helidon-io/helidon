@@ -104,9 +104,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <compilerArgs>
-                        <compilerArg>--enable-preview</compilerArg>
-                    </compilerArgs>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>io.helidon.common.features</groupId>
@@ -119,15 +116,6 @@
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <additionalOptions>
-                        <additionalOption>--enable-preview</additionalOption>
-                    </additionalOptions>
                 </configuration>
             </plugin>
         </plugins>

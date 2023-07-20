@@ -39,8 +39,7 @@ mvn ${MAVEN_ARGS} --version
 echo "GRAALVM_HOME=${GRAALVM_HOME}";
 ${GRAALVM_HOME}/bin/native-image --version;
 
-# TODO:java19
-echo Skipping native image tests, until we have a Java 19 build
+echo Skipping native image tests, until we have a Java 21 build
 exit 0
 
 # Temporary workaround until job stages will share maven repository

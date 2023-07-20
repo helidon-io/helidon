@@ -19,6 +19,6 @@
 To run Helidon with thin client, flag `--add-opens=java.base/java.io=ALL-UNNAMED` is needed to
 open java.base module to thin client internals.
 1. `mvn clean package`
-2. `java --add-opens=java.base/java.io=ALL-UNNAMED --enable-preview -jar ./target/weblogic-jms-mp.jar`
+2. `java --add-opens=java.base/java.io=ALL-UNNAMED -jar ./target/weblogic-jms-mp.jar`
 3. Visit http://localhost:8080 and try to send and receive messages over Weblogic JMS queue.
 

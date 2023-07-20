@@ -47,7 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
 @Configuration(useExisting = true)
-// Embedded cassandra does not start on Java 17
+// Embedded cassandra does not start on Java 17+
 @Disabled("3.0.0-JAKARTA")
 class BackendTests {
 

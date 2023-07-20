@@ -36,7 +36,7 @@
         <version.plexus.utils>3.3.0</version.plexus.utils>
         <version.plugin.api>3.8.5</version.plugin.api>
         <version.plugin.annotations>3.6.4</version.plugin.annotations>
-        <version.plugin.plugin>3.7.1</version.plugin.plugin>
+        <version.plugin.plugin>3.9.0</version.plugin.plugin>
         <version.plugin.project>2.2.1</version.plugin.project>
 
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>

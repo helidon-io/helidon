@@ -29,7 +29,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
 
@@ -129,21 +129,10 @@
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${version.plugin.compiler}</version>
-                    <configuration>
-                        <compilerArgs>
-                            <compilerArg>--enable-preview</compilerArg>
-                        </compilerArgs>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${version.plugin.surefire}</version>
                     <configuration>
                         <useModulePath>false</useModulePath>
-                        <argLine>--enable-preview</argLine>
                         <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
@@ -154,7 +143,6 @@
                     <configuration>
                         <useModulePath>false</useModulePath>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

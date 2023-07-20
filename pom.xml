@@ -35,14 +35,14 @@
     <description>Java libraries for writing microservices</description>
 
     <properties>
-        <version.java>20</version.java>
+        <version.java>21</version.java>
 
         <doclint>all</doclint>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</surefire.argLine>
-        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</failsafe.argLine>
+        <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8</surefire.argLine>
+        <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8</failsafe.argLine>
         <surefire.coverage.argline />
         <failsafe.coverage.argline />
 
@@ -119,7 +119,7 @@
         <version.plugin.scm-publish-plugin>3.0.0</version.plugin.scm-publish-plugin>
         <version.plugin.shade>3.0.0</version.plugin.shade>
         <version.plugin.source>3.0.1</version.plugin.source>
-        <version.plugin.spotbugs>4.7.3.2</version.plugin.spotbugs>
+        <version.plugin.spotbugs>4.7.3.5</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.12.0</version.plugin.findsecbugs>
         <version.plugin.dependency-check>8.2.1</version.plugin.dependency-check>
         <version.plugin.surefire>3.1.0</version.plugin.surefire>
@@ -398,9 +398,6 @@
                         <additionalJOptions combine.children="append">
                             <additionalJOption>-J-Dhttp.agent=maven-javadoc-plugin</additionalJOption>
                         </additionalJOptions>
-                        <additionalOptions>
-                            <additionalOption>--enable-preview</additionalOption>
-                        </additionalOptions>
                         <sourceFileExcludes>
                             <sourceFileExclude>**/target/**/*.java</sourceFileExclude>
                             <sourceFileExclude>**/*_.java</sourceFileExclude>

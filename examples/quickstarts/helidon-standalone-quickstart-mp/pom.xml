@@ -29,7 +29,7 @@
         <helidon.version>4.0.0-SNAPSHOT</helidon.version>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
 
-        <maven.compiler.source>20</maven.compiler.source>
+        <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.site.skip>true</maven.site.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -109,7 +109,6 @@
                         <systemPropertyVariables>
                             <java.util.logging.config.file>${project.build.outputDirectory}/logging.properties</java.util.logging.config.file>
                         </systemPropertyVariables>
-                        <argLine>--enable-preview</argLine>
                     </configuration>
                 </plugin>
                 <plugin>

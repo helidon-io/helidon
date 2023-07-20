@@ -279,7 +279,6 @@
                                 <configuration>
                                     <executable>java</executable>
                                     <arguments>
-                                        <argument>--enable-preview</argument>
                                         <argument>-classpath</argument>
                                         <classpath />
                                         <argument>${mainClass}</argument>

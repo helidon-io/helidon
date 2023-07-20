@@ -1,3 +1,4 @@
+jvm.config
 .iml
 .apt
 .args

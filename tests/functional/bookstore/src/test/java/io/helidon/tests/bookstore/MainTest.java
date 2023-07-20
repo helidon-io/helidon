@@ -31,16 +31,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 
-import com.oracle.bedrock.runtime.Application;
-import com.oracle.bedrock.runtime.LocalPlatform;
-import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
-import com.oracle.bedrock.runtime.options.Arguments;
-import com.oracle.bedrock.runtime.options.Console;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.webclient.ClientResponse;
 import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+
+import com.oracle.bedrock.runtime.Application;
+import com.oracle.bedrock.runtime.LocalPlatform;
+import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
+import com.oracle.bedrock.runtime.options.Arguments;
+import com.oracle.bedrock.runtime.options.Console;
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -197,7 +198,7 @@ class MainTest {
 
     private void runExitOnStartedTest(String edition) throws Exception {
         int port = localPlatform.getAvailablePorts().next();
-        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!", "--enable-preview"), null, port);
+        Arguments args = toArguments(editionToJarPath(edition), List.of("-Dexit.on.started=!"), null, port);
         CapturingApplicationConsole console = new CapturingApplicationConsole();
         Application application = localPlatform.launch("java", args, Console.of(console));
         Queue<String> stdOut = console.getCapturedOutputLines();
@@ -413,7 +414,6 @@ class MainTest {
     private static Arguments toArguments(String appJarPath, List<String> javaArgs, String moduleName, int port) {
         List<String> startArgs = new ArrayList<>(javaArgs);
         startArgs.add("-Dserver.port=" + port);
-        startArgs.add("--enable-preview");
 
         if (moduleName != null && !moduleName.isEmpty()) {
             File jarFile = new File(appJarPath);
