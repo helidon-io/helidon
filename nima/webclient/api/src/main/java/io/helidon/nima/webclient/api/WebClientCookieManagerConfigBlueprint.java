@@ -1,0 +1,46 @@
+package io.helidon.nima.webclient.api;
+
+import java.net.CookiePolicy;
+import java.net.CookieStore;
+import java.util.Map;
+import java.util.Optional;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+
+@Prototype.Blueprint
+@Configured
+interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebClientCookieManager> {
+    /**
+     * Whether automatic cookie store is enabled or not.
+     *
+     * @return status of cookie store
+     */
+    @ConfiguredOption("false")
+    boolean enableAutomaticCookieStore();
+
+    /**
+     * Current cookie policy for this client.
+     *
+     * @return the cookie policy
+     */
+    @ConfiguredOption("java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER")
+    CookiePolicy cookiePolicy();
+
+    /**
+     * Map of default cookies to include in all requests if cookies enabled.
+     *
+     * @return map of default cookies
+     */
+    @ConfiguredOption
+    @Prototype.Singular
+    Map<String, String> defaultCookies();
+
+    /**
+     * The cookie store where cookies are kept. If not defined, JDK default is used (in memory store).
+     *
+     * @return cookie store
+     */
+    Optional<CookieStore> cookieStore();
+}

@@ -17,20 +17,17 @@
 package io.helidon.nima.testing.junit5.webserver;
 
 import java.net.InetSocketAddress;
-import java.net.URI;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientConfig;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.api.WebClientCookieManager;
 import io.helidon.nima.webclient.spi.Protocol;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
 import io.helidon.nima.webserver.Router;
@@ -120,6 +117,11 @@ public class DirectWebClient implements WebClient {
     @Override
     public ExecutorService executor() {
         return webClient.executor();
+    }
+
+    @Override
+    public WebClientCookieManager cookieManager() {
+        return webClient.cookieManager();
     }
 
     /**

@@ -21,17 +21,20 @@ import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.FullClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.WebClientCookieManager;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
 class Http1ClientImpl implements Http1Client, HttpClientSpi {
     private final WebClient client;
     private final Http1ClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
+    private final WebClientCookieManager cookieManager;
 
     Http1ClientImpl(WebClient client, Http1ClientConfig clientConfig) {
         this.client = client;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
+        this.cookieManager = client.cookieManager();
     }
 
     @Override
@@ -43,7 +46,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         clientConfig.baseFragment().ifPresent(clientUri::fragment);
         clientConfig.baseQuery().ifPresent(clientUri.writeableQuery()::from);
 
-        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
+        return new Http1ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
     }
 
     @Override
@@ -62,12 +65,12 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         // this is HTTP/1.1 - it should support any and all HTTP requests
         // this method is called from the "generic" HTTP client, that can support any version (that is on classpath).
         // usually HTTP/1.1 is either the only available, or a fallback if other versions cannot be used
-        Http1ClientRequest request = new ClientRequestImpl(client,
-                                                           clientConfig,
-                                                           protocolConfig,
-                                                           clientRequest.method(),
-                                                           clientUri,
-                                                           clientRequest.properties());
+        Http1ClientRequest request = new Http1ClientRequestImpl(client,
+                                                                clientConfig,
+                                                                protocolConfig,
+                                                                clientRequest.method(),
+                                                                clientUri,
+                                                                clientRequest.properties());
 
         clientRequest.connection().ifPresent(request::connection);
         clientRequest.pathParams().forEach(request::pathParam);

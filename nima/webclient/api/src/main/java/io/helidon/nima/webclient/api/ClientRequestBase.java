@@ -37,6 +37,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private final Map<String, String> pathParams = new HashMap<>();
     private final HttpClientConfig clientConfig;
+    private final WebClientCookieManager cookieManager;
     private final String protocolId;
     private final Http.Method method;
     private final ClientUri clientUri;
@@ -56,11 +57,13 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private ClientConnection connection;
 
     protected ClientRequestBase(HttpClientConfig clientConfig,
+                                WebClientCookieManager cookieManager,
                                 String protocolId,
                                 Http.Method method,
                                 ClientUri clientUri,
                                 Map<String, String> properties) {
         this.clientConfig = clientConfig;
+        this.cookieManager = cookieManager;
         this.protocolId = protocolId;
         this.method = method;
         this.clientUri = clientUri;
@@ -318,6 +321,9 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
                                                       ClientUri usedUri) {
 
+        // include any stored cookies in request
+        cookieManager.request(usedUri, headers);
+
         WebClientServiceRequest serviceRequest = new ServiceRequestImpl(usedUri,
                                                                         method,
                                                                         protocolId,
@@ -336,7 +342,10 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             last = new ServiceChainImpl(last, serviceIterator.previous());
         }
 
-        return last.proceed(serviceRequest);
+        WebClientServiceResponse response = last.proceed(serviceRequest);
+        cookieManager.response(usedUri, response.headers());
+
+        return response;
     }
 
     /**

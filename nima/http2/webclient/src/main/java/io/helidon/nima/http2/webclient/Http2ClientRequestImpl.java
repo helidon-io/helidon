@@ -45,7 +45,7 @@ import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
-class ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse> implements Http2ClientRequest {
+class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse> implements Http2ClientRequest {
 
     private final Http2ClientProtocolConfig protocolConfig;
     private final ExecutorService executor;
@@ -60,12 +60,12 @@ class ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2Clien
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
 
-    ClientRequestImpl(WebClient webClient,
-                      HttpClientConfig clientConfig,
-                      Http2ClientProtocolConfig protocolConfig,
-                      Http.Method method,
-                      ClientUri clientUri) {
-        super(clientConfig, Http2Client.PROTOCOL_ID, method, clientUri, clientConfig.properties());
+    Http2ClientRequestImpl(WebClient webClient,
+                           HttpClientConfig clientConfig,
+                           Http2ClientProtocolConfig protocolConfig,
+                           Http.Method method,
+                           ClientUri clientUri) {
+        super(clientConfig, webClient.cookieManager(), Http2Client.PROTOCOL_ID, method, clientUri, clientConfig.properties());
         this.protocolConfig = protocolConfig;
         this.executor = clientConfig.executor();
 
@@ -114,12 +114,12 @@ class ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2Clien
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientService.Chain httpCall = new Http2CallEntityChain(webClient,
-                                                                  this,
-                                                                  protocolConfig,
-                                                                  connection().orElse(null),
-                                                                  whenSent,
-                                                                  whenComplete,
-                                                                  entity);
+                                                                   this,
+                                                                   protocolConfig,
+                                                                   connection().orElse(null),
+                                                                   whenSent,
+                                                                   whenComplete,
+                                                                   entity);
 
         return invokeWithServices(httpCall, whenSent, whenComplete);
         WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);

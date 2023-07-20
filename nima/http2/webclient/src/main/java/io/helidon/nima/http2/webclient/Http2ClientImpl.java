@@ -44,7 +44,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
         UriQueryWriteable query = UriQueryWriteable.create();
         clientConfig.baseQuery().ifPresent(query::from);
 
-        return new ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri);
+        return new Http2ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri);
     }
 
     @Override

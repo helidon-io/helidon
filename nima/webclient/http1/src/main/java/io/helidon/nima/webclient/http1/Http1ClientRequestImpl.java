@@ -30,28 +30,28 @@ import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
-class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
+class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
 
     private final WebClient webClient;
     private final Http1ClientProtocolConfig protocolConfig;
 
-    ClientRequestImpl(WebClient webClient,
-                      HttpClientConfig clientConfig,
-                      Http1ClientProtocolConfig protocolConfig,
-                      Http.Method method,
-                      ClientUri clientUri,
-                      Map<String, String> properties) {
-        super(clientConfig, Http1Client.PROTOCOL_ID, method, clientUri, properties);
+    Http1ClientRequestImpl(WebClient webClient,
+                           HttpClientConfig clientConfig,
+                           Http1ClientProtocolConfig protocolConfig,
+                           Http.Method method,
+                           ClientUri clientUri,
+                           Map<String, String> properties) {
+        super(clientConfig, webClient.cookieManager(), Http1Client.PROTOCOL_ID, method, clientUri, properties);
 
         this.webClient = webClient;
         this.protocolConfig = protocolConfig;
     }
 
     //Copy constructor for redirection purposes
-    private ClientRequestImpl(ClientRequestImpl request,
-                              Http.Method method,
-                              ClientUri clientUri,
-                              Map<String, String> properties) {
+    private Http1ClientRequestImpl(Http1ClientRequestImpl request,
+                                   Http.Method method,
+                                   ClientUri clientUri,
+                                   Map<String, String> properties) {
         this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, properties);
 
         followRedirects(request.followRedirects());
@@ -85,7 +85,7 @@ class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1Clien
 
     private ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {
         //Request object which should be used for invoking the next request. This will change in case of any redirection.
-        ClientRequestImpl clientRequest = this;
+        Http1ClientRequestImpl clientRequest = this;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
         Object entityToBeSent = entity;
         for (int i = 0; i < maxRedirects(); i++) {
@@ -115,11 +115,11 @@ class ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1Clien
             //Method and entity is required to be the same as with original request with 307 and 308 requests
             if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
                     || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
-                clientRequest = new ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
+                clientRequest = new Http1ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, properties());
+                clientRequest = new Http1ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, properties());
             }
         }
         throw new IllegalStateException("Maximum number of request redirections ("

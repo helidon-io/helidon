@@ -29,7 +29,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                       List<ProtocolSpi> protocols,
                       List<ProtocolSpi> tcpProtocols,
                       List<String> tcpProtocolIds) {
-        super(clientConfig, "any", method, clientUri, clientConfig.properties());
+        super(clientConfig, webClient.cookieManager(), "any", method, clientUri, clientConfig.properties());
         this.webClient = webClient;
         this.clients = protocolsToClients;
         this.protocols = protocols;

@@ -65,6 +65,7 @@ class LoomClient implements WebClient {
     private final List<ProtocolSpi> tcpProtocols;
     private final ProtocolConfigs protocolConfigs;
     private final List<String> tcpProtocolIds;
+    private final WebClientCookieManager cookieManager;
 
     /**
      * Construct this instance from a subclass of builder.
@@ -76,6 +77,7 @@ class LoomClient implements WebClient {
     protected LoomClient(WebClientConfig config) {
         this.config = config;
         this.protocolConfigs = ProtocolConfigs.create(config.protocolConfigs());
+        this.cookieManager = config.cookieManager().orElseGet(() -> WebClientCookieManager.builder().build());
 
         List<HttpClientSpiProvider> providers;
         List<String> protocolPreference = config.protocolPreference();
@@ -121,6 +123,11 @@ class LoomClient implements WebClient {
         this.tcpProtocolIds = tcpProtocols.stream()
                 .map(ProtocolSpi::id)
                 .toList();
+    }
+
+    @Override
+    public WebClientCookieManager cookieManager() {
+        return cookieManager;
     }
 
     @Override

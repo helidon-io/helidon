@@ -61,6 +61,12 @@ import org.glassfish.jersey.client.spi.ConnectorProvider;
  *
  */
 public class HelidonConnectorProvider implements ConnectorProvider {
+    /**
+     * Default constructor is required for extensibility of Jersey.
+     */
+    public HelidonConnectorProvider() {
+    }
+
     @Override
     public Connector getConnector(Client client, Configuration runtimeConfig) {
         return new HelidonConnector(client, runtimeConfig);

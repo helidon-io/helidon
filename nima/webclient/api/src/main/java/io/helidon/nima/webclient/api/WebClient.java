@@ -20,7 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.common.http.Headers;
 import io.helidon.nima.webclient.spi.Protocol;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
 
@@ -34,7 +33,7 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * Create a new builder of the HTTP protocol, that can be used with any supported version.
      * Which versions are supported is determined by the classpath, HTTP/1.1 is always supported.
      * To support a specific HTTP version only,
-     *  you can use {@link WebClientConfig.Builder#addProtocolPreference(java.util.List)}.
+     * you can use {@link WebClientConfig.Builder#addProtocolPreference(java.util.List)}.
      *
      * @return new HTTP client builder
      */
@@ -61,11 +60,11 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * The resulting protocol will use this client as a base, so it will share all configuration that is
      * relevant for the protocol.
      *
-     * @param protocol protocol instance, usually defined as a constant on the protocol interface
+     * @param protocol       protocol instance, usually defined as a constant on the protocol interface
      * @param protocolConfig configuration of the protocol to be used (if customization is required)
+     * @param <T>            type of the protocol client
+     * @param <C>            type of the protocol config
      * @return a new protocol client instance
-     * @param <T> type of the protocol client
-     * @param <C> type of the protocol config
      */
     <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol, C protocolConfig);
 
@@ -76,9 +75,9 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * relevant for the protocol.
      *
      * @param protocol protocol instance, usually defined as a constant on the protocol interface
+     * @param <T>      type of the protocol client
+     * @param <C>      type of the protocol config
      * @return a new protocol client instance
-     * @param <T> type of the protocol client
-     * @param <C> type of the protocol config
      */
     <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol);
 
@@ -88,4 +87,11 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
      * @return executor service
      */
     ExecutorService executor();
+
+    /**
+     * Cookie manager to use by this client.
+     *
+     * @return cookie manager
+     */
+    WebClientCookieManager cookieManager();
 }

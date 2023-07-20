@@ -37,8 +37,8 @@ import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
@@ -174,7 +174,7 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("HTTP/2 route"));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
                        is("test-get"));
         }
@@ -196,7 +196,7 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("PUT " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
                        is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
@@ -220,7 +220,7 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("POST " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
                        is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),

@@ -176,7 +176,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
      * Whether Expect-100-Continue header is sent to verify server availability before sending an entity.
      * <p>
-     *     Defaults to {@code true}.
+     * Defaults to {@code true}.
      * </p>
      *
      * @return whether Expect:100-Continue header should be sent on streamed transfers
@@ -192,4 +192,11 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @ConfiguredOption("256")
     int connectionCacheSize();
+
+    /**
+     * Web client cookie manager.
+     *
+     * @return cookie manager to use
+     */
+    Optional<WebClientCookieManager> cookieManager();
 }
