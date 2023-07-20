@@ -39,6 +39,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -499,6 +500,11 @@ class ClientRequestImplTest {
             this.clientWriter = writer(clientToServer);
             this.serverReader = reader(clientToServer);
             this.serverWriter = writer(serverToClient);
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return null;
         }
 
         @Override

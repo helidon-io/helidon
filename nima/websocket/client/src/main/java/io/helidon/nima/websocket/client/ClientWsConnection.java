@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.websocket.ClientWsFrame;
 import io.helidon.nima.websocket.ServerWsFrame;
 import io.helidon.nima.websocket.WsCloseCodes;
@@ -39,51 +39,53 @@ public class ClientWsConnection implements WsSession, Runnable {
     private static final System.Logger LOGGER = System.getLogger(ClientWsConnection.class.getName());
 
     private final WsListener listener;
-    private final HelidonSocket helidonSocket;
-    private final DataReader reader;
-    private final DataWriter writer;
-    private final Optional<String> subProtocol;
+    private final String subProtocol;
     private final BufferData sendBuffer = BufferData.growing(1024);
+    private final ClientConnection connection;
+    private final HelidonSocket helidonSocket;
 
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
     private boolean closeSent;
     private boolean terminated;
 
-    ClientWsConnection(WsListener listener,
-                       HelidonSocket helidonSocket,
-                       DataReader reader,
-                       DataWriter writer,
-                       Optional<String> subProtocol) {
+    ClientWsConnection(ClientConnection connection,
+                       WsListener listener,
+                       String subProtocol) {
+        this.connection = connection;
         this.listener = listener;
-        this.helidonSocket = helidonSocket;
-        this.reader = reader;
-        this.writer = writer;
         this.subProtocol = subProtocol;
+        this.helidonSocket = connection.helidonSocket();
+    }
+
+    ClientWsConnection(ClientConnection connection,
+                       WsListener listener) {
+        this(connection, listener, null);
     }
 
     /**
      * Create a new connection. The connection needs to run on ana executor service (it implements {@link java.lang.Runnable})
      * so it does not block the current thread.
      *
+     * @param clientConnection connection to use for this WS connection
      * @param listener WebSocket listener to handle events on this connection
-     * @param helidonSocket Helidon Socket to obtain information about peer
-     * @param reader used to read data from remote server
-     * @param writer use to write data to remote server
      * @param subProtocol chosen sub-protocol of this connection (negotiated during upgrade from HTTP/1)
      * @return a new WebSocket connection
      */
-    public static ClientWsConnection create(WsListener listener,
-                                            HelidonSocket helidonSocket,
-                                            DataReader reader,
-                                            DataWriter writer,
-                                            Optional<String> subProtocol) {
-        return new ClientWsConnection(listener, helidonSocket, reader, writer, subProtocol);
+    public static ClientWsConnection create(ClientConnection clientConnection,
+                                            WsListener listener,
+                                            String subProtocol) {
+        return new ClientWsConnection(clientConnection, listener, subProtocol);
+    }
+
+    public static ClientWsConnection create(ClientConnection clientConnection,
+                                            WsListener listener) {
+        return new ClientWsConnection(clientConnection, listener);
     }
 
     @Override
     public void run() {
-        Thread.currentThread().setName(helidonSocket.socketId() + " ws client");
+        Thread.currentThread().setName(connection.channelId() + " ws client");
         try {
             doRun();
         } catch (Exception e) {
@@ -97,7 +99,7 @@ public class ClientWsConnection implements WsSession, Runnable {
                 }
             }
         } finally {
-            helidonSocket.close();
+            connection.close();
         }
     }
 
@@ -144,7 +146,7 @@ public class ClientWsConnection implements WsSession, Runnable {
 
     @Override
     public Optional<String> subProtocol() {
-        return subProtocol;
+        return Optional.ofNullable(subProtocol);
     }
 
     private ClientWsConnection send(ClientWsFrame frame) {
@@ -181,7 +183,7 @@ public class ClientWsConnection implements WsSession, Runnable {
         sendBuffer.write(maskingKey[2]);
         sendBuffer.write(maskingKey[3]);
         sendBuffer.write(frame.maskedData());
-        writer.writeNow(sendBuffer);
+        connection.writer().writeNow(sendBuffer);
         return this;
     }
 
@@ -265,7 +267,7 @@ public class ClientWsConnection implements WsSession, Runnable {
     private ServerWsFrame readFrame() {
         try {
             // TODO check may payload size, danger of oom
-            return ServerWsFrame.read(helidonSocket, reader, Integer.MAX_VALUE);
+            return ServerWsFrame.read(helidonSocket, connection.reader(), Integer.MAX_VALUE);
         } catch (WsCloseException e) {
             close(e.closeCode(), e.getMessage());
             throw e;

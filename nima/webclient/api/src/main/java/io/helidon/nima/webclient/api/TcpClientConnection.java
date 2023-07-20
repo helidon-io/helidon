@@ -203,6 +203,7 @@ public class TcpClientConnection implements ClientConnection {
         }
     }
 
+    @Override
     public HelidonSocket helidonSocket() {
         return helidonSocket;
     }

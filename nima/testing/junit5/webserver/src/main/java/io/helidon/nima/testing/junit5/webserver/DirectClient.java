@@ -95,8 +95,10 @@ public class DirectClient implements Http1Client {
                 Optional.ofNullable(serverTlsPrincipal),
                 Optional.ofNullable(serverTlsCertificates));
 
+        DirectSocket socket = DirectSocket.create(localPeer, clientPeer, isTls);
+
         return httpClient.method(method)
-                .connection(new DirectClientConnection(clientPeer, localPeer, router, isTls));
+                .connection(new DirectClientConnection(socket, router));
     }
 
     /**

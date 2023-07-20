@@ -17,28 +17,38 @@
 package io.helidon.nima.websocket.client;
 
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.function.Consumer;
 
-import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.api.DefaultDnsResolverProvider;
-import io.helidon.nima.webclient.api.DnsAddressLookup;
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.websocket.WsListener;
 
 /**
  * WebSocket client.
  */
-public interface WsClient extends WebClient {
+@RuntimeType.PrototypedBy(WsClientConfig.class)
+public interface WsClient extends RuntimeType.Api<WsClientConfig> {
     /**
      * A new fluent API builder to create new instances of client.
      *
      * @return a new builder
      */
-    static Builder builder() {
-        return new Builder();
+    static WsClientConfig.Builder builder() {
+        return WsClientConfig.builder();
+    }
+
+    static WsClient create(WsClientConfig clientConfig) {
+        WebClient webClient = WebClient.create(it -> it.from(clientConfig));
+        return new WsClientImpl(webClient,
+                                webClient.client(Http1Client.PROTOCOL),
+                                clientConfig);
+    }
+
+    static WsClient create(Consumer<WsClientConfig.Builder> consumer) {
+        return WsClientConfig.builder()
+                .update(consumer)
+                .build();
     }
 
     /**
@@ -46,7 +56,7 @@ public interface WsClient extends WebClient {
      * This method returns when the connection is established and a new {@link io.helidon.nima.websocket.WsSession} is
      * started.
      *
-     * @param uri URI to connect to
+     * @param uri      URI to connect to
      * @param listener listener to handle WebSocket
      */
     void connect(URI uri, WsListener listener);
@@ -56,70 +66,8 @@ public interface WsClient extends WebClient {
      * This method returns when the connection is established and a new {@link io.helidon.nima.websocket.WsSession} is
      * started.
      *
-     * @param path path to connect to, if client uses a base URI, this is resolved against the base URI
+     * @param path     path to connect to, if client uses a base URI, this is resolved against the base URI
      * @param listener listener to handle WebSocket
      */
     void connect(String path, WsListener listener);
-
-    /**
-     * Fluent API builder for {@link io.helidon.nima.websocket.client.WsClient}.
-     */
-    class Builder extends WebClient.Builder<Builder, WsClient> {
-        /**
-         * Supported WebSocket version.
-         */
-        static final String SUPPORTED_VERSION = "13";
-        static final Http.HeaderValue HEADER_UPGRADE_WS = Http.Header.createCached(Http.Header.UPGRADE, "websocket");
-        static final Http.HeaderName HEADER_WS_PROTOCOL = Http.Header.create("Sec-WebSocket-Protocol");
-        private static final Http.HeaderValue HEADER_WS_VERSION = Http.Header.createCached(Http.Header.create(
-                "Sec-WebSocket-Version"), SUPPORTED_VERSION);
-        private final List<String> subprotocols = new ArrayList<>();
-
-        private Builder() {
-            // until we use the same parent for HTTP/1 and websocket, we need to have these defined as defaults
-            super.dnsResolver(new DefaultDnsResolverProvider().createDnsResolver());
-            super.dnsAddressLookup(DnsAddressLookup.defaultLookup());
-        }
-
-        @Override
-        public WsClient doBuild() {
-            // these headers cannot be modified by user
-            header(HEADER_UPGRADE_WS);
-            header(HEADER_WS_VERSION);
-            header(Http.HeaderValues.CONTENT_LENGTH_ZERO);
-            if (subprotocols.isEmpty()) {
-                removeHeader(HEADER_WS_PROTOCOL);
-            } else {
-                header(HEADER_WS_PROTOCOL, subprotocols);
-            }
-
-            return new WsClientImpl(this);
-        }
-
-        /**
-         * Add sub-protocol. A list of preferred sub-protocols is sent to server, and it chooses zero or one of them.
-         *
-         * @param preferred preferred sub-protocol to use, first one added is considered to be the most desired one
-         * @return updated builder instance
-         */
-        public Builder addSubProtocol(String preferred) {
-            Objects.requireNonNull(preferred);
-            this.subprotocols.add(preferred);
-            return this;
-        }
-
-        /**
-         * Configure sub-protocols.
-         * A list of preferred sub-protocols is sent to server, and it chooses zero or one of them.
-         *
-         * @param preferred preferred sub-protocols to use
-         * @return updated builder instance
-         */
-        public Builder subProtocols(String... preferred) {
-            Objects.requireNonNull(preferred);
-            subprotocols.clear();
-            Collections.addAll(subprotocols, preferred);
-            return this;
-        }
-    }
 }

@@ -73,7 +73,7 @@ class ClientResponseImpl implements Http1ClientResponse {
     private final ParserMode parserMode;
     private final ClientUri lastEndpointUri;
 
-    private ClientConnection connection;
+    private final ClientConnection connection;
     private long entityLength;
     private boolean entityFullyRead;
     private WritableHeaders<?> trailers;
@@ -160,6 +160,10 @@ class ClientResponseImpl implements Http1ClientResponse {
     @Override
     public ClientUri lastEndpointUri() {
         return lastEndpointUri;
+    }
+
+    ClientConnection connection() {
+        return connection;
     }
 
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,

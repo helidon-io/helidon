@@ -22,26 +22,35 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
 import io.helidon.nima.webclient.api.HttpClient;
 import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.spi.Protocol;
 
 /**
  * HTTP/1.1 client.
  */
 @RuntimeType.PrototypedBy(Http1ClientConfig.class)
 public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType.Api<Http1ClientConfig> {
-
+    /**
+     * ID of HTTP/1.1 protocol, as used for example in ALPN.
+     */
     String PROTOCOL_ID = "http/1.1";
+    /**
+     * HTTP/1.1 protocol to use to obtain an instance of HTTP/1.1 specific client from
+     * {@link io.helidon.nima.webclient.api.WebClient#client(io.helidon.nima.webclient.spi.Protocol)}
+     */
+    Protocol<Http1Client, Http1ClientProtocolConfig> PROTOCOL = Http1ProtocolProvider::new;
 
     static Http1ClientConfig.Builder builder() {
         return Http1ClientConfig.builder();
     }
+
     static Http1Client create(Http1ClientConfig clientConfig) {
         return new Http1ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
     }
 
     static Http1Client create(Consumer<Http1ClientConfig.Builder> consumer) {
-        return create(Http1ClientConfig.builder()
-                              .update(consumer)
-                              .buildPrototype());
+        return Http1ClientConfig.builder()
+                .update(consumer)
+                .build();
     }
 
     /**

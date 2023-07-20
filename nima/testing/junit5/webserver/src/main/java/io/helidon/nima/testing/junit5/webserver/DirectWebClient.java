@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
@@ -93,8 +94,9 @@ public class DirectWebClient implements WebClient {
                 Optional.ofNullable(serverTlsPrincipal),
                 Optional.ofNullable(serverTlsCertificates));
 
+        HelidonSocket socket = DirectSocket.create(clientPeer, localPeer, isTls);
         return webClient.method(method)
-                .connection(new DirectClientConnection(clientPeer, localPeer, router, isTls));
+                .connection(new DirectClientConnection(socket, router));
     }
 
     @Override

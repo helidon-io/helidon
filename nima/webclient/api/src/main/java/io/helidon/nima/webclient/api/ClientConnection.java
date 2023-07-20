@@ -20,6 +20,7 @@ import java.time.Duration;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
 
 /**
  * Client connection.
@@ -56,6 +57,13 @@ public interface ClientConnection {
      * @return id of this channel (connection)
      */
     String channelId();
+
+    /**
+     * Associated {@link io.helidon.common.socket.HelidonSocket}.
+     *
+     * @return socket of this connection
+     */
+    HelidonSocket helidonSocket();
 
     /**
      * Read timeout for this connection.

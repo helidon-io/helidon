@@ -31,6 +31,7 @@ import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
+    private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
 
     private final WebClient webClient;
     private final Http1ClientProtocolConfig protocolConfig;
@@ -81,6 +82,53 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                                                          streamHandler);
 
         return invokeWithServices(callChain, whenSent, whenComplete);
+    }
+
+    @Override
+    public UpgradeResponse upgrade(String protocol) {
+        if (!headers().contains(Http.Header.UPGRADE)) {
+            headers().set(Http.Header.UPGRADE, protocol);
+        }
+        Http.HeaderValue requestedUpgrade = headers().get(Http.Header.UPGRADE);
+        ClientResponseImpl response;
+
+        if (followRedirects()) {
+            response = invokeWithFollowRedirectsEntity(BufferData.EMPTY_BYTES);
+        } else {
+            response = invokeRequestWithEntity(BufferData.EMPTY_BYTES);
+        }
+
+        if (response.status() == Http.Status.SWITCHING_PROTOCOLS_101) {
+            // yep, this is the response we want
+            if (response.headers().contains(requestedUpgrade)) {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    response.connection().helidonSocket().log(LOGGER,
+                                                              System.Logger.Level.TRACE,
+                                                              "Upgrading to {0}",
+                                                              requestedUpgrade);
+                }
+                // upgrade was a success
+                return UpgradeResponse.success(response, response.connection());
+            } else {
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    response.connection().helidonSocket().log(LOGGER,
+                                                              System.Logger.Level.TRACE,
+                                                              "Upgrade failed. Expected upgrade: {0}, got headers: {1}",
+                                                              requestedUpgrade,
+                                                              response.headers());
+                }
+            }
+        } else {
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                response.connection().helidonSocket().log(LOGGER,
+                                                          System.Logger.Level.TRACE,
+                                                          "Upgrade failed. Tried upgrading to {0}, got status: {1}",
+                                                          requestedUpgrade,
+                                                          response.status());
+            }
+        }
+
+        return UpgradeResponse.failure(response);
     }
 
     private ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {

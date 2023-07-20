@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,12 +51,13 @@ class LoomClient implements WebClient {
     private static final List<HttpClientSpiProvider> PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(HttpClientSpiProvider.class))
                     .asList();
-    private static final Map<String, HttpClientSpiProvider> PROVIDERS_BY_PROTOCOL;
+    private static final Map<String, HttpClientSpiProvider> HTTP_PROVIDERS_BY_PROTOCOL;
+    private static final Map<String, Object> CLIENTS_BY_PROTOCOL = new ConcurrentHashMap<>();
 
     static {
         Map<String, HttpClientSpiProvider> providerMap = new HashMap<>();
         PROVIDERS.forEach(it -> providerMap.put(it.protocolId(), it));
-        PROVIDERS_BY_PROTOCOL = Map.copyOf(providerMap);
+        HTTP_PROVIDERS_BY_PROTOCOL = Map.copyOf(providerMap);
     }
 
     private final WebClientConfig config;
@@ -87,7 +89,7 @@ class LoomClient implements WebClient {
         } else {
             providers = new ArrayList<>();
             for (String protocol : protocolPreference) {
-                HttpClientSpiProvider spi = PROVIDERS_BY_PROTOCOL.get(protocol);
+                HttpClientSpiProvider spi = HTTP_PROVIDERS_BY_PROTOCOL.get(protocol);
                 if (spi == null) {
                     throw new IllegalStateException("Requested protocol \"" + protocol + "\" is not available on classpath");
                 }
@@ -154,14 +156,17 @@ class LoomClient implements WebClient {
         return protocol.provider().protocol(this, protocolConfig);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol) {
         ProtocolProvider<T, C> provider = protocol.provider();
-        C config = protocolConfigs.config(provider.protocolId(),
-                                          provider.configType(),
-                                          provider::defaultConfig);
-
-        return provider.protocol(this, config);
+        return (T) CLIENTS_BY_PROTOCOL.computeIfAbsent(provider.protocolId(),
+                                                   protocolId -> {
+                                                       C config = protocolConfigs.config(provider.protocolId(),
+                                                                                         provider.configType(),
+                                                                                         provider::defaultConfig);
+                                                       return protocol.provider().protocol(this, config);
+                                                   });
     }
 
     @Override
