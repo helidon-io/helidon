@@ -127,6 +127,9 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
+                                    <list key="module-info">
+                                        <value if="${flavor} == 'mp'"><![CDATA[    requires io.helidon.microprofile.metrics;]]></value>
+                                    </list>
                                 </model>
                             </output>
                         </option>

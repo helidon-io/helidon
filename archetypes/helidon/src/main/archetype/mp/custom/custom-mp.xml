@@ -78,6 +78,12 @@
                     <value key="artifactId">helidon-microprofile-core</value>
                 </map>
             </list>
+            <list key="module-info">
+                <value><![CDATA[    requires jakarta.cdi;]]></value>
+                <value><![CDATA[    requires jakarta.inject;]]></value>
+                <value><![CDATA[    requires jakarta.ws.rs;]]></value>
+                <value><![CDATA[    requires io.helidon.microprofile.config;]]></value>
+            </list>
         </model>
     </output>
 </archetype-script>

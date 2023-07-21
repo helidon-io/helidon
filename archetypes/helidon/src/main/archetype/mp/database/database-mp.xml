@@ -32,6 +32,11 @@
             <list key="readme-exercise-the-application">
                 <value file="files/README.md"/>
             </list>
+            <list key="module-info">
+                <value><![CDATA[    requires jakarta.annotation;]]></value>
+                <value><![CDATA[    requires jakarta.persistence;]]></value>
+                <value><![CDATA[    requires jakarta.transaction;]]></value>
+            </list>
         </model>
     </output>
 </archetype-script>
