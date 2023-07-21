@@ -85,6 +85,14 @@ public interface ClientRequest<T extends ClientRequest<T>> {
     T uri(URI uri);
 
     /**
+     * Configure request URI. This always replaces the existing URI (even if base URI is configured).
+     *
+     * @param uri uri to resolve against base URI, or to use if absolute
+     * @return updated request
+     */
+    T uri(ClientUri uri);
+
+    /**
      * Set an HTTP header.
      *
      * @param header header to set
@@ -330,15 +338,6 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated client request
      */
     T connection(ClientConnection connection);
-
-    /**
-     * Disable uri encoding.
-     *
-     * @return updated client request
-     */
-    default T skipUriEncoding() {
-        return skipUriEncoding(true);
-    }
 
     /**
      * Disable uri encoding.

@@ -16,43 +16,27 @@
 
 package io.helidon.nima.http2.webclient;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.socket.SocketOptions;
-import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http2.Http2Headers;
-import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
-import io.helidon.nima.webclient.api.ConnectionKey;
+import io.helidon.nima.webclient.api.FullClientRequest;
 import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
-import io.helidon.nima.webclient.spi.WebClientService;
 
-class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse> implements Http2ClientRequest {
+class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse>
+        implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
 
+    private final WebClient webClient;
     private final Http2ClientProtocolConfig protocolConfig;
-    private final ExecutorService executor;
-    private final int initialWindowSize;
-    private final int maxFrameSize;
-    private final long maxHeaderListSize;
-    private final int connectionPrefetch;
 
     private int priority;
     private boolean priorKnowledge;
@@ -64,16 +48,28 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            HttpClientConfig clientConfig,
                            Http2ClientProtocolConfig protocolConfig,
                            Http.Method method,
-                           ClientUri clientUri) {
-        super(clientConfig, webClient.cookieManager(), Http2Client.PROTOCOL_ID, method, clientUri, clientConfig.properties());
-        this.protocolConfig = protocolConfig;
-        this.executor = clientConfig.executor();
+                           ClientUri clientUri, Map<String, String> properties) {
+        super(clientConfig, webClient.cookieManager(), Http2Client.PROTOCOL_ID, method, clientUri, properties);
 
-        this.priorKnowledge = protocolConfig.priorKnowledge();
-        this.initialWindowSize = protocolConfig.initialWindowSize();
-        this.maxFrameSize = protocolConfig.maxFrameSize();
-        this.maxHeaderListSize = protocolConfig.maxHeaderListSize();
-        this.connectionPrefetch = protocolConfig.prefetch();
+        this.webClient = webClient;
+        this.protocolConfig = protocolConfig;
+    }
+
+    public Http2ClientRequestImpl(Http2ClientRequestImpl request,
+                                  Http.Method method,
+                                  ClientUri clientUri,
+                                  Map<String, String> properties) {
+        this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, properties);
+
+        followRedirects(request.followRedirects());
+        maxRedirects(request.maxRedirects());
+        tls(request.tls());
+
+        this.priority(request.priority);
+        this.priorKnowledge(request.priorKnowledge);
+        this.flowControlTimeout(request.flowControlTimeout);
+        this.requestPrefetch(request.requestPrefetch);
+        this.timeout(request.timeout);
     }
 
     @Override
@@ -111,153 +107,133 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
 
     @Override
     public Http2ClientResponse doSubmit(Object entity) {
-        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain httpCall = new Http2CallEntityChain(webClient,
-                                                                   this,
-                                                                   protocolConfig,
-                                                                   connection().orElse(null),
-                                                                   whenSent,
-                                                                   whenComplete,
-                                                                   entity);
-
-        return invokeWithServices(httpCall, whenSent, whenComplete);
-        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
-
-        Http2ClientStream stream = reserveStream();
-
-        byte[] entityBytes;
-        if (entity == BufferData.EMPTY_BYTES) {
-            entityBytes = BufferData.EMPTY_BYTES;
-        } else {
-            entityBytes = entityBytes(entity);
+        if (followRedirects()) {
+            return invokeEntityFollowRedirects(entity);
         }
-        headers.set(Header.create(Header.CONTENT_LENGTH, entityBytes.length));
-        headers.setIfAbsent(USER_AGENT_HEADER);
-
-        Http2Headers http2Headers = prepareHeaders(headers);
-        stream.write(http2Headers, entityBytes.length == 0);
-
-        stream.flowControl().inbound().incrementWindowSize(requestPrefetch);
-
-        if (entityBytes.length != 0) {
-            stream.writeData(BufferData.create(entityBytes), true);
-        }
-
-        return readResponse(stream);
+        return invokeEntity(entity);
     }
 
     @Override
-    public Http2ClientResponse outputStream(ClientRequest.OutputStreamHandler streamHandler) {
-        // todo validate request ok
+    public Http2ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        Http2CallChainBase callChain = new Http2CallOutputStreamChain(webClient,
+                                                                      this,
+                                                                      clientConfig(),
+                                                                      protocolConfig,
+                                                                      whenSent,
+                                                                      whenComplete,
+                                                                      streamHandler);
 
-        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
-
-        Http2ClientStream stream = reserveStream();
-
-        Http2Headers http2Headers = prepareHeaders(headers);
-
-        stream.write(http2Headers, false);
-
-        Http2ClientStream.ClientOutputStream outputStream;
-        try {
-            outputStream = stream.outputStream();
-            streamHandler.handle(outputStream);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-
-        if (!outputStream.closed()) {
-            throw new IllegalStateException("Output stream was not closed in handler");
-        }
-
-        return readResponse(stream);
+        return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
-    private Http2ClientResponse readResponse(Http2ClientStream stream) {
-        Http2Headers headers = stream.readHeaders();
-
-        return new ClientResponseImpl(headers, stream, clientUri);
+    @Override
+    public boolean priorKnowledge() {
+        return priorKnowledge;
     }
 
-    private byte[] entityBytes(Object entity) {
-        if (entity instanceof byte[] bytes) {
-            return bytes;
-        }
-
-        GenericType<Object> genericType = GenericType.create(entity);
-        EntityWriter<Object> writer = mediaContext.writer(genericType, explicitHeaders);
-
-        // This uses an in-memory buffer, which would cause damage for writing big objects (such as Path)
-        // we have a follow-up issue to make sure this is fixed
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        writer.write(genericType, entity, bos, explicitHeaders);
-        return bos.toByteArray();
+    @Override
+    public int priority() {
+        return priority;
     }
 
-    private Http2Headers prepareHeaders(WritableHeaders<?> headers) {
-        Http2Headers http2Headers = Http2Headers.create(headers);
-        http2Headers.method(this.method);
-        http2Headers.authority(this.clientUri.authority());
-        http2Headers.scheme(this.clientUri.scheme());
-        http2Headers.path(this.clientUri.pathWithQueryAndFragment(query, fragment));
-
-        headers.remove(Header.HOST, LogHeaderConsumer.INSTANCE);
-        headers.remove(Header.TRANSFER_ENCODING, LogHeaderConsumer.INSTANCE);
-        headers.remove(Header.CONNECTION, LogHeaderConsumer.INSTANCE);
-        return http2Headers;
+    @Override
+    public Duration timeout() {
+        return timeout;
     }
 
-    private Http2ClientStream reserveStream() {
-        if (explicitConnection == null) {
-            return newStream(clientUri);
-        } else {
-            throw new UnsupportedOperationException("Explicit connection not (yet) supported for HTTP/2 client");
-        }
+    // this is currently not used - if it is to be used, it must be per stream configuration, not connection wide
+    int requestPrefetch() {
+        return requestPrefetch;
     }
 
-    private Http2ClientStream newStream(ClientUri uri) {
-        try {
-            ConnectionKey connectionKey = new ConnectionKey(method,
-                                                            uri.scheme(),
-                                                            uri.host(),
-                                                            uri.port(),
-                                                            priorKnowledge,
-                                                            tls,
-                                                            clientConfig.dnsResolver(),
-                                                            clientConfig.dnsAddressLookup());
-
-            // this statement locks all threads - must not do anything complicated (just create a new instance)
-            return CHANNEL_CACHE.computeIfAbsent(connectionKey,
-                                                 key -> new Http2ClientConnectionHandler(executor,
-                                                                                         SocketOptions.builder().build(),
-                                                                                         uri.path(),
-                                                                                         key))
-                    // this statement may block a single connection key
-                    .newStream(new ConnectionContext(priority,
-                                                     priorKnowledge,
-                                                     initialWindowSize,
-                                                     maxFrameSize,
-                                                     maxHeaderListSize,
-                                                     connectionPrefetch,
-                                                     requestPrefetch,
-                                                     flowControlTimeout,
-                                                     timeout));
-        } catch (UpgradeRedirectException e) {
-            return newStream(ClientUri.create(URI.create(e.redirectUri()), UriQueryWriteable.create()));
-        }
+    // this is currently not used - if it is to be used, it must be per stream configuration, not connection wide
+    Duration flowControlTimeout() {
+        return flowControlTimeout;
     }
 
-    private static final class LogHeaderConsumer implements Consumer<HeaderValue> {
-        private static final System.Logger LOGGER = System.getLogger(LogHeaderConsumer.class.getName());
-        private static final LogHeaderConsumer INSTANCE = new LogHeaderConsumer();
+    private Http2ClientResponse invokeEntityFollowRedirects(Object entity) {
+        //Request object which should be used for invoking the next request. This will change in case of any redirection.
+        Http2ClientRequestImpl clientRequest = this;
+        //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
+        Object entityToBeSent = entity;
+        for (int i = 0; i < maxRedirects(); i++) {
+            Http2ClientResponseImpl clientResponse = clientRequest.invokeEntity(entityToBeSent);
+            int code = clientResponse.status().code();
+            if (code < 300 || code >= 400) {
+                return clientResponse;
+            } else if (!clientResponse.headers().contains(Http.Header.LOCATION)) {
+                throw new IllegalStateException("There is no " + Http.Header.LOCATION + " header present in the response! "
+                                                        + "It is not clear where to redirect.");
+            }
+            String redirectedUri = clientResponse.headers().get(Http.Header.LOCATION).value();
+            URI newUri = URI.create(redirectedUri);
+            ClientUri redirectUri = ClientUri.create(newUri);
 
-        @Override
-        public void accept(HeaderValue httpHeader) {
-            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                LOGGER.log(System.Logger.Level.DEBUG,
-                           "HTTP/2 request contains wrong header, removing: " + httpHeader);
+            if (newUri.getHost() == null) {
+                //To keep the information about the latest host, we need to use uri from the last performed request
+                //Example:
+                //request -> my-test.com -> response redirect -> my-example.com
+                //new request -> my-example.com -> response redirect -> /login
+                //with using the last request uri host etc, we prevent my-test.com/login from happening
+                ClientUri resolvedUri = clientRequest.resolvedUri();
+                redirectUri.scheme(resolvedUri.scheme());
+                redirectUri.host(resolvedUri.host());
+                redirectUri.port(resolvedUri.port());
+            }
+            //Method and entity is required to be the same as with original request with 307 and 308 requests
+            if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
+                    || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+                clientRequest = new Http2ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
+            } else {
+                //It is possible to change to GET and send no entity with all other redirect codes
+                entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
+                clientRequest = new Http2ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, properties());
             }
         }
+        throw new IllegalStateException("Maximum number of request redirections ("
+                                                + clientConfig().maxRedirects() + ") reached.");
+    }
+
+    private Http2ClientResponseImpl invokeEntity(Object entity) {
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        Http2CallChainBase httpCall = new Http2CallEntityChain(webClient,
+                                                               this,
+                                                               clientConfig(),
+                                                               protocolConfig,
+                                                               connection().orElse(null),
+                                                               whenSent,
+                                                               whenComplete,
+                                                               entity);
+
+        return invokeWithServices(httpCall, whenSent, whenComplete);
+    }
+
+    private Http2ClientResponseImpl invokeWithServices(Http2CallChainBase callChain,
+                                                       CompletableFuture<WebClientServiceRequest> whenSent,
+                                                       CompletableFuture<WebClientServiceResponse> whenComplete) {
+
+        // will create a copy, so we could invoke this method multiple times
+        ClientUri resolvedUri = resolvedUri();
+
+        WebClientServiceResponse serviceResponse = invokeServices(callChain, whenSent, whenComplete, resolvedUri);
+
+        CompletableFuture<Void> complete = new CompletableFuture<>();
+        complete.thenAccept(ignored -> serviceResponse.whenComplete().complete(serviceResponse))
+                .exceptionally(throwable -> {
+                    serviceResponse.whenComplete().completeExceptionally(throwable);
+                    return null;
+                });
+
+        return new Http2ClientResponseImpl(Http2Headers.create(serviceResponse.headers()),
+                                           Http2Headers.create(serviceResponse.serviceRequest().headers()),
+                                           callChain.clientStream(),
+                                           serviceResponse.reader(),
+                                           mediaContext(),
+                                           clientConfig().mediaTypeParserMode(),
+                                           resolvedUri,
+                                           complete);
     }
 }

@@ -1,5 +1,7 @@
 package io.helidon.nima.http2.webclient;
 
+import java.time.Duration;
+
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -74,4 +76,12 @@ interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
      */
     @ConfiguredOption("33554432")
     int prefetch();
+
+    /**
+     * Timeout for blocking between windows size check iterations.
+     *
+     * @return timeout
+     */
+    @ConfiguredOption("PT0.1S")
+    Duration flowControlBlockTimeout();
 }

@@ -21,20 +21,17 @@ import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.FullClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.api.WebClientCookieManager;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
 class Http1ClientImpl implements Http1Client, HttpClientSpi {
     private final WebClient client;
     private final Http1ClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
-    private final WebClientCookieManager cookieManager;
 
     Http1ClientImpl(WebClient client, Http1ClientConfig clientConfig) {
         this.client = client;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
-        this.cookieManager = client.cookieManager();
     }
 
     @Override

@@ -18,6 +18,7 @@ package io.helidon.nima.http2.webclient;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,13 +75,13 @@ class Http2ClientStream implements Http2Stream {
     Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
                       SocketContext ctx,
-                      ConnectionContext connectionContext,
+                      Duration timeout,
                       LockingStreamIdSequence streamIdSeq) {
         this.connection = connection;
         this.serverSettings = serverSettings;
         this.ctx = ctx;
         this.streamIdSeq = streamIdSeq;
-        this.buffer = new StreamBuffer(streamId, connectionContext.timeout());
+        this.buffer = new StreamBuffer(streamId, timeout);
     }
 
     @Override

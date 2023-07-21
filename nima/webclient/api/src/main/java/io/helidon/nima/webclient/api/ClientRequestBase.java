@@ -95,6 +95,13 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
+    public T uri(ClientUri uri) {
+        this.uriTemplate = null;
+        this.clientUri.resolve(uri);
+        return identity();
+    }
+
+    @Override
     public T uri(String uri) {
         if (uri.indexOf('{') > -1) {
             this.uriTemplate = uri;
@@ -302,6 +309,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public boolean keepAlive() {
         return keepAlive;
+    }
+
+    @Override
+    public boolean skipUriEncoding() {
+        return skipUriEncoding;
     }
 
     protected abstract R doSubmit(Object entity);

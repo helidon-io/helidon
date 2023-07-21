@@ -16,22 +16,31 @@
 
 package io.helidon.nima.http2.webclient;
 
-import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.media.type.ParserMode;
+import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientUri;
 
-class ClientResponseImpl implements Http2ClientResponse {
+class Http2ClientResponseImpl implements Http2ClientResponse {
     private final Http.Status responseStatus;
     private final ClientResponseHeaders responseHeaders;
     private final ClientUri lastEndpointUri;
     private Http2ClientStream stream;
 
-    ClientResponseImpl(Http2Headers headers, Http2ClientStream stream, ClientUri lastEndpointUri) {
+    Http2ClientResponseImpl(Http2Headers headers,
+                            Http2Headers http2Headers,
+                            Http2ClientStream stream,
+                            DataReader reader,
+                            MediaContext mediaContext,
+                            ParserMode parserMode,
+                            ClientUri lastEndpointUri,
+                            CompletableFuture<Void> complete) {
         this.responseStatus = headers.status();
         this.responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
         this.stream = stream;

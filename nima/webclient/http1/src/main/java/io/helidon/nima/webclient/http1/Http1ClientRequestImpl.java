@@ -58,7 +58,6 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
-        request.connection().ifPresent(this::connection);
     }
 
     @Override
@@ -90,7 +89,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             headers().set(Http.Header.UPGRADE, protocol);
         }
         Http.HeaderValue requestedUpgrade = headers().get(Http.Header.UPGRADE);
-        ClientResponseImpl response;
+        Http1ClientResponseImpl response;
 
         if (followRedirects()) {
             response = invokeWithFollowRedirectsEntity(BufferData.EMPTY_BYTES);
@@ -131,13 +130,13 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return UpgradeResponse.failure(response);
     }
 
-    private ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {
+    private Http1ClientResponseImpl invokeWithFollowRedirectsEntity(Object entity) {
         //Request object which should be used for invoking the next request. This will change in case of any redirection.
         Http1ClientRequestImpl clientRequest = this;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
         Object entityToBeSent = entity;
         for (int i = 0; i < maxRedirects(); i++) {
-            ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
+            Http1ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
             int code = clientResponse.status().code();
             if (code < 300 || code >= 400) {
                 return clientResponse;
@@ -174,7 +173,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                                 + clientConfig().maxRedirects() + ") reached.");
     }
 
-    private ClientResponseImpl invokeRequestWithEntity(Object entity) {
+    private Http1ClientResponseImpl invokeRequestWithEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientService.Chain callChain = new HttpCallEntityChain(webClient,
@@ -188,9 +187,9 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
-    private ClientResponseImpl invokeWithServices(WebClientService.Chain callChain,
-                                                  CompletableFuture<WebClientServiceRequest> whenSent,
-                                                  CompletableFuture<WebClientServiceResponse> whenComplete) {
+    private Http1ClientResponseImpl invokeWithServices(WebClientService.Chain callChain,
+                                                       CompletableFuture<WebClientServiceRequest> whenSent,
+                                                       CompletableFuture<WebClientServiceResponse> whenComplete) {
 
         // will create a copy, so we could invoke this method multiple times
         ClientUri resolvedUri = resolvedUri();
@@ -204,15 +203,15 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                     return null;
                 });
 
-        return new ClientResponseImpl(serviceResponse.status(),
-                                      serviceResponse.serviceRequest().headers(),
-                                      serviceResponse.headers(),
-                                      serviceResponse.connection(),
-                                      serviceResponse.reader(),
-                                      mediaContext(),
-                                      clientConfig().mediaTypeParserMode(),
-                                      resolvedUri,
-                                      complete);
+        return new Http1ClientResponseImpl(serviceResponse.status(),
+                                           serviceResponse.serviceRequest().headers(),
+                                           serviceResponse.headers(),
+                                           serviceResponse.connection(),
+                                           serviceResponse.reader(),
+                                           mediaContext(),
+                                           clientConfig().mediaTypeParserMode(),
+                                           resolvedUri,
+                                           complete);
     }
 
 }

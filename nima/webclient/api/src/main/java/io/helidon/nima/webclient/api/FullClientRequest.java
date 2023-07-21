@@ -4,11 +4,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.builder.api.Prototype;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQuery;
-import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.common.tls.Tls;
 
 /**
@@ -84,4 +80,11 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      * @return whether to use keep alive
      */
     boolean keepAlive();
+
+    /**
+     * Whether to skip URI encoding.
+     *
+     * @return whether to skip encoding
+     */
+    boolean skipUriEncoding();
 }

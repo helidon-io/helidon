@@ -36,7 +36,7 @@ import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
-abstract class HttpCallChainBase implements WebClientService.Chain {
+abstract class Http1CallChainBase implements WebClientService.Chain {
     private final BufferData writeBuffer = BufferData.growing(128);
     private final WebClient webClient;
     private final HttpClientConfig clientConfig;
@@ -46,13 +46,13 @@ abstract class HttpCallChainBase implements WebClientService.Chain {
     private final Proxy proxy;
     private final boolean keepAlive;
 
-    HttpCallChainBase(WebClient webClient,
-                      HttpClientConfig clientConfig,
-                      Http1ClientProtocolConfig protocolConfig,
-                      ClientConnection connection,
-                      Tls tls,
-                      Proxy proxy,
-                      boolean keepAlive) {
+    Http1CallChainBase(WebClient webClient,
+                       HttpClientConfig clientConfig,
+                       Http1ClientProtocolConfig protocolConfig,
+                       ClientConnection connection,
+                       Tls tls,
+                       Proxy proxy,
+                       boolean keepAlive) {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;

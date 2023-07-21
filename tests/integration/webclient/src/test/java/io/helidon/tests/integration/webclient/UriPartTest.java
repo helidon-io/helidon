@@ -49,7 +49,7 @@ class UriPartTest extends TestParent {
         try (Http1ClientResponse fullResponse = client.get()
                 .path("obtainedQuery")
                 .queryParam("test", EXPECTED_QUERY)
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .request()) {
             assertThat(fullResponse.status(), is(Http.Status.BAD_REQUEST_400));
         }
@@ -67,7 +67,7 @@ class UriPartTest extends TestParent {
         assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("obtainedQuery")
                 .queryParam("param", queryNameWithSpace)
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .request(String.class));
     }
 
@@ -79,7 +79,7 @@ class UriPartTest extends TestParent {
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
         assertThrows(IllegalArgumentException.class, () -> client.get()
                 .path("pattern with space")
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .request(String.class));
     }
 
@@ -99,7 +99,7 @@ class UriPartTest extends TestParent {
     void testBadFragment() {
         String fragment = "super fragment#&?/"; // contains illegal characters, that should break validation
         try (HttpClientResponse response = client.get()
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .fragment(fragment)
                 .request()) {
 
@@ -115,7 +115,7 @@ class UriPartTest extends TestParent {
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .requestEntity(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
@@ -128,7 +128,7 @@ class UriPartTest extends TestParent {
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .requestEntity(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
@@ -141,7 +141,7 @@ class UriPartTest extends TestParent {
         });
         assertThrows(CompletionException.class, () -> webClient.get()
                 .path("path%26")
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .request(String.class));
     }
 

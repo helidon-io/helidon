@@ -49,8 +49,8 @@ import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
-class ClientResponseImpl implements Http1ClientResponse {
-    private static final System.Logger LOGGER = System.getLogger(ClientResponseImpl.class.getName());
+class Http1ClientResponseImpl implements Http1ClientResponse {
+    private static final System.Logger LOGGER = System.getLogger(Http1ClientResponseImpl.class.getName());
 
     @SuppressWarnings("rawtypes")
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS
@@ -78,15 +78,15 @@ class ClientResponseImpl implements Http1ClientResponse {
     private boolean entityFullyRead;
     private WritableHeaders<?> trailers;
 
-    ClientResponseImpl(Http.Status responseStatus,
-                       ClientRequestHeaders requestHeaders,
-                       ClientResponseHeaders responseHeaders,
-                       ClientConnection connection,
-                       DataReader reader,
-                       MediaContext mediaContext,
-                       ParserMode parserMode,
-                       ClientUri lastEndpointUri,
-                       CompletableFuture<Void> whenComplete) {
+    Http1ClientResponseImpl(Http.Status responseStatus,
+                            ClientRequestHeaders requestHeaders,
+                            ClientResponseHeaders responseHeaders,
+                            ClientConnection connection,
+                            DataReader reader,
+                            MediaContext mediaContext,
+                            ParserMode parserMode,
+                            ClientUri lastEndpointUri,
+                            CompletableFuture<Void> whenComplete) {
         this.responseStatus = responseStatus;
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;

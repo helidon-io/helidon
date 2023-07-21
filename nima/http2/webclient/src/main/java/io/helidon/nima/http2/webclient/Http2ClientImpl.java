@@ -20,6 +20,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.ConnectionKey;
 import io.helidon.nima.webclient.api.FullClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
@@ -44,7 +45,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
         UriQueryWriteable query = UriQueryWriteable.create();
         clientConfig.baseQuery().ifPresent(query::from);
 
-        return new Http2ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri);
+        return new Http2ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
     }
 
     @Override
@@ -54,11 +55,38 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
-        return null;
+        ConnectionKey ck = new ConnectionKey(clientUri.scheme(),
+                                             clientUri.host(),
+                                             clientUri.port(),
+                                             clientRequest.tls(),
+                                             clientConfig.dnsResolver(),
+                                             clientConfig.dnsAddressLookup(),
+                                             clientRequest.proxy());
+        if (ConnectionCache.supports(ck)) {
+            return SupportLevel.SUPPORTED;
+        }
+
+        return SupportLevel.NOT_SUPPORTED;
     }
 
     @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
-        return null;
+        Http2ClientRequest request = new Http2ClientRequestImpl(client,
+                                                                clientConfig,
+                                                                protocolConfig,
+                                                                clientRequest.method(),
+                                                                clientUri,
+                                                                clientRequest.properties());
+
+        clientRequest.connection().ifPresent(request::connection);
+        clientRequest.pathParams().forEach(request::pathParam);
+
+        return request.readTimeout(clientRequest.readTimeout())
+                .followRedirects(clientRequest.followRedirects())
+                .maxRedirects(clientRequest.maxRedirects())
+                .proxy(clientRequest.proxy())
+                .tls(clientRequest.tls())
+                .headers(clientRequest.headers())
+                .fragment(clientUri.fragment());
     }
 }

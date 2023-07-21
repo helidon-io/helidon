@@ -2,35 +2,40 @@ package io.helidon.nima.http2.webclient;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 
-import io.helidon.common.socket.SocketOptions;
+import io.helidon.common.configurable.LruCache;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.ConnectionKey;
+import io.helidon.nima.webclient.api.WebClient;
 
 class ConnectionCache {
     //todo Gracefully close connections in channel cache
+    private static final LruCache<ConnectionKey, Boolean> HTTP2_SUPPORTED = LruCache.<ConnectionKey, Boolean>builder()
+            .capacity(1000)
+            .build();
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
 
-    static Http2ClientStream newStream(ExecutorService executorService,
-                                       ConnectionKey connectionKey,
-                                       boolean priorKnowledge,
-                                       ClientUri uri) {
+    static boolean supports(ConnectionKey ck) {
+        return HTTP2_SUPPORTED.get(ck).isPresent();
+    }
+
+    static Http2ConnectionAttemptResult newStream(WebClient webClient,
+                                                  Http2ClientProtocolConfig protocolConfig,
+                                                  ConnectionKey connectionKey,
+                                                  Http2ClientRequestImpl request,
+                                                  ClientUri initialUri) {
+
         // this statement locks all threads - must not do anything complicated (just create a new instance)
-        return CHANNEL_CACHE.computeIfAbsent(connectionKey,
-                                             key -> new Http2ClientConnectionHandler(executorService,
-                                                                                     SocketOptions.builder().build(),
-                                                                                     uri.path(),
-                                                                                     key))
+        Http2ConnectionAttemptResult result = CHANNEL_CACHE.computeIfAbsent(connectionKey,
+                                             Http2ClientConnectionHandler::new)
                 // this statement may block a single connection key
-                .newStream(new ConnectionContext(priority,
-                                                 priorKnowledge,
-                                                 initialWindowSize,
-                                                 maxFrameSize,
-                                                 maxHeaderListSize,
-                                                 connectionPrefetch,
-                                                 requestPrefetch,
-                                                 flowControlTimeout,
-                                                 timeout));
+                .newStream(webClient,
+                           protocolConfig,
+                           request,
+                           initialUri);
+        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+            HTTP2_SUPPORTED.put(connectionKey, true);
+        }
+        return result;
     }
 }

@@ -37,7 +37,7 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
-class HttpCallOutputStreamChain extends HttpCallChainBase {
+class HttpCallOutputStreamChain extends Http1CallChainBase {
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final CompletableFuture<WebClientServiceRequest> whenSent;

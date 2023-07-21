@@ -17,7 +17,6 @@
 package io.helidon.nima.webclient.api;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
@@ -47,6 +46,13 @@ public class ClientUri implements UriInfo {
         this.query = UriQueryWriteable.create().from(baseUri.query());
     }
 
+    public ClientUri(UriInfo baseUri) {
+        this.base = baseUri;
+        this.uriBuilder = UriInfo.builder(baseUri);
+        this.skipUriEncoding = false;
+        this.query = UriQueryWriteable.create().from(baseUri.query());
+    }
+
     /**
      * Create an empty URI helper.
      *
@@ -63,6 +69,16 @@ public class ClientUri implements UriInfo {
      * @return a new client uri
      */
     public static ClientUri create(ClientUri baseUri) {
+        return new ClientUri(baseUri);
+    }
+
+    /**
+     * Create a new client uri.
+     *
+     * @param baseUri base URI
+     * @return a new client uri
+     */
+    public static ClientUri create(UriInfo baseUri) {
         return new ClientUri(baseUri);
     }
 
@@ -153,7 +169,7 @@ public class ClientUri implements UriInfo {
     }
 
     /**
-     * Resolve the provided URI against this URI and extract query from it.
+     * Resolve the provided URI against this URI.
      *
      * @param uri URI to use
      * @return updated instance
@@ -181,6 +197,17 @@ public class ClientUri implements UriInfo {
             uriBuilder.fragment(UriFragment.create(uri.getRawFragment()));
         }
 
+        return this;
+    }
+
+    /**
+     * Replaces the current URI with values from the provided URI.
+     *
+     * @param uri URI to use
+     * @return updated instance
+     */
+    public ClientUri resolve(ClientUri uri) {
+        this.uriBuilder.from(uri);
         return this;
     }
 
