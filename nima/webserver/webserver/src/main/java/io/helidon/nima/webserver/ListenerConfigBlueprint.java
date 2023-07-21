@@ -167,6 +167,15 @@ interface ListenerConfigBlueprint {
     int writeBufferSize();
 
     /**
+     * Grace period in milliseconds to allow running tasks to complete before listener's shutdown.
+     * Default is {@code 500} milliseconds.
+     *
+     * @return grace period
+     */
+    @ConfiguredOption("500")
+    long shutdownGracePeriod();
+
+    /**
      * Configuration of a connection (established from client against our server).
      *
      * @return connection configuration

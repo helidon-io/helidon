@@ -20,7 +20,6 @@ import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.nima.webserver.WebServer.DEFAULT_SOCKET_NAME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -32,8 +31,30 @@ public class ListenerConfigTest {
         var webServerConfig = WebServer.builder().config(config.get("server")).buildPrototype();
         assertThat(webServerConfig.writeQueueLength(), is(0));         // default
         assertThat(webServerConfig.writeBufferSize(), is(512));        // default
+        assertThat(webServerConfig.shutdownGracePeriod(), is(500L));   // default
         ListenerConfig listenerConfig2 = webServerConfig.sockets().get("other");
         assertThat(listenerConfig2.writeQueueLength(), is(64));
         assertThat(listenerConfig2.writeBufferSize(), is(1024));
     }
+
+
+    // Verify that value of server2.shutdown-grace-period is present in ListenerConfiguration instance
+    // of the default socket.
+    @Test
+    void tesDefaulttListenerConfigFromConfigFile() {
+        Config config = Config.create();
+        var webServerConfig = WebServer.builder().config(config.get("server2")).buildPrototype();
+        assertThat(webServerConfig.shutdownGracePeriod(), is(1000L));
+    }
+
+    // Verify that value of server3.sockets[name="grace"].shutdown-grace-period is present
+    // in ListenerConfiguration instance of the "grace" socket.
+    @Test
+    void testSpecificListenerConfigFromConfigFile() {
+        Config config = Config.create();
+        var webServerConfig = WebServer.builder().config(config.get("server3")).buildPrototype();
+        ListenerConfig listenerConfig = webServerConfig.sockets().get("grace");
+        assertThat(listenerConfig.shutdownGracePeriod(), is(2000L));
+    }
+
 }
