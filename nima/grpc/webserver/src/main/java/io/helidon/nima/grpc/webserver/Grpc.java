@@ -109,9 +109,6 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
 
         Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
         Descriptors.MethodDescriptor mtd = svc.findMethodByName(methodName);
-        String pkg = proto.getOptions().getJavaPackage();
-        pkg = "".equals(pkg) ? proto.getPackage() : pkg;
-        String outerClass = getOuterClass(proto);
 
         String path = svc.getFullName() + "/" + methodName;
 
@@ -120,8 +117,8 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
          - to load the class
          - to invoke a static method on it
          */
-        Class<ReqT> requestType = load(pkg + "." + outerClass + mtd.getInputType().getName().replace('.', '$'));
-        Class<ResT> responsetype = load(pkg + "." + outerClass + mtd.getOutputType().getName().replace('.', '$'));
+        Class<ReqT> requestType = load(getClassName(mtd.getInputType()));
+        Class<ResT> responsetype = load(getClassName(mtd.getOutputType()));
 
         MethodDescriptor.Marshaller<ReqT> reqMarshaller = ProtoMarshaller.get(requestType);
         MethodDescriptor.Marshaller<ResT> resMarshaller = ProtoMarshaller.get(responsetype);
@@ -132,6 +129,14 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
         return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responsetype, callHandler);
+    }
+
+    private static String getClassName(Descriptors.Descriptor descriptor) {
+        Descriptors.FileDescriptor fd = descriptor.getFile();
+        String outerClass = getOuterClass(fd);
+        String pkg = fd.getOptions().getJavaPackage();
+        pkg = "".equals(pkg) ? fd.getPackage() : pkg;
+        return pkg + "." + outerClass + descriptor.getName().replace('.', '$');
     }
 
     @SuppressWarnings("unchecked")
