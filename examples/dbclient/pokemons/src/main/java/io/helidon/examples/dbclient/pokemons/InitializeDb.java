@@ -17,6 +17,7 @@ package io.helidon.examples.dbclient.pokemons;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
+import io.helidon.dbclient.DbTransaction;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -82,9 +83,15 @@ public class InitializeDb {
      */
     private static void initData(DbClient dbClient) {
         // Init Pokémon types
-        DbExecute exec = dbClient.execute();
-        initTypes(exec);
-        initPokemons(exec);
+        DbTransaction tx = dbClient.transaction();
+        try {
+            initTypes(tx);
+            initPokemons(tx);
+            tx.commit();
+        } catch (Throwable t) {
+            tx.rollback();
+            throw t;
+        }
     }
 
     /**
@@ -93,9 +100,15 @@ public class InitializeDb {
      * @param dbClient database client
      */
     private static void deleteData(DbClient dbClient) {
-        DbExecute exec = dbClient.execute();
-        exec.namedDelete("delete-all-pokemons");
-        exec.namedDelete("delete-all-types");
+        DbTransaction tx = dbClient.transaction();
+        try {
+            tx.namedDelete("delete-all-pokemons");
+            tx.namedDelete("delete-all-types");
+            tx.commit();
+        } catch (Throwable t) {
+            tx.rollback();
+            throw t;
+        }
     }
 
     /**

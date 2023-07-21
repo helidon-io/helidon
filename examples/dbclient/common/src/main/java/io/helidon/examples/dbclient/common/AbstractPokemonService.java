@@ -159,15 +159,20 @@ public abstract class AbstractPokemonService implements HttpService {
     private void transactional(ServerRequest req, ServerResponse res) {
         Pokemon pokemon = req.content().as(Pokemon.class);
         DbTransaction tx = dbClient.transaction();
-        long count = tx.createNamedGet("select-for-update")
-                .namedParam(pokemon)
-                .execute()
-                .map(dbRow -> tx.createNamedUpdate("update")
-                        .namedParam(pokemon)
-                        .execute())
-                .orElse(0L);
-        tx.commit();
-        res.send("Updated " + count + " records");
+        try {
+            long count = tx.createNamedGet("select-for-update")
+                    .namedParam(pokemon)
+                    .execute()
+                    .map(dbRow -> tx.createNamedUpdate("update")
+                            .namedParam(pokemon)
+                            .execute())
+                    .orElse(0L);
+            tx.commit();
+            res.send("Updated " + count + " records");
+        } catch (Throwable t) {
+            tx.rollback();
+            throw t;
+        }
     }
 
     /**
