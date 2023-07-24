@@ -16,10 +16,11 @@
 
 package io.helidon.nima.webclient.api;
 
+import java.io.InputStream;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 
@@ -44,19 +45,21 @@ interface WebClientServiceResponseBlueprint {
     Http.Status status();
 
     /**
-     * Data reader to obtain response bytes.
+     * Input stream to get data of the entity. This allows decorating the entity (such as decryption).
+     * The status, headers are always already read, and the input stream will not provide transfer encoded bytes
+     * (e.g. the bytes in the input stream are the entity bytes, regardless of how it is encoded over HTTP).
      *
-     * @return data reader
+     * @return entity input stream, or empty, if there is no entity
      */
-    DataReader reader();
+    Optional<InputStream> inputStream();
 
     /**
-     * Client connection that was used to handle this request.
-     * This connection will be closed/released once the entity is fully read, depending on keep alive configuration.
+     * Client connection/stream that was used to handle this request.
+     * This resource will be closed/released once the entity is fully read, depending on keep alive configuration.
      *
-     * @return connection
+     * @return connection resource
      */
-    ClientConnection connection();
+    ReleasableResource connection();
 
     /**
      * Completable future to be completed by the client response when the entity is fully read.

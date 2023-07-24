@@ -34,7 +34,6 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();
 
     private final AtomicBoolean consumed = new AtomicBoolean();
-    private final Function<InputStream, InputStream> decoder;
     private final Function<Integer, BufferData> readEntityFunction;
     private final Runnable entityProcessedRunnable;
 
@@ -46,26 +45,22 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     /**
      * Create a new base.
      *
-     * @param decoder                 content decoder when using content encoding
      * @param readEntityFunction      accepts estimate of needed bytes, returns buffer data (the length of buffer data may differ
      *                                from the estimate)
      * @param entityProcessedRunnable runnable to run when entity is fully read
      */
-    protected ReadableEntityBase(Function<InputStream, InputStream> decoder,
-                                 Function<Integer, BufferData> readEntityFunction,
+    protected ReadableEntityBase(Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable) {
-        this.decoder = decoder;
-        this.entityRequestedCallback = d -> {};
+        this.entityRequestedCallback = d -> {
+        };
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
     }
 
     protected ReadableEntityBase(Consumer<Boolean> entityRequestedCallback,
-                                 Function<InputStream, InputStream> decoder,
                                  Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable) {
         this.entityRequestedCallback = entityRequestedCallback;
-        this.decoder = decoder;
         this.readEntityFunction = readEntityFunction;
         this.entityProcessedRunnable = new EntityProcessedRunnable(entityProcessedRunnable, entityProcessed);
     }
@@ -86,7 +81,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                 entityRequestedCallback.accept(false);
             }
 
-            this.inputStream = decoder.apply(new RequestingInputStream(readEntityFunction, entityProcessedRunnable));
+            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
             return inputStream;
         } else {
             throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
@@ -181,15 +176,6 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      */
     protected Runnable entityProcessedRunnable() {
         return entityProcessedRunnable;
-    }
-
-    /**
-     * Content decoder.
-     *
-     * @return content decoder
-     */
-    protected Function<InputStream, InputStream> contentDecoder() {
-        return decoder;
     }
 
     private static class EntityProcessedRunnable implements Runnable {

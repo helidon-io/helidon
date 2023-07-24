@@ -137,7 +137,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                 + "but got an unsupported protocol back: " + negotiatedProtocol);
                     }
                     // we have negotiated protocol we do not support? this is strange
-                    connection.close();
+                    connection.closeResource();
                 } else {
                     CLIENT_SPI_CACHE.put(endpointKey, protocolSpi.spi());
                     connection(connection);
@@ -148,7 +148,7 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                     LOGGER.log(System.Logger.Level.TRACE, "Attempted to negotiate a protocol (" + tcpProtocolIds + "), "
                             + "but did not get a negotiated protocol back, ignoring.");
                 }
-                connection.close();
+                connection.closeResource();
             }
         }
 

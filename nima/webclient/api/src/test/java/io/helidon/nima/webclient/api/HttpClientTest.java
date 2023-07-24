@@ -83,7 +83,7 @@ class HttpClientTest {
     }
 
     static class FakeHttpClientRequest implements ClientRequest<FakeHttpClientRequest> {
-        private Http.Method method;
+        private final Http.Method method;
         private URI uri;
 
         FakeHttpClientRequest(Http.Method method) {
@@ -195,7 +195,7 @@ class HttpClientTest {
         }
 
         @Override
-        public FakeHttpClientRequest skipUriEncoding() {
+        public FakeHttpClientRequest uri(ClientUri uri) {
             return this;
         }
 

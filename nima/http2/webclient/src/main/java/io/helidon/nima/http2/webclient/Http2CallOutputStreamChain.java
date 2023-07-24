@@ -4,35 +4,47 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientRequest;
+import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
 class Http2CallOutputStreamChain extends Http2CallChainBase {
+    private final CompletableFuture<WebClientServiceRequest> whenSent;
+    private final ClientRequest.OutputStreamHandler streamHandler;
+
     Http2CallOutputStreamChain(WebClient webClient,
-                                      Http2ClientRequestImpl http2ClientRequest,
-                                      HttpClientConfig clientConfig,
-                                      Http2ClientProtocolConfig protocolConfig,
-                                      CompletableFuture<WebClientServiceRequest> whenSent,
-                                      CompletableFuture<WebClientServiceResponse> whenComplete,
-                                      ClientRequest.OutputStreamHandler streamHandler) {
+                               Http2ClientRequestImpl http2ClientRequest,
+                               HttpClientConfig clientConfig,
+                               Http2ClientProtocolConfig protocolConfig,
+                               CompletableFuture<WebClientServiceRequest> whenSent,
+                               CompletableFuture<WebClientServiceResponse> whenComplete,
+                               ClientRequest.OutputStreamHandler streamHandler) {
+        super(webClient,
+              clientConfig,
+              protocolConfig,
+              http2ClientRequest,
+              whenComplete,
+              req -> req.outputStream(streamHandler));
+
+        this.whenSent = whenSent;
+        this.streamHandler = streamHandler;
     }
 
     @Override
-    public WebClientServiceResponse proceed(WebClientServiceRequest clientRequest) {
-        // todo validate request ok
+    protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest,
+                                                 ClientRequestHeaders headers,
+                                                 Http2ClientStream stream) {
 
-        WritableHeaders<?> headers = WritableHeaders.create(explicitHeaders);
-
-        Http2ClientStream stream = reserveStream();
-
-        Http2Headers http2Headers = prepareHeaders(headers);
+        ClientUri uri = serviceRequest.uri();
+        Http2Headers http2Headers = prepareHeaders(serviceRequest.method(), headers, uri);
 
         stream.write(http2Headers, false);
+        whenSent.complete(serviceRequest);
 
         Http2ClientStream.ClientOutputStream outputStream;
         try {
@@ -46,6 +58,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        return readResponse(stream);
+        return readResponse(serviceRequest, stream);
     }
 }

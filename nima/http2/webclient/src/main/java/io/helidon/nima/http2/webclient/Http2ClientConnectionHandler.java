@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
@@ -38,6 +39,7 @@ import io.helidon.nima.webclient.api.TcpClientConnection;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.http1.UpgradeResponse;
 
 import static java.lang.System.Logger.Level.TRACE;
@@ -71,11 +73,12 @@ class Http2ClientConnectionHandler {
     Http2ConnectionAttemptResult newStream(WebClient webClient,
                                            Http2ClientProtocolConfig protocolConfig,
                                            Http2ClientRequestImpl request,
-                                           ClientUri initialUri) {
+                                           ClientUri initialUri,
+                                           Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
         return switch (result.get()) {
-            case HTTP_1 -> http1(webClient, request, initialUri);
+            case HTTP_1 -> http1(webClient, request, initialUri, http1EntityHandler);
             case HTTP_2 -> http2(webClient, protocolConfig, request, initialUri);
-            case UNKNOWN -> maybeNewConnection(webClient, protocolConfig, request, initialUri);
+            case UNKNOWN -> maybeNewConnection(webClient, protocolConfig, request, initialUri, http1EntityHandler);
         };
     }
 
@@ -114,7 +117,8 @@ class Http2ClientConnectionHandler {
     private Http2ConnectionAttemptResult maybeNewConnection(WebClient webClient,
                                                             Http2ClientProtocolConfig protocolConfig,
                                                             Http2ClientRequestImpl request,
-                                                            ClientUri initialUri) {
+                                                            ClientUri initialUri,
+                                                            Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
         try {
             semaphore.acquire();
         } catch (InterruptedException e) {
@@ -143,7 +147,7 @@ class Http2ClientConnectionHandler {
                 } else {
                     result.set(Result.HTTP_1);
                     request.connection(tcpClientConnection);
-                    return http1(webClient, request, initialUri);
+                    return http1(webClient, request, initialUri, http1EntityHandler);
                 }
             } else {
                 // this should not really happen, as H2 is depending on ALPN, but let's support it anyway, and hope we can
@@ -191,10 +195,11 @@ class Http2ClientConnectionHandler {
         return Base64.getEncoder().encodeToString(b);
     }
 
-    private Http2ConnectionAttemptResult http1(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri) {
-        return new Http2ConnectionAttemptResult(Result.HTTP_1, null,
-                                                //TODO entity
-                                                http1Request(webClient, request, initialUri).request());
+    private Http2ConnectionAttemptResult http1(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri,
+                                               Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+        return new Http2ConnectionAttemptResult(Result.HTTP_1,
+                                                null,
+                                                http1EntityHandler.apply(http1Request(webClient, request, initialUri)));
     }
 
     private Http1ClientRequest http1Request(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri) {

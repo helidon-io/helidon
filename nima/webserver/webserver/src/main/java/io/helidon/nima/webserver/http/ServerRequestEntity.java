@@ -41,7 +41,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                 Runnable entityProcessedRunnable,
                                 ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext) {
-        super(entityRequestedCallback, decoder, readEntityFunction, entityProcessedRunnable);
+        super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable);
 
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;

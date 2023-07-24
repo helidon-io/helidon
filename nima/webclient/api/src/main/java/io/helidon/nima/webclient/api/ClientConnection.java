@@ -26,7 +26,7 @@ import io.helidon.common.socket.HelidonSocket;
  * Client connection.
  * This allows usage of a custom connection for testing - see {@code DirectClient} class.
  */
-public interface ClientConnection {
+public interface ClientConnection extends ReleasableResource {
     /**
      * Data reader providing response bytes.
      *
@@ -40,16 +40,6 @@ public interface ClientConnection {
      * @return writer to write to this connection
      */
     DataWriter writer();
-
-    /**
-     * Release this connection (for keep-alive, this would return the connection to pool).
-     */
-    void release();
-
-    /**
-     * Close the connection.
-     */
-    void close();
 
     /**
      * Channel id, mostly used in logs.

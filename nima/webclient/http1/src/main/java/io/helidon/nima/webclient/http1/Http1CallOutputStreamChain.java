@@ -27,7 +27,6 @@ import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webclient.api.ClientConnection;
@@ -37,31 +36,27 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
-class HttpCallOutputStreamChain extends Http1CallChainBase {
+class Http1CallOutputStreamChain extends Http1CallChainBase {
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
-    private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final ClientRequest.OutputStreamHandler osHandler;
 
-    HttpCallOutputStreamChain(WebClient webClient,
-                              Http1ClientRequestImpl clientRequest,
-                              HttpClientConfig clientConfig,
-                              Http1ClientProtocolConfig protocolConfig,
-                              CompletableFuture<WebClientServiceRequest> whenSent,
-                              CompletableFuture<WebClientServiceResponse> whenComplete,
-                              ClientRequest.OutputStreamHandler osHandler) {
+    Http1CallOutputStreamChain(WebClient webClient,
+                               Http1ClientRequestImpl clientRequest,
+                               HttpClientConfig clientConfig,
+                               Http1ClientProtocolConfig protocolConfig,
+                               CompletableFuture<WebClientServiceRequest> whenSent,
+                               CompletableFuture<WebClientServiceResponse> whenComplete,
+                               ClientRequest.OutputStreamHandler osHandler) {
         super(webClient,
               clientConfig,
               protocolConfig,
-              clientRequest.connection().orElse(null),
-              clientRequest.tls(),
-              clientRequest.proxy(),
-              clientRequest.keepAlive());
+              clientRequest,
+              whenComplete);
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
         this.whenSent = whenSent;
-        this.whenComplete = whenComplete;
         this.osHandler = osHandler;
     }
 
@@ -72,6 +67,9 @@ class HttpCallOutputStreamChain extends Http1CallChainBase {
                                        DataWriter writer,
                                        DataReader reader,
                                        BufferData writeBuffer) {
+
+        writeHeaders(headers, writeBuffer, protocolConfig().validateHeaders());
+        whenSent.complete(serviceRequest);
 
         ClientConnectionOutputStream cos = new ClientConnectionOutputStream(writer,
                                                                             reader,
@@ -92,18 +90,7 @@ class HttpCallOutputStreamChain extends Http1CallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        return WebClientServiceResponse.builder()
-                .connection(connection)
-                .reader(reader)
-                .headers(responseHeaders)
-                .status(responseStatus)
-                .whenComplete(whenComplete)
-                .serviceRequest(serviceRequest)
-                .build();
-
+        return readResponse(serviceRequest, connection, reader);
     }
 
     private static class ClientConnectionOutputStream extends OutputStream {

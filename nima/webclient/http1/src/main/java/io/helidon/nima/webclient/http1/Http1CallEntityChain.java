@@ -24,7 +24,6 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.webclient.api.ClientConnection;
@@ -33,31 +32,26 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
-class HttpCallEntityChain extends Http1CallChainBase {
+class Http1CallEntityChain extends Http1CallChainBase {
 
     private final Http1ClientRequestImpl request;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
-    private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Object entity;
 
-    HttpCallEntityChain(WebClient webClient,
-                        Http1ClientRequestImpl request,
-                        HttpClientConfig clientConfig,
-                        Http1ClientProtocolConfig protocolConfig,
-                        CompletableFuture<WebClientServiceRequest> whenSent,
-                        CompletableFuture<WebClientServiceResponse> whenComplete,
-                        Object entity) {
+    Http1CallEntityChain(WebClient webClient,
+                         Http1ClientRequestImpl request,
+                         HttpClientConfig clientConfig,
+                         Http1ClientProtocolConfig protocolConfig,
+                         CompletableFuture<WebClientServiceRequest> whenSent,
+                         CompletableFuture<WebClientServiceResponse> whenComplete,
+                         Object entity) {
         super(webClient,
               clientConfig,
               protocolConfig,
-              request.connection().orElse(null),
-              request.tls(),
-              request.proxy(),
-              request.keepAlive());
+              request, whenComplete);
 
         this.request = request;
         this.whenSent = whenSent;
-        this.whenComplete = whenComplete;
         this.entity = entity;
     }
 
@@ -74,7 +68,6 @@ class HttpCallEntityChain extends Http1CallChainBase {
         } else {
             entityBytes = entityBytes(entity, headers);
         }
-        connection.readTimeout(request.readTimeout());
 
         headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, entityBytes.length));
 
@@ -87,22 +80,12 @@ class HttpCallEntityChain extends Http1CallChainBase {
         }
         writer.write(writeBuffer);
 
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, protocolConfig().maxStatusLineLength());
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        return WebClientServiceResponse.builder()
-                .connection(connection)
-                .reader(reader)
-                .headers(responseHeaders)
-                .status(responseStatus)
-                .whenComplete(whenComplete)
-                .serviceRequest(serviceRequest)
-                .build();
+        return readResponse(serviceRequest, connection, reader);
     }
 
     byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
-        if (entity instanceof byte[]) {
-            return (byte[]) entity;
+        if (entity instanceof byte[] bytes) {
+            return bytes;
         }
         GenericType<Object> genericType = GenericType.create(entity);
         EntityWriter<Object> writer = clientConfig().mediaContext().writer(genericType, headers);

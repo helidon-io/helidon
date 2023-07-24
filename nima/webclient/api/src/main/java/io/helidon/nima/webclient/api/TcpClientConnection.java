@@ -68,9 +68,9 @@ public class TcpClientConnection implements ClientConnection {
      * @param webClient       webclient, may be used to create proxy connections
      * @param connectionKey   connection key of the new connection (where and how to connect)
      * @param tcpProtocolIds  protocol IDs for ALPN (TLS protocol negotiation)
-     * @param releaseFunction called when {@link #release()} is called, if {@code false} is returned, the connection will
+     * @param releaseFunction called when {@link #releaseResource()} is called, if {@code false} is returned, the connection will
      *                        be closed instead kept open
-     * @param closeConsumer   called when {@link #close()} is called, the connection is no longer usable after this moment
+     * @param closeConsumer   called when {@link #closeResource()} is called, the connection is no longer usable after this moment
      * @return a new TCP connection, {@link #connect()} must be called to make it available for use
      */
     public static TcpClientConnection create(WebClient webClient,
@@ -155,17 +155,17 @@ public class TcpClientConnection implements ClientConnection {
     }
 
     @Override
-    public void release() {
+    public void releaseResource() {
         if (closed) {
             return;
         }
         if (!releaseFunction.apply(this)) {
-            close();
+            closeResource();
         }
     }
 
     @Override
-    public void close() {
+    public void closeResource() {
         if (closed) {
             return;
         }

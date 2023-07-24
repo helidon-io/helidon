@@ -23,7 +23,6 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
-import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.FullClientRequest;
@@ -200,10 +199,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         Http2CallChainBase httpCall = new Http2CallEntityChain(webClient,
-                                                               this,
                                                                clientConfig(),
                                                                protocolConfig,
-                                                               connection().orElse(null),
+                                                               this,
                                                                whenSent,
                                                                whenComplete,
                                                                entity);
@@ -227,13 +225,15 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                     return null;
                 });
 
-        return new Http2ClientResponseImpl(Http2Headers.create(serviceResponse.headers()),
-                                           Http2Headers.create(serviceResponse.serviceRequest().headers()),
-                                           callChain.clientStream(),
-                                           serviceResponse.reader(),
+        // if this was an HTTP/1.1 response, do something different (just re-use response)
+        return new Http2ClientResponseImpl(callChain.responseStatus(),
+                                           callChain.requestHeaders(),
+                                           callChain.responseHeaders(),
+                                           serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
-                                           clientConfig().mediaTypeParserMode(),
                                            resolvedUri,
-                                           complete);
+                                           complete,
+                                           callChain::closeResponse);
+
     }
 }

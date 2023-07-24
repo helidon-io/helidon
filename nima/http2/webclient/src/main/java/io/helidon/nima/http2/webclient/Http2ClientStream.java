@@ -23,13 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.SocketContext;
-import io.helidon.nima.http.encoding.ContentDecoder;
-import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.ReadableEntityBase;
 import io.helidon.nima.http2.Http2ErrorCode;
 import io.helidon.nima.http2.Http2Exception;
 import io.helidon.nima.http2.Http2Flag;
@@ -50,11 +44,11 @@ import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.StreamFlowControl;
 import io.helidon.nima.http2.WindowSize;
-import io.helidon.nima.webclient.api.ClientResponseEntity;
+import io.helidon.nima.webclient.api.ReleasableResource;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-class Http2ClientStream implements Http2Stream {
+class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
     private final Http2ClientConnection connection;
@@ -71,6 +65,7 @@ class Http2ClientStream implements Http2Stream {
     private Http2Headers currentHeaders;
     private StreamFlowControl flowControl;
     private int streamId;
+    private boolean hasEntity;
 
     Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
@@ -96,7 +91,8 @@ class Http2ClientStream implements Http2Stream {
 
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
-        currentHeaders = headers;
+        this.currentHeaders = headers;
+        this.hasEntity = !endOfStream;
     }
 
     @Override
@@ -156,23 +152,21 @@ class Http2ClientStream implements Http2Stream {
         return flowControl;
     }
 
+    @Override
+    public void closeResource() {
+        close();
+    }
+
+    boolean hasEntity() {
+        return hasEntity;
+    }
+
     void cancel() {
         Http2RstStream rstStream = new Http2RstStream(Http2ErrorCode.CANCEL);
         Http2FrameData frameData = rstStream.toFrameData(settings, streamId, Http2Flag.NoFlags.create());
         sendListener.frameHeader(ctx, frameData.header());
         sendListener.frame(ctx, rstStream);
         write(frameData, false);
-    }
-
-    ReadableEntityBase entity() {
-        return ClientResponseEntity.create(
-                ContentDecoder.NO_OP,
-                this::read,
-                this::close,
-                ClientRequestHeaders.create(WritableHeaders.create()),
-                ClientResponseHeaders.create(WritableHeaders.create()),
-                MediaContext.create()
-        );
     }
 
     void close() {
@@ -189,6 +183,10 @@ class Http2ClientStream implements Http2Stream {
     }
 
     BufferData read(int i) {
+        return read();
+    }
+
+    BufferData read() {
         while (state == Http2StreamState.HALF_CLOSED_LOCAL) {
             Http2FrameData frameData = readOne();
             if (frameData != null) {

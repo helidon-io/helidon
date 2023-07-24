@@ -574,7 +574,7 @@ public interface BufferData {
     /**
      * Number of bytes available for reading.
      *
-     * @return available byte
+     * @return available bytes
      */
     int available();
 
@@ -642,4 +642,16 @@ public interface BufferData {
      * @return byte at the index
      */
     int get(int index);
+
+    /**
+     * Read the content of this data as bytes.
+     * This method always creates a new byte array.
+     *
+     * @return byte array with {@link #available()} bytes, may be empty
+     */
+    default byte[] readBytes() {
+        byte[] bytes = new byte[available()];
+        read(bytes);
+        return bytes;
+    }
 }

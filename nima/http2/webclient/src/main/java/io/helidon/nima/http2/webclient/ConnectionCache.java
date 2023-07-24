@@ -2,11 +2,14 @@ package io.helidon.nima.http2.webclient;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.ConnectionKey;
 import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 class ConnectionCache {
     //todo Gracefully close connections in channel cache
@@ -23,7 +26,8 @@ class ConnectionCache {
                                                   Http2ClientProtocolConfig protocolConfig,
                                                   ConnectionKey connectionKey,
                                                   Http2ClientRequestImpl request,
-                                                  ClientUri initialUri) {
+                                                  ClientUri initialUri,
+                                                  Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
 
         // this statement locks all threads - must not do anything complicated (just create a new instance)
         Http2ConnectionAttemptResult result = CHANNEL_CACHE.computeIfAbsent(connectionKey,
@@ -32,7 +36,8 @@ class ConnectionCache {
                 .newStream(webClient,
                            protocolConfig,
                            request,
-                           initialUri);
+                           initialUri,
+                           http1EntityHandler);
         if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
             HTTP2_SUPPORTED.put(connectionKey, true);
         }

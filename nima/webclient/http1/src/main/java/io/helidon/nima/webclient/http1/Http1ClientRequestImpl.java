@@ -72,13 +72,13 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     public Http1ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallOutputStreamChain(webClient,
-                                                                         this,
-                                                                         clientConfig(),
-                                                                         protocolConfig,
-                                                                         whenSent,
-                                                                         whenComplete,
-                                                                         streamHandler);
+        WebClientService.Chain callChain = new Http1CallOutputStreamChain(webClient,
+                                                                          this,
+                                                                          clientConfig(),
+                                                                          protocolConfig,
+                                                                          whenSent,
+                                                                          whenComplete,
+                                                                          streamHandler);
 
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
@@ -176,18 +176,18 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     private Http1ClientResponseImpl invokeRequestWithEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new HttpCallEntityChain(webClient,
-                                                                   this,
-                                                                   clientConfig(),
-                                                                   protocolConfig,
-                                                                   whenSent,
-                                                                   whenComplete,
-                                                                   entity);
+        WebClientService.Chain callChain = new Http1CallEntityChain(webClient,
+                                                                    this,
+                                                                    clientConfig(),
+                                                                    protocolConfig,
+                                                                    whenSent,
+                                                                    whenComplete,
+                                                                    entity);
 
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
-    private Http1ClientResponseImpl invokeWithServices(WebClientService.Chain callChain,
+    private Http1ClientResponseImpl invokeWithServices(Http1CallChainBase callChain,
                                                        CompletableFuture<WebClientServiceRequest> whenSent,
                                                        CompletableFuture<WebClientServiceResponse> whenComplete) {
 
@@ -203,11 +203,12 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                     return null;
                 });
 
-        return new Http1ClientResponseImpl(serviceResponse.status(),
+        return new Http1ClientResponseImpl(clientConfig(),
+                                           serviceResponse.status(),
                                            serviceResponse.serviceRequest().headers(),
                                            serviceResponse.headers(),
-                                           serviceResponse.connection(),
-                                           serviceResponse.reader(),
+                                           callChain.connection(),
+                                           serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            clientConfig().mediaTypeParserMode(),
                                            resolvedUri,

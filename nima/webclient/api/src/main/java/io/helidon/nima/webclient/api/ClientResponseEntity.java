@@ -16,14 +16,12 @@
 
 package io.helidon.nima.webclient.api;
 
-import java.io.InputStream;
 import java.util.function.Function;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.ReadableEntity;
 import io.helidon.nima.http.media.ReadableEntityBase;
@@ -36,13 +34,12 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
     private final ClientResponseHeaders responseHeaders;
     private final MediaContext mediaContext;
 
-    private ClientResponseEntity(Function<InputStream, InputStream> decoder,
-                                 Function<Integer, BufferData> readEntityFunction,
+    private ClientResponseEntity(Function<Integer, BufferData> readEntityFunction,
                                  Runnable entityProcessedRunnable,
                                  ClientRequestHeaders requestHeaders,
                                  ClientResponseHeaders responseHeaders,
                                  MediaContext mediaContext) {
-        super(decoder, readEntityFunction, entityProcessedRunnable);
+        super(readEntityFunction, entityProcessedRunnable);
 
         this.requestHeaders = requestHeaders;
         this.responseHeaders = responseHeaders;
@@ -52,7 +49,6 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
     /**
      * Create a new client response entity.
      *
-     * @param decoder                 content decoder
      * @param readEntityFunction      function to read bytes from entity based on suggested buffer length
      * @param entityProcessedRunnable runnable to run when entity processing finishes
      * @param requestHeaders          request headers
@@ -60,14 +56,12 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
      * @param mediaContext            media context to read into specific types
      * @return client response entity
      */
-    public static ClientResponseEntity create(ContentDecoder decoder,
-                                              Function<Integer, BufferData> readEntityFunction,
+    public static ClientResponseEntity create(Function<Integer, BufferData> readEntityFunction,
                                               Runnable entityProcessedRunnable,
                                               ClientRequestHeaders requestHeaders,
                                               ClientResponseHeaders responseHeaders,
                                               MediaContext mediaContext) {
-        return new ClientResponseEntity(decoder,
-                                        readEntityFunction,
+        return new ClientResponseEntity(readEntityFunction,
                                         entityProcessedRunnable,
                                         requestHeaders,
                                         responseHeaders,
@@ -76,11 +70,11 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
 
     @Override
     public ReadableEntity copy(Runnable entityProcessedRunnable) {
-        return new ClientResponseEntity(contentDecoder(),
-                                        readEntityFunction(), () -> {
-            entityProcessedRunnable.run();
-            entityProcessedRunnable().run();
-        },
+        return new ClientResponseEntity(readEntityFunction(),
+                                        () -> {
+                                            entityProcessedRunnable.run();
+                                            entityProcessedRunnable().run();
+                                        },
                                         requestHeaders,
                                         responseHeaders,
                                         mediaContext);

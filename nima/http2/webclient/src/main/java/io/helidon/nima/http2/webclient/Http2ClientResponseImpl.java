@@ -16,35 +16,44 @@
 
 package io.helidon.nima.http2.webclient;
 
+import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 
-import io.helidon.common.buffers.DataReader;
+import io.helidon.common.buffers.BufferData;
+import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.media.type.ParserMode;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.ReadableEntity;
-import io.helidon.nima.http2.Http2Headers;
+import io.helidon.nima.webclient.api.ClientResponseEntity;
 import io.helidon.nima.webclient.api.ClientUri;
 
 class Http2ClientResponseImpl implements Http2ClientResponse {
     private final Http.Status responseStatus;
+    private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
+    private final CompletableFuture<Void> complete;
+    private final Runnable closeResponseRunnable;
+    private final InputStream inputStream;
+    private final MediaContext mediaContext;
     private final ClientUri lastEndpointUri;
-    private Http2ClientStream stream;
 
-    Http2ClientResponseImpl(Http2Headers headers,
-                            Http2Headers http2Headers,
-                            Http2ClientStream stream,
-                            DataReader reader,
+    Http2ClientResponseImpl(Http.Status status,
+                            ClientRequestHeaders requestHeaders,
+                            ClientResponseHeaders responseHeaders,
+                            InputStream inputStream, // input stream is nullable - no response entity
                             MediaContext mediaContext,
-                            ParserMode parserMode,
                             ClientUri lastEndpointUri,
-                            CompletableFuture<Void> complete) {
-        this.responseStatus = headers.status();
-        this.responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
-        this.stream = stream;
+                            CompletableFuture<Void> complete,
+                            Runnable closeResponseRunnable) {
+        this.responseStatus = status;
+        this.requestHeaders = requestHeaders;
+        this.responseHeaders = responseHeaders;
+        this.inputStream = inputStream;
+        this.mediaContext = mediaContext;
         this.lastEndpointUri = lastEndpointUri;
+        this.complete = complete;
+        this.closeResponseRunnable = closeResponseRunnable;
     }
 
     @Override
@@ -59,7 +68,24 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     @Override
     public ReadableEntity entity() {
-        return stream.entity().copy(() -> this.stream = null);
+        if (inputStream == null) {
+            return ClientResponseEntity.empty();
+        }
+
+        return ClientResponseEntity.create(
+                this::readBytes,
+                this::close,
+                requestHeaders,
+                responseHeaders,
+                mediaContext
+        );
+    }
+
+    private BufferData readBytes(int estimate) {
+        BufferData bufferData = BufferData.create(estimate);
+        bufferData.readFrom(inputStream);
+
+        return bufferData;
     }
 
     @Override
@@ -69,9 +95,7 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     @Override
     public void close() {
-        if (stream != null) {
-            stream.cancel();
-            stream = null;
-        }
+        complete.complete(null);
+        closeResponseRunnable.run();
     }
 }
