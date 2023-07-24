@@ -32,10 +32,10 @@
     <packaging>maven-plugin</packaging>
 
     <properties>
-        <version.plexus.classworlds>2.6.0</version.plexus.classworlds>
+        <version.plexus.classworlds>2.7.0</version.plexus.classworlds>
         <version.plexus.utils>3.3.0</version.plexus.utils>
-        <version.plugin.api>3.8.5</version.plugin.api>
-        <version.plugin.annotations>3.6.4</version.plugin.annotations>
+        <version.plugin.api>3.9.3</version.plugin.api>
+        <version.plugin.annotations>3.9.0</version.plugin.annotations>
         <version.plugin.plugin>3.9.0</version.plugin.plugin>
         <version.plugin.project>2.2.1</version.plugin.project>
 
@@ -168,6 +168,8 @@
                             <!-- we need this since 19ea is not really supported -->
 <!--                            <mojoDependency></mojoDependency>-->
                         </mojoDependencies>
+                        <requiredMavenVersion>[3.6.1,)</requiredMavenVersion>
+                        <requiredJavaVersion>[${version.java}.0,)</requiredJavaVersion>
                     </configuration>
                 </plugin>
                 <plugin>

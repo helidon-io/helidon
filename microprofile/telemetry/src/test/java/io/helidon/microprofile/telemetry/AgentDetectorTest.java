@@ -1,4 +1,4 @@
-package io.helidon.microprofile.telemetry;/*
+/*
  * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,20 +14,20 @@ package io.helidon.microprofile.telemetry;/*
  * limitations under the License.
  */
 
+package io.helidon.microprofile.telemetry;
+
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
+
 import jakarta.enterprise.inject.spi.CDI;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-
 
 /**
  * Check Agent Detector working correctly.

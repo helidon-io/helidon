@@ -79,7 +79,7 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
     /**
      * The approach for handling providers.
-     * See {@link ApplicationCreatorConfigOptions#permittedProviderTypes()}.
+     * See {@code ApplicationCreatorConfigOptions#permittedProviderTypes()}.
      */
     @Parameter(property = "inject.permitted.provider.types", readonly = true)
     private String permittedProviderTypes;
