@@ -15,7 +15,6 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementType;
 
@@ -34,7 +33,7 @@ class JdbcTransactionStatementDml extends JdbcTransactionStatement<DbStatementDm
      * @param transactionContext transaction context
      */
     JdbcTransactionStatementDml(JdbcConnectionPool connectionPool,
-                                DbExecuteContext context,
+                                JdbcExecuteContext context,
                                 TransactionContext transactionContext,
                                 DbStatementType type) {
         super(connectionPool, context, transactionContext);

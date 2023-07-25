@@ -15,17 +15,24 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import java.io.ByteArrayInputStream;
+import java.io.CharArrayReader;
 import java.lang.System.Logger.Level;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.SQLXML;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbIndexedStatementParameters;
 import io.helidon.dbclient.DbNamedStatementParameters;
 import io.helidon.dbclient.DbStatement;
@@ -50,7 +57,7 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
      * @param connectionPool connection pool
      * @param context        context
      */
-    JdbcStatement(JdbcConnectionPool connectionPool, DbExecuteContext context) {
+    JdbcStatement(JdbcConnectionPool connectionPool, JdbcExecuteContext context) {
         super(context);
         this.connectionPool = connectionPool;
     }
@@ -66,6 +73,10 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, String.format("Could not close connection: %s", e.getMessage()), e);
         }
+    }
+
+    private JdbcExecuteContext jdbcContext() {
+        return context(JdbcExecuteContext.class);
     }
 
     /**
@@ -127,12 +138,12 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             preparedStatement = prepareStatement(stmtName, convertedStmt);
             List<String> namesOrder = parser.namesOrder();
             // Set parameters into prepared statement
-            int i = 1;
+            int i = 1; // JDBC set position parameter starts from 1.
             for (String name : namesOrder) {
                 if (parameters.containsKey(name)) {
                     Object value = parameters.get(name);
                     LOGGER.log(Level.TRACE, String.format("Mapped parameter %d: %s -> %s", i, name, value));
-                    preparedStatement.setObject(i, value);
+                    setParameter(preparedStatement, i, value);
                     i++;
                 } else {
                     throw new DbClientException(namedStatementErrorMessage(namesOrder, parameters));
@@ -152,8 +163,7 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
             int i = 1; // JDBC set position parameter starts from 1.
             for (Object value : parameters) {
                 LOGGER.log(Level.TRACE, String.format("Indexed parameter %d: %s", i, value));
-                preparedStatement.setObject(i, value);
-                // increase value for next iteration
+                setParameter(preparedStatement, i, value);
                 i++;
             }
             return preparedStatement;
@@ -194,4 +204,159 @@ public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatemen
         }
         return sb.toString();
     }
+
+    // JDBC PreparedStatement parameters setting from EclipseLink
+    private void setParameter(PreparedStatement statement, int index, Object parameter) throws SQLException {
+        // Start with common types
+        if (parameter instanceof String s) {
+            // Check for stream binding of large strings.
+            if (jdbcContext().parametersConfig().useStringBinding()
+                    && (s.length() > jdbcContext().parametersConfig().stringBindingSize())) {
+                CharArrayReader reader = new CharArrayReader(s.toCharArray());
+                statement.setCharacterStream(index, reader, (s.length()));
+            } else {
+                if (jdbcContext().parametersConfig().useNString()) {
+                    statement.setNString(index, s);
+                } else {
+                    statement.setString(index, s);
+                }
+            }
+        } else if (parameter instanceof Number number) {
+            if (number instanceof Integer i) {
+                statement.setInt(index, i);
+            } else if (number instanceof Long l) {
+                statement.setLong(index, l);
+            }  else if (number instanceof BigDecimal bd) {
+                statement.setBigDecimal(index, bd);
+            } else if (number instanceof Double d) {
+                statement.setDouble(index, d);
+            } else if (number instanceof Float f) {
+                statement.setFloat(index, f);
+            } else if (number instanceof Short s) {
+                statement.setShort(index, s);
+            } else if (number instanceof Byte b) {
+                statement.setByte(index, b);
+            } else if (number instanceof BigInteger bi) {
+                // Convert to BigDecimal.
+                statement.setBigDecimal(index, new BigDecimal(bi));
+            } else {
+                statement.setObject(index, number);
+            }
+        // java.sql Date/Time
+        }  else if (parameter instanceof java.sql.Date d) {
+            statement.setDate(index, d);
+        } else if (parameter instanceof java.sql.Time t){
+            statement.setTime(index, t);
+        } else if (parameter instanceof java.sql.Timestamp ts) {
+            statement.setTimestamp(index, ts);
+        // java.time Date/Time
+        }  else if (parameter instanceof java.time.LocalDate ld) {
+            if (jdbcContext().parametersConfig().setObjectForJavaTime()) {
+                statement.setObject(index, ld);
+            } else {
+                statement.setDate(index, java.sql.Date.valueOf(ld));
+            }
+        } else if (parameter instanceof java.time.LocalDateTime ldt) {
+            if (jdbcContext().parametersConfig().setObjectForJavaTime()) {
+                statement.setObject(index, ldt);
+            } else {
+                statement.setTimestamp(index, java.sql.Timestamp.valueOf(ldt));
+            }
+        } else if (parameter instanceof java.time.OffsetDateTime odt) {
+            if (jdbcContext().parametersConfig().setObjectForJavaTime()) {
+                statement.setObject(index, odt);
+            } else {
+                statement.setTimestamp(index, java.sql.Timestamp.from((odt).toInstant()));
+            }
+        } else if (parameter instanceof java.time.LocalTime lt) {
+            if (jdbcContext().parametersConfig().setObjectForJavaTime()) {
+                statement.setObject(index, lt);
+            } else {
+                // Fallback option for old JDBC drivers may differ
+                if (jdbcContext().parametersConfig().timestampForLocalTime()) {
+                    statement.setTimestamp(index,
+                                           java.sql.Timestamp.valueOf(
+                                                   java.time.LocalDateTime.of(java.time.LocalDate.ofEpochDay(0), lt)));
+                } else {
+                    statement.setTime(index, java.sql.Time.valueOf(lt));
+                }
+            }
+        } else if (parameter instanceof java.time.OffsetTime ot) {
+            if (jdbcContext().parametersConfig().setObjectForJavaTime()) {
+                statement.setObject(index, ot);
+            } else {
+                statement.setTimestamp(index,
+                                       java.sql.Timestamp.valueOf(
+                                               java.time.LocalDateTime.of(java.time.LocalDate.ofEpochDay(0), ot.toLocalTime())));
+            }
+        } else if (parameter instanceof Boolean b) {
+            statement.setBoolean(index, b);
+        } else if (parameter == null) {
+            // Normally null is passed as a DatabaseField so the type is included, but in some case may be passed directly.
+            statement.setNull(index, Types.VARCHAR);
+        } else if (parameter instanceof byte[] b) {
+            if (jdbcContext().parametersConfig().useByteArrayBinding()) {
+                ByteArrayInputStream inputStream = new ByteArrayInputStream(b);
+                statement.setBinaryStream(index, inputStream, b.length);
+            } else {
+                statement.setBytes(index, b);
+            }
+        // Next process types that need conversion.
+        } else if (parameter instanceof Calendar c) {
+            statement.setTimestamp(index, timestampFromDate(c.getTime()));
+        } else if (parameter instanceof java.util.Date d) {
+            statement.setTimestamp(index, timestampFromDate(d));
+        } else if (parameter instanceof Character c) {
+            statement.setString(index, String.valueOf(c));
+        } else if (parameter instanceof char[] c) {
+            statement.setString(index, new String(c));
+        } else if (parameter instanceof Character[] c) {
+            statement.setString(index, String.valueOf(characterArrayToCharArray(c)));
+        } else if (parameter instanceof Byte[] b) {
+            statement.setBytes(index, byteArrayToByteArray(b));
+        } else if (parameter instanceof SQLXML s) {
+            statement.setSQLXML(index, s);
+        } else if (parameter instanceof UUID uuid) {
+            statement.setString(index, uuid.toString());
+        } else {
+            statement.setObject(index, parameter);
+        }
+    }
+
+    private static java.sql.Timestamp timestampFromLong(long millis) {
+        java.sql.Timestamp timestamp = new java.sql.Timestamp(millis);
+
+        // Must  account for negative millis < 1970
+        // Must account for the jdk millis bug where it does not set the nanos.
+        if ((millis % 1000) > 0) {
+            timestamp.setNanos((int) (millis % 1000) * 1000000);
+        } else if ((millis % 1000) < 0) {
+            timestamp.setNanos((int) (1000000000 - (Math.abs((millis % 1000) * 1000000))));
+        }
+        return timestamp;
+    }
+
+    private static java.sql.Timestamp timestampFromDate(java.util.Date date) {
+        return timestampFromLong(date.getTime());
+    }
+
+    private static char[] characterArrayToCharArray(Character[] source) {
+        char[] chars = new char[source.length];
+        for (int i = 0; i < source.length; i++) {
+            chars[i] = source[i];
+        }
+        return chars;
+    }
+
+    private static byte[] byteArrayToByteArray(Byte[] source) {
+        byte[] bytes = new byte[source.length];
+        for (int i = 0; i < source.length; i++) {
+            Byte value = source[i];
+            if (value != null) {
+                bytes[i] = value;
+            }
+        }
+        return bytes;
+    }
+
 }

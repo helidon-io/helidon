@@ -19,7 +19,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.dbclient.jdbc.JdbcClientProvider;
 import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 import io.helidon.dbclient.spi.DbClientProvider;
-import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
 
 /**
  * Helidon Database Client JDBC.
@@ -38,6 +37,8 @@ module io.helidon.dbclient.jdbc {
 
     requires transitive io.helidon.common;
     requires transitive io.helidon.dbclient;
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.config.metadata;
 
     exports io.helidon.dbclient.jdbc;
     exports io.helidon.dbclient.jdbc.spi;

@@ -17,6 +17,8 @@ package io.helidon.dbclient.jdbc;
 
 import java.util.List;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientContext;
 import io.helidon.dbclient.DbClientService;
@@ -49,6 +51,64 @@ class JdbcClientBuilderTest {
         // Retrieve context from mocked service
         DbClientServiceContext serviceContext = service.statement(null);
         assertThat(serviceContext.dbType(), is(TEST_SERVICE_CONTEXT.dbType()));
+    }
+
+    // Check default JDBC parameters setter configuration
+    @Test
+    void testDefaultParametersSetterConfig() {
+        DbClient dbClient = new JdbcClientBuilder()
+                .addService(context -> TEST_SERVICE_CONTEXT)
+                .connectionPool(() -> null)
+                .build();
+        JdbcClientContext clientContext = dbClient.unwrap(JdbcClient.class).context();
+        assertThat(clientContext.parametersConfig().useNString(), is(false));
+        assertThat(clientContext.parametersConfig().useStringBinding(), is(true));
+        assertThat(clientContext.parametersConfig().stringBindingSize(), is(1024));
+        assertThat(clientContext.parametersConfig().useByteArrayBinding(), is(true));
+        assertThat(clientContext.parametersConfig().timestampForLocalTime(), is(true));
+        assertThat(clientContext.parametersConfig().setObjectForJavaTime(), is(true));
+    }
+
+    // Check custom JDBC parameters setter configuration from builder
+    @Test
+    void testCustomParametersSetterConfig() {
+        DbClient dbClient = new JdbcClientBuilder()
+                .addService(context -> TEST_SERVICE_CONTEXT)
+                .connectionPool(() -> null)
+                .parametersSetter(JdbcParametersConfig.builder()
+                                          .useNString(true)
+                                          .useStringBinding(false)
+                                          .stringBindingSize(4096)
+                                          .useByteArrayBinding(false)
+                                          .timestampForLocalTime(false)
+                                          .setObjectForJavaTime(false)
+                                          .build())
+                .build();
+        JdbcClientContext clientContext = dbClient.unwrap(JdbcClient.class).context();
+        assertThat(clientContext.parametersConfig().useNString(), is(true));
+        assertThat(clientContext.parametersConfig().useStringBinding(), is(false));
+        assertThat(clientContext.parametersConfig().stringBindingSize(), is(4096));
+        assertThat(clientContext.parametersConfig().useByteArrayBinding(), is(false));
+        assertThat(clientContext.parametersConfig().timestampForLocalTime(), is(false));
+        assertThat(clientContext.parametersConfig().setObjectForJavaTime(), is(false));
+    }
+
+    // Check custom JDBC parameters setter configuration from fonfig file
+    @Test
+    void testCustomFileParametersSetterConfig() {
+        Config config = Config.create(ConfigSources.classpath("params.yaml"));
+        DbClient dbClient = new JdbcClientBuilder()
+                .config(config.get("db"))
+                .addService(context -> TEST_SERVICE_CONTEXT)
+                .connectionPool(() -> null)
+                .build();
+        JdbcClientContext clientContext = dbClient.unwrap(JdbcClient.class).context();
+        assertThat(clientContext.parametersConfig().useNString(), is(true));
+        assertThat(clientContext.parametersConfig().useStringBinding(), is(false));
+        assertThat(clientContext.parametersConfig().stringBindingSize(), is(8192));
+        assertThat(clientContext.parametersConfig().useByteArrayBinding(), is(false));
+        assertThat(clientContext.parametersConfig().timestampForLocalTime(), is(false));
+        assertThat(clientContext.parametersConfig().setObjectForJavaTime(), is(false));
     }
 
 }

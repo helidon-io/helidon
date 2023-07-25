@@ -54,6 +54,17 @@ public abstract class DbStatementBase<S extends DbStatement<S>> implements DbSta
     }
 
     /**
+     * Returns execution context cast to it's extending class.
+     *
+     * @param cls {@link DbExecuteContext} extending class
+     * @return extended execution context
+     * @param <C> execution context extending type
+     */
+    protected <C extends DbExecuteContext> C context(Class<C> cls) {
+        return cls.cast(context);
+    }
+
+    /**
      * Get the statement parameters.
      *
      * @return statement parameters
@@ -262,4 +273,5 @@ public abstract class DbStatementBase<S extends DbStatement<S>> implements DbSta
     protected S identity() {
         return (S) this;
     }
+
 }

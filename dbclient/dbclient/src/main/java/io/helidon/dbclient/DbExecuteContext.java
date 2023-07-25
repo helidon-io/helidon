@@ -28,7 +28,13 @@ public class DbExecuteContext implements DbContext {
     private final String statement;
     private final DbClientContext clientContext;
 
-    private DbExecuteContext(Builder builder) {
+    /**
+     * Creates an instance of execution context.
+     *
+     * @param builder Helidon database client context builder
+     */
+    protected DbExecuteContext(
+            BuilderBase<? extends BuilderBase<?, ? extends DbExecuteContext>, ? extends DbExecuteContext> builder) {
         this.statementName = builder.statementName;
         this.statement = builder.statement;
         this.clientContext = builder.clientContext;
@@ -78,6 +84,17 @@ public class DbExecuteContext implements DbContext {
     }
 
     /**
+     * Returns client context cast to it's extending class.
+     *
+     * @param cls {@link DbClientContext} extending class
+     * @return extended client context
+     * @param <C> client context extending type
+     */
+    protected <C extends DbClientContext> C clientContext(Class<C> cls) {
+        return cls.cast(clientContext);
+    }
+
+    /**
      * Create a new execution context.
      *
      * @param statementName statement name
@@ -102,10 +119,27 @@ public class DbExecuteContext implements DbContext {
         return new Builder();
     }
 
+
     /**
      * Builder for {@link DbExecuteContext}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, DbExecuteContext> {
+    public static final class Builder extends BuilderBase<Builder, DbExecuteContext> {
+
+        @Override
+        public DbExecuteContext build() {
+            return new DbExecuteContext(this);
+        }
+
+    }
+
+    /**
+     * Base builder for {@link DbExecuteContext}.
+     *
+     * @param <B> type of the builder
+     * @param <T> type of the built instance
+     */
+    public abstract static class BuilderBase<B extends BuilderBase<B, T>, T extends DbExecuteContext>
+            implements io.helidon.common.Builder<B, T> {
 
         private String statementName;
         private String statement;
@@ -117,9 +151,9 @@ public class DbExecuteContext implements DbContext {
          * @param statement statement
          * @return updated builder instance
          */
-        public Builder statement(String statement) {
+        public B statement(String statement) {
             this.statement = statement;
-            return this;
+            return identity();
         }
 
         /**
@@ -128,9 +162,9 @@ public class DbExecuteContext implements DbContext {
          * @param statementName statement name
          * @return updated builder instance
          */
-        public Builder statementName(String statementName) {
+        public B statementName(String statementName) {
             this.statementName = statementName;
-            return this;
+            return identity();
         }
 
         /**
@@ -139,14 +173,10 @@ public class DbExecuteContext implements DbContext {
          * @param clientContext client context
          * @return updated builder instance
          */
-        public Builder clientContext(DbClientContext clientContext) {
+        public B clientContext(DbClientContext clientContext) {
             this.clientContext = clientContext;
-            return this;
+            return identity();
         }
 
-        @Override
-        public DbExecuteContext build() {
-            return new DbExecuteContext(this);
-        }
     }
 }

@@ -19,7 +19,6 @@ import java.sql.Connection;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientBase;
-import io.helidon.dbclient.DbClientContext;
 
 /**
  * Helidon DB implementation for JDBC drivers.
@@ -34,12 +33,13 @@ class JdbcClient extends DbClientBase implements DbClient {
      * @param builder builder
      */
     JdbcClient(JdbcClientBuilder builder) {
-        super(DbClientContext.builder()
+        super(JdbcClientContext.jdbcBuilder()
                 .statements(builder.statements())
                 .dbMapperManager(builder.dbMapperManager())
                 .mapperManager(builder.mapperManager())
                 .clientServices(builder.clientServices())
                 .dbType(builder.connectionPool().dbType())
+                .parametersSetter(builder.parametersConfig())
                 .build());
         connectionPool = builder.connectionPool();
     }
@@ -60,6 +60,11 @@ class JdbcClient extends DbClientBase implements DbClient {
     }
 
     @Override
+    public JdbcClientContext context() {
+        return (JdbcClientContext) super.context();
+    }
+
+    @Override
     public <C> C unwrap(Class<C> cls) {
         if (Connection.class.isAssignableFrom(cls)) {
             return cls.cast(connectionPool.connection());
@@ -70,4 +75,5 @@ class JdbcClient extends DbClientBase implements DbClient {
             throw new UnsupportedOperationException(String.format("Class %s is not supported for unwrap", cls.getName()));
         }
     }
+
 }
