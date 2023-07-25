@@ -17,10 +17,6 @@
 
 package org.jboss.weld.bean.proxy;
 
-import static org.jboss.classfilewriter.util.DescriptorUtils.isPrimitive;
-import static org.jboss.classfilewriter.util.DescriptorUtils.isWide;
-import static org.jboss.weld.util.reflection.Reflections.cast;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -45,7 +41,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jakarta.enterprise.inject.spi.Bean;
-
 import org.jboss.classfilewriter.AccessFlag;
 import org.jboss.classfilewriter.ClassFile;
 import org.jboss.classfilewriter.ClassMethod;
@@ -56,7 +51,6 @@ import org.jboss.classfilewriter.util.Boxing;
 import org.jboss.classfilewriter.util.DescriptorUtils;
 import org.jboss.weld.Container;
 import org.jboss.weld.bean.AbstractProducerBean;
-import org.jboss.weld.bean.builtin.AbstractBuiltInBean;
 import org.jboss.weld.config.WeldConfiguration;
 import org.jboss.weld.exceptions.DefinitionException;
 import org.jboss.weld.exceptions.WeldException;
@@ -67,8 +61,6 @@ import org.jboss.weld.proxy.WeldConstruct;
 import org.jboss.weld.security.GetDeclaredConstructorsAction;
 import org.jboss.weld.security.GetDeclaredMethodsAction;
 import org.jboss.weld.security.GetProtectionDomainAction;
-import org.jboss.weld.serialization.spi.BeanIdentifier;
-import org.jboss.weld.serialization.spi.ContextualStore;
 import org.jboss.weld.serialization.spi.ProxyServices;
 import org.jboss.weld.util.Proxies;
 import org.jboss.weld.util.Proxies.TypeInfo;
@@ -80,6 +72,10 @@ import org.jboss.weld.util.bytecode.RuntimeMethodInformation;
 import org.jboss.weld.util.collections.ImmutableSet;
 import org.jboss.weld.util.collections.Sets;
 import org.jboss.weld.util.reflection.Reflections;
+
+import static org.jboss.classfilewriter.util.DescriptorUtils.isPrimitive;
+import static org.jboss.classfilewriter.util.DescriptorUtils.isWide;
+import static org.jboss.weld.util.reflection.Reflections.cast;
 
 /*
  * This class is copied from Weld sources.
@@ -98,7 +94,7 @@ import org.jboss.weld.util.reflection.Reflections;
  *
  * Helidon changes are under the copyright of:
  *
- * Copyright (c) 2020. 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -300,7 +296,7 @@ public class ProxyFactory<T> implements PrivilegedAction<T> {
         // we need a sorted collection without repetition, hence LinkedHashSet
         final Set<String> interfaces = new LinkedHashSet<>();
         // for producers, try to determine the most specific class and make sure the proxy starts with the same package and class
-        if (bean != null && bean instanceof AbstractProducerBean) {
+        if (bean instanceof AbstractProducerBean) {
             Class<?> mostSpecificClass = ((AbstractProducerBean) bean).getType();
             proxyPackage = mostSpecificClass.getPackage().getName();
             if (mostSpecificClass.getDeclaringClass() != null) {
