@@ -96,6 +96,9 @@
                     <value key="artifactId">helidon-microprofile-openapi</value>
                 </map>
             </list>
+            <list key="modules">
+                <value>io.helidon.microprofile.openapi</value>
+            </list>
         </model>
     </output>
 </archetype-script>

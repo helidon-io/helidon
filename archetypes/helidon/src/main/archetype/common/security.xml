@@ -47,6 +47,9 @@
                                             <value key="artifactId">helidon-microprofile-oidc</value>
                                         </map>
                                     </list>
+                                    <list key="modules" if="${flavor} == 'se'">
+                                        <value>io.helidon.security.providers.oidc</value>
+                                    </list>
                                     <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                         <value>io.helidon.common.context.Contexts</value>
                                         <value>io.helidon.security.Security</value>
@@ -187,6 +190,10 @@
                                 <value key="groupId">io.helidon.security.integration</value>
                                 <value key="artifactId">helidon-security-integration-webserver</value>
                             </map>
+                        </list>
+                        <list key="modules">
+                            <value if="${flavor} == 'se'">io.helidon.security</value>
+                            <value if="${flavor} == 'se'">io.helidon.security.integration.webserver</value>
                         </list>
                         <list key="paths-config-entries">
                             <value><![CDATA[       - path: "/simple-greet"
