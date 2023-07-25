@@ -70,10 +70,10 @@
                 <value>static org.hamcrest.MatcherAssert.assertThat</value>
                 <value>static org.hamcrest.Matchers.is</value>
             </list>
-            <list key="module-info">
-                <value><![CDATA[    requires io.helidon.nima.webserver;]]></value>
-                <value><![CDATA[    requires io.helidon.common.http;]]></value>
-                <value><![CDATA[    requires io.helidon.config;]]></value>
+            <list key="modules">
+                <value>io.helidon.nima.webserver</value>
+                <value>io.helidon.common.http</value>
+                <value>io.helidon.config</value>
             </list>
         </model>
     </output>

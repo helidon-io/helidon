@@ -166,15 +166,15 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 
 ]]></value>
             </list>
-            <list key="module-info">
-                <value><![CDATA[    requires io.helidon.nima.observe;]]></value>
-                <value if="${health}"><![CDATA[    requires io.helidon.nima.observe.health;]]></value>
-                <value if="${health}"><![CDATA[    requires io.helidon.health.checks;]]></value>
-                <value if="${metrics}"><![CDATA[    requires io.helidon.nima.observe.metrics;]]></value>
-                <value if="${metrics}"><![CDATA[    requires io.helidon.metrics.api;]]></value>
-                <value if="${tracing}"><![CDATA[    requires io.helidon.nima.http2.webserver;]]></value>
-                <value if="${tracing}"><![CDATA[    requires io.helidon.nima.webserver.tracing;]]></value>
-                <value if="${tracing}"><![CDATA[    requires io.helidon.tracing;]]></value>
+            <list key="modules">
+                <value>io.helidon.nima.observe</value>
+                <value if="${health}">io.helidon.nima.observe.health</value>
+                <value if="${health}">io.helidon.health.checks</value>
+                <value if="${metrics}">io.helidon.nima.observe.metrics</value>
+                <value if="${metrics}">io.helidon.metrics.api</value>
+                <value if="${tracing}">io.helidon.nima.http2.webserver</value>
+                <value if="${tracing}">io.helidon.nima.webserver.tracing</value>
+                <value if="${tracing}">io.helidon.tracing</value>
             </list>
         </model>
     </output>

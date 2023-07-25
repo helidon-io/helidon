@@ -63,8 +63,8 @@
     }
 ]]></value>
                                         </list>
-                                        <list key="module-info">
-                                            <value><![CDATA[    requires jakarta.json;]]></value>
+                                        <list key="modules">
+                                            <value>jakarta.json</value>
                                         </list>
                                     </model>
                                 </output>
@@ -83,8 +83,8 @@
                                                 <value key="scope">runtime</value>
                                             </map>
                                         </list>
-                                        <list key="module-info">
-                                            <value><![CDATA[    requires com.fasterxml.jackson.annotation;]]></value>
+                                        <list key="modules">
+                                            <value>com.fasterxml.jackson.annotation</value>
                                         </list>
                                     </model>
                                 </output>
@@ -129,8 +129,8 @@
     }
 ]]></value>
                                         </list>
-                                        <list key="module-info">
-                                            <value><![CDATA[    requires jakarta.json;]]></value>
+                                        <list key="modules">
+                                            <value>jakarta.json</value>
                                         </list>
                                     </model>
                                 </output>
@@ -163,14 +163,14 @@
                                     <value key="artifactId">jakarta.json-api</value>
                                 </map>
                             </list>
-                            <list key="module-info" if="${flavor} == 'nima'">
-                                <value><![CDATA[    requires jakarta.json;]]></value>
-                                <value><![CDATA[    requires io.helidon.nima.http.media.multipart;]]></value>
-                                <value><![CDATA[    requires io.helidon.nima.webserver.staticcontent;]]></value>
+                            <list key="modules" if="${flavor} == 'nima'">
+                                <value>jakarta.json</value>
+                                <value>io.helidon.nima.http.media.multipart</value>
+                                <value>io.helidon.nima.webserver.staticcontent</value>
                             </list>
-                            <list key="module-info" if="${flavor} == 'mp'">
-                                <value><![CDATA[    requires jakarta.json;]]></value>
-                                <value><![CDATA[    requires jersey.media.multipart;]]></value>
+                            <list key="modules" if="${flavor} == 'mp'">
+                                <value>jakarta.json</value>
+                                <value>jersey.media.multipart</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'nima'">
                                 <value>io.helidon.common.http.Http</value>
