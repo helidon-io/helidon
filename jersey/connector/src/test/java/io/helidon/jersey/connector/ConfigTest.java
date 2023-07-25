@@ -16,8 +16,11 @@
 
 package io.helidon.jersey.connector;
 
+import java.util.Optional;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.nima.webclient.Proxy;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -25,6 +28,7 @@ import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 
@@ -63,5 +67,27 @@ class ConfigTest {
         HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
         Http1ClientRequest request = connector.client().get();
         assertThat(request.followRedirects(), is(false));
+    }
+
+    @Test
+    void testConfigNoProxy() {
+        Client client = ClientBuilder.newClient();
+        HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
+        assertThat(connector.proxy(), is(Proxy.noProxy()));
+    }
+
+    @Test
+    void testConfigProxy() {
+        Client client = ClientBuilder.newBuilder()
+                .property(ClientProperties.PROXY_URI, "http://localhost:8080")
+                .property(ClientProperties.PROXY_USERNAME, "user")
+                .property(ClientProperties.PROXY_PASSWORD, "pass")
+                .build();
+        HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
+        assertThat(connector.proxy().host(), is("localhost"));
+        assertThat(connector.proxy().port(), is(8080));
+        assertThat(connector.proxy().type(), is(Proxy.ProxyType.HTTP));
+        assertThat(connector.proxy().username(), is(Optional.of("user")));
+        assertThat(connector.proxy().password(), notNullValue());
     }
 }
