@@ -64,6 +64,9 @@ curl -X GET http://localhost:8080/greet/Jose
                     <value key="artifactId">helidon-nima-webclient</value>
                 </map>
             </list>
+            <list key="modules">
+                <value>io.helidon.nima.webclient</value>
+            </list>
         </model>
     </output>
 </archetype-script>

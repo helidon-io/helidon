@@ -63,6 +63,9 @@
     }
 ]]></value>
                                         </list>
+                                        <list key="modules">
+                                            <value>jakarta.json</value>
+                                        </list>
                                     </model>
                                 </output>
                             </option>
@@ -79,6 +82,9 @@
                                                 <value key="artifactId">jersey-media-json-jackson</value>
                                                 <value key="scope">runtime</value>
                                             </map>
+                                        </list>
+                                        <list key="modules">
+                                            <value>com.fasterxml.jackson.annotation</value>
                                         </list>
                                     </model>
                                 </output>
@@ -123,6 +129,9 @@
     }
 ]]></value>
                                         </list>
+                                        <list key="modules">
+                                            <value>jakarta.json</value>
+                                        </list>
                                     </model>
                                 </output>
                             </option>
@@ -153,6 +162,15 @@
                                     <value key="groupId">jakarta.json</value>
                                     <value key="artifactId">jakarta.json-api</value>
                                 </map>
+                            </list>
+                            <list key="modules" if="${flavor} == 'nima'">
+                                <value>jakarta.json</value>
+                                <value>io.helidon.nima.http.media.multipart</value>
+                                <value>io.helidon.nima.webserver.staticcontent</value>
+                            </list>
+                            <list key="modules" if="${flavor} == 'mp'">
+                                <value>jakarta.json</value>
+                                <value>jersey.media.multipart</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'nima'">
                                 <value>io.helidon.common.http.Http</value>
