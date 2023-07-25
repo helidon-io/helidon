@@ -19,7 +19,6 @@ import java.sql.SQLException;
 
 import io.helidon.dbclient.DbClientContext;
 import io.helidon.dbclient.DbClientException;
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
@@ -52,7 +51,7 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     public DbStatementQuery createNamedQuery(String stmtName, String stmt) {
         return new JdbcTransactionStatementQuery(
                 connectionPool(),
-                DbExecuteContext.create(stmtName, stmt, context()),
+                JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()),
                 transactionContext);
     }
 
@@ -60,7 +59,7 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     public DbStatementGet createNamedGet(String statementName, String statement) {
         return new JdbcTransactionStatementGet(
                 connectionPool(),
-                DbExecuteContext.create(statementName, statement, context()),
+                JdbcExecuteContext.jdbcCreate(statementName, statement, jdbcContext()),
                 transactionContext);
     }
 
@@ -68,7 +67,7 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     public DbStatementDml createNamedDmlStatement(String statementName, String statement) {
         return new JdbcTransactionStatementDml(
                 connectionPool(),
-                DbExecuteContext.create(statementName, statement, context()),
+                JdbcExecuteContext.jdbcCreate(statementName, statement, jdbcContext()),
                 transactionContext,
                 DML);
     }
@@ -77,7 +76,7 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     public DbStatementDml createNamedInsert(String statementName, String statement) {
         return new JdbcTransactionStatementDml(
                 connectionPool(),
-                DbExecuteContext.create(statementName, statement, context()),
+                JdbcExecuteContext.jdbcCreate(statementName, statement, jdbcContext()),
                 transactionContext,
                 INSERT);
     }
@@ -86,7 +85,7 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     public DbStatementDml createNamedUpdate(String stmtName, String stmt) {
         return new JdbcTransactionStatementDml(
                 connectionPool(),
-                DbExecuteContext.create(stmtName, stmt, context()),
+                JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()),
                 transactionContext,
                 UPDATE);
     }
@@ -95,7 +94,7 @@ class JdbcTransaction extends JdbcExecute implements DbTransaction {
     public DbStatementDml createNamedDelete(String statementName, String statement) {
         return new JdbcTransactionStatementDml(
                 connectionPool(),
-                DbExecuteContext.create(statementName, statement, context()),
+                JdbcExecuteContext.jdbcCreate(statementName, statement, jdbcContext()),
                 transactionContext,
                 DELETE);
     }

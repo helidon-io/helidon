@@ -56,6 +56,17 @@ public abstract class DbExecuteBase implements DbExecute {
         return context;
     }
 
+    /**
+     * Return database client context cast to it's extending class.
+     *
+     * @param cls {@link DbClientContext} extending class
+     * @return extended client context
+     * @param <C> client context extending type
+     */
+    protected <C extends DbClientContext> C context(Class<C> cls) {
+        return cls.cast(context);
+    }
+
     @Override
     public DbStatementQuery createNamedQuery(String statementName) {
         return createNamedQuery(statementName, statementText(statementName));

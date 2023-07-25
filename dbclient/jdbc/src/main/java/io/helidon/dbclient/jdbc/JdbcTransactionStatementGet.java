@@ -17,7 +17,6 @@ package io.helidon.dbclient.jdbc;
 
 import java.util.Optional;
 
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementType;
@@ -35,7 +34,7 @@ class JdbcTransactionStatementGet extends JdbcTransactionStatement<DbStatementGe
      * @param transactionContext transaction context
      */
     JdbcTransactionStatementGet(JdbcConnectionPool connectionPool,
-                                DbExecuteContext context,
+                                JdbcExecuteContext context,
                                 TransactionContext transactionContext) {
         super(connectionPool, context, transactionContext);
     }

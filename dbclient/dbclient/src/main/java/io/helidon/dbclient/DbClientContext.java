@@ -32,7 +32,13 @@ public class DbClientContext implements DbContext {
     private final DbStatements statements;
     private final String dbType;
 
-    private DbClientContext(Builder builder) {
+    /**
+     * Create an instance of client context.
+     *
+     * @param builder Builder for {@link DbClientContext}
+     */
+    protected DbClientContext(
+            BuilderBase<? extends BuilderBase<?, ? extends DbClientContext>, ? extends DbClientContext> builder) {
         this.dbMapperManager = builder.dbMapperManager;
         this.mapperManager = builder.mapperManager;
         this.clientServices = builder.clientServices;
@@ -81,7 +87,22 @@ public class DbClientContext implements DbContext {
     /**
      * Builder for {@link DbClientContext}.
      */
-    public static class Builder implements io.helidon.common.Builder<Builder, DbClientContext> {
+    public static final class Builder extends BuilderBase<Builder, DbClientContext> {
+
+        @Override
+        public DbClientContext build() {
+            return new DbClientContext(this);
+        }
+
+    }
+
+    /**
+     * Base builder for {@link DbClientContext}.
+     *
+     * @param <B> type of the builder
+     * @param <T> type of the built instance
+     */
+    public abstract static class BuilderBase<B extends BuilderBase<B, T>, T extends DbClientContext> implements io.helidon.common.Builder<B, T> {
 
         private DbMapperManager dbMapperManager;
         private MapperManager mapperManager;
@@ -89,12 +110,10 @@ public class DbClientContext implements DbContext {
         private DbStatements statements;
         private String dbType;
 
-        private Builder() {
-        }
-
-        @Override
-        public DbClientContext build() {
-            return new DbClientContext(this);
+        /**
+         * Creates an instance of base builder for {@link DbClientContext}.
+         */
+        protected BuilderBase() {
         }
 
         /**
@@ -103,9 +122,9 @@ public class DbClientContext implements DbContext {
          * @param dbMapperManager DB mapper manager
          * @return updated builder instance
          */
-        public Builder dbMapperManager(DbMapperManager dbMapperManager) {
+        public B dbMapperManager(DbMapperManager dbMapperManager) {
             this.dbMapperManager = dbMapperManager;
-            return this;
+            return identity();
         }
 
         /**
@@ -114,9 +133,9 @@ public class DbClientContext implements DbContext {
          * @param mapperManager mapper manager
          * @return updated builder instance
          */
-        public Builder mapperManager(MapperManager mapperManager) {
+        public B mapperManager(MapperManager mapperManager) {
             this.mapperManager = mapperManager;
-            return this;
+            return identity();
         }
 
         /**
@@ -125,9 +144,9 @@ public class DbClientContext implements DbContext {
          * @param clientServices client service list
          * @return updated builder instance
          */
-        public Builder clientServices(List<DbClientService> clientServices) {
+        public B clientServices(List<DbClientService> clientServices) {
             this.clientServices = clientServices;
-            return this;
+            return identity();
         }
 
         /**
@@ -136,9 +155,9 @@ public class DbClientContext implements DbContext {
          * @param statements statements
          * @return updated builder instance
          */
-        public Builder statements(DbStatements statements) {
+        public B statements(DbStatements statements) {
             this.statements = statements;
-            return this;
+            return identity();
         }
 
         /**
@@ -147,9 +166,9 @@ public class DbClientContext implements DbContext {
          * @param dbType database provider type
          * @return updated builder instance
          */
-        public Builder dbType(String dbType) {
+        public B dbType(String dbType) {
             this.dbType = dbType;
-            return this;
+            return identity();
         }
     }
 }

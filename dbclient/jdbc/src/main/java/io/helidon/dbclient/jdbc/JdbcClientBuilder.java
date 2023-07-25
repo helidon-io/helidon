@@ -29,9 +29,11 @@ public final class JdbcClientBuilder
         implements DbClientBuilder<JdbcClientBuilder> {
 
     private JdbcConnectionPool connectionPool;
+    private JdbcParametersConfigBlueprint parametersConfig;
 
     JdbcClientBuilder() {
         super();
+        this.parametersConfig = JdbcParametersConfig.create();
     }
 
     /**
@@ -52,6 +54,21 @@ public final class JdbcClientBuilder
     public JdbcClientBuilder config(Config config) {
         super.config(config);
         config.get("connection").detach().map(JdbcConnectionPool::create).ifPresent(this::connectionPool);
+        Config parameters = config.get("parameters");
+        if (parameters.exists()) {
+            this.parametersConfig = JdbcParametersConfig.create(parameters);
+        }
+        return this;
+    }
+
+    /**
+     * Configure parameters setter.
+     *
+     * @param parametersConfig parameters setter configuration
+     * @return updated builder instance
+     */
+    public JdbcClientBuilder parametersSetter(JdbcParametersConfig parametersConfig) {
+        this.parametersConfig = parametersConfig;
         return this;
     }
 
@@ -73,6 +90,15 @@ public final class JdbcClientBuilder
      */
     JdbcConnectionPool connectionPool() {
         return connectionPool;
+    }
+
+    /**
+     * Get the parameters setter configuration.
+     *
+     * @return parameters setter configuration
+     */
+    JdbcParametersConfigBlueprint parametersConfig() {
+        return parametersConfig;
     }
 
 }

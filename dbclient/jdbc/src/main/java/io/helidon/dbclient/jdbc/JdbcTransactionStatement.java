@@ -17,7 +17,6 @@ package io.helidon.dbclient.jdbc;
 
 import java.sql.PreparedStatement;
 
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatement;
 
 /**
@@ -37,7 +36,7 @@ abstract class JdbcTransactionStatement<S extends DbStatement<S>> extends JdbcSt
      * @param transactionContext transaction context
      */
     protected JdbcTransactionStatement(JdbcConnectionPool connectionPool,
-                                       DbExecuteContext context,
+                                       JdbcExecuteContext context,
                                        TransactionContext transactionContext) {
         super(connectionPool, context);
         this.transactionContext = transactionContext;

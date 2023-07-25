@@ -20,7 +20,6 @@ import java.sql.SQLException;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementException;
 import io.helidon.dbclient.DbStatementType;
@@ -38,7 +37,7 @@ class JdbcStatementDml extends JdbcStatement<DbStatementDml> implements DbStatem
      * @param connectionPool connection pool
      * @param context        execution context
      */
-    JdbcStatementDml(JdbcConnectionPool connectionPool, DbStatementType type, DbExecuteContext context) {
+    JdbcStatementDml(JdbcConnectionPool connectionPool, DbStatementType type, JdbcExecuteContext context) {
         super(connectionPool, context);
         this.type = type;
     }

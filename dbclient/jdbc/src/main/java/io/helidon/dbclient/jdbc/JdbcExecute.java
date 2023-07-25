@@ -19,7 +19,6 @@ import java.sql.Connection;
 
 import io.helidon.dbclient.DbClientContext;
 import io.helidon.dbclient.DbExecuteBase;
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementGet;
 import io.helidon.dbclient.DbStatementQuery;
@@ -56,34 +55,38 @@ class JdbcExecute extends DbExecuteBase {
         return connectionPool;
     }
 
+    JdbcClientContext jdbcContext() {
+        return context(JdbcClientContext.class);
+    }
+
     @Override
     public DbStatementQuery createNamedQuery(String stmtName, String stmt) {
-        return new JdbcStatementQuery(connectionPool, DbExecuteContext.create(stmtName, stmt, context()));
+        return new JdbcStatementQuery(connectionPool, JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()));
     }
 
     @Override
     public DbStatementGet createNamedGet(String stmtName, String stmt) {
-        return new JdbcStatementGet(connectionPool, DbExecuteContext.create(stmtName, stmt, context()));
+        return new JdbcStatementGet(connectionPool, JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()));
     }
 
     @Override
     public DbStatementDml createNamedDmlStatement(String stmtName, String stmt) {
-        return new JdbcStatementDml(connectionPool, DML, DbExecuteContext.create(stmtName, stmt, context()));
+        return new JdbcStatementDml(connectionPool, DML, JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()));
     }
 
     @Override
     public DbStatementDml createNamedInsert(String stmtName, String stmt) {
-        return new JdbcStatementDml(connectionPool, INSERT, DbExecuteContext.create(stmtName, stmt, context()));
+        return new JdbcStatementDml(connectionPool, INSERT, JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()));
     }
 
     @Override
     public DbStatementDml createNamedUpdate(String stmtName, String stmt) {
-        return new JdbcStatementDml(connectionPool, UPDATE, DbExecuteContext.create(stmtName, stmt, context()));
+        return new JdbcStatementDml(connectionPool, UPDATE, JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()));
     }
 
     @Override
     public DbStatementDml createNamedDelete(String stmtName, String stmt) {
-        return new JdbcStatementDml(connectionPool, DELETE, DbExecuteContext.create(stmtName, stmt, context()));
+        return new JdbcStatementDml(connectionPool, DELETE, JdbcExecuteContext.jdbcCreate(stmtName, stmt, jdbcContext()));
     }
 
     @Override

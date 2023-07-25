@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementException;
 import io.helidon.dbclient.DbStatementGet;
@@ -39,7 +38,7 @@ class JdbcStatementGet extends JdbcStatement<DbStatementGet> implements DbStatem
      * @param connectionPool connection pool
      * @param context        execution context
      */
-    JdbcStatementGet(JdbcConnectionPool connectionPool, DbExecuteContext context) {
+    JdbcStatementGet(JdbcConnectionPool connectionPool, JdbcExecuteContext context) {
         super(connectionPool, context);
     }
 

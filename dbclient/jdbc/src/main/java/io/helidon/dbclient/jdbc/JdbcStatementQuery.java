@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.dbclient.DbClientServiceContext;
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementDml;
 import io.helidon.dbclient.DbStatementException;
@@ -41,7 +40,7 @@ class JdbcStatementQuery extends JdbcStatement<DbStatementQuery> implements DbSt
      * @param connectionPool connection pool
      * @param context        context
      */
-    JdbcStatementQuery(JdbcConnectionPool connectionPool, DbExecuteContext context) {
+    JdbcStatementQuery(JdbcConnectionPool connectionPool, JdbcExecuteContext context) {
         super(connectionPool, context);
     }
 

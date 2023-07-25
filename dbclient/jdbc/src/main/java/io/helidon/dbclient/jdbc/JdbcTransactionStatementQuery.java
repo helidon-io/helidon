@@ -17,7 +17,6 @@ package io.helidon.dbclient.jdbc;
 
 import java.util.stream.Stream;
 
-import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementQuery;
 import io.helidon.dbclient.DbStatementType;
@@ -35,7 +34,7 @@ class JdbcTransactionStatementQuery extends JdbcTransactionStatement<DbStatement
      * @param transactionContext transaction context
      */
     JdbcTransactionStatementQuery(JdbcConnectionPool connectionPool,
-                                  DbExecuteContext context,
+                                  JdbcExecuteContext context,
                                   TransactionContext transactionContext) {
 
         super(connectionPool, context, transactionContext);
@@ -50,4 +49,5 @@ class JdbcTransactionStatementQuery extends JdbcTransactionStatement<DbStatement
     public Stream<DbRow> execute() {
         return doExecute((future, context) -> JdbcStatementQuery.doExecute(this, future, context, null));
     }
+
 }
