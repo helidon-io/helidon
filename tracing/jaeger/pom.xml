@@ -82,6 +82,13 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+        <!-- Hack to get around module issue in okio. See module-info.java -->
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+            <version>1.8.0</version>
+            <scope>provided</scope>
+        </dependency>
         <!--
          - Test dependencies
          -->
