@@ -32,6 +32,11 @@
                                 <include>src/*/java/**/WebClientMainTest.java.mustache</include>
                             </includes>
                         </templates>
+                        <model>
+                            <list key="modules">
+                                <value>io.helidon.webclient</value>
+                            </list>
+                        </model>
                     </output>
                 </option>
                 <option value="fault-tolerance" name="Fault Tolerance" description="System for building resilient applications">
@@ -61,6 +66,11 @@
                                     <value key="groupId">io.helidon.webclient</value>
                                     <value key="artifactId">helidon-webclient</value>
                                 </map>
+                            </list>
+                            <list key="modules">
+                                <value if="${flavor} == 'mp'">io.helidon.microprofile.faulttolerance</value>
+                                <value if="${flavor} == 'mp'">io.helidon.common.reactive</value>
+                                <value if="${flavor} == 'se'">io.helidon.faulttolerance</value>
                             </list>
                             <list key="Main-helidon-imports">
                                 <value>io.helidon.common.http.Http</value>
@@ -143,6 +153,10 @@
                         .build())
                 .addCrossOrigin(CrossOriginConfig.create())
                 .build();]]></value>
+                            </list>
+                            <list key="modules">
+                                <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
+                                <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
                             </list>
                             <list key="Main-routingBuilder" if="${flavor} == 'se'">
                                 <value><![CDATA[                .register("/cors", corsSupport, new CorsService())]]></value>

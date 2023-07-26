@@ -51,6 +51,9 @@
             <list key="application-yaml-entries">
                 <value file="files/src/main/resources/application.config.yaml"/>
             </list>
+            <list key="modules">
+                <value>java.logging</value>
+            </list>
         </model>
     </output>
 </archetype-script>

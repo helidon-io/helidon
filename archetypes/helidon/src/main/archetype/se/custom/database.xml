@@ -313,6 +313,13 @@ docker run --rm --name mongo -p 27017:27017 mongo
                                 <value key="artifactId">slf4j-jdk14</value>
                             </map>
                         </list>
+                        <list key="modules">
+                            <value>io.helidon.dbclient</value>
+                            <value if="${flavor} == 'mp'">io.helidon.dbclient.spi</value>
+                            <value if="${media.json-lib} != 'jsonb'">io.helidon.media.jsonb</value>
+                            <value if="${media.json-lib} != 'jsonp'">io.helidon.media.jsonp</value>
+                            <value>io.helidon.dbclient.health</value>
+                        </list>
                         <list key="Main-helidon-imports">
                             <value>io.helidon.dbclient.DbClient</value>
                             <value>io.helidon.media.jsonp.JsonpSupport</value>
