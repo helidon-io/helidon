@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,7 @@ public class ServerConfigurationTest {
     }
 
     @Test
+    @SuppressWarnings({"deprecation", "removal"})
     public void fromConfig() throws Exception {
         Config config = Config.builder().sources(ConfigSources.classpath("config1.conf")).build();
         ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
@@ -113,6 +114,7 @@ public class ServerConfigurationTest {
     }
 
     @Test
+    @SuppressWarnings({"deprecation", "removal"})
     public void sslFromConfig() throws Exception {
         Config config = Config.builder().sources(ConfigSources.classpath("config-with-ssl.conf")).build();
         ServerConfiguration sc = config.get("webserver").as(ServerConfiguration::create).get();
