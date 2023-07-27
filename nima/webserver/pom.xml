@@ -24,7 +24,7 @@
     <parent>
         <groupId>io.helidon.nima</groupId>
         <artifactId>helidon-nima-project</artifactId>
-        <version>4.0.0-M1-SNAPSHOT</version>
+        <version>4.0.0-M1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 

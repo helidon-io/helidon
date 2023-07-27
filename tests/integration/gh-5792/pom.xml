@@ -24,12 +24,12 @@
     <parent>
         <groupId>io.helidon.applications</groupId>
         <artifactId>helidon-nima</artifactId>
-        <version>4.0.0-M1-SNAPSHOT</version>
+        <version>4.0.0-M1</version>
         <relativePath>../../../applications/nima/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-yaml-parsing-nima</artifactId>
-    <version>4.0.0-M1-SNAPSHOT</version>
+    <version>4.0.0-M1</version>
 
     <name>Helidon SnakeYAML Earlier Version Test</name>
 

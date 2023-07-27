@@ -21,7 +21,7 @@
 
     <groupId>io.helidon.examples.nima</groupId>
     <artifactId>helidon-nima-examples-quickstart-standalone</artifactId>
-    <version>4.0.0-M1-SNAPSHOT</version>
+    <version>4.0.0-M1</version>
 
     <name>Helidon Níma Examples Quickstart Standalone</name>
     <description>Example demonstrating a standalone project without an application parent.</description>
@@ -33,7 +33,7 @@
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
 
-        <helidon.version>4.0.0-M1-SNAPSHOT</helidon.version>
+        <helidon.version>4.0.0-M1</helidon.version>
         <mainClass>io.helidon.examples.nima.quickstart.standalone.StandaloneQuickstartMain</mainClass>
 
         <!-- plugin versions -->
