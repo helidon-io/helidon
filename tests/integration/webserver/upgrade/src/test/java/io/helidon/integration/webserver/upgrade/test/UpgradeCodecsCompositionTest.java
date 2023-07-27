@@ -43,7 +43,7 @@ import io.helidon.integration.webserver.upgrade.Main;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.webclient.Http2Client;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 
@@ -138,7 +138,7 @@ class UpgradeCodecsCompositionTest {
     })
     void genericHttp20(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_2).body(), is("HTTP Version 2.0\n"));
-        try (ClientResponse response = webClient(GET, url, Http.Version.V2_0)) {
+        try (HttpClientResponse response = webClient(GET, url, Http.Version.V2_0)) {
             assertThat(response.entity().as(String.class), is("HTTP Version 2.0\n"));
         }
     }
@@ -150,7 +150,7 @@ class UpgradeCodecsCompositionTest {
     })
     void genericHttp11(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_1_1).body(), is("HTTP Version 1.1\n"));
-        try (ClientResponse response = webClient(GET, url, Http.Version.V1_1)) {
+        try (HttpClientResponse response = webClient(GET, url, Http.Version.V1_1)) {
             assertThat(response.entity().as(String.class), is("HTTP Version 1.1\n"));
         }
     }
@@ -162,7 +162,7 @@ class UpgradeCodecsCompositionTest {
     })
     void versionSpecificHttp11(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_1_1).body(), is("HTTP/1.1 route\n"));
-        try (ClientResponse response = webClient(GET, url, Http.Version.V1_1)) {
+        try (HttpClientResponse response = webClient(GET, url, Http.Version.V1_1)) {
             assertThat(response.entity().as(String.class), is("HTTP/1.1 route\n"));
         }
     }
@@ -174,7 +174,7 @@ class UpgradeCodecsCompositionTest {
     })
     void versionSpecificHttp20(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_2).body(), is("HTTP/2.0 route\n"));
-        try (ClientResponse response = webClient(GET, url, Http.Version.V2_0)) {
+        try (HttpClientResponse response = webClient(GET, url, Http.Version.V2_0)) {
             assertThat(response.entity().as(String.class), is("HTTP/2.0 route\n"));
         }
     }
@@ -186,7 +186,7 @@ class UpgradeCodecsCompositionTest {
     })
     void versionSpecificHttp11Negative(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_2).statusCode(), is(404));
-        try (ClientResponse response = webClient(GET, url, Http.Version.V2_0)) {
+        try (HttpClientResponse response = webClient(GET, url, Http.Version.V2_0)) {
             assertThat(response.status().code(), is(404));
         }
     }
@@ -198,7 +198,7 @@ class UpgradeCodecsCompositionTest {
     })
     void versionSpecificHttp20Negative(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_1_1).statusCode(), is(404));
-        try (ClientResponse response = webClient(GET, url, Http.Version.V1_1)) {
+        try (HttpClientResponse response = webClient(GET, url, Http.Version.V1_1)) {
             assertThat(response.status().code(), is(404));
         }
     }
@@ -222,7 +222,7 @@ class UpgradeCodecsCompositionTest {
         String expectedResponse = version + " route " + method + "\n";
 
         assertThat(httpClient(Http.Method.create(method), url, version.contains("2") ? HTTP_2 : HTTP_1_1).body(), is(expectedResponse));
-        try (ClientResponse response = webClient(Http.Method.create(method), url, Http.Version.create(version))) {
+        try (HttpClientResponse response = webClient(Http.Method.create(method), url, Http.Version.create(version))) {
             assertThat(response.entity().as(String.class), is(expectedResponse));
         }
     }
@@ -267,7 +267,7 @@ class UpgradeCodecsCompositionTest {
                 .build(), HttpResponse.BodyHandlers.ofString());
     }
 
-    private ClientResponse webClient(Http.Method method, String url, Http.Version version) {
+    private HttpClientResponse webClient(Http.Method method, String url, Http.Version version) {
         if (version == Http.Version.V2_0) {
             return webClient2.method(method)
                     .uri(resolveUri(url))

@@ -19,41 +19,56 @@ package io.helidon.nima.tests.integration.webclient;
 import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ServerTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CookieTest {
-    private final Http1Client client;
+    private static WebServer server;
+    private static Http1Client client;
 
-    CookieTest(WebServer webServer) {
+    @BeforeAll
+    void beforeAll() {
+        // because we need to share instance of webclient between test methods, we cannot use the default approach
+        // of @ServerTest, as that only supports instance per method
+        server = WebServer.builder()
+                .routing(rules -> rules.get("/cookie", CookieTest::getHandler)
+                        .put("/cookie", CookieTest::putHandler))
+                .build()
+                .start();
+
         Config config = Config.builder()
                 .addSource(ConfigSources.classpath("cookies.yaml"))
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .build();
+
         client = Http1Client.builder()
-                .baseUri("http://localhost:" + webServer.port())
+                .baseUri("http://localhost:" + server.port())
                 .config(config.get("client"))
                 .build();
     }
 
-    @SetUpRoute
-    static void routing(HttpRules rules) {
-        rules.get("/cookie", CookieTest::getHandler)
-                .put("/cookie", CookieTest::putHandler);
+    @AfterAll
+    void afterAll() {
+        if (server != null) {
+            server.stop();
+        }
     }
 
     @Test
@@ -73,25 +88,33 @@ class CookieTest {
     }
 
     private static void getHandler(ServerRequest req, ServerResponse res) {
-        Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
-        if (cookies.allValues().size() == 2
-                && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
-                && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
-            res.header(Http.Header.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
-            res.status(Http.Status.OK_200).send();
+        if (req.headers().contains(Http.Header.COOKIE)) {
+            Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
+            if (cookies.allValues().size() == 2
+                    && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
+                    && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
+                res.header(Http.Header.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
+                res.status(Http.Status.OK_200).send();
+            } else {
+                res.status(Http.Status.BAD_REQUEST_400).send();
+            }
         } else {
             res.status(Http.Status.BAD_REQUEST_400).send();
         }
     }
 
     private static void putHandler(ServerRequest req, ServerResponse res) {
-        Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
-        if (cookies.allValues().size() == 4
-                && cookies.allValues().contains("flavor1=chocolate")
-                && cookies.allValues().contains("flavor2=vanilla")
-                && cookies.allValues().contains("flavor3=strawberry")
-                && cookies.allValues().contains("flavor4=raspberry")) {
-            res.status(Http.Status.OK_200).send();
+        if (req.headers().contains(Http.Header.COOKIE)) {
+            Http.HeaderValue cookies = req.headers().get(Http.Header.COOKIE);
+            if (cookies.allValues().size() == 4
+                    && cookies.allValues().contains("flavor1=chocolate")
+                    && cookies.allValues().contains("flavor2=vanilla")
+                    && cookies.allValues().contains("flavor3=strawberry")
+                    && cookies.allValues().contains("flavor4=raspberry")) {
+                res.status(Http.Status.OK_200).send();
+            } else {
+                res.status(Http.Status.BAD_REQUEST_400).send();
+            }
         } else {
             res.status(Http.Status.BAD_REQUEST_400).send();
         }

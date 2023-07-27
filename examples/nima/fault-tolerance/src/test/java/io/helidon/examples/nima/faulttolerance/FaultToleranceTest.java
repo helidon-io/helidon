@@ -18,11 +18,10 @@ package io.helidon.examples.nima.faulttolerance;
 
 import io.helidon.Main;
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.nima.webclient.api.ClientResponseTyped;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,8 +33,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class FaultToleranceTest {
-    private static Http1Client webClient;
-    private static Http1Client adminWebClient;
+    private static WebClient webClient;
+    private static WebClient adminWebClient;
 
     @BeforeAll
     static void init() {
@@ -66,30 +65,29 @@ class FaultToleranceTest {
     @Test
     void testAdminEndpointIsOnAdminSocket() {
         String response = adminWebClient.get("/admin")
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, startsWith("This is the admin endpoint"));
     }
 
     @Test
     void testAdminEndpointIsNotOnDefaultSocket() {
-        try (Http1ClientResponse response = webClient.get("/admin")
-                .request()) {
-            assertThat(response.entity().as(String.class), response.status(), is(Http.Status.NOT_FOUND_404));
-        }
+        ClientResponseTyped<String> response = webClient.get("/admin")
+                .request(String.class);
+        assertThat(response.entity(), response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
     @Test
     void testGreetSimple() {
         String response = webClient.get("/greet")
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response, is("Hello World!"));
     }
 
     @Test
     void testGreetNamed() {
         String response = webClient.get("/greet/helidon")
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, startsWith("Hello helidon! Requested host: localhost:"));
     }
@@ -98,7 +96,7 @@ class FaultToleranceTest {
     void testGreetNamedFallback() {
         String response = webClient.get("/greet/helidon")
                 .queryParam("throw", "true")
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, startsWith("Fallback for"));
     }

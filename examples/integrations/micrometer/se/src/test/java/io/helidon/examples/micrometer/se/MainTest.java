@@ -122,7 +122,7 @@ public class MainTest {
     private JsonObject get(String path) {
         JsonObject jsonObject = client.get()
                 .path(path)
-                .request(JsonObject.class);
+                .requestEntity(JsonObject.class);
         expectedAllGets++;
         return jsonObject;
     }

@@ -53,7 +53,7 @@ public class WebClientCookieManager extends CookieManager implements RuntimeType
                 .stream()
                 .map(e -> e.getKey() + "=" + e.getValue())
                 .toList();
-        this.acceptCookies = config.enableAutomaticCookieStore();
+        this.acceptCookies = config.automaticStoreEnabled();
     }
 
     /**

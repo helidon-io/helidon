@@ -16,11 +16,10 @@
 package io.helidon.webserver.examples.mtls;
 
 import io.helidon.config.Config;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 
 /**
- * Setting up {@link WebClient} to support mutual TLS via configuration.
+ * Setting up {@link io.helidon.nima.webclient.api.WebClient} to support mutual TLS via configuration.
  */
 public class ClientConfigMain {
 
@@ -29,7 +28,7 @@ public class ClientConfigMain {
 
     /**
      * Start the example.
-     * This example executes two requests by Helidon {@link WebClient} which are configured
+     * This example executes two requests by Helidon {@link io.helidon.nima.webclient.api.WebClient} which are configured
      * by the configuration.
      * <p>
      * You have to execute either {@link ServerBuilderMain} or {@link ServerConfigMain} for this to work.
@@ -54,11 +53,11 @@ public class ClientConfigMain {
 
     static String callUnsecured(Http1Client client, int port) {
         return client.get("http://localhost:" + port)
-                     .request(String.class);
+                     .requestEntity(String.class);
     }
 
     static String callSecured(Http1Client client, int port) {
         return client.get("https://localhost:" + port)
-                     .request(String.class);
+                .requestEntity(String.class);
     }
 }

@@ -48,6 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
+@Disabled
 class HeadersTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);

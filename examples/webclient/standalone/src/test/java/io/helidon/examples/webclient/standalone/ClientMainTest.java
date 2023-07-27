@@ -19,13 +19,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -70,22 +71,19 @@ public class ClientMainTest {
         Files.deleteIfExists(testFile);
     }
 
-    private Http1Client client(WebClientService... services) {
+    private WebClient client(WebClientService... services) {
         Config config = Config.create();
-        Http1Client.Http1ClientBuilder builder = Http1Client.builder()
+        return WebClient.builder()
                 .baseUri("http://localhost:" + server.port() + "/greet")
-                .config(config.get("client"));
-
-        for (WebClientService service : services) {
-            builder.addService(service);
-        }
-        return builder.build();
+                .config(config.get("client"))
+                .update(it -> Stream.of(services).forEach(it::addService))
+                .build();
     }
 
     @Test
     @Order(1)
     public void testPerformRedirect() {
-        Http1Client client = client();
+        WebClient client = client();
         String greeting = ClientMain.followRedirects(client);
         assertThat(greeting, is("{\"message\":\"Hello World!\"}"));
     }
@@ -93,7 +91,7 @@ public class ClientMainTest {
     @Test
     @Order(2)
     public void testFileDownload() throws IOException {
-        Http1Client client = client();
+        WebClient client = client();
         ClientMain.saveResponseToFile(client);
         assertThat(Files.exists(testFile), is(true));
         assertThat(Files.readString(testFile), is("{\"message\":\"Hello World!\"}"));
@@ -112,7 +110,7 @@ public class ClientMainTest {
     @Test
     @Order(4)
     public void testPerformPutAndGetMethod() {
-        Http1Client client = client();
+        WebClient client = client();
         String greeting = ClientMain.performGetMethod(client);
         assertThat(greeting, is("{\"message\":\"Hello World!\"}"));
         ClientMain.performPutMethod(client);

@@ -19,11 +19,10 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.common.tls.TlsClientAuth;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 
 /**
- * Setting up {@link WebClient} to support mutual TLS via builder.
+ * Setting up {@link io.helidon.nima.webclient.api.WebClient} to support mutual TLS via builder.
  */
 public class ClientBuilderMain {
 
@@ -32,8 +31,8 @@ public class ClientBuilderMain {
 
     /**
      * Start the example.
-     * This example executes two requests by Helidon {@link WebClient} which are configured
-     * by the {@link WebClient.Builder}.
+     * This example executes two requests by Helidon {@link io.helidon.nima.webclient.api.WebClient} which are configured
+     * by the {@link io.helidon.nima.webclient.api.WebClientConfig.Builder}.
      * <p>
      * You have to execute either {@link ServerBuilderMain} or {@link ServerConfigMain} for this to work.
      * <p>
@@ -64,17 +63,18 @@ public class ClientBuilderMain {
                         .clientAuth(TlsClientAuth.REQUIRED)
                         .privateKey(keyConfig)
                         .privateKeyCertChain(keyConfig)
-                        .trust(keyConfig))
+                        .trust(keyConfig)
+                        .build())
                 .build();
     }
 
     static String callUnsecured(Http1Client client, int port) {
         return client.get("http://localhost:" + port)
-                .request(String.class);
+                .requestEntity(String.class);
     }
 
     static String callSecured(Http1Client client, int port) {
         return client.get("https://localhost:" + port)
-                .request(String.class);
+                .requestEntity(String.class);
     }
 }

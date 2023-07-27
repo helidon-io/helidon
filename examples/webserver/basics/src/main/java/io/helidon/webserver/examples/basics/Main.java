@@ -81,7 +81,7 @@ public class Main {
     public static void firstRouting(HttpRouting.Builder routing) {
         routing.post("/firstRouting/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
                         .send())
-                .get("/firstRouting/get-endpoint", (req, res) -> res.status(Http.Status.NO_CONTENT_204)
+                .get("/firstRouting/get-endpoint", (req, res) -> res.status(Http.Status.OK_200)
                         .send("Hello World!"));
     }
 
@@ -113,7 +113,7 @@ public class Main {
                 })
                 .post("/routingAsFilter/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
                         .send())
-                .get("/routingAsFilter/get-endpoint", (req, res) -> res.status(Http.Status.NO_CONTENT_204)
+                .get("/routingAsFilter/get-endpoint", (req, res) -> res.status(Http.Status.OK_200)
                         .send("Hello World!"));
     }
 

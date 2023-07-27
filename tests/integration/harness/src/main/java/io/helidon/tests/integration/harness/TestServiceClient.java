@@ -68,7 +68,7 @@ public class TestServiceClient extends TestClient {
      */
     public String callServiceAndGetString(String method) {
         Http1ClientRequest clientRequest = clientGetBuilderWithPath(service, method);
-        return clientRequest.request(String.class);
+        return clientRequest.requestEntity(String.class);
     }
 
     /**

@@ -26,7 +26,6 @@ import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
@@ -171,7 +170,6 @@ public class MainTest {
                     headers.set(ORIGIN, "http://foo.com");
                     headers.set(HOST, "here.com");
                     preFlightHeaders.forEach(headers::add);
-                    return headers;
                 }).submit(payload.forRest())) {
 
             assertThat(response.status().code(), is(204));
@@ -212,7 +210,6 @@ public class MainTest {
         request.headers(headers -> {
             headers.set(ORIGIN, "http://other.com");
             headers.set(HOST, "here.com");
-            return headers;
         });
 
         GreetingMessage payload = new GreetingMessage("Ahoy");

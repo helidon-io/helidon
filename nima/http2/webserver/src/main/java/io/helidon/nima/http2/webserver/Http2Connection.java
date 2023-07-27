@@ -688,10 +688,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         Http2RstStream rstStream = Http2RstStream.create(inProgressFrame());
         receiveFrameListener.frame(ctx, frameHeader.streamId(), rstStream);
 
-        StreamContext streamContext = stream(frameHeader.streamId());
-        streamContext.stream().rstStream(rstStream);
+        try {
+            StreamContext streamContext = stream(frameHeader.streamId());
+            streamContext.stream().rstStream(rstStream);
 
-        state = State.READ_FRAME;
+            state = State.READ_FRAME;
+        } catch (Http2Exception e) {
+            if (e.getMessage().startsWith("Stream closed")) {
+                // expected state, probably closed by remote peer
+                state = State.READ_FRAME;
+                return;
+            }
+            throw e;
+        }
     }
 
     private void unknownFrame() {

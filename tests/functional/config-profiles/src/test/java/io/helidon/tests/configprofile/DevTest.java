@@ -51,7 +51,7 @@ class DevTest {
     public void testHelloDevWorld() {
         JsonObject jsonObject = client.get()
                 .path("/greet")
-                .request(JsonObject.class);
+                .requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello Dev World!"));
     }
 }

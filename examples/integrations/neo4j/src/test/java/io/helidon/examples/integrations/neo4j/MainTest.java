@@ -81,7 +81,7 @@ public class MainTest {
 
     @Test
     void testMovies() {
-        JsonArray result = webClient.get("/api/movies").request(JsonArray.class);
+        JsonArray result = webClient.get("/api/movies").requestEntity(JsonArray.class);
         assertThat(result.getJsonObject(0).getString("title"), containsString("The Matrix"));
     }
 

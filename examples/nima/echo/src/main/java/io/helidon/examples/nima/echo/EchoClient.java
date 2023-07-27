@@ -19,10 +19,9 @@ package io.helidon.examples.nima.echo;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 /**
  * A client that invokes the echo server.
@@ -40,12 +39,11 @@ public class EchoClient {
      * @param args ignored
      */
     public static void main(String[] args) {
-        Http1Client client = WebClient.builder()
-                .build();
+        WebClient client = WebClient.create();
 
-        Http1ClientRequest request = client.get("http://localhost:8080/echo;param={param}/{name}");
+        HttpClientRequest request = client.get("http://localhost:8080/echo;param={param}/{name}");
 
-        try (Http1ClientResponse response = request.pathParam("name", "param-placeholder")
+        try (HttpClientResponse response = request.pathParam("name", "param-placeholder")
                 .pathParam("param", "path-param-placeholder")
                 .queryParam("query-param", "single_value")
                 .queryParam("query-params", "a", "b", "c")

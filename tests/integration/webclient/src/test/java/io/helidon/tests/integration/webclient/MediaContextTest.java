@@ -103,7 +103,7 @@ public class MediaContextTest extends TestParent {
                 .build();
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                client.get().request(String.class));
+                client.get().request().as(String.class));
         assertThat(ex.getMessage(), startsWith("No client response media support for class"));
     }
 

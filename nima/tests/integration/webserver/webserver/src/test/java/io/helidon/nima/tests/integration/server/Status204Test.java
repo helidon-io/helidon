@@ -58,6 +58,6 @@ class Status204Test {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
 
-        assertThat(client.get().request(String.class), is("test"));
+        assertThat(client.get().requestEntity(String.class), is("test"));
     }
 }

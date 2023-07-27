@@ -22,6 +22,7 @@ import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.nima.webclient.security.WebClientSecurity;
@@ -53,6 +54,15 @@ class TestParent {
     @SetUpServer
     static void startTheServer(WebServerConfig.Builder builder) {
         Main.setup(builder, null);
+    }
+
+    protected WebClient noServiceClient(WebClientService... services) {
+        return WebClient.builder()
+                .update(it -> Stream.of(services).forEach(it::addService))
+                .servicesDiscoverServices(false)
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .config(CONFIG.get("client"))
+                .build();
     }
 
     protected Http1Client createNewClient(WebClientService... clientServices) {

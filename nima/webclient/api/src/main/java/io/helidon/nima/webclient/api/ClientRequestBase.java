@@ -48,7 +48,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * Helidon user agent request header.
      */
     public static final Http.HeaderValue USER_AGENT_HEADER = Http.Header.create(Http.Header.USER_AGENT,
-                                                                                 "Helidon " + Version.VERSION);
+                                                                                "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
 
     private final Map<String, String> pathParams = new HashMap<>();
@@ -118,15 +118,17 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
+    public T path(String uri) {
+        this.clientUri.resolvePath(uri);
+        return identity();
+    }
+
+    @Override
     public T uri(String uri) {
         if (uri.indexOf('{') > -1) {
             this.uriTemplate = uri;
         } else {
-            if (skipUriEncoding) {
-                uri(URI.create(uri));
-            } else {
-                uri(URI.create(UriEncoding.encodeUri(uri)));
-            }
+            uri(URI.create(UriEncoding.encodeUri(uri)));
         }
 
         return identity();
@@ -398,7 +400,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * Resolve possible templated URI definition against the provided {@link io.helidon.nima.webclient.api.ClientUri},
      * extracting possible query information into the provided writable query.
      *
-     * @param toResolve         client uri to update from the template
+     * @param toResolve client uri to update from the template
      * @return updated client uri
      */
     protected ClientUri resolveUri(ClientUri toResolve) {

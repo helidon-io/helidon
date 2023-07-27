@@ -54,7 +54,7 @@ class ImperativeMainTest {
 
     private void testSocket(Http1Client client) {
         String response = client.get()
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(response, is("Hello World!"));
     }

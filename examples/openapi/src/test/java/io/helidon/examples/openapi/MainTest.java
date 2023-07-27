@@ -96,7 +96,7 @@ public class MainTest {
          */
         JsonObject jsonObject = client.get("/openapi")
                 .accept(MediaTypes.APPLICATION_JSON)
-                .request(JsonObject.class);
+                .requestEntity(JsonObject.class);
         JsonObject paths = jsonObject.getJsonObject("paths");
 
         JsonPointer jp = Json.createPointer("/" + escape("/greet/greeting") + "/put/summary");

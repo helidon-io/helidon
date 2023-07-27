@@ -23,7 +23,6 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
@@ -40,11 +39,9 @@ public class CompressionTest {
     private static final Http.HeaderValue CONTENT_ENCODING_GZIP = Header.create(Header.CONTENT_ENCODING, "gzip");
     private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE = Header.create(Header.CONTENT_ENCODING, "deflate");
 
-    private final int port;
     private final Http1Client webClient;
 
-    CompressionTest(WebServer server, Http1Client client) {
-        this.port = server.port();
+    CompressionTest(Http1Client client) {
         this.webClient = client;
     }
 

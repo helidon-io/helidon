@@ -18,9 +18,8 @@ package io.helidon.nima.tests.integration.server;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -40,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  * The MultiPortTest.
  */
 class MultiPortTest {
-    private static final Http1Client CLIENT = WebClient.builder()
-            .followRedirect(false)
+    private static final WebClient CLIENT = WebClient.builder()
+            .followRedirects(false)
             .build();
     private Handler commonHandler;
     private WebServer server;
@@ -164,7 +163,7 @@ class MultiPortTest {
 
         assertResponse(server.port(), "/foo", is("Root! 1"));
 
-        try (Http1ClientResponse response = CLIENT.get("http://localhost:" + server.port("redirect") + "/foo")
+        try (HttpClientResponse response = CLIENT.get("http://localhost:" + server.port("redirect") + "/foo")
                 .request()) {
             assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(),
@@ -181,7 +180,7 @@ class MultiPortTest {
     }
 
     private void assertResponse(int port, String path, Matcher<String> matcher) {
-        try (Http1ClientResponse response = CLIENT.get()
+        try (HttpClientResponse response = CLIENT.get()
                 .uri("http://localhost:" + port)
                 .path(path)
                 .request()) {

@@ -48,21 +48,21 @@ class StaticContentTest {
     @Test
     void testWelcomeFile() {
         String response = client.get("/files/")
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response, is("Welcome"));
     }
 
     @Test
     void testStaticContent() {
         String response = client.get("/files/static-content.txt")
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response, is("Hi"));
     }
 
     @Test
     void testNexted() {
         String response = client.get("/files/default")
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response, is("Nexted"));
     }
 

@@ -45,7 +45,7 @@ public class TlsTest {
         this.client = client;
         this.secureClient = Http1Client.builder()
                 .baseUri("https://localhost:" + server.port())
-                .tls(Tls.builder().trustAll(true))
+                .tls(Tls.builder().trustAll(true).build())
                 .build();
     }
 
@@ -66,7 +66,7 @@ public class TlsTest {
 
     @Test
     public void testConnectionOnHttps() {
-        assertThat(secureClient.get().request(String.class), is("It works!"));
+        assertThat(secureClient.get().requestEntity(String.class), is("It works!"));
     }
 
     @Test

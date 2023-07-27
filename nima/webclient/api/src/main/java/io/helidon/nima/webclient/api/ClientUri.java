@@ -37,6 +37,7 @@ public class ClientUri implements UriInfo {
     private ClientUri() {
         this.base = null;
         this.query = UriQueryWriteable.create();
+        this.uriBuilder = UriInfo.builder();
     }
 
     private ClientUri(ClientUri baseUri) {
@@ -197,6 +198,11 @@ public class ClientUri implements UriInfo {
             uriBuilder.fragment(UriFragment.create(uri.getRawFragment()));
         }
 
+        return this;
+    }
+
+    public ClientUri resolvePath(String path) {
+        uriBuilder.path(resolvePath(uriBuilder.path().path(), path));
         return this;
     }
 

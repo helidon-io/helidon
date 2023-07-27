@@ -27,6 +27,7 @@ import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -60,7 +61,7 @@ public class OutboundOverrideExampleTest {
                 .path("/override")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jill\n"));
     }
@@ -71,7 +72,7 @@ public class OutboundOverrideExampleTest {
                 .path("/propagate")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
-                .request(String.class);
+                .requestEntity(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jack\n"));
     }

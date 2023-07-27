@@ -276,7 +276,7 @@ class Http2ClientConnection {
             recvListener.frameHeader(ctx, streamId, frameHeader);
             recvListener.frame(ctx, streamId, http2GoAway);
             this.close();
-            ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %d, last stream: %d",
+            ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
                     http2GoAway.errorCode(),
                     http2GoAway.lastStreamId());
             return false;

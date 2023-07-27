@@ -27,8 +27,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.metrics.WebClientMetrics;
 import io.helidon.nima.webclient.spi.WebClientService;
 
@@ -82,7 +82,7 @@ public class ClientMain {
             url = "http://localhost:" + Integer.parseInt(args[0]) + "/greet";
         }
 
-        Http1Client client = Http1Client.builder()
+        WebClient client = WebClient.builder()
                 .baseUri(url)
                 .config(config.get("client"))
                 .build();
@@ -95,25 +95,25 @@ public class ClientMain {
         clientMetricsExample(url, config);
     }
 
-    static Http.Status performPutMethod(Http1Client client) {
+    static Http.Status performPutMethod(WebClient client) {
         System.out.println("Put request execution.");
-        try (Http1ClientResponse response = client.put("/greeting").submit(JSON_NEW_GREETING)) {
+        try (HttpClientResponse response = client.put("/greeting").submit(JSON_NEW_GREETING)) {
             System.out.println("PUT request executed with status: " + response.status());
             return response.status();
         }
     }
 
-    static String performGetMethod(Http1Client client) {
+    static String performGetMethod(WebClient client) {
         System.out.println("Get request execution.");
-        String result = client.get().request(String.class);
+        String result = client.get().requestEntity(String.class);
         System.out.println("GET request successfully executed.");
         System.out.println(result);
         return result;
     }
 
-    static String followRedirects(Http1Client client) {
+    static String followRedirects(WebClient client) {
         System.out.println("Following request redirection.");
-        try (Http1ClientResponse response = client.get("/redirect").request()) {
+        try (HttpClientResponse response = client.get("/redirect").request()) {
             if (response.status() != Http.Status.OK_200) {
                 throw new IllegalStateException("Follow redirection failed!");
             }
@@ -124,14 +124,14 @@ public class ClientMain {
         }
     }
 
-    static void getResponseAsAnJsonObject(Http1Client client) {
+    static void getResponseAsAnJsonObject(WebClient client) {
         System.out.println("Requesting from JsonObject.");
-        JsonObject jsonObject = client.get().request(JsonObject.class);
+        JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
         System.out.println("JsonObject successfully obtained.");
         System.out.println(jsonObject);
     }
 
-    static void saveResponseToFile(Http1Client client) {
+    static void saveResponseToFile(WebClient client) {
         Path file = Paths.get("test.txt");
         try {
             Files.deleteIfExists(file);
@@ -140,7 +140,7 @@ public class ClientMain {
         }
 
         System.out.println("Downloading server response to file: " + file);
-        try (Http1ClientResponse response = client.get().request()) {
+        try (HttpClientResponse response = client.get().request()) {
             Files.copy(response.entity().inputStream(), file);
             System.out.println("Download complete!");
         } catch (IOException e) {
@@ -161,7 +161,7 @@ public class ClientMain {
                 .build();
 
         //This newly created metric now needs to be registered to WebClient.
-        Http1Client client = Http1Client.builder()
+        WebClient client = WebClient.builder()
                 .baseUri(url)
                 .config(config)
                 .addService(clientService)

@@ -18,8 +18,6 @@ client:
   cookie-manager:
     automatic-store-enabled: true
     default-cookies:
-      - name: flavor3
-        value: strawberry
-      - name: flavor4
-        value: raspberry
+      flavor3: strawberry
+      flavor4: raspberry
   follow-redirects: true

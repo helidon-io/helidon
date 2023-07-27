@@ -32,11 +32,11 @@ import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
 class HeadersTest {
@@ -79,8 +79,8 @@ class HeadersTest {
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value is invalid, IllegalArgumentException shall be thrown
             try {
-                h.contentType();
-                Assertions.fail("Content-Type: text parsing must throw an exception in strict mode");
+                Optional<HttpMediaType> httpMediaType = h.contentType();
+                fail("Content-Type: text parsing must throw an exception in strict mode, got: " + httpMediaType);
             } catch (IllegalArgumentException ex) {
                 assertThat(ex.getMessage(), is("Cannot parse media type: text"));
             }
@@ -95,7 +95,7 @@ class HeadersTest {
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
         try (HttpClientResponse res = client.method(Http.Method.GET)
-                .path("/invalidTextContentType")
+                .path("/test/invalidTextContentType")
                 .request()) {
             assertThat(res.status(), is(Http.Status.OK_200));
             Headers h = res.headers();

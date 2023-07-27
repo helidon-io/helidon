@@ -214,5 +214,6 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return cookie manager to use
      */
+    @ConfiguredOption
     Optional<WebClientCookieManager> cookieManager();
 }

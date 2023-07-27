@@ -408,28 +408,31 @@ public class Proxy {
         WebClientConfig clientConfig = webClient.prototype();
         TcpClientConnection connection = TcpClientConnection.create(webClient,
                                                                     new ConnectionKey("http",
-                                                                          proxyAddress.getHostName(),
-                                                                          proxyAddress.getPort(),
-                                                                          NO_TLS,
-                                                                          clientConfig.dnsResolver(),
-                                                                          clientConfig.dnsAddressLookup(),
-                                                                          NO_PROXY),
+                                                                                      proxyAddress.getHostName(),
+                                                                                      proxyAddress.getPort(),
+                                                                                      NO_TLS,
+                                                                                      clientConfig.dnsResolver(),
+                                                                                      clientConfig.dnsAddressLookup(),
+                                                                                      NO_PROXY),
                                                                     List.of(),
-                                                        it -> false,
-                                                        it -> {})
+                                                                    it -> false,
+                                                                    it -> {
+                                                                    })
                 .connect();
 
-        try (HttpClientResponse response = webClient.method(Http.Method.CONNECT)
+        HttpClientResponse response = webClient.method(Http.Method.CONNECT)
+                .followRedirects(false) // do not follow redirects for proxy connect itself
                 .connection(connection)
                 .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())
                 .protocolId("http/1.1") // MUST be 1.1, if not available, proxy connection will fail
                 .header(Http.Header.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
                 .accept(MediaTypes.WILDCARD)
-                .request()) {
-            if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
-                throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
-            }
+                .request(); // we cannot close the response, as that would close the connection
+        if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
+            response.close();
+            throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
         }
+
         return connection.socket();
     }
 
@@ -498,8 +501,8 @@ public class Proxy {
                            boolean tls) {
                 return proxy.address(targetAddress)
                         .map(proxyAddress -> connectToProxy(webClient,
-                                                        proxyAddress,
-                                                        targetAddress))
+                                                            proxyAddress,
+                                                            targetAddress))
                         .orElseGet(() -> NONE.connect(webClient, proxy, targetAddress, socketOptions, tls));
             }
         };

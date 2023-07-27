@@ -21,14 +21,23 @@ import java.lang.System.Logger.Level;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 
-import jakarta.json.*;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import org.junit.jupiter.api.Assertions;
 
 /**
@@ -167,7 +176,7 @@ public class TestClient {
                 clientRequest.queryParam(entry.getKey(), encode(entry.getValue()));
             }
         }
-        String response = clientRequest.request(String.class);
+        String response = clientRequest.requestEntity(String.class);
         try {
             JsonReader jsonReader = Json.createReader(new StringReader(response));
             JsonValue jsonContent = jsonReader.read();

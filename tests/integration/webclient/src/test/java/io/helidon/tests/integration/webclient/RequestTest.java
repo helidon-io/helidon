@@ -131,7 +131,7 @@ class RequestTest extends TestParent {
         URI redirectTemplate = URI.create("http://localhost:" + server.port() + "/greet/redirect");
 
         try (Http1ClientResponse response = client.get("/redirect").request()) {
-            assertThat(response.lastEndpointUri(), is(defaultTemplate));
+            assertThat(response.lastEndpointUri().toUri(), is(defaultTemplate));
         }
 
         try (Http1ClientResponse response = client.get()
@@ -139,11 +139,11 @@ class RequestTest extends TestParent {
                 .followRedirects(false)
                 .request()) {
 
-            assertThat(response.lastEndpointUri(), is(redirectTemplate));
+            assertThat(response.lastEndpointUri().toUri(), is(redirectTemplate));
         }
 
         try (Http1ClientResponse response = client.get().request()) {
-            assertThat(response.lastEndpointUri(), is(defaultTemplate));
+            assertThat(response.lastEndpointUri().toUri(), is(defaultTemplate));
         }
     }
 

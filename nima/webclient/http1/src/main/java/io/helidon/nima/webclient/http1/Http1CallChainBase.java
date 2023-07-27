@@ -131,7 +131,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         WritableHeaders<?> writable = Http1HeadersParser.readHeaders(reader,
                                                                      protocolConfig.maxHeaderSize(),
                                                                      protocolConfig.validateHeaders());
-
         return ClientResponseHeaders.create(writable, clientConfig.mediaTypeParserMode());
     }
 
@@ -151,7 +150,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                     ClientConnection connection,
                                                     DataReader reader) {
         Http.Status responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+        connection.helidonSocket().log(LOGGER, TRACE, "client received status %n%s", responseStatus);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
+        connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
 
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
@@ -198,8 +199,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             return decoder.apply(new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length));
         } else if (responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             return new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
+        } else {
+            // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
+            return new EverythingInputStream(helidonSocket, reader, whenComplete, response);
         }
-        throw new RuntimeException("Neither content-length nor chunked encoding set on response");
     }
 
     private boolean mayHaveEntity(Http.Status responseStatus, ClientResponseHeaders responseHeaders) {
@@ -209,13 +212,14 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseStatus == Http.Status.NO_CONTENT_204) {
             return false;
         }
-        if ((responseHeaders.contains(Http.Header.UPGRADE)
-                     && !responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+        if ((
+                responseHeaders.contains(Http.Header.UPGRADE)
+                        && !responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }
         // if we decide to support HTTP/1.0, we may have an entity without any headers
-        // in HTTP/1.1, we should have a content encoding, but let's make it easier for now
+        // in HTTP/1.1, we should have a content encoding
         return true;
     }
 
@@ -298,22 +302,83 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 return;
             }
 
+            if (currentBuffer != null && !currentBuffer.consumed()) {
+                return;
+            }
+
             reader.ensureAvailable();
             int toRead = Math.min(reader.available(), estimate);
 
-            if (currentBuffer != null && currentBuffer.consumed()) {
-                currentBuffer = null;
+            // read between 0 and available bytes (or estimate, which is the number of requested bytes)
+            currentBuffer = reader.readBuffer(toRead);
+            if (currentBuffer == null || currentBuffer == BufferData.empty()) {
+                entityProcessedRunnable.run();
+                finished = true;
+            } else {
+                socket.log(LOGGER, TRACE, "client read entity buffer %n%s", currentBuffer.debugDataHex(true));
             }
-            if (currentBuffer == null) {
-                reader.ensureAvailable();
-                // read between 0 and available bytes (or estimate, which is the number of requested bytes)
-                currentBuffer = reader.readBuffer(toRead);
-                if (currentBuffer == null || currentBuffer == BufferData.empty()) {
-                    entityProcessedRunnable.run();
-                    finished = true;
-                } else {
-                    socket.log(LOGGER, TRACE, "client read entity buffer %s", currentBuffer.debugDataHex(true));
-                }
+        }
+    }
+
+    static class EverythingInputStream extends InputStream {
+        private final HelidonSocket helidonSocket;
+        private final DataReader reader;
+        private final Runnable entityProcessedRunnable;
+
+        private BufferData currentBuffer;
+        private boolean finished;
+
+        EverythingInputStream(HelidonSocket helidonSocket,
+                              DataReader reader,
+                              CompletableFuture<WebClientServiceResponse> whenComplete,
+                              AtomicReference<WebClientServiceResponse> response) {
+            this.helidonSocket = helidonSocket;
+            this.reader = reader;
+            // we can only get the response at the time of completion, as the instance is created after this constructor
+            // returns
+            this.entityProcessedRunnable = () -> whenComplete.complete(response.get());
+        }
+
+        @Override
+        public int read() {
+            if (finished) {
+                return -1;
+            }
+            ensureBuffer(512);
+            if (finished || currentBuffer == null) {
+                return -1;
+            }
+            return currentBuffer.read();
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) {
+            if (finished) {
+                return -1;
+            }
+            ensureBuffer(len);
+            if (finished || currentBuffer == null) {
+                return -1;
+            }
+            return currentBuffer.read(b, off, len);
+        }
+
+        private void ensureBuffer(int estimate) {
+            if (currentBuffer != null && currentBuffer.available() > 0) {
+                // we did not read the previous buffer fully
+                return;
+            }
+
+            reader.ensureAvailable();
+            int toRead = Math.min(reader.available(), estimate);
+
+            // read between 0 and available bytes (or estimate, which is the number of requested bytes)
+            currentBuffer = reader.readBuffer(toRead);
+            if (currentBuffer == null || currentBuffer == BufferData.empty()) {
+                entityProcessedRunnable.run();
+                finished = true;
+            } else {
+                helidonSocket.log(LOGGER, TRACE, "client read entity buffer %n%s", currentBuffer.debugDataHex(true));
             }
         }
     }

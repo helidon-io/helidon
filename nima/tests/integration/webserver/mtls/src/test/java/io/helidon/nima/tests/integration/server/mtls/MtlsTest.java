@@ -30,11 +30,10 @@ import io.helidon.nima.common.tls.TlsClientAuth;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.api.ClientResponseTyped;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -46,7 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class MtlsTest {
     private static WebServer server;
-    private final Http1Client client;
+    private final WebClient client;
 
     MtlsTest(WebServer server) {
         MtlsTest.server = server;
@@ -134,45 +133,45 @@ class MtlsTest {
 
     @Test
     void testMutualTlsPrincipal() {
-        Http1ClientResponse response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Http.Method.GET)
                 .uri("/name")
-                .request();
+                .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is("C=CZ,CN=Helidon-client,OU=Prague,O=Oracle"));
+        assertThat(response.entity(), is("C=CZ,CN=Helidon-client,OU=Prague,O=Oracle"));
     }
 
     @Test
     void testMutualTlsCertificates() {
-        Http1ClientResponse response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Http.Method.GET)
                 .uri("/certs")
-                .request();
+                .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is("X.509:C=CZ,CN=Helidon-client,OU=Prague,O=Oracle|X.509:CN=Helidon-CA"));
+        assertThat(response.entity(), is("X.509:C=CZ,CN=Helidon-client,OU=Prague,O=Oracle|X.509:CN=Helidon-CA"));
     }
 
     @Test
     void testTlsReload() {
-        Http1ClientResponse response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Http.Method.GET)
                 .uri("/serverCert")
-                .request();
+                .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is("X.509:CN=localhost|X.509:CN=Helidon-CA"));
+        assertThat(response.entity(), is("X.509:CN=localhost|X.509:CN=Helidon-CA"));
 
         response = client.method(Http.Method.GET)
                 .uri("/reload")
-                .request();
+                .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
 
         response = client.method(Http.Method.GET)
                 .uri("/serverCert")
-                .request();
+                .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
-        assertThat(response.as(String.class), is("X.509:CN=localhost|X.509:CN=Nima-CA"));
+        assertThat(response.entity(), is("X.509:CN=localhost|X.509:CN=Nima-CA"));
     }
 
     private static void sendCertificateString(Certificate[] certs, ServerResponse res) {

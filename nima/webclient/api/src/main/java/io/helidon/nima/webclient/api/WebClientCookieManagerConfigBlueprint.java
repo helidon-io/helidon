@@ -34,7 +34,7 @@ interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebCli
      * @return status of cookie store
      */
     @ConfiguredOption("false")
-    boolean enableAutomaticCookieStore();
+    boolean automaticStoreEnabled();
 
     /**
      * Current cookie policy for this client.
