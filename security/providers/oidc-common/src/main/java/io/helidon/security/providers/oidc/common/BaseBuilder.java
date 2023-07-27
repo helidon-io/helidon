@@ -420,6 +420,18 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         return identity();
     }
 
+    /**
+     * Allow audience claim to be optional.
+     *
+     * @param optional whether the audience claim is optional (true) or not (false)
+     * @return updated builder instance
+     */
+    @ConfiguredOption("false")
+    public B optionalAudience(boolean optional) {
+        this.optionalAudience = optional;
+        return identity();
+    }
+
     private void clientTimeoutMillis(long millis) {
         this.clientTimeout(Duration.ofMillis(millis));
     }
@@ -506,10 +518,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
 
     boolean optionalAudience() {
         return optionalAudience;
-    }
-
-    void setOptionalAudience(boolean optional) {
-        this.optionalAudience = optional;
     }
 
 }
