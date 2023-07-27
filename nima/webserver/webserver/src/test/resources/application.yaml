@@ -48,7 +48,7 @@ server:
 server2:
   port: 8079
   host: 127.0.0.1
-  shutdown-grace-period: 1000
+  shutdown-grace-period: PT1S
 
   connection-providers:
     discover-services: false
@@ -61,7 +61,7 @@ server3:
 
   sockets:
     - name: "grace"
-      shutdown-grace-period: 2000
+      shutdown-grace-period: PT2S
 
 inject:
   permits-dynamic: true
