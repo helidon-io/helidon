@@ -40,15 +40,15 @@ import static java.lang.System.Logger.Level.DEBUG;
 /**
  * Cache of HTTP/1.1 connections for keep alive.
  */
-class ConnectionCache {
-    private static final System.Logger LOGGER = System.getLogger(ConnectionCache.class.getName());
+class Http1ConnectionCache {
+    private static final System.Logger LOGGER = System.getLogger(Http1ConnectionCache.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
     private static final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
 
-    private ConnectionCache() {
+    private Http1ConnectionCache() {
     }
 
     static ClientConnection connection(WebClient webClient,

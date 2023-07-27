@@ -28,7 +28,6 @@ import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
-import io.helidon.nima.webclient.spi.WebClientService;
 
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
@@ -72,13 +71,13 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     public Http1ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new Http1CallOutputStreamChain(webClient,
-                                                                          this,
-                                                                          clientConfig(),
-                                                                          protocolConfig,
-                                                                          whenSent,
-                                                                          whenComplete,
-                                                                          streamHandler);
+        Http1CallChainBase callChain = new Http1CallOutputStreamChain(webClient,
+                                                                      this,
+                                                                      clientConfig(),
+                                                                      protocolConfig,
+                                                                      whenSent,
+                                                                      whenComplete,
+                                                                      streamHandler);
 
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
@@ -101,10 +100,11 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             // yep, this is the response we want
             if (response.headers().contains(requestedUpgrade)) {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                    response.connection().helidonSocket().log(LOGGER,
-                                                              System.Logger.Level.TRACE,
-                                                              "Upgrading to {0}",
-                                                              requestedUpgrade);
+                    response.connection()
+                            .helidonSocket().log(LOGGER,
+                                                 System.Logger.Level.TRACE,
+                                                 "Upgrading to %s",
+                                                 requestedUpgrade);
                 }
                 // upgrade was a success
                 return UpgradeResponse.success(response, response.connection());
@@ -121,7 +121,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
                 response.connection().helidonSocket().log(LOGGER,
                                                           System.Logger.Level.TRACE,
-                                                          "Upgrade failed. Tried upgrading to {0}, got status: {1}",
+                                                          "Upgrade failed. Tried upgrading to %s, got status: %s",
                                                           requestedUpgrade,
                                                           response.status());
             }
@@ -176,13 +176,13 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     private Http1ClientResponseImpl invokeRequestWithEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        WebClientService.Chain callChain = new Http1CallEntityChain(webClient,
-                                                                    this,
-                                                                    clientConfig(),
-                                                                    protocolConfig,
-                                                                    whenSent,
-                                                                    whenComplete,
-                                                                    entity);
+        Http1CallChainBase callChain = new Http1CallEntityChain(webClient,
+                                                                this,
+                                                                clientConfig(),
+                                                                protocolConfig,
+                                                                whenSent,
+                                                                whenComplete,
+                                                                entity);
 
         return invokeWithServices(callChain, whenSent, whenComplete);
     }

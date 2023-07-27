@@ -16,8 +16,6 @@
 
 package io.helidon.nima.http2;
 
-import io.helidon.common.socket.SocketContext;
-
 /**
  * HTTP/2 frame.
  *
@@ -48,14 +46,6 @@ public sealed interface Http2Frame<T extends Http2Flag>
      * @return frame type name
      */
     String name();
-
-    /**
-     * Trigger listener.
-     *
-     * @param ctx      context
-     * @param listener listener
-     */
-    void triggerListener(SocketContext ctx, Http2FrameListener listener);
 
     /**
      * Frame type enum.

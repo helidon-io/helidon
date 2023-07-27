@@ -41,7 +41,7 @@ public interface Http2FrameListener {
      * @param ctx         context
      * @param frameHeader header data
      */
-    default void frameHeader(SocketContext ctx, BufferData frameHeader) {
+    default void frameHeader(SocketContext ctx, int streamId, BufferData frameHeader) {
 
     }
 
@@ -51,7 +51,7 @@ public interface Http2FrameListener {
      * @param ctx    context
      * @param header frame header
      */
-    default void frameHeader(SocketContext ctx, Http2FrameHeader header) {
+    default void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
     }
 
     /**
@@ -60,7 +60,7 @@ public interface Http2FrameListener {
      * @param ctx  context
      * @param data frame
      */
-    default void frame(SocketContext ctx, Http2DataFrame data) {
+    default void frame(SocketContext ctx, int streamId, Http2DataFrame data) {
 
     }
 
@@ -70,7 +70,7 @@ public interface Http2FrameListener {
      * @param ctx  context
      * @param data frame data
      */
-    default void frame(SocketContext ctx, BufferData data) {
+    default void frame(SocketContext ctx, int streamId, BufferData data) {
     }
 
     /**
@@ -79,7 +79,7 @@ public interface Http2FrameListener {
      * @param ctx      context
      * @param priority priority
      */
-    default void frame(SocketContext ctx, Http2Priority priority) {
+    default void frame(SocketContext ctx, int streamId, Http2Priority priority) {
 
     }
 
@@ -89,7 +89,7 @@ public interface Http2FrameListener {
      * @param ctx       context
      * @param rstStream rst stream
      */
-    default void frame(SocketContext ctx, Http2RstStream rstStream) {
+    default void frame(SocketContext ctx, int streamId, Http2RstStream rstStream) {
     }
 
     /**
@@ -98,7 +98,7 @@ public interface Http2FrameListener {
      * @param ctx      context
      * @param settings settings
      */
-    default void frame(SocketContext ctx, Http2Settings settings) {
+    default void frame(SocketContext ctx, int streamId, Http2Settings settings) {
 
     }
 
@@ -108,7 +108,7 @@ public interface Http2FrameListener {
      * @param ctx  context
      * @param ping ping
      */
-    default void frame(SocketContext ctx, Http2Ping ping) {
+    default void frame(SocketContext ctx, int streamId, Http2Ping ping) {
 
     }
 
@@ -118,7 +118,7 @@ public interface Http2FrameListener {
      * @param ctx    context
      * @param goAway go away
      */
-    default void frame(SocketContext ctx, Http2GoAway goAway) {
+    default void frame(SocketContext ctx, int streamId, Http2GoAway goAway) {
 
     }
 
@@ -128,7 +128,7 @@ public interface Http2FrameListener {
      * @param ctx          context
      * @param windowUpdate window update
      */
-    default void frame(SocketContext ctx, Http2WindowUpdate windowUpdate) {
+    default void frame(SocketContext ctx, int streamId, Http2WindowUpdate windowUpdate) {
 
     }
 
@@ -136,9 +136,10 @@ public interface Http2FrameListener {
      * Headers received.
      *
      * @param ctx     context
+     * @param streamId HTTP/2 stream ID to augment the server socket id and server connection id
      * @param headers headers
      */
-    default void headers(SocketContext ctx, Http2Headers headers) {
+    default void headers(SocketContext ctx, int streamId, Http2Headers headers) {
 
     }
 
@@ -148,6 +149,6 @@ public interface Http2FrameListener {
      * @param ctx          context
      * @param continuation continuation
      */
-    default void frame(SocketContext ctx, Http2Continuation continuation) {
+    default void frame(SocketContext ctx, int streamId, Http2Continuation continuation) {
     }
 }

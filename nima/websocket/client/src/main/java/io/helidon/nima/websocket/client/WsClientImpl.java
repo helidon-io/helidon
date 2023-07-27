@@ -17,7 +17,6 @@
 package io.helidon.nima.websocket.client;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -31,10 +30,13 @@ import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.nima.webclient.api.ClientConnection;
+import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.UpgradeResponse;
 import io.helidon.nima.websocket.WsListener;
 
@@ -82,30 +84,27 @@ class WsClientImpl implements WsClient {
     @Override
     public void connect(URI uri, WsListener listener) {
         // there is no connection pooling, as each connection is upgraded to be a websocket connection
-        String scheme = null;
-        if ("ws".equals(uri.getScheme())) {
-            scheme = "http";
-        } else if ("wss".equals(uri.getScheme())) {
-            scheme = "https";
-        }
-        URI requestUri = uri;
-        if (scheme != null) {
-            try {
-                requestUri = new URI(scheme, uri.getAuthority(), uri.getPath(), uri.getQuery(), uri.getFragment());
-            } catch (URISyntaxException e) {
-                throw new IllegalArgumentException("Cannot connect to WebSocket URI, illegal URI.", e);
-            }
-        }
+
         byte[] nonce = new byte[16];
         RANDOM.get().nextBytes(nonce);
         String secWsKey = B64_ENCODER.encodeToString(nonce);
 
-        UpgradeResponse upgradeResponse = http1Client.get()
+        Http1ClientRequest upgradeRequest = http1Client.get()
                 .headers(headers)
                 .header(HEADER_WS_KEY, secWsKey)
-                .headers(headers -> headers.setIfAbsent(Header.create(Header.HOST, uri.getRawAuthority())))
-                .uri(requestUri)
-                .upgrade("websocket");
+                .uri(uri);
+        UriInfo resolvedUri = upgradeRequest.resolvedUri();
+        String scheme = resolvedUri.scheme();
+        if ("ws".equals(scheme)) {
+            upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("http"));
+        } else if ("wss".equals(scheme)) {
+            upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("https"));
+        }
+
+        upgradeRequest.headers(headers -> headers.setIfAbsent(Header.create(Header.HOST, resolvedUri
+                .authority())));
+
+        UpgradeResponse upgradeResponse = upgradeRequest.upgrade("websocket");
 
         if (!upgradeResponse.isUpgraded()) {
             throw new WsClientException("Failed to upgrade to WebSocket. Response: " + upgradeResponse);

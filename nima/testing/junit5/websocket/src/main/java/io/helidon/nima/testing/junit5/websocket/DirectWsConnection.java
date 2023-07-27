@@ -17,6 +17,7 @@
 package io.helidon.nima.testing.junit5.websocket;
 
 import java.net.InetSocketAddress;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -30,8 +31,10 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.testing.junit5.webserver.DirectPeerInfo;
 import io.helidon.nima.testing.junit5.webserver.DirectSocket;
+import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.websocket.WsListener;
@@ -103,11 +106,9 @@ class DirectWsConnection {
     void start() {
         if (serverStarted.compareAndSet(false, true)) {
             WsConnection serverConnection = WsConnection.create(ctx, prologue, WritableHeaders.create(), "", serverRoute);
-            ClientWsConnection clientConnection = ClientWsConnection.create(clientListener,
-                                                                            socket,
-                                                                            clientReader,
-                                                                            clientWriter,
-                                                                            Optional.empty());
+
+            ClientWsConnection clientConnection = ClientWsConnection.create(new DirectConnect(clientReader, clientWriter),
+                                                                            clientListener);
             serverFuture = executorService.submit(serverConnection::handle);
             clientFuture = executorService.submit(clientConnection);
         }
@@ -154,5 +155,69 @@ class DirectWsConnection {
                 }
             }
         };
+    }
+
+    private static class DirectConnect implements ClientConnection {
+        private final DataReader reader;
+        private final DataWriter writer;
+        private final PeerInfo clientPeer;
+        private final PeerInfo localPeer;
+        private final HelidonSocket socket;
+        private Duration timeout;
+
+        private DirectConnect(DataReader reader, DataWriter writer) {
+            this.reader = reader;
+            this.writer = writer;
+
+            String clientHost = "localhost";
+            int clientPort = 9999;
+            String serverHost = "server";
+            int serverPort = 9999;
+
+            this.clientPeer = new DirectPeerInfo(
+                    InetSocketAddress.createUnresolved(clientHost, clientPort),
+                    clientHost,
+                    clientPort,
+                    Optional.empty(),
+                    Optional.empty());
+
+            this.localPeer = new DirectPeerInfo(
+                    InetSocketAddress.createUnresolved(serverHost, serverPort),
+                    serverHost,
+                    serverPort,
+                    Optional.empty(),
+                    Optional.empty());
+
+            this.socket = DirectSocket.create(localPeer, clientPeer, false);
+        }
+
+        @Override
+        public DataReader reader() {
+            return reader;
+        }
+
+        @Override
+        public DataWriter writer() {
+            return writer;
+        }
+
+        @Override
+        public String channelId() {
+            return "direct-ws-connection";
+        }
+
+        @Override
+        public HelidonSocket helidonSocket() {
+            return socket;
+        }
+
+        @Override
+        public void readTimeout(Duration readTimeout) {
+            this.timeout = readTimeout;
+        }
+
+        @Override
+        public void closeResource() {
+        }
     }
 }

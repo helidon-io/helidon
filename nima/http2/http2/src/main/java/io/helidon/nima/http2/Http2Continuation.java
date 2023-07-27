@@ -17,7 +17,6 @@
 package io.helidon.nima.http2;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 /**
  * HTTP/2 Continuation frame.
@@ -51,11 +50,6 @@ public final class Http2Continuation implements Http2Frame<Http2Flag.Continuatio
     @Override
     public String name() {
         return Http2FrameType.CONTINUATION.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

@@ -19,6 +19,8 @@ package io.helidon.nima.http2;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import io.helidon.common.buffers.BufferData;
+
 /**
  * HTTP/2 utility.
  */
@@ -42,5 +44,9 @@ public final class Http2Util {
     public static boolean isPreface(byte[] bytes) {
         return Arrays.compare(PRIOR_KNOWLEDGE_PREFACE, 0, PREFACE_LENGTH,
                               bytes, 0, PREFACE_LENGTH) == 0;
+    }
+
+    public static BufferData prefaceData() {
+        return BufferData.create(PRIOR_KNOWLEDGE_PREFACE);
     }
 }

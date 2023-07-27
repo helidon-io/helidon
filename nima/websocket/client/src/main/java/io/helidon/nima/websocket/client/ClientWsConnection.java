@@ -99,7 +99,7 @@ public class ClientWsConnection implements WsSession, Runnable {
                 }
             }
         } finally {
-            connection.close();
+            connection.closeResource();
         }
     }
 

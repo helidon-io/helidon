@@ -22,6 +22,11 @@ class ConnectionCache {
         return HTTP2_SUPPORTED.get(ck).isPresent();
     }
 
+    static void clear() {
+        HTTP2_SUPPORTED.clear();
+        CHANNEL_CACHE.forEach((c, c2) -> c2.close());
+    }
+
     static Http2ConnectionAttemptResult newStream(WebClient webClient,
                                                   Http2ClientProtocolConfig protocolConfig,
                                                   ConnectionKey connectionKey,

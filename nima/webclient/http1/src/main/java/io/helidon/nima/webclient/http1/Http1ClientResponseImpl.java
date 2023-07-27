@@ -178,8 +178,10 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private BufferData readBytes(int estimate) {
         BufferData bufferData = BufferData.create(estimate);
-        bufferData.readFrom(inputStream);
-
+        int bytesRead = bufferData.readFrom(inputStream);
+        if (bytesRead == -1) {
+            return null;
+        }
         return bufferData;
     }
 }

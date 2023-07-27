@@ -59,7 +59,7 @@ abstract class WsSocketAbstractTestingTest {
 
     @Test
     void testHttpEndpoint() {
-        String message = httpClient.get("/test").request(String.class);
+        String message = httpClient.get("/test").requestEntity(String.class);
         assertThat(message, is("http"));
     }
 

@@ -39,7 +39,8 @@ class Http2ProtocolProvider implements ProtocolProvider<Http2Client, Http2Client
 
     @Override
     public Http2Client protocol(WebClient client, Http2ClientProtocolConfig config) {
-        return new Http2ClientImpl(Http2ClientConfig.builder()
+        return new Http2ClientImpl(client,
+                                   Http2ClientConfig.builder()
                                            .from(client.prototype())
                                            .protocolConfig(config)
                                            .buildPrototype());

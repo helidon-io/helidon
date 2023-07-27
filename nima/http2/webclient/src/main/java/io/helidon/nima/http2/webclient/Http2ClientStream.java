@@ -18,6 +18,7 @@ package io.helidon.nima.http2.webclient;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -54,18 +55,22 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
     private final SocketContext ctx;
+    private final Duration timeout;
     private final LockingStreamIdSequence streamIdSeq;
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final Http2Settings settings = Http2Settings.create();
     private final List<Http2FrameData> continuationData = new ArrayList<>();
-    private final StreamBuffer buffer;
 
     private Http2StreamState state = Http2StreamState.IDLE;
     private Http2Headers currentHeaders;
-    private StreamFlowControl flowControl;
-    private int streamId;
+    // accessed from stream thread an connection thread
+    private volatile StreamFlowControl flowControl;
     private boolean hasEntity;
+
+    // streamId and buffer can only be created when we are locked in the stream id sequence
+    private int streamId;
+    private StreamBuffer buffer;
 
     Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
@@ -75,8 +80,8 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.connection = connection;
         this.serverSettings = serverSettings;
         this.ctx = ctx;
+        this.timeout = timeout;
         this.streamIdSeq = streamIdSeq;
-        this.buffer = new StreamBuffer(streamId, timeout);
     }
 
     @Override
@@ -164,9 +169,14 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     void cancel() {
         Http2RstStream rstStream = new Http2RstStream(Http2ErrorCode.CANCEL);
         Http2FrameData frameData = rstStream.toFrameData(settings, streamId, Http2Flag.NoFlags.create());
-        sendListener.frameHeader(ctx, frameData.header());
-        sendListener.frame(ctx, rstStream);
-        write(frameData, false);
+        sendListener.frameHeader(ctx, streamId, frameData.header());
+        sendListener.frame(ctx, streamId, rstStream);
+        try {
+            write(frameData, false);
+        } catch (UncheckedIOException e) {
+            // we consider this to be a marker that the connection is already close
+            ctx.log(LOGGER, DEBUG, "Exception during stream cancel", e);
+        }
     }
 
     void close() {
@@ -179,6 +189,10 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param frameData data or header frame
      */
     void push(Http2FrameData frameData) {
+        if (LOGGER.isLoggable(DEBUG)) {
+            ctx.log(LOGGER, DEBUG, "%d: received frame of type %s, pushing to buffer", streamId, frameData.header().type());
+        }
+
         buffer.push(frameData);
     }
 
@@ -205,18 +219,22 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS);
         }
 
-        sendListener.headers(ctx, http2Headers);
         try {
             // Keep ascending streamId order among concurrent streams
             // §5.1.1 - The identifier of a newly established stream MUST be numerically
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
+            this.buffer = new StreamBuffer(streamId, timeout);
+
             // fixme Configurable initial win size, max frame size
             this.flowControl = connection.flowControl().createStreamFlowControl(
                     streamId,
                     WindowSize.DEFAULT_WIN_SIZE,
                     WindowSize.DEFAULT_MAX_FRAME_SIZE);
+            // this must be done after we create the flow control, as it may be used from another thread
             this.connection.addStream(streamId, this);
+
+            sendListener.headers(ctx, streamId, http2Headers);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
             connection.writer().writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
         } finally {
@@ -254,8 +272,8 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
 
         if (frameData != null) {
 
-            recvListener.frameHeader(ctx, frameData.header());
-            recvListener.frame(ctx, frameData.data());
+            recvListener.frameHeader(ctx, streamId, frameData.header());
+            recvListener.frame(ctx, streamId, frameData.data());
 
             int flags = frameData.header().flags();
             boolean endOfStream = (flags & Http2Flag.END_OF_STREAM) == Http2Flag.END_OF_STREAM;
@@ -279,6 +297,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                                     connection.getInboundDynamicTable(),
                                                                     requestHuffman,
                                                                     continuationData.toArray(new Http2FrameData[0]));
+                    recvListener.headers(ctx, streamId, http2Headers);
                     this.headers(http2Headers, endOfStream);
                 }
                 break;

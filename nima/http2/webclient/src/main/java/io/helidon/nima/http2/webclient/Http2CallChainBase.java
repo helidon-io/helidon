@@ -10,6 +10,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
+import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.ConnectionKey;
@@ -26,6 +27,8 @@ import io.helidon.nima.webclient.spi.WebClientService;
 import static io.helidon.nima.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
+    private static final Tls NO_TLS = Tls.builder().enabled(false).build();
+
     private final WebClient webClient;
     private final HttpClientConfig clientConfig;
     private final Http2ClientProtocolConfig protocolConfig;
@@ -87,10 +90,6 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return requestHeaders;
     }
 
-    ClientResponseHeaders responseHeaders() {
-        return responseHeaders;
-    }
-
     Http.Status responseStatus() {
         return responseStatus;
     }
@@ -135,7 +134,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         Http2Headers headers = stream.readHeaders();
 
         ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
-        Http.Status responseStatus = headers.status();
+        this.responseStatus = headers.status();
 
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
 
@@ -191,7 +190,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return new ConnectionKey(uri.scheme(),
                                  uri.host(),
                                  uri.port(),
-                                 clientRequest.tls(),
+                                 "https".equals(uri.scheme()) ? clientRequest.tls() : NO_TLS,
                                  clientConfig.dnsResolver(),
                                  clientConfig.dnsAddressLookup(),
                                  clientRequest.proxy());

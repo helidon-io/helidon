@@ -25,6 +25,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.websocket.WsListener;
 import io.helidon.nima.websocket.client.WsClient;
+import io.helidon.nima.websocket.client.WsClientConfig;
 import io.helidon.nima.websocket.webserver.WsRoute;
 import io.helidon.nima.websocket.webserver.WsRouting;
 
@@ -67,6 +68,11 @@ public class DirectWsClient implements WsClient {
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Cannot create URI from provided path", e);
         }
+    }
+
+    @Override
+    public WsClientConfig prototype() {
+        return WsClientConfig.create();
     }
 
     void close() {

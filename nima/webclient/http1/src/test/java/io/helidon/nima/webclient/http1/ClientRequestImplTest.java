@@ -40,6 +40,7 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.nima.http.media.EntityReader;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http.media.MediaContext;
@@ -194,7 +195,7 @@ class ClientRequestImplTest {
                     it.close();
                 }));
         client.head(url).connection(http1ClientConnection).request();
-        http1ClientConnection.close();
+        http1ClientConnection.closeResource();
     }
 
     @Test
@@ -207,7 +208,7 @@ class ClientRequestImplTest {
         assertThat(uri.getRawQuery(), is("specialChar%2B=someValue%2C"));
         assertThat(uri.getRawFragment(), is("someFragment%2C"));
 
-        request = request.skipUriEncoding();
+        request = request.skipUriEncoding(true);
         uri = request.resolvedUri().toUri();
         assertThat(uri.getRawPath(), is("/ěščžř"));
         assertThat(uri.getRawQuery(), is("specialChar+=someValue,"));
@@ -504,7 +505,7 @@ class ClientRequestImplTest {
 
         @Override
         public HelidonSocket helidonSocket() {
-            return null;
+            return new FakeSocket();
         }
 
         @Override
@@ -518,17 +519,17 @@ class ClientRequestImplTest {
         }
 
         @Override
-        public void release() {
+        public void releaseResource() {
         }
 
         @Override
-        public void close() {
+        public void closeResource() {
             webServerEmulator.shutdownNow();
         }
 
         @Override
         public String channelId() {
-            return null;
+            return helidonSocket().socketId();
         }
 
         @Override
@@ -701,6 +702,54 @@ class ClientRequestImplTest {
             if (entitySize > 0) {
                 serverWriter.write(entity);
             }
+        }
+
+    }
+
+    private static class FakeSocket implements HelidonSocket {
+        @Override
+        public void close() {
+
+        }
+
+        @Override
+        public int read(BufferData buffer) {
+            return 0;
+        }
+
+        @Override
+        public void write(BufferData buffer) {
+
+        }
+
+        @Override
+        public PeerInfo remotePeer() {
+            return null;
+        }
+
+        @Override
+        public PeerInfo localPeer() {
+            return null;
+        }
+
+        @Override
+        public boolean isSecure() {
+            return false;
+        }
+
+        @Override
+        public String socketId() {
+            return "fake";
+        }
+
+        @Override
+        public String childSocketId() {
+            return "fake";
+        }
+
+        @Override
+        public byte[] get() {
+            return new byte[0];
         }
     }
 

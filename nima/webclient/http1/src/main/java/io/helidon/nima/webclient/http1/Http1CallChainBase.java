@@ -61,6 +61,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private final boolean keepAlive;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Duration timeout;
+    private ClientConnection effectiveConnection;
 
     Http1CallChainBase(WebClient webClient,
                        HttpClientConfig clientConfig,
@@ -92,7 +93,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
-        ClientConnection effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
+        effectiveConnection = connection == null ? obtainConnection(serviceRequest) : connection;
         effectiveConnection.readTimeout(this.timeout);
 
         DataWriter writer = effectiveConnection.writer();
@@ -143,7 +144,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     ClientConnection connection() {
-        return connection;
+        return effectiveConnection;
     }
 
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
@@ -208,19 +209,24 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseStatus == Http.Status.NO_CONTENT_204) {
             return false;
         }
+        if ((responseHeaders.contains(Http.Header.UPGRADE)
+                     && !responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+            // this is an upgrade response and there is no entity
+            return false;
+        }
         // if we decide to support HTTP/1.0, we may have an entity without any headers
         // in HTTP/1.1, we should have a content encoding, but let's make it easier for now
         return true;
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
-        return ConnectionCache.connection(webClient,
-                                          clientConfig,
-                                          tls,
-                                          proxy,
-                                          request.uri(),
-                                          request.headers(),
-                                          keepAlive);
+        return Http1ConnectionCache.connection(webClient,
+                                               clientConfig,
+                                               tls,
+                                               proxy,
+                                               request.uri(),
+                                               request.headers(),
+                                               keepAlive);
     }
 
     static class ContentLengthInputStream extends InputStream {
@@ -284,8 +290,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
 
         private void ensureBuffer(int estimate) {
-            int toRead = Math.min(reader.available(), estimate);
-
             if (remainingLength == 0) {
                 entityProcessedRunnable.run();
                 // we have fully read the entity
@@ -293,6 +297,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 currentBuffer = null;
                 return;
             }
+
+            reader.ensureAvailable();
+            int toRead = Math.min(reader.available(), estimate);
+
             if (currentBuffer != null && currentBuffer.consumed()) {
                 currentBuffer = null;
             }
@@ -303,8 +311,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 if (currentBuffer == null || currentBuffer == BufferData.empty()) {
                     entityProcessedRunnable.run();
                     finished = true;
+                } else {
+                    socket.log(LOGGER, TRACE, "client read entity buffer %s", currentBuffer.debugDataHex(true));
                 }
-                socket.log(LOGGER, TRACE, "client read entity buffer {0}", currentBuffer.debugDataHex(true));
             }
         }
     }
@@ -382,7 +391,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             BufferData chunk = reader.readBuffer(length);
 
             if (LOGGER.isLoggable(TRACE)) {
-                helidonSocket.log(LOGGER, TRACE, "client read chunk {0}", chunk.debugDataHex(true));
+                helidonSocket.log(LOGGER, TRACE, "client read chunk %s", chunk.debugDataHex(true));
             }
 
             reader.skip(2); // trailing CRLF after each chunk

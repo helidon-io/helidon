@@ -47,58 +47,58 @@ final class Http2FrameListenerUtil {
         }
 
         @Override
-        public void frameHeader(SocketContext ctx, BufferData frameHeader) {
-            delegates.forEach(it -> it.frameHeader(ctx, frameHeader));
+        public void frameHeader(SocketContext ctx, int streamId, BufferData frameHeader) {
+            delegates.forEach(it -> it.frameHeader(ctx, streamId, frameHeader));
         }
 
         @Override
-        public void frameHeader(SocketContext ctx, Http2FrameHeader header) {
-            delegates.forEach(it -> it.frameHeader(ctx, header));
+        public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
+            delegates.forEach(it -> it.frameHeader(ctx, streamId, header));
         }
 
         @Override
-        public void frame(SocketContext ctx, BufferData data) {
-            delegates.forEach(it -> it.frame(ctx, data));
+        public void frame(SocketContext ctx, int streamId, BufferData data) {
+            delegates.forEach(it -> it.frame(ctx, streamId, data));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2Priority priority) {
-            delegates.forEach(it -> it.frame(ctx, priority));
+        public void frame(SocketContext ctx, int streamId, Http2Priority priority) {
+            delegates.forEach(it -> it.frame(ctx, streamId, priority));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2RstStream rstStream) {
-            delegates.forEach(it -> it.frame(ctx, rstStream));
+        public void frame(SocketContext ctx, int streamId, Http2RstStream rstStream) {
+            delegates.forEach(it -> it.frame(ctx, streamId, rstStream));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2Settings settings) {
-            delegates.forEach(it -> it.frame(ctx, settings));
+        public void frame(SocketContext ctx, int streamId, Http2Settings settings) {
+            delegates.forEach(it -> it.frame(ctx, streamId, settings));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2Ping ping) {
-            delegates.forEach(it -> it.frame(ctx, ping));
+        public void frame(SocketContext ctx, int streamId, Http2Ping ping) {
+            delegates.forEach(it -> it.frame(ctx, streamId, ping));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2GoAway goAway) {
-            delegates.forEach(it -> it.frame(ctx, goAway));
+        public void frame(SocketContext ctx, int streamId, Http2GoAway goAway) {
+            delegates.forEach(it -> it.frame(ctx, streamId, goAway));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2WindowUpdate windowUpdate) {
-            delegates.forEach(it -> it.frame(ctx, windowUpdate));
+        public void frame(SocketContext ctx, int streamId, Http2WindowUpdate windowUpdate) {
+            delegates.forEach(it -> it.frame(ctx, streamId, windowUpdate));
         }
 
         @Override
-        public void headers(SocketContext ctx, Http2Headers headers) {
-            delegates.forEach(it -> it.headers(ctx, headers));
+        public void headers(SocketContext ctx, int streamId, Http2Headers headers) {
+            delegates.forEach(it -> it.headers(ctx, streamId, headers));
         }
 
         @Override
-        public void frame(SocketContext ctx, Http2Continuation continuation) {
-            delegates.forEach(it -> it.frame(ctx, continuation));
+        public void frame(SocketContext ctx, int streamId, Http2Continuation continuation) {
+            delegates.forEach(it -> it.frame(ctx, streamId, continuation));
         }
     }
 }

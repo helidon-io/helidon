@@ -45,14 +45,13 @@ import jakarta.inject.Inject;
 class LoomClient implements WebClient {
     static final LazyValue<ExecutorService> EXECUTOR = LazyValue.create(() -> {
         return Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
-                                                          .name("helidon-client-")
+                                                          .name("helidon-client-", 0)
                                                           .factory());
     });
     private static final List<HttpClientSpiProvider> PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(HttpClientSpiProvider.class))
                     .asList();
     private static final Map<String, HttpClientSpiProvider> HTTP_PROVIDERS_BY_PROTOCOL;
-    private static final Map<String, Object> CLIENTS_BY_PROTOCOL = new ConcurrentHashMap<>();
 
     static {
         Map<String, HttpClientSpiProvider> providerMap = new HashMap<>();
@@ -62,7 +61,8 @@ class LoomClient implements WebClient {
 
     private final WebClientConfig config;
     // a map of protocol ids to the client SPI implementing them
-    private final Map<String, ProtocolSpi> protocolsToClients;
+    private final Map<String, ProtocolSpi> clientSpiByProtocol;
+    private final Map<String, Object> clientsByProtocol = new ConcurrentHashMap<>();
     private final List<ProtocolSpi> protocols;
     private final List<ProtocolSpi> tcpProtocols;
     private final ProtocolConfigs protocolConfigs;
@@ -119,7 +119,7 @@ class LoomClient implements WebClient {
             }
         }
 
-        this.protocolsToClients = clients;
+        this.clientSpiByProtocol = clients;
         this.protocols = protocols;
         this.tcpProtocols = tcpProtocols;
         this.tcpProtocolIds = tcpProtocols.stream()
@@ -145,7 +145,7 @@ class LoomClient implements WebClient {
                                      this.prototype(),
                                      method,
                                      clientUri,
-                                     protocolsToClients,
+                                     clientSpiByProtocol,
                                      protocols,
                                      tcpProtocols,
                                      tcpProtocolIds);
@@ -160,7 +160,7 @@ class LoomClient implements WebClient {
     @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol) {
         ProtocolProvider<T, C> provider = protocol.provider();
-        return (T) CLIENTS_BY_PROTOCOL.computeIfAbsent(provider.protocolId(),
+        return (T) clientsByProtocol.computeIfAbsent(provider.protocolId(),
                                                    protocolId -> {
                                                        C config = protocolConfigs.config(provider.protocolId(),
                                                                                          provider.configType(),

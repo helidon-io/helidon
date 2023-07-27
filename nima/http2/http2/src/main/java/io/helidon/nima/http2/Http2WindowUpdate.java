@@ -17,7 +17,6 @@
 package io.helidon.nima.http2;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 /**
  * Window update frame.
@@ -51,11 +50,6 @@ public record Http2WindowUpdate(int windowSizeIncrement) implements Http2Frame<H
     @Override
     public String name() {
         return Http2FrameType.WINDOW_UPDATE.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

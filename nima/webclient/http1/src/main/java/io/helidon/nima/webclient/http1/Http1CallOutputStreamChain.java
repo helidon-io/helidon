@@ -68,9 +68,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                        DataReader reader,
                                        BufferData writeBuffer) {
 
-        writeHeaders(headers, writeBuffer, protocolConfig().validateHeaders());
-        whenSent.complete(serviceRequest);
-
         ClientConnectionOutputStream cos = new ClientConnectionOutputStream(writer,
                                                                             reader,
                                                                             writeBuffer,
@@ -244,7 +241,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
             writer.writeNow(prologue);
 
-            // todo validate request headers
             BufferData headerBuffer = BufferData.growing(128);
             writeHeaders(headers, headerBuffer, protocolConfig.validateHeaders());
             writer.writeNow(headerBuffer);

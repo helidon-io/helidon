@@ -34,6 +34,11 @@ public final class UpgradeResponse {
         return new UpgradeResponse(false, null, response);
     }
 
+    @Override
+    public String toString() {
+        return response.status() + ": " + response.headers();
+    }
+
     /**
      * Whether upgrade succeeded or not.
      *

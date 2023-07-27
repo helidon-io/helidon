@@ -22,9 +22,8 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
@@ -35,6 +34,7 @@ import io.helidon.nima.http2.webclient.Http2ConnectionAttemptResult.Result;
 import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.ConnectionKey;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.TcpClientConnection;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -57,17 +57,22 @@ class Http2ClientConnectionHandler {
     // todo requires handling of timeouts and removal from this queue
     private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =
             Collections.synchronizedMap(new IdentityHashMap<>());
-    private final Set<Http2ClientConnection> allConnections =
-            Collections.synchronizedSet(new IdentityHashMap<Http2ClientConnection, Boolean>().keySet());
 
+    private final Map<Http2ClientConnection, Boolean> allConnections = Collections.synchronizedMap(new IdentityHashMap<>());
     private final ConnectionKey connectionKey;
     private final AtomicReference<Http2ClientConnection> activeConnection = new AtomicReference<>();
-    // simple solution for now
-    private final Semaphore semaphore = new Semaphore(1);
+    private final ReentrantLock lock = new ReentrantLock();
     private final AtomicReference<Result> result = new AtomicReference<>(Result.UNKNOWN);
 
     Http2ClientConnectionHandler(ConnectionKey connectionKey) {
         this.connectionKey = connectionKey;
+    }
+
+    void close() {
+        this.allConnections.keySet()
+                .forEach(Http2ClientConnection::close);
+        this.activeConnection.set(null);
+        this.allConnections.clear();
     }
 
     Http2ConnectionAttemptResult newStream(WebClient webClient,
@@ -75,8 +80,9 @@ class Http2ClientConnectionHandler {
                                            Http2ClientRequestImpl request,
                                            ClientUri initialUri,
                                            Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+
         return switch (result.get()) {
-            case HTTP_1 -> http1(webClient, request, initialUri, http1EntityHandler);
+            case HTTP_1 -> http1(webClient, protocolConfig, request, initialUri, http1EntityHandler);
             case HTTP_2 -> http2(webClient, protocolConfig, request, initialUri);
             case UNKNOWN -> maybeNewConnection(webClient, protocolConfig, request, initialUri, http1EntityHandler);
         };
@@ -87,7 +93,7 @@ class Http2ClientConnectionHandler {
                                        Http2ClientRequestImpl request,
                                        ClientUri initialUri) {
         try {
-            semaphore.acquire();
+            lock.lockInterruptibly();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Interrupted", e);
         }
@@ -110,7 +116,7 @@ class Http2ClientConnectionHandler {
 
             return new Http2ConnectionAttemptResult(Result.HTTP_2, stream, null);
         } finally {
-            semaphore.release();
+            lock.unlock();
         }
     }
 
@@ -120,42 +126,44 @@ class Http2ClientConnectionHandler {
                                                             ClientUri initialUri,
                                                             Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
         try {
-            semaphore.acquire();
+            lock.lockInterruptibly();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Interrupted", e);
         }
-        if (request.tls().enabled() && "https".equals(initialUri.scheme())) {
-            // use ALPN, not upgrade, if prior, only h2, otherwise both
-            List<String> alpn;
-            if (request.priorKnowledge()) {
-                alpn = List.of(Http2Client.PROTOCOL_ID);
-            } else {
-                alpn = List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID);
-            }
-            ClientConnection tcpClientConnection = connectClient(webClient, alpn);
-            if (tcpClientConnection.helidonSocket().protocolNegotiated()) {
-                if (Http2Client.PROTOCOL_ID.equals(tcpClientConnection.helidonSocket().protocol())) {
-                    result.set(Result.HTTP_2);
-                    // this should always be true
-                    Http2ClientConnection connection = Http2ClientConnection.create(webClient,
-                                                                                    protocolConfig,
-                                                                                    tcpClientConnection);
-                    allConnections.add(connection);
-                    h2ConnByConn.put(tcpClientConnection, connection);
-                    this.activeConnection.set(connection);
-                    return http2(webClient, protocolConfig, request, initialUri);
-                } else {
-                    result.set(Result.HTTP_1);
-                    request.connection(tcpClientConnection);
-                    return http1(webClient, request, initialUri, http1EntityHandler);
-                }
-            } else {
-                // this should not really happen, as H2 is depending on ALPN, but let's support it anyway, and hope we can
-                // do this later
-                request.connection(tcpClientConnection);
-            }
-        }
         try {
+            if (request.tls().enabled() && "https".equals(initialUri.scheme())) {
+                // use ALPN, not upgrade, if prior, only h2, otherwise both
+                List<String> alpn;
+                if (request.priorKnowledge()) {
+                    alpn = List.of(Http2Client.PROTOCOL_ID);
+                } else {
+                    alpn = List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID);
+                }
+                ClientConnection tcpClientConnection = connectClient(webClient, alpn);
+                if (tcpClientConnection.helidonSocket().protocolNegotiated()) {
+                    if (Http2Client.PROTOCOL_ID.equals(tcpClientConnection.helidonSocket().protocol())) {
+                        result.set(Result.HTTP_2);
+                        // this should always be true
+                        Http2ClientConnection connection = Http2ClientConnection.create(webClient,
+                                                                                        protocolConfig,
+                                                                                        tcpClientConnection,
+                                                                                        true);
+                        allConnections.put(connection, true);
+                        h2ConnByConn.put(tcpClientConnection, connection);
+                        this.activeConnection.set(connection);
+                        return http2(webClient, protocolConfig, request, initialUri);
+                    } else {
+                        result.set(Result.HTTP_1);
+                        request.connection(tcpClientConnection);
+                        return http1(webClient, protocolConfig, request, initialUri, http1EntityHandler);
+                    }
+                } else {
+                    // this should not really happen, as H2 is depending on ALPN, but let's support it anyway, and hope we can
+                    // do this later
+                    request.connection(tcpClientConnection);
+                }
+            }
+
             if (result.get() != Result.UNKNOWN) {
                 return http2(webClient, protocolConfig, request, initialUri);
             }
@@ -168,11 +176,14 @@ class Http2ClientConnectionHandler {
             UpgradeResponse upgradeResponse = http1Request(webClient, request, initialUri)
                     .header(UPGRADE_HEADER)
                     .header(CONNECTION_UPGRADE_HEADER)
-                    .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade())
+                    .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(protocolConfig))
                     .upgrade("h2c");
             if (upgradeResponse.isUpgraded()) {
                 result.set(Result.HTTP_2);
-                Http2ClientConnection conn = Http2ClientConnection.create(webClient, protocolConfig, upgradeResponse.connection());
+                Http2ClientConnection conn = Http2ClientConnection.create(webClient,
+                                                                          protocolConfig,
+                                                                          upgradeResponse.connection(),
+                                                                          false);
                 activeConnection.set(conn);
                 return http2(webClient, protocolConfig, request, initialUri);
             } else {
@@ -182,20 +193,22 @@ class Http2ClientConnectionHandler {
                                                         upgradeResponse.response());
             }
         } finally {
-            semaphore.release();
+            lock.unlock();
         }
     }
 
-    private String settingsForUpgrade() {
-        BufferData settingsFrameData = Http2Settings.create()
-                .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))
+    private String settingsForUpgrade(Http2ClientProtocolConfig protocolConfig) {
+        Http2Settings settings = Http2ClientConnection.settings(protocolConfig);
+        BufferData settingsFrameData = settings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))
                 .data();
         byte[] b = new byte[settingsFrameData.available()];
-        settingsFrameData.write(b);
+        settingsFrameData.read(b);
         return Base64.getEncoder().encodeToString(b);
     }
 
-    private Http2ConnectionAttemptResult http1(WebClient webClient, Http2ClientRequestImpl request, ClientUri initialUri,
+    private Http2ConnectionAttemptResult http1(WebClient webClient,
+                                               Http2ClientProtocolConfig protocolConfig,
+                                               Http2ClientRequestImpl request, ClientUri initialUri,
                                                Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
         return new Http2ConnectionAttemptResult(Result.HTTP_1,
                                                 null,
@@ -226,47 +239,47 @@ class Http2ClientConnectionHandler {
         if (maybeConnection.isPresent()) {
             // TLS is ignored (we cannot do a TLS negotiation on a connected connection)
             // we cannot cache this connection, it will be a one-off
-            usedConnection = Http2ClientConnection.create(webClient, protocolConfig, maybeConnection.get());
-            usedConnection.sendPreface(protocolConfig, true);
+            usedConnection = Http2ClientConnection.create(webClient, protocolConfig, maybeConnection.get(), true);
         } else {
             ClientConnection connection;
 
             // we know that this is HTTP/2 capable server - still need to support all three (prior, upgrade, alpn)
             if (request.tls().enabled() && "https".equals(requestUri.scheme())) {
                 connection = connectClient(webClient, List.of(Http2Client.PROTOCOL_ID));
-                usedConnection = Http2ClientConnection.create(webClient, protocolConfig, connection);
+                usedConnection = Http2ClientConnection.create(webClient, protocolConfig, connection, true);
             } else {
                 if (request.priorKnowledge()) {
                     connection = connectClient(webClient, List.of(Http2Client.PROTOCOL_ID));
-                    usedConnection = Http2ClientConnection.create(webClient, protocolConfig, connection);
-                    usedConnection.sendPreface(protocolConfig, true);
+                    usedConnection = Http2ClientConnection.create(webClient, protocolConfig, connection, true);
                 } else {
                     // attempt an upgrade to HTTP/2
                     UpgradeResponse upgradeResponse = http1Request(webClient, request, requestUri)
                             .header(UPGRADE_HEADER)
                             .header(CONNECTION_UPGRADE_HEADER)
-                            .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade())
+                            .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(protocolConfig))
                             .upgrade("h2c");
                     if (upgradeResponse.isUpgraded()) {
                         result.set(Result.HTTP_2);
                         connection = upgradeResponse.connection();
-                        usedConnection = Http2ClientConnection.create(webClient, protocolConfig, connection);
-                        usedConnection.sendPreface(protocolConfig, false);
+                        usedConnection = Http2ClientConnection.create(webClient, protocolConfig, connection, false);
                     } else {
-                        if (LOGGER.isLoggable(TRACE)) {
-                            upgradeResponse.connection().helidonSocket()
-                                    .log(LOGGER, TRACE, "Failed to upgrade to HTTP/2");
+                        try (HttpClientResponse response = upgradeResponse.response()) {
+                            if (LOGGER.isLoggable(TRACE)) {
+                                upgradeResponse.connection().helidonSocket()
+                                        .log(LOGGER, TRACE, "Failed to upgrade to HTTP/2");
+                            }
+                            upgradeResponse.connection().closeResource();
+                            throw new IllegalStateException(
+                                    "Failed to upgrade to HTTP/2, even though it succeeded before. Status: "
+                                            + response.status());
                         }
-                        upgradeResponse.connection().close();
-                        throw new IllegalStateException("Failed to upgrade to HTTP/2, even though it succeeded before. Status: "
-                                                                + upgradeResponse.response().status());
                     }
                 }
             }
 
             // only set these for requests that do not have an explicit connection defined
             activeConnection.set(usedConnection);
-            allConnections.add(usedConnection);
+            allConnections.put(usedConnection, true);
             h2ConnByConn.put(connection, usedConnection);
         }
 

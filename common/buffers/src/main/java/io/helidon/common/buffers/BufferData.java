@@ -210,7 +210,7 @@ public interface BufferData {
      * Read bytes from the input stream.
      * Reads at least 1 byte.
      * @param in input stream
-     * @return number of bytes read
+     * @return number of bytes read, -1 if the input stream is finished
      */
     int readFrom(InputStream in);
 

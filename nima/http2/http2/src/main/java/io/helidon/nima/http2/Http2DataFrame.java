@@ -17,7 +17,6 @@
 package io.helidon.nima.http2;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 /**
  * Data frame.
@@ -53,11 +52,6 @@ public final class Http2DataFrame implements Http2Frame<Http2Flag.DataFlags> {
     @Override
     public String name() {
         return Http2FrameType.DATA.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

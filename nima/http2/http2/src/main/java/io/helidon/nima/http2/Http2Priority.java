@@ -17,7 +17,6 @@
 package io.helidon.nima.http2;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 /**
  * HTTP/2 priority frame.
@@ -66,11 +65,6 @@ public record Http2Priority(boolean exclusive, int streamId, int weight) impleme
     @Override
     public String name() {
         return Http2FrameType.PRIORITY.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

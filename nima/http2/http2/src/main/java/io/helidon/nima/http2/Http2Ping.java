@@ -17,7 +17,6 @@
 package io.helidon.nima.http2;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 /**
  * Ping frame.
@@ -52,11 +51,6 @@ public final class Http2Ping implements Http2Frame<Http2Flag.PingFlags> {
     @Override
     public String name() {
         return Http2FrameType.PING.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

@@ -72,12 +72,12 @@ class DirectClientConnection implements ClientConnection {
     }
 
     @Override
-    public void release() {
-        close();
+    public void releaseResource() {
+        closeResource();
     }
 
     @Override
-    public void close() {
+    public void closeResource() {
         if (closed.compareAndSet(false, true)) {
             clientWriter.writeNow(BufferData.empty());
         }

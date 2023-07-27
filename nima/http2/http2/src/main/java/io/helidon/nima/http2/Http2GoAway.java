@@ -19,7 +19,6 @@ package io.helidon.nima.http2;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 import static io.helidon.common.buffers.BufferData.EMPTY_BYTES;
 
@@ -76,11 +75,6 @@ public record Http2GoAway(int lastStreamId, Http2ErrorCode errorCode, String det
     @Override
     public String name() {
         return Http2FrameType.GO_AWAY.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

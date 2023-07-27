@@ -50,14 +50,15 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            ClientUri clientUri, Map<String, String> properties) {
         super(clientConfig, webClient.cookieManager(), Http2Client.PROTOCOL_ID, method, clientUri, properties);
 
+        this.priorKnowledge = protocolConfig.priorKnowledge();
         this.webClient = webClient;
         this.protocolConfig = protocolConfig;
     }
 
-    public Http2ClientRequestImpl(Http2ClientRequestImpl request,
-                                  Http.Method method,
-                                  ClientUri clientUri,
-                                  Map<String, String> properties) {
+    Http2ClientRequestImpl(Http2ClientRequestImpl request,
+                           Http.Method method,
+                           ClientUri clientUri,
+                           Map<String, String> properties) {
         this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, properties);
 
         followRedirects(request.followRedirects());
@@ -228,7 +229,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         // if this was an HTTP/1.1 response, do something different (just re-use response)
         return new Http2ClientResponseImpl(callChain.responseStatus(),
                                            callChain.requestHeaders(),
-                                           callChain.responseHeaders(),
+                                           serviceResponse.headers(),
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,

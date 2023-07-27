@@ -76,7 +76,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     public final void run() {
         Thread.currentThread().setName("[" + socket.socketId() + " " + socket.childSocketId() + "] Nima socket");
         if (LOGGER.isLoggable(DEBUG)) {
-            socket.log(LOGGER, DEBUG, "accepted socket from %s", socket.remotePeer().host());
+            socket.log(LOGGER,
+                       DEBUG,
+                       "accepted socket from %s:%d",
+                       socket.remotePeer().host(),
+                       socket.remotePeer().port());
         }
 
         try {

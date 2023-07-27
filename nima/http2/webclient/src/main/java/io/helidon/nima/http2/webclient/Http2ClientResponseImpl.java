@@ -16,7 +16,9 @@
 
 package io.helidon.nima.http2.webclient;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
@@ -82,10 +84,16 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     }
 
     private BufferData readBytes(int estimate) {
-        BufferData bufferData = BufferData.create(estimate);
-        bufferData.readFrom(inputStream);
-
-        return bufferData;
+        try {
+            byte[] buffer = new byte[estimate];
+            int read = inputStream.read(buffer);
+            if (read < 1) {
+                return BufferData.empty();
+            }
+            return BufferData.create(buffer, 0, read);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override

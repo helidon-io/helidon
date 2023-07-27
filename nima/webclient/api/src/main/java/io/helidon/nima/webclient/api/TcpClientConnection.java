@@ -97,9 +97,10 @@ public class TcpClientConnection implements ClientConnection {
         this.channelId = createChannelId(socket);
 
         if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, String.format("[%s] client connected %s %s",
+            LOGGER.log(DEBUG, String.format("[client %s] client connected %s:%d %s",
                                             channelId,
-                                            socket.getLocalAddress(),
+                                            socket.getLocalAddress().getHostAddress(),
+                                            socket.getLocalPort(),
                                             Thread.currentThread().getName()));
         }
 

@@ -223,13 +223,13 @@ class ClientRequestImplTest {
         for (int i = 0; i < 5; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
             // connection will be dequeued if queue is not empty
-            connectionNow = ConnectionCache.connection(WebClient.create(),
-                                                       Http1ClientConfig.create(),
-                                                       injectedHttp1client.prototype().tls(),
-                                                       Proxy.noProxy(),
-                                                       request.resolvedUri(),
-                                                       request.headers(),
-                                                       true);
+            connectionNow = Http1ConnectionCache.connection(WebClient.create(),
+                                                            Http1ClientConfig.create(),
+                                                            injectedHttp1client.prototype().tls(),
+                                                            Proxy.noProxy(),
+                                                            request.resolvedUri(),
+                                                            request.headers(),
+                                                            true);
             request.connection(connectionNow);
             HttpClientResponse response = request.request();
             // connection will be queued up
@@ -251,13 +251,13 @@ class ClientRequestImplTest {
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
 
-            connectionList.add(ConnectionCache.connection(WebClient.create(),
-                                                          injectedHttp1client.prototype(),
-                                                          injectedHttp1client.prototype().tls(),
-                                                          Proxy.noProxy(),
-                                                          request.resolvedUri(),
-                                                          request.headers(),
-                                                          true));
+            connectionList.add(Http1ConnectionCache.connection(WebClient.create(),
+                                                               injectedHttp1client.prototype(),
+                                                               injectedHttp1client.prototype().tls(),
+                                                               Proxy.noProxy(),
+                                                               request.resolvedUri(),
+                                                               request.headers(),
+                                                               true));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
         }
@@ -272,13 +272,13 @@ class ClientRequestImplTest {
         HttpClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
-            connection = ConnectionCache.connection(WebClient.create(),
-                                                    injectedHttp1client.prototype(),
-                                                    injectedHttp1client.prototype().tls(),
-                                                    Proxy.noProxy(),
-                                                    request.resolvedUri(),
-                                                    request.headers(),
-                                                    true);
+            connection = Http1ConnectionCache.connection(WebClient.create(),
+                                                         injectedHttp1client.prototype(),
+                                                         injectedHttp1client.prototype().tls(),
+                                                         Proxy.noProxy(),
+                                                         request.resolvedUri(),
+                                                         request.headers(),
+                                                         true);
             request.connection(connection);
             response = request.request();
             if (i < connectionQueueSize) {
@@ -293,13 +293,13 @@ class ClientRequestImplTest {
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
         HttpClientRequest request = injectedHttp1client.put("/test");
-        ClientConnection connectionNow = ConnectionCache.connection(WebClient.create(),
-                                                                    injectedHttp1client.prototype(),
-                                                                    injectedHttp1client.prototype().tls(),
-                                                                    Proxy.noProxy(),
-                                                                    request.resolvedUri(),
-                                                                    request.headers(),
-                                                                    true);
+        ClientConnection connectionNow = Http1ConnectionCache.connection(WebClient.create(),
+                                                                         injectedHttp1client.prototype(),
+                                                                         injectedHttp1client.prototype().tls(),
+                                                                         Proxy.noProxy(),
+                                                                         request.resolvedUri(),
+                                                                         request.headers(),
+                                                                         true);
         request.connection(connectionNow);
         HttpClientResponse responseNow = request.request();
         // Verify that the connection was dequeued
