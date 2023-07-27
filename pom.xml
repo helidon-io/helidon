@@ -247,7 +247,6 @@
                         <!-- we are not interested in each file that is generated -->
                         <quiet>true</quiet>
                         <!--<verbose>true</verbose>-->
-                        <!--isOffline>true</isOffline-->
                         <offlineLinks>
                             <offlineLink>
                                 <url>${javadoc.link.jackson-annotations}</url>
