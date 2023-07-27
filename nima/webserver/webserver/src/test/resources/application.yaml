@@ -48,11 +48,20 @@ server:
 server2:
   port: 8079
   host: 127.0.0.1
+  shutdown-grace-period: PT1S
 
   connection-providers:
     discover-services: false
   media-context:
   content-encoding:
+
+server3:
+  port: 8079
+  host: 127.0.0.1
+
+  sockets:
+    - name: "grace"
+      shutdown-grace-period: PT2S
 
 inject:
   permits-dynamic: true

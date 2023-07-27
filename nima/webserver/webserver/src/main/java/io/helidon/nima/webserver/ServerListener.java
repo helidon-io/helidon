@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
@@ -64,7 +65,6 @@ import static java.lang.System.Logger.Level.TRACE;
 class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
 
-    private static final long EXECUTOR_SHUTDOWN_MILLIS = 500L;
     @SuppressWarnings("rawtypes")
     private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() -> {
         return HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class))
@@ -83,6 +83,7 @@ class ServerListener implements ListenerContext {
     private final Tls tls;
     private final SocketOptions connectionOptions;
     private final InetSocketAddress configuredAddress;
+    private final Duration gracePeriod;
 
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
@@ -126,6 +127,7 @@ class ServerListener implements ListenerContext {
                 .id("listener-" + socketName)
                 .parent(serverContext)
                 .build());
+        this.gracePeriod = listenerConfig.shutdownGracePeriod();
 
         this.serverThread = Thread.ofPlatform()
                 .inheritInheritableThreadLocals(true)
@@ -219,7 +221,7 @@ class ServerListener implements ListenerContext {
             serverSocket.close();
 
             // Shutdown reader executor
-            readerExecutor.terminate(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+            readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
             if (!readerExecutor.isTerminated()) {
                 LOGGER.log(DEBUG, "Some tasks in reader executor did not terminate gracefully");
                 readerExecutor.forceTerminate();
@@ -228,7 +230,7 @@ class ServerListener implements ListenerContext {
             // Shutdown shared executor
             try {
                 sharedExecutor.shutdown();
-                boolean done = sharedExecutor.awaitTermination(EXECUTOR_SHUTDOWN_MILLIS, TimeUnit.MILLISECONDS);
+                boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
                 if (!done) {
                     List<Runnable> running = sharedExecutor.shutdownNow();
                     if (!running.isEmpty()) {

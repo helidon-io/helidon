@@ -23,6 +23,7 @@ import java.net.ServerSocket;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -165,6 +166,16 @@ interface ListenerConfigBlueprint {
      */
     @ConfiguredOption("512")
     int writeBufferSize();
+
+    /**
+     * Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown.
+     * Default is {@code 500} milliseconds.
+     * <p>Configuration file values example: {@code PT0.5S}, {@code PT2S}.
+     *
+     * @return grace period
+     */
+    @ConfiguredOption("PT0.5S")
+    Duration shutdownGracePeriod();
 
     /**
      * Configuration of a connection (established from client against our server).
