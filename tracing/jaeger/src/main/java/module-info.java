@@ -24,6 +24,12 @@ module io.helidon.tracing.jaeger {
     requires io.helidon.common.context;
     requires static io.helidon.config.metadata;
 
+    // Hack because okhttp and okio are not modularized
+    // but kotlin.stdlib is, and therefore kotlin.stdlib
+    // will be missing from module graph unless some module
+    // requires it.
+    requires kotlin.stdlib;
+
     requires java.logging;
     requires io.opentracing.util;
     requires jaeger.client;
