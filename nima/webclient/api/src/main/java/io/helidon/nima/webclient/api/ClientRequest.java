@@ -260,7 +260,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      */
     default <E> ClientResponseTyped<E> request(Class<E> type) {
         HttpClientResponse response = request();
-        return new ClientResponseTypedImpl<E>(response, response.as(type));
+        return new ClientResponseTypedImpl<>(response, type);
     }
 
     /**
@@ -300,7 +300,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      */
     default <T> ClientResponseTyped<T> submit(Object entity, Class<T> requestedType) {
         HttpClientResponse response = submit(entity);
-        return new ClientResponseTypedImpl<>(response, response.as(requestedType));
+        return new ClientResponseTypedImpl<>(response, requestedType);
     }
 
     /**
@@ -321,7 +321,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      */
     default <T> ClientResponseTyped<T> outputStream(OutputStreamHandler outputStreamConsumer, Class<T> requestedType) {
         HttpClientResponse response = outputStream(outputStreamConsumer);
-        return new ClientResponseTypedImpl<>(response, response.as(requestedType));
+        return new ClientResponseTypedImpl<>(response, requestedType);
     }
 
     /**

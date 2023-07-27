@@ -30,8 +30,8 @@ import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.observe.health.HealthFeature;
 import io.helidon.nima.observe.metrics.MetricsFeature;
 import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 /**
@@ -112,6 +112,7 @@ public final class Main {
         JsonLibrary jsonLibrary = getJsonLibrary(config);
 
         wsBuilder.mediaContext(context -> {
+            context.mediaSupportsDiscoverServices(false);
             switch (jsonLibrary) {
             case JSONP -> context.addMediaSupport(JsonpSupport.create(config));
             case JSONB -> context.addMediaSupport(JsonbSupport.create(config));
