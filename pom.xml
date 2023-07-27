@@ -121,7 +121,7 @@
         <version.plugin.spotbugs>4.4.2.2</version.plugin.spotbugs>
         <version.plugin.findsecbugs>1.11.0</version.plugin.findsecbugs>
         <version.plugin.dependency-check>8.3.1</version.plugin.dependency-check>
-        <version.plugin.surefire>3.1.2</version.plugin.surefire>
+        <version.plugin.surefire>3.0.0</version.plugin.surefire>
         <version.plugin.toolchains>1.1</version.plugin.toolchains>
         <version.plugin.version-plugin>2.3</version.plugin.version-plugin>
         <version.plugin.buildnumber>3.2.0</version.plugin.buildnumber>
