@@ -115,23 +115,27 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     @Override
     public ReadableEntity entity() {
-        return entity(requestHeaders, responseHeaders, whenComplete);
+        return entity(requestHeaders, responseHeaders);
     }
 
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
-                connection.closeResource();
-            } else {
-                if (entityFullyRead || entityLength == 0) {
-                    if (hasTrailers) {
-                        readTrailers();
-                    }
-                    connection.releaseResource();
-                } else {
+            try {
+                if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
                     connection.closeResource();
+                } else {
+                    if (entityFullyRead || entityLength == 0) {
+                        if (hasTrailers) {
+                            readTrailers();
+                        }
+                        connection.releaseResource();
+                    } else {
+                        connection.closeResource();
+                    }
                 }
+            } finally {
+                whenComplete.complete(null);
             }
         }
     }
@@ -158,8 +162,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,
-                                  ClientResponseHeaders responseHeaders,
-                                  CompletableFuture<Void> whenComplete) {
+                                  ClientResponseHeaders responseHeaders) {
         if (inputStream == null) {
             return ReadableEntityBase.empty();
         }

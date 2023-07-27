@@ -285,11 +285,6 @@ class MainTest {
                     .baseUri(application.getBaseUrl().toURI())
                     .build();
 
-            String value = webClient.get()
-                    .path("/books")
-                    .requestEntity(String.class);
-            System.err.println("/books: " + value);
-
             JsonArray bookArray = webClient.get()
                     .path("/books")
                     .requestEntity(JsonArray.class);

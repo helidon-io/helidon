@@ -362,6 +362,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
 
         private void ensureBuffer() {
+            if (currentBuffer != null && currentBuffer.available() > 0) {
+                // we did not read the previous buffer fully
+                return;
+            }
             // chunked encoding - I will just read each chunk fully into memory, as that is how the protocol is designed
             int endOfChunkSize = reader.findNewLine(256);
             if (endOfChunkSize == 256) {

@@ -41,7 +41,7 @@ class Http1BuilderInterceptor implements Prototype.BuilderInterceptor<Http1Confi
     private void sentListeners(Http1Config.BuilderBase<?, ?> target) {
         var listeners = target.sendListeners();
         if (listeners.isEmpty() && target.sendLog()) {
-            target.addReceiveListener(new Http1LoggingConnectionListener("send"));
+            target.addSendListener(new Http1LoggingConnectionListener("send"));
         }
         listeners = target.sendListeners();
         target.compositeSendListener(Http1ConnectionListener.create(listeners));
