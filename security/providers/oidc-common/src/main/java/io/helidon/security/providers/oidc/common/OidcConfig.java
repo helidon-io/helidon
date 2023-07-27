@@ -1538,17 +1538,5 @@ public final class OidcConfig extends TenantConfigImpl {
             return this;
         }
 
-        /**
-         * Allow audience claim to be optional.
-         *
-         * @param optional whether the audience claim is be optional (true) or not (false)
-         * @return updated builder instance
-         */
-        @ConfiguredOption("false")
-        public Builder optionalAudience(Boolean optional) {
-            setOptionalAudience(optional);
-            return this;
-        }
-
     }
 }
