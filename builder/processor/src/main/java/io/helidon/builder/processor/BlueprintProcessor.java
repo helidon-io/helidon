@@ -293,7 +293,9 @@ public class BlueprintProcessor extends AbstractProcessor {
                 pw.println(javadocLine);
             }
             pw.println(" *");
-            pw.println(" * @see #builder()");
+            if (blueprintDef.builderPublic()) {
+                pw.println(" * @see #builder()");
+            }
             if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
                 pw.println(" * @see #create()");
             }

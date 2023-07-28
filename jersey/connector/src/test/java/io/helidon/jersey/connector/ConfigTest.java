@@ -20,17 +20,18 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webclient.Proxy;
+import io.helidon.nima.webclient.api.Proxy;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
 
 /**
  * Tests {@link HelidonConnector} configuration.

@@ -25,6 +25,9 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.common.tls.Tls;
 
+/**
+ * Common configuration for HTTP protocols.
+ */
 @Configured
 @Prototype.Blueprint(builderPublic = false)
 interface HttpConfigBaseBlueprint {
