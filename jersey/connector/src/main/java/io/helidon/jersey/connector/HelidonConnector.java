@@ -34,7 +34,7 @@ import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
 import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.ReadableEntity;
-import io.helidon.nima.webclient.Proxy;
+import io.helidon.nima.webclient.api.Proxy;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
