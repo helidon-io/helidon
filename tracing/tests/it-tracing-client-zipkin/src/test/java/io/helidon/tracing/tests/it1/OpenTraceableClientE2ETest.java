@@ -33,8 +33,8 @@ import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
-import io.helidon.tracing.opentracing.OpenTracing;
-import io.helidon.tracing.zipkin.ZipkinTracer;
+import io.helidon.tracing.providers.opentracing.OpenTracing;
+import io.helidon.tracing.providers.zipkin.ZipkinTracer;
 
 import brave.Tracing;
 import brave.opentracing.BraveSpanContext;

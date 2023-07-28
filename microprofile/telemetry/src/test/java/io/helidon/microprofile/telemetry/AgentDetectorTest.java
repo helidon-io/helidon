@@ -21,7 +21,7 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import jakarta.enterprise.inject.spi.CDI;
 import org.junit.jupiter.api.Test;

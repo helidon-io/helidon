@@ -588,15 +588,15 @@
             </dependency>
             <dependency>
                 <!-- to add tracer builder -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-opentracing</artifactId>
-                <version>${helidon.version}</version>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-opentracing</artifactId>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <!-- to add tracer builder -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-opentelemetry</artifactId>
-                <version>${helidon.version}</version>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <!-- basic tracing configuration -->
@@ -606,15 +606,15 @@
             </dependency>
             <dependency>
                 <!-- to add Zipkin support -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-zipkin</artifactId>
-                <version>${helidon.version}</version>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-zipkin</artifactId>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <!-- to add Jaeger support -->
-                <groupId>io.helidon.tracing</groupId>
-                <artifactId>helidon-tracing-jaeger</artifactId>
-                <version>${helidon.version}</version>
+                <groupId>io.helidon.tracing.providers</groupId>
+                <artifactId>helidon-tracing-providers-jaeger</artifactId>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <!-- to add TracerResolver support -->

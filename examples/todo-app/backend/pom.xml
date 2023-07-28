@@ -88,8 +88,8 @@
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-zipkin</artifactId>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-zipkin</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

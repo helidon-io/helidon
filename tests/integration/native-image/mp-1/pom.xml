@@ -57,8 +57,8 @@
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing-jaeger</artifactId>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-jaeger</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>

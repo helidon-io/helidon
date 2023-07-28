@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package io.helidon.tracing.tracerresolver;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
-import io.helidon.tracing.opentracing.spi.OpenTracingProvider;
+import io.helidon.tracing.providers.opentracing.OpenTracingTracerBuilder;
+import io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
 
 /**
  * Service to use {@link io.opentracing.contrib.tracerresolver.TracerResolver} to find tracer to use with Helidon.

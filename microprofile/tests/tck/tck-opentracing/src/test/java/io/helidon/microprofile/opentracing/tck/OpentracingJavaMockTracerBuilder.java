@@ -19,7 +19,7 @@ package io.helidon.microprofile.opentracing.tck;
 import java.net.URI;
 
 import io.helidon.common.config.Config;
-import io.helidon.tracing.opentracing.OpenTracingTracerBuilder;
+import io.helidon.tracing.providers.opentracing.OpenTracingTracerBuilder;
 
 import io.opentracing.Tracer;
 import io.opentracing.mock.MockTracer;
