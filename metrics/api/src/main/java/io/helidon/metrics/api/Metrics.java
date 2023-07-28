@@ -37,18 +37,6 @@ public interface Metrics {
      * increasing value.
      *
      * @param name counter name
-     * @param tags further identification of the counter
-     * @return new or previously-registered counter
-     */
-    static Counter counter(String name, Iterable<Tag> tags) {
-        return globalRegistry().counter(name, tags);
-    }
-
-    /**
-     * Registers a new or locates a previously-registered counter, using the global registry, which tracks a monotonically
-     * increasing value.
-     *
-     * @param name counter name
      * @param tags further identification of the counter; MUST be an even number of arguments representing key/value pairs
      *             of tags
      * @return new or previously-registered counter
@@ -73,7 +61,10 @@ public interface Metrics {
      * @return new or existing counter
      * @param <T> type of the object which furnishes the counter value
      */
-    static <T> Counter counter(String name, Iterable<Tag> tags, T target, ToDoubleFunction<T> fn) {
+    static <T> Counter counter(String name,
+                               Iterable<Tag> tags,
+                               T target,
+                               ToDoubleFunction<T> fn) {
         return globalRegistry().counter(name, tags, target, fn);
     }
 
@@ -85,7 +76,8 @@ public interface Metrics {
      * @param tags further identification of the summary
      * @return new or previously-registered distribution summary
      */
-    static DistributionSummary summary(String name, Iterable<Tag> tags) {
+    static DistributionSummary summary(String name,
+                                       Iterable<Tag> tags) {
         return globalRegistry().summary(name, tags);
     }
 
@@ -98,7 +90,8 @@ public interface Metrics {
      *             of tags
      * @return new or previously-registered distribution summary
      */
-    static DistributionSummary summary(String name, String... tags) {
+    static DistributionSummary summary(String name,
+                                       String... tags) {
         return globalRegistry().summary(name, tags);
     }
 
@@ -110,7 +103,8 @@ public interface Metrics {
      * @param tags further identification of the timer
      * @return new or previously-registered timer
      */
-    static Timer timer(String name, Iterable<Tag> tags) {
+    static Timer timer(String name,
+                       Iterable<Tag> tags) {
         return globalRegistry().timer(name, tags);
     }
 
@@ -122,7 +116,8 @@ public interface Metrics {
      * @param tags further identification of the timer; MUST be an even number of arguments representing key/value pairs of tags.
      * @return new or previously-registered timer
      */
-    static Timer timer(String name, String... tags) {
+    static Timer timer(String name,
+                       String... tags) {
         return globalRegistry().timer(name, tags);
     }
 
@@ -137,7 +132,10 @@ public interface Metrics {
      * @param <T> type of the state object which maintains the gauge's value
      * @return state object
      */
-    static <T> T gauge(String name, Iterable<Tag> tags, T obj, ToDoubleFunction<T> valueFunction) {
+    static <T> T gauge(String name,
+                       Iterable<Tag> tags,
+                       T obj,
+                       ToDoubleFunction<T> valueFunction) {
         return globalRegistry().gauge(name, tags, obj, valueFunction);
     }
 
@@ -151,7 +149,9 @@ public interface Metrics {
      * @param <N> specific subtype of {@code Number} which the wrapped object exposes
      * @return {@code number} wrapped by this gauge
      */
-    static <N extends Number> N gauge(String name, Iterable<Tag> tags, N number) {
+    static <N extends Number> N gauge(String name,
+                                      Iterable<Tag> tags,
+                                      N number) {
         return globalRegistry().gauge(name, tags, number);
     }
 
@@ -164,7 +164,8 @@ public interface Metrics {
      * @param <N> specific subtype of {@code Number} which the wrapped object exposes
      * @return {@code number} wrapped by this gauge
      */
-    static <N extends Number> N gauge(String name, N number) {
+    static <N extends Number> N gauge(String name,
+                                      N number) {
         return globalRegistry().gauge(name, number);
     }
 
@@ -178,7 +179,20 @@ public interface Metrics {
      * @param <T> type of the state object which maintains the gauge's value
      * @return state object
      */
-    static <T> T gauge(String name, T obj, ToDoubleFunction<T> valueFunction) {
+    static <T> T gauge(String name,
+                       T obj,
+                       ToDoubleFunction<T> valueFunction) {
         return globalRegistry().gauge(name, obj, valueFunction);
+    }
+
+    /**
+     * Creates a {@link Tag} for the specified key and value.
+     *
+     * @param key tag key
+     * @param value tag value
+     * @return new tag
+     */
+    static Tag tag(String key, String value) {
+        return MetricFactoryManager.INSTANCE.get().tagOf(key, value);
     }
 }

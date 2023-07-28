@@ -28,7 +28,7 @@ import io.helidon.metrics.api.spi.HelidonMetricFactory;
 class MetricFactoryManager {
 
     /**
-     * Instance of the highest-weight implementation of {@code MetricFactory}
+     * Instance of the highest-weight implementation of {@code MetricFactory}.
      */
     static final LazyValue<HelidonMetricFactory> INSTANCE =
             LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(HelidonMetricFactory.class))
@@ -36,4 +36,7 @@ class MetricFactoryManager {
             .build()
             .iterator()
             .next());
+
+    private MetricFactoryManager() {
+    }
 }
