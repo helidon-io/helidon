@@ -39,4 +39,10 @@ class Http1ServerRequestNoEntity extends Http1ServerRequest {
     public ReadableEntity content() {
         return ReadableEntityBase.empty();
     }
+
+    @Override
+    public boolean continueSent() {
+        // we do not have a request entity, so we did not sent expect continue, and we do not need to drain it
+        return false;
+    }
 }

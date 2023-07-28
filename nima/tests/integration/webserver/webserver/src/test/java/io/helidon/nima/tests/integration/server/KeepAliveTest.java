@@ -32,6 +32,8 @@ import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.RepeatedTest;
 
+import static io.helidon.common.http.Http.Status.INTERNAL_SERVER_ERROR_500;
+import static io.helidon.common.http.Http.Status.OK_200;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -55,8 +57,7 @@ class KeepAliveTest {
                 }
                 res.send("done");
             } catch (Exception e) {
-                e.printStackTrace();
-                res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
         }).route(Http.Method.PUT, "/close", (req, res) -> {
@@ -65,7 +66,7 @@ class KeepAliveTest {
                 in.read(buffer);
                 throw new RuntimeException("BOOM!");
             } catch (IOException e) {
-                res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
         });
@@ -73,7 +74,7 @@ class KeepAliveTest {
 
     @RepeatedTest(100)
     void sendWithKeepAlive() {
-        try (HttpClientResponse response = testCall(webClient, true, "/plain", 200)) {
+        try (HttpClientResponse response = testCall(webClient, true, "/plain", OK_200)) {
             assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
 
@@ -81,7 +82,7 @@ class KeepAliveTest {
 
     @RepeatedTest(100)
     void sendWithoutKeepAlive() {
-        try (HttpClientResponse response = testCall(webClient, false, "/plain", 200)) {
+        try (HttpClientResponse response = testCall(webClient, false, "/plain", OK_200)) {
             assertThat(response.headers(), not(hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE)));
         }
     }
@@ -89,7 +90,7 @@ class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithKeepAliveExpectKeepAlive() {
         // we attempt to fully consume request entity, if succeeded, we keep connection keep-alive
-        try (HttpClientResponse response = testCall(webClient, true, "/close", 500)) {
+        try (HttpClientResponse response = testCall(webClient, true, "/close", INTERNAL_SERVER_ERROR_500)) {
             assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
@@ -97,7 +98,7 @@ class KeepAliveTest {
     private static HttpClientResponse testCall(Http1Client client,
                                                boolean keepAlive,
                                                String path,
-                                               int expectedStatus) {
+                                               Http.Status expectedStatus) {
 
         Http1ClientRequest request = client.method(Http.Method.PUT)
                 .uri(path);
@@ -114,7 +115,7 @@ class KeepAliveTest {
                     it.close();
                 });
 
-        assertThat(response.status(), is(Http.Status.create(expectedStatus)));
+        assertThat(response.status(), is(expectedStatus));
 
         return response;
     }

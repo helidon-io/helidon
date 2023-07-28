@@ -91,4 +91,13 @@ public interface ServerRequest extends HttpRequest {
      * @see io.helidon.nima.webserver.http.HttpRouting.Builder#security(HttpSecurity)
      */
     HttpSecurity security();
+
+    /**
+     * Whether we have already sent the {@link io.helidon.common.http.Http.Status#CONTINUE_100} when expect continue is
+     * present. This method returns {@code true} for cases where expect continue is not set.
+     * This method returns {@code false} for requests without entity.
+     *
+     * @return whether 100-Continue was sent back to client
+     */
+    boolean continueSent();
 }
