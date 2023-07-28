@@ -20,8 +20,6 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <presets>
-        <enum path="metrics.provider">microprofile</enum>
-        <enum path="tracing.provider">jaeger</enum>
         <boolean path="db">false</boolean>
     </presets>
     <exec src="/nima/common/common-nima.xml"/>

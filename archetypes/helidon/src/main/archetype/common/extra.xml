@@ -28,9 +28,9 @@
                         <templates engine="mustache" transformations="mustache,packaged">
                             <directory>files</directory>
                             <includes>
-                                <include>src/*/java/**/FtResource.java.mustache</include>
-                                <include>src/*/java/**/FtResourceTest.java.mustache</include>
-                                <include>src/*/java/**/FtService.java.mustache</include>
+                                <include if="${flavor} == 'mp'">src/*/java/**/FtResource.java.mustache</include>
+                                <include if="${flavor} == 'mp'">src/*/java/**/FtResourceTest.java.mustache</include>
+                                <include if="${flavor} == 'nima'">src/*/java/**/FtService.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
@@ -45,15 +45,15 @@
                                 </map>
                             </list>
                             <list key="modules">
-                                <value>io.helidon.microprofile.faulttolerance</value>
+                                <value if="${flavor} == 'mp'">io.helidon.microprofile.faulttolerance</value>
                             </list>
-                            <list key="Main-helidon-imports">
+                            <list key="Main-helidon-imports" if="${flavor} == 'mp'">
                                 <value>io.helidon.http.Http</value>
                             </list>
-                            <list key="Main-other-imports" if="${flavor} != 'nima'">
+                            <list key="Main-other-imports" if="${flavor} == 'mp'">
                                 <value>java.util.concurrent.TimeoutException</value>
                             </list>
-                            <list key="maven-plugins">
+                            <list key="maven-plugins" if="${flavor} == 'mp'">
                                 <value><![CDATA[
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -69,7 +69,7 @@
                         </model>
                     </output>
                 </option>
-                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities" if="${flavor} != 'nima'">
+                <option value="cors" name="CORS" description="Cross-Origin Resource Sharing utilities">
                     <output>
                         <templates engine="mustache" transformations="mustache,packaged">
                             <directory>files</directory>
@@ -91,14 +91,14 @@
                                 <value>jakarta.ws.rs.core.Response</value>
                                 <value>jakarta.ws.rs.HttpMethod</value>
                             </list>
-                            <list key="modules">
+                            <list key="modules" if="${flavor} == 'mp'">
                                 <value>io.helidon.microprofile.cors</value>
                             </list>
                             <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
-                                <value>@AddExtension(CorsCdiExtension.class)</value>
+                                <value if="${flavor} == 'mp'">@AddExtension(CorsCdiExtension.class)</value>
                             </list>
                             <list key="FileServiceTest-helidon-imports" if="${media} contains 'multipart'">
-                                <value>io.helidon.microprofile.cors.CorsCdiExtension</value>
+                                <value if="${flavor} == 'mp'">io.helidon.microprofile.cors.CorsCdiExtension</value>
                             </list>
                             <list key="SimpleGreetService-methods" if="${flavor} == 'mp'">
                                 <value><![CDATA[

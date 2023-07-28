@@ -13,7 +13,7 @@ import {{.}};
 {{/MainTest-other-imports}}
 
 {{#MainTest-static-imports}}
-import {{.}};
+import static {{.}};
 {{/MainTest-static-imports}}
 
 abstract class AbstractMainTest {
@@ -25,7 +25,7 @@ abstract class AbstractMainTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        Main.routing(builder);
+        Main.routing(builder, Config.create());
     }
 
     {{#Abstract-tests}}

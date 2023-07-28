@@ -178,6 +178,9 @@
     }
 ]]></value>
             </list>
+            <list key="modules" if="${extra} contains 'fault-tolerance'">
+                <value>io.helidon.nima.faulttolerance</value>
+            </list>
         </model>
     </output>
 </archetype-script>

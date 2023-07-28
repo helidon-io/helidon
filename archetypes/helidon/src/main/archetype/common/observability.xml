@@ -138,10 +138,14 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                 description="Expose metrics using the Micrometer API">
                             <output>
                                 <model>
-                                    <list key="dependencies" if="${flavor} == 'mp'">
-                                        <map>
+                                    <list key="dependencies">
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.integrations.micrometer</value>
                                             <value key="artifactId">helidon-integrations-micrometer-cdi</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.integrations.micrometer</value>
+                                            <value key="artifactId">helidon-integrations-micrometer</value>
                                         </map>
                                     </list>
                                     <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
@@ -167,10 +171,10 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
         return String.format("Hello %s", name);
     }]]></value>
                                     </list>
-                                    <list key="Main-helidon-imports">
+                                    <list key="Main-helidon-imports" if="${flavor} == 'mp'">
                                         <value>io.helidon.integrations.micrometer.MicrometerSupport</value>
                                     </list>
-                                    <list key="Main-createRouting">
+                                    <list key="Main-createRouting" if="${flavor} == 'mp'">
                                         <value><![CDATA[        MicrometerSupport micrometerSupport = MicrometerSupport.create();]]></value>
                                     </list>
                                     <list key="MainTest-methods" if="${flavor} == 'mp'">
@@ -226,6 +230,92 @@ curl http://localhost:8080/micrometer
 allRequests_total 0.0
 ```
 ]]></value>
+                                    </list>
+                                    <list key="MetricsService-imports">
+                                        <value>io.helidon.integrations.micrometer.MicrometerFeature</value>
+                                        <value>io.micrometer.core.instrument.Counter</value>
+                                        <value>io.micrometer.core.instrument.Timer</value>
+                                    </list>
+                                    <list key="MetricsService-routing">
+                                        <value><![CDATA[
+        .get((req, resp) -> getTimer.record(resp::next))
+        .get("/{name}",
+                (req, resp) -> {
+                        personalizedGetCounter.increment();
+                        resp.next();
+                    })]]></value>
+                                    </list>
+                                    <list key="MetricsService-fields">
+                                        <value><![CDATA[
+    static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+    static final String ALL_GETS_TIMER_NAME = "allGets";
+
+    private final Timer getTimer;
+    private final Counter personalizedGetCounter;
+    private final MicrometerFeature micrometerFeature;]]></value>
+                                    </list>
+                                    <list key="MetricsService-constructor">
+                                        <value><![CDATA[
+        this.micrometerFeature = MicrometerFeature.create(config);
+        this.personalizedGetCounter = micrometerFeature.registry()
+                .counter(PERSONALIZED_GETS_COUNTER_NAME);
+        this.getTimer = Timer.builder(ALL_GETS_TIMER_NAME)
+                .publishPercentileHistogram()
+                .register(micrometerFeature.registry());]]></value>
+                                    </list>
+                                    <list key="MetricsService-methods">
+                                        <value><![CDATA[
+    MicrometerFeature micrometerFeature() {
+        return micrometerFeature;
+    }
+]]></value>
+                                    </list>
+                                    <list key="MainTest-static-imports">
+                                        <value if="${flavor} == 'nima'">org.hamcrest.CoreMatchers.containsString</value>
+                                    </list>
+                                    <list key="Abstract-tests">
+                                        <value><![CDATA[
+    @Test
+    void testMicrometer() {
+        Http1ClientResponse response = client.get()
+                .path("/metrics-greet")
+                .request();
+        assertThat(response.status().code(), is(200));
+
+        response = client.get()
+                .path("/metrics-greet/Joe")
+                .request();
+        assertThat(response.status().code(), is(200));
+
+        response = client.get()
+                .path("/micrometer")
+                .request();
+        assertThat(response.status().code(), is(200));
+
+        String output = response.as(String.class);
+        String expected = MetricsService.ALL_GETS_TIMER_NAME + "_seconds_count " + 2;
+        assertThat("Unable to find expected all-gets timer count " + expected + "; output is " + output,
+                output, containsString(expected));
+
+        assertThat("Unable to find expected all-gets timer sum", output,
+                containsString(MetricsService.ALL_GETS_TIMER_NAME + "_seconds_sum"));
+        expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total " + 1;
+        assertThat("Unable to find expected counter result " + expected + "; output is " + output,
+                output, containsString(expected));
+        response.close();
+    }
+]]></value>
+                                    </list>
+                                    <list key="Main-routing">
+                                        <value><![CDATA[MetricsService metricsService = new MetricsService(config);
+]]></value>
+                                    </list>
+                                    <list key="Main-routing-builder">
+                                        <value><![CDATA[.register("/metrics-greet", metricsService)
+.addFeature(metricsService.micrometerFeature())]]></value>
+                                    </list>
+                                    <list key="modules">
+                                        <value if="${flavor} == 'nima'">io.helidon.integrations.micrometer</value>
                                     </list>
                                 </model>
                             </output>
@@ -291,7 +381,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value key="artifactId">helidon-microprofile-health</value>
                                     </map>
                                 </list>
-                                <list key="Main-createRouting">
+                                <list key="Main-createRouting" if="${flavor} == 'mp'">
                                     <value template="mustache" order="0"><![CDATA[
         HealthSupport health = HealthSupport.builder()
                 .add(HealthChecks.healthChecks()) // Adds a convenient set of checks
@@ -311,8 +401,8 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                 .get();
         assertThat(response.getStatus(), is(200));
     }]]></value>
-                                    </list>
-                                <list key="readme-sections" if="${flavor} != 'nima'">
+                                </list>
+                                <list key="readme-sections" if="${flavor} == 'mp'">
                                     <value><![CDATA[
 ## Try health
 
@@ -323,6 +413,86 @@ curl -s -X GET http://localhost:8080/health
 ```
 
 ]]></value>
+                                </list>
+                                <list key="dependencies" if="${flavor} == 'nima'">
+                                    <map order="800">
+                                        <value key="groupId">io.helidon.nima.observe</value>
+                                        <value key="artifactId">helidon-nima-observe-health</value>
+                                    </map>
+                                    <map order="800">
+                                        <value key="groupId">io.helidon.health</value>
+                                        <value key="artifactId">helidon-health-checks</value>
+                                    </map>
+                                </list>
+                                <list key="Observe-feature-builder" if="${flavor} == 'nima'">
+                                    <value><![CDATA[
+                        .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                            .useSystemServices(true)
+                            .addCheck(() -> HealthCheckResponse.builder()
+                                    .status(HealthCheckResponse.Status.UP)
+                                    .detail("time", System.currentTimeMillis())
+                                    .build(), HealthCheckType.READINESS)
+                            .addCheck(() -> HealthCheckResponse.builder()
+                                    .status(isStarted())
+                                    .detail("time", System.currentTimeMillis())
+                                    .build(), HealthCheckType.STARTUP)
+                            .build()))
+]]></value>
+                                </list>
+<!--                                <list key="Abstract-tests" if="${flavor} == 'nima'">-->
+<!--                                    <value><![CDATA[-->
+<!--    @Test-->
+<!--    void testHealthObserver() {-->
+<!--        try (Http1ClientResponse response = client.get("/health").request()) {-->
+<!--            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));-->
+<!--        }-->
+<!--    }-->
+<!--]]></value>-->
+<!--                                </list>-->
+                                <list key="Main-helidon-imports" if="${flavor} == 'nima'">
+                                    <value>io.helidon.health.HealthCheckResponse</value>
+                                    <value>io.helidon.health.HealthCheckType</value>
+                                    <value>io.helidon.nima.observe.health.HealthFeature</value>
+                                    <value>io.helidon.nima.observe.health.HealthObserveProvider</value>
+                                </list>
+                                <list key="Main-java-imports" if="${flavor} == 'nima'">
+                                    <value>java.time.Duration</value>
+                                </list>
+                                <list key="Main-fields" if="${flavor} == 'nima'">
+                                    <value><![CDATA[    private static long serverStartTime;]]></value>
+                                </list>
+                                <list key="Main-main" if="${flavor} == 'nima'">
+                                    <value><![CDATA[        serverStartTime = System.currentTimeMillis();]]></value>
+                                </list>
+                                <list key="Main-content" if="${flavor} == 'nima'">
+                                    <value><![CDATA[
+private static boolean isStarted() {
+    return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;
+}
+]]></value>
+                                </list>
+                                <list key="readme-sections" if="${flavor} == 'nima'">
+                                    <value><![CDATA[
+## Try health
+
+This example shows the basics of using Helidon SE Health. It uses the
+set of built-in health checks that Helidon provides plus defines a
+custom health check.
+
+Note the port number reported by the application.
+
+Probe the health endpoints:
+
+```bash
+curl -X GET http://localhost:PORT/health/
+curl -X GET http://localhost:PORT/health/ready
+```
+
+]]></value>
+                                </list>
+                                <list key="modules" if="${flavor} == 'nima'">
+                                    <value>io.helidon.nima.observe.health</value>
+                                    <value>io.helidon.health.checks</value>
                                 </list>
                             </model>
                         </output>
@@ -343,7 +513,7 @@ curl -s -X GET http://localhost:8080/health
                                 name="Jaeger"
                                 description="Send traces to a Jaeger backend" >
                             <output>
-                                <model>
+                                <model if="${flavor} == 'mp'">
                                     <list key="dependencies">
                                         <map order="800">
                                             <value key="groupId">io.helidon.tracing.providers</value>
@@ -363,7 +533,7 @@ curl -s -X GET http://localhost:8080/health
                                 name="Zipkin"
                                 description="Send traces to a Zipkin backend">
                             <output>
-                                <model>
+                                <model if="${flavor} == 'mp'">
                                     <list key="dependencies">
                                         <map order="800">
                                             <value key="groupId">io.helidon.tracing.providers</value>

@@ -1,0 +1,88 @@
+package {{package}};
+
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
+
+{{#MetricsService-imports}}
+import {{.}};
+{{/MetricsService-imports}}
+import io.helidon.common.http.Http;
+import io.helidon.config.Config;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
+/**
+ * A simple service to greet you. Examples:
+ * <p>
+ * Get default greeting message:
+ * {@code curl -X GET http://localhost:8080/metrics-greet}
+ * <p>
+ * Get greeting message for Joe:
+ * {@code curl -X GET http://localhost:8080/metrics-greet/Joe}
+ * <p>
+ * <p>
+ * The message is returned as a String
+ */
+class MetricsService implements HttpService {
+
+{{#MetricsService-fields}}
+{{.}}
+{{/MetricsService-fields}}
+
+
+    MetricsService(Config config) {
+        {{#MetricsService-constructor}}
+        {{.}}
+        {{/MetricsService-constructor}}
+    }
+
+    /**
+     * A service registers itself by updating the routing rules.
+     *
+     * @param rules the routing rules.
+     */
+    @Override
+    public void routing(HttpRules rules) {
+        rules
+                {{#MetricsService-routing}}
+                {{.}}
+                {{/MetricsService-routing}}
+                .get("/", this::getDefaultMessageHandler)
+                .get("/{name}", this::getMessageHandler);
+    }
+
+    /**
+     * Return a worldly greeting message.
+     *
+     * @param request  the server request
+     * @param response the server response
+     */
+    private void getDefaultMessageHandler(ServerRequest request,
+                                          ServerResponse response) {
+        sendResponse(response, "Hello World!");
+    }
+
+    /**
+     * Return a greeting message using the name that was provided.
+     *
+     * @param request  the server request
+     * @param response the server response
+     */
+    private void getMessageHandler(ServerRequest request,
+                                   ServerResponse response) {
+        String name = request.path().pathParameters().value("name");
+        sendResponse(response, name);
+    }
+
+    private void sendResponse(ServerResponse response, String name) {
+        String msg = String.format("Hello %s!", name);
+        response.send(msg);
+    }
+
+{{#MetricsService-methods}}
+{{.}}
+{{/MetricsService-methods}}
+
+}

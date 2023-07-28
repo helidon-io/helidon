@@ -58,6 +58,7 @@
             </list>
             <list key="MainTest-helidon-imports">
                 <value>io.helidon.http.Http</value>
+                <value>io.helidon.config.Config</value>
                 <value>io.helidon.webserver.testing.junit5.SetUpRoute</value>
                 <value>io.helidon.webclient.http1.Http1Client</value>
                 <value>io.helidon.webclient.http1.Http1ClientResponse</value>
@@ -67,13 +68,16 @@
                 <value>org.junit.jupiter.api.Test</value>
             </list>
             <list key="MainTest-static-imports">
-                <value>static org.hamcrest.MatcherAssert.assertThat</value>
-                <value>static org.hamcrest.Matchers.is</value>
+                <value>org.hamcrest.MatcherAssert.assertThat</value>
+                <value>org.hamcrest.Matchers.is</value>
             </list>
             <list key="modules">
                 <value>io.helidon.webserver</value>
                 <value>io.helidon.http</value>
                 <value>io.helidon.config</value>
+            </list>
+            <list key="Main-routing-builder">
+                <value><![CDATA[.register("/greet", new GreetService())]]></value>
             </list>
         </model>
     </output>

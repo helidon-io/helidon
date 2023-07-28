@@ -21,6 +21,10 @@ import {{.}};
  */
 public final class Main {
 
+{{#Main-fields}}
+{{.}}
+{{/Main-fields}}
+
     /**
      * Cannot be instantiated.
      */
@@ -35,11 +39,15 @@ public final class Main {
          // load logging configuration
         LogConfig.configureRuntime();
 
+        {{#Main-main}}
+        {{.}}
+        {{/Main-main}}
+
         Config config = Config.create();
 
         WebServer server = WebServer.builder()
                 .config(config.get("server"))
-                .routing(Main::routing)
+                .routing(r -> routing(r, config))
                 .build()
                 .start();
 
@@ -49,7 +57,7 @@ public final class Main {
     /**
      * Updates HTTP Routing.
      */
-    static void routing(HttpRouting.Builder routing) {
+    static void routing(HttpRouting.Builder routing, Config config) {
         {{#Main-routing}}
         {{.}}
         {{/Main-routing}}

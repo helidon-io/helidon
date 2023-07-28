@@ -20,6 +20,12 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <output>
+        <templates engine="mustache" transformations="mustache,packaged" if="${metrics}">
+            <directory>files</directory>
+            <includes>
+                <include>**/MetricsService.java.mustache</include>
+            </includes>
+        </templates>
         <model if="${health} || ${metrics} || ${tracing}">
             <list key="Main-helidon-imports">
                 <value>io.helidon.webserver.observe.ObserveFeature</value>
@@ -89,13 +95,6 @@
             <list key="Main-static-imports" if="${tracing}">
                 <value>static io.helidon.http.Http.Method.GET</value>
             </list>
-            <list key="Observe-feature-builder">
-                <value if="${health}"><![CDATA[.addProvider(HealthObserveProvider.create(HealthFeature.builder()
-                                               .addCheck(HeapMemoryHealthCheck.create())
-                                               .addCheck(DiskSpaceHealthCheck.create())
-                                               .addCheck(DeadlockHealthCheck.create())
-                                               .build()))]]></value>
-            </list>
             <list key="Main-routing-builder" if="${tracing}">
                 <value if="${tracing}"><![CDATA[.addFeature(TracingFeature.create(tracer))
                 .route(Http1Route.route(GET, "/versionspecific", new TracedHandler(tracer, "HTTP/1.1 route")))
@@ -131,14 +130,6 @@ private static class TracedHandler implements Handler {
 ]]></value>
             </list>
             <list key="Abstract-tests">
-                <value if="${health}"><![CDATA[
-    @Test
-    void testHealthObserver() {
-        try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
-        }
-    }
-]]></value>
                 <value if="${metrics}"><![CDATA[
     @Test
     void testMetricsObserver() {
@@ -171,6 +162,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
                 <value if="${health}">io.helidon.webserver.observe.health</value>
                 <value if="${health}">io.helidon.health.checks</value>
                 <value if="${metrics}">io.helidon.webserver.observe.metrics</value>
+                <value if="${metrics}">io.helidon.nima.observe.metrics</value>
                 <value if="${metrics}">io.helidon.metrics.api</value>
                 <value if="${tracing}">io.helidon.webserver.http2</value>
                 <value if="${tracing}">io.helidon.webserver.tracing</value>

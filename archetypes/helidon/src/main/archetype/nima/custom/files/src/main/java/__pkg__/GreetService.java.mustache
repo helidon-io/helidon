@@ -6,15 +6,11 @@ import java.util.concurrent.atomic.AtomicReference;
 {{#GreetService-imports}}
 {{.}}
 {{/GreetService-imports}}
-import io.helidon.http.Http;
-import io.helidon.webserver.http.HttpRules;
-import io.helidon.webserver.http.HttpService;
-import io.helidon.webserver.http.ServerRequest;
-import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
+import io.helidon.common.http.Http;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
 
 /**
  * A simple service to greet you. Examples:
@@ -28,15 +24,13 @@ import jakarta.json.JsonObject;
  * Change greeting
  * {@code curl -X PUT -H "Content-Type: application/json" -d '{"greeting" : "Howdy"}' http://localhost:8080/greet/greeting}
  * <p>
- * The message is returned as a JSON object
+ * The message is returned as a String
  */
 class GreetService implements HttpService {
 
 {{#GreetService-fields}}
 {{.}}
 {{/GreetService-fields}}
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The config value for the key {@code greeting}.
@@ -92,25 +86,11 @@ class GreetService implements HttpService {
 
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting.get(), name);
-
-        JsonObject returnObject = JSON.createObjectBuilder()
-                .add("message", msg)
-                .build();
-        response.send(returnObject);
+        response.send(msg);
     }
 
-    private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
-
-        if (!jo.containsKey("greeting")) {
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "No greeting provided")
-                    .build();
-            response.status(Http.Status.BAD_REQUEST_400)
-                    .send(jsonErrorObject);
-            return;
-        }
-
-        greeting.set(jo.getString("greeting"));
+    private void updateGreetingFromJson(String update, ServerResponse response) {
+        greeting.set(update);
         response.status(Http.Status.NO_CONTENT_204).send();
     }
 
@@ -122,7 +102,7 @@ class GreetService implements HttpService {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        updateGreetingFromJson(request.content().as(JsonObject.class), response);
+        updateGreetingFromJson(request.content().as(String.class), response);
     }
 
 }

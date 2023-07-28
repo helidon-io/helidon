@@ -43,9 +43,6 @@
                                                 <value key="artifactId">helidon-http-media-jsonp</value>
                                             </map>
                                         </list>
-                                        <list key="Main-routing-builder">
-                                            <value>.register("/greet", new GreetService())</value>
-                                        </list>
                                         <list key="MainTest-other-imports">
                                             <value>jakarta.json.JsonObject</value>
                                         </list>
@@ -106,9 +103,6 @@
                                                 <value key="groupId">io.helidon.http.media</value>
                                                 <value key="artifactId">helidon-http-media-jsonb</value>
                                             </map>
-                                        </list>
-                                        <list key="Main-routing-builder" if="${flavor} == 'nima'">
-                                            <value><![CDATA[.register("/greet", new GreetService())]]></value>
                                         </list>
                                         <list key="Abstract-tests" if="${flavor} == 'nima'">
                                             <value><![CDATA[

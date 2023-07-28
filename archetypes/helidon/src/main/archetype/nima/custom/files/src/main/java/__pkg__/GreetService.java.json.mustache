@@ -2,6 +2,9 @@ package {{package}};
 
 import java.util.concurrent.atomic.AtomicReference;
 
+{{#GreetService-imports}}
+{{.}}
+{{/GreetService-imports}}
 import io.helidon.http.Http;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -9,6 +12,10 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 public class GreetService implements HttpService {
+
+{{#GreetService-fields}}
+{{.}}
+{{/GreetService-fields}}
 
     /**
      * The config value for the key {@code greeting}.
@@ -19,6 +26,10 @@ public class GreetService implements HttpService {
         greeting.set("Hello");
     }
 
+{{#GreetService-constructor}}
+{{.}}
+{{/GreetService-constructor}}
+
     /**
      * A service registers itself by updating the routing rules.
      *
@@ -27,6 +38,9 @@ public class GreetService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         rules
+                {{#GreetService-routing}}
+                {{.}}
+                {{/GreetService-routing}}
                 .get("/", this::getDefaultMessageHandler)
                 .get("/{name}", this::getMessageHandler)
                 .put("/greeting", this::updateGreetingHandler);
