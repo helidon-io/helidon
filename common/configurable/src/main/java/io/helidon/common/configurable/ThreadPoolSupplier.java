@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package io.helidon.common.configurable;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -72,7 +74,7 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         this.growthThreshold = builder.growthThreshold;
         this.growthRate = builder.growthRate;
         this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
-        this.useVirtualThreads = builder.useVirtualThreads || builder.virtualThreadsEnforced;
+        this.useVirtualThreads = builder.useVirtualThreads;
         ObserverManager.registerSupplier(this, name, "general", useVirtualThreads);
     }
 
@@ -111,10 +113,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
 
     ExecutorService getThreadPool() {
         if (useVirtualThreads) {
-            if (VirtualExecutorUtil.isVirtualSupported()) {
-                LOGGER.log(System.Logger.Level.TRACE, "Using unbounded virtual executor service for pool " + name);
-                return ObserverManager.registerExecutorService(this, VirtualExecutorUtil.executorService());
-            }
+            ThreadFactory factory = Thread.ofVirtual().name(name + "-", 0).factory();
+            return ObserverManager.registerExecutorService(this, Executors.newThreadPerTaskExecutor(factory));
         }
 
         ThreadPool result = ThreadPool.create(name,
@@ -165,7 +165,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
         private ThreadPool.RejectionHandler rejectionHandler = DEFAULT_REJECTION_POLICY;
         private String name;
         private boolean useVirtualThreads;
-        private boolean virtualThreadsEnforced;
 
         private Builder() {
         }
@@ -184,13 +183,6 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
 
             if (rejectionHandler == null) {
                 rejectionHandler = DEFAULT_REJECTION_POLICY;
-            }
-
-            if (virtualThreadsEnforced) {
-                if (!VirtualExecutorUtil.isVirtualSupported()) {
-                    throw new IllegalStateException("Virtual threads are required, yet not available on this JVM. "
-                                                            + "Please use a Loom build.");
-                }
             }
 
             return new ThreadPoolSupplier(this);

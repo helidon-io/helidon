@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.configurable;
 
 import java.lang.System.Logger.Level;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -216,7 +218,7 @@ class ObserverManager {
         private final Class<?> type;
 
         private static final LazyValue<ExecutorService> VIRTUAL_EXECUTOR_SERVICE = LazyValue
-                .create(VirtualExecutorUtil::executorService);
+                .create(Executors::newVirtualThreadPerTaskExecutor);
 
         static MethodInvocationImpl create(String displayName, String description, String methodName)  {
             ExecutorService executorService = VIRTUAL_EXECUTOR_SERVICE.get();
