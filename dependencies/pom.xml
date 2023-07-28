@@ -127,10 +127,11 @@
         <version.lib.neo4j>4.4.11</version.lib.neo4j>
         <version.lib.netty>4.1.94.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.8.Final</version.lib.netty-io_uring>
-        <version.lib.oci>3.12.1</version.lib.oci>
+        <version.lib.oci>3.21.0</version.lib.oci>
         <version.lib.ojdbc8>21.3.0.0</version.lib.ojdbc8>
         <version.lib.okhttp3>3.14.9</version.lib.okhttp3>
-        <version.lib.okio>1.17.5</version.lib.okio>
+        <!-- Force upgrade to more current version -->
+        <version.lib.okio>3.4.0</version.lib.okio>
         <version.lib.opentelemetry.semconv>1.22.0-alpha</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry-sdk-extension-autoconfigure>1.22.0-alpha</version.lib.opentelemetry-sdk-extension-autoconfigure>
         <version.lib.opentelemetry.opentracing.shim>1.22.0-alpha</version.lib.opentelemetry.opentracing.shim>
