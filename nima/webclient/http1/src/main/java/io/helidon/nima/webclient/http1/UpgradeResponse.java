@@ -42,10 +42,23 @@ public final class UpgradeResponse {
         this.response = response;
     }
 
+    /**
+     * Create an upgrade success response.
+     *
+     * @param response the HTTP/1.1 response that was returned (successful upgrade)
+     * @param connection client connection, now upgraded to the requested protocol on server side
+     * @return upgrade response that was successful
+     */
     public static UpgradeResponse success(HttpClientResponse response, ClientConnection connection) {
         return new UpgradeResponse(true, connection, new NoCloseResponse(response));
     }
 
+    /**
+     * Create an upgrade failure response.
+     *
+     * @param response the HTTP/1.1 client response that was returned instead of upgrading the connection
+     * @return upgrade response that failed to upgrade
+     */
     public static UpgradeResponse failure(HttpClientResponse response) {
         return new UpgradeResponse(false, null, response);
     }

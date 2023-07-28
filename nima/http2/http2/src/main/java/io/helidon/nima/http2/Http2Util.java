@@ -46,6 +46,11 @@ public final class Http2Util {
                               bytes, 0, PREFACE_LENGTH) == 0;
     }
 
+    /**
+     * HTTP/2 preface data as a buffer data.
+     *
+     * @return a buffer that contains the preface
+     */
     public static BufferData prefaceData() {
         return BufferData.create(PRIOR_KNOWLEDGE_PREFACE);
     }

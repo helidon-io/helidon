@@ -62,7 +62,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
                                              clientConfig.dnsResolver(),
                                              clientConfig.dnsAddressLookup(),
                                              clientRequest.proxy());
-        if (ConnectionCache.supports(ck)) {
+        if (Http2ConnectionCache.supports(ck)) {
             return SupportLevel.SUPPORTED;
         }
 

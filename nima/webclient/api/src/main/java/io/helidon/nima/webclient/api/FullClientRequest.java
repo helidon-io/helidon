@@ -25,6 +25,8 @@ import io.helidon.nima.common.tls.Tls;
 
 /**
  * Client request with getters for all configurable options, used for integration with HTTP version implementations.
+ *
+ * @param <T> type of the implementation, to support fluent API
  */
 public interface FullClientRequest<T extends ClientRequest<T>> extends ClientRequest<T> {
     /**

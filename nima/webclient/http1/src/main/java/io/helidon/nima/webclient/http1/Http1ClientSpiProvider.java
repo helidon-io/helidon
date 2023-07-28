@@ -20,7 +20,17 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 
+/**
+ * {@link java.util.ServiceLoader} provider implementation for HTTP/1.1 protocol.
+ */
 public class Http1ClientSpiProvider implements HttpClientSpiProvider<Http1ClientProtocolConfig> {
+
+    /**
+     * Public constructor required by {@link java.util.ServiceLoader}.
+     */
+    public Http1ClientSpiProvider() {
+    }
+
     @Override
     public String protocolId() {
         return Http1Client.PROTOCOL_ID;

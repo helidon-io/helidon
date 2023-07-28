@@ -35,18 +35,35 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
     String PROTOCOL_ID = "http/1.1";
     /**
      * HTTP/1.1 protocol to use to obtain an instance of HTTP/1.1 specific client from
-     * {@link io.helidon.nima.webclient.api.WebClient#client(io.helidon.nima.webclient.spi.Protocol)}
+     * {@link io.helidon.nima.webclient.api.WebClient#client(io.helidon.nima.webclient.spi.Protocol)}.
      */
     Protocol<Http1Client, Http1ClientProtocolConfig> PROTOCOL = Http1ProtocolProvider::new;
 
+    /**
+     * Create a new builder to construct an HTTP/1.1 client.
+     *
+     * @return fluent API builder
+     */
     static Http1ClientConfig.Builder builder() {
         return Http1ClientConfig.builder();
     }
 
+    /**
+     * Create a new HTTP/1.1 client with custom configuration.
+     *
+     * @param clientConfig client configuration
+     * @return a new client
+     */
     static Http1Client create(Http1ClientConfig clientConfig) {
         return new Http1ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
     }
 
+    /**
+     * Create a new HTTP/1.1 client customizing configuration.
+     *
+     * @param consumer client configuration
+     * @return a new client
+     */
     static Http1Client create(Consumer<Http1ClientConfig.Builder> consumer) {
         return Http1ClientConfig.builder()
                 .update(consumer)
@@ -54,7 +71,7 @@ public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType
     }
 
     /**
-     * Create a new instance.
+     * Create a new instance with default configuration.
      *
      * @return client
      */

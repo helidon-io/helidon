@@ -82,12 +82,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         requestHeaders.remove(Http.Header.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
-        Http2ConnectionAttemptResult result = ConnectionCache.newStream(webClient,
-                                                                        protocolConfig,
-                                                                        connectionKey(serviceRequest),
-                                                                        clientRequest,
-                                                                        uri,
-                                                                        http1EntityHandler);
+        Http2ConnectionAttemptResult result = Http2ConnectionCache.newStream(webClient,
+                                                                             protocolConfig,
+                                                                             connectionKey(serviceRequest),
+                                                                             clientRequest,
+                                                                             uri,
+                                                                             http1EntityHandler);
 
         this.result = result.result();
 

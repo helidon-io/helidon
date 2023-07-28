@@ -84,7 +84,7 @@ class Http2ClientConnectionHandler {
         return switch (result.get()) {
             case HTTP_1 -> http1(webClient, protocolConfig, request, initialUri, http1EntityHandler);
             case HTTP_2 -> http2(webClient, protocolConfig, request, initialUri);
-            case UNKNOWN -> maybeNewConnection(webClient, protocolConfig, request, initialUri, http1EntityHandler);
+            case UNKNOWN -> httpX(webClient, protocolConfig, request, initialUri, http1EntityHandler);
         };
     }
 
@@ -120,11 +120,11 @@ class Http2ClientConnectionHandler {
         }
     }
 
-    private Http2ConnectionAttemptResult maybeNewConnection(WebClient webClient,
-                                                            Http2ClientProtocolConfig protocolConfig,
-                                                            Http2ClientRequestImpl request,
-                                                            ClientUri initialUri,
-                                                            Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+    private Http2ConnectionAttemptResult httpX(WebClient webClient,
+                                               Http2ClientProtocolConfig protocolConfig,
+                                               Http2ClientRequestImpl request,
+                                               ClientUri initialUri,
+                                               Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
         try {
             lock.lockInterruptibly();
         } catch (InterruptedException e) {

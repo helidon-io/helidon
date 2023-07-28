@@ -25,7 +25,6 @@ import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
 import io.helidon.nima.webclient.api.HttpClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
 
 class AppRoleRestApi extends VaultRestApi {
     private static final System.Logger LOGGER = System.getLogger(AppRoleRestApi.class.getName());

@@ -97,6 +97,12 @@ public class TcpClientConnection implements ClientConnection {
         return new TcpClientConnection(webClient, connectionKey, tcpProtocolIds, releaseFunction, closeConsumer);
     }
 
+    /**
+     * Connect this connection over the network.
+     * This will resolve proxy connection, TLS negotiation (including ALPN) and return a connected connection.
+     *
+     * @return this connection, connected to the remote socket
+     */
     public TcpClientConnection connect() {
         Tls tls = connectionKey.tls();
         InetSocketAddress targetAddress = inetSocketAddress();

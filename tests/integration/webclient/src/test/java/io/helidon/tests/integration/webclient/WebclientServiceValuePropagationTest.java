@@ -17,7 +17,6 @@ package io.helidon.tests.integration.webclient;
 
 import java.net.URI;
 
-import io.helidon.common.uri.UriFragment;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
@@ -80,7 +79,7 @@ class WebclientServiceValuePropagationTest extends TestParent {
             uri.port(server.port());
             uri.path("/greet/valuesPropagated");
             uri.writeableQuery().add("param", "Hi");
-            uri.fragment(UriFragment.create("Test"));
+            uri.fragment("Test");
 
             return chain.proceed(request);
         }

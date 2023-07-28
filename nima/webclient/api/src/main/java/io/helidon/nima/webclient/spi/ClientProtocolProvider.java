@@ -26,7 +26,7 @@ import io.helidon.nima.webclient.api.WebClient;
  * @param <T> type of protocol
  * @param <C> type of the protocol config
  */
-public interface ProtocolProvider<T, C> {
+public interface ClientProtocolProvider<T, C> {
     /**
      * Protocol id for ALPN (protocol negotiation when using TLS).
      *
@@ -49,9 +49,11 @@ public interface ProtocolProvider<T, C> {
     C defaultConfig();
 
     /**
-     * Client SPI to create a protocol builder.
+     * Create a protocol client instance.
      *
-     * @return a new builder
+     * @param client webclient to use
+     * @param config configuration of the protocol
+     * @return a new protocol client
      */
     T protocol(WebClient client, C config);
 }

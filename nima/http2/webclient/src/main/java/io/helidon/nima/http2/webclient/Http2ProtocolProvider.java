@@ -17,9 +17,9 @@
 package io.helidon.nima.http2.webclient;
 
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.spi.ProtocolProvider;
+import io.helidon.nima.webclient.spi.ClientProtocolProvider;
 
-class Http2ProtocolProvider implements ProtocolProvider<Http2Client, Http2ClientProtocolConfig> {
+class Http2ProtocolProvider implements ClientProtocolProvider<Http2Client, Http2ClientProtocolConfig> {
     static final String CONFIG_KEY = "h2";
 
     @Override

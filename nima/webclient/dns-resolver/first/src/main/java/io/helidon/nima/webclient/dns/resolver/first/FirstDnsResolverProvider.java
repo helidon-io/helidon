@@ -28,6 +28,8 @@ import io.helidon.nima.webclient.spi.DnsResolverProvider;
 public class FirstDnsResolverProvider implements DnsResolverProvider {
     /**
      * Public constructor is required for service loader, do not use directly.
+     *
+     * @deprecated do not use directly
      */
     @Deprecated
     public FirstDnsResolverProvider() {

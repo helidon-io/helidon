@@ -32,8 +32,6 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;

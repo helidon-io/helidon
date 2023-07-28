@@ -41,14 +41,31 @@ public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<
         return WebClientConfig.builder();
     }
 
+    /**
+     * Create a new web client with default configuration.
+     *
+     * @return a new web client
+     */
     static WebClient create() {
         return create(WebClientConfig.create());
     }
 
+    /**
+     * Create a new webclient with customized configuration.
+     *
+     * @param config configuration to use
+     * @return a new web client
+     */
     static WebClient create(WebClientConfig config) {
         return new LoomClient(config);
     }
 
+    /**
+     * Create a new webclient, customizing its configuration.
+     *
+     * @param consumer configuration consumer
+     * @return a new web client
+     */
     static WebClient create(Consumer<WebClientConfig.Builder> consumer) {
         return builder()
                 .update(consumer)

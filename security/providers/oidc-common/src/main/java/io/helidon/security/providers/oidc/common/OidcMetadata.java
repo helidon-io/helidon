@@ -21,8 +21,6 @@ import java.net.URI;
 import java.util.Optional;
 
 import io.helidon.common.Errors;
-import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.api.ClientResponseTyped;
 import io.helidon.nima.webclient.api.WebClient;
 
 import jakarta.json.JsonObject;

@@ -245,6 +245,15 @@ public class Proxy {
         };
     }
 
+    /**
+     * Create a socket for TCP, connected through the proxy.
+     *
+     * @param webClient web client to use if HTTP requests must be done
+     * @param inetSocketAddress target address of the request (proxy address is configured as part Proxy instance)
+     * @param socketOptions options for creating sockets
+     * @param tls whether to use TLS
+     * @return a new connected socket
+     */
     public Socket tcpSocket(WebClient webClient,
                             InetSocketAddress inetSocketAddress,
                             SocketOptions socketOptions,

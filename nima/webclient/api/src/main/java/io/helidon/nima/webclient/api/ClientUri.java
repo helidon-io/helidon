@@ -47,7 +47,7 @@ public class ClientUri implements UriInfo {
         this.query = UriQueryWriteable.create().from(baseUri.query());
     }
 
-    public ClientUri(UriInfo baseUri) {
+    private ClientUri(UriInfo baseUri) {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(baseUri);
         this.skipUriEncoding = false;
@@ -201,6 +201,12 @@ public class ClientUri implements UriInfo {
         return this;
     }
 
+    /**
+     * Resolve the provided path against the current path of this URI.
+     *
+     * @param path to resolve
+     * @return updated URI
+     */
     public ClientUri resolvePath(String path) {
         uriBuilder.path(resolvePath(uriBuilder.path().path(), path));
         return this;
@@ -252,9 +258,26 @@ public class ClientUri implements UriInfo {
         return uriBuilder.path();
     }
 
+    /**
+     * Configure the fragment for this URI.
+     *
+     * @param fragment fragment to use
+     * @return updated URI
+     */
     public ClientUri fragment(UriFragment fragment) {
         uriBuilder.fragment(fragment);
         return this;
+    }
+
+    /**
+     * Configure the fragment for this URI, using its decoded form ("human readable"). If you have an encoded fragment,
+     * please use {@link #fragment(io.helidon.common.uri.UriFragment)}.
+     *
+     * @param fragment decoded fragment
+     * @return updated URI
+     */
+    public ClientUri fragment(String fragment) {
+        return fragment(UriFragment.createFromDecoded(fragment));
     }
 
     /**

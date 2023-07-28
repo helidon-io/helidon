@@ -27,6 +27,11 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.api.LoomClient.ProtocolSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
+/**
+ * Client request of any client that support HTTP protocol.
+ * This allows configuration of a request, such as setting headers, query parameters etc.
+ * Terminating methods are {@link #submit(Object)} (and its variants), and {@link #request()} (and its variants).
+ */
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
 

@@ -167,7 +167,7 @@ class Http2WebClientTest {
     @MethodSource("clientTypes")
     void clientGet(String name, LazyValue<Http2Client> client) {
         // reset everything, so we need to create a new connection
-        ConnectionCache.clear();
+        Http2ConnectionCache.clear();
         try (Http2ClientResponse response = client.get()
                 .get()
                 .queryParam("custQueryParam", "test-get")
@@ -185,7 +185,7 @@ class Http2WebClientTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void clientPut(String clientType, LazyValue<Http2Client> client) {
-        ConnectionCache.clear();
+        Http2ConnectionCache.clear();
 
         String payload = clientType + " payload";
         String custHeaderValue = clientType + " header value";
@@ -210,7 +210,7 @@ class Http2WebClientTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void clientPost(String clientType, LazyValue<Http2Client> client) {
-        ConnectionCache.clear();
+        Http2ConnectionCache.clear();
 
         String payload = clientType + " payload";
         String custHeaderValue = clientType + " header value";
@@ -237,7 +237,7 @@ class Http2WebClientTest {
     void multiplexParallelStreamsGet(String clientType, LazyValue<Http2Client> client)
             throws ExecutionException, InterruptedException, TimeoutException {
 
-        ConnectionCache.clear();
+        Http2ConnectionCache.clear();
         Consumer<Integer> callable = id -> {
             try (Http2ClientResponse response = client.get()
                     .get("/h2streaming")

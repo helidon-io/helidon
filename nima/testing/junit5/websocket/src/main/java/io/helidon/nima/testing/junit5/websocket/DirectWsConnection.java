@@ -163,7 +163,6 @@ class DirectWsConnection {
         private final PeerInfo clientPeer;
         private final PeerInfo localPeer;
         private final HelidonSocket socket;
-        private Duration timeout;
 
         private DirectConnect(DataReader reader, DataWriter writer) {
             this.reader = reader;
@@ -213,7 +212,6 @@ class DirectWsConnection {
 
         @Override
         public void readTimeout(Duration readTimeout) {
-            this.timeout = readTimeout;
         }
 
         @Override

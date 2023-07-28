@@ -28,7 +28,9 @@ import io.helidon.nima.webclient.api.WebClient;
  */
 @RuntimeType.PrototypedBy(Http2ClientConfig.class)
 public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType.Api<Http2ClientConfig> {
-
+    /**
+     * HTTP/2 protocol ID, as used by ALPN.
+     */
     String PROTOCOL_ID = "h2";
 
     /**
@@ -40,10 +42,22 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
         return Http2ClientConfig.builder();
     }
 
+    /**
+     * Create a new instance with custom configuration.
+     *
+     * @param clientConfig HTTP/2 client configuration
+     * @return a new HTTP/2 client
+     */
     static Http2Client create(Http2ClientConfig clientConfig) {
         return new Http2ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
     }
 
+    /**
+     * Create a new instance customizing its configuration.
+     *
+     * @param consumer HTTP/2 client configuration
+     * @return a new HTTP/2 client
+     */
     static Http2Client create(Consumer<Http2ClientConfig.Builder> consumer) {
         return create(Http2ClientConfig.builder()
                               .update(consumer)
@@ -51,9 +65,9 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
     }
 
     /**
-     * Create a new instance.
+     * Create a new instance with default configuration.
      *
-     * @return client
+     * @return a new HTTP/2 client
      */
     static Http2Client create() {
         return create(Http2ClientConfig.create());
@@ -63,7 +77,7 @@ public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType
      * Create a new instance based on {@link io.helidon.common.config.Config}.
      *
      * @param config client config
-     * @return client
+     * @return a new HTTP/2 client
      */
     static Http2Client create(Config config) {
         return create(it -> it.config(config));

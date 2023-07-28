@@ -34,8 +34,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientConfig;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;

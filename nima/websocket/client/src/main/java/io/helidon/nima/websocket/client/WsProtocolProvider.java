@@ -18,10 +18,20 @@ package io.helidon.nima.websocket.client;
 
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.spi.ProtocolProvider;
+import io.helidon.nima.webclient.spi.ClientProtocolProvider;
 
-public class WsProtocolProvider implements ProtocolProvider<WsClient, WsClientProtocolConfig> {
+/**
+ * {@link java.util.ServiceLoader} provider implementation for WebSocket protocol.
+ * This supports method {@link io.helidon.nima.webclient.api.WebClient#client(io.helidon.nima.webclient.spi.Protocol)}.
+ */
+public class WsProtocolProvider implements ClientProtocolProvider<WsClient, WsClientProtocolConfig> {
     static final String CONFIG_KEY = "websocket";
+
+    /**
+     * Public constructor required by {@link java.util.ServiceLoader}.
+     */
+    public WsProtocolProvider() {
+    }
 
     @Override
     public String protocolId() {

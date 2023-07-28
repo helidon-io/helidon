@@ -20,7 +20,16 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 
+/**
+ * {@link java.util.ServiceLoader} provider implementation for HTTP/2 protocol.
+ */
 public class Http2ClientSpiProvider implements HttpClientSpiProvider<Http2ClientProtocolConfig> {
+    /**
+     * Public constructor required by {@link java.util.ServiceLoader}.
+     */
+    public Http2ClientSpiProvider() {
+    }
+
     @Override
     public String protocolId() {
         return Http2Client.PROTOCOL_ID;

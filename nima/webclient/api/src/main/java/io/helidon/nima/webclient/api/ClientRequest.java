@@ -38,6 +38,8 @@ import io.helidon.nima.common.tls.Tls;
 /**
  * Request can be reused within a single thread, but it remembers all explicitly configured headers and URI.
  * Implementation is not expected to be thread safe!
+ *
+ * @param <T> type of the implementation, to support fluent API
  */
 public interface ClientRequest<T extends ClientRequest<T>> {
     /**
@@ -270,6 +272,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param type type of requested entity
      * @return correctly typed entity
      * @throws io.helidon.common.http.HttpException in case the response status is not success
+     * @param <E> type of the entity to read from the response
      */
     default <E> E requestEntity(Class<E> type) throws HttpException {
         ClientResponseTyped<E> typedResponse = request(type);

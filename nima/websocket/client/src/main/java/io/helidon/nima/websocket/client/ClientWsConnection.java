@@ -68,8 +68,8 @@ public class ClientWsConnection implements WsSession, Runnable {
      * so it does not block the current thread.
      *
      * @param clientConnection connection to use for this WS connection
-     * @param listener WebSocket listener to handle events on this connection
-     * @param subProtocol chosen sub-protocol of this connection (negotiated during upgrade from HTTP/1)
+     * @param listener         WebSocket listener to handle events on this connection
+     * @param subProtocol      chosen sub-protocol of this connection (negotiated during upgrade from HTTP/1)
      * @return a new WebSocket connection
      */
     public static ClientWsConnection create(ClientConnection clientConnection,
@@ -78,6 +78,13 @@ public class ClientWsConnection implements WsSession, Runnable {
         return new ClientWsConnection(clientConnection, listener, subProtocol);
     }
 
+    /**
+     * Create a new connection without a sub-protocol.
+     *
+     * @param clientConnection connection to work on
+     * @param listener         WebSocket listener to handle events on this connection
+     * @return a new WebSocket connection
+     */
     public static ClientWsConnection create(ClientConnection clientConnection,
                                             WsListener listener) {
         return new ClientWsConnection(clientConnection, listener);

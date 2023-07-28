@@ -29,11 +29,11 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.http.Http;
 import io.helidon.inject.configdriven.api.ConfigDriven;
+import io.helidon.nima.webclient.spi.ClientProtocolProvider;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 import io.helidon.nima.webclient.spi.HttpClientSpiProvider;
 import io.helidon.nima.webclient.spi.Protocol;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
-import io.helidon.nima.webclient.spi.ProtocolProvider;
 
 import jakarta.inject.Inject;
 
@@ -136,7 +136,7 @@ class LoomClient implements WebClient {
     public HttpClientRequest method(Http.Method method) {
         ClientUri clientUri = prototype().baseUri()
                 .map(ClientUri::create) // create from base config
-                .orElseGet(ClientUri::create);// create as empty
+                .orElseGet(ClientUri::create); // create as empty
 
         prototype().baseQuery().ifPresent(clientUri.writeableQuery()::from);
         prototype().baseFragment().ifPresent(clientUri::fragment);
@@ -159,14 +159,14 @@ class LoomClient implements WebClient {
     @SuppressWarnings("unchecked")
     @Override
     public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol) {
-        ProtocolProvider<T, C> provider = protocol.provider();
+        ClientProtocolProvider<T, C> provider = protocol.provider();
         return (T) clientsByProtocol.computeIfAbsent(provider.protocolId(),
-                                                   protocolId -> {
-                                                       C config = protocolConfigs.config(provider.protocolId(),
-                                                                                         provider.configType(),
-                                                                                         provider::defaultConfig);
-                                                       return protocol.provider().protocol(this, config);
-                                                   });
+                                                     protocolId -> {
+                                                         C config = protocolConfigs.config(provider.protocolId(),
+                                                                                           provider.configType(),
+                                                                                           provider::defaultConfig);
+                                                         return protocol.provider().protocol(this, config);
+                                                     });
     }
 
     @Override

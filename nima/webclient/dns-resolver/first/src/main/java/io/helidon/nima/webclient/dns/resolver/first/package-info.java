@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.webclient.spi;
-
 /**
- * Client protocol.
- *
- * @param <T> type of the protocol client
- * @param <C> type of the protocol configuration
+ * DNS resolver implementation that uses the first address from DNS lookup.
  */
-public interface Protocol<T, C> {
-    /**
-     * Provider to use for this protocol.
-     *
-     * @return protocol provider
-     */
-    ClientProtocolProvider<T, C> provider();
-}
+package io.helidon.nima.webclient.dns.resolver.first;

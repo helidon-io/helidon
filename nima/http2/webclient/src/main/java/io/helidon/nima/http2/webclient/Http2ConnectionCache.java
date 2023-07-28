@@ -27,12 +27,15 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
-class ConnectionCache {
+final class Http2ConnectionCache {
     //todo Gracefully close connections in channel cache
     private static final LruCache<ConnectionKey, Boolean> HTTP2_SUPPORTED = LruCache.<ConnectionKey, Boolean>builder()
             .capacity(1000)
             .build();
     private static final Map<ConnectionKey, Http2ClientConnectionHandler> CHANNEL_CACHE = new ConcurrentHashMap<>();
+
+    private Http2ConnectionCache() {
+    }
 
     static boolean supports(ConnectionKey ck) {
         return HTTP2_SUPPORTED.get(ck).isPresent();

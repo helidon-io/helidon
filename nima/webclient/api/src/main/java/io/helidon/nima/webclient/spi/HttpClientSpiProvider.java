@@ -16,5 +16,10 @@
 
 package io.helidon.nima.webclient.spi;
 
-public interface HttpClientSpiProvider<T> extends ProtocolProvider<HttpClientSpi, T> {
+/**
+ * A {@link java.util.ServiceLoader} provider interface to obtain clients that support HTTP protocol.
+ *
+ * @param <T> type of configuration used by the provider implementation
+ */
+public interface HttpClientSpiProvider<T> extends ClientProtocolProvider<HttpClientSpi, T> {
 }

@@ -44,6 +44,7 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
      * handle the connection close. In case of failure, this is just a regular client response that closes the connection
      *  (or returns it to the pool)
      *
+     * @param protocol protocol ID for upgrade
      * @return upgrade response
      */
     UpgradeResponse upgrade(String protocol);

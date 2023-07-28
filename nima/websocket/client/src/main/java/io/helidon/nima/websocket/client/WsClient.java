@@ -38,6 +38,12 @@ public interface WsClient extends RuntimeType.Api<WsClientConfig> {
         return WsClientConfig.builder();
     }
 
+    /**
+     * Create a new WebSocket client with custom configuration.
+     *
+     * @param clientConfig websocket client configuration
+     * @return a new WebSocket client
+     */
     static WsClient create(WsClientConfig clientConfig) {
         WebClient webClient = WebClient.create(it -> it.from(clientConfig));
         return new WsClientImpl(webClient,
@@ -45,6 +51,12 @@ public interface WsClient extends RuntimeType.Api<WsClientConfig> {
                                 clientConfig);
     }
 
+    /**
+     * Create a new WebSocket client customizing its configuration.
+     *
+     * @param consumer websocket client configuration consumer
+     * @return a new WebSocket client
+     */
     static WsClient create(Consumer<WsClientConfig.Builder> consumer) {
         return WsClientConfig.builder()
                 .update(consumer)

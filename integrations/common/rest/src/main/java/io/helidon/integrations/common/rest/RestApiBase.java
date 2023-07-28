@@ -37,7 +37,6 @@ import io.helidon.nima.faulttolerance.FtHandler;
 import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
 
 import io.opentracing.SpanContext;
 import jakarta.json.JsonBuilderFactory;

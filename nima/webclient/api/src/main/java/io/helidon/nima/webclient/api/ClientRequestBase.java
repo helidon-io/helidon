@@ -42,6 +42,12 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webclient.spi.WebClientService;
 
+/**
+ * Abstract base implementation of an HTTP client. Provides helpful methods to handle cookies, client services etc.
+ *
+ * @param <T> type of the request
+ * @param <R> type of the response
+ */
 public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends HttpClientResponse>
         implements FullClientRequest<T> {
     /**
@@ -344,6 +350,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param whenSent      completable future to be completed when the request is sent over the network
      * @param whenComplete  completable future to be completed when the request/response interaction finishes
      * @param httpCallChain invocation of the HTTP request (the actual network call)
+     * @param usedUri       URI configured on the request, combined with the base URI of the client
      * @return web client service response
      */
     protected WebClientServiceResponse invokeServices(WebClientService.Chain httpCallChain,

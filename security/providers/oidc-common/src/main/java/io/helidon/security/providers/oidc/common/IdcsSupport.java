@@ -23,8 +23,6 @@ import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 

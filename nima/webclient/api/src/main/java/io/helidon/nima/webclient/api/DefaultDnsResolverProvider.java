@@ -20,15 +20,12 @@ import io.helidon.nima.webclient.spi.DnsResolver;
 import io.helidon.nima.webclient.spi.DnsResolverProvider;
 
 /**
- * Provider of the {@link DefaultDnsResolver} instance.
+ * Provider of the {@link DefaultDnsResolver} instance. Not looked up by {@link java.util.ServiceLoader},
+ * registered manually.
  */
 class DefaultDnsResolverProvider implements DnsResolverProvider {
 
-    /**
-     * Create new instance of the {@link DefaultDnsResolverProvider}.
-     * This should be used only for purposes of SPI.
-     */
-    public DefaultDnsResolverProvider() {
+    DefaultDnsResolverProvider() {
     }
 
     @Override

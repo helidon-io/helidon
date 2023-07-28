@@ -17,9 +17,9 @@
 package io.helidon.nima.webclient.http1;
 
 import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.spi.ProtocolProvider;
+import io.helidon.nima.webclient.spi.ClientProtocolProvider;
 
-class Http1ProtocolProvider implements ProtocolProvider<Http1Client, Http1ClientProtocolConfig> {
+class Http1ProtocolProvider implements ClientProtocolProvider<Http1Client, Http1ClientProtocolConfig> {
     static final String CONFIG_KEY = "http_1_1";
 
     @Override
