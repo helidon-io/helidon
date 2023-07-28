@@ -15,20 +15,21 @@
  */
 package io.helidon.dbclient.metrics.jdbc;
 
+import java.util.function.Consumer;
+
 import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.HikariCpExtension;
+import io.helidon.dbclient.jdbc.JdbcCpExtension;
 
 import com.codahale.metrics.MetricRegistry;
-import com.zaxxer.hikari.HikariConfig;
 
 /**
  * Registers JDBC connection pool metrics to {@code HikariConnectionPool}.
  */
-final class HikariMetricsExtension implements HikariCpExtension {
+final class JdbcMetricsExtension implements JdbcCpExtension {
     private final Config config;
     private final boolean enabled;
 
-    private HikariMetricsExtension(Config config, boolean enabled) {
+    private JdbcMetricsExtension(Config config, boolean enabled) {
         this.config = config;
         this.enabled = enabled;
     }
@@ -39,21 +40,24 @@ final class HikariMetricsExtension implements HikariCpExtension {
      * @param config config
      * @return HikariCpExtension
      */
-    static HikariMetricsExtension create(Config config) {
-        return new HikariMetricsExtension(config, config.get("enabled").asBoolean().orElse(true));
+    static JdbcMetricsExtension create(Config config) {
+        return new JdbcMetricsExtension(config, config.get("enabled").asBoolean().orElse(true));
     }
 
     /**
-     * Register {@code MetricRegistry} instance with listener into Hikari CP configuration.
+     * Register {@link MetricRegistry} instance with listener into connection pool configuration.
+     * Provided {@link MetricRegistry} instance consumer is responsible for setting this instance
+     * to connection pool configuration.
      *
-     * @param poolConfig Hikari CP configuration
+     * @param processRegistry {@link MetricRegistry} instance consumer
      */
     @Override
-    public void configure(HikariConfig poolConfig) {
+    public void metricRegistry(Consumer<Object> processRegistry) {
         if (enabled) {
-            final MetricRegistry metricRegistry = new MetricRegistry();
+            MetricRegistry metricRegistry = new MetricRegistry();
             metricRegistry.addListener(DropwizardMetricsListener.create(config));
-            poolConfig.setMetricRegistry(metricRegistry);
+            processRegistry.accept(metricRegistry);
         }
     }
+
 }

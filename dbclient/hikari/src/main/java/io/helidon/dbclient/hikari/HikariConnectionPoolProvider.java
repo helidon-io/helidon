@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.hikari;
+
+import java.util.List;
 
 import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.JdbcCpExtension;
+import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
 
 /**
- * {@link io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider} implementation for {@link JdbcMetricsExtension}.
+ * Hikari connection pool {@link java.util.ServiceLoader} provider.
  */
-public class JdbcMetricsExtensionProvider implements JdbcCpExtensionProvider {
+public class HikariConnectionPoolProvider
+        implements JdbcConnectionPoolProvider<HikariConnectionPool> {
+
+    private static final String  CONFIG_NAME = "hikari";
 
     @Override
     public String configKey() {
-        return "pool-metrics";
+        return CONFIG_NAME;
     }
 
     @Override
-    public JdbcCpExtension extension(Config config) {
-        return JdbcMetricsExtension.create(config);
+    public HikariConnectionPool create(Config config, String name, List<JdbcCpExtensionProvider> extensions) {
+        return HikariConnectionPool.builder(extensions)
+                .config(config)
+                .serviceName(name)
+                .build();
     }
 
 }

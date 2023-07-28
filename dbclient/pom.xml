@@ -33,6 +33,7 @@
     <modules>
         <module>dbclient</module>
         <module>jdbc</module>
+        <module>hikari</module>
         <module>mongodb</module>
         <module>tracing</module>
         <module>metrics</module>

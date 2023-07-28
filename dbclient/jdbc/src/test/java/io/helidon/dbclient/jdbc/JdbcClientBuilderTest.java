@@ -37,11 +37,13 @@ class JdbcClientBuilderTest {
 
     private static final DbClientServiceContext TEST_SERVICE_CONTEXT = Mockito.mock(DbClientServiceContext.class);
 
+    private static final JdbcConnectionPool TEST_POOL = () -> null;
+
     @Test
     void testDbClientBuildWithService() {
         DbClient dbClient = new JdbcClientBuilder()
                 .addService(context -> TEST_SERVICE_CONTEXT)
-                .connectionPool(() -> null)
+                .connectionPool(TEST_POOL)
                 .build();
         DbClientContext clientContext = dbClient.unwrap(JdbcClient.class).context();
         List<DbClientService> services = clientContext.clientServices();
@@ -58,7 +60,7 @@ class JdbcClientBuilderTest {
     void testDefaultParametersSetterConfig() {
         DbClient dbClient = new JdbcClientBuilder()
                 .addService(context -> TEST_SERVICE_CONTEXT)
-                .connectionPool(() -> null)
+                .connectionPool(TEST_POOL)
                 .build();
         JdbcClientContext clientContext = dbClient.unwrap(JdbcClient.class).context();
         assertThat(clientContext.parametersConfig().useNString(), is(false));
@@ -74,7 +76,7 @@ class JdbcClientBuilderTest {
     void testCustomParametersSetterConfig() {
         DbClient dbClient = new JdbcClientBuilder()
                 .addService(context -> TEST_SERVICE_CONTEXT)
-                .connectionPool(() -> null)
+                .connectionPool(TEST_POOL)
                 .parametersSetter(JdbcParametersConfig.builder()
                                           .useNString(true)
                                           .useStringBinding(false)
@@ -100,7 +102,7 @@ class JdbcClientBuilderTest {
         DbClient dbClient = new JdbcClientBuilder()
                 .config(config.get("db"))
                 .addService(context -> TEST_SERVICE_CONTEXT)
-                .connectionPool(() -> null)
+                .connectionPool(TEST_POOL)
                 .build();
         JdbcClientContext clientContext = dbClient.unwrap(JdbcClient.class).context();
         assertThat(clientContext.parametersConfig().useNString(), is(true));

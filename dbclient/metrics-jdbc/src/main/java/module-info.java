@@ -14,22 +14,24 @@
  * limitations under the License.
  */
 
-import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
+import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
 import io.helidon.dbclient.metrics.jdbc.JdbcMetricsExtensionProvider;
 
 /**
  * Metrics support for Helidon Database Client JDBC.
  */
 module io.helidon.dbclient.metrics.jdbc {
-    requires io.helidon.dbclient;
-    requires io.helidon.dbclient.jdbc;
-    requires io.helidon.metrics;
-    requires io.helidon.dbclient.metrics;
-    requires com.zaxxer.hikari;
+
+    requires transitive io.helidon.dbclient;
+    requires transitive io.helidon.dbclient.jdbc;
+    requires transitive io.helidon.dbclient.metrics;
+    requires transitive io.helidon.metrics;
+
     requires com.codahale.metrics;
 
     exports io.helidon.dbclient.metrics.jdbc;
 
-    provides HikariCpExtensionProvider
+    provides JdbcCpExtensionProvider
             with JdbcMetricsExtensionProvider;
+
 }

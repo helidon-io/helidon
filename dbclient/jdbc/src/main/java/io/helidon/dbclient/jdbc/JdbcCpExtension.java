@@ -15,17 +15,20 @@
  */
 package io.helidon.dbclient.jdbc;
 
-import com.zaxxer.hikari.HikariConfig;
+import java.util.function.Consumer;
 
 /**
  * Interceptor to handle connection pool configuration.
+ * Interceptor does not have access to connection pool implementation so connection pool must provide
+ * consumers for provided configuration values.
  */
-public interface HikariCpExtension {
+public interface JdbcCpExtension {
 
     /**
-     * Set additional configuration option.
+     * Process registry of metric instances on registered connection pool.
      *
-     * @param poolConfig pool configuration
+     * @param processRegistry pool configuration
      */
-    void configure(HikariConfig poolConfig);
+    void metricRegistry(Consumer<Object> processRegistry);
+
 }

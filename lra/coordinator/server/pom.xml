@@ -88,6 +88,10 @@
             <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-hikari</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.parsson</groupId>
             <artifactId>parsson</artifactId>
         </dependency>

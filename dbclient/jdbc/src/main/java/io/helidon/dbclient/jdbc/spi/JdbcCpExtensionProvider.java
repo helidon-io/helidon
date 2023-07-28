@@ -18,12 +18,12 @@ package io.helidon.dbclient.jdbc.spi;
 import java.util.ServiceLoader;
 
 import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.HikariCpExtension;
+import io.helidon.dbclient.jdbc.JdbcCpExtension;
 
 /**
- * Java {@link ServiceLoader} interface that provides implementations of {@link HikariCpExtension}.
+ * Java {@link ServiceLoader} interface that provides implementations of {@link io.helidon.dbclient.jdbc.JdbcCpExtension}.
  */
-public interface HikariCpExtensionProvider {
+public interface JdbcCpExtensionProvider {
 
     /**
      * Configuration key of the extension provider.
@@ -33,11 +33,11 @@ public interface HikariCpExtensionProvider {
     String configKey();
 
     /**
-     * Get instance of {@link HikariCpExtension} from config.
+     * Get instance of {@link io.helidon.dbclient.jdbc.JdbcCpExtension} from config.
      *
      * @param config provider configuration
-     * @return HikariCpExtension
+     * @return interceptor to handle connection pool configuration.
      */
-    HikariCpExtension extension(Config config);
+    JdbcCpExtension extension(Config config);
 
 }
