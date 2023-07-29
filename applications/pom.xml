@@ -132,6 +132,8 @@
                                 <overWriteIfNewer>true</overWriteIfNewer>
                                 <includeScope>runtime</includeScope>
                                 <excludeScope>test</excludeScope>
+                                <!-- Hack to work-around https://github.com/square/okio/issues/1306 -->
+                                <excludeArtifactIds>okio</excludeArtifactIds>
                             </configuration>
                         </execution>
                     </executions>
