@@ -22,7 +22,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Demonstrates interception of builders.
  */
-@Prototype.Blueprint(builderInterceptor = BeanBuilderInterceptor.class)
+@Prototype.Blueprint(decorator = BeanBuilderInterceptor.class)
 interface InterceptedBeanBlueprint {
 
     /**

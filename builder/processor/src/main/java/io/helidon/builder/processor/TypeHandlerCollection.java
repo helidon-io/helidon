@@ -262,7 +262,6 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
         List<String> lines = new ArrayList<>();
         lines.add("Objects.requireNonNull(" + singularName + ");");
-        lines.addAll(resolveBuilderLines(actualType(), singularName));
         lines.add("this." + name() + ".add(" + singularName + ");");
         lines.add("return self();");
 

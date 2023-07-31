@@ -28,7 +28,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * {@link Retry} configuration bean.
  */
 // @ConfigBean(value = "fault-tolerance.retries", repeatable = true, wantDefaultConfigBean = true)
-@Prototype.Blueprint(builderInterceptor = RetryConfigBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = RetryConfigBlueprint.BuilderInterceptor.class)
 @Configured(root = true, prefix = "fault-tolerance.retries")
 interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
     /**
@@ -125,9 +125,9 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      */
     Optional<Retry.RetryPolicy> retryPolicy();
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<RetryConfig.BuilderBase<?, ?>> {
+    class BuilderInterceptor implements Prototype.BuilderDecorator<RetryConfig.BuilderBase<?, ?>> {
         @Override
-        public RetryConfig.BuilderBase<?, ?> intercept(RetryConfig.BuilderBase<?, ?> target) {
+        public RetryConfig.BuilderBase<?, ?> decorate(RetryConfig.BuilderBase<?, ?> target) {
             if (target.name().isEmpty()) {
                 target.config()
                         .ifPresent(cfg -> target.name(cfg.name()));

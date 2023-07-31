@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,11 +50,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     /**
      * Fluent API builder base for {@link io.helidon.common.types.TypeInfo}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeInfo>
-            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE>, TypeInfo {
+            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE> {
         private final java.util.List<TypedElementInfo> elementInfo = new java.util.ArrayList<>();
         private final java.util.List<TypedElementInfo> otherElementInfo = new java.util.ArrayList<>();
         private final java.util.Map<TypeName, java.util.List<Annotation>> referencedTypeNamesToAnnotations =
@@ -69,7 +69,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
         /**
          * Protected to support extensibility.
-         *
          */
         protected BuilderBase() {
         }
@@ -101,17 +100,13 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          */
         public BUILDER from(BuilderBase<?, ?> builder) {
-            if (builder.typeName() != null) {
-                typeName(builder.typeName());
-            }
-            if (builder.typeKind() != null) {
-                typeKind(builder.typeKind());
-            }
+            builder.typeName().ifPresent(this::typeName);
+            builder.typeKind().ifPresent(this::typeKind);
             addElementInfo(builder.elementInfo());
             addOtherElementInfo(builder.otherElementInfo());
             addReferencedTypeNamesToAnnotations(builder.referencedTypeNamesToAnnotations());
             addReferencedModuleNames(builder.referencedModuleNames());
-            superTypeInfo(builder.superTypeInfo());
+            builder.superTypeInfo().ifPresent(this::superTypeInfo);
             addInterfaceTypeInfo(builder.interfaceTypeInfo());
             addModifiers(builder.modifiers());
             addAnnotations(builder.annotations());
@@ -119,23 +114,23 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Handles providers and interceptors.
+         * The type element kind.
+         * <p>
+         * Such as
+         * <ul>
+         * <li>{@value TypeValues#KIND_INTERFACE}</li>
+         * <li>{@value TypeValues#KIND_ANNOTATION_TYPE}</li>
+         * <li>and other constants on {@link TypeValues}</li>
+         * </ul>
+         *
+         * @param typeKind the type element kind.
+         * @return updated builder instance
+         * @see #typeKind()
          */
-        protected void preBuildPrototype() {
-        }
-
-        /**
-         * Validates required properties.
-         */
-        protected void validatePrototype() {
-            Errors.Collector collector = Errors.collector();
-            if (typeName == null) {
-                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
-            }
-            if (typeKind == null) {
-                collector.fatal(getClass(), "Property \"type-kind\" is required, but not set");
-            }
-            collector.collect().checkValid();
+        public BUILDER typeKind(String typeKind) {
+            Objects.requireNonNull(typeKind);
+            this.typeKind = typeKind;
+            return self();
         }
 
         /**
@@ -155,7 +150,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * The type name.
          *
          * @param consumer consumer of builder for
-         * the type name
+         *                 the type name
          * @return updated builder instance
          * @see #typeName()
          */
@@ -168,17 +163,21 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The type element kind.
+         * Any Map, List, Set, or method that has {@link TypeName#typeArguments()} will be analyzed and any
+         * type arguments will have
+         * its annotations added here. Note that this only applies to non-built-in types.
          *
-         * @param typeKind the type element kind (e.g., "{@value TypeValues#KIND_INTERFACE}",
-         * "{@value TypeValues#KIND_ANNOTATION_TYPE}",
-         * etc.)
+         * This method replaces all values with the new ones.
+         *
+         * @param referencedTypeNamesToAnnotations all referenced types
          * @return updated builder instance
-         * @see #typeKind()
+         * @see #referencedTypeNamesToAnnotations()
          */
-        public BUILDER typeKind(String typeKind) {
-            Objects.requireNonNull(typeKind);
-            this.typeKind = typeKind;
+        public BUILDER referencedTypeNamesToAnnotations(java.util.Map<? extends TypeName,
+                ? extends java.util.List<Annotation>> referencedTypeNamesToAnnotations) {
+            Objects.requireNonNull(referencedTypeNamesToAnnotations);
+            this.referencedTypeNamesToAnnotations.clear();
+            this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
             return self();
         }
 
@@ -301,33 +300,31 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          *
-         * This method replaces all values with the new ones.
+         * This method keeps existing values, then puts all new values into the map.
+         *
          * @param referencedTypeNamesToAnnotations all referenced types
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
          */
-        public BUILDER referencedTypeNamesToAnnotations(java.util.Map<? extends TypeName,
-                ? extends java.util.List<Annotation>> referencedTypeNamesToAnnotations) {
+        public BUILDER addReferencedTypeNamesToAnnotations(java.util.Map<? extends TypeName, ?
+                extends java.util.List<Annotation>> referencedTypeNamesToAnnotations) {
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
-            this.referencedTypeNamesToAnnotations.clear();
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
             return self();
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link TypeName#typeArguments()} will be analyzed and any
-         * type arguments will have
-         * its annotations added here. Note that this only applies to non-built-in types.
+         * The parent/super class for this type info.
          *
-         * This method keeps existing values, then puts all new values into the map.
-         * @param referencedTypeNamesToAnnotations all referenced types
+         * @param consumer the super type
          * @return updated builder instance
-         * @see #referencedTypeNamesToAnnotations()
+         * @see #superTypeInfo()
          */
-        public BUILDER addReferencedTypeNamesToAnnotations(java.util.Map<? extends TypeName,
-                ? extends java.util.List<Annotation>> referencedTypeNamesToAnnotations) {
-            Objects.requireNonNull(referencedTypeNamesToAnnotations);
-            this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
+        public BUILDER superTypeInfo(java.util.function.Consumer<Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeInfo.builder();
+            consumer.accept(builder);
+            this.superTypeInfo(builder.build());
             return self();
         }
 
@@ -337,7 +334,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * its annotations added here. Note that this only applies to non-built-in types.
          *
          * This method adds a new value to the map value, or creates a new value.
-         * @param key key to add to
+         *
+         * @param key                             key to add to
          * @param referencedTypeNamesToAnnotation additional value for the key
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
@@ -359,7 +357,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * its annotations added here. Note that this only applies to non-built-in types.
          *
          * This method adds a new value to the map value, or creates a new value.
-         * @param key key to add to
+         *
+         * @param key                              key to add to
          * @param referencedTypeNamesToAnnotations additional values for the key
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
@@ -382,7 +381,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * its annotations added here. Note that this only applies to non-built-in types.
          *
          * This method adds a new value to the map, or replaces it if the key already exists.
-         * @param key key to add or replace
+         *
+         * @param key                             key to add or replace
          * @param referencedTypeNamesToAnnotation new value for the key
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
@@ -399,6 +399,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Populated if the (external) module name containing the type is known.
          *
          * This method replaces all values with the new ones.
+         *
          * @param referencedModuleNames type names to its associated defining module name
          * @return updated builder instance
          * @see #referencedModuleNames()
@@ -414,6 +415,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Populated if the (external) module name containing the type is known.
          *
          * This method keeps existing values, then puts all new values into the map.
+         *
          * @param referencedModuleNames type names to its associated defining module name
          * @return updated builder instance
          * @see #referencedModuleNames()
@@ -428,7 +430,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * Populated if the (external) module name containing the type is known.
          *
          * This method adds a new value to the map, or replaces it if the key already exists.
-         * @param key key to add or replace
+         *
+         * @param key                  key to add or replace
          * @param referencedModuleName new value for the key
          * @return updated builder instance
          * @see #referencedModuleNames()
@@ -441,20 +444,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The parent/super class for this type info.
-         *
-         * @param superTypeInfo the super type
-         * @return updated builder instance
-         * @see #superTypeInfo()
-         */
-        BUILDER superTypeInfo(Optional<? extends TypeInfo> superTypeInfo) {
-            Objects.requireNonNull(superTypeInfo);
-            this.superTypeInfo = superTypeInfo.orElse(null);
-            return self();
-        }
-
-        /**
          * Clear existing value of this property.
+         *
          * @return updated builder instance
          * @see #superTypeInfo()
          */
@@ -477,17 +468,17 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The parent/super class for this type info.
+         * The interface classes for this type info.
          *
-         * @param consumer the super type
+         * @param consumer the interface type info
          * @return updated builder instance
-         * @see #superTypeInfo()
+         * @see #interfaceTypeInfo()
          */
-        public BUILDER superTypeInfo(java.util.function.Consumer<TypeInfo.Builder> consumer) {
+        public BUILDER addInterfaceTypeInfo(java.util.function.Consumer<Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeInfo.builder();
             consumer.accept(builder);
-            this.superTypeInfo(builder.build());
+            this.interfaceTypeInfo.add(builder.build());
             return self();
         }
 
@@ -532,18 +523,12 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The interface classes for this type info.
+         * The type name.
          *
-         * @param consumer the interface type info
-         * @return updated builder instance
-         * @see #interfaceTypeInfo()
+         * @return the type name
          */
-        public BUILDER addInterfaceTypeInfo(java.util.function.Consumer<TypeInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypeInfo.builder();
-            consumer.accept(builder);
-            this.interfaceTypeInfo.add(builder.build());
-            return self();
+        public Optional<TypeName> typeName() {
+            return Optional.ofNullable(typeName);
         }
 
         /**
@@ -646,23 +631,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * The type name.
-         *
-         * @return the type name
-         */
-        @Override
-        public TypeName typeName() {
-            return typeName;
-        }
-
-        /**
          * The type element kind.
+         * <p>
+         * Such as
+         * <ul>
+         * <li>{@value TypeValues#KIND_INTERFACE}</li>
+         * <li>{@value TypeValues#KIND_ANNOTATION_TYPE}</li>
+         * <li>and other constants on {@link TypeValues}</li>
+         * </ul>
          *
          * @return the type kind
          */
-        @Override
-        public String typeKind() {
-            return typeKind;
+        public Optional<String> typeKind() {
+            return Optional.ofNullable(typeKind);
         }
 
         /**
@@ -670,7 +651,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the element info
          */
-        @Override
         public java.util.List<TypedElementInfo> elementInfo() {
             return elementInfo;
         }
@@ -681,7 +661,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the other element info
          */
-        @Override
         public java.util.List<TypedElementInfo> otherElementInfo() {
             return otherElementInfo;
         }
@@ -693,7 +672,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the referenced type names to annotations
          */
-        @Override
         public java.util.Map<TypeName, java.util.List<Annotation>> referencedTypeNamesToAnnotations() {
             return referencedTypeNamesToAnnotations;
         }
@@ -703,7 +681,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the referenced module names
          */
-        @Override
         public java.util.Map<TypeName, String> referencedModuleNames() {
             return referencedModuleNames;
         }
@@ -713,7 +690,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the super type info
          */
-        @Override
         public Optional<TypeInfo> superTypeInfo() {
             return Optional.ofNullable(superTypeInfo);
         }
@@ -723,7 +699,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the interface type info
          */
-        @Override
         public java.util.List<TypeInfo> interfaceTypeInfo() {
             return interfaceTypeInfo;
         }
@@ -733,7 +708,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the modifiers
          */
-        @Override
         public java.util.Set<String> modifiers() {
             return modifiers;
         }
@@ -744,7 +718,6 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          *
          * @return the annotations
          */
-        @Override
         public java.util.List<Annotation> annotations() {
             return annotations;
         }
@@ -759,6 +732,39 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     + "modifiers=" + modifiers + ","
                     + "annotations=" + annotations
                     + "}";
+        }
+
+        /**
+         * Validates required properties.
+         */
+        protected void validatePrototype() {
+            Errors.Collector collector = Errors.collector();
+            if (typeName == null) {
+                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
+            }
+            if (typeKind == null) {
+                collector.fatal(getClass(), "Property \"type-kind\" is required, but not set");
+            }
+            collector.collect().checkValid();
+        }
+
+        /**
+         * The parent/super class for this type info.
+         *
+         * @param superTypeInfo the super type
+         * @return updated builder instance
+         * @see #superTypeInfo()
+         */
+        BUILDER superTypeInfo(Optional<? extends TypeInfo> superTypeInfo) {
+            Objects.requireNonNull(superTypeInfo);
+            this.superTypeInfo = superTypeInfo.orElse(null);
+            return self();
+        }
+
+        /**
+         * Handles providers and decorators.
+         */
+        protected void preBuildPrototype() {
         }
 
         /**
@@ -778,11 +784,12 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
             /**
              * Create an instance providing a builder.
+             *
              * @param builder extending builder base of this prototype
              */
             protected TypeInfoImpl(BuilderBase<?, ?> builder) {
-                this.typeName = builder.typeName();
-                this.typeKind = builder.typeKind();
+                this.typeName = builder.typeName().get();
+                this.typeKind = builder.typeKind().get();
                 this.elementInfo = java.util.List.copyOf(builder.elementInfo());
                 this.otherElementInfo = java.util.List.copyOf(builder.otherElementInfo());
                 this.referencedTypeNamesToAnnotations = java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(

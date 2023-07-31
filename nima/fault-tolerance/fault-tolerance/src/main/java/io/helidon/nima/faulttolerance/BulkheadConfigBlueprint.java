@@ -29,7 +29,7 @@ import io.helidon.inject.configdriven.api.ConfigBean;
  */
 @ConfigBean(repeatable = true)
 @Configured(root = true, prefix = "fault-tolerance.bulkheads")
-@Prototype.Blueprint(builderInterceptor = BulkheadConfigBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = BulkheadConfigBlueprint.BuilderInterceptor.class)
 interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
     /**
      * Default limit.
@@ -78,9 +78,9 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      */
     Optional<String> name();
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<BulkheadConfig.BuilderBase<?, ?>> {
+    class BuilderInterceptor implements Prototype.BuilderDecorator<BulkheadConfig.BuilderBase<?, ?>> {
         @Override
-        public BulkheadConfig.BuilderBase<?, ?> intercept(BulkheadConfig.BuilderBase<?, ?> target) {
+        public BulkheadConfig.BuilderBase<?, ?> decorate(BulkheadConfig.BuilderBase<?, ?> target) {
             if (target.name().isEmpty()) {
                 target.config()
                         .ifPresent(cfg -> target.name(cfg.name()));

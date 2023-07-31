@@ -19,9 +19,9 @@ package io.helidon.nima.webserver.http1;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
 
-class Http1BuilderInterceptor implements Prototype.BuilderInterceptor<Http1Config.BuilderBase<?, ?>> {
+class Http1BuilderInterceptor implements Prototype.BuilderDecorator<Http1Config.BuilderBase<?, ?>> {
     @Override
-    public Http1Config.BuilderBase<?, ?> intercept(Http1Config.BuilderBase<?, ?> target) {
+    public Http1Config.BuilderBase<?, ?> decorate(Http1Config.BuilderBase<?, ?> target) {
         receiveListeners(target);
         sentListeners(target);
 

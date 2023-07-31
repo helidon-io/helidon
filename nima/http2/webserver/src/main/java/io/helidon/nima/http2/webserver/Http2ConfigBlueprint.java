@@ -27,7 +27,7 @@ import io.helidon.nima.webserver.spi.ProtocolConfig;
 /**
  * HTTP/2 server configuration.
  */
-@Prototype.Blueprint(builderInterceptor = Http2ConfigBlueprint.Http2ConfigInterceptor.class)
+@Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigInterceptor.class)
 @Configured(provides = ProtocolConfig.class)
 interface Http2ConfigBlueprint extends ProtocolConfig {
     /**
@@ -130,9 +130,9 @@ interface Http2ConfigBlueprint extends ProtocolConfig {
         return Http2ConnectionProvider.CONFIG_NAME;
     }
 
-    class Http2ConfigInterceptor implements Prototype.BuilderInterceptor<Http2Config.BuilderBase<?, ?>> {
+    class Http2ConfigInterceptor implements Prototype.BuilderDecorator<Http2Config.BuilderBase<?, ?>> {
         @Override
-        public Http2Config.BuilderBase<?, ?> intercept(Http2Config.BuilderBase<?, ?> target) {
+        public Http2Config.BuilderBase<?, ?> decorate(Http2Config.BuilderBase<?, ?> target) {
             if (target.name() == null) {
                 target.name("@default");
             }

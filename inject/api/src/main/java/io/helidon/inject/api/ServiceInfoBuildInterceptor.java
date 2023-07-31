@@ -21,10 +21,10 @@ import io.helidon.builder.api.Prototype;
 /**
  * Ensures that all external contracts are also treated as normal contracts, etc.
  */
-class ServiceInfoBuildInterceptor implements Prototype.BuilderInterceptor<ServiceInfo.BuilderBase<?, ?>> {
+class ServiceInfoBuildInterceptor implements Prototype.BuilderDecorator<ServiceInfo.BuilderBase<?, ?>> {
 
     @Override
-    public ServiceInfo.BuilderBase<?, ?> intercept(ServiceInfo.BuilderBase<?, ?> target) {
+    public ServiceInfo.BuilderBase<?, ?> decorate(ServiceInfo.BuilderBase<?, ?> target) {
         target.addContractsImplemented(target.externalContractsImplemented());
         return target;
     }

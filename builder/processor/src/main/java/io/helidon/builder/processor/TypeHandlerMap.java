@@ -192,7 +192,6 @@ class TypeHandlerMap extends TypeHandler {
             List<String> lines = new ArrayList<>();
             lines.add("Objects.requireNonNull(key);");
             lines.add("Objects.requireNonNull(" + singularName + ");");
-            lines.addAll(resolveBuilderLines(actualType(), singularName));
             lines.add("this." + name() + ".put(key, " + secondArgToPut(actualType(), singularName) + ");");
             lines.add("return self();");
             setters.add(new GeneratedMethod(

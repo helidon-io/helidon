@@ -48,7 +48,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionSelector;
  * Configuration of a server listener (server socket).
  */
 @Configured
-@Prototype.Blueprint(builderInterceptor = ListenerConfigBlueprint.ConfigInterceptor.class)
+@Prototype.Blueprint(decorator = ListenerConfigBlueprint.ConfigInterceptor.class)
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -284,9 +284,9 @@ interface ListenerConfigBlueprint {
         }
     }
 
-    class ConfigInterceptor implements Prototype.BuilderInterceptor<ListenerConfig.BuilderBase<?, ?>> {
+    class ConfigInterceptor implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
         @Override
-        public ListenerConfig.BuilderBase<?, ?> intercept(ListenerConfig.BuilderBase<?, ?> target) {
+        public ListenerConfig.BuilderBase<?, ?> decorate(ListenerConfig.BuilderBase<?, ?> target) {
             String name = target.name();
             if (name == null && target.config().isPresent()) {
                 Config config = target.config().get();

@@ -18,9 +18,9 @@ package io.helidon.nima.http.media;
 
 import io.helidon.builder.api.Prototype;
 
-class MediaContextBuilderInterceptor implements Prototype.BuilderInterceptor<MediaContextConfig.BuilderBase<?, ?>> {
+class MediaContextBuilderInterceptor implements Prototype.BuilderDecorator<MediaContextConfig.BuilderBase<?, ?>> {
     @Override
-    public MediaContextConfig.BuilderBase<?, ?> intercept(MediaContextConfig.BuilderBase<?, ?> target) {
+    public MediaContextConfig.BuilderBase<?, ?> decorate(MediaContextConfig.BuilderBase<?, ?> target) {
         if (target.registerDefaults()) {
             target.addMediaSupport(StringSupport.create())
                     .addMediaSupport(PathSupport.create())

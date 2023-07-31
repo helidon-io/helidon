@@ -144,8 +144,18 @@ record PrototypeProperty(MethodSignature signature,
         return typeHandler.declaredType();
     }
 
+    TypeName builderGetterType() {
+        return typeHandler.builderGetterType(configuredOption.required(),
+                                             configuredOption.hasDefault());
+    }
     String builderGetter() {
-        return typeHandler().generateBuilderGetter();
+        return typeHandler.generateBuilderGetter(configuredOption.required(),
+                                                 configuredOption.hasDefault());
+    }
+
+    boolean builderGetterOptional() {
+        return typeHandler.builderGetterOptional(configuredOption.required(),
+                                                 configuredOption.hasDefault());
     }
 
     public String fieldDeclaration(boolean isBuilder) {

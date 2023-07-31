@@ -98,9 +98,8 @@ final class GenerateAbstractBuilder {
         } else {
             pw.print(PROTOTYPE_BUILDER);
         }
-        pw.print("<BUILDER, PROTOTYPE>,");
-        pw.print(prototypeWithTypes);
-        pw.println(" {");
+        pw.println("<BUILDER, PROTOTYPE> {");
+
         // builder fields
         fields(pw, typeContext, true);
 
@@ -143,57 +142,12 @@ final class GenerateAbstractBuilder {
         fromInstanceMethod(pw, typeContext, prototypeWithTypes);
         fromBuilderMethod(pw, typeContext, typeArgumentNames);
 
-        // method preBuildPrototype() - handles providers, interceptor
+        // method preBuildPrototype() - handles providers, decorator
         preBuildPrototypeMethod(pw, typeContext);
         validatePrototypeMethod(pw, typeContext);
 
         CustomMethods customMethods = typeContext.customMethods();
 
-        for (CustomMethods.CustomMethod customMethod : customMethods.prototypeMethods()) {
-            // todo these sections should be moved to CustomMethod implementation once we have class model
-            // builder - custom implementation methods for new prototype interface methods
-            CustomMethods.Method generated = customMethod.generatedMethod().method();
-            // public TypeName boxed() - with implementation
-            if (!generated.javadoc().isEmpty()) {
-                Javadoc parsed = Javadoc.parse(generated.javadoc()).removeFirstParam();
-                pw.print(SOURCE_SPACING);
-                pw.println("/**");
-                for (String docLine : parsed.toLines()) {
-                    pw.print(SOURCE_SPACING);
-                    pw.print(" *");
-                    pw.println(docLine);
-                }
-                pw.print(SOURCE_SPACING);
-                pw.println(" */");
-            }
-            for (String annotation : customMethod.generatedMethod().annotations()) {
-                pw.print(SOURCE_SPACING);
-                pw.print('@');
-                pw.println(annotation);
-            }
-            if (!customMethod.generatedMethod().annotations().contains(OVERRIDE)) {
-                pw.print(SOURCE_SPACING);
-                pw.println("@Override");
-            }
-            pw.print(SOURCE_SPACING);
-            pw.print("public ");
-            pw.print(generated.returnType().fqName());
-            pw.print(" ");
-            pw.print(generated.name());
-            pw.print("(");
-            pw.print(generated.arguments()
-                             .stream()
-                             .map(it -> it.typeName().fqName() + " " + it.name())
-                             .collect(Collectors.joining(", ")));
-            pw.println(") {");
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
-            pw.print(customMethod.generatedMethod().callCode());
-            pw.println(";");
-            pw.print(SOURCE_SPACING);
-            pw.println("}");
-            pw.println();
-        }
         for (CustomMethods.CustomMethod customMethod : customMethods.builderMethods()) {
             // builder specific custom methods (not part of interface)
             CustomMethods.Method generated = customMethod.generatedMethod().method();
@@ -402,7 +356,7 @@ final class GenerateAbstractBuilder {
         }
 
         TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
-        // first setters (implement interface)
+        // first setters
         for (PrototypeProperty child : properties) {
             for (GeneratedMethod setter : child.setters(returnType, child.configuredOption().description())) {
                 // this is builder setters
@@ -454,6 +408,12 @@ final class GenerateAbstractBuilder {
         }
 
         // then getters
+        /*
+        If has default value - return type
+        If primitive & optional - return type
+        If collection - return type
+        Otherwise return Optional<x>
+         */
         for (PrototypeProperty child : properties) {
             String getterName = child.getterName();
             /*
@@ -481,11 +441,8 @@ final class GenerateAbstractBuilder {
             }
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
-            pw.println("@Override");
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
             pw.print("public ");
-            pw.print(child.typeName().fqName());
+            pw.print(child.builderGetterType().fqName());
             pw.print(" ");
             pw.print(getterName);
             pw.println("() {");
@@ -630,36 +587,24 @@ final class GenerateAbstractBuilder {
             pw.print(SOURCE_SPACING);
             TypeName declaredType = property.typeHandler().declaredType();
 
-            if (declaredType.primitive() || declaredType.isOptional()) {
-                pw.print(property.typeHandler().setterName());
-                pw.print("(builder.");
-                pw.print(property.typeHandler().getterName());
-                pw.println("());");
-            } else if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
-                pw.print("add");
-                pw.print(capitalize(property.name()));
-                pw.print("(builder.");
-                pw.print(property.typeHandler().getterName());
-                pw.println("());");
-            } else {
+            if (property.builderGetterOptional()) {
                 // property that is either mandatory or internally nullable
-                pw.print("if (builder.");
+                pw.print("builder.");
                 pw.print(property.typeHandler().getterName());
-                pw.println("() != null) {");
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
+                pw.print("().ifPresent(this::");
                 pw.print(property.typeHandler().setterName());
+                pw.println(");");
+            } else {
+                if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
+                    pw.print("add");
+                    pw.print(capitalize(property.name()));
+                } else {
+                    pw.print(property.typeHandler().setterName());
+                }
                 pw.print("(builder.");
                 pw.print(property.typeHandler().getterName());
                 pw.println("());");
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                pw.println("}");
             }
-
         }
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
@@ -709,7 +654,7 @@ final class GenerateAbstractBuilder {
         pw.println("/**");
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
-        pw.println(" * Handles providers and interceptors.");
+        pw.println(" * Handles providers and decorators.");
         pw.print(SOURCE_SPACING);
         pw.print(SOURCE_SPACING);
         pw.println(" */");
@@ -803,14 +748,13 @@ final class GenerateAbstractBuilder {
                 }
             }
         }
-        if (typeContext.typeInfo().builderInterceptor().isPresent()) {
-            // TODO we should use the resulting builder, or remove the return type from interceptor
+        if (typeContext.typeInfo().decorator().isPresent()) {
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
             pw.print("new ");
-            pw.print(typeContext.typeInfo().builderInterceptor().get().fqName());
-            pw.println("().intercept(this);");
+            pw.print(typeContext.typeInfo().decorator().get().fqName());
+            pw.println("().decorate(this);");
             pw.println();
         }
         pw.print(SOURCE_SPACING);
@@ -1252,23 +1196,31 @@ final class GenerateAbstractBuilder {
             pw.print("this.");
             pw.print(child.name());
             pw.print(" = ");
-            if (child.typeHandler().declaredType().genericTypeName().equals(LIST)) {
+            TypeName declaredType = child.typeHandler().declaredType();
+            if (declaredType.genericTypeName().equals(LIST)) {
                 pw.print("java.util.List.copyOf(builder.");
                 pw.print(child.getterName());
                 pw.println("());");
-            } else if (child.typeHandler().declaredType().genericTypeName().equals(SET)) {
+            } else if (declaredType.genericTypeName().equals(SET)) {
                 pw.print("java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(builder.");
                 pw.print(child.getterName());
                 pw.println("()));");
-            } else if (child.typeHandler().declaredType().genericTypeName().equals(MAP)) {
+            } else if (declaredType.genericTypeName().equals(MAP)) {
                 pw.print("java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(builder.");
                 pw.print(child.getterName());
                 pw.println("()));");
             } else {
-                // optional and other types are just plainly assigned
-                pw.print(" builder.");
-                pw.print(child.getterName());
-                pw.println("();");
+                if (child.builderGetterOptional() && !declaredType.isOptional()) {
+                    // builder getter optional, but type not, we call get (must be present - is validated)
+                    pw.print(" builder.");
+                    pw.print(child.getterName());
+                    pw.println("().get();");
+                } else {
+                    // optional and other types are just plainly assigned
+                    pw.print(" builder.");
+                    pw.print(child.getterName());
+                    pw.println("();");
+                }
             }
         }
     }

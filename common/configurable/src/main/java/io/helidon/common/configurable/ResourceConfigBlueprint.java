@@ -28,7 +28,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Configuration of a resource.
  */
-@Prototype.Blueprint(createEmptyPublic = false, builderInterceptor = ResourceBuilderInterceptor.class)
+@Prototype.Blueprint(createEmptyPublic = false, decorator = ResourceBuilderInterceptor.class)
 @Configured
 interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
     /**

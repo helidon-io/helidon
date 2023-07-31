@@ -39,7 +39,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 
 import static io.helidon.builder.processor.Types.BLUEPRINT_TYPE;
-import static io.helidon.builder.processor.Types.BUILDER_INTERCEPTOR;
+import static io.helidon.builder.processor.Types.BUILDER_DECORATOR;
 import static io.helidon.builder.processor.Types.CONFIGURED_OPTION_TYPE;
 import static io.helidon.builder.processor.Types.CONFIGURED_TYPE;
 import static io.helidon.builder.processor.Types.IMPLEMENT_TYPE;
@@ -191,8 +191,8 @@ record TypeContext(
                 .filter(it -> it) // filter our falses
                 .findFirst()
                 .orElse(false);
-        Optional<TypeName> builderInterceptor = blueprintAnnotation.getValue("builderInterceptor")
-                .filter(Predicate.not(BUILDER_INTERCEPTOR::equals))
+        Optional<TypeName> decorator = blueprintAnnotation.getValue("decorator")
+                .filter(Predicate.not(BUILDER_DECORATOR::equals))
                 .map(TypeName::create);
 
         // factory is if the blueprint implements Factory<RuntimeContractType>
@@ -225,7 +225,7 @@ record TypeContext(
                                                               prototypeBuilder,
                                                               prototypeImpl,
                                                               runtimeObject,
-                                                              builderInterceptor,
+                                                              decorator,
                                                               superPrototype,
                                                               annotationsToGenerate(blueprint));
 
@@ -448,7 +448,7 @@ record TypeContext(
             TypeName prototypeBuilder,
             TypeName prototypeImpl,
             Optional<TypeName> runtimeObject,
-            Optional<TypeName> builderInterceptor,
+            Optional<TypeName> decorator,
             Optional<TypeName> superPrototype,
             List<String> annotationsToGenerate) {
         public TypeName prototypeBuilderBase() {

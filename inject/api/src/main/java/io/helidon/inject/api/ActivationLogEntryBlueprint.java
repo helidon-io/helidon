@@ -29,7 +29,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * @see Activator
  * @see DeActivator
  */
-@Prototype.Blueprint(builderInterceptor = ActivationLogEntryBlueprint.Interceptor.class)
+@Prototype.Blueprint(decorator = ActivationLogEntryBlueprint.Interceptor.class)
 interface ActivationLogEntryBlueprint {
 
     /**
@@ -92,13 +92,13 @@ interface ActivationLogEntryBlueprint {
     /**
      * Ensures that the non-nullable fields are populated with default values.
      */
-    class Interceptor implements Prototype.BuilderInterceptor<ActivationLogEntry.BuilderBase<?, ?>> {
+    class Interceptor implements Prototype.BuilderDecorator<ActivationLogEntry.BuilderBase<?, ?>> {
 
         Interceptor() {
         }
 
         @Override
-        public ActivationLogEntry.BuilderBase<?, ?> intercept(ActivationLogEntry.BuilderBase<?, ?> b) {
+        public ActivationLogEntry.BuilderBase<?, ?> decorate(ActivationLogEntry.BuilderBase<?, ?> b) {
             if (b.time() == null) {
                 b.time(Instant.now());
             }

@@ -22,9 +22,9 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 
-class ResourceBuilderInterceptor implements Prototype.BuilderInterceptor<ResourceConfig.BuilderBase<?, ?>> {
+class ResourceBuilderInterceptor implements Prototype.BuilderDecorator<ResourceConfig.BuilderBase<?, ?>> {
     @Override
-    public ResourceConfig.BuilderBase<?, ?> intercept(ResourceConfig.BuilderBase<?, ?> target) {
+    public ResourceConfig.BuilderBase<?, ?> decorate(ResourceConfig.BuilderBase<?, ?> target) {
         boolean useProxy = target.useProxy();
         if (!useProxy) {
             target.proxy(Optional.empty());

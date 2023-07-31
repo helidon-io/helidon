@@ -44,8 +44,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface TypeName
-        extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
+public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
     /**
      * Create a new fluent API builder to customize configuration.
      *
@@ -66,7 +65,7 @@ public interface TypeName
     }
 
     /**
-     *Create a type name from a type (such as class).
+     * Create a type name from a type (such as class).
      *
      * @param type the type
      * @return type name for the provided type
@@ -76,7 +75,7 @@ public interface TypeName
     }
 
     /**
-     *Creates a type name from a fully qualified class name.
+     * Creates a type name from a fully qualified class name.
      *
      * @param typeName the FQN of the class type
      * @return the TypeName for the provided type name
@@ -86,7 +85,7 @@ public interface TypeName
     }
 
     /**
-     *Creates a type name from a generic alias type name.
+     * Creates a type name from a generic alias type name.
      *
      * @param genericAliasTypeName the generic alias type name
      * @return the TypeName for the provided type name
@@ -96,29 +95,29 @@ public interface TypeName
     }
 
     /**
-     *Return the boxed equivalent of this type.
-     *If this is not a primitive type, returns this instance.
+     * Return the boxed equivalent of this type.
+     * If this is not a primitive type, returns this instance.
      *
-     *@return boxed type for this type, or this type if not primitive
+     * @return boxed type for this type, or this type if not primitive
      */
     TypeName boxed();
 
     /**
-     *The base generic type name, stripped of any {@link TypeName#typeArguments()}.
-     *This is equivalent to the type name represented by {@link TypeName#name()}.
+     * The base generic type name, stripped of any {@link io.helidon.common.types.TypeName#typeArguments()}.
+     * This is equivalent to the type name represented by {@link io.helidon.common.types.TypeName#name()}.
      *
-     *@return based generic type name
+     * @return based generic type name
      */
     TypeName genericTypeName();
 
     /**
      * Fluent API builder base for {@link io.helidon.common.types.TypeName}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
-            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE>, TypeName {
+            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE> {
         private final java.util.List<String> enclosingNames = new java.util.ArrayList<>();
         private final java.util.List<TypeName> typeArguments = new java.util.ArrayList<>();
         private String packageName = "";
@@ -130,7 +129,6 @@ public interface TypeName
 
         /**
          * Protected to support extensibility.
-         *
          */
         protected BuilderBase() {
         }
@@ -160,12 +158,8 @@ public interface TypeName
          * @return updated builder instance
          */
         public BUILDER from(BuilderBase<?, ?> builder) {
-            if (builder.packageName() != null) {
-                packageName(builder.packageName());
-            }
-            if (builder.className() != null) {
-                className(builder.className());
-            }
+            packageName(builder.packageName());
+            builder.className().ifPresent(this::className);
             addEnclosingNames(builder.enclosingNames());
             primitive(builder.primitive());
             array(builder.array());
@@ -176,69 +170,10 @@ public interface TypeName
         }
 
         /**
-         * Handles providers and interceptors.
-         */
-        protected void preBuildPrototype() {
-        }
-
-        /**
-         * Validates required properties.
-         */
-        protected void validatePrototype() {
-            Errors.Collector collector = Errors.collector();
-            if (className == null) {
-                collector.fatal(getClass(), "Property \"class-name\" is required, but not set");
-            }
-            collector.collect().checkValid();
-        }
-
-        @Override
-        public int compareTo(TypeName o) {
-            return TypeNameSupport.compareTo(this, o);
-        }
-
-        /**
-         *Return the boxed equivalent of this type.
-         *If this is not a primitive type, returns this instance.
+         * Update builder from the provided type.
          *
-         *@return boxed type for this type, or this type if not primitive
-         */
-        @Override
-        public TypeName boxed() {
-            return TypeNameSupport.boxed(this);
-        }
-
-        @Override
-        public String toString() {
-            return TypeNameSupport.toString(this);
-        }
-
-        @Override
-        public String name() {
-            return TypeNameSupport.name(this);
-        }
-
-        /**
-         *The base generic type name, stripped of any {@link TypeName#typeArguments()}.
-         *This is equivalent to the type name represented by {@link TypeName#name()}.
-         *
-         *@return based generic type name
-         */
-        @Override
-        public TypeName genericTypeName() {
-            return TypeNameSupport.genericTypeName(this);
-        }
-
-        @Override
-        public String fqName() {
-            return TypeNameSupport.fqName(this);
-        }
-
-        /**
-         *Update builder from the provided type.
-         *
-         *@param type type to get information (package name, class name, primitive, array)
-         *@return updated builder instance
+         * @param type type to get information (package name, class name, primitive, array)
+         * @return updated builder instance
          */
         public BUILDER type(java.lang.reflect.Type type) {
             TypeNameSupport.type(this, type);
@@ -412,7 +347,7 @@ public interface TypeName
          * @return updated builder instance
          * @see #typeArguments()
          */
-        public BUILDER addTypeArgument(java.util.function.Consumer<TypeName.Builder> consumer) {
+        public BUILDER addTypeArgument(java.util.function.Consumer<Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
@@ -425,7 +360,6 @@ public interface TypeName
          *
          * @return the package name
          */
-        @Override
         public String packageName() {
             return packageName;
         }
@@ -435,9 +369,8 @@ public interface TypeName
          *
          * @return the class name
          */
-        @Override
-        public String className() {
-            return className;
+        public java.util.Optional<String> className() {
+            return java.util.Optional.ofNullable(className);
         }
 
         /**
@@ -447,7 +380,6 @@ public interface TypeName
          *
          * @return the enclosing names
          */
-        @Override
         public java.util.List<String> enclosingNames() {
             return enclosingNames;
         }
@@ -457,7 +389,6 @@ public interface TypeName
          *
          * @return the primitive
          */
-        @Override
         public boolean primitive() {
             return primitive;
         }
@@ -467,7 +398,6 @@ public interface TypeName
          *
          * @return the array
          */
-        @Override
         public boolean array() {
             return array;
         }
@@ -477,7 +407,6 @@ public interface TypeName
          *
          * @return the generic
          */
-        @Override
         public boolean generic() {
             return generic;
         }
@@ -487,7 +416,6 @@ public interface TypeName
          *
          * @return the wildcard
          */
-        @Override
         public boolean wildcard() {
             return wildcard;
         }
@@ -497,9 +425,25 @@ public interface TypeName
          *
          * @return the type arguments
          */
-        @Override
         public java.util.List<TypeName> typeArguments() {
             return typeArguments;
+        }
+
+        /**
+         * Validates required properties.
+         */
+        protected void validatePrototype() {
+            Errors.Collector collector = Errors.collector();
+            if (className == null) {
+                collector.fatal(getClass(), "Property \"class-name\" is required, but not set");
+            }
+            collector.collect().checkValid();
+        }
+
+        /**
+         * Handles providers and decorators.
+         */
+        protected void preBuildPrototype() {
         }
 
         /**
@@ -517,11 +461,12 @@ public interface TypeName
 
             /**
              * Create an instance providing a builder.
+             *
              * @param builder extending builder base of this prototype
              */
             protected TypeNameImpl(BuilderBase<?, ?> builder) {
                 this.packageName = builder.packageName();
-                this.className = builder.className();
+                this.className = builder.className().get();
                 this.enclosingNames = java.util.List.copyOf(builder.enclosingNames());
                 this.primitive = builder.primitive();
                 this.array = builder.array();
@@ -608,11 +553,10 @@ public interface TypeName
                 if (!(o instanceof TypeName other)) {
                     return false;
                 }
-                return Objects.equals(packageName, other.packageName())
-                        && Objects.equals(className, other.className())
-                        && Objects.equals(enclosingNames, other.enclosingNames())
-                        && primitive == other.primitive()
-                        && array == other.array();
+                return Objects.equals(packageName, other.packageName()) && Objects.equals(className,
+                                                                                          other.className()) && Objects.equals(
+                        enclosingNames,
+                        other.enclosingNames()) && primitive == other.primitive() && array == other.array();
             }
 
             @Override

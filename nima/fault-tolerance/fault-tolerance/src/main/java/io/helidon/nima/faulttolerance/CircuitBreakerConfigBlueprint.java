@@ -26,7 +26,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
-@Prototype.Blueprint(builderInterceptor = CircuitBreakerConfigBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = CircuitBreakerConfigBlueprint.BuilderInterceptor.class)
 @Configured(prefix = "fault-tolerance.circuit-breakers", root = true)
 @ConfigBean(wantDefault = true, repeatable = true)
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {
@@ -101,9 +101,9 @@ interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker
     @Prototype.Singular
     Set<Class<? extends Throwable>> applyOn();
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<CircuitBreakerConfig.BuilderBase<?, ?>> {
+    class BuilderInterceptor implements Prototype.BuilderDecorator<CircuitBreakerConfig.BuilderBase<?, ?>> {
         @Override
-        public CircuitBreakerConfig.BuilderBase<?, ?> intercept(CircuitBreakerConfig.BuilderBase<?, ?> target) {
+        public CircuitBreakerConfig.BuilderBase<?, ?> decorate(CircuitBreakerConfig.BuilderBase<?, ?> target) {
             if (target.name().isEmpty()) {
                 target.config()
                         .ifPresent(cfg -> target.name(cfg.name()));

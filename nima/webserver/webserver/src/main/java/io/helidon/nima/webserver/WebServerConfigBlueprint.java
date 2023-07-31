@@ -30,7 +30,7 @@ import io.helidon.inject.configdriven.api.ConfigBean;
  * WebServer configuration bean.
  * See {@link io.helidon.nima.webserver.WebServer#create(java.util.function.Consumer)}.
  */
-@Prototype.Blueprint(builderInterceptor = WebServerConfigBlueprint.ServerConfigInterceptor.class)
+@Prototype.Blueprint(decorator = WebServerConfigBlueprint.ServerConfigInterceptor.class)
 @Configured(root = true, prefix = "server")
 @ConfigBean(wantDefault = true)
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
@@ -62,9 +62,9 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      */
     Optional<Context> serverContext();
 
-    class ServerConfigInterceptor implements Prototype.BuilderInterceptor<WebServerConfig.BuilderBase<?, ?>> {
+    class ServerConfigInterceptor implements Prototype.BuilderDecorator<WebServerConfig.BuilderBase<?, ?>> {
         @Override
-        public WebServerConfig.BuilderBase<?, ?> intercept(WebServerConfig.BuilderBase<?, ?> target) {
+        public WebServerConfig.BuilderBase<?, ?> decorate(WebServerConfig.BuilderBase<?, ?> target) {
             if (target.sockets().containsKey(WebServer.DEFAULT_SOCKET_NAME)) {
                 throw new ConfigException("Default socket must be configured directly on server config node, or through"
                                                   + " \"ServerConfig.Builder\", not as a separated socket.");

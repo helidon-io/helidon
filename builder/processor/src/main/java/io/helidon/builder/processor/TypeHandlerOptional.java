@@ -36,11 +36,6 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    String generateBuilderGetter() {
-        return "Optional.ofNullable(" + name() + ")";
-    }
-
-    @Override
     String fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
         StringBuilder fieldDeclaration = new StringBuilder("private ");
         TypeName usedType = isBuilder ? actualType() : declaredType();
@@ -91,7 +86,6 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             // declared setter - optional is package local, field is never optional in builder
             List<String> lines = new ArrayList<>();
             lines.add("Objects.requireNonNull(" + name() + ");");
-            lines.addAll(resolveBuilderLines(actualType(), name()));
             lines.add("this." + name() + " = " + name() + ";");
             lines.add("return self();");
 

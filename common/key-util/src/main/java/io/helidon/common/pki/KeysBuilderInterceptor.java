@@ -28,11 +28,11 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
 
-class KeysBuilderInterceptor implements Prototype.BuilderInterceptor<Keys.BuilderBase<?, ?>> {
+class KeysBuilderInterceptor implements Prototype.BuilderDecorator<Keys.BuilderBase<?, ?>> {
     private static final System.Logger LOGGER = System.getLogger(Keys.class.getName());
 
     @Override
-    public Keys.BuilderBase<?, ?> intercept(Keys.BuilderBase<?, ?> target) {
+    public Keys.BuilderBase<?, ?> decorate(Keys.BuilderBase<?, ?> target) {
         try {
             target.keystore().ifPresent(keystoreConfig -> updateFromKeystore(target, keystoreConfig));
             target.pem().ifPresent(pemConfig -> updateFromPem(target, pemConfig));

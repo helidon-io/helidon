@@ -24,7 +24,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.http.media.spi.MediaSupportProvider;
 
-@Prototype.Blueprint(builderInterceptor = MediaContextBuilderInterceptor.class)
+@Prototype.Blueprint(decorator = MediaContextBuilderInterceptor.class)
 @Configured
 interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
     /**
