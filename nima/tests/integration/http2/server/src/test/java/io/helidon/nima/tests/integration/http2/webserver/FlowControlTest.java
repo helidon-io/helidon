@@ -77,11 +77,12 @@ class FlowControlTest {
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         serverBuilder
                 .addProtocol(Http2Config.builder()
-                                     .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE))
+                                     .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
+                                     .build())
                 .addConnectionSelector(Http2ConnectionSelector.builder()
                                                .http2Config(Http2Config.builder()
                                                                     .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
-                                               )
+                                                                    .build())
                                                .build())
                 .host("localhost")
                 .routing(router -> router
