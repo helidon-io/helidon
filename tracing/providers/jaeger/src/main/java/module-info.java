@@ -16,9 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.tracing.providers.jaeger.JaegerDataPropagationProvider;
-import io.helidon.tracing.providers.jaeger.JaegerTracerProvider;
-import io.helidon.tracing.spi.TracerProvider;
 
 /**
  * Jaeger tracing support.
@@ -47,7 +44,9 @@ module io.helidon.tracing.providers.jaeger {
 
     exports io.helidon.tracing.providers.jaeger;
 
-    provides TracerProvider with JaegerTracerProvider;
-    provides io.helidon.common.context.spi.DataPropagationProvider with JaegerDataPropagationProvider;
+    provides io.helidon.tracing.spi.TracerProvider
+            with io.helidon.tracing.providers.jaeger.JaegerTracerProvider;
+    provides io.helidon.common.context.spi.DataPropagationProvider
+            with io.helidon.tracing.providers.jaeger.JaegerDataPropagationProvider;
 
 }

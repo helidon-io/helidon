@@ -25,7 +25,7 @@
     </parent>
 
     <artifactId>helidon-tracing-providers-opentracing</artifactId>
-    <name>Helidon Tracing Open Tracing</name>
+    <name>Helidon Tracing Providers Open Tracing</name>
     <description>As OpenTracing is now discontinued, this is a backward compatibility module to support it.
     Please switch to Open Telemetry</description>
 

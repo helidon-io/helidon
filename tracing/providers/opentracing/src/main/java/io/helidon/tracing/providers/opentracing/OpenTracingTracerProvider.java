@@ -28,7 +28,7 @@ import io.opentracing.noop.NoopSpan;
 import io.opentracing.util.GlobalTracer;
 
 /**
- * {@link java.util.ServiceLoader} service implementation of {@link TracerProvider} for Open Tracing
+ * {@link java.util.ServiceLoader} service implementation of {@link io.helidon.tracing.spi.TracerProvider} for Open Tracing
  * tracers.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50) // low weight, so it is easy to override

@@ -19,7 +19,6 @@ package io.helidon.tracing.providers.zipkin;
 import java.util.List;
 
 import io.helidon.tracing.Tag;
-import io.helidon.tracing.TracerBuilder;
 
 import brave.opentracing.BraveTracer;
 import io.opentracing.Scope;
@@ -33,7 +32,7 @@ import io.opentracing.propagation.Format;
  * The ZipkinTracer delegates to {@link BraveTracer} while creating {@link ZipkinSpanBuilder}
  * instead of {@link brave.opentracing.BraveSpanBuilder}.
  * This class should not be sued directly, use either
- * {@link TracerBuilder} or {@link ZipkinTracerBuilder}.
+ * {@link io.helidon.tracing.TracerBuilder} or {@link ZipkinTracerBuilder}.
  *
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>

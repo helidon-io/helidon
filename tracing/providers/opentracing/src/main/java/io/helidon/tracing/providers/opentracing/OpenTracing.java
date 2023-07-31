@@ -41,7 +41,7 @@ public final class OpenTracing {
      *
      * @param tracer the tracer that created the span
      * @param span open telemetry span
-     * @return Helidon {@link Span}
+     * @return Helidon {@link io.helidon.tracing.Span}
      */
     public static Span create(Tracer tracer, io.opentracing.Span span) {
         return new OpenTracingSpan(tracer, span);

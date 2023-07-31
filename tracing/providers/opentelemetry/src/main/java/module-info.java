@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
-import io.helidon.tracing.spi.TracerProvider;
-
 /**
  * Open telemetry support for Helidon tracing.
  */
@@ -35,5 +32,6 @@ module io.helidon.tracing.providers.opentelemetry {
 
     exports io.helidon.tracing.providers.opentelemetry;
 
-    provides TracerProvider with OpenTelemetryTracerProvider;
+    provides io.helidon.tracing.spi.TracerProvider
+            with io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 }

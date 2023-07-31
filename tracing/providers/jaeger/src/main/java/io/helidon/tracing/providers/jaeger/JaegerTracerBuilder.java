@@ -52,11 +52,11 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 
 /**
- * The JaegerTracerBuilder is a convenience builder for {@link Tracer} to use with Jaeger.
+ * The JaegerTracerBuilder is a convenience builder for {@link io.helidon.tracing.Tracer} to use with Jaeger.
  * <p>
  * <b>Unless You want to explicitly depend on Jaeger in Your code, please
- * use {@link TracerBuilder#create(String)} or
- * {@link TracerBuilder#create(io.helidon.common.config.Config)} that is abstracted.</b>
+ * use {@link io.helidon.tracing.TracerBuilder#create(String)} or
+ * {@link io.helidon.tracing.TracerBuilder#create(io.helidon.common.config.Config)} that is abstracted.</b>
  * <p>
  * The Jaeger tracer uses environment variables and system properties to override the defaults.
  * Except for {@code protocol} and {@code service} these are honored, unless overridden in configuration
@@ -131,17 +131,17 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  *     <tr>
  *         <td>{@code tags}</td>
  *         <td>&nbsp;</td>
- *         <td>see {@link TracerBuilder}</td>
+ *         <td>see {@link io.helidon.tracing.TracerBuilder}</td>
  *     </tr>
  *     <tr>
  *         <td>{@code boolean-tags}</td>
  *         <td>&nbsp;</td>
- *         <td>see {@link TracerBuilder}</td>
+ *         <td>see {@link io.helidon.tracing.TracerBuilder}</td>
  *     </tr>
  *     <tr>
  *         <td>{@code int-tags}</td>
  *         <td>&nbsp;</td>
- *         <td>see {@link TracerBuilder}</td>
+ *         <td>see {@link io.helidon.tracing.TracerBuilder}</td>
  *     </tr>
  * </table>
  */
@@ -177,7 +177,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     }
 
     /**
-     * Get a Jaeger {@link Tracer } builder for processing tracing data of a service with a given name.
+     * Get a Jaeger {@link io.helidon.tracing.Tracer } builder for processing tracing data of a service with a given name.
      *
      * @param serviceName name of the service that will be using the tracer.
      * @return {@code Tracer} builder for Jaeger.
@@ -193,7 +193,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      *
      * @param config configuration to load this builder from
      * @return a new builder instance.
-     * @see JaegerTracerBuilder#config(io.helidon.common.config.Config)
+     * @see io.helidon.tracing.providers.jaeger.JaegerTracerBuilder#config(io.helidon.common.config.Config)
      */
     public static JaegerTracerBuilder create(Config config) {
         return create().config(config);
@@ -408,7 +408,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     }
 
     /**
-     * Builds the {@link Tracer} for Jaeger based on the configured parameters.
+     * Builds the {@link io.helidon.tracing.Tracer} for Jaeger based on the configured parameters.
      *
      * @return the tracer
      */

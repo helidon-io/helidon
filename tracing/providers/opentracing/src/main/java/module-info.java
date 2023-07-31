@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.tracing.providers.opentracing.OpenTracingTracerProvider;
-import io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
-import io.helidon.tracing.spi.TracerProvider;
-
 /**
  * Open tracing support for Helidon tracing.
  */
@@ -33,6 +29,7 @@ module io.helidon.tracing.providers.opentracing {
     requires io.opentracing.api;
     requires io.opentracing.noop;
 
-    uses OpenTracingProvider;
-    provides TracerProvider with OpenTracingTracerProvider;
+    uses io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider;
+    provides io.helidon.tracing.spi.TracerProvider
+            with io.helidon.tracing.providers.opentracing.OpenTracingTracerProvider;
 }

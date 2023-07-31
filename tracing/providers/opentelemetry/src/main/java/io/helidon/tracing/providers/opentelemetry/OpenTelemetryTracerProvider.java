@@ -34,7 +34,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
- * Service loader provider implementation for {@link TracerProvider}.
+ * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
 public class OpenTelemetryTracerProvider implements TracerProvider {
