@@ -88,7 +88,7 @@ public interface Timer extends Meter, HistogramSupport {
      * @return return value from invoking the callable {@code f}
      * @throws Exception exception escaping from the callable
      */
-    <T> T recordCallable(Callable<T> f) throws Exception;
+    <T> T record(Callable<T> f) throws Exception;
 
     /**
      * Executes the {@link java.lang.Runnable} {@code f} and records the time it takes.
