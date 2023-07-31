@@ -16,6 +16,7 @@
 
 import io.helidon.metrics.api.spi.ExemplarService;
 import io.helidon.metrics.api.spi.RegistryFactoryProvider;
+import io.helidon.metrics.spi.MetricFactoryProvider;
 
 /**
  * Helidon metrics API.
@@ -25,14 +26,16 @@ module io.helidon.metrics.api {
     requires io.helidon.common.http;
     requires transitive io.helidon.common.config;
 
-    requires transitive microprofile.metrics.api;
     requires static io.helidon.config.metadata;
-    requires micrometer.core;
+    requires microprofile.metrics.api;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
+    exports io.helidon.metrics.spi;
 
     uses RegistryFactoryProvider;
     uses ExemplarService;
     uses io.helidon.metrics.api.MetricsProgrammaticSettings;
+    uses io.helidon.metrics.api.spi.MetricFactory;
+    uses MetricFactoryProvider;
 }

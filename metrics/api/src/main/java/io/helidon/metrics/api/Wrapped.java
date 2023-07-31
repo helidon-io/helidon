@@ -21,13 +21,18 @@ package io.helidon.metrics.api;
 public interface Wrapped {
 
     /**
-     * Unwraps the meter registry as the specified type.
+     * Unwraps the wrapped item as the specified type.
      *
-     * @param c {@link Class} to which to cast this meter registry
-     * @return the meter registry cast as the requested type
+     * @param c {@link Class} to which to cast this object
+     * @return this object cast as the requested type
      * @param <R> type to cast to
      */
     default <R> R unwrap(Class<? extends R> c) {
-        return c.cast(this);
+        if (c.isInstance(this)) {
+            return c.cast(this);
+        }
+        throw new IllegalArgumentException(String.format("Cannot provide an object of %s from an object of type %s",
+                                                         c.getName(),
+                                                         getClass().getName()));
     }
 }

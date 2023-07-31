@@ -19,10 +19,10 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.metrics.api.spi.HelidonMetricFactory;
+import io.helidon.metrics.spi.MetricFactoryProvider;
 
 /**
- * Locates and makes available the highest-weight implementation of {@link io.helidon.metrics.api.spi.HelidonMetricFactory},
+ * Locates and makes available the highest-weight implementation of {@link io.helidon.metrics.spi.MetricFactoryProvider},
  * using a default no-op implementation if no other is available.
  */
 class MetricFactoryManager {
@@ -30,9 +30,9 @@ class MetricFactoryManager {
     /**
      * Instance of the highest-weight implementation of {@code MetricFactory}.
      */
-    static final LazyValue<HelidonMetricFactory> INSTANCE =
-            LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(HelidonMetricFactory.class))
-            .addService(HelidonNoOpMetricFactory.create(), Double.MIN_VALUE)
+    static final LazyValue<MetricFactoryProvider> INSTANCE =
+            LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(MetricFactoryProvider.class))
+            .addService(NoOpMetricFactoryProvider.create(), Double.MIN_VALUE)
             .build()
             .iterator()
             .next());

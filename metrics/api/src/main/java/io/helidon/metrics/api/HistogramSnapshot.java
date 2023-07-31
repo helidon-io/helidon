@@ -84,16 +84,16 @@ public interface HistogramSnapshot extends Wrapped {
     /**
      * Returns the values at the configured percentiles for the histogram.
      *
-     * @return array of pairs of percentile and the histogram value at that percentile
+     * @return pairs of percentile and the histogram value at that percentile
      */
-    ValueAtPercentile[] percentileValues();
+    Iterable<ValueAtPercentile> percentileValues();
 
     /**
      * Returns information about each of the configured buckets for the histogram.
      *
-     * @return array of pairs of bucket value and count of observations in that bucket
+     * @return pairs of bucket value and count of observations in that bucket
      */
-    CountAtBucket[] histogramCounts();
+    Iterable<CountAtBucket> histogramCounts();
 
     /**
      * Dumps a summary of the snapshot to the specified {@link java.io.PrintStream} using the indicated scaling factor for

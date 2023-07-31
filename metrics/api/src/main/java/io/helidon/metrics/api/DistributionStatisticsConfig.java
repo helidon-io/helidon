@@ -91,7 +91,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
     /**
      * Builder for a new {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance.
      */
-    interface Builder extends io.helidon.common.Builder<Builder, DistributionStatisticsConfig> {
+    interface Builder extends Wrapped, io.helidon.common.Builder<Builder, DistributionStatisticsConfig> {
 
         /**
          * Updates the builder with non-null settings from the specified existing config.
