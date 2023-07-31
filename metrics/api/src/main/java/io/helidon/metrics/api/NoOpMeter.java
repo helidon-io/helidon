@@ -353,7 +353,7 @@ class NoOpMeter implements Meter {
         }
 
         @Override
-        public <T> T recordCallable(Callable<T> f) throws Exception {
+        public <T> T record(Callable<T> f) throws Exception {
             return null;
         }
 
