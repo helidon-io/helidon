@@ -346,8 +346,8 @@ curl -s -X GET http://localhost:8080/health
                                 <model>
                                     <list key="dependencies">
                                         <map order="800">
-                                            <value key="groupId">io.helidon.tracing</value>
-                                            <value key="artifactId">helidon-tracing-jaeger</value>
+                                            <value key="groupId">io.helidon.tracing.providers</value>
+                                            <value key="artifactId">helidon-tracing-providers-jaeger</value>
                                         </map>
                                     </list>
                                     <list key="readme-sections">
@@ -366,8 +366,8 @@ curl -s -X GET http://localhost:8080/health
                                 <model>
                                     <list key="dependencies">
                                         <map order="800">
-                                            <value key="groupId">io.helidon.tracing</value>
-                                            <value key="artifactId">helidon-tracing-zipkin</value>
+                                            <value key="groupId">io.helidon.tracing.providers</value>
+                                            <value key="artifactId">helidon-tracing-providers-zipkin</value>
                                         </map>
                                     </list>
                                     <list key="readme-sections">

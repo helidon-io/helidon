@@ -207,8 +207,8 @@ default host and port, `localhost:9411`.
 .Add the following dependency to `pom.xml`:
 ----
 <dependency>
-  <groupId>io.helidon.tracing</groupId>
-  <artifactId>helidon-tracing-zipkin</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
 </dependency>
 ----
 
@@ -560,8 +560,8 @@ cd helidon-quickstart-mp-2
 .Add the following dependency to `pom.xml`:
 ----
 <dependency>
-  <groupId>io.helidon.tracing</groupId>
-  <artifactId>helidon-tracing-zipkin</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
 </dependency>
 ----
 
