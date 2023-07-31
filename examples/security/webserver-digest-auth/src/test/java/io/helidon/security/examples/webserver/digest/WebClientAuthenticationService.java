@@ -18,8 +18,8 @@ package io.helidon.security.examples.webserver.digest;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
 /**
@@ -56,7 +56,7 @@ class WebClientAuthenticationService implements WebClientService {
         if (challenge == null) {
             return response;
         }
-        String uri = request.uri().path();
+        String uri = request.uri().path().path();
         String method = request.method().text();
         String atz = digestAuth.authorization(challenge, uri, method, username, password);
         if (atz == null) {

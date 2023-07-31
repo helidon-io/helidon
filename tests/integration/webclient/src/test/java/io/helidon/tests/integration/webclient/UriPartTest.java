@@ -16,12 +16,10 @@
 
 package io.helidon.tests.integration.webclient;
 
-import java.util.concurrent.CompletionException;
-
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 
 import org.junit.jupiter.api.Disabled;
@@ -34,23 +32,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UriPartTest extends TestParent {
 
     private static final String EXPECTED_QUERY = "some query &#&@Đ value";
+    private final WebClient noSecurityClient;
 
     UriPartTest(WebServer server) {
         super(server);
+        this.noSecurityClient = noServiceClient();
     }
 
     @Test
     void testQuerySpace() {
-        String response = client.get()
+        String response = noSecurityClient.get()
                 .path("obtainedQuery")
                 .queryParam("param", "test")
                 .queryParam("test", EXPECTED_QUERY)
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response.trim(), is(EXPECTED_QUERY));
-        try (Http1ClientResponse fullResponse = client.get()
+        try (HttpClientResponse fullResponse = noSecurityClient.get()
                 .path("obtainedQuery")
                 .queryParam("test", EXPECTED_QUERY)
-                .skipUriEncoding()
+                .skipUriEncoding(true)
                 .request()) {
             assertThat(fullResponse.status(), is(Http.Status.BAD_REQUEST_400));
         }
@@ -59,48 +59,48 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryKeySpace() {
         String queryNameWithSpace = "query name with space";
-        String response = client.get()
+        String response = noSecurityClient.get()
                 .path("obtainedQuery")
                 .queryParam("param", queryNameWithSpace)
                 .queryParam(queryNameWithSpace, EXPECTED_QUERY)
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response.trim(), is(EXPECTED_QUERY));
-        assertThrows(IllegalArgumentException.class, () -> client.get()
+        assertThrows(IllegalArgumentException.class, () -> noSecurityClient.get()
                 .path("obtainedQuery")
                 .queryParam("param", queryNameWithSpace)
-                .skipUriEncoding()
-                .request(String.class));
+                .skipUriEncoding(true)
+                .requestEntity(String.class));
     }
 
     @Test
     void testPathWithSpace() {
-        String response = client.get()
+        String response = noSecurityClient.get()
                 .path("pattern with space")
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
-        assertThrows(IllegalArgumentException.class, () -> client.get()
+        assertThrows(IllegalArgumentException.class, () -> noSecurityClient.get()
                 .path("pattern with space")
-                .skipUriEncoding()
-                .request(String.class));
+                .skipUriEncoding(true)
+                .requestEntity(String.class));
     }
 
     @Test
     void testFragment() {
         String fragment = "super fragment#&?/";
-        String response = client.get()
+        String response = noSecurityClient.get()
                 .path("obtainedQuery")
                 .queryParam("param", "empty")
                 .queryParam("empty", "")
                 .fragment(fragment)
-                .request(String.class);
+                .requestEntity(String.class);
         assertThat(response.trim(), is(fragment));
     }
 
     @Test
     void testBadFragment() {
         String fragment = "super fragment#&?/"; // contains illegal characters, that should break validation
-        try (ClientResponse response = client.get()
-                .skipUriEncoding()
+        try (HttpClientResponse response = noSecurityClient.get()
+                .skipUriEncoding(true)
                 .fragment(fragment)
                 .request()) {
 
@@ -111,40 +111,44 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.query().value(), is("first&second%26=val&ue%26"));
+            assertThat(request.uri().query().value(), is("first&second%26=val&ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
-                .skipUriEncoding()
-                .request(String.class);
+                .skipUriEncoding(true)
+                .requestEntity(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
 
     @Test
     void testQueryNotDoubleEncoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.query().rawValue(), is("first%26second%26=val%26ue%26"));
+            assertThat(request.uri().query().rawValue(), is("first%26second%26=val%26ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
                 .queryParam("first&second%26", "val&ue%26")
-                .skipUriEncoding()
-                .request(String.class);
+                .skipUriEncoding(true)
+                .requestEntity(String.class);
         assertThat(response.trim(), is("{\"message\":\"Hello World!\"}"));
     }
 
     @Test
-    @Disabled("Requires changes to UriHelper and WebClient (to be done as part of #6669)")
+    @Disabled
     void testPathNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.uri().path()/*.rawPath()*/, is("/greet/path%26"));
+            assertThat(request.uri().path().rawPath(), is("/greet/path%26"));
             return chain.proceed(request);
         });
-        assertThrows(CompletionException.class, () -> webClient.get()
+        // as the %26 is a valid encoding of path, when we encode it, it does not change
+        // as a result, the path is stored as this in encoded state, and the decoded state is different
+        // to fix this, we would need to have support for skip URI encoding all the way to UriPath, so we store
+        // the same value for decoded/encoded and we never re-encode it when skipped
+        webClient.get()
+                .skipUriEncoding(true)
                 .path("path%26")
-                .skipUriEncoding()
-                .request(String.class));
+                .requestEntity(String.class);
     }
 
 }

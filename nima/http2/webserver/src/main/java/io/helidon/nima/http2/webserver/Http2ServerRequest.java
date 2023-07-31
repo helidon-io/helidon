@@ -58,6 +58,8 @@ class Http2ServerRequest implements RoutingRequest {
     private RoutedPath path;
     private WritableHeaders<?> writable;
     private Context context;
+    // preparation for continue support in HTTP/2
+    private boolean continueSent;
 
     Http2ServerRequest(ConnectionContext ctx,
                        HttpSecurity security,
@@ -199,6 +201,11 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public UriInfo requestedUri() {
         return uriInfo.get();
+    }
+
+    @Override
+    public boolean continueSent() {
+        return continueSent;
     }
 
     private UriInfo createUriInfo() {

@@ -16,6 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.nima.webclient.spi.ClientProtocolProvider;
 
 /**
  * WebSocket client.
@@ -27,9 +28,15 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.nima.websocket.client {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.nima.websocket;
     requires io.helidon.nima.webclient;
 
     exports io.helidon.nima.websocket.client;
+
+    provides ClientProtocolProvider
+            with io.helidon.nima.websocket.client.WsProtocolProvider;
+    provides io.helidon.nima.webclient.spi.ProtocolConfigProvider
+            with io.helidon.nima.websocket.client.WsProtocolConfigProvider;
 }

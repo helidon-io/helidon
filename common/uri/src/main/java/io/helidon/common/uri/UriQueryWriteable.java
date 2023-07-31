@@ -33,6 +33,14 @@ public interface UriQueryWriteable extends UriQuery {
     }
 
     /**
+     * Update this query by copying all names and their value(s) from the provided query.
+     *
+     * @param uriQuery uri query to read
+     * @return updated instance
+     */
+    UriQueryWriteable from(UriQuery uriQuery);
+
+    /**
      * Set a query parameter with values.
      *
      * @param name  name of the parameter
@@ -81,4 +89,9 @@ public interface UriQueryWriteable extends UriQuery {
      * @param queryString decoded query string to update this instance
      */
     void fromQueryString(String queryString);
+
+    /**
+     * Clear all query parameters.
+     */
+    void clear();
 }

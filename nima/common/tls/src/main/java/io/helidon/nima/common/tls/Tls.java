@@ -196,16 +196,16 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
     /**
      * Create a SSLSocket for the chosen protocol and the given socket.
      *
-     * @param alpnProtocol protocol to use
+     * @param alpnProtocols protocol(s) to use (order is significant)
      * @param socket existing socket
      * @param address where SSL socket will connect
      * @return a new socket ready for TLS communication
      */
-    public SSLSocket createSocket(String alpnProtocol, Socket socket, InetSocketAddress address) {
+    public SSLSocket createSocket(List<String> alpnProtocols, Socket socket, InetSocketAddress address) {
         try {
             SSLSocket sslSocket = (SSLSocket) sslSocketFactory
                     .createSocket(socket, address.getHostName(), address.getPort(), true);
-            sslParameters.setApplicationProtocols(new String[] {alpnProtocol});
+            sslParameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
             sslSocket.setSSLParameters(sslParameters);
             return sslSocket;
         } catch (IOException e) {

@@ -60,7 +60,7 @@ public final class BackendServiceClient {
 
         try {
             JsonArray jsonArray = client.get("/api/backend")
-                    .request(JsonArray.class);
+                    .requestEntity(JsonArray.class);
             span.end();
             return jsonArray;
         } catch (Throwable t) {

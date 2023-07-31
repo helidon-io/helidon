@@ -194,16 +194,17 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     private void noLockWrite(Http2FrameData frame) {
         Http2FrameHeader frameHeader = frame.header();
-        listener.frameHeader(ctx, frameHeader);
+        int streamId = frameHeader.streamId();
+        listener.frameHeader(ctx, streamId, frameHeader);
 
         BufferData headerData = frameHeader.write();
-        listener.frameHeader(ctx, headerData);
+        listener.frameHeader(ctx, streamId, headerData);
 
         if (frameHeader.length() == 0) {
             writer.write(headerData);
         } else {
             BufferData data = frame.data().copy();
-            listener.frame(ctx, data);
+            listener.frame(ctx, streamId, data);
             writer.write(BufferData.create(headerData, data));
         }
     }

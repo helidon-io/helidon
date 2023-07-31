@@ -17,7 +17,6 @@
 package io.helidon.jersey.connector;
 
 import io.helidon.config.Config;
-import io.helidon.nima.webclient.WebClient;
 
 /**
  * Configuration options specific to the Client API that utilizes {@link HelidonConnector}.
@@ -28,7 +27,7 @@ public final class HelidonProperties {
     }
 
     /**
-     * A Helidon {@link Config} instance used to create the corresponding {@link WebClient}.
+     * A Helidon {@link Config} instance used to create the corresponding {@link io.helidon.nima.webclient.api.WebClient}.
      * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
      */
     public static final String CONFIG = "jersey.connector.helidon.config";

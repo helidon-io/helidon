@@ -24,11 +24,9 @@ import java.util.function.Function;
 import io.helidon.common.context.Context;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webclient.UriHelper;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -79,8 +77,8 @@ public class WebClientTracing implements WebClientService {
 
         Tracer tracer = tracerFunction.apply(request.context());
 
-        UriHelper uriInfo = request.uri();
-        String url = uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path();
+        ClientUri uriInfo = request.uri();
+        String url = uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path().path();
         Span.Builder spanBuilder = tracer.spanBuilder(method + "-" + url);
 
         request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
@@ -118,13 +116,6 @@ public class WebClientTracing implements WebClientService {
             span.end(e);
             throw e;
         }
-    }
-
-    private String composeName(String method, WebClientServiceRequest request) {
-        UriHelper uri = request.uri();
-        return method
-                + "-"
-                + uri.pathWithQueryAndFragment(UriQuery.empty(), UriFragment.empty());
     }
 
     private static class ClientHeaderConsumer implements HeaderConsumer {

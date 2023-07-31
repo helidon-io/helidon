@@ -89,7 +89,7 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      *
      * @return {@code true} if logging should be enabled for sent packets, {@code false} if no logging should be done
      */
-    @ConfiguredOption(key = "send-log", value = "true")
+    @ConfiguredOption(value = "true")
     boolean sendLog();
 
     /**

@@ -18,51 +18,75 @@ package io.helidon.nima.http2.webclient;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.uri.UriQueryWriteable;
-import io.helidon.nima.webclient.LoomClient;
-import io.helidon.nima.webclient.UriHelper;
+import io.helidon.nima.webclient.api.ClientRequest;
+import io.helidon.nima.webclient.api.ClientUri;
+import io.helidon.nima.webclient.api.ConnectionKey;
+import io.helidon.nima.webclient.api.FullClientRequest;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.spi.HttpClientSpi;
 
-class Http2ClientImpl extends LoomClient implements Http2Client {
+class Http2ClientImpl implements Http2Client, HttpClientSpi {
+    private final WebClient client;
+    private final Http2ClientConfig clientConfig;
+    private final Http2ClientProtocolConfig protocolConfig;
 
-    private final int maxFrameSize;
-    private final long maxHeaderListSize;
-    private final int initialWindowSize;
-    private final int prefetch;
-    private final boolean priorKnowledge;
-
-    Http2ClientImpl(Http2ClientBuilder builder) {
-        super(builder);
-        this.priorKnowledge = builder.priorKnowledge();
-        this.maxFrameSize = builder.maxFrameSize();
-        this.maxHeaderListSize = builder.maxHeaderListSize();
-        this.initialWindowSize = builder.initialWindowSize();
-        this.prefetch = builder.prefetch();
+    Http2ClientImpl(WebClient client, Http2ClientConfig clientConfig) {
+        this.client = client;
+        this.clientConfig = clientConfig;
+        this.protocolConfig = clientConfig.protocolConfig();
     }
 
     @Override
     public Http2ClientRequest method(Http.Method method) {
+        ClientUri clientUri = clientConfig.baseUri()
+                .map(ClientUri::create) // create from base config
+                .orElseGet(ClientUri::create); // create as empty
+
         UriQueryWriteable query = UriQueryWriteable.create();
-        UriHelper helper = (uri() == null) ? UriHelper.create() : UriHelper.create(uri(), query);
+        clientConfig.baseQuery().ifPresent(query::from);
 
-        return new ClientRequestImpl(this, executor(), method, helper, tls(), query);
+        return new Http2ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
     }
 
-    long maxHeaderListSize() {
-        return maxHeaderListSize;
+    @Override
+    public Http2ClientConfig prototype() {
+        return clientConfig;
     }
 
-    int initialWindowSize() {
-        return initialWindowSize;
+    @Override
+    public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        ConnectionKey ck = new ConnectionKey(clientUri.scheme(),
+                                             clientUri.host(),
+                                             clientUri.port(),
+                                             clientRequest.tls(),
+                                             clientConfig.dnsResolver(),
+                                             clientConfig.dnsAddressLookup(),
+                                             clientRequest.proxy());
+        if (Http2ConnectionCache.supports(ck)) {
+            return SupportLevel.SUPPORTED;
+        }
+
+        return SupportLevel.NOT_SUPPORTED;
     }
 
-    int prefetch() {
-        return prefetch;
-    }
+    @Override
+    public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        Http2ClientRequest request = new Http2ClientRequestImpl(client,
+                                                                clientConfig,
+                                                                protocolConfig,
+                                                                clientRequest.method(),
+                                                                clientUri,
+                                                                clientRequest.properties());
 
-    boolean priorKnowledge() {
-        return priorKnowledge;
-    }
+        clientRequest.connection().ifPresent(request::connection);
+        clientRequest.pathParams().forEach(request::pathParam);
 
-    int maxFrameSize() {
-        return this.maxFrameSize;
+        return request.readTimeout(clientRequest.readTimeout())
+                .followRedirects(clientRequest.followRedirects())
+                .maxRedirects(clientRequest.maxRedirects())
+                .proxy(clientRequest.proxy())
+                .tls(clientRequest.tls())
+                .headers(clientRequest.headers())
+                .fragment(clientUri.fragment());
     }
 }

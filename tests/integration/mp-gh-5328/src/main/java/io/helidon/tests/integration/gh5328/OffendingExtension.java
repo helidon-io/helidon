@@ -48,7 +48,7 @@ public class OffendingExtension implements Extension {
                 .baseUri("http://localhost:" + ws.port())
                 .build();
 
-        response = wc.get().request(String.class);
+        response = wc.get().requestEntity(String.class);
     }
 
     String response() {

@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
 import static io.helidon.common.uri.UriEncoding.decodeUri;
@@ -35,6 +36,32 @@ final class UriQueryImpl implements UriQuery {
 
     UriQueryImpl(String query) {
         this.query = query;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof UriQuery that)) {
+            return false;
+        }
+        if (!Objects.equals(this.names(), that.names())) {
+            return false;
+        }
+
+        for (String name : this.names()) {
+            if (!Objects.equals(this.all(name), that.all(name))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        ensureDecoded();
+        return Objects.hashCode(decodedQueryParams);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,18 +40,19 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
     }
 
     @Override
-    public void frameHeader(SocketContext ctx, BufferData headerData) {
+    public void frameHeader(SocketContext ctx, int streamId, BufferData headerData) {
         if (logger.isLoggable(TRACE)) {
-            ctx.log(logger, TRACE, "%s frame header data%n%s", prefix, headerData.debugDataHex(true));
+            ctx.log(logger, TRACE, "%s %d: frame header data%n%s", prefix, streamId, headerData.debugDataHex(true));
         }
     }
 
     @Override
-    public void frameHeader(SocketContext ctx, Http2FrameHeader frameHeader) {
+    public void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader frameHeader) {
         if (logger.isLoggable(DEBUG)) {
             String flagsString = frameHeader.typedFlags().toString();
-            ctx.log(logger, DEBUG, "%s %s frame <length=%d, stream_id=%d, flags=%s active_flags=%s>",
+            ctx.log(logger, DEBUG, "%s %d: %s frame <length=%d, stream_id=%d, flags=%s active_flags=%s>",
                     prefix,
+                    streamId,
                     frameHeader.type(),
                     frameHeader.length(),
                     frameHeader.streamId(),
@@ -61,50 +62,58 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
     }
 
     @Override
-    public void frame(SocketContext ctx, BufferData data) {
+    public void frame(SocketContext ctx, int streamId, BufferData data) {
         if (logger.isLoggable(TRACE)) {
             if (data.available() == 0) {
-                ctx.log(logger, TRACE, "%s frame data - empty", prefix);
+                ctx.log(logger, TRACE, "%s %d: frame data - empty", prefix, streamId);
             } else {
-                ctx.log(logger, TRACE, "%s frame data, %n%s", prefix, data.debugDataHex(true));
+                ctx.log(logger, TRACE, "%s %d: frame data, %n%s", prefix, streamId, data.debugDataHex(true));
             }
         }
     }
 
     @Override
-    public void frame(SocketContext ctx, Http2Priority priority) {
-        ctx.log(logger, DEBUG, "%s (dep_stream_id: %s, weight: %d, exclusive: %s)",
+    public void frame(SocketContext ctx, int streamId, Http2Priority priority) {
+        ctx.log(logger, DEBUG, "%s %d: (dep_stream_id: %s, weight: %d, exclusive: %s)",
                 prefix,
+                streamId,
                 priority.streamId(),
                 priority.weight(),
                 priority.exclusive());
     }
 
     @Override
-    public void frame(SocketContext ctx, Http2RstStream rstStream) {
-        ctx.log(logger, DEBUG, "%s (rstStream: %s)", prefix, rstStream.errorCode());
+    public void frame(SocketContext ctx, int streamId, Http2RstStream rstStream) {
+        ctx.log(logger, DEBUG, "%s %d: (rstStream: %s)", prefix, streamId, rstStream.errorCode());
     }
 
     @Override
-    public void frame(SocketContext ctx, Http2Settings settings) {
-        ctx.log(logger, DEBUG, "%s %s", prefix, settings);
+    public void frame(SocketContext ctx, int streamId, Http2Settings settings) {
+        ctx.log(logger, DEBUG, "%s %d: %s", prefix, streamId, settings);
     }
 
     @Override
-    public void frame(SocketContext ctx, Http2Ping ping) {
+    public void frame(SocketContext ctx, int streamId, Http2Ping ping) {
         if (logger.isLoggable(TRACE)) {
-            ctx.log(logger, TRACE, "%s ping%n%s", prefix, BufferData.create(ping.getBytes()).debugDataHex(true));
+            ctx.log(logger, TRACE, "%s %d: ping%n%s", prefix, streamId, BufferData.create(ping.getBytes()).debugDataHex(true));
         }
     }
 
     @Override
-    public void frame(SocketContext ctx, Http2GoAway go) {
+    public void frame(SocketContext ctx, int streamId, Http2GoAway go) {
         if (logger.isLoggable(DEBUG)) {
             if (go.errorCode() == Http2ErrorCode.NO_ERROR) {
-                ctx.log(logger, DEBUG, "%s (last_stream_id=%d, errorCode=%s)", prefix, go.lastStreamId(), go.errorCode());
-            } else {
-                ctx.log(logger, DEBUG, "%s (last_stream_id=%d, errorCode=%s)%n%s",
+                ctx.log(logger,
+                        DEBUG,
+                        "%s %d: (last_stream_id=%d, errorCode=%s)",
                         prefix,
+                        streamId,
+                        go.lastStreamId(),
+                        go.errorCode());
+            } else {
+                ctx.log(logger, DEBUG, "%s %d: (last_stream_id=%d, errorCode=%s)%n%s",
+                        prefix,
+                        streamId,
                         go.lastStreamId(),
                         go.errorCode(),
                         go.details());
@@ -113,14 +122,14 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
     }
 
     @Override
-    public void frame(SocketContext ctx, Http2WindowUpdate windowUpdate) {
-        ctx.log(logger, DEBUG, "%s (size_increment=%d)%n", prefix, windowUpdate.windowSizeIncrement());
+    public void frame(SocketContext ctx, int streamId, Http2WindowUpdate windowUpdate) {
+        ctx.log(logger, DEBUG, "%s %d: (size_increment=%d)%n", prefix, streamId, windowUpdate.windowSizeIncrement());
     }
 
     @Override
-    public void headers(SocketContext ctx, Http2Headers headers) {
+    public void headers(SocketContext ctx, int streamId, Http2Headers headers) {
         if (logger.isLoggable(TRACE)) {
-            ctx.log(logger, TRACE, "%s headers:%n%s", prefix, headers.toString());
+            ctx.log(logger, TRACE, "%s %d: headers:%n%s", prefix, streamId, headers.toString());
         }
     }
 }

@@ -19,7 +19,7 @@ package io.helidon.nima.tests.integration.server;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRules;
 import org.junit.jupiter.api.Test;
@@ -46,7 +46,7 @@ class StatusCodeTest {
 
     @Test
     void testCode() {
-        try (ClientResponse response = client.method(Http.Method.GET).request()) {
+        try (HttpClientResponse response = client.method(Http.Method.GET).request()) {
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
     }

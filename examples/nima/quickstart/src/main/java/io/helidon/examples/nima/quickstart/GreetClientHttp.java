@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 package io.helidon.examples.nima.quickstart;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.WebClient;
 
 /**
  * Executable class that invokes HTTP/1 requests against the server.
@@ -33,19 +32,17 @@ public class GreetClientHttp {
      * @param args ignored
      */
     public static void main(String[] args) {
-        Http1Client client = WebClient.builder()
+        WebClient client = WebClient.builder()
                 .baseUri("http://localhost:8080/greet")
                 .build();
 
         String response = client.method(Http.Method.GET)
-                .request()
-                .as(String.class);
+                .requestEntity(String.class);
 
         System.out.println(response);
 
         response = client.get("Nima")
-                .request()
-                .as(String.class);
+                .requestEntity(String.class);
 
         System.out.println(response);
     }

@@ -35,7 +35,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private final Http1Connection connection;
     private final boolean expectContinue;
     private final boolean continueImmediately;
-
+    private boolean continueSent;
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
                                  Http1Connection connection,
@@ -53,6 +53,10 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         this.connection = connection;
         this.expectContinue = expectContinue;
         this.continueImmediately = http1Config.continueImmediately();
+        // if continue immediately, then continue was already sent
+        // if not expecting continue, then we must expect the entity is being sent, and so we also treat it as if continue
+        // was sent
+        this.continueSent = continueImmediately || !expectContinue;
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
                                                                         decoder,
@@ -69,14 +73,20 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
 
     @Override
     public void reset() {
-        if (!continueImmediately && expectContinue) {
+        if (!continueSent) {
             connection.reset();
         }
+    }
+
+    @Override
+    public boolean continueSent() {
+        return continueSent;
     }
 
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
             ctx.dataWriter().writeNow(BufferData.create(Http1Connection.CONTINUE_100));
+            this.continueSent = true;
         }
     }
 }

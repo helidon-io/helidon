@@ -104,11 +104,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
-            if (status.reasonPhrase().isEmpty()) {
-                buffer.write((status.codeText()).getBytes(StandardCharsets.US_ASCII));
-            } else {
-                buffer.write((status.code() + " " + status.reasonPhrase()).getBytes(StandardCharsets.US_ASCII));
-            }
+            String reasonPhrase = status.reasonPhrase().isEmpty() ? status.codeText() : status.reasonPhrase();
+            buffer.write((status.code() + " " + reasonPhrase).getBytes(StandardCharsets.US_ASCII));
             buffer.write('\r');
             buffer.write('\n');
         }

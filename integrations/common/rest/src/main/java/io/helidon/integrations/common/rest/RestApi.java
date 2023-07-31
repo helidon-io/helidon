@@ -28,8 +28,9 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
 import io.helidon.nima.faulttolerance.FaultTolerance;
 import io.helidon.nima.faulttolerance.FtHandler;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.WebClientConfig;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -262,14 +263,14 @@ public interface RestApi {
      * @param <T> type of the built {@link io.helidon.integrations.common.rest.RestApi}
      */
     abstract class Builder<B extends Builder<B, T>, T extends RestApi> implements io.helidon.common.Builder<B, T> {
-        private final Http1ClientBuilder webClientBuilder = Http1Client.builder()
-                .followRedirect(true)
+        private final WebClientConfig.Builder webClientBuilder = WebClient.builder()
+                .followRedirects(true)
                 .keepAlive(true);
         private FtHandler ftHandler = FaultTolerance.builder().build();
         private JsonBuilderFactory jsonBuilderFactory;
         private JsonReaderFactory jsonReaderFactory;
         private JsonWriterFactory jsonWriterFactory;
-        private Http1Client webClient;
+        private WebClient webClient;
 
         /**
          * This method is final, as we need to call the {@link #preBuild()}, {@link #doBuild()} and {@link #postBuild()}
@@ -334,12 +335,12 @@ public interface RestApi {
         /**
          * Update web client builder.
          * This can be used to configure
-         * {@link Http1ClientBuilder#channelOptions(SocketOptions)}.
+         * {@link WebClientConfig.Builder#socketOptions(SocketOptions)}.
          *
          * @param updater consumer that updates the web client builder
          * @return updated builder instance
          */
-        public B webClientBuilder(Consumer<Http1ClientBuilder> updater) {
+        public B webClientBuilder(Consumer<WebClientConfig.Builder> updater) {
             updater.accept(this.webClientBuilder);
             return me();
         }
@@ -390,7 +391,7 @@ public interface RestApi {
          *
          * @return web client
          */
-        protected Http1Client webClient() {
+        protected WebClient webClient() {
             return webClient;
         }
 

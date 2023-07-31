@@ -26,7 +26,8 @@ import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.security.WebClientSecurity;
@@ -54,7 +55,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class WebSecurityBuilderGateDefaultsTest {
 
     private final UnitTestAuditProvider myAuditProvider;
-    private final Http1Client securityClient;
+    private final WebClient securityClient;
     private final Http1Client webClient;
 
     WebSecurityBuilderGateDefaultsTest(WebServer server, Http1Client webClient) {
@@ -176,7 +177,7 @@ class WebSecurityBuilderGateDefaultsTest {
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 
-        try (Http1ClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
+        try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
             assertThat(response.headers().first(Http.Header.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
@@ -185,7 +186,7 @@ class WebSecurityBuilderGateDefaultsTest {
     }
 
     private void testForbidden(String uri, String username, String password) {
-        try (Http1ClientResponse response = callProtected(uri, username, password)) {
+        try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
                     response.status(),
                     is(Http.Status.FORBIDDEN_403));
@@ -199,7 +200,7 @@ class WebSecurityBuilderGateDefaultsTest {
                                Set<String> invalidRoles) {
 
         String entity;
-        try (Http1ClientResponse response = callProtected(uri, username, password)) {
+        try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(response.status(), is(Http.Status.OK_200));
 
             entity = response.entity().as(String.class);
@@ -213,7 +214,7 @@ class WebSecurityBuilderGateDefaultsTest {
         }
     }
 
-    private Http1ClientResponse callProtected(String uri, String username, String password) {
+    private HttpClientResponse callProtected(String uri, String username, String password) {
         // here we call the endpoint
         return securityClient.get(uri)
                 .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, username)

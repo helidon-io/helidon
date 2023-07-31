@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.ListIterator;
 
 import io.helidon.common.config.Config;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
 /**

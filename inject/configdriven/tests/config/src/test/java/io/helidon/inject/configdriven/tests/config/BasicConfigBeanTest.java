@@ -83,9 +83,9 @@ class BasicConfigBeanTest {
         assertThat(clientConfig.cipherSuites(),
                    contains("a", "b", "c"));
         assertThat(clientConfig.headers(),
-                   hasEntry("headers.0", "header1"));
+                   hasEntry("0", "header1"));
         assertThat(clientConfig.headers(),
-                   hasEntry("headers.1", "header2"));
+                   hasEntry("1", "header2"));
     }
 
     @Test
@@ -177,7 +177,7 @@ class BasicConfigBeanTest {
                 .port(clientCfg.get("port").asInt().get())
                 .serverPort(clientCfg.get("server-port").asInt().get())
                 .cipherSuites(clientCfg.get("cipher-suites").asList(String.class).get())
-                .headers(clientCfg.get("headers").asMap().get());
+                .headers(clientCfg.get("headers").detach().asMap().get());
         clientCfg.get("name").asString().ifPresent(clientConfigBeanManualBuilder::name);
         clientCfg.get("pswd").asString().ifPresent(serverConfigBeanManualBuilder::pswd);
         TestClientConfig clientConfigBeanManual = clientConfigBeanManualBuilder.build();

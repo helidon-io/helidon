@@ -32,6 +32,7 @@ import io.helidon.nima.http.media.ReadableEntityBase;
  * Server request entity.
  */
 public final class ServerRequestEntity extends ReadableEntityBase implements ReadableEntity {
+    private final Function<InputStream, InputStream> decoder;
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
 
@@ -41,8 +42,8 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                 Runnable entityProcessedRunnable,
                                 ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext) {
-        super(entityRequestedCallback, decoder, readEntityFunction, entityProcessedRunnable);
-
+        super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable);
+        this.decoder = decoder;
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;
     }
@@ -76,11 +77,16 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     @Override
     public ReadableEntity copy(Runnable entityProcessedRunnable) {
         return new ServerRequestEntity(d -> {},
-                                       contentDecoder(),
+                                       decoder,
                                        readEntityFunction(),
                                        entityProcessedRunnable(),
                                        requestHeaders,
                                        mediaContext);
+    }
+
+    @Override
+    public InputStream inputStream() {
+        return decoder.apply(super.inputStream());
     }
 
     @Override

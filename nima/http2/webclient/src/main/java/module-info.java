@@ -21,14 +21,16 @@ import io.helidon.common.features.api.HelidonFlavor;
  * HTTP/2 WebClient.
  */
 @Feature(value = "HTTP/2",
-        description = "HTTP/2 WebClient",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
-        path = {"WebClient","HTTP/2"}
+         description = "HTTP/2 WebClient",
+         in = HelidonFlavor.NIMA,
+         invalidIn = HelidonFlavor.SE,
+         path = {"WebClient", "HTTP/2"}
 )
 module io.helidon.nima.http2.webclient {
     requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
 
+    requires transitive io.helidon.builder.api;
     requires transitive io.helidon.nima.http2;
     requires transitive io.helidon.nima.webclient;
     requires transitive io.helidon.common.pki;

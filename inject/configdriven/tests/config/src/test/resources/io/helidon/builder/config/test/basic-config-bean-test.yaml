@@ -29,5 +29,5 @@ test-client:
     - "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
     - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256"
   headers:
-    - header-key1: "header-val1"
-    - header-key2: "header-val2"
+    header-key1: "header-val1"
+    header-key2: "header-val2"

@@ -77,10 +77,6 @@ class TypeHandlerMap extends TypeHandler {
 
     @Override
     Optional<String> generateFromConfig(PrototypeProperty.ConfiguredOption configured, FactoryMethods factoryMethods) {
-        if (STRING_TYPE.equals(actualType)) {
-            return Optional.of("config.get(\"" + configured.configKey() + "\").asMap().ifPresent(this::" + setterName() + ");");
-        }
-
         return Optional.of("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
                                    + "(node -> "
                                    + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"

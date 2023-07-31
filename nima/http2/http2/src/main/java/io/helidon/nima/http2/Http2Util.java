@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.nima.http2;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
+import io.helidon.common.buffers.BufferData;
 
 /**
  * HTTP/2 utility.
@@ -42,5 +44,14 @@ public final class Http2Util {
     public static boolean isPreface(byte[] bytes) {
         return Arrays.compare(PRIOR_KNOWLEDGE_PREFACE, 0, PREFACE_LENGTH,
                               bytes, 0, PREFACE_LENGTH) == 0;
+    }
+
+    /**
+     * HTTP/2 preface data as a buffer data.
+     *
+     * @return a buffer that contains the preface
+     */
+    public static BufferData prefaceData() {
+        return BufferData.create(PRIOR_KNOWLEDGE_PREFACE);
     }
 }

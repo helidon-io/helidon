@@ -22,18 +22,16 @@ import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
@@ -60,11 +58,11 @@ class Http2ClientTest {
                 .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
                 .trustAll(true)
                 .build();
-        this.tlsClient = WebClient.builder(Http2.PROTOCOL)
+        this.tlsClient = Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
                 .tls(insecureTls)
                 .build();
-        this.plainClient = WebClient.builder(Http2.PROTOCOL)
+        this.plainClient = Http2Client.builder()
                 .baseUri("http://localhost:" + plainPort + "/")
                 .build();
     }

@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.socket.PeerInfo;
-import io.helidon.nima.webclient.ClientConnection;
+import io.helidon.common.socket.HelidonSocket;
+import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webserver.ProtocolConfigs;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.WebServer;
@@ -39,21 +39,26 @@ class DirectClientConnection implements ClientConnection {
     private final DataReader clientReader;
     private final DataWriter clientWriter;
     private final DirectClientServerContext serverContext;
+    private final HelidonSocket socket;
 
-    DirectClientConnection(PeerInfo clientPeer,
-                           PeerInfo localPeer,
-                           Router router,
-                           boolean isTls) {
+    DirectClientConnection(HelidonSocket socket,
+                           Router router) {
 
         ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
         ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
         this.clientReader = reader(serverToClient);
         this.clientWriter = writer(clientToServer);
+        this.socket = socket;
         this.serverContext = new DirectClientServerContext(router,
-                                                           new DirectSocket(localPeer, clientPeer, isTls),
+                                                           socket,
                                                            reader(clientToServer),
                                                            writer(serverToClient));
+    }
+
+    @Override
+    public HelidonSocket helidonSocket() {
+        return socket;
     }
 
     @Override
@@ -67,12 +72,12 @@ class DirectClientConnection implements ClientConnection {
     }
 
     @Override
-    public void release() {
-        close();
+    public void releaseResource() {
+        closeResource();
     }
 
     @Override
-    public void close() {
+    public void closeResource() {
         if (closed.compareAndSet(false, true)) {
             clientWriter.writeNow(BufferData.empty());
         }

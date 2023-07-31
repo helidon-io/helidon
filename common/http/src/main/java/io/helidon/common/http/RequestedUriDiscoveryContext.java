@@ -17,7 +17,6 @@ package io.helidon.common.http;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.AllowList;
@@ -289,7 +288,7 @@ public interface RequestedUriDiscoveryContext {
                                    String requestPath,
                                    ServerRequestHeaders headers,
                                    UriQuery query,
-                                          boolean isSecure) {
+                                   boolean isSecure) {
                 String scheme = null;
                 String authority = null;
                 String host = null;
@@ -340,34 +339,28 @@ public interface RequestedUriDiscoveryContext {
                     }
                 }
 
+                UriInfo.Builder uriInfo = UriInfo.builder();
+
                 // now we must fill values that were not discovered (to have a valid URI information)
                 if (host == null && authority == null) {
                     authority = headers.first(Http.Header.HOST).orElse(null);
                 }
 
-                if (path == null) {
-                    path = requestPath;
+                uriInfo.path(path == null ? requestPath : path);
+                uriInfo.host(localAddress); // this is the fallback
+                if (authority != null) {
+                    uriInfo.authority(authority); // this is the second possibility
+                }
+                if (host != null) {
+                    uriInfo.host(host); // and this one has priority
+                }
+                if (port != -1) {
+                    uriInfo.port(port);
                 }
 
-                if (host == null && authority != null) {
-                    Authority a;
-                    if (scheme == null) {
-                        a = Authority.create(authority);
-                    } else {
-                        a = Authority.create(scheme, authority);
-                    }
-                    if (a.host() != null) {
-                        host = a.host();
-                    }
-                    if (port == -1) {
-                        port = a.port();
-                    }
-                }
-
-        /*
-        Discover final values to be used
-        */
-
+                /*
+                Discover final values to be used
+                */
                 if (scheme == null) {
                     if (port == 80) {
                         scheme = "http";
@@ -377,23 +370,10 @@ public interface RequestedUriDiscoveryContext {
                         scheme = isSecure ? "https" : "http";
                     }
                 }
+                uriInfo.scheme(scheme);
+                uriInfo.query(query);
 
-                if (host == null) {
-                    host = localAddress;
-                }
-
-                // we may still have -1, if port was not explicitly defined by a header - use default port of protocol
-                if (port == -1) {
-                    if ("https".equals(scheme)) {
-                        port = 443;
-                    } else {
-                        port = 80;
-                    }
-                }
-                if (query == null || query.isEmpty()) {
-                    query = null;
-                }
-                return new UriInfo(scheme, host, port, path, Optional.ofNullable(query));
+                return uriInfo.build();
             }
 
             private static String hostPart(String address) {
@@ -465,29 +445,6 @@ public interface RequestedUriDiscoveryContext {
                     discovered = scheme != null || host != null || port != -1 || path != null;
                 }
                 return discovered ? new XForwardedDiscovery(scheme, host, port, path) : null;
-            }
-
-            private record Authority(String host, int port) {
-                static Authority create(String hostHeader) {
-                    int colon = hostHeader.indexOf(':');
-                    if (colon == -1) {
-                        // we do not know the protocol, and there is no port defined
-                        return new Authority(hostHeader, -1);
-                    }
-                    String hostString = hostHeader.substring(0, colon);
-                    String portString = hostHeader.substring(colon + 1);
-                    return new Authority(hostString, Integer.parseInt(portString));
-                }
-                static Authority create(String scheme, String hostHeader) {
-                    int colon = hostHeader.indexOf(':');
-                    if (colon == -1) {
-                        // define port by protocol
-                        return new Authority(hostHeader, "https".equals(scheme) ? 443 : 80);
-                    }
-                    String hostString = hostHeader.substring(0, colon);
-                    String portString = hostHeader.substring(colon + 1);
-                    return new Authority(hostString, Integer.parseInt(portString));
-                }
             }
 
             private record ForwardedDiscovery(String authority, String scheme) {}

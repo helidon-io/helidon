@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRules;
+
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.getLogger;
@@ -46,7 +47,7 @@ class Log4jTest {
     @Test
     void testOk() {
         String response = client.method(Http.Method.GET)
-                .request(String.class);
+                .requestEntity(String.class);
 
         LOGGER.log(System.Logger.Level.DEBUG, "Message");
 

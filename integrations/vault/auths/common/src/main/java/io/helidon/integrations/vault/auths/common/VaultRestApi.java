@@ -29,7 +29,7 @@ import io.helidon.integrations.common.rest.RestApiBase;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 
 import jakarta.json.JsonObject;
 
@@ -59,7 +59,7 @@ public class VaultRestApi extends RestApiBase {
                                   ApiRequest<?> request,
                                   Http.Method method,
                                   String requestId,
-                                  Http1ClientResponse response,
+                                  HttpClientResponse response,
                                   ResponseBuilder<?, T, ?> responseBuilder) {
 
         if (responseBuilder instanceof VaultOptionalResponse.Builder) {
@@ -91,7 +91,7 @@ public class VaultRestApi extends RestApiBase {
                                          ApiRequest<?> request,
                                          Http.Method method,
                                          String requestId,
-                                         Http1ClientResponse response,
+                                         HttpClientResponse response,
                                          JsonObject entity) {
 
         String message = "Failed to invoke " + method + " on path " + path;

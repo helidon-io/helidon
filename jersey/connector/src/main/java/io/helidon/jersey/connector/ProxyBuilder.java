@@ -20,7 +20,7 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
 
-import io.helidon.nima.webclient.Proxy;
+import io.helidon.nima.webclient.api.Proxy;
 
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Configuration;
@@ -77,7 +77,7 @@ class ProxyBuilder {
         }
     }
 
-    private static URI getProxyUri(final Object proxy) {
+    private static URI getProxyUri(Object proxy) {
         if (proxy instanceof URI) {
             return (URI) proxy;
         } else if (proxy instanceof String) {

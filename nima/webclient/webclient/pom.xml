@@ -28,115 +28,19 @@
     <name>Helidon Níma WebClient</name>
 
     <properties>
-        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+        <maven.sources.skip>true</maven.sources.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <spotbugs.skip>true</spotbugs.skip>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-http</artifactId>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-socket</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-key-util</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.common</groupId>
-            <artifactId>helidon-nima-common-tls</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.http.media</groupId>
-            <artifactId>helidon-nima-http-media</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.http.encoding</groupId>
-            <artifactId>helidon-nima-http-encoding</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-context</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.features</groupId>
-            <artifactId>helidon-common-features-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-metadata-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <artifactId>junit-jupiter-params</artifactId>
-            <groupId>org.junit.jupiter</groupId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common.testing</groupId>
-            <artifactId>helidon-common-testing-http-junit5</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-nima-webclient-http1</artifactId>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.common.features</groupId>
-                            <artifactId>helidon-common-features-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.builder</groupId>
-                            <artifactId>helidon-builder-processor</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                    <dependency>
-                        <groupId>io.helidon.common.features</groupId>
-                        <artifactId>helidon-common-features-processor</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
 </project>

@@ -46,10 +46,12 @@ class StreamBuffer {
             if (!dequeSemaphore.tryAcquire(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
                 throw new StreamTimeoutException(streamId, timeout);
             }
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted while waiting for data", e);
+        }
+        try {
             streamLock.lock();
             return buffer.poll();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
         } finally {
             streamLock.unlock();
         }

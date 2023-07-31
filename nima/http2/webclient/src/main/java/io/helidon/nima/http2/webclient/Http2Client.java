@@ -16,141 +16,70 @@
 
 package io.helidon.nima.http2.webclient;
 
-import io.helidon.nima.http2.WindowSize;
-import io.helidon.nima.webclient.DefaultDnsResolverProvider;
-import io.helidon.nima.webclient.DnsAddressLookup;
-import io.helidon.nima.webclient.HttpClient;
-import io.helidon.nima.webclient.WebClient;
+import java.util.function.Consumer;
+
+import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.config.Config;
+import io.helidon.nima.webclient.api.HttpClient;
+import io.helidon.nima.webclient.api.WebClient;
 
 /**
  * HTTP2 client.
  */
-public interface Http2Client extends HttpClient<Http2ClientRequest, Http2ClientResponse> {
+@RuntimeType.PrototypedBy(Http2ClientConfig.class)
+public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType.Api<Http2ClientConfig> {
+    /**
+     * HTTP/2 protocol ID, as used by ALPN.
+     */
+    String PROTOCOL_ID = "h2";
 
     /**
      * A new fluent API builder to customize client setup.
      *
      * @return a new builder
      */
-    static Http2ClientBuilder builder() {
-        return new Http2ClientBuilder();
+    static Http2ClientConfig.Builder builder() {
+        return Http2ClientConfig.builder();
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.nima.http2.webclient.Http2Client}.
+     * Create a new instance with custom configuration.
+     *
+     * @param clientConfig HTTP/2 client configuration
+     * @return a new HTTP/2 client
      */
-    class Http2ClientBuilder extends WebClient.Builder<Http2ClientBuilder, Http2Client> {
+    static Http2Client create(Http2ClientConfig clientConfig) {
+        return new Http2ClientImpl(WebClient.create(it -> it.from(clientConfig)), clientConfig);
+    }
 
-        private boolean priorKnowledge;
-        private int maxFrameSize = WindowSize.DEFAULT_MAX_FRAME_SIZE;
-        private long maxHeaderListSize = -1;
-        private int initialWindowSize = WindowSize.DEFAULT_WIN_SIZE;
-        private int prefetch = 33554432;
+    /**
+     * Create a new instance customizing its configuration.
+     *
+     * @param consumer HTTP/2 client configuration
+     * @return a new HTTP/2 client
+     */
+    static Http2Client create(Consumer<Http2ClientConfig.Builder> consumer) {
+        return create(Http2ClientConfig.builder()
+                              .update(consumer)
+                              .buildPrototype());
+    }
 
-        private Http2ClientBuilder() {
-            // until we use the same parent for HTTP/1 and HTTP/2, we need to have these defined as defaults
-            super.dnsResolver(new DefaultDnsResolverProvider().createDnsResolver());
-            super.dnsAddressLookup(DnsAddressLookup.defaultLookup());
-        }
+    /**
+     * Create a new instance with default configuration.
+     *
+     * @return a new HTTP/2 client
+     */
+    static Http2Client create() {
+        return create(Http2ClientConfig.create());
+    }
 
-        /**
-         * Prior knowledge of HTTP/2 capabilities of the server. If server we are connecting to does not
-         * support HTTP/2 and prior knowledge is set to {@code false}, only features supported by HTTP/1 will be available
-         * and attempts to use HTTP/2 specific will throw an {@link UnsupportedOperationException}.
-         * <h4>Plain text connection</h4>
-         * If prior knowledge is set to {@code true}, we will not attempt an upgrade of connection and use prior knowledge.
-         * If prior knowledge is set to {@code false}, we will initiate an HTTP/1 connection and upgrade it to HTTP/2,
-         * if supported by the server.
-         * plaintext connection ({@code h2c}).
-         * <h4>TLS protected connection</h4>
-         * If prior knowledge is set to {@code true}, we will negotiate protocol using HTTP/2 only, failing if not supported.
-         * if prior knowledge is set to {@code false}, we will negotiate protocol using both HTTP/2 and HTTP/1, using the protocol
-         * supported by server.
-         *
-         * @param priorKnowledge whether to use prior knowledge of HTTP/2
-         * @return updated client
-         */
-        public Http2ClientBuilder priorKnowledge(boolean priorKnowledge) {
-            this.priorKnowledge = priorKnowledge;
-            return this;
-        }
-
-        /**
-         * Configure initial MAX_FRAME_SIZE setting for new HTTP/2 connections.
-         * Maximum size of data frames in bytes the client is prepared to accept from the server.
-         * Default value is 2^14(16_384).
-         *
-         * @param maxFrameSize data frame size in bytes between 2^14(16_384) and 2^24-1(16_777_215)
-         * @return updated client
-         */
-        public Http2ClientBuilder maxFrameSize(int maxFrameSize) {
-            if (maxFrameSize < WindowSize.DEFAULT_MAX_FRAME_SIZE || maxFrameSize > WindowSize.MAX_MAX_FRAME_SIZE) {
-                throw new IllegalArgumentException(
-                        "Max frame size needs to be a number between 2^14(16_384) and 2^24-1(16_777_215)"
-                );
-            }
-            this.maxFrameSize = maxFrameSize;
-            return this;
-        }
-
-        /**
-         * Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections.
-         * Sends to the server the maximum header field section size client is prepared to accept.
-         *
-         * @param maxHeaderListSize units of octets
-         * @return updated client
-         */
-        public Http2ClientBuilder maxHeaderListSize(long maxHeaderListSize){
-            this.maxHeaderListSize = maxHeaderListSize;
-            return this;
-        }
-
-        /**
-         * Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections.
-         * Sends to the server the size of the largest frame payload client is willing to receive.
-         *
-         * @param initialWindowSize units of octets
-         * @return updated client
-         */
-        public Http2ClientBuilder initialWindowSize(int initialWindowSize){
-            this.initialWindowSize = initialWindowSize;
-            return this;
-        }
-
-        /**
-         * First connection window update increment sent right after the connection is established.
-         *
-         * @param prefetch number of bytes the client is prepared to receive as data from all the streams combined
-         * @return updated client
-         */
-        public Http2ClientBuilder prefetch(int prefetch) {
-            this.prefetch = prefetch;
-            return this;
-        }
-
-        @Override
-        public Http2Client doBuild() {
-            return new Http2ClientImpl(this);
-        }
-
-        boolean priorKnowledge() {
-            return priorKnowledge;
-        }
-
-        long maxHeaderListSize() {
-            return maxHeaderListSize;
-        }
-
-        int initialWindowSize() {
-            return initialWindowSize;
-        }
-
-        int prefetch() {
-            return prefetch;
-        }
-
-        int maxFrameSize() {
-            return this.maxFrameSize;
-        }
+    /**
+     * Create a new instance based on {@link io.helidon.common.config.Config}.
+     *
+     * @param config client config
+     * @return a new HTTP/2 client
+     */
+    static Http2Client create(Config config) {
+        return create(it -> it.config(config));
     }
 }

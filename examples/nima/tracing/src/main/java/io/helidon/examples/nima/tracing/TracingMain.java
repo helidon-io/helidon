@@ -18,8 +18,7 @@ package io.helidon.examples.nima.tracing;
 
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.http2.webserver.Http2Route;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.tracing.WebClientTracing;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
@@ -63,12 +62,12 @@ public class TracingMain {
     }
 
     private static class ClientHandler implements Handler {
-        private final Http1Client client;
+        private final WebClient client;
 
         private ClientHandler(Tracer tracer) {
             this.client = WebClient.builder()
                     .baseUri("http://localhost:8080/versionspecific")
-                    .useSystemServiceLoader(false)
+                    .servicesDiscoverServices(false)
                     .addService(WebClientTracing.create(tracer))
                     .build();
         }
@@ -76,8 +75,7 @@ public class TracingMain {
         @Override
         public void handle(ServerRequest req, ServerResponse res) {
             res.send(client.get()
-                             .request()
-                             .as(String.class));
+                             .requestEntity(String.class));
         }
     }
 

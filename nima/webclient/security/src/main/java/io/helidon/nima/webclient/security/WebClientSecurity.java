@@ -25,8 +25,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
@@ -121,9 +121,9 @@ public class WebClientSecurity implements WebClientService {
                     .clearQueryParams();
 
             outboundEnv.method(request.method().text())
-                    .path(request.uri().path())
+                    .path(request.uri().path().path())
                     .targetUri(request.uri().toUri())
-                    .queryParams(request.query());
+                    .queryParams(request.uri().query());
 
             request.headers()
                     .stream()
@@ -201,7 +201,7 @@ public class WebClientSecurity implements WebClientService {
                 .endpointConfig(EndpointConfig.builder()
                                         .build())
                 .env(SecurityEnvironment.builder()
-                             .path(request.uri().path())
+                             .path(request.uri().path().path())
                              .build());
         request.context().get(Tracer.class).ifPresent(builder::tracingTracer);
         request.context().get(SpanContext.class).ifPresent(builder::tracingSpan);

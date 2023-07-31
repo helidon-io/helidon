@@ -19,7 +19,7 @@ package io.helidon.tests.integration.webserver.gh2631;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -37,7 +37,7 @@ class Gh2631Test {
     Gh2631Test(WebServer server) {
         this.client = Http1Client.builder()
                                .baseUri("http://localhost:" + server.port())
-                               .followRedirect(true)
+                               .followRedirects(true)
                                .build();
     }
 
@@ -94,7 +94,7 @@ class Gh2631Test {
 
     @Test
     void testFileNoFallbackMissing() {
-        ClientResponse response = getResponse("/simpleFile/second/");
+        HttpClientResponse response = getResponse("/simpleFile/second/");
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
@@ -125,6 +125,6 @@ class Gh2631Test {
     private String get(String path) {
         return client.get()
                 .path(path)
-                .request(String.class);
+                .requestEntity(String.class);
     }
 }

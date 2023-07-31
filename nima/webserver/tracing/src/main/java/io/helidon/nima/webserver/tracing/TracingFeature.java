@@ -311,7 +311,7 @@ public class TracingFeature implements HttpFeature, Weighted {
                 span.tag(Tag.COMPONENT.create("helidon-nima-webserver"));
                 span.tag(Tag.HTTP_METHOD.create(prologue.method().text()));
                 UriInfo uriInfo = req.requestedUri();
-                span.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path()));
+                span.tag(Tag.HTTP_URL.create(uriInfo.scheme() + "://" + uriInfo.authority() + uriInfo.path().path()));
                 span.tag(Tag.HTTP_VERSION.create(prologue.protocolVersion()));
 
                 Contexts.runInContext(context, chain::proceed);

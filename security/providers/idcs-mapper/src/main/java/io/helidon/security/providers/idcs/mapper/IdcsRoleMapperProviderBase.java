@@ -35,9 +35,9 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -171,8 +171,8 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         return builder.build();
     }
 
-    protected List<? extends Grant> processRoleRequest(Http1ClientRequest request, Object entity, String subjectName) {
-        try (Http1ClientResponse response = request.submit(entity)) {
+    protected List<? extends Grant> processRoleRequest(HttpClientRequest request, Object entity, String subjectName) {
+        try (HttpClientResponse response = request.submit(entity)) {
             if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);
@@ -383,11 +383,11 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
         private static final List<Validator<Jwt>> TIME_VALIDATORS = Jwt.defaultTimeValidators();
 
         private final AtomicReference<LazyValue<AppTokenData>> token = new AtomicReference<>();
-        private final Http1Client webClient;
+        private final WebClient webClient;
         private final URI tokenEndpointUri;
         private final Duration tokenRefreshSkew;
 
-        protected AppToken(Http1Client webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
+        protected AppToken(WebClient webClient, URI tokenEndpointUri, Duration tokenRefreshSkew) {
             this.webClient = webClient;
             this.tokenEndpointUri = tokenEndpointUri;
             this.tokenRefreshSkew = tokenRefreshSkew;
@@ -448,11 +448,11 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             tracing.findParent()
                     .ifPresent(childContext::register);
 
-            Http1ClientRequest request = webClient.post()
+            HttpClientRequest request = webClient.post()
                     .uri(tokenEndpointUri)
                     .header(Http.HeaderValues.ACCEPT_JSON);
 
-            try (Http1ClientResponse response = request.submit(params)) {
+            try (HttpClientResponse response = request.submit(params)) {
                 if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
                     try {
                         JsonObject jsonObject = response.as(JsonObject.class);

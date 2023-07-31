@@ -37,8 +37,8 @@ import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
@@ -63,7 +63,7 @@ class Http2WebClientTest {
     private static ExecutorService executorService;
     private static int plainPort;
     private static final LazyValue<Http2Client> priorKnowledgeClient = LazyValue.create(() -> Http2Client.builder()
-            .priorKnowledge(true)
+            .protocolConfig(pc -> pc.priorKnowledge(true))
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
             .build());
     private static final LazyValue<Http2Client> upgradeClient = LazyValue.create(() -> Http2Client.builder()
@@ -166,6 +166,8 @@ class Http2WebClientTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void clientGet(String name, LazyValue<Http2Client> client) {
+        // reset everything, so we need to create a new connection
+        Http2ConnectionCache.clear();
         try (Http2ClientResponse response = client.get()
                 .get()
                 .queryParam("custQueryParam", "test-get")
@@ -174,7 +176,7 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("HTTP/2 route"));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
                        is("test-get"));
         }
@@ -183,6 +185,7 @@ class Http2WebClientTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void clientPut(String clientType, LazyValue<Http2Client> client) {
+        Http2ConnectionCache.clear();
 
         String payload = clientType + " payload";
         String custHeaderValue = clientType + " header value";
@@ -196,7 +199,7 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("PUT " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
                        is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
@@ -207,6 +210,7 @@ class Http2WebClientTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void clientPost(String clientType, LazyValue<Http2Client> client) {
+        Http2ConnectionCache.clear();
 
         String payload = clientType + " payload";
         String custHeaderValue = clientType + " header value";
@@ -220,7 +224,7 @@ class Http2WebClientTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("POST " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
-                       is(ClientRequestImpl.USER_AGENT_HEADER.value()));
+                       is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
             assertThat(response.headers().get(SERVER_CUSTOM_HEADER_NAME).value(),
                        is(custHeaderValue));
             assertThat(response.headers().get(SERVER_HEADER_FROM_PARAM_NAME).value(),
@@ -232,6 +236,8 @@ class Http2WebClientTest {
     @MethodSource("clientTypes")
     void multiplexParallelStreamsGet(String clientType, LazyValue<Http2Client> client)
             throws ExecutionException, InterruptedException, TimeoutException {
+
+        Http2ConnectionCache.clear();
         Consumer<Integer> callable = id -> {
             try (Http2ClientResponse response = client.get()
                     .get("/h2streaming")

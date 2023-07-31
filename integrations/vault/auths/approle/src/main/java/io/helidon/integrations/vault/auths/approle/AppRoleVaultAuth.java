@@ -126,7 +126,7 @@ public class AppRoleVaultAuth implements VaultAuth {
                                    .webClientBuilder(webclient -> {
                                        webclient.baseUri(address + "/v1");
                                        vaultBuilder.baseNamespace()
-                                               .ifPresent(ns -> webclient.header(VAULT_NAMESPACE_HEADER_NAME, ns));
+                                               .ifPresent(ns -> webclient.addHeader(VAULT_NAMESPACE_HEADER_NAME, ns));
                                        vaultBuilder.webClientUpdater().accept(webclient);
                                    })
                                    .faultTolerance(vaultBuilder.ftHandler())

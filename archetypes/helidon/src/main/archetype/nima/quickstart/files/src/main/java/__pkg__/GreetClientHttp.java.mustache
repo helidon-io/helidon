@@ -1,8 +1,7 @@
 package {{package}};
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.WebClient;
 
 /**
  * Executable class that invokes HTTP/1 requests against the server.
@@ -17,19 +16,17 @@ public class GreetClientHttp {
      * @param args ignored
      */
     public static void main(String[] args) {
-        Http1Client client = WebClient.builder()
+        WebClient client = WebClient.builder()
                 .baseUri("http://localhost:8080/greet")
                 .build();
 
         String response = client.method(Http.Method.GET)
-                .request()
-                .as(String.class);
+                .requestEntity(String.class);
 
         System.out.println(response);
 
         response = client.get("Nima")
-                .request()
-                .as(String.class);
+                .requestEntity(String.class);
 
         System.out.println(response);
     }

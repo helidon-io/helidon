@@ -192,7 +192,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
      */
     public void clientSettings(Http2Settings http2Settings) {
         this.clientSettings = http2Settings;
-        this.receiveFrameListener.frame(ctx, clientSettings);
+        this.receiveFrameListener.frame(ctx, 0, clientSettings);
         if (this.clientSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
             updateHeaderTableSize(clientSettings.value(Http2Setting.HEADER_TABLE_SIZE));
         }
@@ -351,9 +351,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         BufferData frameHeaderBuffer = reader.readBuffer(FRAME_HEADER_LENGTH);
 
-        receiveFrameListener.frameHeader(ctx, frameHeaderBuffer);
-        frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
-        receiveFrameListener.frameHeader(ctx, this.frameHeader);
+
+        int streamId;
+        try {
+            frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
+            streamId = frameHeader.streamId();
+            receiveFrameListener.frameHeader(ctx, streamId, frameHeaderBuffer);
+        } catch (Throwable e) {
+            // cannot determine correct stream id
+            receiveFrameListener.frameHeader(ctx, 0, frameHeaderBuffer);
+            throw e;
+        }
+        receiveFrameListener.frameHeader(ctx, frameHeader.streamId(), this.frameHeader);
 
         // https://datatracker.ietf.org/doc/html/rfc7540#section-4.1
         if (serverSettings.value(Http2Setting.MAX_FRAME_SIZE) < frameHeader.length()) {
@@ -369,7 +378,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             frameInProgress = reader.readBuffer(frameHeader.length());
         }
 
-        receiveFrameListener.frame(ctx, frameInProgress);
+        receiveFrameListener.frame(ctx, streamId, frameInProgress);
         this.state = switch (frameHeader.type()) {
             case DATA -> State.DATA;
             case HEADERS -> State.HEADERS;
@@ -386,8 +395,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (continuationExpectedStreamId != 0) {
             // somebody expects header data, we cannot receive anything else
-            int streamId = frameHeader.streamId();
-
             if (state == State.CONTINUATION) {
                 if (continuationExpectedStreamId != streamId) {
                     // TODO go away should send the id of the last processed stream (for retries etc.)
@@ -430,12 +437,15 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void readWindowUpdateFrame() {
         Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(inProgressFrame());
-        receiveFrameListener.frame(ctx, windowUpdate);
+        int streamId = frameHeader.streamId();
+
+        receiveFrameListener.frame(ctx, streamId, windowUpdate);
+
         state = State.READ_FRAME;
 
         boolean overflow;
         int increment = windowUpdate.windowSizeIncrement();
-        int streamId = frameHeader.streamId();
+
 
         if (streamId == 0) {
             // overall connection
@@ -583,7 +593,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                           new Http2FrameData(frameHeader, inProgressFrame()));
         }
 
-        receiveFrameListener.headers(ctx, headers);
+        receiveFrameListener.headers(ctx, streamId, headers);
         headers.validateRequest();
         String path = headers.path();
         Http.Method method = headers.method();
@@ -616,14 +626,14 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             state = State.READ_FRAME;
         } else {
             ping = Http2Ping.create(inProgressFrame());
-            receiveFrameListener.frame(ctx, ping);
+            receiveFrameListener.frame(ctx, 0, ping);
             state = State.SEND_PING_ACK;
         }
     }
 
     private void doPriority() {
         Http2Priority http2Priority = Http2Priority.create(inProgressFrame());
-        receiveFrameListener.frame(ctx, http2Priority);
+        receiveFrameListener.frame(ctx, http2Priority.streamId(), http2Priority);
 
         if (frameHeader.streamId() == 0) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Priority with stream id 0");
@@ -665,7 +675,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void goAwayFrame() {
         Http2GoAway go = Http2GoAway.create(inProgressFrame());
-        receiveFrameListener.frame(ctx, go);
+        receiveFrameListener.frame(ctx, 0, go);
         state = State.FINISHED;
         if (go.errorCode() != Http2ErrorCode.NO_ERROR) {
             ctx.log(LOGGER, DEBUG, "Received go away. Error code: %s, message: %s",
@@ -676,12 +686,21 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void rstStream() {
         Http2RstStream rstStream = Http2RstStream.create(inProgressFrame());
-        receiveFrameListener.frame(ctx, rstStream);
+        receiveFrameListener.frame(ctx, frameHeader.streamId(), rstStream);
 
-        StreamContext streamContext = stream(frameHeader.streamId());
-        streamContext.stream().rstStream(rstStream);
+        try {
+            StreamContext streamContext = stream(frameHeader.streamId());
+            streamContext.stream().rstStream(rstStream);
 
-        state = State.READ_FRAME;
+            state = State.READ_FRAME;
+        } catch (Http2Exception e) {
+            if (e.getMessage().startsWith("Stream closed")) {
+                // expected state, probably closed by remote peer
+                state = State.READ_FRAME;
+                return;
+            }
+            throw e;
+        }
     }
 
     private void unknownFrame() {

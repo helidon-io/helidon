@@ -16,36 +16,23 @@
 
 package io.helidon.nima.http2.webclient;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.nio.charset.StandardCharsets;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http1HeadersParser;
-import io.helidon.common.http.WritableHeaders;
-import io.helidon.common.socket.PlainSocket;
-import io.helidon.common.socket.SocketOptions;
-import io.helidon.common.socket.SocketWriter;
-import io.helidon.common.socket.TlsSocket;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.nima.http2.ConnectionFlowControl;
 import io.helidon.nima.http2.Http2ConnectionWriter;
 import io.helidon.nima.http2.Http2ErrorCode;
@@ -62,9 +49,11 @@ import io.helidon.nima.http2.Http2Ping;
 import io.helidon.nima.http2.Http2RstStream;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
+import io.helidon.nima.http2.Http2Util;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.WindowSize;
-import io.helidon.nima.webclient.spi.DnsResolver;
+import io.helidon.nima.webclient.api.ClientConnection;
+import io.helidon.nima.webclient.api.WebClient;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -72,53 +61,53 @@ import static java.lang.System.Logger.Level.WARNING;
 
 class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
+    private static final ExecutorService TMP_EXECUTOR = Executors.newFixedThreadPool(10,
+                                                                                     Thread.ofPlatform()
+                                                                                             .name("helidon-tmp-client-", 0)
+                                                                                             .factory());
     private static final int FRAME_HEADER_LENGTH = 9;
-    private static final String UPGRADE_REQ_MASK = """
-            %s %s HTTP/1.1\r
-            Host: %s:%s\r
-            Connection: Upgrade, HTTP2-Settings\r
-            Upgrade: h2c\r
-            HTTP2-Settings: %s\r\n\r
-            """;
-    private static final byte[] PRIOR_KNOWLEDGE_PREFACE =
-            "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
-    private final ExecutorService executor;
-    private final SocketOptions socketOptions;
-    private final ConnectionKey connectionKey;
-    private final String primaryPath;
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
+    private final ReadWriteLock streamsLock = new ReentrantReadWriteLock();
+    // streams may be accessed from connection thread, or stream thread, must be guarded by the above lock
     private final Map<Integer, Http2ClientStream> streams = new HashMap<>();
     private final ConnectionFlowControl connectionFlowControl;
-    private final ConnectionContext connectionContext;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+    private final ClientConnection connection;
+    private final SocketContext ctx;
+    private final Http2ConnectionWriter writer;
+    private final DataReader reader;
+    private final DataWriter dataWriter;
+
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
-    private String channelId;
-    private Socket socket;
-    private PlainSocket helidonSocket;
-    private Http2ConnectionWriter writer;
-    private DataReader reader;
-    private DataWriter dataWriter;
     private Future<?> handleTask;
 
-    Http2ClientConnection(ExecutorService executor,
-                          SocketOptions socketOptions,
-                          ConnectionKey connectionKey,
-                          String primaryPath,
-                          ConnectionContext connectionContext) {
-        this.executor = executor;
-        this.socketOptions = socketOptions;
-        this.connectionKey = connectionKey;
-        this.primaryPath = primaryPath;
-        this.connectionContext = connectionContext;
+    Http2ClientConnection(Http2ClientProtocolConfig protocolConfig, ClientConnection connection) {
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
-                .maxFrameSize(connectionContext.maxFrameSize())
-                .initialWindowSize(connectionContext.initialWindowSize())
-                .blockTimeout(connectionContext.timeout())
+                .maxFrameSize(protocolConfig.maxFrameSize())
+                .initialWindowSize(protocolConfig.initialWindowSize())
+                .blockTimeout(protocolConfig.flowControlBlockTimeout())
                 .build();
+        this.connection = connection;
+        this.ctx = connection.helidonSocket();
+        this.dataWriter = connection.writer();
+        this.reader = connection.reader();
+        this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
+    }
+
+    static Http2ClientConnection create(WebClient webClient,
+                                        Http2ClientProtocolConfig protocolConfig,
+                                        ClientConnection connection,
+                                        boolean sendSettings) {
+
+        Http2ClientConnection h2conn = new Http2ClientConnection(protocolConfig, connection);
+        h2conn.start(protocolConfig, webClient.executor(), sendSettings);
+
+        return h2conn;
     }
 
     Http2ConnectionWriter writer() {
@@ -133,47 +122,50 @@ class Http2ClientConnection {
         return this.connectionFlowControl;
     }
 
-    Http2ClientConnection connect() {
-        try {
-            doConnect();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Could not connect to " + connectionKey + ", with options: " + socketOptions, e);
-        }
-
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, String.format("[%s] client connected %s %s",
-                                            channelId,
-                                            socket.getLocalAddress(),
-                                            Thread.currentThread().getName()));
-        }
-
-        return this;
-    }
-
     Http2ClientStream stream(int streamId) {
-        return streams.get(streamId);
+        Lock lock = streamsLock.readLock();
+        lock.lock();
+        try {
+            return streams.get(streamId);
+        } finally {
+            lock.unlock();
+        }
+
     }
 
-    Http2ClientStream createStream(int priority) {
+    Http2ClientStream createStream(Http2StreamConfig config) {
         //FIXME: priority
         return new Http2ClientStream(this,
                                      serverSettings,
-                                     helidonSocket,
-                                     connectionContext,
+                                     ctx,
+                                     config.timeout(),
                                      streamIdSeq);
     }
 
     void addStream(int streamId, Http2ClientStream stream) {
-        this.streams.put(streamId, stream);
+        Lock lock = streamsLock.writeLock();
+        lock.lock();
+        try {
+            this.streams.put(streamId, stream);
+        } finally {
+            lock.unlock();
+        }
     }
 
     void removeStream(int streamId) {
-        this.streams.remove(streamId);
+        Lock lock = streamsLock.writeLock();
+        lock.lock();
+        try {
+            this.streams.remove(streamId);
+        } finally {
+            lock.unlock();
+        }
+
     }
 
-    Http2ClientStream tryStream(int priority) {
+    Http2ClientStream tryStream(Http2StreamConfig config) {
         try {
-            return createStream(priority);
+            return createStream(config);
         } catch (IllegalStateException | UncheckedIOException e) {
             return null;
         }
@@ -182,9 +174,81 @@ class Http2ClientConnection {
     void close() {
         try {
             handleTask.cancel(true);
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            ctx.log(LOGGER, TRACE, "Closing connection");
+            connection.closeResource();
+        } catch (Throwable e) {
+            ctx.log(LOGGER, TRACE, "Failed to close HTTP/2 connection.", e);
+        }
+    }
+
+    static Http2Settings settings(Http2ClientProtocolConfig config) {
+        Http2Settings.Builder b = Http2Settings.builder();
+        if (config.maxHeaderListSize() > 0) {
+            b.add(Http2Setting.MAX_HEADER_LIST_SIZE, config.maxHeaderListSize());
+        }
+        return b.add(Http2Setting.INITIAL_WINDOW_SIZE, (long) config.initialWindowSize())
+                .add(Http2Setting.MAX_FRAME_SIZE, (long) config.maxFrameSize())
+                .add(Http2Setting.ENABLE_PUSH, false)
+                .build();
+    }
+
+    private void sendPreface(Http2ClientProtocolConfig config, boolean sendSettings) {
+        dataWriter.writeNow(Http2Util.prefaceData());
+        if (sendSettings) {
+            // §3.5 Preface bytes must be followed by setting frame
+            Http2Settings http2Settings = settings(config);
+            Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(0);
+            Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
+            sendListener.frameHeader(ctx, 0, frameData.header());
+            sendListener.frame(ctx, 0, http2Settings);
+            writer.write(frameData);
+        }
+        // First connection window update, with prefetch increment
+        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(config.prefetch());
+        Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
+        Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
+        sendListener.frameHeader(ctx, 0, frameData.header());
+        sendListener.frame(ctx, 0, windowUpdate);
+        writer.write(frameData);
+    }
+
+    private void start(Http2ClientProtocolConfig protocolConfig,
+                       ExecutorService executor,
+                       boolean sendSettings) {
+        CountDownLatch cdl = new CountDownLatch(1);
+
+        //        handleTask = executor.submit(() -> {
+        handleTask = TMP_EXECUTOR.submit(() -> {
+            ctx.log(LOGGER, TRACE, "Starting HTTP/2 connection, thread: %s", Thread.currentThread().getName());
+            try {
+                sendPreface(protocolConfig, sendSettings);
+            } catch (Throwable e) {
+                ctx.log(LOGGER, WARNING, "Failed to send preface.", e);
+            } finally {
+                // we must wait until the preface is sent, before continuing with client operations
+                cdl.countDown();
+            }
+
+            // now switch to HTTP/2
+            try {
+                while (!Thread.interrupted()) {
+                    if (!handle()) {
+                        ctx.log(LOGGER, TRACE, "Connection closed");
+                        return;
+                    }
+                }
+                ctx.log(LOGGER, TRACE, "Client listener interrupted");
+            } catch (Throwable t) {
+                ctx.log(LOGGER, DEBUG, "Failed to handle HTTP/2 client connection", t);
+            }
+        });
+
+        try {
+            if (!cdl.await(20, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Filed to send HTTP/2 preface within 20 seconds, this connection is broken");
+            }
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Interrupted while waiting for preface to be sent", e);
         }
     }
 
@@ -192,7 +256,7 @@ class Http2ClientConnection {
         writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
     }
 
-    private void handle() {
+    private boolean handle() {
         this.reader.ensureAvailable();
         BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
         Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
@@ -209,17 +273,17 @@ class Http2ClientConnection {
         switch (frameHeader.type()) {
         case GO_AWAY:
             Http2GoAway http2GoAway = Http2GoAway.create(data);
-            recvListener.frameHeader(helidonSocket, frameHeader);
-            recvListener.frame(helidonSocket, http2GoAway);
+            recvListener.frameHeader(ctx, streamId, frameHeader);
+            recvListener.frame(ctx, streamId, http2GoAway);
             this.close();
-            throw new IllegalStateException("Connection closed by the other side, error code: "
-                                                    + http2GoAway.errorCode()
-                                                    + " lastStreamId: " + http2GoAway.lastStreamId());
-
+            ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
+                    http2GoAway.errorCode(),
+                    http2GoAway.lastStreamId());
+            return false;
         case SETTINGS:
             serverSettings = Http2Settings.create(data);
-            recvListener.frameHeader(helidonSocket, frameHeader);
-            recvListener.frame(helidonSocket, serverSettings);
+            recvListener.frameHeader(ctx, streamId, frameHeader);
+            recvListener.frame(ctx, streamId, serverSettings);
             // §4.3.1 Endpoint communicates the size chosen by its HPACK decoder context
             inboundDynamicTable.protocolMaxTableSize(serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
             if (serverSettings.hasValue(Http2Setting.MAX_FRAME_SIZE)) {
@@ -235,18 +299,24 @@ class Http2ClientConnection {
                 }
                 int initWinSize = initWinSizeLong.intValue();
                 connectionFlowControl.resetInitialWindowSize(initWinSize);
-                streams.values().forEach(stream -> stream.flowControl().outbound().resetStreamWindowSize(initWinSize));
+                Lock lock = streamsLock.readLock();
+                lock.lock();
+                try {
+                    streams.values().forEach(stream -> stream.flowControl().outbound().resetStreamWindowSize(initWinSize));
+                } finally {
+                    lock.unlock();
+                }
 
             }
             // §6.5.3 Settings Synchronization
             ackSettings();
             //FIXME: Max number of concurrent streams
-            return;
+            return true;
 
         case WINDOW_UPDATE:
             Http2WindowUpdate windowUpdate = Http2WindowUpdate.create(data);
-            recvListener.frameHeader(helidonSocket, frameHeader);
-            recvListener.frame(helidonSocket, windowUpdate);
+            recvListener.frameHeader(ctx, streamId, frameHeader);
+            recvListener.frame(ctx, streamId, windowUpdate);
             // Outbound flow-control window update
             if (streamId == 0) {
                 int increment = windowUpdate.windowSizeIncrement();
@@ -266,7 +336,7 @@ class Http2ClientConnection {
                 stream(streamId)
                         .windowUpdate(windowUpdate);
             }
-            return;
+            return true;
         case PING:
             if (streamId != 0) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL,
@@ -278,7 +348,7 @@ class Http2ClientConnection {
             }
             if (!frameHeader.flags(Http2FrameTypes.PING).ack()) {
                 Http2Ping ping = Http2Ping.create(data);
-                recvListener.frame(helidonSocket, ping);
+                recvListener.frame(ctx, streamId, ping);
                 BufferData frame = ping.data();
                 Http2FrameHeader header = Http2FrameHeader.create(frame.available(),
                                                                   Http2FrameTypes.PING,
@@ -290,85 +360,38 @@ class Http2ClientConnection {
 
         case RST_STREAM:
             Http2RstStream rstStream = Http2RstStream.create(data);
-            recvListener.frame(helidonSocket, rstStream);
+            recvListener.frame(ctx, streamId, rstStream);
             stream(streamId).rstStream(rstStream);
             break;
 
         case DATA:
             Http2ClientStream stream = stream(streamId);
-            stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
-            stream.push(new Http2FrameData(frameHeader, data));
+            if (stream == null) {
+                // most likely a closed stream
+                ctx.log(LOGGER, DEBUG, "%d: received data for stream %d, which does not exist", 0, streamId);
+            } else {
+                stream.flowControl().inbound().decrementWindowSize(frameHeader.length());
+                ctx.log(LOGGER, DEBUG, "%d: received data for stream %d", 0, streamId);
+                stream.push(new Http2FrameData(frameHeader, data));
+            }
             break;
-
         case HEADERS, CONTINUATION:
             stream(streamId).push(new Http2FrameData(frameHeader, data));
-            return;
+            return true;
 
         default:
             LOGGER.log(WARNING, "Unsupported frame type!! " + frameHeader.type());
         }
 
-    }
-
-    private void doConnect() throws IOException {
-        boolean useTls = "https".equals(connectionKey.scheme()) && connectionKey.tls() != null;
-
-        SSLSocket sslSocket = useTls ? connectionKey.tls().createSocket("h2") : null;
-        socket = sslSocket == null ? new Socket() : sslSocket;
-
-        socketOptions.configureSocket(socket);
-        DnsResolver dnsResolver = connectionKey.dnsResolver();
-        if (dnsResolver.useDefaultJavaResolver()) {
-            socket.connect(new InetSocketAddress(connectionKey.host(), connectionKey.port()),
-                           (int) socketOptions.connectTimeout().toMillis());
-        } else {
-            InetAddress address = dnsResolver.resolveAddress(connectionKey.host(), connectionKey.dnsAddressLookup());
-            socket.connect(new InetSocketAddress(address, connectionKey.port()), (int) socketOptions.connectTimeout().toMillis());
-        }
-        channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
-
-        helidonSocket = sslSocket == null
-                ? PlainSocket.client(socket, channelId)
-                : TlsSocket.client(sslSocket, channelId);
-
-        dataWriter = SocketWriter.create(executor, helidonSocket, 32);
-        this.reader = new DataReader(helidonSocket);
-        this.writer = new Http2ConnectionWriter(helidonSocket, dataWriter, List.of());
-
-        if (sslSocket != null) {
-            sslSocket.startHandshake();
-            if (LOGGER.isLoggable(TRACE)) {
-                debugTls(sslSocket);
-            }
-            String negotiatedProtocol = sslSocket.getApplicationProtocol();
-            if (!"h2".equals(negotiatedProtocol)) {
-                close();
-                throw new IllegalStateException("Failed to negotiate h2 protocol. Protocol from socket: " + negotiatedProtocol);
-            }
-        }
-
-        if (!connectionContext.priorKnowledge() && !useTls) {
-            httpUpgrade();
-            // Settings are part of the HTTP/1 upgrade request
-            sendPreface(false);
-        } else {
-            sendPreface(true);
-        }
-
-        handleTask = executor.submit(() -> {
-            while (!Thread.interrupted()) {
-                handle();
-            }
-            LOGGER.log(DEBUG, () -> "Client listener interrupted");
-        });
+        return true;
     }
 
     private void ackSettings() {
         Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(Http2Flag.ACK);
         Http2Settings http2Settings = Http2Settings.create();
         Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
-        sendListener.frameHeader(helidonSocket, frameData.header());
-        sendListener.frame(helidonSocket, http2Settings);
+        sendListener.frameHeader(ctx, 0, frameData.header());
+        sendListener.frame(ctx, 0, http2Settings);
         writer.write(frameData);
     }
 
@@ -376,118 +399,5 @@ class Http2ClientConnection {
         Http2Settings http2Settings = Http2Settings.create();
         Http2GoAway frame = new Http2GoAway(streamId, errorCode, msg);
         writer.write(frame.toFrameData(http2Settings, 0, Http2Flag.NoFlags.create()));
-    }
-
-    private void sendPreface(boolean sendSettings) {
-        dataWriter.writeNow(BufferData.create(PRIOR_KNOWLEDGE_PREFACE));
-        if (sendSettings) {
-            // §3.5 Preface bytes must be followed by setting frame
-            Http2Settings.Builder b = Http2Settings.builder();
-            if (connectionContext.maxHeaderListSize() > 0) {
-                b.add(Http2Setting.MAX_HEADER_LIST_SIZE, connectionContext.maxHeaderListSize());
-            }
-            Http2Settings http2Settings = b
-                    .add(Http2Setting.INITIAL_WINDOW_SIZE, (long) connectionContext.initialWindowSize())
-                    .add(Http2Setting.MAX_FRAME_SIZE, (long) connectionContext.maxFrameSize())
-                    .add(Http2Setting.ENABLE_PUSH, false)
-                    .build();
-
-            Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(0);
-            Http2FrameData frameData = http2Settings.toFrameData(null, 0, flags);
-            sendListener.frameHeader(helidonSocket, frameData.header());
-            sendListener.frame(helidonSocket, http2Settings);
-            writer.write(frameData);
-        }
-        // First connection window update, with prefetch increment
-        Http2WindowUpdate windowUpdate = new Http2WindowUpdate(connectionContext.connectionPrefetch());
-        Http2Flag.NoFlags flags = Http2Flag.NoFlags.create();
-        Http2FrameData frameData = windowUpdate.toFrameData(null, 0, flags);
-        sendListener.frameHeader(helidonSocket, frameData.header());
-        sendListener.frame(helidonSocket, windowUpdate);
-        writer.write(frameData);
-    }
-
-    private void httpUpgrade() {
-        Http2FrameData settingsFrame = Http2Settings.create().toFrameData(null, 0, Http2Flag.SettingsFlags.create(0));
-        BufferData upgradeRequest = createUpgradeRequest(settingsFrame);
-        sendListener.frame(helidonSocket, upgradeRequest);
-        dataWriter.writeNow(upgradeRequest);
-        reader.skip("HTTP/1.1 ".length());
-        String status = reader.readAsciiString(3);
-        String message = reader.readLine();
-        WritableHeaders<?> headers = Http1HeadersParser.readHeaders(reader, 8192, false);
-        switch (status) {
-        case "101":
-            break;
-        case "301":
-            throw new UpgradeRedirectException(headers.get(Http.Header.LOCATION).value());
-        default:
-            close();
-            throw new IllegalStateException("Upgrade to HTTP/2 failed: " + message);
-        }
-    }
-
-    private BufferData createUpgradeRequest(Http2FrameData settingsFrame) {
-        BufferData settingsData = settingsFrame.data();
-        byte[] b = new byte[settingsData.available()];
-        settingsData.write(b);
-
-        return BufferData.create(UPGRADE_REQ_MASK.formatted(
-                connectionKey.method().text(),
-                this.primaryPath != null && !"".equals(this.primaryPath) ? primaryPath : "/",
-                connectionKey.host(),
-                connectionKey.port(),
-                Base64.getEncoder().encodeToString(b)
-        ));
-    }
-
-    private void debugTls(SSLSocket sslSocket) {
-        SSLSession sslSession = sslSocket.getSession();
-        if (sslSession == null) {
-            LOGGER.log(TRACE, "No SSL session");
-            return;
-        }
-
-        String msg = "[client " + channelId + "] TLS negotiated:\n"
-                + "Application protocol: " + sslSocket.getApplicationProtocol() + "\n"
-                + "Handshake application protocol: " + sslSocket.getHandshakeApplicationProtocol() + "\n"
-                + "Protocol: " + sslSession.getProtocol() + "\n"
-                + "Cipher Suite: " + sslSession.getCipherSuite() + "\n"
-                + "Peer host: " + sslSession.getPeerHost() + "\n"
-                + "Peer port: " + sslSession.getPeerPort() + "\n"
-                + "Application buffer size: " + sslSession.getApplicationBufferSize() + "\n"
-                + "Packet buffer size: " + sslSession.getPacketBufferSize() + "\n"
-                + "Local principal: " + sslSession.getLocalPrincipal() + "\n";
-
-        try {
-            msg += "Peer principal: " + sslSession.getPeerPrincipal() + "\n";
-            msg += "Peer certs: " + certsToString(sslSession.getPeerCertificates()) + "\n";
-        } catch (SSLPeerUnverifiedException e) {
-            msg += "Peer not verified";
-        }
-
-        LOGGER.log(TRACE, msg);
-    }
-
-    private String certsToString(Certificate[] peerCertificates) {
-        String[] certs = new String[peerCertificates.length];
-
-        for (int i = 0; i < peerCertificates.length; i++) {
-            Certificate peerCertificate = peerCertificates[i];
-            if (peerCertificate instanceof X509Certificate x509) {
-                certs[i] = "type=" + peerCertificate.getType()
-                        + ";key=" + peerCertificate.getPublicKey().getAlgorithm()
-                        + "(" + peerCertificate.getPublicKey().getFormat() + ")"
-                        + ";x509=V" + x509.getVersion()
-                        + ";from=" + x509.getNotBefore()
-                        + ";to=" + x509.getNotAfter()
-                        + ";serial=" + x509.getSerialNumber().toString(16);
-            } else {
-                certs[i] = "type=" + peerCertificate.getType() + ";key=" + peerCertificate.getPublicKey();
-            }
-
-        }
-
-        return String.join(", ", certs);
     }
 }

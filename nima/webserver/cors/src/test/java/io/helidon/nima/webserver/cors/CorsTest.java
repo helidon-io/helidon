@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.nima.webserver.cors;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ class CorsTest extends AbstractCorsTest {
     @Test
     void test1PreFlightAllowedOrigin() {
         String origin = fooOrigin();
-        ClientResponse response = runTest1PreFlightAllowedOrigin();
+        HttpClientResponse response = runTest1PreFlightAllowedOrigin();
 
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, origin));

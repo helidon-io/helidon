@@ -18,8 +18,8 @@ package io.helidon.tests.integration.webclient;
 import java.util.List;
 
 import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.WebClientServiceRequest;
-import io.helidon.nima.webclient.WebClientServiceResponse;
+import io.helidon.nima.webclient.api.WebClientServiceRequest;
+import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
@@ -76,7 +76,6 @@ public class HeaderTest extends TestParent {
         try (Http1ClientResponse res = webClient.post()
                 .headers(headers -> {
                     headers.contentLength(0);
-                    return headers;
                 })
                 .path("contentLength")
                 .submit(sampleSmallEntity)) {

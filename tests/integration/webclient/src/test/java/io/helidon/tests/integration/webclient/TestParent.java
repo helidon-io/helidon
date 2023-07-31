@@ -22,8 +22,9 @@ import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1Client.Http1ClientBuilder;
+import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.nima.webclient.security.WebClientSecurity;
 import io.helidon.nima.webclient.spi.WebClientService;
 import io.helidon.nima.webserver.WebServer;
@@ -55,6 +56,15 @@ class TestParent {
         Main.setup(builder, null);
     }
 
+    protected WebClient noServiceClient(WebClientService... services) {
+        return WebClient.builder()
+                .update(it -> Stream.of(services).forEach(it::addService))
+                .servicesDiscoverServices(false)
+                .baseUri("http://localhost:" + server.port() + "/greet")
+                .config(CONFIG.get("client"))
+                .build();
+    }
+
     protected Http1Client createNewClient(WebClientService... clientServices) {
         Security security = Security.builder()
                 .addProvider(HttpBasicAuthProvider.builder()
@@ -63,8 +73,8 @@ class TestParent {
                                      .build())
                 .build();
 
-        Http1ClientBuilder builder = Http1Client.builder()
-                .useSystemServiceLoader(false)
+        Http1ClientConfig.Builder builder = Http1Client.builder()
+                .servicesDiscoverServices(false)
                 .addService(WebClientSecurity.create(security))
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .config(CONFIG.get("client"));

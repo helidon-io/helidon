@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -112,11 +111,6 @@ public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> 
     @Override
     public String name() {
         return Http2FrameType.SETTINGS.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

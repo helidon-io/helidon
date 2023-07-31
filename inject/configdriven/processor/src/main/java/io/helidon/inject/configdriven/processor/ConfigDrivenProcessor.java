@@ -30,6 +30,7 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.inject.processor.InjectionAnnotationProcessor;
 import io.helidon.inject.tools.ServicesToProcess;
+import io.helidon.inject.tools.ToolsException;
 
 /**
  * Annotation processor implementation to handle types annotated with {@code ConfigDriven}.
@@ -65,6 +66,10 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
 
         ConfigDrivenAnnotation configDriven = ConfigDrivenAnnotation.create(service);
         // the type must be either a valid prototype, or a prototype blueprint (in case this is the same module)
+        if ("<error>".equals(configDriven.configBeanType().className())) {
+            throw new ToolsException("The config bean type must be set to the Blueprint type if they are within the same "
+                                             + "module! Failed on: " + service.typeName().fqName());
+        }
         TypeInfo configBeanTypeInfo = TypeInfoFactory.create(processingEnv, asElement(configDriven.configBeanType()))
                 .orElseThrow();
 

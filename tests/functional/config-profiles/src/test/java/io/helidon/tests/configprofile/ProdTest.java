@@ -19,8 +19,8 @@ package io.helidon.tests.configprofile;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
-
 import io.helidon.nima.webserver.http.HttpRouting;
+
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -51,7 +51,7 @@ class ProdTest {
     public void testHelloDevWorld() {
         JsonObject jsonObject = client.get()
                 .path("/greet")
-                .request(JsonObject.class);
+                .requestEntity(JsonObject.class);
         assertThat(jsonObject.getString("message"), is("Hello Prod World!"));
     }
 }

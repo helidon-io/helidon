@@ -24,10 +24,11 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import io.helidon.common.http.Http;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -38,7 +39,7 @@ import jakarta.json.JsonValue;
 class WebClientService implements HttpService {
     private static final Duration TRACE_TIMEOUT = Duration.ofSeconds(15);
     private static final System.Logger LOGGER = System.getLogger(WebClientService.class.getName());
-    private final Http1Client client;
+    private final WebClient client;
     private final MockZipkinService zipkinService;
     private final String context;
 
@@ -47,9 +48,8 @@ class WebClientService implements HttpService {
         this.context = "http://localhost:" + config.get("port").asInt().orElse(7076);
         client = WebClient.builder()
                 .baseUri(context)
-                // TODO: improvement
-                // .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON)
-                // .config(config.get("client"))
+                .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                .config(config.get("client"))
                 .build();
     }
 
@@ -80,8 +80,8 @@ class WebClientService implements HttpService {
 
         try {
             testTracedGet();
-            //testFollowRedirect();
-            //testFollowRedirectInfinite();
+            testFollowRedirect();
+            testFollowRedirectInfinite();
 
             response.send("ALL TESTS PASSED!\n");
         } catch (Exception e) {
@@ -96,7 +96,7 @@ class WebClientService implements HttpService {
         Single<JsonValue> nextTrace = zipkinService.next();
         Animal animal = client.get()
                 .path("/wc/endpoint")
-                .request(Animal.class);
+                .requestEntity(Animal.class);
 
         assertTrue(animal, a -> "Frank".equals(a.getName()));
         //Wait for trace arrival to MockZipkin
@@ -104,46 +104,30 @@ class WebClientService implements HttpService {
     }
 
     public void testFollowRedirect() {
-        /*
-        client.get()
+        Animal animal = client.get()
                 .path("/wc/redirect")
-                // TODO improvement
                 .followRedirects(true)
-                .context(ctx)
-                .request(Animal.class)
-                .thenAccept(animal -> assertTrue(animal, a -> "Frank".equals(a.getName())))
-                .await(15, TimeUnit.SECONDS);
+                .requestEntity(Animal.class);
 
-        WebClientResponse response = client.get()
+        assertTrue(animal, a -> "Frank".equals(a.getName()));
+
+        try (HttpClientResponse response = client.get()
                 .path("/wc/redirect")
                 .followRedirects(false)
-                .context(ctx)
-                .request()
-                .await(15, TimeUnit.SECONDS);
-        assertEquals(response.status(), Http.Status.MOVED_PERMANENTLY_301);
-        */
+                .request()) {
+            assertEquals(response.status(), Http.Status.MOVED_PERMANENTLY_301);
+        }
     }
 
     public void testFollowRedirectInfinite() {
-        // TODO improvement
-        /*
         try {
             client.get()
                     .path("/wc/redirect/infinite")
-                    .context(ctx)
-                    .request(Animal.class)
-                    .thenAccept(a -> fail("This should have failed!"))
-                    .await(15, TimeUnit.SECONDS);
+                    .requestEntity(Animal.class);
             fail("This should have failed!");
         } catch (Exception e) {
-            if (e.getCause() instanceof WebClientException) {
-                WebClientException clientException = (WebClientException) e.getCause();
-                assertTrue(clientException.getMessage(), m -> m.startsWith("Max number of redirects extended! (5)"));
-            } else {
-                fail(e);
-            }
+            assertTrue(e.getMessage(), m -> m.startsWith("Maximum number of request redirections (5) reached."));
         }
-         */
     }
 
     private <T> void assertTrue(T value, Predicate<T> predicate) {

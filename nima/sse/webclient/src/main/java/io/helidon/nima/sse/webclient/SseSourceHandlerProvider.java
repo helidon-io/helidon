@@ -28,9 +28,9 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.sse.SseEvent;
-import io.helidon.nima.webclient.ClientResponse;
-import io.helidon.nima.webclient.http.spi.Source;
-import io.helidon.nima.webclient.http.spi.SourceHandlerProvider;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.spi.Source;
+import io.helidon.nima.webclient.spi.SourceHandlerProvider;
 
 /**
  * A handler for SSE sources.
@@ -44,13 +44,13 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
     private static final String EVENT = "event:";
 
     @Override
-    public boolean supports(GenericType<? extends Source<?>> type, ClientResponse response) {
+    public boolean supports(GenericType<? extends Source<?>> type, HttpClientResponse response) {
         return SseSource.TYPE.equals(type) && response.headers().contentType()
                 .map(ct -> ct.mediaType().equals(MediaTypes.TEXT_EVENT_STREAM)).orElse(false);
     }
 
     @Override
-    public <X extends Source<SseEvent>> void handle(X source, ClientResponse response, MediaContext mediaContext) {
+    public <X extends Source<SseEvent>> void handle(X source, HttpClientResponse response, MediaContext mediaContext) {
         InputStream is = response.inputStream();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;

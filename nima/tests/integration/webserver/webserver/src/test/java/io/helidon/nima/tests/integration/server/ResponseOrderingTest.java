@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ class ResponseOrderingTest {
         for (int i = 0; i < 1000; i++) {
             returnedIds.add(Long.parseLong(client.get("/multi")
                                                    .queryParam("id", String.valueOf(i))
-                                                   .request(String.class)));
+                                                   .requestEntity(String.class)));
         }
 
         assertThat(returnedIds.toArray(), allOf(arrayWithSize(1000), is(queue.toArray())));

@@ -42,7 +42,7 @@ public class WebClientMetricsProvider implements WebClientServiceProvider {
     }
 
     @Override
-    public WebClientService create(Config config) {
+    public WebClientService create(Config config, String name) {
         return WebClientMetrics.create(config);
     }
 

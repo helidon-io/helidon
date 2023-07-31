@@ -21,8 +21,8 @@ import java.time.Duration;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 
@@ -37,8 +37,8 @@ class IdcsSupport {
     }
 
     // load signature jwk with a token, blocking operation
-    static JwkKeys signJwk(Http1Client appWebClient,
-                           Http1Client generalClient,
+    static JwkKeys signJwk(WebClient appWebClient,
+                           WebClient generalClient,
                            URI tokenEndpointUri,
                            URI signJwkUri,
                            Duration clientTimeout) {
@@ -48,7 +48,7 @@ class IdcsSupport {
                 .add("scope", "urn:opc:idm:__myscopes__")
                 .build();
 
-        try (Http1ClientResponse response = appWebClient.post()
+        try (HttpClientResponse response = appWebClient.post()
                 .uri(tokenEndpointUri)
                 .header(Http.HeaderValues.ACCEPT_JSON)
                 .submit(form)) {
@@ -62,7 +62,7 @@ class IdcsSupport {
                 JsonObject jwkJson = generalClient.get()
                         .uri(signJwkUri)
                         .header(Http.Header.AUTHORIZATION, "Bearer " + accessToken)
-                        .request(JsonObject.class);
+                        .requestEntity(JsonObject.class);
 
                 return JwkKeys.create(jwkJson);
             } else {

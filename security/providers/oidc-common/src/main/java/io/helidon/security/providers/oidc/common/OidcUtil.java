@@ -24,8 +24,9 @@ import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.Proxy;
+import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.WebClientConfig;
 import io.helidon.nima.webclient.tracing.WebClientTracing;
 
 final class OidcUtil {
@@ -48,33 +49,32 @@ final class OidcUtil {
         return serverType;
     }
 
-    static Http1Client.Http1ClientBuilder webClientBaseBuilder(String proxyProtocol,
-                                                               String proxyHost,
-                                                               int proxyPort,
-                                                               boolean relativeUris,
-                                                               Duration clientTimeout) {
-        Http1Client.Http1ClientBuilder webClientBuilder = WebClient.builder()
+    static WebClientConfig.Builder webClientBaseBuilder(String proxyProtocol,
+                                                        String proxyHost,
+                                                        int proxyPort,
+                                                        boolean relativeUris,
+                                                        Duration clientTimeout) {
+        WebClientConfig.Builder webClientBuilder = WebClient.builder()
                 .addService(WebClientTracing.create())
+                .servicesDiscoverServices(false)
                 .mediaContext(MediaContext.builder()
                                       .mediaSupportsDiscoverServices(false)
                                       .addMediaSupport(JsonpSupport.create(Config.empty()))
                                       .build())
-                .channelOptions(SocketOptions.builder()
-                                        .connectTimeout(clientTimeout)
-                                        .readTimeout(clientTimeout)
-                                        .build());
+                .socketOptions(SocketOptions.builder()
+                                       .connectTimeout(clientTimeout)
+                                       .readTimeout(clientTimeout)
+                                       .build());
 
-        //TODO Níma client proxy
-//        if (proxyHost != null) {
-//            Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
-//            webClientBuilder.proxy(Proxy.builder()
-//                                           .type(proxyType)
-//                                           .host(proxyHost)
-//                                           .port(proxyPort)
-//                                           .build());
-                //relative uris should be set when proxy is used
-//                .relativeUris(relativeUris);
-//        }
+        if (proxyHost != null) {
+            Proxy.ProxyType proxyType = Proxy.ProxyType.valueOf(proxyProtocol.toUpperCase());
+            webClientBuilder.proxy(Proxy.builder()
+                                           .type(proxyType)
+                                           .host(proxyHost)
+                                           .port(proxyPort)
+                                           .build())
+                    .relativeUris(relativeUris);
+        }
         return webClientBuilder;
     }
 

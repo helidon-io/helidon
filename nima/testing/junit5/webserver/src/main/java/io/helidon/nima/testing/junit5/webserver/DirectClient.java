@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import java.util.Optional;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientConfig;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -55,11 +55,16 @@ public class DirectClient implements Http1Client {
      */
     public DirectClient(HttpRouting routing) {
         this.routing = routing;
-        this.httpClient = WebClient.builder()
+        this.httpClient = Http1Client.builder()
                 .baseUri(URI.create("unit://helidon-unit:65000"))
                 .build();
         this.router = Router.builder().addRouting(routing).build();
         this.router.beforeStart();
+    }
+
+    @Override
+    public Http1ClientConfig prototype() {
+        return Http1ClientConfig.create();
     }
 
     @Override
@@ -90,8 +95,10 @@ public class DirectClient implements Http1Client {
                 Optional.ofNullable(serverTlsPrincipal),
                 Optional.ofNullable(serverTlsCertificates));
 
+        DirectSocket socket = DirectSocket.create(localPeer, clientPeer, isTls);
+
         return httpClient.method(method)
-                .connection(new DirectClientConnection(clientPeer, localPeer, router, isTls));
+                .connection(new DirectClientConnection(socket, router));
     }
 
     /**

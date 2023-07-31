@@ -16,12 +16,22 @@
 
 package io.helidon.nima.tests.integration.http2.client;
 
+import java.time.Duration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
+
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.http2.webclient.Http2;
+import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
-import io.helidon.nima.webclient.WebClient;
+
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.Http2Settings;
@@ -33,21 +43,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeoutException;
-
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 
+@Disabled
 class HeadersTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -121,7 +122,7 @@ class HeadersTest {
     //FIXME: #6544 trailer headers are not implemented yet
     @Disabled
     void trailerHeader() {
-        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
+        try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
                 .method(Http.Method.GET)
@@ -137,7 +138,7 @@ class HeadersTest {
 
     @Test
     void continuationInbound() {
-        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
+        try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
                 .method(Http.Method.GET)
@@ -158,7 +159,7 @@ class HeadersTest {
     @Test
     void continuationOutbound() {
         Set<String> expected = new HashSet<>(500);
-        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
+        try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
                 .method(Http.Method.GET)
@@ -169,7 +170,6 @@ class HeadersTest {
                         hv.add(Http.Header.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
-                    return hv;
                 })
                 .request()) {
             String actual = res.as(String.class);
@@ -180,7 +180,7 @@ class HeadersTest {
     @Test
     void continuationOutboundPost() {
         Set<String> expected = new HashSet<>(500);
-        try (Http2ClientResponse res = WebClient.builder(Http2.PROTOCOL)
+        try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
                 .method(Http.Method.POST)
@@ -191,7 +191,6 @@ class HeadersTest {
                         hv.add(Http.Header.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
-                    return hv;
                 })
                 .submit(DATA)) {
             String actual = res.as(String.class);

@@ -1097,7 +1097,27 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.nima.webclient</groupId>
+                <artifactId>helidon-nima-webclient-api</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webclient</groupId>
+                <artifactId>helidon-nima-webclient-http1</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webclient</groupId>
                 <artifactId>helidon-nima-webclient</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webclient.dns.resolver</groupId>
+                <artifactId>helidon-nima-webclient-dns-resolver-first</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.nima.webclient.dns.resolver</groupId>
+                <artifactId>helidon-nima-webclient-dns-resolver-round-robin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

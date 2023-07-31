@@ -82,9 +82,9 @@ public class AbstractConfigBeanTest {
         assertThat(clientConfig.cipherSuites(),
                    contains("a", "b", "c"));
         assertThat(clientConfig.headers(),
-                   hasEntry("headers.0", "header1"));
+                   hasEntry("0", "header1"));
         assertThat(clientConfig.headers(),
-                   hasEntry("headers.1", "header2"));
+                   hasEntry("1", "header2"));
     }
 
     /**

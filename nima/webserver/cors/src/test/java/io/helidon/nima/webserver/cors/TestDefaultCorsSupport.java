@@ -18,8 +18,8 @@ package io.helidon.nima.webserver.cors;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.nima.webclient.ClientResponse;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
@@ -49,7 +49,7 @@ class TestDefaultCorsSupport {
     @Test
     void testGetWithoutCors() {
         WebServer server = null;
-        Http1Client client;
+        WebClient client;
         try {
             server = WebServer.builder()
                     .routing(it -> prepRouting(it, false))
@@ -59,7 +59,7 @@ class TestDefaultCorsSupport {
                     .baseUri("http://localhost:" + server.port())
                     .build();
 
-            try (ClientResponse response = client.get("/greet")
+            try (HttpClientResponse response = client.get("/greet")
                     .request()) {
 
                 String greeting = response.as(String.class);
@@ -75,7 +75,7 @@ class TestDefaultCorsSupport {
     @Test
     void testOptionsWithCors() {
         WebServer server = null;
-        Http1Client client;
+        WebClient client;
         try {
             server = WebServer.builder()
                     .routing(it -> prepRouting(it, true))
@@ -85,7 +85,7 @@ class TestDefaultCorsSupport {
                     .baseUri("http://localhost:" + server.port())
                     .build();
 
-            try (ClientResponse response = client.get("/greet")
+            try (HttpClientResponse response = client.get("/greet")
                     .header(Header.ORIGIN, "http://foo.com")
                     .header(Header.HOST, "bar.com")
                     .request()) {
@@ -103,7 +103,7 @@ class TestDefaultCorsSupport {
     @Test
     void testOptionsWithoutCors() {
         WebServer server = null;
-        Http1Client client;
+        WebClient client;
         try {
             server = WebServer.builder()
                     .routing(it -> prepRouting(it, false))
@@ -113,7 +113,7 @@ class TestDefaultCorsSupport {
                     .baseUri("http://localhost:" + server.port())
                     .build();
 
-            try (ClientResponse response = client.get("/greet")
+            try (HttpClientResponse response = client.get("/greet")
                     .header(Header.ORIGIN, "http://foo.com")
                     .header(Header.HOST, "bar.com")
                     .request()) {

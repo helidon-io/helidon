@@ -18,9 +18,7 @@ package io.helidon.nima.http2.webclient;
 
 import java.time.Duration;
 
-record ConnectionContext(int priority,
-                         boolean priorKnowledge,
-                         int initialWindowSize,
+record ConnectionContext(int initialWindowSize,
                          int maxFrameSize,
                          long maxHeaderListSize,
                          int connectionPrefetch,

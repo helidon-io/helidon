@@ -34,12 +34,12 @@ abstract class TestBase {
     TestBase(WebServer server) {
         this.client = Http1Client.builder()
                 .baseUri("https://localhost:" + server.port())
-                .tls(Tls.builder().trustAll(true))
+                .tls(Tls.builder().trustAll(true).build())
                 .build();
     }
 
     @Test
     void testSsl() {
-        assertThat(client.get().request(String.class), is("Hello!"));
+        assertThat(client.get().requestEntity(String.class), is("Hello!"));
     }
 }

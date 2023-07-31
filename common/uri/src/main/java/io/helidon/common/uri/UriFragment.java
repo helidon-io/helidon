@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.common.uri;
+
+import java.util.Objects;
 
 /**
  * Fragment section of the URI.
@@ -64,6 +66,22 @@ public class UriFragment {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof UriFragment that)) {
+            return false;
+        }
+        return Objects.equals(rawFragment, that.rawFragment);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rawFragment);
+    }
+
+    @Override
     public String toString() {
         if (rawFragment == null) {
             return "";
@@ -73,6 +91,7 @@ public class UriFragment {
 
     /**
      * Whether there is a fragment.
+     *
      * @return {@code true} if fragment exists
      */
     public boolean hasValue() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,47 +39,52 @@ public interface Http2FrameListener {
      * Frame header data.
      *
      * @param ctx         context
+     * @param streamId    id of the stream that triggered this event
      * @param frameHeader header data
      */
-    default void frameHeader(SocketContext ctx, BufferData frameHeader) {
+    default void frameHeader(SocketContext ctx, int streamId, BufferData frameHeader) {
 
     }
 
     /**
      * Frame header.
      *
-     * @param ctx    context
-     * @param header frame header
+     * @param ctx      context
+     * @param streamId id of the stream that triggered this event
+     * @param header   frame header
      */
-    default void frameHeader(SocketContext ctx, Http2FrameHeader header) {
+    default void frameHeader(SocketContext ctx, int streamId, Http2FrameHeader header) {
     }
 
     /**
      * Frame.
      *
-     * @param ctx  context
-     * @param data frame
+     * @param ctx      context
+     * @param streamId id of the stream that triggered this event
+     * @param data     frame
      */
-    default void frame(SocketContext ctx, Http2DataFrame data) {
+    default void frame(SocketContext ctx, int streamId, Http2DataFrame data) {
 
     }
 
     /**
      * Frame data.
      *
-     * @param ctx  context
-     * @param data frame data
+     * @param ctx      context
+     * @param streamId id of the stream that triggered this event
+     * @param data     frame data
      */
-    default void frame(SocketContext ctx, BufferData data) {
+    default void frame(SocketContext ctx, int streamId, BufferData data) {
     }
 
     /**
      * Priority frame.
      *
      * @param ctx      context
+     * @param streamId id of the stream that triggered this event
      * @param priority priority
      */
-    default void frame(SocketContext ctx, Http2Priority priority) {
+    default void frame(SocketContext ctx, int streamId, Http2Priority priority) {
 
     }
 
@@ -87,38 +92,42 @@ public interface Http2FrameListener {
      * RST stream frame.
      *
      * @param ctx       context
+     * @param streamId  id of the stream that triggered this event
      * @param rstStream rst stream
      */
-    default void frame(SocketContext ctx, Http2RstStream rstStream) {
+    default void frame(SocketContext ctx, int streamId, Http2RstStream rstStream) {
     }
 
     /**
      * Settings frame.
      *
      * @param ctx      context
+     * @param streamId id of the stream that triggered this event
      * @param settings settings
      */
-    default void frame(SocketContext ctx, Http2Settings settings) {
+    default void frame(SocketContext ctx, int streamId, Http2Settings settings) {
 
     }
 
     /**
      * Ping frame.
      *
-     * @param ctx  context
-     * @param ping ping
+     * @param ctx      context
+     * @param streamId id of the stream that triggered this event
+     * @param ping     ping
      */
-    default void frame(SocketContext ctx, Http2Ping ping) {
+    default void frame(SocketContext ctx, int streamId, Http2Ping ping) {
 
     }
 
     /**
      * Go away frame.
      *
-     * @param ctx    context
-     * @param goAway go away
+     * @param ctx      context
+     * @param streamId id of the stream that triggered this event
+     * @param goAway   go away
      */
-    default void frame(SocketContext ctx, Http2GoAway goAway) {
+    default void frame(SocketContext ctx, int streamId, Http2GoAway goAway) {
 
     }
 
@@ -126,19 +135,21 @@ public interface Http2FrameListener {
      * Window update frame.
      *
      * @param ctx          context
+     * @param streamId     id of the stream that triggered this event
      * @param windowUpdate window update
      */
-    default void frame(SocketContext ctx, Http2WindowUpdate windowUpdate) {
+    default void frame(SocketContext ctx, int streamId, Http2WindowUpdate windowUpdate) {
 
     }
 
     /**
      * Headers received.
      *
-     * @param ctx     context
-     * @param headers headers
+     * @param ctx      context
+     * @param streamId HTTP/2 stream ID to augment the server socket id and server connection id
+     * @param headers  headers
      */
-    default void headers(SocketContext ctx, Http2Headers headers) {
+    default void headers(SocketContext ctx, int streamId, Http2Headers headers) {
 
     }
 
@@ -146,8 +157,9 @@ public interface Http2FrameListener {
      * Continuation frame.
      *
      * @param ctx          context
+     * @param streamId     id of the stream that triggered this event
      * @param continuation continuation
      */
-    default void frame(SocketContext ctx, Http2Continuation continuation) {
+    default void frame(SocketContext ctx, int streamId, Http2Continuation continuation) {
     }
 }

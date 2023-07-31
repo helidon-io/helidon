@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.spi.ServerJunitExtension;
-import io.helidon.nima.webclient.WebClient;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.ListenerConfig;
 import io.helidon.nima.webserver.Router;
@@ -42,6 +42,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 public class Http1ServerJunitExtension implements ServerJunitExtension {
     private final Map<String, SocketHttpClient> socketHttpClients = new ConcurrentHashMap<>();
     private final Map<String, Http1Client> httpClients = new ConcurrentHashMap<>();
+    private final Map<String, WebClient> webClients = new ConcurrentHashMap<>();
 
     /**
      * Public constructor as required by {@link java.util.ServiceLoader}.
@@ -65,6 +66,9 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
         if (paramType.equals(SocketHttpClient.class)) {
             return true;
         }
+        if (paramType.equals(WebClient.class)) {
+            return true;
+        }
 
         return false;
     }
@@ -82,6 +86,10 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
         if (parameterType.equals(Http1Client.class)) {
             return httpClients.computeIfAbsent(Junit5Util.socketName(parameterContext.getParameter()),
                                                it -> httpClient(server, it));
+        }
+        if (parameterType.equals(WebClient.class)) {
+            return webClients.computeIfAbsent(Junit5Util.socketName(parameterContext.getParameter()),
+                                              it -> webClient(server, it));
         }
 
         throw new ParameterResolutionException("Parameter of type " + parameterType.getName() + " not supported");
@@ -101,8 +109,14 @@ public class Http1ServerJunitExtension implements ServerJunitExtension {
         return Optional.empty();
     }
 
-    private Http1Client httpClient(WebServer server, String socketName) {
+    private WebClient webClient(WebServer server, String socketName) {
         return WebClient.builder()
+                .baseUri("http://localhost:" + server.port(socketName))
+                .build();
+    }
+
+    private Http1Client httpClient(WebServer server, String socketName) {
+        return Http1Client.builder()
                 .baseUri("http://localhost:" + server.port(socketName))
                 .build();
     }

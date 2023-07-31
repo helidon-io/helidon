@@ -36,9 +36,12 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>api</module>
         <module>webclient</module>
         <module>tracing</module>
         <module>security</module>
+        <module>dns-resolver</module>
+        <module>http1</module>
         <module>metrics</module>
     </modules>
 

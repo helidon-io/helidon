@@ -293,8 +293,10 @@ public class BlueprintProcessor extends AbstractProcessor {
                 pw.println(javadocLine);
             }
             pw.println(" *");
-            pw.println(" * @see #builder()");
-            if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic()) {
+            if (blueprintDef.builderPublic()) {
+                pw.println(" * @see #builder()");
+            }
+            if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
                 pw.println(" * @see #create()");
             }
             pw.println(" */");
@@ -438,7 +440,7 @@ public class BlueprintProcessor extends AbstractProcessor {
                 pw.println();
             }
 
-            if (blueprintDef.createEmptyPublic()) {
+            if (blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
             /*
             static X create()
              */

@@ -28,10 +28,8 @@ import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.nima.http2.webclient.Http2;
 import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.http2.webclient.Http2ClientResponse;
-import io.helidon.nima.webclient.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -78,9 +76,9 @@ class PostTest {
                 .build()
                 .start();
 
-        client = WebClient.builder(Http2.PROTOCOL)
+        client = Http2Client.builder()
                 .baseUri("http://localhost:" + server.port())
-                .priorKnowledge(true)
+                .protocolConfig(it -> it.priorKnowledge(true))
                 .build();
     }
 

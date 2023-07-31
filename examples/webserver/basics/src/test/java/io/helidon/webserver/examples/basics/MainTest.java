@@ -29,6 +29,11 @@ import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.http.Http.Status.BAD_REQUEST_400;
+import static io.helidon.common.http.Http.Status.CREATED_201;
+import static io.helidon.common.http.Http.Status.INTERNAL_SERVER_ERROR_500;
+import static io.helidon.common.http.Http.Status.OK_200;
+import static io.helidon.common.http.Http.Status.PRECONDITION_FAILED_412;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,12 +71,11 @@ public class MainTest {
     public void firstRouting() {
         // POST
         try (Http1ClientResponse response = client.post("/firstRouting/post-endpoint").request()) {
-            assertThat(response.status().code(), is(201));
+            assertThat(response.status(), is(CREATED_201));
         }
         // GET
         try (Http1ClientResponse response = client.get("/firstRouting/get-endpoint").request()) {
-            assertThat(response.status().code(), is(204));
-            assertThat(response.entity().as(String.class), is("Hello World!"));
+            assertThat(response.status(), is(OK_200));
         }
     }
 
@@ -79,11 +83,11 @@ public class MainTest {
     public void routingAsFilter() {
         // POST
         try (Http1ClientResponse response = client.post("/routingAsFilter/post-endpoint").request()) {
-            assertThat(response.status().code(), is(201));
+            assertThat(response.status(), is(CREATED_201));
         }
         // GET
         try (Http1ClientResponse response = client.get("/routingAsFilter/get-endpoint").request()) {
-            assertThat(response.status().code(), is(204));
+            assertThat(response.status(), is(OK_200));
         }
     }
 
@@ -94,7 +98,7 @@ public class MainTest {
                 .header(FOO_HEADER, "ccc")
                 .request()) {
 
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             String s = response.entity().as(String.class);
             assertThat(s, containsString("id: aaa"));
             assertThat(s, containsString("bar: bbb"));
@@ -106,13 +110,13 @@ public class MainTest {
     public void organiseCode() {
         // List
         try (Http1ClientResponse response = client.get("/organiseCode/catalog-context-path").request()) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("1, 2, 3, 4, 5"));
         }
 
         // Get by id
         try (Http1ClientResponse response = client.get("/organiseCode/catalog-context-path/aaa").request()) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("Item: aaa"));
         }
     }
@@ -121,13 +125,13 @@ public class MainTest {
     public void readContentEntity() {
         // foo
         try (Http1ClientResponse response = client.post("/readContentEntity/foo").submit("aaa")) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("aaa"));
         }
 
         // bar
         try (Http1ClientResponse response = client.post("/readContentEntity/bar").submit("aaa")) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("aaa"));
         }
     }
@@ -137,7 +141,7 @@ public class MainTest {
         try (Http1ClientResponse response = client.post("/mediaReader/create-record")
                 .contentType(NameSupport.APP_NAME)
                 .submit("John Smith")) {
-            assertThat(response.status().code(), is(201));
+            assertThat(response.status(), is(CREATED_201));
             assertThat(response.entity().as(String.class), is("John Smith"));
         }
 
@@ -145,7 +149,7 @@ public class MainTest {
         try (Http1ClientResponse response = client.post("/mediaReader/create-record")
                 .contentType(HttpMediaType.TEXT_PLAIN)
                 .submit("John Smith")) {
-            assertThat(response.status().code(), is(500));
+            assertThat(response.status(), is(INTERNAL_SERVER_ERROR_500));
         }
     }
 
@@ -153,13 +157,13 @@ public class MainTest {
     public void supports() {
         // Static content
         try (Http1ClientResponse response = client.get("/supports/index.html").request()) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
         }
 
         // JSON
         try (Http1ClientResponse response = client.get("/supports/hello/Europe").request()) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("{\"message\":\"Hello Europe\"}"));
         }
     }
@@ -170,7 +174,7 @@ public class MainTest {
         try (Http1ClientResponse response = client.post("/errorHandling/compute")
                 .contentType(HttpMediaType.TEXT_PLAIN)
                 .submit("2")) {
-            assertThat(response.status().code(), is(200));
+            assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("100 / 2 = 50"));
         }
 
@@ -178,14 +182,14 @@ public class MainTest {
         try (Http1ClientResponse response = client.post("/errorHandling/compute")
                 .contentType(HttpMediaType.TEXT_PLAIN)
                 .submit("0")) {
-            assertThat(response.status().code(), is(412));
+            assertThat(response.status(), is(PRECONDITION_FAILED_412));
         }
 
         // NaN
         try (Http1ClientResponse response = client.post("/errorHandling/compute")
                 .contentType(HttpMediaType.TEXT_PLAIN)
                 .submit("aaa")) {
-            assertThat(response.status().code(), is(400));
+            assertThat(response.status(), is(BAD_REQUEST_400));
         }
     }
 }

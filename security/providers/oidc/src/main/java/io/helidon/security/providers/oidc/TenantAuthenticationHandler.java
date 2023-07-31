@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
 import io.helidon.common.Errors;
 import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -114,18 +114,15 @@ class TenantAuthenticationHandler {
                 Parameters.Builder form = Parameters.builder("oidc-form-params")
                         .add("token", signedJwt.tokenContent());
 
-                Http1ClientRequest post = tenant.appWebClient()
+                HttpClientRequest post = tenant.appWebClient()
                         .post()
                         .uri(tenant.introspectUri())
                         .header(Http.HeaderValues.ACCEPT_JSON)
-                        .headers(it -> {
-                            it.add(Http.Header.CACHE_CONTROL, "no-cache, no-store, must-revalidate");
-                            return it;
-                        });
+                        .headers(it -> it.add(Http.Header.CACHE_CONTROL, "no-cache, no-store, must-revalidate"));
 
                 OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);
 
-                try (Http1ClientResponse response = post.submit(form.build())) {
+                try (HttpClientResponse response = post.submit(form.build())) {
                     if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
                         try {
                             JsonObject jsonObject = response.as(JsonObject.class);

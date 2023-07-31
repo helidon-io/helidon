@@ -170,7 +170,6 @@ class CoordinatorHeaderPropagationTest {
                                     .headers(reqHeaders -> {
                                         // relay all incoming headers
                                         req.headers().forEach(reqHeaders::add);
-                                        return reqHeaders;
                                     })
                                     .submit(LRAStatus.Closing.name())) {
                                 if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
@@ -193,7 +192,6 @@ class CoordinatorHeaderPropagationTest {
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
                                 req.headers().forEach(reqHeaders::add);
-                                return reqHeaders;
                             })
                             .request()) {
                         if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
@@ -216,7 +214,6 @@ class CoordinatorHeaderPropagationTest {
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
                                 req.headers().forEach(reqHeaders::add);
-                                return reqHeaders;
                             })
                             .request()) {
                         if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {

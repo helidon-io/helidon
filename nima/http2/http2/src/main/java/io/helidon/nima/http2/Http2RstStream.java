@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.nima.http2;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketContext;
 
 /**
  * RST Stream frame.
@@ -50,11 +49,6 @@ public record Http2RstStream(Http2ErrorCode errorCode) implements Http2Frame<Htt
     @Override
     public String name() {
         return Http2FrameType.RST_STREAM.name();
-    }
-
-    @Override
-    public void triggerListener(SocketContext ctx, Http2FrameListener listener) {
-        listener.frame(ctx, this);
     }
 
     @Override

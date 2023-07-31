@@ -300,21 +300,30 @@ record TypeContext(
                     // this is a prototype itself, ignore additional interfaces
                     gatherAll = false;
                     superPrototypes.add(info.typeName());
-                    ignoredInterfaces.add(info.typeName());
-                    ignoredInterfaces.add(TypeName.builder(info.typeName())
-                                                  .className(info.typeName().className() + "Blueprint")
-                                                  .build());
-                    // also add all super interfaces of the prototype
-                    info.interfaceTypeInfo()
-                            .stream()
-                            .map(TypeInfo::typeName)
-                            .map(TypeName::genericTypeName)
-                            .forEach(ignoredInterfaces::add);
+
+                    // we need to ignore ANY interface implemented by "info" and its super interfaces
+                    if (ignoredInterfaces.add(info.typeName().genericTypeName())) {
+                        ignoredInterfaces.add(TypeName.builder(info.typeName())
+                                                      .className(info.typeName().className() + "Blueprint")
+                                                      .build());
+                        ignoreAllInterfaces(ignoredInterfaces, info);
+                    }
                     break;
                 }
             }
             if (gatherAll) {
                 gatherExtends(info, extendList, superPrototypes, ignoredInterfaces);
+            }
+        }
+    }
+
+    private static void ignoreAllInterfaces(Set<TypeName> ignoredInterfaces, TypeInfo info) {
+        // also add all super interfaces of the prototype
+        List<TypeInfo> superIfaces = info.interfaceTypeInfo();
+
+        for (TypeInfo superIface : superIfaces) {
+            if (ignoredInterfaces.add(superIface.typeName().genericTypeName())) {
+                ignoreAllInterfaces(ignoredInterfaces, superIface);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,7 +210,7 @@ public interface BufferData {
      * Read bytes from the input stream.
      * Reads at least 1 byte.
      * @param in input stream
-     * @return number of bytes read
+     * @return number of bytes read, -1 if the input stream is finished
      */
     int readFrom(InputStream in);
 
@@ -574,7 +574,7 @@ public interface BufferData {
     /**
      * Number of bytes available for reading.
      *
-     * @return available byte
+     * @return available bytes
      */
     int available();
 
@@ -642,4 +642,16 @@ public interface BufferData {
      * @return byte at the index
      */
     int get(int index);
+
+    /**
+     * Read the content of this data as bytes.
+     * This method always creates a new byte array.
+     *
+     * @return byte array with {@link #available()} bytes, may be empty
+     */
+    default byte[] readBytes() {
+        byte[] bytes = new byte[available()];
+        read(bytes);
+        return bytes;
+    }
 }

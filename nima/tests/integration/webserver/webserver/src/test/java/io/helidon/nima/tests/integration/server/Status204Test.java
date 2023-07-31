@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package io.helidon.nima.tests.integration.server;
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.ClientResponse;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRules;
 
@@ -52,12 +52,12 @@ class Status204Test {
 
     @Test
     void callPutAndGet() {
-        try (ClientResponse response = client.method(Http.Method.PUT)
+        try (HttpClientResponse response = client.method(Http.Method.PUT)
                 .submit("test call")) {
 
             assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
         }
 
-        assertThat(client.get().request(String.class), is("test"));
+        assertThat(client.get().requestEntity(String.class), is("test"));
     }
 }

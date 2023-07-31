@@ -33,9 +33,8 @@ import java.util.Queue;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.ClientResponse;
-import io.helidon.nima.webclient.WebClient;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.nima.webclient.api.WebClient;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;
@@ -282,23 +281,23 @@ class MainTest {
 
         HelidonApplication application = startTheApplication(editionToJarPath(edition), systemPropertyArgs);
         try {
-            Http1Client webClient = WebClient.builder()
+            WebClient webClient = WebClient.builder()
                     .baseUri(application.getBaseUrl().toURI())
                     .build();
 
             JsonArray bookArray = webClient.get()
                     .path("/books")
-                    .request(JsonArray.class);
+                    .requestEntity(JsonArray.class);
             assertThat("Number of books", bookArray.size(), is(numberOfBooks));
 
-            ClientResponse response = webClient
+            HttpClientResponse response = webClient
                     .post("/books")
                     .submit(json);
             assertThat("HTTP response POST", response.status(), is(Http.Status.OK_200));
 
             JsonObject book = webClient
                     .get("/books/123456")
-                    .request(JsonObject.class);
+                    .requestEntity(JsonObject.class);
             assertThat("Checking if correct ISBN", book.getString("isbn"), is("123456"));
 
             response = webClient.get()
@@ -313,7 +312,7 @@ class MainTest {
 
             bookArray = webClient.get()
                     .path("/books")
-                    .request(JsonArray.class);
+                    .requestEntity(JsonArray.class);
             assertThat("Number of books", bookArray.size(), is(numberOfBooks));
         } finally {
             application.stop();
@@ -347,14 +346,14 @@ class MainTest {
         }
 
         try {
-            Http1Client webClient = WebClient.builder()
+            WebClient webClient = WebClient.builder()
                     .baseUri(application.getBaseUrl().toURI())
                     .build();
 
             String payload = webClient.get()
                     .path("/metrics")
                     .header(Http.Header.ACCEPT, MediaTypes.WILDCARD.text())
-                    .request(String.class);
+                    .requestEntity(String.class);
             assertThat("Making sure we got Prometheus format", payload, anyOf(startsWith("# TYPE"), startsWith("# HELP")));
 
             JsonObject jsonObject;
@@ -364,7 +363,7 @@ class MainTest {
                 jsonObject = webClient.get()
                         .path("/metrics")
                         .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
-                        .request(JsonObject.class);
+                        .requestEntity(JsonObject.class);
                 assertThat("Checking request count",
                         jsonObject.getJsonObject("vendor").getInt("requests.count"), greaterThan(0));
             }
@@ -372,7 +371,7 @@ class MainTest {
             jsonObject = webClient.get()
                     .path("/health")
                     .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
-                    .request(JsonObject.class);
+                    .requestEntity(JsonObject.class);
             assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
             if (edition.equals("mp")) {
                 assertThat("Checking built-in health checks disabled",
@@ -388,11 +387,11 @@ class MainTest {
     void routing(String edition) throws Exception {
         HelidonApplication application = startTheApplication(editionToJarPath(edition), Collections.emptyList());
         try {
-            Http1Client webClient = WebClient.builder()
+            WebClient webClient = WebClient.builder()
                     .baseUri(application.getBaseUrl().toURI())
                     .build();
 
-            ClientResponse response = webClient.get()
+            HttpClientResponse response = webClient.get()
                     .path("/badurl")
                     .header(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .request();
