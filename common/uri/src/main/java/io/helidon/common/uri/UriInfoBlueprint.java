@@ -25,7 +25,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Information about URI, that can be used to invoke a specific request over the network.
  */
-@Prototype.Blueprint(builderInterceptor = UriBuilderSupport.UriInfoInterceptor.class)
+@Prototype.Blueprint(decorator = UriBuilderSupport.UriInfoInterceptor.class)
 @Prototype.CustomMethods(UriBuilderSupport.UriInfoCustomMethods.class)
 interface UriInfoBlueprint {
 

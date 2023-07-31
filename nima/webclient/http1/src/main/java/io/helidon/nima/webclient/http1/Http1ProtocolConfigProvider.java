@@ -39,6 +39,7 @@ public class Http1ProtocolConfigProvider implements ProtocolConfigProvider<Http1
     public Http1ClientProtocolConfig create(Config config, String name) {
         return Http1ClientProtocolConfig.builder()
                 .config(config)
-                .name(name);
+                .name(name)
+                .build();
     }
 }

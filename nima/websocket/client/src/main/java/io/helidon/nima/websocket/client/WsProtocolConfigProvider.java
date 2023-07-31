@@ -40,6 +40,7 @@ public class WsProtocolConfigProvider implements ProtocolConfigProvider<WsClient
     public WsClientProtocolConfig create(Config config, String name) {
         return WsClientProtocolConfig.builder()
                 .config(config)
-                .name(name);
+                .name(name)
+                .build();
     }
 }

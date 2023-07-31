@@ -23,7 +23,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.nima.webclient.spi.ProtocolConfig;
 
-@Prototype.Blueprint(builderInterceptor = Http2ClientConfigSupport.ProtocolConfigInterceptor.class)
+@Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
 @Configured
 interface Http2ClientProtocolConfigBlueprint extends ProtocolConfig {
     @Override
