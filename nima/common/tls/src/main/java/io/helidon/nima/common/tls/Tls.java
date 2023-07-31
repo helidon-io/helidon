@@ -24,7 +24,6 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -195,31 +194,14 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
     }
 
     /**
-     * Create a socket for the chosen protocol.
-     *
-     * @param alpnProtocols protocols to use, this should be an ordered collection, as order is significant
-     * @return a new socket ready for TLS communication
-     */
-    public SSLSocket createSocket(Collection<String> alpnProtocols) {
-        try {
-            SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket();
-            sslParameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
-            socket.setSSLParameters(sslParameters);
-            return socket;
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    /**
      * Create a SSLSocket for the chosen protocol and the given socket.
      *
-     * @param alpnProtocols protocol(s) to use
+     * @param alpnProtocols protocol(s) to use (order is significant)
      * @param socket existing socket
      * @param address where SSL socket will connect
      * @return a new socket ready for TLS communication
      */
-    public SSLSocket createSocket(Collection<String> alpnProtocols, Socket socket, InetSocketAddress address) {
+    public SSLSocket createSocket(List<String> alpnProtocols, Socket socket, InetSocketAddress address) {
         try {
             SSLSocket sslSocket = (SSLSocket) sslSocketFactory
                     .createSocket(socket, address.getHostName(), address.getPort(), true);

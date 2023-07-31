@@ -47,7 +47,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                            HttpClientConfig clientConfig,
                            Http2ClientProtocolConfig protocolConfig,
                            Http.Method method,
-                           ClientUri clientUri, Map<String, String> properties) {
+                           ClientUri clientUri,
+                           Map<String, String> properties) {
         super(clientConfig, webClient.cookieManager(), Http2Client.PROTOCOL_ID, method, clientUri, properties);
 
         this.priorKnowledge = protocolConfig.priorKnowledge();
