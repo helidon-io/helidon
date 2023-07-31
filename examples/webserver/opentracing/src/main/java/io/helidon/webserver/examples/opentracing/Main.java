@@ -28,7 +28,7 @@ import io.helidon.tracing.TracerBuilder;
  * The application uses Open Tracing and sends the collected data to ZipKin.
  *
  * @see io.helidon.tracing.TracerBuilder
- * @see io.helidon.tracing.zipkin.ZipkinTracerBuilder
+ * @see io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder
  */
 public final class Main {
 

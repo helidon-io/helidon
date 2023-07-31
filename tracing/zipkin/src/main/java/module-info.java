@@ -25,13 +25,13 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
         path = {"Tracing", "Zipkin"}
 )
-module io.helidon.tracing.zipkin {
+module io.helidon.tracing.providers.zipkin {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.tracing;
-    requires io.helidon.tracing.opentracing;
+    requires io.helidon.tracing.providers.opentracing;
     requires static io.helidon.config.metadata;
 
     requires io.opentracing.util;
@@ -43,7 +43,7 @@ module io.helidon.tracing.zipkin {
     requires io.opentracing.noop;
     requires io.opentracing.api;
 
-    exports io.helidon.tracing.zipkin;
+    exports io.helidon.tracing.providers.zipkin;
 
-    provides io.helidon.tracing.opentracing.spi.OpenTracingProvider with io.helidon.tracing.zipkin.ZipkinTracerProvider;
+    provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider with io.helidon.tracing.providers.zipkin.ZipkinTracerProvider;
 }
