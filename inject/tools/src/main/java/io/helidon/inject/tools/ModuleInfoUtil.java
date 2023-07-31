@@ -38,7 +38,7 @@ final class ModuleInfoUtil {
     static boolean addIfAbsent(ModuleInfoDescriptor.Builder builder,
                                String target,
                                Supplier<ModuleInfoItem> itemSupplier) {
-        Optional<ModuleInfoItem> existing = builder.first(target);
+        Optional<ModuleInfoItem> existing = first(builder, target);
         if (existing.isEmpty()) {
             ModuleInfoItem item = Objects.requireNonNull(itemSupplier.get());
             assert (target.equals(item.target())) : "target mismatch: " + target + " and " + item.target();
@@ -145,5 +145,12 @@ final class ModuleInfoUtil {
      */
     static ModuleInfoItem usesExternalContract(TypeName externalContract) {
         return usesExternalContract(externalContract.fqName());
+    }
+
+    private static Optional<ModuleInfoItem> first(ModuleInfoDescriptor.BuilderBase<?, ?> builder, String target) {
+        return builder.items()
+                .stream()
+                .filter(it -> it.target().equals(target))
+                .findFirst();
     }
 }

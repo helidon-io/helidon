@@ -27,7 +27,7 @@ import io.helidon.nima.webserver.spi.ProtocolConfig;
 /**
  * HTTP/1.1 server configuration.
  */
-@Prototype.Blueprint(decorator = Http1BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = Http1BuilderDecorator.class)
 @Configured(provides = ProtocolConfig.class)
 interface Http1ConfigBlueprint extends ProtocolConfig {
     /**

@@ -165,10 +165,11 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
 
                 for (CustomAnnotationTemplateCreator producer : producers) {
                     req.genericTemplateCreator(new GenericTemplateCreatorDefault(producer.getClass(), utils()));
-                    res.request(req);
-                    CustomAnnotationTemplateResponse producerResponse = process(producer, req);
+                    CustomAnnotationTemplateRequest request = req.build();
+                    res.request(request);
+                    CustomAnnotationTemplateResponse producerResponse = process(producer, request);
                     if (producerResponse != null) {
-                        res = CustomAnnotationTemplateResponses.aggregate(req, res, producerResponse);
+                        res = CustomAnnotationTemplateResponses.aggregate(request, res.build(), producerResponse);
                     }
                 }
                 CustomAnnotationTemplateResponse response = res.build();

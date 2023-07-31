@@ -381,8 +381,10 @@ public abstract class AbstractApplicationCreatorMojo extends AbstractCreatorMojo
 
     void warn(String msg) {
         Optional<CallingContext.Builder> optBuilder = CallingContextFactory.createBuilder(false);
-        CallingContext callCtx = optBuilder.<CallingContext>map(builder -> builder
-                .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName))).orElse(null);
+        CallingContext callCtx = optBuilder.map(builder -> builder
+                .update(it -> Optional.ofNullable(getThisModuleName()).ifPresent(it::moduleName)))
+                .map(CallingContext.Builder::build)
+                .orElse(null);
         String desc = "no modules to process";
         String ctxMsg = (callCtx == null) ? toErrorMessage(desc) : toErrorMessage(callCtx, desc);
         ToolsException e = new ToolsException(ctxMsg);

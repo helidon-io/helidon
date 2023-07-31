@@ -266,7 +266,7 @@ class ModuleInfoDescriptorTest {
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> descriptor.mergeCreate(descriptor));
         assertThat(e.getMessage(), equalTo("can't merge with self"));
 
-        ModuleInfoDescriptor mergeCreated = descriptor.mergeCreate(ModuleInfoDescriptor.builder(descriptor));
+        ModuleInfoDescriptor mergeCreated = descriptor.mergeCreate(ModuleInfoDescriptor.builder(descriptor).build());
         assertThat(descriptor.contents(), equalTo(mergeCreated.contents()));
 
         ModuleInfoDescriptor descriptor1 = ModuleInfoDescriptor.builder()

@@ -246,7 +246,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
                 if (listenerConfig == null) {
                     builder.putSocket(socketName, listenerBuilder.build());
                 } else {
-                    builder.putSocket(socketName, ListenerConfig.builder(listenerConfig).from(listenerBuilder));
+                    builder.putSocket(socketName, ListenerConfig.builder(listenerConfig).from(listenerBuilder).build());
                 }
             }
         });

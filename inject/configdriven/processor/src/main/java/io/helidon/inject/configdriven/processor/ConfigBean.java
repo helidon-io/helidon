@@ -38,7 +38,8 @@ record ConfigBean(TypeName typeName,
             if (className.endsWith("Blueprint")) {
                 className = className.substring(0, className.length() - 9);
                 typeName = TypeName.builder(configBeanTypeInfo.typeName().genericTypeName())
-                        .className(className);
+                        .className(className)
+                        .build();
             } else {
                 throw new IllegalArgumentException("Type annotation with @Prototype.Blueprint does not"
                                                            + " end with Blueprint: " + configBeanTypeInfo.typeName());

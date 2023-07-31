@@ -101,6 +101,20 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                                                  + OciConfig.CONFIG_KEY);
     }
 
+    static String toNamedProfile(InjectionPointInfo.Builder ipiBuilder) {
+        Optional<? extends Annotation> named = findFirst(Named.class, ipiBuilder.qualifiers());
+        if (named.isEmpty()) {
+            return null;
+        }
+
+        String nameProfile = named.get().value().orElse(null);
+        if (nameProfile == null || nameProfile.isBlank()) {
+            return null;
+        }
+
+        return nameProfile.trim();
+    }
+
     static String toNamedProfile(InjectionPointInfo ipi) {
         if (ipi == null) {
             return null;

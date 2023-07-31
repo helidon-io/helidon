@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeName;
  * @see Services
  * @see ServiceInfoCriteria
  */
-@Prototype.Blueprint(decorator = ServiceInfoBuildInterceptor.class)
+@Prototype.Blueprint(decorator = ServiceInfoBuildDecorator.class)
 @Prototype.CustomMethods(ServiceInfoBlueprint.CustomMethods.class)
 interface ServiceInfoBlueprint extends ServiceInfoBasicsBlueprint, ServiceInfoBasics {
 

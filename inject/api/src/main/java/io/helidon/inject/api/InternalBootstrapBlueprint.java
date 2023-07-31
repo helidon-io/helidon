@@ -23,7 +23,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * Internal bootstrap is what we store when {@link InjectionServices#globalBootstrap(Bootstrap)} is used.
  */
-@Prototype.Blueprint(decorator = InternalBootstrapBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = InternalBootstrapBlueprint.BuilderDecorator.class)
 interface InternalBootstrapBlueprint {
 
     /**
@@ -40,13 +40,12 @@ interface InternalBootstrapBlueprint {
      */
     Optional<CallingContext> callingContext();
 
-    class BuilderInterceptor implements Prototype.BuilderDecorator<InternalBootstrap.BuilderBase<?, ?>> {
+    class BuilderDecorator implements Prototype.BuilderDecorator<InternalBootstrap.BuilderBase<?, ?>> {
         @Override
-        public InternalBootstrap.BuilderBase<?, ?> decorate(InternalBootstrap.BuilderBase<?, ?> target) {
+        public void decorate(InternalBootstrap.BuilderBase<?, ?> target) {
             if (target.bootStrap().isEmpty()) {
                 target.bootStrap(Bootstrap.create());
             }
-            return target;
         }
     }
 }

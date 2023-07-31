@@ -22,16 +22,16 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 
-class ResourceBuilderInterceptor implements Prototype.BuilderDecorator<ResourceConfig.BuilderBase<?, ?>> {
+class ResourceBuilderDecorator implements Prototype.BuilderDecorator<ResourceConfig.BuilderBase<?, ?>> {
     @Override
-    public ResourceConfig.BuilderBase<?, ?> decorate(ResourceConfig.BuilderBase<?, ?> target) {
+    public void decorate(ResourceConfig.BuilderBase<?, ?> target) {
         boolean useProxy = target.useProxy();
         if (!useProxy) {
             target.proxy(Optional.empty());
-            return target;
+            return;
         }
         if (target.proxy().isPresent()) {
-            return target;
+            return;
         }
         if (target.proxyHost().isPresent()) {
             String proxyHost = target.proxyHost().get();
@@ -40,6 +40,5 @@ class ResourceBuilderInterceptor implements Prototype.BuilderDecorator<ResourceC
                                     new InetSocketAddress(proxyHost, port));
             target.proxy(proxy);
         }
-        return target;
     }
 }

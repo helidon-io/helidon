@@ -78,14 +78,14 @@ public class Dependencies {
                 ? (DependenciesInfo.Builder) deps
                 : DependenciesInfo.builder(deps);
         parentDeps.serviceInfoDependencies().forEach(builder::addServiceInfoDependencies);
-        return forceBuild(builder);
+        return builder.build();
     }
 
-    static String toBaseIdentity(InjectionPointInfo dep) {
-        ElementKind kind = Objects.requireNonNull(dep.elementKind());
-        String elemName = Objects.requireNonNull(dep.elementName());
-        AccessModifier access = Objects.requireNonNull(dep.access());
-        String packageName = toPackageName(dep.serviceTypeName());
+    static String toBaseIdentity(InjectionPointInfo.Builder dep) {
+        ElementKind kind = dep.elementKind().orElseThrow();
+        String elemName = dep.elementName().orElseThrow();
+        AccessModifier access = dep.access().orElseThrow();
+        String packageName = toPackageName(dep.serviceTypeName().orElseThrow());
 
         String baseId;
         if (ElementKind.FIELD == kind) {
@@ -98,11 +98,11 @@ public class Dependencies {
         return baseId;
     }
 
-    static String toId(InjectionPointInfo dep) {
-        ElementKind kind = Objects.requireNonNull(dep.elementKind());
-        String elemName = Objects.requireNonNull(dep.elementName());
-        AccessModifier access = Objects.requireNonNull(dep.access());
-        String packageName = toPackageName(dep.serviceTypeName());
+    static String toId(InjectionPointInfo.Builder dep) {
+        ElementKind kind = dep.elementKind().orElseThrow();
+        String elemName = dep.elementName().orElseThrow();
+        AccessModifier access = dep.access().orElseThrow();
+        String packageName = toPackageName(dep.serviceTypeName().orElseThrow());
 
         String id;
         if (ElementKind.FIELD == kind) {
@@ -180,22 +180,6 @@ public class Dependencies {
 
         assert (elemOffset <= methodArgCount) : result;
         return result + "(" + elemOffset + ")";
-    }
-
-    /**
-     * Returns the non-builder version of the passed dependencies.
-     *
-     * @param deps the dependencies, but might be actually in builder form
-     * @return will always be the built version of the dependencies
-     */
-    private static DependenciesInfo forceBuild(DependenciesInfo deps) {
-        Objects.requireNonNull(deps);
-
-        if (deps instanceof DependenciesInfo.Builder) {
-            deps = ((DependenciesInfo.Builder) deps).build();
-        }
-
-        return deps;
     }
 
     private static String toPackageName(TypeName typeName) {
@@ -540,7 +524,7 @@ public class Dependencies {
                     ipInfoBuilder.baseIdentity(toBaseIdentity(ipInfoBuilder));
                     ipInfoBuilder.id(id);
                     ServiceInfoCriteria criteria = ServiceInfoCriteria.builder()
-                            .addContractImplemented(ipInfoBuilder.elementTypeName())
+                            .addContractImplemented(ipInfoBuilder.elementTypeName().orElseThrow())
                             .qualifiers(ipInfoBuilder.qualifiers())
                             .build();
 

@@ -284,7 +284,8 @@ public abstract class AbstractCreator {
             }
         }
 
-        return addProviderRequirementsTo(descriptorBuilder, generatedAnno);
+        return addProviderRequirementsTo(descriptorBuilder, generatedAnno)
+                .build();
     }
 
 }

@@ -31,7 +31,7 @@ import io.helidon.common.pki.Keys;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
-@Prototype.Blueprint(decorator = TlsConfigInterceptor.class)
+@Prototype.Blueprint(decorator = TlsConfigDecorator.class)
 @Configured
 interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     String DEFAULT_PROTOCOL = "TLS";

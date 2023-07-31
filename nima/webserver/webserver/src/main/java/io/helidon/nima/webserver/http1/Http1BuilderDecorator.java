@@ -19,23 +19,21 @@ package io.helidon.nima.webserver.http1;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.http.RequestedUriDiscoveryContext;
 
-class Http1BuilderInterceptor implements Prototype.BuilderDecorator<Http1Config.BuilderBase<?, ?>> {
+class Http1BuilderDecorator implements Prototype.BuilderDecorator<Http1Config.BuilderBase<?, ?>> {
     @Override
-    public Http1Config.BuilderBase<?, ?> decorate(Http1Config.BuilderBase<?, ?> target) {
+    public void decorate(Http1Config.BuilderBase<?, ?> target) {
         receiveListeners(target);
         sentListeners(target);
 
-        if (target.name() == null) {
+        if (target.name().isEmpty()) {
             target.name("@default");
         }
 
-        if (target.requestedUriDiscovery() == null) {
+        if (target.requestedUriDiscovery().isEmpty()) {
             target.requestedUriDiscovery(RequestedUriDiscoveryContext.builder()
-                                                 .socketId(target.name())
+                                                 .socketId(target.name().orElse("@default"))
                                                  .build());
         }
-
-        return target;
     }
 
     private void sentListeners(Http1Config.BuilderBase<?, ?> target) {

@@ -87,7 +87,7 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void testToNamedProfile() {
-        assertThat(OciAuthenticationDetailsProvider.toNamedProfile(null),
+        assertThat(OciAuthenticationDetailsProvider.toNamedProfile((InjectionPointInfo) null),
                    nullValue());
 
         InjectionPointInfo.Builder ipi = InjectionPointInfo.builder()

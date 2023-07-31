@@ -65,7 +65,8 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     @Override
     TypeName argumentTypeName() {
         return TypeName.builder(OPTIONAL)
-                .addTypeArgument(toWildcard(actualType()));
+                .addTypeArgument(toWildcard(actualType()))
+                .build();
     }
 
     @Override
@@ -142,7 +143,8 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             FactoryMethods.FactoryMethod fm = factoryMethod.builder().get();
 
             TypeName builderType;
-            if (fm.factoryMethodReturnType().className().equals("Builder")) {
+            String className = fm.factoryMethodReturnType().className();
+            if (className.equals("Builder") || className.endsWith(".Builder")) {
                 builderType = fm.factoryMethodReturnType();
             } else {
                 builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");

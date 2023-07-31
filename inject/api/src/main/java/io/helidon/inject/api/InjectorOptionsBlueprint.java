@@ -24,7 +24,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *
  * @see Injector
  */
-@Prototype.Blueprint(decorator = InjectorOptionsBlueprint.Interceptor.class)
+@Prototype.Blueprint(decorator = InjectorOptionsBlueprint.BuilderDecorator.class)
 interface InjectorOptionsBlueprint {
     /**
      * The strategy the injector should apply. The default is {@link Injector.Strategy#ANY}.
@@ -45,16 +45,15 @@ interface InjectorOptionsBlueprint {
     /**
      * This will ensure that the activation request is populated.
      */
-    class Interceptor implements Prototype.BuilderDecorator<InjectorOptions.BuilderBase<?, ?>> {
-        Interceptor() {
+    class BuilderDecorator implements Prototype.BuilderDecorator<InjectorOptions.BuilderBase<?, ?>> {
+        BuilderDecorator() {
         }
 
         @Override
-        public InjectorOptions.BuilderBase<?, ?> decorate(InjectorOptions.BuilderBase<?, ?> target) {
-            if (target.activationRequest() == null) {
+        public void decorate(InjectorOptions.BuilderBase<?, ?> target) {
+            if (target.activationRequest().isEmpty()) {
                 target.activationRequest(InjectionServices.createActivationRequestDefault());
             }
-            return target;
         }
     }
 
