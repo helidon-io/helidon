@@ -23,11 +23,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.metrics</groupId>
-        <artifactId>helidon-metrics-project</artifactId>
+        <artifactId>helidon-metrics-providers-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-metrics-micrometer</artifactId>
-    <name>Helidon Metrics - Micrometer Adapter</name>
+    <name>Helidon Metrics Micrometer Adapter</name>
     <description>Micrometer implementation of the Helidon metrics API</description>
 
     <dependencies>

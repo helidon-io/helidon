@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api.spi;
+package io.helidon.metrics.spi;
 
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
@@ -36,7 +36,7 @@ import io.helidon.metrics.api.Timer;
  *     {@link Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
  * </p>
  */
-public interface HelidonMetricFactory {
+public interface MetricFactoryProvider {
 
     /**
      * Returns the global meter registry.

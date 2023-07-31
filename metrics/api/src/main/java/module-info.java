@@ -29,9 +29,11 @@ module io.helidon.metrics.api {
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
+    exports io.helidon.metrics.spi;
 
     uses io.helidon.metrics.api.spi.RegistryFactoryProvider;
     uses io.helidon.metrics.api.spi.ExemplarService;
     uses io.helidon.metrics.api.MetricsProgrammaticSettings;
+    uses io.helidon.metrics.spi.MetricFactoryProvider;
 
 }
