@@ -125,7 +125,7 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
 
         io.grpc.MethodDescriptor.Builder<ReqT, ResT> grpcDesc = io.grpc.MethodDescriptor.<ReqT, ResT>newBuilder()
                 .setFullMethodName(io.grpc.MethodDescriptor.generateFullMethodName(serviceName, methodName))
-                .setType(io.grpc.MethodDescriptor.MethodType.UNARY).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
+                .setType(getMethodType(mtd)).setFullMethodName(path).setRequestMarshaller(reqMarshaller)
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
         return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responsetype, callHandler);
@@ -177,5 +177,20 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         }
 
         return sb.toString();
+    }
+
+    private static io.grpc.MethodDescriptor.MethodType getMethodType(Descriptors.MethodDescriptor mtd) {
+        if (mtd.isClientStreaming()) {
+            if (mtd.isServerStreaming()) {
+                return MethodDescriptor.MethodType.BIDI_STREAMING;
+            }
+            else {
+                return MethodDescriptor.MethodType.CLIENT_STREAMING;
+            }
+        }
+        else if (mtd.isServerStreaming()) {
+            return MethodDescriptor.MethodType.SERVER_STREAMING;
+        }
+        return MethodDescriptor.MethodType.UNARY;
     }
 }
