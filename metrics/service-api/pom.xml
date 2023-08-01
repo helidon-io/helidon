@@ -46,11 +46,6 @@
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics-api</artifactId>
         </dependency>
-<!--        // TODO - temporary so module will compile during transition to neutral metrics API-->
-        <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
             <artifactId>parsson</artifactId>

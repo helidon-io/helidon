@@ -24,7 +24,5 @@ module io.helidon.metrics.serviceapi {
     requires io.helidon.metrics.api;
     requires jakarta.json;
 
-    requires microprofile.metrics.api;
-
     exports io.helidon.metrics.serviceapi;
 }
