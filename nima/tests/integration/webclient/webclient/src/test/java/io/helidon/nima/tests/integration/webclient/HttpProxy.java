@@ -24,11 +24,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * HttpProxy implementation. It has to handle two sockets per each connection to it:
+ * 1. The socket that starts the connection to the HTTP Proxy, known as origin.
+ * 2. The socket that will connect from the HTTP Proxy to the desired remote host, known as remote.
+ *
+ * An HTTP Proxy has to primarily pass data from both sides, origin to remote and remote to origin.
+ * Before doing this, it has to handle a first request from the origin to know where is the remote host.
+ *
+ * An instance of HttpProxy can not be re-used after stopping it.
+ */
 class HttpProxy {
 
     private static final System.Logger LOGGER = System.getLogger(HttpProxy.class.getName());
@@ -53,16 +64,21 @@ class HttpProxy {
         this(port, null, null);
     }
 
-    boolean start() {
+    void start() {
+        CountDownLatch ready = new CountDownLatch(1);
         executor.submit(() -> {
             try (ServerSocket server = new ServerSocket(port)) {
                 this.connectedPort = server.getLocalPort();
                 LOGGER.log(Level.INFO, "Listening connections in port: " + connectedPort);
                 while (!stop) {
+                    // Origin is the socket that starts the connection
                     Socket origin = server.accept();
                     LOGGER.log(Level.DEBUG, "Open: " + origin);
                     counter.incrementAndGet();
+                    ready.countDown();
                     origin.setSoTimeout(TIMEOUT);
+                    // Remote is the socket that will connect to the desired host, for example www.google.com
+                    // It is not connected yet because we need to wait for the HTTP CONNECT to know where.
                     Socket remote = new Socket();
                     remote.setSoTimeout(TIMEOUT);
                     MiddleCommunicator remoteToOrigin = new MiddleCommunicator(executor, remote, origin, null);
@@ -82,9 +98,10 @@ class HttpProxy {
             try (Socket socket = new Socket()) {
                 socket.connect(new InetSocketAddress(connectedPort), 10000);
                 responding = true;
-            } catch (IOException e) {}
+                // Wait for counter is set to 0
+                ready.await(5, TimeUnit.SECONDS);
+            } catch (IOException | InterruptedException e) {}
         }
-        return responding;
     }
 
     int counter() {
@@ -108,11 +125,23 @@ class HttpProxy {
         return connectedPort;
     }
 
+    /**
+     * This is the core of the HTTP Proxy. One HTTP Proxy must run 2 instances of this, as it will be explained here.
+     *
+     * Its goal is to forward what arrives. There are two workflows:
+     * 1. Listen from origin to forward it to remote.
+     * 2. Listen from remote to forward it to origin.
+     *
+     * One instance of MiddleCommunicator can only handle 1 workflow, then you need 2 instances of it because
+     * it is needed to send data to remote, and also read data from it.
+     *
+     * The workflow number 1 (originToRemote) also requires one additional step. It has to handle
+     * an HTTP CONNECT request before start forwarding. This is needed to know where is the remote and to authenticate.
+     */
     private class MiddleCommunicator {
 
         private static final System.Logger LOGGER = System.getLogger(MiddleCommunicator.class.getName());
         private static final int BUFFER_SIZE = 1024 * 1024;
-        private static final String HOST = "HOST: ";
         private final ExecutorService executor;
         private final Socket readerSocket;
         private final Socket writerSocket;
@@ -125,6 +154,7 @@ class HttpProxy {
             this.readerSocket = readerSocket;
             this.writerSocket = writerSocket;
             this.originToRemote = callback != null;
+            // Both are the same thing with different name. The only purpose of this is to understand better stack traces.
             this.reader = originToRemote ? new OriginToRemoteReader() : new RemoteToOriginReader();
             this.callback = callback;
         }
@@ -156,46 +186,41 @@ class HttpProxy {
                 byte[] buffer = new byte[BUFFER_SIZE];
                 Exception exception = null;
                 try {
+                    boolean handleFirstRequest = true;
                     int read;
-                    OriginInfo originInfo = null;
                     while ((read = readerSocket.getInputStream().read(buffer)) != -1) {
-                        final int readB = read;
-                        LOGGER.log(Level.DEBUG, readerSocket + " read " + readB + " bytes");
-                        LOGGER.log(Level.DEBUG, new String(buffer, 0, readB));
-                        if (originToRemote) {
-                            if (originInfo == null) {
-                                originInfo = getOriginInfo(buffer, read);
-                                LOGGER.log(Level.DEBUG, "Incoming request: " + originInfo);
-                                if (originInfo.respondOrigin()) {
-                                    if (authenticate(originInfo)) {
-                                        // Respond origin
-                                        String response = "HTTP/1.1 200 Connection established\r\n\r\n";
-                                        writerSocket.connect(new InetSocketAddress(originInfo.host, originInfo.port));
-                                        LOGGER.log(Level.DEBUG, "Open: " + writerSocket);
-                                        readerSocket.getOutputStream()
-                                                .write(response.getBytes());
-                                        // Start listening from origin
-                                        callback.start();
-                                        readerSocket.getOutputStream().flush();
-                                    } else {
-                                        LOGGER.log(Level.WARNING, "Invalid " + originInfo.user + ":" + originInfo.password);
-                                        originInfo = null;
-                                        String response = "HTTP/1.1 401 Unauthorized\r\n\r\n";
-                                        readerSocket.getOutputStream().write(response.getBytes());
-                                        readerSocket.getOutputStream().flush();
-                                        readerSocket.close();
-                                    }
-                                }
+                        final int readb = read;
+                        LOGGER.log(Level.DEBUG, () -> readerSocket + " read " + readb + " bytes\n" + new String(buffer, 0, readb));
+                        // Handling workflow number 1
+                        if (originToRemote && handleFirstRequest) {
+                            handleFirstRequest = false;
+                            // It is expected the first request is HTTP CONNECT
+                            OriginInfo originInfo = getOriginInfo(buffer, readb);
+                            LOGGER.log(Level.DEBUG, "Incoming request: " + originInfo);
+                            if (authenticate(originInfo)) {
+                                // Respond origin
+                                String response = "HTTP/1.1 200 Connection established\r\n\r\n";
+                                writerSocket.connect(new InetSocketAddress(originInfo.host, originInfo.port));
+                                LOGGER.log(Level.DEBUG, "Open: " + writerSocket);
+                                readerSocket.getOutputStream()
+                                        .write(response.getBytes());
+                                // Now we know where to connect, so we can connect the socket to the remote.
+                                callback.start();
+                                readerSocket.getOutputStream().flush();
                             } else {
-                                writerSocket.getOutputStream().write(buffer, 0, read);
-                                writerSocket.getOutputStream().flush();
+                                LOGGER.log(Level.WARNING, "Invalid " + originInfo.user + ":" + originInfo.password);
+                                originInfo = null;
+                                String response = "HTTP/1.1 401 Unauthorized\r\n\r\n";
+                                readerSocket.getOutputStream().write(response.getBytes());
+                                readerSocket.getOutputStream().flush();
+                                readerSocket.close();
                             }
                         } else {
-                            writerSocket.getOutputStream().write(buffer, 0, read);
+                            writerSocket.getOutputStream().write(buffer, 0, readb);
                             writerSocket.getOutputStream().flush();
                         }
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
                     exception = e;
 //                    LOGGER.log(Level.SEVERE, e.getMessage(), e);
                 } finally {
@@ -222,16 +247,14 @@ class HttpProxy {
             for (String line : lines) {
                 if (line.startsWith(OriginInfo.CONNECT)) {
                     request.parseFirstLine(line);
-                } else if (line.toUpperCase().startsWith(HOST)) {
-                    request.parseHost(line);
-                } else if (line.toUpperCase().startsWith(OriginInfo.AUTHORIZATION)) {
+                } else if (line.startsWith(OriginInfo.AUTHORIZATION)) {
                     request.parseAuthorization(line);
                 }
             }
             return request;
         }
 
-        // Make it easy to understand stacktraces
+        // Make it easy to understand stack traces
         private class OriginToRemoteReader extends Reader {
             @Override
             public void run() {
@@ -248,7 +271,7 @@ class HttpProxy {
 
         private static class OriginInfo {
             private static final String CONNECT = "CONNECT";
-            private static final String AUTHORIZATION = "AUTHORIZATION:";
+            private static final String AUTHORIZATION = "Proxy-Authorization:";
             private String host;
             private int port = 80;
             private String protocol;
@@ -261,29 +284,20 @@ class HttpProxy {
                 String[] parts = line.split(" ");
                 this.method = parts[0].trim();
                 this.protocol = parts[2].trim();
-            }
-
-            // Host: host:port
-            private void parseHost(String line) {
-                line = line.substring(HOST.length()).trim();
-                String[] hostPort = line.split(":");
+                String[] hostPort = parts[1].split(":");
                 this.host = hostPort[0];
                 if (hostPort.length > 1) {
                     this.port = Integer.parseInt(hostPort[1]);
                 }
             }
 
-            // Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
+            // Proxy-Authorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==
             private void parseAuthorization(String line) {
                 String[] parts = line.split(" ");
                 String base64 = parts[2];
                 String[] userPass = new String(Base64.getDecoder().decode(base64)).split(":");
                 user = userPass[0];
                 password = userPass[1];
-            }
-
-            private boolean respondOrigin() {
-                return CONNECT.equals(method);
             }
 
             @Override

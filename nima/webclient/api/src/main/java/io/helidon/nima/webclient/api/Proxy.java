@@ -24,7 +24,9 @@ import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.Socket;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,6 +41,8 @@ import java.util.regex.Pattern;
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.Configured;
@@ -51,6 +55,8 @@ import io.helidon.nima.common.tls.Tls;
 public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
+    private static final HeaderValue PROXY_CONNECTION =
+            Header.create(Http.Header.create("Proxy-Connection"), "keep-alive");
 
     /**
      * No proxy instance.
@@ -81,6 +87,7 @@ public class Proxy {
     private final Function<InetSocketAddress, Boolean> noProxy;
     private final Optional<String> username;
     private final Optional<char[]> password;
+    private final Optional<HeaderValue> proxyAuthHeader;
 
     private Proxy(Proxy.Builder builder) {
         this.host = builder.host();
@@ -98,6 +105,16 @@ public class Proxy {
             this.noProxy = inetSocketAddress -> true;
         } else {
             this.noProxy = prepareNoProxy(builder.noProxyHosts());
+        }
+
+        if (!username.isEmpty()) {
+            char[] pass = password.orElse(new char[0]);
+            // Making the password char[] to String looks not correct, but it is done in the same way in HttpBasicAuthProvider
+            String b64 = Base64.getEncoder().encodeToString((username.get() + ":" + new String(pass))
+                    .getBytes(StandardCharsets.UTF_8));
+            this.proxyAuthHeader = Optional.of(Header.create(Header.PROXY_AUTHORIZATION, "Basic " + b64));
+        } else {
+            this.proxyAuthHeader = Optional.empty();
         }
     }
 
@@ -412,7 +429,8 @@ public class Proxy {
 
     private static Socket connectToProxy(WebClient webClient,
                                          InetSocketAddress proxyAddress,
-                                         InetSocketAddress targetAddress) {
+                                         InetSocketAddress targetAddress,
+                                         Proxy proxy) {
 
         WebClientConfig clientConfig = webClient.prototype();
         TcpClientConnection connection = TcpClientConnection.create(webClient,
@@ -429,14 +447,20 @@ public class Proxy {
                                                                     })
                 .connect();
 
-        HttpClientResponse response = webClient.method(Http.Method.CONNECT)
+        HttpClientRequest request = webClient.method(Http.Method.CONNECT)
                 .followRedirects(false) // do not follow redirects for proxy connect itself
                 .connection(connection)
                 .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())
                 .protocolId("http/1.1") // MUST be 1.1, if not available, proxy connection will fail
                 .header(Http.Header.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
-                .accept(MediaTypes.WILDCARD)
-                .request(); // we cannot close the response, as that would close the connection
+                .accept(MediaTypes.WILDCARD);
+        if (clientConfig.keepAlive()) {
+            request.header(Http.HeaderValues.CONNECTION_KEEP_ALIVE)
+                .header(PROXY_CONNECTION);
+        }
+        proxy.proxyAuthHeader.ifPresent(request::header);
+        // we cannot close the response, as that would close the connection
+        HttpClientResponse response = request.request();
         if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
             response.close();
             throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
@@ -511,7 +535,8 @@ public class Proxy {
                 return proxy.address(targetAddress)
                         .map(proxyAddress -> connectToProxy(webClient,
                                                             proxyAddress,
-                                                            targetAddress))
+                                                            targetAddress,
+                                                            proxy))
                         .orElseGet(() -> NONE.connect(webClient, proxy, targetAddress, socketOptions, tls));
             }
         };
@@ -531,7 +556,7 @@ public class Proxy {
         private final Set<String> noProxyHosts = new HashSet<>();
 
         // Defaults to system
-        private ProxyType type;
+        private ProxyType type = ProxyType.SYSTEM;
         private String host;
         private int port = 80;
         private String username;
@@ -542,11 +567,6 @@ public class Proxy {
 
         @Override
         public Proxy build() {
-            if ((null == host) || (host.isEmpty())) {
-                return NO_PROXY;
-            } else if (type == ProxyType.SYSTEM) {
-                return SYSTEM_PROXY;
-            }
             return new Proxy(this);
         }
 
@@ -715,5 +735,4 @@ public class Proxy {
             return Optional.ofNullable(password);
         }
     }
-
 }
