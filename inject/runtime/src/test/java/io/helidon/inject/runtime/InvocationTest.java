@@ -57,8 +57,7 @@ class InvocationTest {
             .elementInfo(TypedElementInfo.builder()
                                  .elementName("test")
                                  .elementTypeKind(TypeValues.KIND_METHOD)
-                                 .typeName(TypeName.create(InvocationTest.class))
-                                 .build())
+                                 .typeName(TypeName.create(InvocationTest.class)))
             .interceptors(List.of(first.provider, second.provider))
             .build();
     ArrayList<Object[]> calls = new ArrayList<>();

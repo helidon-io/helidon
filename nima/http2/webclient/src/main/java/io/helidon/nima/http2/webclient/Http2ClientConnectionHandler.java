@@ -18,10 +18,12 @@ package io.helidon.nima.http2.webclient;
 
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -69,8 +71,9 @@ class Http2ClientConnectionHandler {
     }
 
     void close() {
-        this.allConnections.keySet()
-                .forEach(Http2ClientConnection::close);
+        // this is to prevent concurrent modification (connections remove themself from the map)
+        Set<Http2ClientConnection> toClose = new HashSet<>(allConnections.keySet());
+        toClose.forEach(Http2ClientConnection::close);
         this.activeConnection.set(null);
         this.allConnections.clear();
     }

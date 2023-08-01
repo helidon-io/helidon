@@ -163,6 +163,20 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * The type name.
+         *
+         * @param supplier supplier of
+         * the type name
+         * @return updated builder instance
+         * @see #typeName()
+         */
+        public BUILDER typeName(java.util.function.Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.typeName(supplier.get());
+            return self();
+        }
+
+        /**
          * Any Map, List, Set, or method that has {@link TypeName#typeArguments()} will be analyzed and any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
