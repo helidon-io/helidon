@@ -16,7 +16,7 @@
 
 import io.helidon.metrics.api.spi.ExemplarService;
 import io.helidon.metrics.api.spi.RegistryFactoryProvider;
-import io.helidon.metrics.spi.MetricFactoryProvider;
+import io.helidon.metrics.spi.MetricsProvider;
 
 /**
  * Helidon metrics API.
@@ -37,5 +37,5 @@ module io.helidon.metrics.api {
     uses ExemplarService;
     uses io.helidon.metrics.api.MetricsProgrammaticSettings;
     uses io.helidon.metrics.api.spi.MetricFactory;
-    uses MetricFactoryProvider;
+    uses MetricsProvider;
 }

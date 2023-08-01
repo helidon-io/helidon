@@ -18,17 +18,17 @@ package io.helidon.metrics.api;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.metrics.spi.MetricFactoryProvider;
+import io.helidon.metrics.spi.MetricsProvider;
 
 /**
  * No-op implementation of the {@link io.helidon.metrics.api.spi.MetricFactory} interface.
  */
-class NoOpMetricFactoryProvider implements MetricFactoryProvider {
+class NoOpMetricsProvider implements MetricsProvider {
 
     private final MeterRegistry meterRegistry = null;
 
-    static NoOpMetricFactoryProvider create() {
-        return new NoOpMetricFactoryProvider();
+    static NoOpMetricsProvider create() {
+        return new NoOpMetricsProvider();
     }
 
     @Override
