@@ -28,7 +28,8 @@ class DefaultInjectionServicesConfigTest {
 
     @Test
     void testIt() {
-        InjectionServicesConfig cfg = DefaultInjectionServicesConfig.createDefaultConfigBuilder();
+        InjectionServicesConfig cfg = DefaultInjectionServicesConfig.createDefaultConfigBuilder()
+                .build();
         assertThat(cfg.providerName(), optionalValue(is("oracle")));
         assertThat(cfg.providerVersion(), optionalValue(is("1")));
     }

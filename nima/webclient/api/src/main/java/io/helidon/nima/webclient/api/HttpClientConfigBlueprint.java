@@ -43,7 +43,7 @@ import io.helidon.nima.webclient.spi.WebClientServiceProvider;
  * This can be used by any HTTP client version, and does not act as a factory, for easy extensibility.
  */
 @Configured
-@Prototype.Blueprint(builderInterceptor = HttpClientConfigSupport.HttpBuilderInterceptor.class)
+@Prototype.Blueprint(decorator = HttpClientConfigSupport.HttpBuilderDecorator.class)
 @Prototype.CustomMethods(HttpClientConfigSupport.HttpCustomMethods.class)
 interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     /**
@@ -151,7 +151,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return media context
      */
-    @ConfiguredOption
+    @ConfiguredOption("create()")
     MediaContext mediaContext();
 
     /**

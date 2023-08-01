@@ -393,7 +393,7 @@ class TypeNameTest {
 
     @Test
     void extendsTypeName() {
-        TypeName extendsName = TypeName.builder(create(Map.class)).wildcard(true);
+        TypeName extendsName = TypeName.builder(create(Map.class)).wildcard(true).build();
         assertThat(extendsName.fqName(), equalTo("? extends java.util.Map"));
         assertThat(extendsName.declaredName(), equalTo("java.util.Map"));
         assertThat(extendsName.name(), equalTo("java.util.Map"));

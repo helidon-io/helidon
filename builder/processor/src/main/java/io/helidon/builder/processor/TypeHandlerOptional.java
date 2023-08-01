@@ -36,11 +36,6 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    String generateBuilderGetter() {
-        return "Optional.ofNullable(" + name() + ")";
-    }
-
-    @Override
     String fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
         StringBuilder fieldDeclaration = new StringBuilder("private ");
         TypeName usedType = isBuilder ? actualType() : declaredType();
@@ -70,7 +65,8 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
     @Override
     TypeName argumentTypeName() {
         return TypeName.builder(OPTIONAL)
-                .addTypeArgument(toWildcard(actualType()));
+                .addTypeArgument(toWildcard(actualType()))
+                .build();
     }
 
     @Override
@@ -91,7 +87,6 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             // declared setter - optional is package local, field is never optional in builder
             List<String> lines = new ArrayList<>();
             lines.add("Objects.requireNonNull(" + name() + ");");
-            lines.addAll(resolveBuilderLines(actualType(), name()));
             lines.add("this." + name() + " = " + name() + ";");
             lines.add("return self();");
 
@@ -148,7 +143,8 @@ class TypeHandlerOptional extends TypeHandler.OneTypeHandler {
             FactoryMethods.FactoryMethod fm = factoryMethod.builder().get();
 
             TypeName builderType;
-            if (fm.factoryMethodReturnType().className().equals("Builder")) {
+            String className = fm.factoryMethodReturnType().className();
+            if (className.equals("Builder") || className.endsWith(".Builder")) {
                 builderType = fm.factoryMethodReturnType();
             } else {
                 builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");

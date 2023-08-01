@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ActivationLog;
 import io.helidon.inject.api.ActivationLogEntry;
 import io.helidon.inject.api.ActivationPhaseReceiver;
@@ -43,6 +44,7 @@ import io.helidon.inject.api.ContextualServiceQuery;
 import io.helidon.inject.api.DeActivationRequest;
 import io.helidon.inject.api.DeActivator;
 import io.helidon.inject.api.DependenciesInfo;
+import io.helidon.inject.api.ElementKind;
 import io.helidon.inject.api.Event;
 import io.helidon.inject.api.InjectionPointInfo;
 import io.helidon.inject.api.InjectionPointProvider;
@@ -415,35 +417,42 @@ public abstract class AbstractServiceProvider<T>
 
         // if we get here then we own the semaphore for activation...
         try {
+            Phase finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_STARTING.ordinal()
-                    && (Phase.INIT == res.finishingActivationPhase()
-                                || Phase.PENDING == res.finishingActivationPhase()
-                                || Phase.ACTIVATION_STARTING == res.finishingActivationPhase()
-                                || Phase.DESTROYED == res.finishingActivationPhase())) {
+                    && (Phase.INIT == res.finishingActivationPhase().orElse(null)
+                                || Phase.PENDING == finishing
+                                || Phase.ACTIVATION_STARTING == finishing
+                                || Phase.DESTROYED == finishing)) {
                 doStartingLifecycle(logEntryAndResult);
             }
+            finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.GATHERING_DEPENDENCIES.ordinal()
-                    && (Phase.ACTIVATION_STARTING == res.finishingActivationPhase())) {
+                    && (Phase.ACTIVATION_STARTING == finishing)) {
                 doGatheringDependencies(logEntryAndResult);
             }
+            finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.CONSTRUCTING.ordinal()
-                    && (Phase.GATHERING_DEPENDENCIES == res.finishingActivationPhase())) {
+                    && (Phase.GATHERING_DEPENDENCIES == finishing)) {
                 doConstructing(logEntryAndResult);
             }
+            finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.INJECTING.ordinal()
-                    && (Phase.CONSTRUCTING == res.finishingActivationPhase())) {
+                    && (Phase.CONSTRUCTING == finishing)) {
                 doInjecting(logEntryAndResult);
             }
+            finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.POST_CONSTRUCTING.ordinal()
-                    && (Phase.INJECTING == res.finishingActivationPhase())) {
+                    && (Phase.INJECTING == finishing)) {
                 doPostConstructing(logEntryAndResult);
             }
+            finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.ACTIVATION_FINISHING.ordinal()
-                    && (Phase.POST_CONSTRUCTING == res.finishingActivationPhase())) {
+                    && (Phase.POST_CONSTRUCTING == finishing)) {
                 doActivationFinishing(logEntryAndResult);
             }
+            finishing = res.finishingActivationPhase().orElse(null);
             if (res.targetActivationPhase().ordinal() >= Phase.ACTIVE.ordinal()
-                    && (Phase.ACTIVATION_FINISHING == res.finishingActivationPhase())) {
+                    && (Phase.ACTIVATION_FINISHING == finishing)) {
                 doActivationActive(logEntryAndResult);
             }
 
@@ -533,12 +542,24 @@ public abstract class AbstractServiceProvider<T>
                                                                   Class<?> serviceType) {
                 try {
                     InjectionResolver resolver = (InjectionResolver) AbstractServiceProvider.this;
+                    TypeName typeName = TypeName.create(serviceType);
                     ServiceInfoCriteria serviceInfo = ServiceInfoCriteria.builder()
-                            .serviceTypeName(TypeName.create(serviceType))
+                            .serviceTypeName(typeName)
                             .build();
+
                     InjectionPointInfo ipInfo = InjectionPointInfo.builder()
                             .id(id)
-                            .dependencyToServiceInfo(serviceInfo);
+                            .dependencyToServiceInfo(serviceInfo)
+                            // the following values are required, but dummy in this instance
+                            .elementKind(ElementKind.METHOD)
+                            .elementTypeName(typeName)
+                            .elementName("none")
+                            .serviceTypeName(typeName)
+                            .access(AccessModifier.PUBLIC)
+                            .ipType(typeName)
+                            .ipName("none")
+                            .baseIdentity("none")
+                            .build();
                     Object resolved = Objects.requireNonNull(
                             resolver.resolve(ipInfo, requiredInjectionServices(), AbstractServiceProvider.this, false));
                     HelidonInjectionPlan plan = createBuilder(id)
@@ -714,7 +735,7 @@ public abstract class AbstractServiceProvider<T>
             this.lastActivationThreadId = Thread.currentThread().getId();
 
             doPreDestroying(logEntryAndResult);
-            if (Phase.PRE_DESTROYING == logEntryAndResult.activationResult.finishingActivationPhase()) {
+            if (Phase.PRE_DESTROYING == logEntryAndResult.activationResult.finishingActivationPhase().orElse(null)) {
                 doDestroying(logEntryAndResult);
             }
             onFinished(logEntryAndResult);
@@ -1052,7 +1073,7 @@ public abstract class AbstractServiceProvider<T>
                 .serviceProvider(this)
                 .event(Event.STARTING)
                 .threadId(Thread.currentThread().getId())
-                .activationResult(activationResult);
+                .activationResult(activationResult.build());
         return new LogEntryAndResult(logEntry, activationResult);
     }
 
@@ -1191,7 +1212,7 @@ public abstract class AbstractServiceProvider<T>
             lastActivationThreadId = Thread.currentThread().getId();
             logEntryAndResult.logEntry.threadId(lastActivationThreadId);
 
-            if (logEntryAndResult.activationResult.finished()) {
+            if (logEntryAndResult.activationResult.build().finished()) {
                 didAcquire = false;
                 activationSemaphore.release();
             }

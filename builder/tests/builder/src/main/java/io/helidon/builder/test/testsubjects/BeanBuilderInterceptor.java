@@ -21,14 +21,14 @@ import io.helidon.builder.api.Prototype;
 /**
  * See {@link InterceptedBean}.
  */
-class BeanBuilderInterceptor implements Prototype.BuilderInterceptor<InterceptedBean.BuilderBase<?, ?>> {
+class BeanBuilderInterceptor implements Prototype.BuilderDecorator<InterceptedBean.BuilderBase<?, ?>> {
     private int callCount;
 
     @Override
-    public InterceptedBean.BuilderBase<?, ?> intercept(InterceptedBean.BuilderBase<?, ?> target) {
+    public void decorate(InterceptedBean.BuilderBase<?, ?> target) {
         if (callCount++ > 0) {
             throw new AssertionError();
         }
-        return target.helloMessage("Hello " + target.name());
+        target.helloMessage("Hello " + target.name().orElse("Not configured"));
     }
 }

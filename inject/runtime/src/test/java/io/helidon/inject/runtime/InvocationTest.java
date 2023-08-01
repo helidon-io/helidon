@@ -25,9 +25,19 @@ import java.util.function.Function;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.inject.api.Activator;
+import io.helidon.inject.api.ContextualServiceQuery;
+import io.helidon.inject.api.DeActivator;
+import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.Interceptor;
 import io.helidon.inject.api.InvocationContext;
 import io.helidon.inject.api.InvocationException;
+import io.helidon.inject.api.Phase;
+import io.helidon.inject.api.PostConstructMethod;
+import io.helidon.inject.api.PreDestroyMethod;
+import io.helidon.inject.api.ServiceInfo;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.ServiceProviderBindable;
 
 import jakarta.inject.Provider;
 import org.junit.jupiter.api.Test;
@@ -38,17 +48,19 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@SuppressWarnings("unchecked")
 class InvocationTest {
     TestInterceptor first = new TestInterceptor("first");
     TestInterceptor second = new TestInterceptor("second");
     InvocationContext dummyCtx = InvocationContext.builder()
+            .serviceProvider(new DummyServiceProvider())
+            .serviceTypeName(TypeName.create(DummyServiceProvider.class))
             .elementInfo(TypedElementInfo.builder()
                                  .elementName("test")
                                  .elementTypeKind(TypeValues.KIND_METHOD)
                                  .typeName(TypeName.create(InvocationTest.class))
                                  .build())
-            .interceptors(List.of(first.provider, second.provider));
+            .interceptors(List.of(first.provider, second.provider))
+            .build();
     ArrayList<Object[]> calls = new ArrayList<>();
 
     @Test
@@ -68,12 +80,15 @@ class InvocationTest {
     @Test
     void normalCaseWithNoInterceptors() {
         InvocationContext dummyCtx = InvocationContext.builder()
+                .serviceProvider(new DummyServiceProvider())
+                .serviceTypeName(TypeName.create(DummyServiceProvider.class))
                 .elementInfo(TypedElementInfo.builder()
                                      .elementName("test")
                                      .elementTypeKind(TypeValues.KIND_METHOD)
                                      .typeName(TypeName.create(InvocationTest.class))
                                      .build())
-                .interceptors(List.of());
+                .interceptors(List.of())
+                .build();
 
         Object[] args = new Object[] {};
         Boolean result = Invocation.createInvokeAndSupply(dummyCtx, (arguments) -> calls.add(arguments), args);
@@ -334,4 +349,71 @@ class InvocationTest {
         }
     }
 
+    private static class DummyServiceProvider implements ServiceProvider<DummyServiceProvider> {
+
+        @Override
+        public Optional<DummyServiceProvider> first(ContextualServiceQuery query) {
+            return Optional.empty();
+        }
+
+        @Override
+        public String id() {
+            return null;
+        }
+
+        @Override
+        public String description() {
+            return null;
+        }
+
+        @Override
+        public boolean isProvider() {
+            return false;
+        }
+
+        @Override
+        public ServiceInfo serviceInfo() {
+            return null;
+        }
+
+        @Override
+        public DependenciesInfo dependencies() {
+            return null;
+        }
+
+        @Override
+        public Phase currentActivationPhase() {
+            return null;
+        }
+
+        @Override
+        public Optional<Activator> activator() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<DeActivator> deActivator() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<PostConstructMethod> postConstructMethod() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<PreDestroyMethod> preDestroyMethod() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<ServiceProviderBindable<DummyServiceProvider>> serviceProviderBindable() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Class<?> serviceType() {
+            return null;
+        }
+    }
 }

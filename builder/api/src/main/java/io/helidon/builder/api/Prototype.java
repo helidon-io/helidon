@@ -68,26 +68,6 @@ public final class Prototype {
         default BUILDER self() {
             return (BUILDER) this;
         }
-
-        /**
-         * Resolve an instance to a built instance (if it is a builder).
-         * This method is used by generated code to ensure that instances passed to us have gone through
-         * builder interceptors and required validation.
-         *
-         * @param instance instance to check
-         * @return the same instance if not a builder, or a built instance
-         * @param <T> type of the parameter
-         */
-        @SuppressWarnings("unchecked")
-        default <T> T resolveBuilder(T instance) {
-            if (instance instanceof Builder<?, ?> builder) {
-                return (T) builder.buildPrototype();
-            }
-            if (instance instanceof io.helidon.common.Builder<?, ?> builder) {
-                return (T) builder.build();
-            }
-            return instance;
-        }
     }
 
     /**
@@ -214,14 +194,14 @@ public final class Prototype {
         boolean beanStyle() default false;
 
         /**
-         * Used to intercept the builder, right before method build is called.
+         * Used to decorate the builder, right before method build is called.
          * Validations are done AFTER the interceptor is handled.
          * This class may be package local if located in the same package as blueprint.
          * The class must have accessible constructor with no parameters.
          *
-         * @return interceptor type
+         * @return decorator type
          */
-        Class<? extends BuilderInterceptor> builderInterceptor() default BuilderInterceptor.class;
+        Class<? extends BuilderDecorator> decorator() default BuilderDecorator.class;
     }
 
     /**
@@ -235,17 +215,16 @@ public final class Prototype {
      * by your very builder interceptor.
      *
      * @param <T> the type of the bean builder to intercept
-     * @see Prototype.Blueprint#builderInterceptor()
+     * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
      */
     @FunctionalInterface
-    public interface BuilderInterceptor<T> {
+    public interface BuilderDecorator<T> {
         /**
          * Provides the ability to intercept (i.e., including decoration or mutation) the target.
          *
          * @param target the target being intercepted
-         * @return the mutated or replaced target (must not be null)
          */
-        T intercept(T target);
+        void decorate(T target);
     }
 
     /**

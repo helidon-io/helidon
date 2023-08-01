@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.http.media;
+package io.helidon.inject.api;
 
 import io.helidon.builder.api.Prototype;
 
-class MediaContextBuilderInterceptor implements Prototype.BuilderInterceptor<MediaContextConfig.BuilderBase<?, ?>> {
+/**
+ * Ensures that all external contracts are also treated as normal contracts, etc.
+ */
+class ServiceInfoBuildDecorator implements Prototype.BuilderDecorator<ServiceInfo.BuilderBase<?, ?>> {
+
     @Override
-    public MediaContextConfig.BuilderBase<?, ?> intercept(MediaContextConfig.BuilderBase<?, ?> target) {
-        if (target.registerDefaults()) {
-            target.addMediaSupport(StringSupport.create())
-                    .addMediaSupport(PathSupport.create())
-                    .addMediaSupport(FormParamsSupport.create());
-        }
-        return target;
+    public void decorate(ServiceInfo.BuilderBase<?, ?> target) {
+        target.addContractsImplemented(target.externalContractsImplemented());
     }
+
 }

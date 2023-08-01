@@ -28,11 +28,11 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceException;
 
-class KeysBuilderInterceptor implements Prototype.BuilderInterceptor<Keys.BuilderBase<?, ?>> {
+class KeysBuilderDecorator implements Prototype.BuilderDecorator<Keys.BuilderBase<?, ?>> {
     private static final System.Logger LOGGER = System.getLogger(Keys.class.getName());
 
     @Override
-    public Keys.BuilderBase<?, ?> intercept(Keys.BuilderBase<?, ?> target) {
+    public void decorate(Keys.BuilderBase<?, ?> target) {
         try {
             target.keystore().ifPresent(keystoreConfig -> updateFromKeystore(target, keystoreConfig));
             target.pem().ifPresent(pemConfig -> updateFromPem(target, pemConfig));
@@ -42,7 +42,6 @@ class KeysBuilderInterceptor implements Prototype.BuilderInterceptor<Keys.Builde
                 target.publicKey(target.publicCert().get().getPublicKey());
             }
 
-            return target;
         } catch (ResourceException e) {
             throw new PkiException("Failed to load key configuration", e);
         }

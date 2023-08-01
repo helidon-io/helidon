@@ -48,7 +48,7 @@ import io.helidon.nima.webserver.spi.ServerConnectionSelector;
  * Configuration of a server listener (server socket).
  */
 @Configured
-@Prototype.Blueprint(builderInterceptor = ListenerConfigBlueprint.ConfigInterceptor.class)
+@Prototype.Blueprint(decorator = ListenerConfigBlueprint.ConfigDecorator.class)
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -284,9 +284,9 @@ interface ListenerConfigBlueprint {
         }
     }
 
-    class ConfigInterceptor implements Prototype.BuilderInterceptor<ListenerConfig.BuilderBase<?, ?>> {
+    class ConfigDecorator implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
         @Override
-        public ListenerConfig.BuilderBase<?, ?> intercept(ListenerConfig.BuilderBase<?, ?> target) {
+        public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
             String name = target.name();
             if (name == null && target.config().isPresent()) {
                 Config config = target.config().get();
@@ -299,10 +299,10 @@ interface ListenerConfigBlueprint {
                 target.name(WebServer.DEFAULT_SOCKET_NAME);
             }
 
-            if (target.connectionOptions() == null) {
+            if (target.connectionOptions().isEmpty()) {
                 target.connectionOptions(SocketOptions.create());
             }
-            if (target.address() == null) {
+            if (target.address().isEmpty()) {
                 try {
                     target.address(InetAddress.getByName(target.host()));
                 } catch (UnknownHostException e) {
@@ -316,13 +316,11 @@ interface ListenerConfigBlueprint {
             if (!socketOptions.containsKey(StandardSocketOptions.SO_RCVBUF)) {
                 target.putListenerSocketOption(StandardSocketOptions.SO_RCVBUF, 4096);
             }
-            if (target.requestedUriDiscoveryContext() == null) {
+            if (target.requestedUriDiscoveryContext().isEmpty()) {
                 target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()
                                                             .socketId(target.name())
                                                             .build());
             }
-
-            return target;
         }
     }
 }

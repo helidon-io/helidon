@@ -97,7 +97,8 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     @Override
     TypeName argumentTypeName() {
         return TypeName.builder(collectionType)
-                .addTypeArgument(toWildcard(actualType()));
+                .addTypeArgument(toWildcard(actualType()))
+                .build();
     }
 
     @Override
@@ -262,7 +263,6 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
         List<String> lines = new ArrayList<>();
         lines.add("Objects.requireNonNull(" + singularName + ");");
-        lines.addAll(resolveBuilderLines(actualType(), singularName));
         lines.add("this." + name() + ".add(" + singularName + ");");
         lines.add("return self();");
 

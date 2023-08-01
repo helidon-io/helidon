@@ -32,7 +32,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Socket options.
  */
 @Configured
-@Prototype.Blueprint(builderInterceptor = SocketOptionsBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = SocketOptionsBlueprint.BuilderDecorator.class)
 interface SocketOptionsBlueprint {
     /**
      * Arbitrary socket options. Socket options that have dedicated methods
@@ -125,16 +125,14 @@ interface SocketOptionsBlueprint {
         }
     }
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<SocketOptions.BuilderBase<?, ?>> {
+    class BuilderDecorator implements Prototype.BuilderDecorator<SocketOptions.BuilderBase<?, ?>> {
         @Override
-        public SocketOptions.BuilderBase<?, ?> intercept(SocketOptions.BuilderBase<?, ?> target) {
+        public void decorate(SocketOptions.BuilderBase<?, ?> target) {
             target.putSocketOption(StandardSocketOptions.SO_RCVBUF, target.socketReceiveBufferSize());
             target.putSocketOption(StandardSocketOptions.SO_SNDBUF, target.socketSendBufferSize());
             target.putSocketOption(StandardSocketOptions.SO_REUSEADDR, target.socketReuseAddress());
             target.putSocketOption(StandardSocketOptions.SO_KEEPALIVE, target.socketKeepAlive());
             target.putSocketOption(StandardSocketOptions.TCP_NODELAY, target.tcpNoDelay());
-
-            return target;
         }
     }
 }

@@ -27,7 +27,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * {@link io.helidon.nima.faulttolerance.Timeout} configuration bean.
  */
-@Prototype.Blueprint(builderInterceptor = TimeoutConfigBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = TimeoutConfigBlueprint.BuilderDecorator.class)
 @Configured(root = true, prefix = "fault-tolerance.timeouts")
 interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
     /**
@@ -62,15 +62,13 @@ interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {
      */
     Optional<ExecutorService> executor();
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<TimeoutConfig.BuilderBase<?, ?>> {
+    class BuilderDecorator implements Prototype.BuilderDecorator<TimeoutConfig.BuilderBase<?, ?>> {
         @Override
-        public TimeoutConfig.BuilderBase<?, ?> intercept(TimeoutConfig.BuilderBase<?, ?> target) {
+        public void decorate(TimeoutConfig.BuilderBase<?, ?> target) {
             if (target.name().isEmpty()) {
                 target.config()
                         .ifPresent(cfg -> target.name(cfg.name()));
             }
-
-            return target;
         }
     }
 }

@@ -48,20 +48,20 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
     }
 
     /**
-     *Provides a description for this instance.
+     * Provides a description for this instance.
      *
-     *@return provides the {typeName}{space}{elementName}
+     * @return provides the {typeName}{space}{elementName}
      */
     String toDeclaration();
 
     /**
      * Fluent API builder base for {@link io.helidon.common.types.TypedElementInfo}.
      *
-     * @param <BUILDER> type of the builder extending this abstract builder
+     * @param <BUILDER>   type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo>
-            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE>, TypedElementInfo {
+            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE> {
         private final java.util.List<Annotation> elementTypeAnnotations = new java.util.ArrayList<>();
         private final java.util.List<TypeName> componentTypes = new java.util.ArrayList<>();
         private final java.util.Set<String> modifiers = new java.util.LinkedHashSet<>();
@@ -76,7 +76,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         /**
          * Protected to support extensibility.
-         *
          */
         protected BuilderBase() {
         }
@@ -109,79 +108,39 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          */
         public BUILDER from(BuilderBase<?, ?> builder) {
-            description(builder.description());
-            if (builder.typeName() != null) {
-                typeName(builder.typeName());
-            }
-            if (builder.elementName() != null) {
-                elementName(builder.elementName());
-            }
-            if (builder.elementTypeKind() != null) {
-                elementTypeKind(builder.elementTypeKind());
-            }
-            defaultValue(builder.defaultValue());
+            builder.description().ifPresent(this::description);
+            builder.typeName().ifPresent(this::typeName);
+            builder.elementName().ifPresent(this::elementName);
+            builder.elementTypeKind().ifPresent(this::elementTypeKind);
+            builder.defaultValue().ifPresent(this::defaultValue);
             addElementTypeAnnotations(builder.elementTypeAnnotations());
             addComponentTypes(builder.componentTypes());
             addModifiers(builder.modifiers());
-            enclosingType(builder.enclosingType());
+            builder.enclosingType().ifPresent(this::enclosingType);
             addParameterArguments(builder.parameterArguments());
             addAnnotations(builder.annotations());
             return self();
         }
 
         /**
-         * Handles providers and interceptors.
-         */
-        protected void preBuildPrototype() {
-        }
-
-        /**
-         * Validates required properties.
-         */
-        protected void validatePrototype() {
-            Errors.Collector collector = Errors.collector();
-            if (typeName == null) {
-                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
-            }
-            if (elementName == null) {
-                collector.fatal(getClass(), "Property \"element-name\" is required, but not set");
-            }
-            if (elementTypeKind == null) {
-                collector.fatal(getClass(), "Property \"element-type-kind\" is required, but not set");
-            }
-            collector.collect().checkValid();
-        }
-
-        @Override
-        public String toString() {
-            return TypedElementInfoSupport.toString(this);
-        }
-
-        /**
-         *Provides a description for this instance.
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link TypeValues#KIND_FIELD}, or
+         * {@link TypeValues#KIND_METHOD}, or
+         * {@link TypeValues#KIND_PARAMETER}
          *
-         *@return provides the {typeName}{space}{elementName}
-         */
-        @Override
-        public String toDeclaration() {
-            return TypedElementInfoSupport.toDeclaration(this);
-        }
-
-        /**
-         * Description, such as javadoc, if available.
-         *
-         * @param description description of this element
+         * @param enclosingType the enclosing type element
          * @return updated builder instance
-         * @see #description()
+         * @see #enclosingType()
          */
-        BUILDER description(Optional<? extends String> description) {
-            Objects.requireNonNull(description);
-            this.description = description.orElse(null);
+        public BUILDER enclosingType(TypeName enclosingType) {
+            Objects.requireNonNull(enclosingType);
+            this.enclosingType = enclosingType;
             return self();
         }
 
         /**
          * Clear existing value of this property.
+         *
          * @return updated builder instance
          * @see #description()
          */
@@ -222,7 +181,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * the method.
          *
          * @param consumer consumer of builder for
-         * the type name of the element
+         *                 the type name of the element
          * @return updated builder instance
          * @see #typeName()
          */
@@ -261,20 +220,8 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The default value assigned to the element, represented as a string.
-         *
-         * @param defaultValue the default value as a string
-         * @return updated builder instance
-         * @see #defaultValue()
-         */
-        BUILDER defaultValue(Optional<? extends String> defaultValue) {
-            Objects.requireNonNull(defaultValue);
-            this.defaultValue = defaultValue.orElse(null);
-            return self();
-        }
-
-        /**
          * Clear existing value of this property.
+         *
          * @return updated builder instance
          * @see #defaultValue()
          */
@@ -392,48 +339,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD} or
-         * {@link TypeValues#KIND_METHOD}.
-         *
-         * @param enclosingType the enclosing type element
-         * @return updated builder instance
-         * @see #enclosingType()
-         */
-        BUILDER enclosingType(Optional<? extends TypeName> enclosingType) {
-            Objects.requireNonNull(enclosingType);
-            this.enclosingType = enclosingType.orElse(null);
-            return self();
-        }
-
-        /**
-         * Clear existing value of this property.
-         * @return updated builder instance
-         * @see #enclosingType()
-         */
-        public BUILDER clearEnclosingType() {
-            this.enclosingType = null;
-            return self();
-        }
-
-        /**
-         * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD} or
-         * {@link TypeValues#KIND_METHOD}.
-         *
-         * @param enclosingType the enclosing type element
-         * @return updated builder instance
-         * @see #enclosingType()
-         */
-        public BUILDER enclosingType(TypeName enclosingType) {
-            Objects.requireNonNull(enclosingType);
-            this.enclosingType = enclosingType;
-            return self();
-        }
-
-        /**
-         * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD} or
-         * {@link TypeValues#KIND_METHOD}.
+         * {@link TypeValues#KIND_FIELD}, or
+         * {@link TypeValues#KIND_METHOD}, or
+         * {@link TypeValues#KIND_PARAMETER}
          *
          * @param consumer the enclosing type element
          * @return updated builder instance
@@ -445,6 +353,44 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             consumer.accept(builder);
             this.enclosingType(builder.build());
             return self();
+        }
+
+        /**
+         * Clear existing value of this property.
+         *
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        public BUILDER clearEnclosingType() {
+            this.enclosingType = null;
+            return self();
+        }
+
+        /**
+         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Each instance of this list
+         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         *
+         * @param consumer the list of parameters belonging to this method if applicable
+         * @return updated builder instance
+         * @see #parameterArguments()
+         */
+        public BUILDER addParameterArgument(java.util.function.Consumer<Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypedElementInfo.builder();
+            consumer.accept(builder);
+            this.parameterArguments.add(builder.build());
+            return self();
+        }
+
+        /**
+         * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
+         * the method.
+         *
+         * @return the type name
+         */
+        public Optional<TypeName> typeName() {
+            return Optional.ofNullable(typeName);
         }
 
         /**
@@ -494,20 +440,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
-         * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * The element (e.g., method, field, etc) name.
          *
-         * @param consumer the list of parameters belonging to this method if applicable
-         * @return updated builder instance
-         * @see #parameterArguments()
+         * @return the element name
          */
-        public BUILDER addParameterArgument(java.util.function.Consumer<TypedElementInfo.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.parameterArguments.add(builder.build());
-            return self();
+        public Optional<String> elementName() {
+            return Optional.ofNullable(elementName);
         }
 
         /**
@@ -574,30 +512,8 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the description
          */
-        @Override
         public Optional<String> description() {
             return Optional.ofNullable(description);
-        }
-
-        /**
-         * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
-         * the method.
-         *
-         * @return the type name
-         */
-        @Override
-        public TypeName typeName() {
-            return typeName;
-        }
-
-        /**
-         * The element (e.g., method, field, etc) name.
-         *
-         * @return the element name
-         */
-        @Override
-        public String elementName() {
-            return elementName;
         }
 
         /**
@@ -605,9 +521,20 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the element type kind
          */
-        @Override
-        public String elementTypeKind() {
-            return elementTypeKind;
+        public Optional<String> elementTypeKind() {
+            return Optional.ofNullable(elementTypeKind);
+        }
+
+        /**
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link TypeValues#KIND_FIELD}, or
+         * {@link TypeValues#KIND_METHOD}, or
+         * {@link TypeValues#KIND_PARAMETER}
+         *
+         * @return the enclosing type
+         */
+        public Optional<TypeName> enclosingType() {
+            return Optional.ofNullable(enclosingType);
         }
 
         /**
@@ -615,7 +542,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the default value
          */
-        @Override
         public Optional<String> defaultValue() {
             return Optional.ofNullable(defaultValue);
         }
@@ -625,7 +551,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the element type annotations
          */
-        @Override
         public java.util.List<Annotation> elementTypeAnnotations() {
             return elementTypeAnnotations;
         }
@@ -635,7 +560,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the component types
          */
-        @Override
         public java.util.List<TypeName> componentTypes() {
             return componentTypes;
         }
@@ -645,21 +569,8 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the modifiers
          */
-        @Override
         public java.util.Set<String> modifiers() {
             return modifiers;
-        }
-
-        /**
-         * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD} or
-         * {@link TypeValues#KIND_METHOD}.
-         *
-         * @return the enclosing type
-         */
-        @Override
-        public Optional<TypeName> enclosingType() {
-            return Optional.ofNullable(enclosingType);
         }
 
         /**
@@ -669,7 +580,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the parameter arguments
          */
-        @Override
         public java.util.List<TypedElementInfo> parameterArguments() {
             return parameterArguments;
         }
@@ -680,9 +590,73 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the annotations
          */
-        @Override
         public java.util.List<Annotation> annotations() {
             return annotations;
+        }
+
+        /**
+         * Validates required properties.
+         */
+        protected void validatePrototype() {
+            Errors.Collector collector = Errors.collector();
+            if (typeName == null) {
+                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
+            }
+            if (elementName == null) {
+                collector.fatal(getClass(), "Property \"element-name\" is required, but not set");
+            }
+            if (elementTypeKind == null) {
+                collector.fatal(getClass(), "Property \"element-type-kind\" is required, but not set");
+            }
+            collector.collect().checkValid();
+        }
+
+        /**
+         * Description, such as javadoc, if available.
+         *
+         * @param description description of this element
+         * @return updated builder instance
+         * @see #description()
+         */
+        BUILDER description(Optional<? extends String> description) {
+            Objects.requireNonNull(description);
+            this.description = description.orElse(null);
+            return self();
+        }
+
+        /**
+         * The default value assigned to the element, represented as a string.
+         *
+         * @param defaultValue the default value as a string
+         * @return updated builder instance
+         * @see #defaultValue()
+         */
+        BUILDER defaultValue(Optional<? extends String> defaultValue) {
+            Objects.requireNonNull(defaultValue);
+            this.defaultValue = defaultValue.orElse(null);
+            return self();
+        }
+
+        /**
+         * Handles providers and decorators.
+         */
+        protected void preBuildPrototype() {
+        }
+
+        /**
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link TypeValues#KIND_FIELD}, or
+         * {@link TypeValues#KIND_METHOD}, or
+         * {@link TypeValues#KIND_PARAMETER}
+         *
+         * @param enclosingType the enclosing type element
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        BUILDER enclosingType(Optional<? extends TypeName> enclosingType) {
+            Objects.requireNonNull(enclosingType);
+            this.enclosingType = enclosingType.orElse(null);
+            return self();
         }
 
         /**
@@ -703,13 +677,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
             /**
              * Create an instance providing a builder.
+             *
              * @param builder extending builder base of this prototype
              */
             protected TypedElementInfoImpl(BuilderBase<?, ?> builder) {
                 this.description = builder.description();
-                this.typeName = builder.typeName();
-                this.elementName = builder.elementName();
-                this.elementTypeKind = builder.elementTypeKind();
+                this.typeName = builder.typeName().get();
+                this.elementName = builder.elementName().get();
+                this.elementTypeKind = builder.elementTypeKind().get();
                 this.defaultValue = builder.defaultValue();
                 this.elementTypeAnnotations = java.util.List.copyOf(builder.elementTypeAnnotations());
                 this.componentTypes = java.util.List.copyOf(builder.componentTypes());

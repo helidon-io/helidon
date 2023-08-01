@@ -65,7 +65,7 @@ class HttpClientConfigSupport {
         }
 
         /**
-         * Set a default header value.
+         * Add a default header value.
          *
          * @param builder builder to update
          * @param name name of the header
@@ -77,7 +77,7 @@ class HttpClientConfigSupport {
         }
 
         /**
-         * Set default header value. This method is not optimal and should only be used when the header name is really
+         * Add default header value. This method is not optimal and should only be used when the header name is really
          * obtained from a string, in other cases, use an alternative with {@link io.helidon.common.http.Http.HeaderName}
          * or {@link io.helidon.common.http.Http.HeaderValue}.
          *
@@ -92,63 +92,49 @@ class HttpClientConfigSupport {
         }
     }
 
-    static class HttpBuilderInterceptor implements Prototype.BuilderInterceptor<HttpClientConfig.BuilderBase<?, ?>>  {
+    static class HttpBuilderDecorator implements Prototype.BuilderDecorator<HttpClientConfig.BuilderBase<?, ?>>  {
         @Override
-        public HttpClientConfig.BuilderBase<?, ?> intercept(HttpClientConfig.BuilderBase<?, ?> target) {
-            if (target.tls() == null) {
+        public void decorate(HttpClientConfig.BuilderBase<?, ?> target) {
+            if (target.tls().isEmpty()) {
                 target.tls(EMPTY_TLS.get());
             }
 
             target.socketOptions(SocketOptions.builder()
                                          .update(it -> {
-                                             if (target.socketOptions() != null) {
-                                                 it.from(target.socketOptions());
-                                             }
+                                             target.socketOptions().ifPresent(it::from);
                                          })
                                          .update(it -> target.connectTimeout().ifPresent(it::connectTimeout))
                                          .update(it -> target.readTimeout().ifPresent(it::readTimeout))
                                          .build());
 
-            if (target.dnsAddressLookup() == null) {
+            if (target.dnsAddressLookup().isEmpty()) {
                 target.dnsAddressLookup(DnsAddressLookup.defaultLookup());
             }
-            if (target.dnsResolver() == null) {
+            if (target.dnsResolver().isEmpty()) {
                 target.dnsResolver(DISCOVERED_DNS_RESOLVER.get());
             }
 
             target.defaultHeadersMap()
                     .forEach((key, value) -> target.addHeader(Http.Header.create(Http.Header.create(key), value)));
 
-            if (target.mediaContext() == null) {
-                if (target.mediaSupports().isEmpty()) {
-                    target.mediaContext(MediaContext.create());
-                } else {
-                    target.mediaContext(MediaContext.builder()
-                                                .update(it -> target.mediaSupports().forEach(it::addMediaSupport))
-                                                .build());
-                }
-            } else {
-                if (!target.mediaSupports().isEmpty()) {
-                    target.mediaContext(MediaContext.builder()
-                                                .update(it -> target.mediaSupports().forEach(it::addMediaSupport))
-                                                .fallback(target.mediaContext())
-                                                .build());
-                }
+            if (!target.mediaSupports().isEmpty()) {
+                target.mediaContext(MediaContext.builder()
+                                            .update(it -> target.mediaSupports().forEach(it::addMediaSupport))
+                                            .fallback(target.mediaContext())
+                                            .build());
             }
 
-            if (target.contentEncoding() == null) {
+            if (target.contentEncoding().isEmpty()) {
                 target.contentEncoding(ContentEncodingContext.create());
             }
 
-            if (target.executor() == null) {
+            if (target.executor().isEmpty()) {
                 target.executor(LoomClient.EXECUTOR.get());
             }
 
-            if (target.proxy() == null) {
+            if (target.proxy().isEmpty()) {
                 target.proxy(Proxy.noProxy());
             }
-
-            return target;
         }
     }
 }

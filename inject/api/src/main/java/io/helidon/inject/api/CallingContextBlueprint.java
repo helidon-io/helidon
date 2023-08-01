@@ -25,7 +25,7 @@ import io.helidon.builder.api.Prototype;
 /**
  * For internal use only to Helidon. Applicable when {@link InjectionServices#TAG_DEBUG} is enabled.
  */
-@Prototype.Blueprint(builderInterceptor = CallingContextBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = CallingContextBlueprint.BuilderDecorator.class)
 interface CallingContextBlueprint {
     /**
      * Only populated when {@link InjectionServices#TAG_DEBUG} is set.
@@ -64,13 +64,12 @@ interface CallingContextBlueprint {
                 .orElseGet(List::of);
     }
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<CallingContext.BuilderBase<?, ?>> {
+    class BuilderDecorator implements Prototype.BuilderDecorator<CallingContext.BuilderBase<?, ?>> {
         @Override
-        public CallingContext.BuilderBase<?, ?> intercept(CallingContext.BuilderBase<?, ?> target) {
-            if (target.threadName() == null) {
+        public void decorate(CallingContext.BuilderBase<?, ?> target) {
+            if (target.threadName().isEmpty()) {
                 target.threadName(Thread.currentThread().getName());
             }
-            return target;
         }
     }
 

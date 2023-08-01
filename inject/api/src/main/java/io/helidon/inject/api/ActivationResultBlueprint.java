@@ -52,6 +52,7 @@ interface ActivationResultBlueprint {
      *
      * @return the starting phase
      */
+    @ConfiguredOption("INIT")
     Phase startingActivationPhase();
 
     /**
@@ -59,6 +60,7 @@ interface ActivationResultBlueprint {
      *
      * @return the target, desired, ultimate phase requested
      */
+    @ConfiguredOption("INIT")
     Phase targetActivationPhase();
 
     /**

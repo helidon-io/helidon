@@ -427,7 +427,8 @@ class DefaultInjectionPlans {
         ContextualServiceQuery query = ContextualServiceQuery.builder()
                 .injectionPointInfo(ipInfo)
                 .serviceInfoCriteria(ipInfo.dependencyToServiceInfo())
-                .expected(expected);
+                .expected(expected)
+                .build();
         for (ServiceProvider<?> sp : list) {
             Collection instances = sp.list(query);
             result.addAll(instances);

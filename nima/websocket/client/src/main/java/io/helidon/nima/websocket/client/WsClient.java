@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.spi.Protocol;
 import io.helidon.nima.websocket.WsListener;
 
 /**
@@ -29,6 +30,12 @@ import io.helidon.nima.websocket.WsListener;
  */
 @RuntimeType.PrototypedBy(WsClientConfig.class)
 public interface WsClient extends RuntimeType.Api<WsClientConfig> {
+    /**
+     * Protocol to use to obtain an instance of WebSocket specific clietn from
+     * {@link io.helidon.nima.webclient.api.WebClient#client(io.helidon.nima.webclient.spi.Protocol)}.
+     */
+    Protocol<WsClient, WsClientProtocolConfig> PROTOCOL = WsProtocolProvider::new;
+
     /**
      * A new fluent API builder to create new instances of client.
      *

@@ -45,17 +45,15 @@ import javax.net.ssl.X509TrustManager;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
 
-class TlsConfigInterceptor implements Prototype.BuilderInterceptor<TlsConfig.BuilderBase<?, ?>> {
+class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.BuilderBase<?, ?>> {
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
 
     @Override
-    public TlsConfig.BuilderBase<?, ?> intercept(TlsConfig.BuilderBase<?, ?> target) {
+    public void decorate(TlsConfig.BuilderBase<?, ?> target) {
         sslParameters(target);
         sslContext(target);
-
-        return target;
     }
 
     private void sslContext(TlsConfig.BuilderBase<?, ?> target) {

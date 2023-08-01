@@ -129,7 +129,8 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
         String className = toModuleClassName(req.codeGen().classPrefixName());
         return TypeName.builder()
                 .packageName(packageName)
-                .className(className);
+                .className(className)
+                .build();
     }
 
     static String toModuleClassName(String modulePrefix) {

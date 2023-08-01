@@ -22,16 +22,15 @@ final class UriBuilderSupport {
     private UriBuilderSupport() {
     }
 
-    static final class UriInfoInterceptor implements Prototype.BuilderInterceptor<UriInfo.BuilderBase<?, ?>> {
+    static final class UriInfoInterceptor implements Prototype.BuilderDecorator<UriInfo.BuilderBase<?, ?>> {
         UriInfoInterceptor() {
         }
 
         @Override
-        public UriInfo.BuilderBase<?, ?> intercept(UriInfo.BuilderBase<?, ?> target) {
+        public void decorate(UriInfo.BuilderBase<?, ?> target) {
             if (target.port() == 0) {
                 target.port(defaultPort(target.scheme()));
             }
-            return target;
         }
 
         private static int defaultPort(String scheme) {

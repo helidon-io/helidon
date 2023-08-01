@@ -36,7 +36,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * So if a Private key is defined both explicitly and through PEM, the explicitly defined key would be used.
  */
 @Configured
-@Prototype.Blueprint(builderInterceptor = KeysBuilderInterceptor.class)
+@Prototype.Blueprint(decorator = KeysBuilderDecorator.class)
 interface KeysBlueprint {
     /**
      * Configure keys from a keystore.
