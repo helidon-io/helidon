@@ -194,6 +194,21 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
+         * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
+         * the method.
+         *
+         * @param supplier supplier of
+         * the type name of the element
+         * @return updated builder instance
+         * @see #typeName()
+         */
+        public BUILDER typeName(java.util.function.Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.typeName(supplier.get());
+            return self();
+        }
+
+        /**
          * The element (e.g., method, field, etc) name.
          *
          * @param elementName the name of the element

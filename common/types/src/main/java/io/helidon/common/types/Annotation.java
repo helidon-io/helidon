@@ -204,6 +204,20 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
+         * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
+         *
+         * @param supplier supplier of
+         * the annotation type name
+         * @return updated builder instance
+         * @see #typeName()
+         */
+        public BUILDER typeName(java.util.function.Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.typeName(supplier.get());
+            return self();
+        }
+
+        /**
          * Get a key-value of all the annotation properties.
          *
          * This method replaces all values with the new ones.

@@ -232,9 +232,10 @@ class TypeHandler {
             factorySetter(configured, setters, returnType, blueprintJavadoc, factoryMethod.createTargetType().get());
         }
 
-        // if there is a builder factory method, we create a method with builder consumer
+        // if there is a builder factory method, we create a method with builder consumer of builder, and supplier of type
         if (factoryMethod.builder().isPresent()) {
             factorySetterConsumer(configured, setters, returnType, blueprintJavadoc, factoryMethod.builder().get());
+            factorySetterSupplier(configured, setters, returnType, blueprintJavadoc, factoryMethod.builder().get());
         }
     }
 
@@ -306,6 +307,47 @@ class TypeHandler {
                 setterName(),
                 returnType,
                 List.of(new GeneratedMethod.Argument(name(), argumentTypeName())),
+                List.of(),
+                javadoc,
+                lines
+        ));
+    }
+
+    private void factorySetterSupplier(PrototypeProperty.ConfiguredOption configured,
+                                       List<GeneratedMethod> setters,
+                                       TypeName returnType,
+                                       Javadoc blueprintJavadoc,
+                                       FactoryMethods.FactoryMethod factoryMethod) {
+        TypeName supplierType = actualType();
+        if (!supplierType.wildcard()) {
+            supplierType = TypeName.builder(supplierType)
+                    .wildcard(true)
+                    .build();
+        }
+        supplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(supplierType)
+                .build();
+
+        String argumentName = "supplier";
+
+        List<String> paramLines = new ArrayList<>();
+        paramLines.add("supplier of");
+        paramLines.addAll(blueprintJavadoc.returns());
+        Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
+                                      List.of(new Javadoc.Tag(argumentName, paramLines)),
+                                      List.of("updated builder instance"),
+                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
+
+        List<String> lines = new ArrayList<>();
+        lines.add("Objects.requireNonNull(" + argumentName + ");");
+        lines.add("this." + name() + "(" + argumentName + ".get());");
+        lines.add("return self();");
+
+        setters.add(new GeneratedMethod(
+                Set.of(setterModifier(configured).trim()),
+                setterName(),
+                returnType,
+                List.of(new GeneratedMethod.Argument(argumentName, supplierType)),
                 List.of(),
                 javadoc,
                 lines
