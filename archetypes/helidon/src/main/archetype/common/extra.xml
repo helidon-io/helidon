@@ -23,6 +23,39 @@
     <step name="Extra" optional="true">
         <inputs>
             <list id="extra" name="Select Additional Components" optional="true">
+                <option value="webclient" name="WebClient" description="Nima HTTP client" if="${flavor} == 'nima'">
+                    <output>
+                        <templates engine="mustache" transformations="mustache,packaged">
+                            <directory>files</directory>
+                            <includes>
+                                <include>src/*/java/**/WebClientMain.java.mustache</include>
+                            </includes>
+                        </templates>
+                        <model>
+                            <list key="dependencies">
+                                <map>
+                                    <value key="groupId">io.helidon.nima.webclient</value>
+                                    <value key="artifactId">helidon-nima-webclient</value>
+                                </map>
+                            </list>
+                            <list key="modules">
+                                <value>io.helidon.nima.webclient</value>
+                            </list>
+                            <list key="Abstract-tests">
+                                <value><![CDATA[
+    @Test
+    public void testPerformGetMethod() {
+        String greeting = WebClientMain.performGetMethod(client);
+        assertThat(greeting, containsString("Hello World!"));
+    }
+]]></value>
+                            </list>
+                            <list key="MainTest-static-imports">
+                                <value if="${flavor} == 'nima'">org.hamcrest.CoreMatchers.containsString</value>
+                            </list>
+                        </model>
+                    </output>
+                </option>
                 <option value="fault-tolerance" name="Fault Tolerance" description="System for building resilient applications">
                     <output>
                         <templates engine="mustache" transformations="mustache,packaged">
@@ -117,7 +150,7 @@
     public void optionsForGetCustomMessage() {
     }]]></value>
                             </list>
-                            <list key="readme-sections">
+                            <list key="readme-sections" if="${flavor} == 'mp'">
                                 <value><![CDATA[
 ## Using CORS
 
