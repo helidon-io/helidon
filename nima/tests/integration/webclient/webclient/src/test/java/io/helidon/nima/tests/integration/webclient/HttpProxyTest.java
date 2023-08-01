@@ -55,6 +55,7 @@ class HttpProxyTest {
         httpProxy = new HttpProxy(0);
         httpProxy.start();
         proxyPort = httpProxy.connectedPort();
+        assertThat(httpProxy.counter(), is(0));
     }
 
     @AfterEach
