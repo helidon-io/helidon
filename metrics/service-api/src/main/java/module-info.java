@@ -24,6 +24,8 @@ module io.helidon.metrics.serviceapi {
     requires transitive io.helidon.metrics.api;
     requires transitive jakarta.json;
 
+    requires microprofile.metrics.api;
+
     exports io.helidon.metrics.serviceapi;
 	
 }

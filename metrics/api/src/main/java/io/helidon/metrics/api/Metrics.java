@@ -29,7 +29,7 @@ public interface Metrics {
      * @return the global meter registry
      */
     static MeterRegistry globalRegistry() {
-        return MetricFactoryManager.INSTANCE.get().globalRegistry();
+        return MetricsProviderManager.INSTANCE.get().globalRegistry();
     }
 
     /**
@@ -193,6 +193,6 @@ public interface Metrics {
      * @return new tag
      */
     static Tag tag(String key, String value) {
-        return MetricFactoryManager.INSTANCE.get().tagOf(key, value);
+        return MetricsProviderManager.INSTANCE.get().tagOf(key, value);
     }
 }

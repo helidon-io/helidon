@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.metrics.micrometer.MicrometerMetricFactory;
-
 /**
  * Micrometer adapter for Helidon metrics API.
  */
@@ -24,5 +22,5 @@ module io.helidon.metrics.micrometer {
     requires io.helidon.metrics.api;
     requires micrometer.core;
 
-//    provides io.helidon.metrics.spi.MetricFactoryProvider with MicrometerMetricFactory;
+//    provides io.helidon.metrics.spi.MetricsProvider with MicrometerMetricsProvider;
 }

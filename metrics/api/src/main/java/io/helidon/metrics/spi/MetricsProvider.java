@@ -27,7 +27,7 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
 /**
- * Factory for creating implementation instances of the Helidon metrics API.
+ * Behavior of implementations of the Helidon metrics API.
  * <p>
  *     An implementation of this interface provides instance methods for each
  *     of the static methods on the Helidon metrics API interfaces. The prefix of each method
@@ -36,7 +36,7 @@ import io.helidon.metrics.api.Timer;
  *     {@link Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
  * </p>
  */
-public interface MetricFactoryProvider {
+public interface MetricsProvider {
 
     /**
      * Returns the global meter registry.

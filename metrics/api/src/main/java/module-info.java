@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
+import io.helidon.metrics.api.spi.ExemplarService;
+import io.helidon.metrics.api.spi.RegistryFactoryProvider;
+import io.helidon.metrics.spi.MetricsProvider;
 
 /**
  * Helidon metrics API.
  */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.metrics.api {
 
     requires io.helidon.http;
+    requires transitive io.helidon.common.config;
 
     requires static io.helidon.config.metadata;
-
-    requires transitive microprofile.metrics.api;
+    requires microprofile.metrics.api;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
     exports io.helidon.metrics.spi;
 
-    uses io.helidon.metrics.api.spi.RegistryFactoryProvider;
-    uses io.helidon.metrics.api.spi.ExemplarService;
+    uses RegistryFactoryProvider;
+    uses ExemplarService;
     uses io.helidon.metrics.api.MetricsProgrammaticSettings;
-    uses io.helidon.metrics.spi.MetricFactoryProvider;
-
+    uses io.helidon.metrics.api.spi.MetricFactory;
+    uses MetricsProvider;
 }

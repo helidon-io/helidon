@@ -31,7 +31,7 @@ public interface Timer extends Meter, HistogramSupport {
      * @return new sample
      */
     static Sample start() {
-        return MetricFactoryManager.INSTANCE.get().timerStart();
+        return MetricsProviderManager.INSTANCE.get().timerStart();
     }
 
     /**
@@ -41,7 +41,7 @@ public interface Timer extends Meter, HistogramSupport {
      * @return new sample with start time recorded
      */
     static Sample start(MeterRegistry registry) {
-        return MetricFactoryManager.INSTANCE.get().timerStart(registry);
+        return MetricsProviderManager.INSTANCE.get().timerStart(registry);
     }
 
     /**
@@ -51,7 +51,7 @@ public interface Timer extends Meter, HistogramSupport {
      * @return new sample with start time recorded
      */
     static Sample start(Clock clock) {
-        return MetricFactoryManager.INSTANCE.get().timerStart(clock);
+        return MetricsProviderManager.INSTANCE.get().timerStart(clock);
     }
 
     /**
