@@ -89,7 +89,7 @@ class GreetService implements HttpService {
         response.send(msg);
     }
 
-    private void updateGreetingFromJson(String update, ServerResponse response) {
+    private void updateGreeting(String update, ServerResponse response) {
         greeting.set(update);
         response.status(Http.Status.NO_CONTENT_204).send();
     }
@@ -102,7 +102,7 @@ class GreetService implements HttpService {
      */
     private void updateGreetingHandler(ServerRequest request,
                                        ServerResponse response) {
-        updateGreetingFromJson(request.content().as(String.class), response);
+        updateGreeting(request.content().as(String.class), response);
     }
 
 }

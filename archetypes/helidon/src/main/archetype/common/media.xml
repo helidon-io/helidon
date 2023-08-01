@@ -74,6 +74,10 @@
                                                 <value key="groupId">com.fasterxml.jackson.core</value>
                                                 <value key="artifactId">jackson-databind</value>
                                             </map>
+                                            <map order="500" if="${flavor} == 'nima'">
+                                                <value key="groupId">io.helidon.nima.http.media</value>
+                                                <value key="artifactId">helidon-nima-http-media-jackson</value>
+                                            </map>
                                             <map order="500" if="${flavor} == 'mp'">
                                                 <value key="groupId">org.glassfish.jersey.media</value>
                                                 <value key="artifactId">jersey-media-json-jackson</value>

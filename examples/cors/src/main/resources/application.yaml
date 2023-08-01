@@ -25,7 +25,7 @@ restrictive-cors:
   allow-origins: ["http://foo.com", "http://there.com"]
   allow-methods: ["PUT", "DELETE"]
 
-# The the example app uses the following for overriding other settings.
+# The example app uses the following for overriding other settings.
 #cors:
 #  paths:
 #    - path-pattern: /greeting
