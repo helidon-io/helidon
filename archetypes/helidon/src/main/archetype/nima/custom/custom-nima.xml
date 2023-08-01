@@ -23,7 +23,7 @@
         <boolean path="db">false</boolean>
     </presets>
     <exec src="/nima/common/common-nima.xml"/>
-    <exec src="/common/observability.xml"/>
+    <source src="/common/observability.xml"/>
     <source src="/nima/custom/observability.xml"/>
     <exec src="/common/media.xml"/>
     <source src="/common/media-sources.xml"/>

@@ -56,7 +56,7 @@ public class WebClientMain {
 
     static String performGetMethod(Http1Client client) {
         System.out.println("Get request execution.");
-        String result = client.get().path("/simple-greet").request(String.class);
+        String result = client.get().path("/simple-greet").request().as(String.class);
         System.out.println("GET request successfully executed.");
         System.out.println(result);
         return result;

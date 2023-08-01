@@ -1,0 +1,78 @@
+package {{package}};
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.helidon.metrics.api.Registry;
+import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.nima.webserver.http.ServerResponse;
+
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
+
+/**
+ * Helidon SE service to update a family of counters based on the HTTP status of each response. Add an instance of this service
+ * to the application's routing.
+ * <p>
+ *     The service uses one {@link org.eclipse.microprofile.metrics.Counter} for each HTTP status family (1xx, 2xx, etc.).
+ *     All counters share the same name--{@value STATUS_COUNTER_NAME}--and each has the tag {@value STATUS_TAG_NAME} with
+ *     value {@code 1xx}, {@code 2xx}, etc.
+ * </p>
+ */
+public class HttpStatusMetricService implements HttpService {
+
+    static final String STATUS_COUNTER_NAME = "httpStatus";
+
+    static final String STATUS_TAG_NAME = "range";
+
+    private static final AtomicInteger IN_PROGRESS = new AtomicInteger();
+
+    private final Counter[] responseCounters = new Counter[6];
+
+    static HttpStatusMetricService create() {
+        return new HttpStatusMetricService();
+    }
+
+    private HttpStatusMetricService() {
+        MetricRegistry appRegistry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
+        Metadata metadata = Metadata.builder()
+                .withName(STATUS_COUNTER_NAME)
+                .withDescription("Counts the number of HTTP responses in each status category (1xx, 2xx, etc.)")
+                .withUnit(MetricUnits.NONE)
+                .build();
+        // Declare the counters and keep references to them.
+        for (int i = 1; i < responseCounters.length; i++) {
+            responseCounters[i] = appRegistry.counter(metadata, new Tag(STATUS_TAG_NAME, i + "xx"));
+        }
+    }
+
+    @Override
+    public void routing(HttpRules rules) {
+        rules.any(this::updateRange);
+    }
+
+    // for testing
+    static boolean isInProgress() {
+        return IN_PROGRESS.get() != 0;
+    }
+
+    // Edited to adopt Ciaran's fix later in the thread.
+    private void updateRange(ServerRequest request, ServerResponse response) {
+        IN_PROGRESS.incrementAndGet();
+        response.next();
+        logMetric(response);
+    }
+
+    private void logMetric(ServerResponse response) {
+        int range = response.status().code() / 100;
+        if (range > 0 && range < responseCounters.length) {
+            responseCounters[range].inc();
+        }
+        IN_PROGRESS.decrementAndGet();
+    }
+}

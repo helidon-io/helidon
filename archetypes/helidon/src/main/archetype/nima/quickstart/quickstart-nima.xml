@@ -24,7 +24,7 @@
             <value>json</value>
         </list>
         <enum path="media.json-lib">jsonp</enum>
-        <boolean path="metrics">false</boolean>
+        <boolean path="metrics">true</boolean>
         <enum path="metrics.provider">microprofile</enum>
         <boolean path="metrics.builtin">true</boolean>
         <boolean path="health">true</boolean>

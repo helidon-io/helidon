@@ -36,6 +36,14 @@
                                 name="MicroProfile"
                                 description="Expose metrics using the MicroProfile API">
                             <output>
+                                <templates engine="mustache" transformations="mustache,packaged" if="${flavor} == 'nima'">
+                                    <directory>files</directory>
+                                    <includes>
+                                        <include>src/*/java/**/HttpStatusMetricService.java.mustache</include>
+                                        <include>src/*/java/**/StatusService.java.mustache</include>
+                                        <include>src/*/java/**/StatusTest.java.mustache</include>
+                                    </includes>
+                                </templates>
                                 <model>
                                     <list key="readme-sections" if="${flavor} == 'mp'">
                                         <value><![CDATA[
@@ -60,9 +68,14 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                             <value key="groupId">org.eclipse.microprofile.metrics</value>
                                             <value key="artifactId">microprofile-metrics-api</value>
                                         </map>
-                                        <map order="800" if="${flavor} == 'mp'">
+                                        <map order="800">
                                             <value key="groupId">io.helidon.microprofile.metrics</value>
                                             <value key="artifactId">helidon-microprofile-metrics</value>
+                                        </map>
+                                        <map order="800" if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.nima.testing.junit5</value>
+                                            <value key="artifactId">helidon-nima-testing-junit5-webserver</value>
+                                            <value key="scope">test</value>
                                         </map>
                                     </list>
                                     <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
@@ -126,6 +139,9 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value><![CDATA[
     @Inject
     private MetricRegistry registry;]]></value>
+                                    </list>
+                                    <list key="Main-routing-builder" if="${flavor} == 'nima'">
+                                        <value><![CDATA[                .register(HttpStatusMetricService.create())]]></value>
                                     </list>
                                     <list key="modules">
                                         <value if="${flavor} == 'mp'">io.helidon.microprofile.metrics</value>

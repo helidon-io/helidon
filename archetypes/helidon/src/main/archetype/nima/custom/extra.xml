@@ -52,7 +52,8 @@
     void testAsync() {
         String response = client.get()
                 .path("/async")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("blocked for 100 millis"));
     }
@@ -83,7 +84,8 @@
     void testCircuitBreaker() {
         String response = client.get()
                 .path("/circuitBreaker/true")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("blocked for 100 millis"));
 
@@ -96,7 +98,8 @@
         // should work after first
         response = client.get()
                 .path("/circuitBreaker/true")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("blocked for 100 millis"));
 
@@ -119,13 +122,15 @@
     void testFallback() {
         String response = client.get()
                 .path("/fallback/true")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("blocked for 100 millis"));
 
         response = client.get()
                 .path("/fallback/false")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("Failed back because of reactive failure"));
     }
@@ -134,19 +139,22 @@
     void testRetry() {
         String response = client.get()
                 .path("/retry/1")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("calls/failures: 1/0"));
 
         response = client.get()
                 .path("/retry/2")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("calls/failures: 2/1"));
 
         response = client.get()
                 .path("/retry/3")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("calls/failures: 3/2"));
 
@@ -164,7 +172,8 @@
     void testTimeout() {
         String response = client.get()
                 .path("/timeout/10")
-                .request(String.class);
+                .request()
+                .as(String.class);
 
         assertThat(response, is("Slept for 10 ms"));
 
