@@ -183,12 +183,10 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
         if (mtd.isClientStreaming()) {
             if (mtd.isServerStreaming()) {
                 return MethodDescriptor.MethodType.BIDI_STREAMING;
-            }
-            else {
+            } else {
                 return MethodDescriptor.MethodType.CLIENT_STREAMING;
             }
-        }
-        else if (mtd.isServerStreaming()) {
+        } else if (mtd.isServerStreaming()) {
             return MethodDescriptor.MethodType.SERVER_STREAMING;
         }
         return MethodDescriptor.MethodType.UNARY;
