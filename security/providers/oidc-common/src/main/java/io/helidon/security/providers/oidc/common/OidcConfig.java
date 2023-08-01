@@ -368,7 +368,6 @@ public final class OidcConfig extends TenantConfigImpl {
     private final OidcCookieHandler tokenCookieHandler;
     private final OidcCookieHandler idTokenCookieHandler;
     private final OidcCookieHandler tenantCookieHandler;
-    private final boolean optionalAudience;
 
     private OidcConfig(Builder builder) {
         super(builder);
@@ -399,7 +398,6 @@ public final class OidcConfig extends TenantConfigImpl {
 
         this.webClientBuilderSupplier = builder.webClientBuilderSupplier;
         this.defaultTenant = LazyValue.create(() -> Tenant.create(this, this));
-        this.optionalAudience = builder.optionalAudience();
 
         LOGGER.log(Level.TRACE, () -> "Redirect URI with host: " + frontendUri + redirectUri);
     }
@@ -1005,8 +1003,6 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("tenants").asList(Config.class)
                     .ifPresent(confList -> confList.forEach(tenantConfig -> tenantFromConfig(config, tenantConfig)));
 
-            config.get("optional-audience").asBoolean().ifPresent(this::optionalAudience);
-
             return this;
         }
 
@@ -1537,6 +1533,5 @@ public final class OidcConfig extends TenantConfigImpl {
             tenantConfigurations.put(tenantConfig.name(), tenantConfig);
             return this;
         }
-
     }
 }

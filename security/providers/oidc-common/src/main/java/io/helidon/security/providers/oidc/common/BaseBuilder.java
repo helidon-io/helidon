@@ -65,7 +65,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     private URI introspectUri;
     private String scopeAudience;
     private boolean useWellKnown = true;
-    // Audience claim is optional
+    // Whether audience claim is optional
     private boolean optionalAudience = false;
 
     BaseBuilder() {
@@ -126,6 +126,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("server-type").asString().ifPresent(this::serverType);
 
         config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
+        config.get("optional-audience").asBoolean().ifPresent(this::optionalAudience);
         return identity();
     }
 
@@ -514,10 +515,6 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
 
     String name() {
         return TenantConfigFinder.DEFAULT_TENANT_ID;
-    }
-
-    boolean optionalAudience() {
-        return optionalAudience;
     }
 
 }
