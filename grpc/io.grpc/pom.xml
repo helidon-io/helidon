@@ -29,8 +29,8 @@
     </parent>
 
     <artifactId>io.grpc</artifactId>
-    <name>Helidon grpc-java Repackaged</name>
-    <description>A Java modules compatible re-packaging of grpc-java</description>
+    <name>Helidon grpc-java Bundle</name>
+    <description>Bundle of grpc dependencies provided for backwards compatibility</description>
 
     <dependencies>
         <dependency>
@@ -45,76 +45,6 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-context</artifactId>
         </dependency>
-
-        <dependency>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-          <exclusions>
-            <exclusion>
-              <artifactId>jsr305</artifactId>
-              <groupId>com.google.code.findbugs</groupId>
-            </exclusion>
-            <exclusion>
-              <artifactId>error_prone_annotations</artifactId>
-              <groupId>com.google.errorprone</groupId>
-            </exclusion>
-            <exclusion>
-              <artifactId>j2objc-annotations</artifactId>
-              <groupId>com.google.j2objc</groupId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-        <dependency>
-          <groupId>com.google.code.gson</groupId>
-          <artifactId>gson</artifactId>
-        </dependency>
-        <dependency>
-          <groupId>io.perfmark</groupId>
-          <artifactId>perfmark-api</artifactId>
-        </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <!-- create the base JAR removing all of the dummy classes -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>io/grpc/**/*.class</exclude>
-                    </excludes>
-                </configuration>
-            </plugin>
-
-            <!-- create the shaded JAR -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>shade</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <createDependencyReducedPom>true</createDependencyReducedPom>
-                            <createSourcesJar>true</createSourcesJar>
-                            <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-                            <artifactSet>
-                                <includes>
-                                    <include>io.grpc:*</include>
-                                    <include>com.google.instrumentation:instrumentation-api</include>
-                                    <include>io.opencensus:opencensus-api</include>
-                                    <include>io.opencensus:opencensus-contrib-grpc-metrics</include>
-                                </includes>
-                            </artifactSet>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
 </project>
