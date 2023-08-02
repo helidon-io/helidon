@@ -41,10 +41,6 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-core</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-context</artifactId>
-        </dependency>
     </dependencies>
 
 </project>
