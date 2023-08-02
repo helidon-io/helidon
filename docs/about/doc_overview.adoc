@@ -107,8 +107,6 @@ xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon SE Tutorial]
 --
 Ready for more hands-on learning? Explore the features of Helidon with these quick step-by-step guides.
 
-xref:{rootdir}/nima/guides/overview.adoc[N&iacute;ma Guides]
-
 xref:{rootdir}/se/guides/overview.adoc[SE Guides]
 
 xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
@@ -131,9 +129,9 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 --
 
-//Helidon N&iacute;ma
+//Get Involved
 [CARD]
-.Helidon N&iacute;ma
+.Helidon Community
 [icon=swap_horiz]
 --
 
