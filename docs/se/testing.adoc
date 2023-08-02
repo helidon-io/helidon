@@ -49,11 +49,11 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Usage
 
-Helidon provides a rich set of extensions based on JUnit 5 for Helidon testing. Testing can be done with automatic server start-up, configuration, and shutdown. Testing can also be done without full server start-up with `DirectClient` when no real sockets are created.
+Helidon provides a rich set of extensions based on JUnit 5 for Helidon WebServer testing. Testing can be done with automatic server start-up, configuration, and shutdown. Testing can also be done without full server start-up with `DirectClient` when no real sockets are created.
 
 == API
 
-There are two main annotations that you can use to test the Helidon web server.
+There are two main annotations that you can use to test Helidon WebServer.
 
 * `@ServerTest` is an integration test annotation that starts the server (opens ports) and provides client injection pre-configured for the server port(s).
 * `@RoutingTest` is a unit test annotation that does not start the server and does not open ports but provides a direct client (with the same API as the usual network client) to test routing.
