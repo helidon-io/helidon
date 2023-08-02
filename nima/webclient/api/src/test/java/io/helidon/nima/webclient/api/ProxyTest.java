@@ -31,6 +31,12 @@ import org.junit.jupiter.api.Test;
 class ProxyTest {
 
     @Test
+    void defaultProxy() {
+        Proxy proxy = Proxy.create();
+        assertThat(proxy.type(), is(Proxy.ProxyType.SYSTEM));
+    }
+
+    @Test
     void testNoProxyHandling() {
         Set<String> noProxy = Set.of("localhost:8080",
                                      ".helidon.io",

@@ -80,7 +80,7 @@ class HelidonConnector implements Connector {
         builder.config(helidonConfig(config).orElse(Config.empty()));
 
         // proxy support
-        proxy = ProxyBuilder.createProxy(config).orElse(Proxy.noProxy());
+        proxy = ProxyBuilder.createProxy(config).orElse(Proxy.create());
 
         // possibly override config with properties
         if (properties.containsKey(CONNECT_TIMEOUT)) {
