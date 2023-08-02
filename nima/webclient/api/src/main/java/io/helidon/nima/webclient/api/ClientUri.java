@@ -191,8 +191,11 @@ public class ClientUri implements UriInfo {
             uriBuilder.port(uri.getPort());
         }
 
-        String uriPath = extractQuery(uri.getPath());
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), uriPath));
+        uriBuilder.path(resolvePath(uriBuilder.path().path(), uri.getPath()));
+
+        if (uri.getRawQuery() != null) {
+            query.fromQueryString(uri.getRawQuery());
+        }
 
         if (uri.getRawFragment() != null) {
             uriBuilder.fragment(UriFragment.create(uri.getRawFragment()));
