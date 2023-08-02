@@ -26,11 +26,11 @@ module io.helidon.config.etcd {
     requires etcd4j;
     requires grpc.protobuf;
     requires grpc.stub;
+    requires grpc.api;
     requires com.google.protobuf;
     requires com.google.common;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
-    requires io.grpc;
 
     exports io.helidon.config.etcd;
 
