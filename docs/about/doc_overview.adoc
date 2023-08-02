@@ -131,7 +131,7 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 //Get Involved
 [CARD]
-.Helidon Community
+.Get Involved
 [icon=swap_horiz]
 --
 
