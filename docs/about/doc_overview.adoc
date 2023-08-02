@@ -123,7 +123,7 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 
 //Training and Certification
 [CARD]
-.Helidon MP
+.Training and Certification
 [icon=swap_horiz]
 --
 

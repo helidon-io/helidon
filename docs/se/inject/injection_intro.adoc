@@ -1,0 +1,112 @@
+///////////////////////////////////////////////////////////////////////////////
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+///////////////////////////////////////////////////////////////////////////////
+
+= Helidon Injection
+:description: about Helidon Injection
+:keywords: helidon, inject, injection, java, microservices, reactive, virtual threads
+
+
+
+
+
+== Contents
+
+- <<Overview, Overview>>
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<API, API>>
+- <<Configuration, Configuration>>
+- <<Examples, Examples>>
+- <<Additional Information, Additional Information>>
+
+== Overview
+
+Helidon Injection //explain what it is and what it can do.
+
+== Maven Coordinates
+
+To enable Injection add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
+
+.Injection dependencies
+[source,java]
+
+----
+<dependency>
+    <groupId>io.helidon.inject</groupId>
+    <artifactId>helidon-inject-api</artifactId>
+    <version>${helidon.version}</version>
+</dependency>
+<dependency>
+    <groupId>io.helidon.inject</groupId>
+    <artifactId>helidon-inject-types</artifactId>
+    <version>${helidon.version}</version>
+</dependency>
+----
+
+== Usage
+
+Once you have planned how each of your resources should support Injection, you specify the behavior in one of two ways:
+
+
+
+== API
+
+Adding Ijection behavior to your Helidon Níma application involves just a few simple steps.
+
+=== Maven Coordinates
+
+.Injection API pom.xml
+[source, java]
+----
+ <artifactId>helidon-inject-inject</artifactId>
+ <name>Helidon Injection API</name>
+----
+
+
+=== Types
+
+The Injection API provides types that are generally useful at compile time to assign special meaning to the type. In this way it also helps with readability and intentions of the code itself.
+
+.Injection types pom.xml
+[source, java]
+----
+ <artifactId>helidon-inject-types</artifactId>
+ <name>Helidon Injection Types</name>
+----
+
+
+ * {@link io.helidon.inject.api.Contract} - signifies that the type can be used for lookup in the service registry.
+ * {@link io.helidon.inject.api.ExternalContracts} - same as Contract, but applied to the implementation class instead.
+ * {@link io.helidon.inject.api.RunLevel} - ascribes meaning for when the service should start.
+
+
+
+
+
+
+== Configuration
+
+Injection Config builder
+
+
+
+== Examples
+
+//optional
+
+== Additional Information
