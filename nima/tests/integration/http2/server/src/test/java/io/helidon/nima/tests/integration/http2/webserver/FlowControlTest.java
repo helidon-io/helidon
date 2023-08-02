@@ -45,7 +45,6 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Method.GET;
@@ -123,7 +122,6 @@ class FlowControlTest {
     }
 
     @Test
-    @Disabled
     void flowControlWebClientInOut() throws ExecutionException, InterruptedException, TimeoutException {
         flowControlServerLatch = new CompletableFuture<>();
         flowControlClientLatch = new CompletableFuture<>();
@@ -180,7 +178,6 @@ class FlowControlTest {
     }
 
     @Test
-    @Disabled
     void flowControlWebClientInbound() {
         var client = Http2Client.builder()
                 .protocolConfig(http2 -> http2.priorKnowledge(true))

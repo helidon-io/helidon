@@ -41,7 +41,6 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerRequest;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -49,7 +48,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-@Disabled
 class ClientFlowControlTest {
 
     private static final System.Logger LOGGER = System.getLogger(ClientFlowControlTest.class.getName());
