@@ -102,12 +102,12 @@ public interface JdbcConnectionPool extends NamedService {
 
     @Override
     default String name() {
-        throw new UnsupportedOperationException("Name of the JdbcConnectionPool service is not definde");
+        throw new UnsupportedOperationException("Name of the JdbcConnectionPool service is not defined");
     }
 
     @Override
     default String type() {
-        throw new UnsupportedOperationException("Type of the JdbcConnectionPool service is not definde");
+        throw new UnsupportedOperationException("Type of the JdbcConnectionPool service is not defined");
     }
 
     /**
