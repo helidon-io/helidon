@@ -55,8 +55,8 @@ The following sections describe these APIs in more detail.
 
 == Server API
 
-The Server API is available as a loadable service in the N&iacute;ma Webserver. The following additional
-dependency is required to find and load the SSE service in the Webserver.
+The Server API is available as a loadable service in the Helidon WebServer. The following additional
+dependency is required to find and load the SSE service in the WebServer.
 
 === Maven Coordinates
 
