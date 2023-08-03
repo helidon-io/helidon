@@ -717,11 +717,11 @@ public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
         @Override
         public String toString() {
             return "TypeInfoBuilder{"
-                    + "typeName=" + typeName + "," 
-                    + "typeKind=" + typeKind + "," 
-                    + "elementInfo=" + elementInfo + "," 
-                    + "superTypeInfo=" + superTypeInfo + "," 
-                    + "modifiers=" + modifiers + "," 
+                    + "typeName=" + typeName + ","
+                    + "typeKind=" + typeKind + ","
+                    + "elementInfo=" + elementInfo + ","
+                    + "superTypeInfo=" + superTypeInfo + ","
+                    + "modifiers=" + modifiers + ","
                     + "annotations=" + annotations
                     + "}";
         }
@@ -846,11 +846,11 @@ public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
             @Override
             public String toString() {
                 return "TypeInfo{"
-                        + "typeName=" + typeName + "," 
-                        + "typeKind=" + typeKind + "," 
-                        + "elementInfo=" + elementInfo + "," 
-                        + "superTypeInfo=" + superTypeInfo + "," 
-                        + "modifiers=" + modifiers + "," 
+                        + "typeName=" + typeName + ","
+                        + "typeKind=" + typeKind + ","
+                        + "elementInfo=" + elementInfo + ","
+                        + "superTypeInfo=" + superTypeInfo + ","
+                        + "modifiers=" + modifiers + ","
                         + "annotations=" + annotations
                         + "}";
             }

@@ -286,7 +286,7 @@ public interface Annotation extends AnnotationBlueprint, Comparable<Annotation>,
         @Override
         public String toString() {
             return "AnnotationBuilder{"
-                    + "typeName=" + typeName + "," 
+                    + "typeName=" + typeName + ","
                     + "values=" + values
                     + "}";
         }
@@ -344,7 +344,7 @@ public interface Annotation extends AnnotationBlueprint, Comparable<Annotation>,
             @Override
             public String toString() {
                 return "Annotation{"
-                        + "typeName=" + typeName + "," 
+                        + "typeName=" + typeName + ","
                         + "values=" + values
                         + "}";
             }
