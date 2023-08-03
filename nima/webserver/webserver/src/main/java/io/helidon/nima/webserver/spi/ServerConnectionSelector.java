@@ -34,7 +34,8 @@ public interface ServerConnectionSelector {
 
     /**
      * Does this selector support current server connection.
-     * The same buffer will be sent to {@link io.helidon.nima.webserver.spi.ServerConnection#handle()}
+     * The same buffer will be sent to
+     * {@link io.helidon.nima.webserver.spi.ServerConnection#handle(java.util.concurrent.Semaphore)}
      *
      * @param data bytes (with available bytes of at least {@link #bytesToIdentifyConnection()})
      * @return support response
