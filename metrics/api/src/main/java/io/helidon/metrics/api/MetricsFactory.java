@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Set;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -128,6 +129,24 @@ public interface MetricsFactory {
      * @return new sample
      */
     Timer.Sample timerStart(Clock clock);
+
+    /**
+     * Creates a {@link io.helidon.metrics.api.Meter.Id} from the specified name and tags.
+     * @param name name to use in the ID
+     * @param tags tags to use in the ID
+     * @return new meter ID
+     */
+    Meter.Id idOf(String name, Iterable<Tag> tags);
+
+    /**
+     * Creates a {@link io.helidon.metrics.api.Meter.Id} from the specified name.
+     *
+     * @param name name to use in the ID
+     * @return new meter ID
+     */
+    default Meter.Id idOf(String name) {
+        return idOf(name, Set.of());
+    }
 
     /**
      * Creates a {@link io.helidon.metrics.api.Tag} from the specified key and value.

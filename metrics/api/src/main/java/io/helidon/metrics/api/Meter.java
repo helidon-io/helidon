@@ -76,6 +76,27 @@ public interface Meter extends Wrapped {
     interface Id {
 
         /**
+         * Creates a {@link io.helidon.metrics.api.Meter.Id} from the specified name.
+         *
+         * @param name name for the ID
+         * @return new meter ID
+         */
+        static Id of(String name) {
+            return MetricsFactoryManager.getInstance().idOf(name);
+        }
+
+        /**
+         * Creates a {@link io.helidon.metrics.api.Meter.Id} from the specified name and tags.
+         *
+         * @param name name for the ID
+         * @param tags tags for the ID
+         * @return new meter ID
+         */
+        static Id of(String name, Iterable<Tag> tags) {
+            return MetricsFactoryManager.getInstance().idOf(name, tags);
+        }
+
+        /**
          * Returns the meter name.
          *
          * @return meter name

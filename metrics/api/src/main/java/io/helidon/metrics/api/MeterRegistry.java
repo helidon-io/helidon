@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -37,7 +38,7 @@ public interface MeterRegistry extends Wrapped {
      * @param filter the predicate with which to evaluate each {@link io.helidon.metrics.api.Meter}
      * @return meters which match the predicate
      */
-    Iterable<Meter> meters(Predicate<Meter> filter);
+    Collection<Meter> meters(Predicate<Meter> filter);
 
     /**
      * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new

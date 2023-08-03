@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Set;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -22,7 +23,7 @@ import java.util.function.ToDoubleFunction;
  */
 class NoOpMetricsFactory implements MetricsFactory {
 
-    private final MeterRegistry meterRegistry = null;
+    private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();
@@ -30,7 +31,17 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry globalRegistry() {
-        return null;
+        return meterRegistry;
+    }
+
+    @Override
+    public Meter.Id idOf(String name) {
+        return idOf(name, Set.of());
+    }
+
+    @Override
+    public Meter.Id idOf(String name, Iterable<Tag> tags) {
+        return NoOpMeter.Id.create(name, tags);
     }
 
     @Override

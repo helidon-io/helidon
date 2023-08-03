@@ -15,10 +15,10 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,37 +39,15 @@ class NoOpMeterRegistry implements MeterRegistry {
     }
 
     @Override
-    public Iterable<Meter> meters(Predicate<Meter> filter) {
-        return () -> new Iterator<>() {
-
-            private final Iterator<Meter> iter = meters.values().iterator();
-            private Meter nextMatch = nextMatch();
-
-            private Meter nextMatch() {
-                while (iter.hasNext()) {
-                    Meter candidate = iter.next();
-                    if (filter.test(candidate)) {
-                        return candidate;
+    public Collection<Meter> meters(Predicate<Meter> filter) {
+        List<Meter> result = new ArrayList<>();
+        meters.values()
+                .forEach(m -> {
+                    if (filter.test(m)) {
+                        result.add(m);
                     }
-                }
-                return null;
-            }
-
-            @Override
-            public boolean hasNext() {
-                return nextMatch != null;
-            }
-
-            @Override
-            public Meter next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                Meter result = nextMatch;
-                nextMatch = nextMatch();
-                return result;
-            }
-        };
+                });
+        return result;
     }
 
     @Override
