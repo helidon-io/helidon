@@ -59,7 +59,7 @@
         <version.lib.graphql-java>18.6</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>18.3</version.lib.graphql-java.extended.scalars>
         <version.lib.gson>2.9.0</version.lib.gson>
-        <version.lib.grpc>1.56.0</version.lib.grpc>
+        <version.lib.grpc>1.57.1</version.lib.grpc>
         <version.lib.guava>32.0.1-jre</version.lib.guava>
         <version.lib.h2>2.1.212</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
@@ -399,75 +399,6 @@
                 <groupId>org.mousio</groupId>
                 <artifactId>etcd4j</artifactId>
                 <version>${version.lib.etcd4j}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-core</artifactId>
-                <version>${version.lib.grpc}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- Used for compilation of "their" sources -->
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- Used for compilation of "their" sources -->
-                        <groupId>com.google.errorprone</groupId>
-                        <artifactId>error_prone_annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-api</artifactId>
-                <version>${version.lib.grpc}</version>
-                <exclusions>
-                    <exclusion>
-                        <!-- Used for compilation of "their" sources -->
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>animal-sniffer-annotations</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- Used for compilation of "their" sources -->
-                        <groupId>com.google.errorprone</groupId>
-                        <artifactId>error_prone_annotations</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- Used for compilation of "their" sources -->
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <!-- Used for compilation of "their" sources -->
-                        <groupId>com.google.j2objc</groupId>
-                        <artifactId>j2objc-annotations</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-context</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-protobuf</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-stub</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-services</artifactId>
-                <version>${version.lib.grpc}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-netty</artifactId>
-                <version>${version.lib.grpc}</version>
             </dependency>
 
             <!-- Dependency convergence. Should align with version used by io.grpc -->
@@ -1428,6 +1359,13 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
                 <version>${version.lib.netty}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${version.lib.grpc}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
