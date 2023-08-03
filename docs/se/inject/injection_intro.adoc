@@ -22,7 +22,7 @@
 :feature-name: Helidon Injection
 :rootdir: {docdir}/..
 
-include::{rootdir}/includes/se.adoc[]
+
 
 
 == Contents
@@ -49,7 +49,7 @@ Helidon Injection's minimalist, compile-time generated dependency injection (DI)
 * provides deterministic behavior (instead of depending on reflection and classpath ordering, etc.)
 * optimizes performance improvements since binding the model at compile-time is more efficient than computing it at runtime.
 
-include::{rootdir}/includes/dependencies.adoc[]
+== Maven Coordinates
 
 
 .Injection dependencies
