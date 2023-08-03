@@ -189,7 +189,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      * Creates new instance of {@link WebClientRequestBuilder} based on previous request.
      *
      * @param clientRequest previous request
-     * @param method Http.Method ro be used
+     * @param method Http.Method to be used
      * @return client request builder
      */
     static WebClientRequestBuilder create(WebClientRequestImpl clientRequest, Http.Method method) {
