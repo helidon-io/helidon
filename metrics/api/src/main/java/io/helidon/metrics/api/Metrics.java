@@ -15,7 +15,9 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.function.ToDoubleFunction;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /**
  * A main entry point to the Helidon metrics implementation, allowing access to the global meter registry and providing shortcut
@@ -29,160 +31,81 @@ public interface Metrics {
      * @return the global meter registry
      */
     static MeterRegistry globalRegistry() {
-        return MetricsProviderManager.INSTANCE.get().globalRegistry();
+        return MetricsFactory.getInstance().globalRegistry();
     }
 
     /**
-     * Registers a new or locates a previously-registered counter, using the global registry, which tracks a monotonically
-     * increasing value.
+     * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new
+     * one using the provided builder.
      *
-     * @param name counter name
-     * @param tags further identification of the counter; MUST be an even number of arguments representing key/value pairs
-     *             of tags
-     * @return new or previously-registered counter
+     * @param builder builder to use in finding or creating a meter
+     * @return the previously-registered meter with the same name and tags or, if none, the newly-registered one
+     * @param <M> type of the meter
+     * @param <B> builder for the meter
      */
-    static Counter counter(String name, String... tags) {
-        return globalRegistry().counter(name, tags);
+    static <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder) {
+        return globalRegistry().getOrCreate(builder);
     }
 
     /**
-     * Registers a new or locates a previously-registered counter, using the global registry, which tracks a monotonically
-     * increasing value that is maintained by an external object, not a counter furnished by the meter registry itself.
+     * Locates a previously-registered counter.
      *
+     * @param name name to match
+     * @param tags tags to match
+     * @return {@link java.util.Optional} of the previously-registered counter; empty if not found
+     */
+    static Optional<Counter> getCounter(String name, Iterable<Tag> tags) {
+        return globalRegistry().get(Counter.class, name, tags);
+    }
+
+    /**
+     * Locates a previously-registered distribution summary.
+     *
+     * @param name name to match
+     * @param tags tags to match
+     * @return {@link java.util.Optional} of the previously-registered distribution summary; empty if not found
+     */
+    static Optional<DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
+        return globalRegistry().get(DistributionSummary.class, name, tags);
+    }
+
+    /**
+     * Locates a previously-registered gauge.
+     *
+     * @param name name to match
+     * @param tags tags to match
+     * @return {@link java.util.Optional} of the previously-registered gauge; empty if not found
+     */
+    static Optional<Gauge> getGauge(String name, Iterable<Tag> tags) {
+        return globalRegistry().get(Gauge.class, name, tags);
+    }
+
+    /**
+     * Locates a previously-registered timer.
+     *
+     * @param name name to match
+     * @param tags tags to match
+     * @return {@link java.util.Optional} of the previously-registered timer; empty if not found
+     */
+    static Optional<Timer> getTimer(String name, Iterable<Tag> tags) {
+        return globalRegistry().get(Timer.class, name, tags);
+    }
+
+    /**
+     * Locates a previously-registered meter of the specified type, matching the name and tags.
      * <p>
-     *     The counter returned rejects attempts to increment its value because the external object, not the counter itself,
-     *     maintains the value.
+     *     The method throws an {@link java.lang.IllegalArgumentException} if a meter exists with
+     *     the name and tags but is not type-compatible with the provided class.
      * </p>
      *
-     * @param name counter name
-     * @param tags further identification of the counter
-     * @param target object which, when the function is applied, yields the counter value
-     * @param fn function which produces the counter value
-     * @return new or existing counter
-     * @param <T> type of the object which furnishes the counter value
+     * @param mClass type of the meter to find
+     * @param name name to match
+     * @param tags tags to match
+     * @return {@link java.util.Optional} of the previously-regsitered meter; empty if not found
+     * @param <M> type of the meter to find
      */
-    static <T> Counter counter(String name,
-                               Iterable<Tag> tags,
-                               T target,
-                               ToDoubleFunction<T> fn) {
-        return globalRegistry().counter(name, tags, target, fn);
-    }
-
-    /**
-     * Registers a new or locates a previously-registered distribution summary, using the global registry, which measures the
-     * distribution of samples.
-     *
-     * @param name summary name
-     * @param tags further identification of the summary
-     * @return new or previously-registered distribution summary
-     */
-    static DistributionSummary summary(String name,
-                                       Iterable<Tag> tags) {
-        return globalRegistry().summary(name, tags);
-    }
-
-    /**
-     * Registers a new or locates a previously-registered distribution summary, using the global registry, which measures the
-     * distribution of samples.
-     *
-     * @param name summary name
-     * @param tags further identification of the summary; MUST be an even number of arguments representing key/value pairs
-     *             of tags
-     * @return new or previously-registered distribution summary
-     */
-    static DistributionSummary summary(String name,
-                                       String... tags) {
-        return globalRegistry().summary(name, tags);
-    }
-
-    /**
-     * Registers a new or locates a previously-registered timer, using the global registry, which measures the time taken for
-     * short tasks and the count of those tasks.
-     *
-     * @param name timer name
-     * @param tags further identification of the timer
-     * @return new or previously-registered timer
-     */
-    static Timer timer(String name,
-                       Iterable<Tag> tags) {
-        return globalRegistry().timer(name, tags);
-    }
-
-    /**
-     * Registers a new or locates a previously-registered timer, using the global registry,  which measures the time taken for
-     * short tasks and the count of those tasks.
-     *
-     * @param name timer name
-     * @param tags further identification of the timer; MUST be an even number of arguments representing key/value pairs of tags.
-     * @return new or previously-registered timer
-     */
-    static Timer timer(String name,
-                       String... tags) {
-        return globalRegistry().timer(name, tags);
-    }
-
-    /**
-     * Locates or registers a {@link io.helidon.metrics.api.Gauge}, using the global registry, that reports the double value
-     * maintained by the specified object and exposed by the object by applying the specified function.
-     *
-     * @param name name of the gauge
-     * @param tags further identification of the gauge
-     * @param obj object which exposes the gauge value
-     * @param valueFunction function which, when applied to the object, yields the gauge value
-     * @param <T> type of the state object which maintains the gauge's value
-     * @return state object
-     */
-    static <T> T gauge(String name,
-                       Iterable<Tag> tags,
-                       T obj,
-                       ToDoubleFunction<T> valueFunction) {
-        return globalRegistry().gauge(name, tags, obj, valueFunction);
-    }
-
-    /**
-     * Locates or registers a {@link io.helidon.metrics.api.Gauge}, using the global registry, which wraps a specific
-     * {@link java.lang.Number} instance.
-     *
-     * @param name name of the gauge
-     * @param tags further identification of the gauge
-     * @param number thread-safe implementation of the specified subtype of {@link java.lang.Number} which is the gauge's value
-     * @param <N> specific subtype of {@code Number} which the wrapped object exposes
-     * @return {@code number} wrapped by this gauge
-     */
-    static <N extends Number> N gauge(String name,
-                                      Iterable<Tag> tags,
-                                      N number) {
-        return globalRegistry().gauge(name, tags, number);
-    }
-
-    /**
-     * Locates or registers a {@link io.helidon.metrics.api.Gauge}, using the global registry, which wraps a specific
-     * {@link java.lang.Number} instance.
-     *
-     * @param name name of the gauge
-     * @param number thread-safe implementation of the specified subtype of {@link java.lang.Number} which is the gauge's value
-     * @param <N> specific subtype of {@code Number} which the wrapped object exposes
-     * @return {@code number} wrapped by this gauge
-     */
-    static <N extends Number> N gauge(String name,
-                                      N number) {
-        return globalRegistry().gauge(name, number);
-    }
-
-    /**
-     * Locates or registers a {@link io.helidon.metrics.api.Gauge}, using the global registry, that reports the double value
-     * maintained by the specified object and exposed by the object by applying the specified function.
-     *
-     * @param name name of the gauge
-     * @param obj object which exposes the gauge value
-     * @param valueFunction function which, when applied to the object, yields the gauge value
-     * @param <T> type of the state object which maintains the gauge's value
-     * @return state object
-     */
-    static <T> T gauge(String name,
-                       T obj,
-                       ToDoubleFunction<T> valueFunction) {
-        return globalRegistry().gauge(name, obj, valueFunction);
+    static <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
+        return globalRegistry().get(mClass, name, tags);
     }
 
     /**
@@ -193,6 +116,36 @@ public interface Metrics {
      * @return new tag
      */
     static Tag tag(String key, String value) {
-        return MetricsProviderManager.INSTANCE.get().tagOf(key, value);
+        return MetricsFactory.getInstance().tagOf(key, value);
+    }
+
+    /**
+     * Provides an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} over an array of tags.
+     *
+     * @param tags tags array to convert
+     * @return iterator over the tags
+     */
+    static Iterable<Tag> tags(Tag... tags) {
+        return () -> new Iterator<>() {
+
+            private int slot = 0;
+
+            @Override
+            public boolean hasNext() {
+                return slot < tags.length;
+            }
+
+            @Override
+            public Tag next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                Tag result = MetricsFactoryManager.getInstance()
+                        .tagOf(tags[slot].key(),
+                               tags[slot].value());
+                slot++;
+                return result;
+            }
+        };
     }
 }

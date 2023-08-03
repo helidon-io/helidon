@@ -25,13 +25,17 @@ import java.util.function.Supplier;
  */
 public interface Timer extends Meter, HistogramSupport {
 
+    static Builder builder(String name) {
+        return MetricsFactory.getInstance().timerBuilder(name);
+    }
+
     /**
      * Starts a timing sample using the default system clock.
      *
      * @return new sample
      */
     static Sample start() {
-        return MetricsProviderManager.INSTANCE.get().timerStart();
+        return MetricsFactory.getInstance().timerStart();
     }
 
     /**
@@ -41,7 +45,7 @@ public interface Timer extends Meter, HistogramSupport {
      * @return new sample with start time recorded
      */
     static Sample start(MeterRegistry registry) {
-        return MetricsProviderManager.INSTANCE.get().timerStart(registry);
+        return MetricsFactory.getInstance().timerStart(registry);
     }
 
     /**
@@ -51,7 +55,7 @@ public interface Timer extends Meter, HistogramSupport {
      * @return new sample with start time recorded
      */
     static Sample start(Clock clock) {
-        return MetricsProviderManager.INSTANCE.get().timerStart(clock);
+        return MetricsFactory.getInstance().timerStart(clock);
     }
 
     /**
@@ -174,5 +178,11 @@ public interface Timer extends Meter, HistogramSupport {
          * @return duration of the sample (in nanoseconds)
          */
         long stop(Timer timer);
+    }
+
+    interface Builder extends Meter.Builder<Builder, Timer> {
+
+        Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
+
     }
 }

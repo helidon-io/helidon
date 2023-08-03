@@ -18,7 +18,7 @@ package io.helidon.metrics.micrometer;
 /**
  * Implementation of Helidon metrics based on Micrometer.
  */
-public class MicrometerMetricsProvider { /* implements MetricsProvider {
+public class MicrometerMetricsProvider { /* implements MetricsFactory {
 
     @Override
     public Tag tagOf(String key, String value) {

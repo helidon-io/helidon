@@ -15,11 +15,17 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.function.ToDoubleFunction;
+
 /**
  * Measures a value that can increase or decrease and is updated by external logic, not by explicit invocations
  * of methods on this type.
  */
 public interface Gauge extends Meter {
+
+    static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+        return MetricsFactory.getInstance().gaugeBuilder(name, stateObject, fn);
+    }
 
     /**
      * Returns the value of the gauge.
@@ -31,4 +37,11 @@ public interface Gauge extends Meter {
      * @return current value of the gauge
      */
     double value();
+
+    interface Builder<T> extends Meter.Builder<Builder<T>, Gauge> {
+
+//        T stateObject();
+//
+//        ToDoubleFunction<T> fn();
+    }
 }

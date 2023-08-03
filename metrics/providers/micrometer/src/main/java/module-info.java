@@ -22,5 +22,5 @@ module io.helidon.metrics.micrometer {
     requires io.helidon.metrics.api;
     requires micrometer.core;
 
-//    provides io.helidon.metrics.spi.MetricsProvider with MicrometerMetricsProvider;
+//    provides io.helidon.metrics.api.MetricsFactory with MicrometerMetricsProvider;
 }

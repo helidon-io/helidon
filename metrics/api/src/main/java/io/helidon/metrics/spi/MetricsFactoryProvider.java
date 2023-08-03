@@ -13,25 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.spi;
 
-/**
- * Common behavior among meters which support histograms.
- */
-public interface HistogramSupport extends Meter {
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 
+public interface MetricsFactoryProvider {
 
-    static Builder builder() {
-        return MetricsFactory.getInstance().histogramSupportBuilder();
-    }
-
-    /**
-     * Returns a snapshot of the data in a histogram.
-     *
-     * @return snapshot of the histogram
-     */
-    HistogramSnapshot takeSnapshot();
-
-    interface Builder extends Meter.Builder<Builder, HistogramSupport> {
-    }
+    MetricsFactory create(MetricsConfig metricsConfig);
 }

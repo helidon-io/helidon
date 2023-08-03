@@ -27,6 +27,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+/**
+ * No-op implementation of the Helidon {@link io.helidon.metrics.api.Meter} interface.
+ */
 class NoOpMeter implements Meter {
 
     private final Id id;
@@ -110,7 +113,7 @@ class NoOpMeter implements Meter {
         return type;
     }
 
-    abstract static class Builder<B extends Builder<B, M>, M extends Meter> implements io.helidon.common.Builder<B, M> {
+    abstract static class Builder<B extends Builder<B, M>, M extends Meter> {
 
         private final String name;
         private final Map<String, Tag> tags = new TreeMap<>(); // tree map for ordering by tag name
@@ -123,38 +126,38 @@ class NoOpMeter implements Meter {
             this.type = type;
         }
 
-        public abstract M build();
+        abstract M build();
 
-        B tags(String... tags) {
-            if (tags.length % 2 != 0) {
-                throw new IllegalArgumentException("""
-                                                           Tag list must contain an even number of items because they must \
-                                                           be key/value pairs")""");
-            }
-            for (int slot = 0; slot < tags.length / 2; slot++) {
-                this.tags.put(tags[slot * 2], Tag.of(tags[slot * 2], tags[slot * 2 + 1]));
-            }
-            return identity();
-        }
-
-        B tags(Iterable<Tag> tags) {
+        public B tags(Iterable<Tag> tags) {
             tags.forEach(tag -> this.tags.put(tag.key(), tag));
             return identity();
         }
 
-        B tag(String key, String value) {
+        public B tag(String key, String value) {
             tags.put(key, Tag.of(key, value));
             return identity();
         }
 
-        B description(String description) {
+        public B description(String description) {
             this.description = description;
             return identity();
         }
 
-        B baseUnit(String unit) {
+        public B baseUnit(String unit) {
             this.unit = unit;
             return identity();
+        }
+
+        public B identity() {
+            return (B) this;
+        }
+
+        String name() {
+            return name;
+        }
+
+        Iterable<Tag> tags() {
+            return tags.values();
         }
     }
 
@@ -166,7 +169,7 @@ class NoOpMeter implements Meter {
                     .build();
         }
 
-        static class Builder extends NoOpMeter.Builder<Builder, Counter> {
+        static class Builder extends NoOpMeter.Builder<Builder, Counter> implements io.helidon.metrics.api.Counter.Builder {
 
             protected Builder(String name) {
                 super(name, Type.COUNTER);
@@ -208,7 +211,7 @@ class NoOpMeter implements Meter {
 
     static class FunctionalCounter<T> extends Counter {
 
-        static class Builder<T> extends Counter.Builder {
+        static class Builder<T> extends Counter.Builder implements io.helidon.metrics.api.Counter.Builder {
 
             private Builder(String name, T target, ToDoubleFunction<T> fn) {
                 super(name);
@@ -237,7 +240,11 @@ class NoOpMeter implements Meter {
 
     static class DistributionSummary extends NoOpMeter implements io.helidon.metrics.api.DistributionSummary {
 
-        static class Builder extends NoOpMeter.Builder<Builder, DistributionSummary> {
+        static class Builder extends NoOpMeter.Builder<Builder, DistributionSummary>
+                implements io.helidon.metrics.api.DistributionSummary.Builder {
+
+            private double scale;
+            private DistributionStatisticsConfig.Builder disitributionStatisticsConfigBuilder;
 
             private Builder(String name) {
                 super(name, Type.DISTRIBUTION_SUMMARY);
@@ -246,6 +253,18 @@ class NoOpMeter implements Meter {
             @Override
             public DistributionSummary build() {
                 return new DistributionSummary(this);
+            }
+
+            @Override
+            public Builder scale(double scale) {
+                this.scale = scale;
+                return identity();
+            }
+
+            @Override
+            public Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
+                this.disitributionStatisticsConfigBuilder = distributionStatisticsConfigBuilder;
+                return identity();
             }
         }
 
@@ -284,14 +303,19 @@ class NoOpMeter implements Meter {
 
     static class Gauge extends NoOpMeter implements io.helidon.metrics.api.Gauge {
 
-        static Builder builder(String name) {
-            return new Builder(name);
+        static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+            return new Builder<>(name, stateObject, fn);
         }
 
-        static class Builder extends NoOpMeter.Builder<Builder, Gauge> {
+        static class Builder<T> extends NoOpMeter.Builder<Builder<T>, Gauge> implements io.helidon.metrics.api.Gauge.Builder<T> {
 
-            private Builder(String name) {
+            private final T stateObject;
+            private final ToDoubleFunction<T> fn;
+
+            private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
                 super(name, Type.GAUGE);
+                this.stateObject = stateObject;
+                this.fn = fn;
             }
 
             @Override
@@ -300,7 +324,7 @@ class NoOpMeter implements Meter {
             }
         }
 
-        private Gauge(Builder builder) {
+        private <T> Gauge(Builder<T> builder) {
             super(builder);
         }
 
@@ -312,7 +336,9 @@ class NoOpMeter implements Meter {
 
     static class Timer extends NoOpMeter implements io.helidon.metrics.api.Timer {
 
-        static class Builder extends NoOpMeter.Builder<Builder, Timer> {
+        static class Builder extends NoOpMeter.Builder<Builder, Timer> implements io.helidon.metrics.api.Timer.Builder {
+
+            private DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder;
 
             private Builder(String name) {
                 super(name, Type.TIMER);
@@ -321,6 +347,12 @@ class NoOpMeter implements Meter {
             @Override
             public Timer build() {
                 return new Timer(this);
+            }
+
+            @Override
+            public io.helidon.metrics.api.Timer.Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
+                this.distributionStatisticsConfigBuilder = distributionStatisticsConfigBuilder;
+                return identity();
             }
         }
 
