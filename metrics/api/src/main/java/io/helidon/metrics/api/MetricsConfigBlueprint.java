@@ -28,7 +28,7 @@ import io.helidon.inject.configdriven.api.ConfigBean;
  */
 @ConfigBean()
 @Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)
-@Prototype.Blueprint(builderInterceptor = MetricsConfigBlueprint.BuilderInterceptor.class)
+@Prototype.Blueprint(decorator = MetricsConfigBlueprint.BuilderDecorator.class)
 interface MetricsConfigBlueprint {
 
     /**
@@ -76,14 +76,13 @@ interface MetricsConfigBlueprint {
     @ConfiguredOption(key = APP_TAG_CONFIG_KEY)
     Optional<String> appTagValue();
 
-    class BuilderInterceptor implements Prototype.BuilderInterceptor<MetricsConfig.BuilderBase<?, ?>> {
+    class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
         @Override
-        public MetricsConfig.BuilderBase<?, ?> intercept(MetricsConfig.BuilderBase<?, ?> target) {
+        public void decorate(MetricsConfig.BuilderBase<?, ?> target) {
             if (target.config().isEmpty()) {
                 target.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
             }
-            return target;
         }
     }
 }
