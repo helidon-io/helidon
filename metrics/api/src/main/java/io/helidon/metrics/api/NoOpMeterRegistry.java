@@ -23,7 +23,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * No-op implementation of {@link io.helidon.metrics.api.MeterRegistry}.
@@ -110,22 +109,23 @@ class NoOpMeterRegistry implements MeterRegistry {
         return (M) meters.computeIfAbsent(id,
                                           thidId -> noOpBuilder.build());
     }
-    private <M extends Meter> M findOrRegister(Meter.Id id, Class<M> mClass, Supplier<M> meterSupplier) {
-        // This next step is atomic because we are using a ConcurrentHashMap.
-        Meter result = meters.computeIfAbsent(id,
-                                              theId -> meterSupplier.get());
-
-        // Check the type in case we retrieved a previously-registered meter with the specified ID. The type will always
-        // be correct if we ran the supplier, in which this test is unneeded by mostly harmless.
-        // We could just attempt the cast and let Java throw a class cast exception itself if needed, but this is nicer.
-        if (!mClass.isInstance(result)) {
-            throw new IllegalArgumentException(
-                    String.format("Found previously-registered meter with ID %s of type %s when expecting %s",
-                                  id,
-                                  result.getClass().getName(),
-                                  mClass.getName()));
-        }
-
-        return mClass.cast(meters.put(id, meterSupplier.get()));
-    }
+// TODO
+//    private <M extends Meter> M findOrRegister(Meter.Id id, Class<M> mClass, Supplier<M> meterSupplier) {
+//        // This next step is atomic because we are using a ConcurrentHashMap.
+//        Meter result = meters.computeIfAbsent(id,
+//                                              theId -> meterSupplier.get());
+//
+//        // Check the type in case we retrieved a previously-registered meter with the specified ID. The type will always
+//        // be correct if we ran the supplier, in which this test is unneeded by mostly harmless.
+//        // We could just attempt the cast and let Java throw a class cast exception itself if needed, but this is nicer.
+//        if (!mClass.isInstance(result)) {
+//            throw new IllegalArgumentException(
+//                    String.format("Found previously-registered meter with ID %s of type %s when expecting %s",
+//                                  id,
+//                                  result.getClass().getName(),
+//                                  mClass.getName()));
+//        }
+//
+//        return mClass.cast(meters.put(id, meterSupplier.get()));
+//    }
 }

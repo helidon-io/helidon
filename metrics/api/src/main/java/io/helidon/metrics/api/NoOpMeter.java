@@ -243,9 +243,6 @@ class NoOpMeter implements Meter {
         static class Builder extends NoOpMeter.Builder<Builder, DistributionSummary>
                 implements io.helidon.metrics.api.DistributionSummary.Builder {
 
-            private double scale;
-            private DistributionStatisticsConfig.Builder disitributionStatisticsConfigBuilder;
-
             private Builder(String name) {
                 super(name, Type.DISTRIBUTION_SUMMARY);
             }
@@ -257,13 +254,12 @@ class NoOpMeter implements Meter {
 
             @Override
             public Builder scale(double scale) {
-                this.scale = scale;
                 return identity();
             }
 
             @Override
-            public Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
-                this.disitributionStatisticsConfigBuilder = distributionStatisticsConfigBuilder;
+            public Builder distributionStatisticsConfig(
+                    DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
                 return identity();
             }
         }
@@ -338,8 +334,6 @@ class NoOpMeter implements Meter {
 
         static class Builder extends NoOpMeter.Builder<Builder, Timer> implements io.helidon.metrics.api.Timer.Builder {
 
-            private DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder;
-
             private Builder(String name) {
                 super(name, Type.TIMER);
             }
@@ -350,8 +344,8 @@ class NoOpMeter implements Meter {
             }
 
             @Override
-            public io.helidon.metrics.api.Timer.Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
-                this.distributionStatisticsConfigBuilder = distributionStatisticsConfigBuilder;
+            public io.helidon.metrics.api.Timer.Builder distributionStatisticsConfig(
+                    DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
                 return identity();
             }
         }

@@ -20,9 +20,12 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
+/**
+ * Config bean for KPI metrics configuration.
+ */
 @ConfigBean()
 @Configured(prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY
-        +"."
+        + "."
         + KeyPerformanceIndicatorMetricsConfigBlueprint.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
 @Prototype.Blueprint()
 interface KeyPerformanceIndicatorMetricsConfigBlueprint {
@@ -61,12 +64,22 @@ interface KeyPerformanceIndicatorMetricsConfigBlueprint {
      * Configuration key for long-running requests extended configuration.
      */
     String QUALIFIED_LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY =
-            LONG_RUNNING_REQUESTS_CONFIG_KEY + "." +LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
+            LONG_RUNNING_REQUESTS_CONFIG_KEY + "." + LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY;
 
+    /**
+     * Whether KPI extended metrics are enabled.
+     *
+     * @return true if KPI extended metrics are enabled; false otherwise
+     */
     @ConfiguredOption(key = KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY,
                       value = KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT)
     boolean isExtended();
 
+    /**
+     * Threshold in ms that characterizes whether a request is long running.
+     *
+     * @return threshold in ms indicating a long-running request
+     */
     @ConfiguredOption(key = QUALIFIED_LONG_RUNNING_REQUESTS_THRESHOLD_CONFIG_KEY,
                       value = LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT)
     long longRunningRequestThresholdMs();

@@ -23,6 +23,15 @@ import java.util.function.ToDoubleFunction;
  */
 public interface Gauge extends Meter {
 
+    /**
+     * Creates a builder for creating a new gauge.
+     *
+     * @param name gauge name
+     * @param stateObject state object which maintains the gauge value
+     * @param fn function which, when applied to the state object, returns the gauge value
+     * @return new builder
+     * @param <T> type of the state object
+     */
     static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return MetricsFactory.getInstance().gaugeBuilder(name, stateObject, fn);
     }
@@ -38,10 +47,11 @@ public interface Gauge extends Meter {
      */
     double value();
 
+    /**
+     * Builder for a new gauge.
+     *
+     * @param <T> type of the state object which exposes the gauge value.
+     */
     interface Builder<T> extends Meter.Builder<Builder<T>, Gauge> {
-
-//        T stateObject();
-//
-//        ToDoubleFunction<T> fn();
     }
 }

@@ -18,7 +18,16 @@ package io.helidon.metrics.spi;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 
+/**
+ * Behavior of providers of {@link io.helidon.metrics.api.MetricsFactory} instances.
+ */
 public interface MetricsFactoryProvider {
 
+    /**
+     * Creates a new {@link MetricsFactory} using the provided metrics config.
+     *
+     * @param metricsConfig metrics configuration settings
+     * @return new metrics factory
+     */
     MetricsFactory create(MetricsConfig metricsConfig);
 }
