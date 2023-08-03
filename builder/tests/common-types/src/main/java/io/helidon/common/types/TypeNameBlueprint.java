@@ -41,7 +41,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * </ul>
  * Finally, this class offers a number of methods that are helpful for code generation:
  * <ul>
- * <li>{@link #declaredName()} and {@link #fqName()}.</li>
+ * <li>{@link #declaredName()} and {@link #resolved()}.</li>
  * </ul>
  */
 @Prototype.Blueprint
@@ -197,12 +197,22 @@ interface TypeNameBlueprint {
     }
 
     /**
-     * The fully qualified type name. This will include the generic portion of the declaration, as well as any array
+     * The fully qualified type name.
+     *
+     * @return the fully qualified name
+     */
+    default String fqName() {
+        // implemented by a custom method
+        return className();
+    }
+
+    /**
+     * The fully resolved type. This will include the generic portion of the declaration, as well as any array
      * declaration, etc.
      *
      * @return the fully qualified name which includes the use of generics/parameterized types, arrays, etc.
      */
-    default String fqName() {
+    default String resolved() {
         // implemented by a custom method
         return className();
     }

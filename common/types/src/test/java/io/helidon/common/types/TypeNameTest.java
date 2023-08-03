@@ -81,14 +81,14 @@ class TypeNameTest {
         name = create("a.b.c.ClassName.Builder");
         assertThat(name.packageName(), is("a.b.c"));
         assertThat(name.className(), is("Builder"));
-        assertThat(name.fqName(), is("a.b.c.ClassName.Builder"));
+        assertThat(name.resolved(), is("a.b.c.ClassName.Builder"));
         assertThat(name.enclosingNames(), contains("ClassName"));
 
         // double nested
         name = create("a.b.c.ClassName.Builder.Type");
         assertThat(name.packageName(), is("a.b.c"));
         assertThat(name.className(), is("Type"));
-        assertThat(name.fqName(), is("a.b.c.ClassName.Builder.Type"));
+        assertThat(name.resolved(), is("a.b.c.ClassName.Builder.Type"));
         assertThat(name.enclosingNames(), contains("ClassName", "Builder"));
 
         // bad naming
@@ -199,7 +199,7 @@ class TypeNameTest {
 
         assertThat(create(Boolean[].class).toString(), is("java.lang.Boolean[]"));
         assertThat(create(Boolean[].class).name(), is("java.lang.Boolean"));
-        assertThat(create(Boolean[].class).fqName(), is("java.lang.Boolean[]"));
+        assertThat(create(Boolean[].class).resolved(), is("java.lang.Boolean[]"));
         assertThat(create(Long[].class).toString(), is("java.lang.Long[]"));
         assertThat(create(Object[].class).toString(), is("java.lang.Object[]"));
         assertThat(create(Void[].class).toString(), is("java.lang.Void[]"));
@@ -235,16 +235,16 @@ class TypeNameTest {
         TypeName typeName = TypeName.builder(TypeName.create(List.class))
                 .typeArguments(Collections.singletonList(TypeName.create(String.class)))
                 .build();
-        assertThat(typeName.fqName(),
+        assertThat(typeName.resolved(),
                    is("java.util.List<java.lang.String>"));
         assertThat(typeName.toString(),
-                   equalTo(typeName.fqName()));
+                   equalTo(typeName.resolved()));
         assertThat(typeName.name(),
                    is("java.util.List"));
 
         typeName = TypeName.create("? extends pkg.Something");
         assertThat(typeName.wildcard(), is(true));
-        assertThat(typeName.fqName(),
+        assertThat(typeName.resolved(),
                    is("? extends pkg.Something"));
         assertThat(typeName.toString(),
                    is("? extends pkg.Something"));
@@ -257,10 +257,10 @@ class TypeNameTest {
 
         typeName = TypeName.create("?");
         assertThat(typeName.wildcard(), is(true));
-        assertThat(typeName.fqName(),
+        assertThat(typeName.resolved(),
                    is("?"));
         assertThat(typeName.toString(),
-                   equalTo(typeName.fqName()));
+                   equalTo(typeName.resolved()));
         assertThat(typeName.name(),
                    is(Object.class.getName()));
         assertThat(typeName.packageName(),
@@ -271,10 +271,10 @@ class TypeNameTest {
         typeName = TypeName.builder(TypeName.create(List.class))
                 .typeArguments(Collections.singletonList(TypeName.create("? extends pkg.Something")))
                 .build();
-        assertThat(typeName.fqName(),
+        assertThat(typeName.resolved(),
                    is("java.util.List<? extends pkg.Something>"));
         assertThat(typeName.toString(),
-                   equalTo(typeName.fqName()));
+                   equalTo(typeName.resolved()));
         assertThat(typeName.name(),
                    is("java.util.List"));
     }
@@ -296,7 +296,7 @@ class TypeNameTest {
     void genericDecl() {
         TypeName genericTypeName = TypeName.createFromGenericDeclaration("CB");
         assertThat(genericTypeName.name(), equalTo("CB"));
-        assertThat(genericTypeName.fqName(), equalTo("CB"));
+        assertThat(genericTypeName.resolved(), equalTo("CB"));
         assertThat(genericTypeName.toString(), equalTo("CB"));
         assertThat(genericTypeName.generic(), is(true));
         assertThat(genericTypeName.wildcard(), is(false));
@@ -307,7 +307,7 @@ class TypeNameTest {
                 .typeArguments(Collections.singletonList(genericTypeName))
                 .build();
         assertThat(typeName.name(), equalTo("java.util.Optional"));
-        assertThat(typeName.fqName(), equalTo("java.util.Optional<CB>"));
+        assertThat(typeName.resolved(), equalTo("java.util.Optional<CB>"));
         assertThat(typeName.toString(), equalTo("java.util.Optional<CB>"));
 
         List<TypeName> typeArguments =
@@ -318,14 +318,14 @@ class TypeNameTest {
                 .typeArguments(typeArguments)
                 .build();
         assertThat(typeName.name(), equalTo("java.util.Map"));
-        assertThat(typeName.fqName(), equalTo("java.util.Map<K, CB>"));
-        assertThat(typeName.toString(), equalTo(typeName.fqName()));
+        assertThat(typeName.resolved(), equalTo("java.util.Map<K, CB>"));
+        assertThat(typeName.toString(), equalTo(typeName.resolved()));
 
         // note: in the future was can always add getBoundedTypeName()
         genericTypeName = TypeName.createFromGenericDeclaration("CB extends MyClass");
         assertThat(genericTypeName.name(), equalTo("CB extends MyClass"));
-        assertThat(genericTypeName.fqName(), equalTo("CB extends MyClass"));
-        assertThat(genericTypeName.toString(), equalTo(genericTypeName.fqName()));
+        assertThat(genericTypeName.resolved(), equalTo("CB extends MyClass"));
+        assertThat(genericTypeName.toString(), equalTo(genericTypeName.resolved()));
         assertThat(genericTypeName.generic(), is(true));
         assertThat(genericTypeName.wildcard(), is(false));
     }
@@ -334,7 +334,7 @@ class TypeNameTest {
     void genericTypeName() {
         TypeName genericTypeName = TypeName.createFromGenericDeclaration("CB");
         assertThat(genericTypeName.genericTypeName().name(), equalTo("CB"));
-        assertThat(genericTypeName.genericTypeName().fqName(), equalTo("CB"));
+        assertThat(genericTypeName.genericTypeName().resolved(), equalTo("CB"));
         assertThat(genericTypeName.genericTypeName().declaredName(), equalTo("CB"));
 
         TypeName typeName = TypeName.builder()
@@ -344,7 +344,7 @@ class TypeNameTest {
                 .array(true)
                 .build();
         assertThat(typeName.genericTypeName().name(), equalTo("java.util.Optional"));
-        assertThat(typeName.genericTypeName().fqName(), equalTo("java.util.Optional"));
+        assertThat(typeName.genericTypeName().resolved(), equalTo("java.util.Optional"));
         assertThat(typeName.genericTypeName().declaredName(), equalTo("java.util.Optional"));
     }
 
@@ -372,7 +372,7 @@ class TypeNameTest {
     void builderOfType() {
         TypeName primitiveTypeName = TypeName.builder().type(boolean[].class).build();
         assertThat(primitiveTypeName.name(), equalTo("boolean"));
-        assertThat(primitiveTypeName.fqName(), equalTo("boolean[]"));
+        assertThat(primitiveTypeName.resolved(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.generic(), is(false));
         assertThat(primitiveTypeName.array(), is(true));
@@ -382,7 +382,7 @@ class TypeNameTest {
 
         TypeName objTypeName = TypeName.builder().type(Boolean[].class).build();
         assertThat(primitiveTypeName.name(), equalTo("boolean"));
-        assertThat(primitiveTypeName.fqName(), equalTo("boolean[]"));
+        assertThat(primitiveTypeName.resolved(), equalTo("boolean[]"));
         assertThat(primitiveTypeName.declaredName(), equalTo("boolean[]"));
         assertThat(objTypeName.generic(), is(false));
         assertThat(objTypeName.array(), is(true));
@@ -394,7 +394,7 @@ class TypeNameTest {
     @Test
     void extendsTypeName() {
         TypeName extendsName = TypeName.builder(create(Map.class)).wildcard(true).build();
-        assertThat(extendsName.fqName(), equalTo("? extends java.util.Map"));
+        assertThat(extendsName.resolved(), equalTo("? extends java.util.Map"));
         assertThat(extendsName.declaredName(), equalTo("java.util.Map"));
         assertThat(extendsName.name(), equalTo("java.util.Map"));
     }

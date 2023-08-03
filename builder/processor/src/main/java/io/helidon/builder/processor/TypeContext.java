@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.TypeElement;
@@ -229,7 +228,6 @@ record TypeContext(
                                                               superPrototype,
                                                               annotationsToGenerate(blueprint));
 
-        String typeArgs = toGeneratedTypeArguments(blueprint.typeName());
         return new TypeContext(
                 typeInformation,
                 new BlueprintData(
@@ -240,7 +238,7 @@ record TypeContext(
                         isFactory,
                         extendList,
                         javadoc,
-                        typeArgs),
+                        blueprint.typeName().typeArguments()),
                 new TypeContext.ConfiguredData(isConfigured,
                                                isConfigRoot,
                                                configPrefix),
@@ -258,10 +256,7 @@ record TypeContext(
                 .flatMap(Annotation::value)
                 .map(annotation -> annotation.split(","))
                 .map(List::of)
-                .orElseGet(List::of)
-                .stream()
-                .map(it -> "@" + it)
-                .toList();
+                .orElseGet(List::of);
     }
 
     private static List<TypeName> prototypeImplements(Annotation annotation) {
@@ -431,17 +426,6 @@ record TypeContext(
                 .build();
     }
 
-    private static String toGeneratedTypeArguments(TypeName typeName) {
-        if (typeName.typeArguments().isEmpty()) {
-            return "";
-        }
-        String types = typeName.typeArguments()
-                .stream()
-                .map(TypeName::className)
-                .collect(Collectors.joining(", "));
-        return "<" + types + ">";
-    }
-
     record TypeInformation(
             TypeInfo blueprintType,
             TypeName prototype,
@@ -467,7 +451,7 @@ record TypeContext(
             boolean isFactory,
             Set<TypeName> extendsList,
             String javadoc,
-            String typeArguments) {
+            List<TypeName> typeArguments) {
     }
 
     record ConfiguredData(

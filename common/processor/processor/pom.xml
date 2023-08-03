@@ -38,6 +38,10 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.common.processor</groupId>
+            <artifactId>helidon-common-processor-class-model</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

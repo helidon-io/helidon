@@ -131,7 +131,7 @@ public abstract class AbstractConfiguredByTest {
                 .build();
         List<ServiceProvider<?>> list = services.lookupAll(criteria);
         List<String> desc = list.stream()
-                .filter(it -> !it.serviceInfo().serviceTypeName().fqName().contains(".yaml."))
+                .filter(it -> !it.serviceInfo().serviceTypeName().resolved().contains(".yaml."))
                 .map(ServiceProvider::description)
                 .collect(Collectors.toList());
         // order matters here since it should be based upon weight

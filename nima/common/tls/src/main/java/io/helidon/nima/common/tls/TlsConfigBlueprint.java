@@ -62,7 +62,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
      * Private key to use. For server side TLS, this is required.
      * For client side TLS, this is optional (used when mutual TLS is enabled).
-     * If
      *
      * @return private key to use
      */

@@ -18,10 +18,16 @@ package io.helidon.builder.processor;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.common.processor.model.AccessModifier;
+import io.helidon.common.processor.model.ClassModel;
+import io.helidon.common.processor.model.Field;
+import io.helidon.common.processor.model.InnerClass;
+import io.helidon.common.processor.model.Javadoc;
+import io.helidon.common.processor.model.Method;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
@@ -64,11 +70,11 @@ class TypeHandler {
         return new TypeHandler(name, getterName, setterName, returnType);
     }
 
-    static String setterModifier(PrototypeProperty.ConfiguredOption configured) {
+    static AccessModifier setterAccessModifier(PrototypeProperty.ConfiguredOption configured) {
         if (configured.builderMethod()) {
-            return "public ";
+            return AccessModifier.PUBLIC;
         }
-        return "";
+        return AccessModifier.PROTECTED;
     }
 
     static TypeName toWildcard(TypeName typeName) {
@@ -78,16 +84,16 @@ class TypeHandler {
         return TypeName.builder(typeName).wildcard(true).build();
     }
 
-    protected static String collectionImplType(TypeName typeName) {
+    protected static TypeName collectionImplType(TypeName typeName) {
         TypeName genericTypeName = typeName.genericTypeName();
         if (genericTypeName.equals(TypeNames.MAP)) {
-            return LINKED_HASH_MAP_TYPE.fqName();
+            return LINKED_HASH_MAP_TYPE;
         }
         if (genericTypeName.equals(TypeNames.LIST)) {
-            return ARRAY_LIST_TYPE.fqName();
+            return ARRAY_LIST_TYPE;
         }
 
-        return LINKED_HASH_SET_TYPE.fqName();
+        return LINKED_HASH_SET_TYPE;
     }
 
     @Override
@@ -111,37 +117,31 @@ class TypeHandler {
 
     String generateBuilderGetter(boolean required, boolean hasDefault) {
         if (builderGetterOptional(required, hasDefault)) {
-            return "java.util.Optional.ofNullable(" + name + ")";
+            return ClassModel.TYPE_TOKEN + "java.util.Optional" + ClassModel.TYPE_TOKEN + ".ofNullable(" + name + ")";
         } else {
             return name;
         }
     }
 
-    String fieldDeclaration(PrototypeProperty.ConfiguredOption configured,
-                            boolean isBuilder,
-                            boolean alwaysFinal) {
-        StringBuilder fieldDeclaration = new StringBuilder("private ");
-
-        if (alwaysFinal || !isBuilder) {
-            fieldDeclaration.append("final ");
-        }
+    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured,
+                                   boolean isBuilder,
+                                   boolean alwaysFinal) {
+        Field.Builder builder = Field.builder()
+                .name(name)
+                .isFinal(alwaysFinal || !isBuilder);
 
         if (isBuilder && (configured.required())) {
             // we need to use object types to be able to see if this was configured
-            fieldDeclaration.append(declaredType.boxed().fqName());
+            builder.type(declaredType.boxed());
         } else {
-            fieldDeclaration.append(declaredType.fqName());
+            builder.type(declaredType);
         }
-
-        fieldDeclaration.append(" ")
-                .append(name);
 
         if (isBuilder && configured.hasDefault()) {
-            fieldDeclaration.append(" = ")
-                    .append(configured.defaultValue());
+            builder.defaultValue(configured.defaultValue());
         }
 
-        return fieldDeclaration.toString();
+        return builder;
     }
 
     String toDefaultValue(String defaultValue) {
@@ -150,7 +150,7 @@ class TypeHandler {
             return "\"" + defaultValue + "\"";
         }
         if (DURATION_TYPE.equals(typeName)) {
-            return "java.time.Duration.parse(\"" + defaultValue + "\")";
+            return ClassModel.TYPE_TOKEN + "java.time.Duration" + ClassModel.TYPE_TOKEN + ".parse(\"" + defaultValue + "\")";
         }
         if (CHAR_ARRAY_TYPE.equals(typeName)) {
             return "\"" + defaultValue + "\".toCharArray()";
@@ -165,7 +165,7 @@ class TypeHandler {
             return defaultValue;
         }
         // should be an enum
-        return typeName.genericTypeName().fqName() + "." + defaultValue;
+        return ClassModel.TYPE_TOKEN + typeName.genericTypeName().fqName() + ClassModel.TYPE_TOKEN + "." + defaultValue;
     }
 
     TypeName declaredType() {
@@ -188,10 +188,12 @@ class TypeHandler {
         return setterName;
     }
 
-    Optional<String> generateFromConfig(PrototypeProperty.ConfiguredOption configured, FactoryMethods factoryMethods) {
-        return Optional.of(configGet(configured)
-                                   + generateFromConfig(factoryMethods)
-                                   + ".ifPresent(this::" + setterName() + ");");
+    void generateFromConfig(Method.Builder method,
+                            PrototypeProperty.ConfiguredOption configured,
+                            FactoryMethods factoryMethods) {
+        method.add(configGet(configured));
+        generateFromConfig(method, factoryMethods);
+        method.addLine(".ifPresent(this::" + setterName() + ");");
     }
 
     String configGet(PrototypeProperty.ConfiguredOption configured) {
@@ -210,59 +212,68 @@ class TypeHandler {
 
     }
 
+    void generateFromConfig(Method.Builder method, FactoryMethods factoryMethods) {
+        if (actualType().fqName().equals("char[]")) {
+            method.add(".asString().map(").typeName(String.class).add("::toCharArray)");
+            return;
+        }
+
+        Optional<FactoryMethods.FactoryMethod> fromConfig = factoryMethods.createFromConfig();
+        if (fromConfig.isPresent()) {
+            FactoryMethods.FactoryMethod factoryMethod = fromConfig.get();
+            method.add(".map(")
+                    .typeName(factoryMethod.typeWithFactoryMethod().genericTypeName())
+                    .add("::" + factoryMethod.createMethodName() + ")");
+        } else {
+            TypeName boxed = actualType().boxed();
+            method.add(".as(").typeName(boxed).add(".class)");
+        }
+    }
+
     TypeName argumentTypeName() {
         return declaredType();
     }
 
-    void setters(PrototypeProperty.ConfiguredOption configured,
+    void setters(InnerClass.Builder classBuilder,
+                 PrototypeProperty.ConfiguredOption configured,
                  PrototypeProperty.Singular singular,
-                 List<GeneratedMethod> setters,
                  FactoryMethods factoryMethod,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
 
-        declaredSetter(configured, setters, returnType, blueprintJavadoc);
+        declaredSetter(classBuilder, configured, returnType, blueprintJavadoc);
 
         if (actualType().equals(CHAR_ARRAY_TYPE)) {
-            charArraySetter(configured, setters, returnType, blueprintJavadoc);
+            charArraySetter(classBuilder, configured, returnType, blueprintJavadoc);
         }
 
         // if there is a factory method for the return type, we also have setters for the type (probably config object)
         if (factoryMethod.createTargetType().isPresent()) {
-            factorySetter(configured, setters, returnType, blueprintJavadoc, factoryMethod.createTargetType().get());
+            factorySetter(classBuilder, configured, returnType, blueprintJavadoc, factoryMethod.createTargetType().get());
         }
 
-        // if there is a builder factory method, we create a method with builder consumer of builder, and supplier of type
+        // if there is a builder factory method, we create a method with builder consumer
         if (factoryMethod.builder().isPresent()) {
-            factorySetterConsumer(configured, setters, returnType, blueprintJavadoc, factoryMethod.builder().get());
-            factorySetterSupplier(configured, setters, returnType, blueprintJavadoc, factoryMethod.builder().get());
+            factorySetterConsumer(classBuilder, configured, returnType, blueprintJavadoc, factoryMethod.builder().get());
+            factorySetterSupplier(classBuilder, configured, returnType, blueprintJavadoc);
         }
     }
 
-    protected void charArraySetter(PrototypeProperty.ConfiguredOption configured,
-                                   List<GeneratedMethod> setters,
+    protected void charArraySetter(InnerClass.Builder classBuilder,
+                                   PrototypeProperty.ConfiguredOption configured,
                                    TypeName returnType,
                                    Javadoc blueprintJavadoc) {
-        List<String> lines = new ArrayList<>();
-        lines.add("Objects.requireNonNull(" + name() + ");");
-        lines.add("this." + name() + " = " + name() + ".toCharArray();");
-        lines.add("return self();");
-
-        Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
-                                      List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        // there is always a setter with the declared type
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                setterName(),
-                returnType,
-                List.of(new GeneratedMethod.Argument(name(), STRING_TYPE)),
-                List.of(),
-                javadoc,
-                lines
-        ));
+        classBuilder.addMethod(builder -> builder.name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(name())
+                        .type(STRING_TYPE)
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class).addLine(".requireNonNull(" + name() + ");")
+                .addLine("this." + name() + " = " + name() + ".toCharArray();")
+                .addLine("return self();"));
     }
 
     boolean builderGetterOptional(boolean required, boolean hasDefault) {
@@ -285,77 +296,29 @@ class TypeHandler {
 
     }
 
-    private void declaredSetter(PrototypeProperty.ConfiguredOption configured,
-                                List<GeneratedMethod> setters,
+    private void declaredSetter(InnerClass.Builder classBuilder,
+                                PrototypeProperty.ConfiguredOption configured,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc) {
-        List<String> lines = new ArrayList<>();
+        Method.Builder builder = Method.builder()
+                .name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(name())
+                        .type(argumentTypeName())
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured));
         if (!declaredType.primitive()) {
-            lines.add("Objects.requireNonNull(" + name() + ");");
+            builder.typeName(Objects.class).addLine(".requireNonNull(" + name() + ");");
         }
-        lines.add("this." + name() + " = " + name() + ";");
-        lines.add("return self();");
-
-        Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
-                                      List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        // there is always a setter with the declared type
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                setterName(),
-                returnType,
-                List.of(new GeneratedMethod.Argument(name(), argumentTypeName())),
-                List.of(),
-                javadoc,
-                lines
-        ));
+        builder.addLine("this." + name() + " = " + name() + ";")
+                .addLine("return self();");
+        classBuilder.addMethod(builder);
     }
 
-    private void factorySetterSupplier(PrototypeProperty.ConfiguredOption configured,
-                                       List<GeneratedMethod> setters,
-                                       TypeName returnType,
-                                       Javadoc blueprintJavadoc,
-                                       FactoryMethods.FactoryMethod factoryMethod) {
-        TypeName supplierType = actualType();
-        if (!supplierType.wildcard()) {
-            supplierType = TypeName.builder(supplierType)
-                    .wildcard(true)
-                    .build();
-        }
-        supplierType = TypeName.builder(TypeNames.SUPPLIER)
-                .addTypeArgument(supplierType)
-                .build();
-
-        String argumentName = "supplier";
-
-        List<String> paramLines = new ArrayList<>();
-        paramLines.add("supplier of");
-        paramLines.addAll(blueprintJavadoc.returns());
-        Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
-                                      List.of(new Javadoc.Tag(argumentName, paramLines)),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        List<String> lines = new ArrayList<>();
-        lines.add("Objects.requireNonNull(" + argumentName + ");");
-        lines.add("this." + name() + "(" + argumentName + ".get());");
-        lines.add("return self();");
-
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                setterName(),
-                returnType,
-                List.of(new GeneratedMethod.Argument(argumentName, supplierType)),
-                List.of(),
-                javadoc,
-                lines
-        ));
-    }
-
-    private void factorySetterConsumer(PrototypeProperty.ConfiguredOption configured,
-                                       List<GeneratedMethod> setters,
+    private void factorySetterConsumer(InnerClass.Builder classBuilder,
+                                       PrototypeProperty.ConfiguredOption configured,
                                        TypeName returnType,
                                        Javadoc blueprintJavadoc,
                                        FactoryMethods.FactoryMethod factoryMethod) {
@@ -370,63 +333,90 @@ class TypeHandler {
 
         List<String> paramLines = new ArrayList<>();
         paramLines.add("consumer of builder for");
-        paramLines.addAll(blueprintJavadoc.returns());
-        Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
-                                      List.of(new Javadoc.Tag(argumentName, paramLines)),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        List<String> lines = new ArrayList<>();
-        lines.add("Objects.requireNonNull(" + argumentName + ");");
-        lines.add("var builder = "
-                          + factoryMethod.typeWithFactoryMethod().genericTypeName().fqName()
-                          + "." + factoryMethod.createMethodName() + "();");
-        lines.add("consumer.accept(builder);");
-        lines.add("this." + name() + "(builder.build());");
-        lines.add("return self();");
+        paramLines.addAll(blueprintJavadoc.returnDescription());
 
         TypeName argumentType = TypeName.builder()
                 .type(Consumer.class)
                 .addTypeArgument(builderType)
                 .build();
-
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                setterName(),
-                returnType,
-                List.of(new GeneratedMethod.Argument(argumentName, argumentType)),
-                List.of(),
-                javadoc,
-                lines
-        ));
+        Method.Builder builder = Method.builder()
+                .name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(argumentName)
+                        .type(argumentType)
+                        .description(paramLines))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + argumentName + ");")
+                .add("var builder = ")
+                .typeName(factoryMethod.typeWithFactoryMethod().genericTypeName())
+                .addLine("." + factoryMethod.createMethodName() + "();")
+                .addLine("consumer.accept(builder);")
+                .addLine("this." + name() + "(builder.build());")
+                .addLine("return self();");
+        classBuilder.addMethod(builder);
     }
 
-    private void factorySetter(PrototypeProperty.ConfiguredOption configured,
-                               List<GeneratedMethod> setters,
+    private void factorySetterSupplier(InnerClass.Builder classBuilder,
+                                       PrototypeProperty.ConfiguredOption configured,
+                                       TypeName returnType,
+                                       Javadoc blueprintJavadoc) {
+        TypeName supplierType = actualType();
+        if (!supplierType.wildcard()) {
+            supplierType = TypeName.builder(supplierType)
+                    .wildcard(true)
+                    .build();
+        }
+        supplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(supplierType)
+                .build();
+
+        String argumentName = "supplier";
+
+        List<String> paramLines = new ArrayList<>();
+        paramLines.add("supplier of");
+        paramLines.addAll(blueprintJavadoc.returnDescription());
+
+        TypeName argumentType = supplierType;
+        Method.Builder builder = Method.builder()
+                .name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(argumentName)
+                        .type(argumentType)
+                        .description(paramLines))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + argumentName + ");")
+                .addLine("this." + name() + "(" + argumentName + ".get());")
+                .addLine("return self();");
+        classBuilder.addMethod(builder);
+    }
+
+    private void factorySetter(InnerClass.Builder classBuilder,
+                               PrototypeProperty.ConfiguredOption configured,
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {
         String argumentName = name() + "Config";
-
-        Javadoc javadoc = new Javadoc(blueprintJavadoc.lines(),
-                                      List.of(new Javadoc.Tag(argumentName, blueprintJavadoc.returns())),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        List<String> lines = new ArrayList<>();
-        lines.add("Objects.requireNonNull(" + argumentName + ");");
-        lines.add("this." + name() + " = " + factoryMethod.typeWithFactoryMethod().genericTypeName().fqName()
-                          + "." + factoryMethod.createMethodName() + "(" + argumentName + ");");
-        lines.add("return self();");
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                setterName(),
-                returnType,
-                List.of(new GeneratedMethod.Argument(argumentName, factoryMethod.argumentType())),
-                List.of(),
-                javadoc,
-                lines
-        ));
+        Method.Builder builder = Method.builder()
+                .name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(argumentName)
+                        .type(factoryMethod.argumentType())
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class).addLine(".requireNonNull(" + argumentName + ");")
+                .add("this." + name() + " = ")
+                .typeName(factoryMethod.typeWithFactoryMethod().genericTypeName())
+                .addLine("." + factoryMethod.createMethodName() + "(" + argumentName + ");")
+                .addLine("return self();");
+        classBuilder.addMethod(builder);
     }
 
     static class OneTypeHandler extends TypeHandler {

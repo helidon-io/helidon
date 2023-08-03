@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.processor.model.ClassModel;
 import io.helidon.common.processor.spi.GeneratedAnnotationProvider;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
@@ -75,7 +76,7 @@ public final class GeneratedAnnotationHandler {
 
         Annotation annotation = create(generator, trigger, generatedType, versionId, comments);
         StringBuilder result = new StringBuilder("@");
-        result.append(annotation.typeName().fqName())
+        result.append(annotation.typeName().resolved())
                 .append("(");
 
         List<String> values = new ArrayList<>();
@@ -102,8 +103,8 @@ public final class GeneratedAnnotationHandler {
                                  String comments) {
             return Annotation.builder()
                     .typeName(GENERATED)
-                    .putValue("value", generator.fqName())
-                    .putValue("trigger", trigger.fqName())
+                    .putValue("value", generator.resolved())
+                    .putValue("trigger", trigger.resolved())
                     .update(it -> {
                         if (!"1".equals(versionId)) {
                             it.putValue("version", versionId);
