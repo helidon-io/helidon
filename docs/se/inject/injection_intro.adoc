@@ -20,6 +20,7 @@
 :description: about Helidon Injection
 :keywords: helidon, inject, injection, java, microservices, reactive, virtual threads
 :feature-name: Helidon Injection
+:rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
 
