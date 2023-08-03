@@ -20,6 +20,9 @@ import java.util.List;
 
 class JavadocParser {
 
+    private JavadocParser() {
+    }
+
     static Javadoc.Builder parse(Javadoc.Builder javadocBuilder, String docString) {
         return parse(javadocBuilder, List.of(docString.split("\n")));
     }

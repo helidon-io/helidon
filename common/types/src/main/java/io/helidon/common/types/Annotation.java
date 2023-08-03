@@ -29,33 +29,33 @@ import io.helidon.common.Errors;
 
 /**
  * An annotation with defined values.
- * 
+ *
  * @see #builder()
  */
-public interface Annotation extends Prototype.Api, Comparable<Annotation>, AnnotationBlueprint {
+public interface Annotation extends AnnotationBlueprint, Comparable<Annotation>, Prototype.Api {
 
     /**
      * Create a new fluent API builder to customize configuration.
-     * 
+     *
      * @return a new builder
      */
     static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Create a new fluent API builder from an existing instance.
-     * 
+     *
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
     static Builder builder(Annotation instance) {
         return Annotation.builder().from(instance);
     }
-    
+
     /**
      * Creates an instance for an annotation with a value.
-     * 
+     *
      * @param annoType the annotation type
      * @param value the annotation value
      * @return the new instance
@@ -63,10 +63,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType, String value) {
         return AnnotationSupport.create(annoType, value);
     }
-    
+
     /**
      * Creates an instance for an annotation with a value.
-     * 
+     *
      * @param annoType the annotation type
      * @param values the annotation values
      * @return the new instance
@@ -74,10 +74,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType, Map<String, String> values) {
         return AnnotationSupport.create(annoType, values);
     }
-    
+
     /**
      * Creates an instance for an annotation with a value.
-     * 
+     *
      * @param annoTypeName the annotation type name
      * @param value the annotation value
      * @return the new instance
@@ -85,10 +85,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
     static Annotation create(TypeName annoTypeName, String value) {
         return AnnotationSupport.create(annoTypeName, value);
     }
-    
+
     /**
      * Creates an instance for annotation with zero or more values.
-     * 
+     *
      * @param annoTypeName the annotation type name
      * @param values the annotation values
      * @return the new instance
@@ -96,47 +96,47 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
     static Annotation create(TypeName annoTypeName, Map<String, String> values) {
         return AnnotationSupport.create(annoTypeName, values);
     }
-    
+
     /**
      * Creates an instance for an annotation with no value.
-     * 
+     *
      * @param annoType the annotation type
      * @return the new instance
      */
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType) {
         return AnnotationSupport.create(annoType);
     }
-    
+
     /**
      * Creates an instance for an annotation with no value.
-     * 
+     *
      * @param annoType the annotation type
      * @return the new instance
      */
     static Annotation create(TypeName annoType) {
         return AnnotationSupport.create(annoType);
     }
-    
+
     /**
      * Fluent API builder base for {@link Annotation}.
-     * 
+     *
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends Annotation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
-    
+
         private final Map<String, String> values = new LinkedHashMap<>();
         private TypeName typeName;
-    
+
         /**
          * Protected to support extensibility.
          */
         protected BuilderBase() {
         }
-        
+
         /**
          * Update this builder from an existing prototype instance.
-         * 
+         *
          * @param prototype existing prototype to update this builder from
          * @return updated builder instance
          */
@@ -145,10 +145,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             addValues(prototype.values());
             return self();
         }
-        
+
         /**
          * Update this builder from an existing prototype builder instance.
-         * 
+         *
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
@@ -157,10 +157,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             addValues(builder.values());
             return self();
         }
-        
+
         /**
          * Annotation type name from annotation type.
-         * 
+         *
          * @param annoType annotation class
          * @return updated builder instance
          */
@@ -168,10 +168,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             AnnotationSupport.type(this, annoType);
             return self();
         }
-        
+
         /**
          * Configure the value of this annotation (property of name {@code value}).
-         * 
+         *
          * @param value value of the annotation
          * @return updated builder instance
          */
@@ -179,10 +179,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             AnnotationSupport.value(this, value);
             return self();
         }
-        
+
         /**
          * The type name, e.g., {@link Objects} -> "java.util.Objects".
-         * 
+         *
          * @param typeName the annotation type name
          * @return updated builder instance
          * @see #typeName()
@@ -192,10 +192,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             this.typeName = typeName;
             return self();
         }
-        
+
         /**
          * The type name, e.g., {@link Objects} -> "java.util.Objects".
-         * 
+         *
          * @param consumer consumer of builder for
          *                 the annotation type name
          * @return updated builder instance
@@ -208,10 +208,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             this.typeName(builder.build());
             return self();
         }
-        
+
         /**
          * The type name, e.g., {@link Objects} -> "java.util.Objects".
-         * 
+         *
          * @param supplier supplier of
          *                 the annotation type name
          * @return updated builder instance
@@ -222,10 +222,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             this.typeName(supplier.get());
             return self();
         }
-        
+
         /**
          * This method replaces all values with the new ones.
-         * 
+         *
          * @param values key-value pairs of all the properties present
          * @return updated builder instance
          * @see #values()
@@ -236,10 +236,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             this.values.putAll(values);
             return self();
         }
-        
+
         /**
          * This method keeps existing values, then puts all new values into the map.
-         * 
+         *
          * @param values key-value pairs of all the properties present
          * @return updated builder instance
          * @see #values()
@@ -249,10 +249,10 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             this.values.putAll(values);
             return self();
         }
-        
+
         /**
          * This method adds a new value to the map, or replaces it if the key already exists.
-         * 
+         *
          * @param key key to add or replace
          * @param value new value for the key
          * @return updated builder instance
@@ -264,25 +264,25 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             this.values.put(key, value);
             return self();
         }
-        
+
         /**
          * The type name, e.g., {@link Objects} -> "java.util.Objects".
-         * 
+         *
          * @return the type name
          */
         public Optional<TypeName> typeName() {
             return Optional.ofNullable(typeName);
         }
-        
+
         /**
          * Get a key-value of all the annotation properties.
-         * 
+         *
          * @return the values
          */
         public Map<String, String> values() {
             return values;
         }
-        
+
         @Override
         public String toString() {
             return "AnnotationBuilder{"
@@ -290,13 +290,13 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
                     + "values=" + values
                     + "}";
         }
-        
+
         /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
         }
-        
+
         /**
          * Validates required properties.
          */
@@ -307,40 +307,40 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
             }
             collector.collect().checkValid();
         }
-        
+
         /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class AnnotationImpl implements Annotation {
-        
+
             private final Map<String, String> values;
             private final TypeName typeName;
-        
+
             /**
              * Create an instance providing a builder.
-             * 
+             *
              * @param builder extending builder base of this prototype
              */
             protected AnnotationImpl(BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
                 this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
             }
-            
+
             @Override
             public int compareTo(Annotation o) {
                 return AnnotationSupport.compareTo(this, o);
             }
-            
+
             @Override
             public TypeName typeName() {
                 return typeName;
             }
-            
+
             @Override
             public Map<String, String> values() {
                 return values;
             }
-            
+
             @Override
             public String toString() {
                 return "Annotation{"
@@ -348,7 +348,7 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
                         + "values=" + values
                         + "}";
             }
-            
+
             @Override
             public boolean equals(Object o) {
                 if (o == this) {
@@ -359,36 +359,36 @@ public interface Annotation extends Prototype.Api, Comparable<Annotation>, Annot
                 }
                 return Objects.equals(typeName, other.typeName()) && Objects.equals(values, other.values());
             }
-            
+
             @Override
             public int hashCode() {
                 return Objects.hash(typeName, values);
             }
-            
+
         }
-        
+
     }
-    
+
     /**
      * Fluent API builder for {@link Annotation}.
      */
     class Builder extends BuilderBase<Builder, Annotation> implements io.helidon.common.Builder<Builder, Annotation> {
-    
+
         private Builder() {
         }
-        
+
         @Override
         public Annotation buildPrototype() {
             preBuildPrototype();
             validatePrototype();
             return new AnnotationImpl(this);
         }
-        
+
         @Override
         public Annotation build() {
             return buildPrototype();
         }
-        
+
     }
-    
+
 }

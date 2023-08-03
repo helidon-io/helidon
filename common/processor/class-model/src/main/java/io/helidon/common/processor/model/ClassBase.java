@@ -113,7 +113,8 @@ public abstract class ClassBase extends AnnotatedComponent {
         if (!interfaces.isEmpty()) {
             writeClassInterfaces(writer, combinedTokens, imports);
         }
-        writer.write("{\n");
+        writer.write("{");
+        writer.writeSeparatorLine();
         if (!staticFields.isEmpty()) {
             writeClassFields(staticFields, writer, combinedTokens, imports);
         }
@@ -180,7 +181,7 @@ public abstract class ClassBase extends AnnotatedComponent {
             field.writeComponent(writer, declaredTokens, imports, this.classType);
         }
         writer.decreasePaddingLevel();
-        writer.write("\n");
+        writer.writeSeparatorLine();
     }
 
     private void writerClassConstructors(ModelWriter writer,
@@ -190,7 +191,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         for (Constructor constructor : constructors) {
             writer.write("\n");
             constructor.writeComponent(writer, declaredTokens, imports, this.classType);
-            writer.write("\n");
+            writer.writeSeparatorLine();
         }
         writer.decreasePaddingLevel();
     }
@@ -203,7 +204,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         for (Method method : methods) {
             writer.write("\n");
             method.writeComponent(writer, declaredTokens, imports, this.classType);
-            writer.write("\n");
+            writer.writeSeparatorLine();
         }
         writer.decreasePaddingLevel();
     }
@@ -213,7 +214,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         for (InnerClass innerClass : innerClasses) {
             writer.write("\n");
             innerClass.writeComponent(writer, declaredTokens, imports, this.classType);
-            writer.write("\n");
+            writer.writeSeparatorLine();
         }
         writer.decreasePaddingLevel();
     }

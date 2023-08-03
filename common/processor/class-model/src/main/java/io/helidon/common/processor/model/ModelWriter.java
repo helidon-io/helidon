@@ -48,6 +48,15 @@ class ModelWriter extends Writer {
         write("\n");
     }
 
+    /**
+     * Separator line is line which is completely empty and with no padding.
+     *
+     * @throws IOException If an I/O error occurs
+     */
+    void writeSeparatorLine() throws IOException {
+        delegate.write("\n");
+    }
+
     @Override
     public void write(String str) throws IOException {
         if (firstWrite) {

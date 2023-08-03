@@ -26,7 +26,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 
 /**
- * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
+ * TypeName is similar to {@link Type} in its most basic use case. The {@link #name()} returns the package +
  * class name tuple for the given type (i.e., the canonical type name).
  * <p>
  * This class also provides a number of methods that are typically found in {@link Class} that can be used to avoid
@@ -43,86 +43,86 @@ import io.helidon.common.Errors;
  * </ul>
  * Finally, this class offers a number of methods that are helpful for code generation:
  * <ul>
- * <li>{@link #declaredName()}, {@link #fqName()} ()} and {@link #resolved()}.</li>
+ * <li>{@link #declaredName()} and {@link #resolved()}.</li>
  * </ul>
- * 
+ *
  * @see #builder()
  */
-public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
+public interface TypeName extends Comparable<TypeName>, Prototype.Api, TypeNameBlueprint {
 
     /**
      * Creates a type name from a generic alias type name.
-     * 
+     *
      * @param genericAliasTypeName the generic alias type name
      * @return the TypeName for the provided type name
      */
     static TypeName createFromGenericDeclaration(String genericAliasTypeName) {
         return TypeNameSupport.createFromGenericDeclaration(genericAliasTypeName);
     }
-    
+
     /**
      * Create a new fluent API builder from an existing instance.
-     * 
+     *
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
     static Builder builder(TypeName instance) {
         return TypeName.builder().from(instance);
     }
-    
+
     /**
      * Create a new fluent API builder to customize configuration.
-     * 
+     *
      * @return a new builder
      */
     static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Create a type name from a type (such as class).
-     * 
+     *
      * @param type the type
      * @return type name for the provided type
      */
     static TypeName create(Type type) {
         return TypeNameSupport.create(type);
     }
-    
+
     /**
      * Creates a type name from a fully qualified class name.
-     * 
+     *
      * @param typeName the FQN of the class type
      * @return the TypeName for the provided type name
      */
     static TypeName create(String typeName) {
         return TypeNameSupport.create(typeName);
     }
-    
+
     /**
      * Return the boxed equivalent of this type.
      * If this is not a primitive type, returns this instance.
-     * 
+     *
      * @return boxed type for this type, or this type if not primitive
      */
     TypeName boxed();
-    
+
     /**
      * The base generic type name, stripped of any {@link TypeName#typeArguments()}.
      * This is equivalent to the type name represented by {@link TypeName#name()}.
-     * 
+     *
      * @return based generic type name
      */
     TypeName genericTypeName();
-    
+
     /**
      * Fluent API builder base for {@link TypeName}.
-     * 
+     *
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName> implements Prototype.Builder<BUILDER, PROTOTYPE> {
-    
+
         private final List<String> enclosingNames = new ArrayList<>();
         private final List<TypeName> typeArguments = new ArrayList<>();
         private String className;
@@ -131,16 +131,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private boolean generic = false;
         private boolean primitive = false;
         private boolean wildcard = false;
-    
+
         /**
          * Protected to support extensibility.
          */
         protected BuilderBase() {
         }
-        
+
         /**
          * Update this builder from an existing prototype instance.
-         * 
+         *
          * @param prototype existing prototype to update this builder from
          * @return updated builder instance
          */
@@ -155,10 +155,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             addTypeArguments(prototype.typeArguments());
             return self();
         }
-        
+
         /**
          * Update this builder from an existing prototype builder instance.
-         * 
+         *
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
@@ -173,10 +173,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             addTypeArguments(builder.typeArguments());
             return self();
         }
-        
+
         /**
          * Update builder from the provided type.
-         * 
+         *
          * @param type type to get information (package name, class name, primitive, array)
          * @return updated builder instance
          */
@@ -184,10 +184,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             TypeNameSupport.type(this, type);
             return self();
         }
-        
+
         /**
          * Functions the same as {@link Class#getPackageName()}.
-         * 
+         *
          * @param packageName the package name, never null
          * @return updated builder instance
          * @see #packageName()
@@ -197,10 +197,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.packageName = packageName;
             return self();
         }
-        
+
         /**
          * Functions the same as {@link Class#getSimpleName()}.
-         * 
+         *
          * @param className the simple class name
          * @return updated builder instance
          * @see #className()
@@ -210,12 +210,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.className = className;
             return self();
         }
-        
+
         /**
          * Simple names of enclosing classes (if any exist).
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
-         * 
+         *
          * @param enclosingNames enclosing classes simple names
          * @return updated builder instance
          * @see #enclosingNames()
@@ -226,12 +226,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.enclosingNames.addAll(enclosingNames);
             return self();
         }
-        
+
         /**
          * Simple names of enclosing classes (if any exist).
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
-         * 
+         *
          * @param enclosingNames enclosing classes simple names
          * @return updated builder instance
          * @see #enclosingNames()
@@ -241,12 +241,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.enclosingNames.addAll(enclosingNames);
             return self();
         }
-        
+
         /**
          * Simple names of enclosing classes (if any exist).
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
-         * 
+         *
          * @param enclosingName enclosing classes simple names
          * @return updated builder instance
          * @see #enclosingNames()
@@ -256,10 +256,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.enclosingNames.add(enclosingName);
             return self();
         }
-        
+
         /**
          * Functions the same as {@link Class#isPrimitive()}.
-         * 
+         *
          * @param primitive true if this type represents a primitive type
          * @return updated builder instance
          * @see #primitive()
@@ -268,10 +268,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.primitive = primitive;
             return self();
         }
-        
+
         /**
          * Functions the same as {@link Class#isArray()}.
-         * 
+         *
          * @param array true if this type represents a primitive array []
          * @return updated builder instance
          * @see #array()
@@ -280,10 +280,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.array = array;
             return self();
         }
-        
+
         /**
          * Indicates whether this type is using generics.
-         * 
+         *
          * @param generic used to represent a generic (e.g., "Optional&lt;CB&gt;")
          * @return updated builder instance
          * @see #generic()
@@ -292,10 +292,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.generic = generic;
             return self();
         }
-        
+
         /**
          * Indicates whether this type is using wildcard generics.
-         * 
+         *
          * @param wildcard used to represent a wildcard (e.g., "? extends SomeType")
          * @return updated builder instance
          * @see #wildcard()
@@ -304,10 +304,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.wildcard = wildcard;
             return self();
         }
-        
+
         /**
          * Returns the list of generic type parameters, or an empty list if no generics are in use.
-         * 
+         *
          * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
          * @see #typeArguments()
@@ -318,10 +318,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.typeArguments.addAll(typeArguments);
             return self();
         }
-        
+
         /**
          * Returns the list of generic type parameters, or an empty list if no generics are in use.
-         * 
+         *
          * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
          * @see #typeArguments()
@@ -331,10 +331,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.typeArguments.addAll(typeArguments);
             return self();
         }
-        
+
         /**
          * Returns the list of generic type parameters, or an empty list if no generics are in use.
-         * 
+         *
          * @param typeArgument the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
          * @see #typeArguments()
@@ -344,10 +344,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.typeArguments.add(typeArgument);
             return self();
         }
-        
+
         /**
          * Returns the list of generic type parameters, or an empty list if no generics are in use.
-         * 
+         *
          * @param consumer the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
          * @see #typeArguments()
@@ -359,87 +359,87 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             this.typeArguments.add(builder.build());
             return self();
         }
-        
+
         /**
          * Functions the same as {@link Class#getPackageName()}.
-         * 
+         *
          * @return the package name
          */
         public String packageName() {
             return packageName;
         }
-        
+
         /**
          * Functions the same as {@link Class#getSimpleName()}.
-         * 
+         *
          * @return the class name
          */
         public Optional<String> className() {
             return Optional.ofNullable(className);
         }
-        
+
         /**
          * Simple names of enclosing classes (if any exist).
          * For example for type {@code io.helidon.example.Type$NestOne$NestTwo}, this would return
          * a list of {@code Type, NestOne}.
-         * 
+         *
          * @return the enclosing names
          */
         public List<String> enclosingNames() {
             return enclosingNames;
         }
-        
+
         /**
          * Functions the same as {@link Class#isPrimitive()}.
-         * 
+         *
          * @return the primitive
          */
         public boolean primitive() {
             return primitive;
         }
-        
+
         /**
          * Functions the same as {@link Class#isArray()}.
-         * 
+         *
          * @return the array
          */
         public boolean array() {
             return array;
         }
-        
+
         /**
          * Indicates whether this type is using generics.
-         * 
+         *
          * @return the generic
          */
         public boolean generic() {
             return generic;
         }
-        
+
         /**
          * Indicates whether this type is using wildcard generics.
-         * 
+         *
          * @return the wildcard
          */
         public boolean wildcard() {
             return wildcard;
         }
-        
+
         /**
          * Returns the list of generic type parameters, or an empty list if no generics are in use.
-         * 
+         *
          * @return the type arguments
          */
         public List<TypeName> typeArguments() {
             return typeArguments;
         }
-        
+
         /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
         }
-        
+
         /**
          * Validates required properties.
          */
@@ -450,12 +450,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
             collector.collect().checkValid();
         }
-        
+
         /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypeNameImpl implements TypeName {
-        
+
             private final List<String> enclosingNames;
             private final List<TypeName> typeArguments;
             private final String className;
@@ -464,10 +464,10 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean generic;
             private final boolean primitive;
             private final boolean wildcard;
-        
+
             /**
              * Create an instance providing a builder.
-             * 
+             *
              * @param builder extending builder base of this prototype
              */
             protected TypeNameImpl(BuilderBase<?, ?> builder) {
@@ -480,82 +480,82 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.wildcard = builder.wildcard();
                 this.typeArguments = List.copyOf(builder.typeArguments());
             }
-            
+
             @Override
             public int compareTo(TypeName o) {
                 return TypeNameSupport.compareTo(this, o);
             }
-            
+
             @Override
             public TypeName boxed() {
                 return TypeNameSupport.boxed(this);
             }
-            
+
             @Override
             public String toString() {
                 return TypeNameSupport.toString(this);
             }
-            
+
             @Override
             public String name() {
                 return TypeNameSupport.name(this);
             }
-            
+
             @Override
             public TypeName genericTypeName() {
                 return TypeNameSupport.genericTypeName(this);
             }
-            
+
             @Override
             public String fqName() {
                 return TypeNameSupport.fqName(this);
             }
-            
+
             @Override
             public String resolved() {
                 return TypeNameSupport.resolved(this);
             }
-            
+
             @Override
             public String packageName() {
                 return packageName;
             }
-            
+
             @Override
             public String className() {
                 return className;
             }
-            
+
             @Override
             public List<String> enclosingNames() {
                 return enclosingNames;
             }
-            
+
             @Override
             public boolean primitive() {
                 return primitive;
             }
-            
+
             @Override
             public boolean array() {
                 return array;
             }
-            
+
             @Override
             public boolean generic() {
                 return generic;
             }
-            
+
             @Override
             public boolean wildcard() {
                 return wildcard;
             }
-            
+
             @Override
             public List<TypeName> typeArguments() {
                 return typeArguments;
             }
-            
+
             @Override
             public boolean equals(Object o) {
                 if (o == this) {
@@ -566,36 +566,36 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 }
                 return Objects.equals(packageName, other.packageName()) && Objects.equals(className, other.className()) && Objects.equals(enclosingNames, other.enclosingNames()) && primitive == other.primitive() && array == other.array();
             }
-            
+
             @Override
             public int hashCode() {
                 return Objects.hash(packageName, className, enclosingNames, primitive, array);
             }
-            
+
         }
-        
+
     }
-    
+
     /**
      * Fluent API builder for {@link TypeName}.
      */
     class Builder extends BuilderBase<Builder, TypeName> implements io.helidon.common.Builder<Builder, TypeName> {
-    
+
         private Builder() {
         }
-        
+
         @Override
         public TypeName buildPrototype() {
             preBuildPrototype();
             validatePrototype();
             return new TypeNameImpl(this);
         }
-        
+
         @Override
         public TypeName build() {
             return buildPrototype();
         }
-        
+
     }
-    
+
 }

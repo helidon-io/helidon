@@ -104,12 +104,14 @@ public final class Javadoc extends ModelComponent {
         for (String line : content) {
             if (!line.isEmpty() && Character.isWhitespace(line.charAt(0))) {
                 writer.writeLine(" *" + line);
+            } else if (line.isBlank()) {
+                writer.writeLine(" *");
             } else {
                 writer.writeLine(" * " + line);
             }
         }
         if (hasAnyOtherParts()) {
-            writer.write(" * \n");
+            writer.write(" *\n");
         }
         for (Map.Entry<String, List<String>> entry : parameters.entrySet()) {
             writeTagInformation(writer, "param", entry.getKey(), entry.getValue());
@@ -164,9 +166,14 @@ public final class Javadoc extends ModelComponent {
             for (String line : description) {
                 if (first) {
                     if (name != null) {
-                        writer.writeLine(" * @" + paramName + " " + name + " " + line);
+                        writer.write(" * @" + paramName + " " + name);
                     } else {
-                        writer.writeLine(" * @" + paramName + " " + line);
+                        writer.write(" * @" + paramName);
+                    }
+                    if (line.isBlank()) {
+                        writer.writeLine("");
+                    } else {
+                        writer.writeLine(" " + line);
                     }
                     first = false;
                 } else {

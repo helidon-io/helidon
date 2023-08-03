@@ -30,45 +30,45 @@ import io.helidon.common.Errors;
 
 /**
  * An annotation with defined values.
- * 
+ *
  * @see #builder()
  */
-public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.Api {
+public interface TypedElementInfo extends Prototype.Api, TypedElementInfoBlueprint {
 
     /**
      * Create a new fluent API builder from an existing instance.
-     * 
+     *
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
     static Builder builder(TypedElementInfo instance) {
         return TypedElementInfo.builder().from(instance);
     }
-    
+
     /**
      * Create a new fluent API builder to customize configuration.
-     * 
+     *
      * @return a new builder
      */
     static Builder builder() {
         return new Builder();
     }
-    
+
     /**
      * Provides a description for this instance.
-     * 
+     *
      * @return provides the {typeName}{space}{elementName}
      */
     String toDeclaration();
-    
+
     /**
      * Fluent API builder base for {@link TypedElementInfo}.
-     * 
+     *
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
     abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
-    
+
         private final List<Annotation> annotations = new ArrayList<>();
         private final List<TypeName> componentTypes = new ArrayList<>();
         private final List<Annotation> elementTypeAnnotations = new ArrayList<>();
@@ -80,16 +80,16 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         private String elementTypeKind;
         private TypeName enclosingType;
         private TypeName typeName;
-    
+
         /**
          * Protected to support extensibility.
          */
         protected BuilderBase() {
         }
-        
+
         /**
          * Update this builder from an existing prototype instance.
-         * 
+         *
          * @param prototype existing prototype to update this builder from
          * @return updated builder instance
          */
@@ -107,10 +107,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             addAnnotations(prototype.annotations());
             return self();
         }
-        
+
         /**
          * Update this builder from an existing prototype builder instance.
-         * 
+         *
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
@@ -128,10 +128,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             addAnnotations(builder.annotations());
             return self();
         }
-        
+
         /**
          * Clear existing value of this property.
-         * 
+         *
          * @return updated builder instance
          * @see #description()
          */
@@ -139,10 +139,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.description = null;
             return self();
         }
-        
+
         /**
          * Description, such as javadoc, if available.
-         * 
+         *
          * @param description description of this element
          * @return updated builder instance
          * @see #description()
@@ -152,11 +152,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.description = description;
             return self();
         }
-        
+
         /**
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
-         * 
+         *
          * @param typeName the type name of the element
          * @return updated builder instance
          * @see #typeName()
@@ -166,11 +166,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.typeName = typeName;
             return self();
         }
-        
+
         /**
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
-         * 
+         *
          * @param consumer consumer of builder for
          *                 the type name of the element
          * @return updated builder instance
@@ -183,11 +183,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.typeName(builder.build());
             return self();
         }
-        
+
         /**
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
-         * 
+         *
          * @param supplier supplier of
          *                 the type name of the element
          * @return updated builder instance
@@ -198,10 +198,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.typeName(supplier.get());
             return self();
         }
-        
+
         /**
          * The element (e.g., method, field, etc) name.
-         * 
+         *
          * @param elementName the name of the element
          * @return updated builder instance
          * @see #elementName()
@@ -211,10 +211,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.elementName = elementName;
             return self();
         }
-        
+
         /**
          * The kind of element (e.g., method, field, etc).
-         * 
+         *
          * @param elementTypeKind the element kind
          * @return updated builder instance
          * @see #elementTypeKind()
@@ -224,10 +224,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.elementTypeKind = elementTypeKind;
             return self();
         }
-        
+
         /**
          * Clear existing value of this property.
-         * 
+         *
          * @return updated builder instance
          * @see #defaultValue()
          */
@@ -235,10 +235,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.defaultValue = null;
             return self();
         }
-        
+
         /**
          * The default value assigned to the element, represented as a string.
-         * 
+         *
          * @param defaultValue the default value as a string
          * @return updated builder instance
          * @see #defaultValue()
@@ -248,10 +248,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.defaultValue = defaultValue;
             return self();
         }
-        
+
         /**
          * The list of known annotations on the type name referenced by {@link #typeName()}.
-         * 
+         *
          * @param elementTypeAnnotations the list of annotations on this element's (return) type.
          * @return updated builder instance
          * @see #elementTypeAnnotations()
@@ -262,10 +262,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
             return self();
         }
-        
+
         /**
          * The list of known annotations on the type name referenced by {@link #typeName()}.
-         * 
+         *
          * @param elementTypeAnnotations the list of annotations on this element's (return) type.
          * @return updated builder instance
          * @see #elementTypeAnnotations()
@@ -275,10 +275,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
             return self();
         }
-        
+
         /**
          * Returns the component type names describing the element.
-         * 
+         *
          * @param componentTypes the component type names of the element
          * @return updated builder instance
          * @see #componentTypes()
@@ -289,10 +289,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.componentTypes.addAll(componentTypes);
             return self();
         }
-        
+
         /**
          * Returns the component type names describing the element.
-         * 
+         *
          * @param componentTypes the component type names of the element
          * @return updated builder instance
          * @see #componentTypes()
@@ -302,10 +302,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.componentTypes.addAll(componentTypes);
             return self();
         }
-        
+
         /**
          * Element modifiers.
-         * 
+         *
          * @param modifiers element modifiers
          * @return updated builder instance
          * @see #modifiers()
@@ -316,10 +316,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.modifiers.addAll(modifiers);
             return self();
         }
-        
+
         /**
          * Element modifiers.
-         * 
+         *
          * @param modifiers element modifiers
          * @return updated builder instance
          * @see #modifiers()
@@ -329,10 +329,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.modifiers.addAll(modifiers);
             return self();
         }
-        
+
         /**
          * Element modifiers.
-         * 
+         *
          * @param modifier element modifiers
          * @return updated builder instance
          * @see #modifiers()
@@ -342,10 +342,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.modifiers.add(modifier);
             return self();
         }
-        
+
         /**
          * Clear existing value of this property.
-         * 
+         *
          * @return updated builder instance
          * @see #enclosingType()
          */
@@ -353,13 +353,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.enclosingType = null;
             return self();
         }
-        
+
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
          * {@link TypeValues#KIND_FIELD}, or
          * {@link TypeValues#KIND_METHOD}, or
          * {@link TypeValues#KIND_PARAMETER}
-         * 
+         *
          * @param enclosingType the enclosing type element
          * @return updated builder instance
          * @see #enclosingType()
@@ -369,13 +369,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.enclosingType = enclosingType;
             return self();
         }
-        
+
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
          * {@link TypeValues#KIND_FIELD}, or
          * {@link TypeValues#KIND_METHOD}, or
          * {@link TypeValues#KIND_PARAMETER}
-         * 
+         *
          * @param consumer the enclosing type element
          * @return updated builder instance
          * @see #enclosingType()
@@ -387,12 +387,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.enclosingType(builder.build());
             return self();
         }
-        
+
         /**
          * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
          * Each instance of this list
          * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
-         * 
+         *
          * @param parameterArguments the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
@@ -403,12 +403,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.parameterArguments.addAll(parameterArguments);
             return self();
         }
-        
+
         /**
          * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
          * Each instance of this list
          * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
-         * 
+         *
          * @param parameterArguments the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
@@ -418,12 +418,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.parameterArguments.addAll(parameterArguments);
             return self();
         }
-        
+
         /**
          * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
          * Each instance of this list
          * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
-         * 
+         *
          * @param parameterArgument the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
@@ -433,12 +433,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.parameterArguments.add(parameterArgument);
             return self();
         }
-        
+
         /**
          * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
          * Each instance of this list
          * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
-         * 
+         *
          * @param consumer the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
@@ -450,11 +450,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.parameterArguments.add(builder.build());
             return self();
         }
-        
+
         /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
-         * 
+         *
          * @param annotations the list of annotations on this element
          * @return updated builder instance
          * @see #annotations()
@@ -465,11 +465,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.annotations.addAll(annotations);
             return self();
         }
-        
+
         /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
-         * 
+         *
          * @param annotations the list of annotations on this element
          * @return updated builder instance
          * @see #annotations()
@@ -479,11 +479,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.annotations.addAll(annotations);
             return self();
         }
-        
+
         /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
-         * 
+         *
          * @param annotation the list of annotations on this element
          * @return updated builder instance
          * @see #annotations()
@@ -493,11 +493,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.annotations.add(annotation);
             return self();
         }
-        
+
         /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
-         * 
+         *
          * @param consumer the list of annotations on this element
          * @return updated builder instance
          * @see #annotations()
@@ -509,119 +509,119 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.annotations.add(builder.build());
             return self();
         }
-        
+
         /**
          * Description, such as javadoc, if available.
-         * 
+         *
          * @return the description
          */
         public Optional<String> description() {
             return Optional.ofNullable(description);
         }
-        
+
         /**
          * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
          * the method.
-         * 
+         *
          * @return the type name
          */
         public Optional<TypeName> typeName() {
             return Optional.ofNullable(typeName);
         }
-        
+
         /**
          * The element (e.g., method, field, etc) name.
-         * 
+         *
          * @return the element name
          */
         public Optional<String> elementName() {
             return Optional.ofNullable(elementName);
         }
-        
+
         /**
          * The kind of element (e.g., method, field, etc).
-         * 
+         *
          * @return the element type kind
          */
         public Optional<String> elementTypeKind() {
             return Optional.ofNullable(elementTypeKind);
         }
-        
+
         /**
          * The default value assigned to the element, represented as a string.
-         * 
+         *
          * @return the default value
          */
         public Optional<String> defaultValue() {
             return Optional.ofNullable(defaultValue);
         }
-        
+
         /**
          * The list of known annotations on the type name referenced by {@link #typeName()}.
-         * 
+         *
          * @return the element type annotations
          */
         public List<Annotation> elementTypeAnnotations() {
             return elementTypeAnnotations;
         }
-        
+
         /**
          * Returns the component type names describing the element.
-         * 
+         *
          * @return the component types
          */
         public List<TypeName> componentTypes() {
             return componentTypes;
         }
-        
+
         /**
          * Element modifiers.
-         * 
+         *
          * @return the modifiers
          */
         public Set<String> modifiers() {
             return modifiers;
         }
-        
+
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
          * {@link TypeValues#KIND_FIELD}, or
          * {@link TypeValues#KIND_METHOD}, or
          * {@link TypeValues#KIND_PARAMETER}
-         * 
+         *
          * @return the enclosing type
          */
         public Optional<TypeName> enclosingType() {
             return Optional.ofNullable(enclosingType);
         }
-        
+
         /**
          * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
          * Each instance of this list
          * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
-         * 
+         *
          * @return the parameter arguments
          */
         public List<TypedElementInfo> parameterArguments() {
             return parameterArguments;
         }
-        
+
         /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
-         * 
+         *
          * @return the annotations
          */
         public List<Annotation> annotations() {
             return annotations;
         }
-        
+
         /**
          * Handles providers and decorators.
          */
         protected void preBuildPrototype() {
         }
-        
+
         /**
          * Validates required properties.
          */
@@ -638,10 +638,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
             collector.collect().checkValid();
         }
-        
+
         /**
          * Description, such as javadoc, if available.
-         * 
+         *
          * @param description description of this element
          * @return updated builder instance
          * @see #description()
@@ -651,10 +651,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.description = description.orElse(null);
             return self();
         }
-        
+
         /**
          * The default value assigned to the element, represented as a string.
-         * 
+         *
          * @param defaultValue the default value as a string
          * @return updated builder instance
          * @see #defaultValue()
@@ -664,13 +664,13 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.defaultValue = defaultValue.orElse(null);
             return self();
         }
-        
+
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
          * {@link TypeValues#KIND_FIELD}, or
          * {@link TypeValues#KIND_METHOD}, or
          * {@link TypeValues#KIND_PARAMETER}
-         * 
+         *
          * @param enclosingType the enclosing type element
          * @return updated builder instance
          * @see #enclosingType()
@@ -680,12 +680,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             this.enclosingType = enclosingType.orElse(null);
             return self();
         }
-        
+
         /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypedElementInfoImpl implements TypedElementInfo {
-        
+
             private final List<Annotation> annotations;
             private final List<TypeName> componentTypes;
             private final List<Annotation> elementTypeAnnotations;
@@ -697,10 +697,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             private final String elementName;
             private final String elementTypeKind;
             private final TypeName typeName;
-        
+
             /**
              * Create an instance providing a builder.
-             * 
+             *
              * @param builder extending builder base of this prototype
              */
             protected TypedElementInfoImpl(BuilderBase<?, ?> builder) {
@@ -716,72 +716,72 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                 this.parameterArguments = List.copyOf(builder.parameterArguments());
                 this.annotations = List.copyOf(builder.annotations());
             }
-            
+
             @Override
             public String toString() {
                 return TypedElementInfoSupport.toString(this);
             }
-            
+
             @Override
             public String toDeclaration() {
                 return TypedElementInfoSupport.toDeclaration(this);
             }
-            
+
             @Override
             public Optional<String> description() {
                 return description;
             }
-            
+
             @Override
             public TypeName typeName() {
                 return typeName;
             }
-            
+
             @Override
             public String elementName() {
                 return elementName;
             }
-            
+
             @Override
             public String elementTypeKind() {
                 return elementTypeKind;
             }
-            
+
             @Override
             public Optional<String> defaultValue() {
                 return defaultValue;
             }
-            
+
             @Override
             public List<Annotation> elementTypeAnnotations() {
                 return elementTypeAnnotations;
             }
-            
+
             @Override
             public List<TypeName> componentTypes() {
                 return componentTypes;
             }
-            
+
             @Override
             public Set<String> modifiers() {
                 return modifiers;
             }
-            
+
             @Override
             public Optional<TypeName> enclosingType() {
                 return enclosingType;
             }
-            
+
             @Override
             public List<TypedElementInfo> parameterArguments() {
                 return parameterArguments;
             }
-            
+
             @Override
             public List<Annotation> annotations() {
                 return annotations;
             }
-            
+
             @Override
             public boolean equals(Object o) {
                 if (o == this) {
@@ -792,36 +792,36 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
                 }
                 return Objects.equals(typeName, other.typeName()) && Objects.equals(elementName, other.elementName()) && Objects.equals(elementTypeKind, other.elementTypeKind()) && Objects.equals(enclosingType, other.enclosingType()) && Objects.equals(parameterArguments, other.parameterArguments()) && Objects.equals(annotations, other.annotations());
             }
-            
+
             @Override
             public int hashCode() {
                 return Objects.hash(typeName, elementName, elementTypeKind, enclosingType, parameterArguments, annotations);
             }
-            
+
         }
-        
+
     }
-    
+
     /**
      * Fluent API builder for {@link TypedElementInfo}.
      */
     class Builder extends BuilderBase<Builder, TypedElementInfo> implements io.helidon.common.Builder<Builder, TypedElementInfo> {
-    
+
         private Builder() {
         }
-        
+
         @Override
         public TypedElementInfo buildPrototype() {
             preBuildPrototype();
             validatePrototype();
             return new TypedElementInfoImpl(this);
         }
-        
+
         @Override
         public TypedElementInfo build() {
             return buildPrototype();
         }
-        
+
     }
-    
+
 }
