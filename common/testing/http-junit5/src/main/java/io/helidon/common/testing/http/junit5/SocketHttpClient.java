@@ -233,34 +233,34 @@ public class SocketHttpClient implements AutoCloseable {
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      */
     public String sendAndReceive(Http.Method method, String payload) {
-        return sendAndReceive("/", method, payload);
+        return sendAndReceive(method, "/", payload);
     }
 
     /**
      * A helper method that sends the given payload at the given path with the provided method and headers to the server.
      *
-     * @param path    the path to access
      * @param method  the http method
+     * @param path    the path to access
      * @param payload the payload to send (must be without the newlines;
      *                otherwise it's not a valid payload)
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      */
-    public String sendAndReceive(String path, Http.Method method, String payload) {
-        return sendAndReceive(path, method, payload, Collections.emptyList());
+    public String sendAndReceive(Http.Method method, String path, String payload) {
+        return sendAndReceive(method, path, payload, Collections.emptyList());
     }
 
     /**
      * A helper method that sends the given payload at the given path with the provided method to the server.
      *
-     * @param path    the path to access
      * @param method  the http method
+     * @param path    the path to access
      * @param payload the payload to send (must be without the newlines;
      *                otherwise it's not a valid payload)
      * @param headers HTTP request headers
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      */
-    public String sendAndReceive(String path,
-                                 Http.Method method,
+    public String sendAndReceive(Http.Method method,
+                                 String path,
                                  String payload,
                                  Iterable<String> headers) {
 

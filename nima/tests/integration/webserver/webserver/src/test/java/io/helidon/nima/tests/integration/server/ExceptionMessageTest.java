@@ -43,11 +43,12 @@ class ExceptionMessageTest {
 
     @Test
     void testNoUrlReflect() {
-        String response = socketClient.sendAndReceive("/anyjavascript%3a/*%3c/script%3e%3cimg/onerror%3d'\\''" +
-                        "-/%22/-/%20onmouseover%d1/-/[%60*/[]/[(new(Image)).src%3d(/%3b/%2b/255t6qeelp23xlr08hn1uv" +
-                        "vnkeqae02stgk87yvnX%3b.oastifycom/).replace(/.%3b/g%2c[])]//'\\''src%3d%3e",
-                Http.Method.GET,
-                "");
+        String path = "/anyjavascript%3a/*%3c/script%3e%3cimg/onerror%3d'\\''"
+                + "-/%22/-/%20onmouseover%d1/-/[%60*/[]/[(new(Image)).src%3d(/%3b/%2b/255t6qeelp23xlr08hn1uv"
+                + "vnkeqae02stgk87yvnX%3b.oastifycom/).replace(/.%3b/g%2c[])]//'\\''src%3d%3e";
+        String response = socketClient.sendAndReceive(Http.Method.GET,
+                                                      path,
+                                                      "");
         Http.Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
         assertThat(status, is(Http.Status.BAD_REQUEST_400));
@@ -57,10 +58,10 @@ class ExceptionMessageTest {
 
     @Test
     void testNoHeaderReflect() {
-        String response = socketClient.sendAndReceive("/",
-                Http.Method.GET,
-                "",
-                Collections.singletonList("<Content-Type>: <javascript/>"));
+        String response = socketClient.sendAndReceive(Http.Method.GET,
+                                                      "/",
+                                                      "",
+                                                      Collections.singletonList("<Content-Type>: <javascript/>"));
         Http.Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
         assertThat(status, is(Http.Status.BAD_REQUEST_400));

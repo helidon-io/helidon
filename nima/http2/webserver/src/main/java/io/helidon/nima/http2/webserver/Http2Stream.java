@@ -19,10 +19,12 @@ package io.helidon.nima.http2.webserver;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RequestException;
@@ -51,6 +53,8 @@ import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
 import io.helidon.nima.webserver.Router;
 import io.helidon.nima.webserver.http.HttpRouting;
+
+import static java.lang.System.Logger.Level.TRACE;
 
 /**
  * Server HTTP/2 stream implementation.
@@ -83,19 +87,21 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private long expectedLength = -1;
     private HttpRouting routing;
     private HttpPrologue prologue;
+    private Semaphore requestSemaphore;
+    private boolean semaphoreAcquired;
 
     /**
      * A new HTTP/2 server stream.
      *
-     * @param ctx                       connection context
-     * @param routing                   HTTP routing
-     * @param http2Config               HTTP/2 configuration
-     * @param subProviders
-     * @param streamId                  stream id
-     * @param serverSettings            server settings
-     * @param clientSettings            client settings
-     * @param writer                    writer
-     * @param connectionFlowControl     connection flow control
+     * @param ctx                   connection context
+     * @param routing               HTTP routing
+     * @param http2Config           HTTP/2 configuration
+     * @param subProviders          HTTP/2 sub protocol selectors
+     * @param streamId              stream id
+     * @param serverSettings        server settings
+     * @param clientSettings        client settings
+     * @param writer                writer
+     * @param connectionFlowControl connection flow control
      */
     public Http2Stream(ConnectionContext ctx,
                        HttpRouting routing,
@@ -291,7 +297,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                 writer.writeHeaders(http2Headers,
                                     streamId,
                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                        flowControl.outbound());
+                                    flowControl.outbound());
             } else {
                 Http2FrameHeader dataHeader = Http2FrameHeader.create(message.length,
                                                                       Http2FrameTypes.DATA,
@@ -301,12 +307,19 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                     streamId,
                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                     new Http2FrameData(dataHeader, BufferData.create(message)),
-                        flowControl.outbound());
+                                    flowControl.outbound());
             }
         } finally {
             headers = null;
             subProtocolHandler = null;
+            if (semaphoreAcquired) {
+                requestSemaphore.release();
+            }
         }
+    }
+
+    void requestSemaphore(Semaphore requestSemaphore) {
+        this.requestSemaphore = requestSemaphore;
     }
 
     void prologue(HttpPrologue prologue) {
@@ -384,8 +397,15 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                                                                    streamId,
                                                                    this::readEntityFromPipeline);
             Http2ServerResponse response = new Http2ServerResponse(ctx, request, writer, streamId, flowControl.outbound());
+            semaphoreAcquired = requestSemaphore.tryAcquire();
             try {
-                routing.route(ctx, request, response);
+                if (semaphoreAcquired) {
+                    routing.route(ctx, request, response);
+                } else {
+                    ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
+                    response.status(Http.Status.SERVICE_UNAVAILABLE_503)
+                            .send("Too Many Concurrent Requests");
+                }
             } finally {
                 this.state = Http2StreamState.CLOSED;
             }

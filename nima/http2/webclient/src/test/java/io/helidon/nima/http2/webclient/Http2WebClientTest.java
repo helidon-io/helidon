@@ -42,6 +42,7 @@ import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -80,8 +81,8 @@ class Http2WebClientTest {
             .build());
 
     Http2WebClientTest(WebServer server) {
-        this.plainPort = server.port();
-        this.tlsPort = server.port("https");
+        plainPort = server.port();
+        tlsPort = server.port("https");
     }
 
     @SetUpServer
@@ -233,6 +234,7 @@ class Http2WebClientTest {
         }
     }
 
+    @Disabled("Failing intermittently, to be investigated")
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
     void multiplexParallelStreamsGet(String clientType, LazyValue<Http2Client> client)

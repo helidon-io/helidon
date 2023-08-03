@@ -88,8 +88,8 @@ class AccessLogTest {
         response = client.get("/wrong").request();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
 
-        String socketResponse = socketClient.sendAndReceive("/access",
-                                                            Http.Method.GET,
+        String socketResponse = socketClient.sendAndReceive(Http.Method.GET,
+                                                            "/access",
                                                             null,
                                                             List.of("Content-Length: 47a"));
         assertThat(socketResponse, startsWith("HTTP/1.1 " + Http.Status.BAD_REQUEST_400.text()));

@@ -18,11 +18,15 @@ package io.helidon.nima.websocket.webserver;
 
 import java.lang.System.Logger.Level;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.http.Headers;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.nima.webserver.CloseConnectionException;
 import io.helidon.nima.webserver.ConnectionContext;
@@ -56,6 +60,11 @@ public class WsConnection implements ServerConnection, WsSession {
     private boolean sendContinuation;
     private boolean closeSent;
 
+    private volatile Thread myThread;
+    private volatile boolean canRun = true;
+    private volatile boolean readingNetwork;
+    private volatile ZonedDateTime lastRequestTimestamp;
+
     private WsConnection(ConnectionContext ctx,
                          HttpPrologue prologue,
                          Headers upgradeHeaders,
@@ -67,6 +76,7 @@ public class WsConnection implements ServerConnection, WsSession {
         this.wsKey = wsKey;
         this.listener = wsRoute.listener();
         this.dataReader = ctx.dataReader();
+        this.lastRequestTimestamp = Http.DateTime.timestamp();
     }
 
     /**
@@ -88,21 +98,37 @@ public class WsConnection implements ServerConnection, WsSession {
     }
 
     @Override
-    public void handle() {
+    public void handle(Semaphore requestSemaphore) {
+        myThread = Thread.currentThread();
         listener.onOpen(this);
-        while (true) {
-            ClientWsFrame frame = readFrame();
+
+        if (requestSemaphore.tryAcquire()) {
             try {
-                if (!processFrame(frame)) {
-                    return;
+                while (canRun) {
+                    readingNetwork = true;
+                    ClientWsFrame frame = readFrame();
+                    readingNetwork = false;
+                    lastRequestTimestamp = Http.DateTime.timestamp();
+                    try {
+                        if (!processFrame(frame)) {
+                            lastRequestTimestamp = Http.DateTime.timestamp();
+                            return;
+                        }
+                        lastRequestTimestamp = Http.DateTime.timestamp();
+                    } catch (CloseConnectionException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        listener.onError(this, e);
+                        this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                        return;
+                    }
                 }
-            } catch (CloseConnectionException e) {
-                throw e;
-            } catch (Exception e) {
-                listener.onError(this, e);
-                this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
-                return;
+                this.close(WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
+            } finally {
+                requestSemaphore.release();
             }
+        } else {
+            listener.onClose(this, WsCloseCodes.TRY_AGAIN_LATER, "Too Many Concurrent Requests");
         }
     }
 
@@ -146,6 +172,28 @@ public class WsConnection implements ServerConnection, WsSession {
     @Override
     public Optional<String> subProtocol() {
         return upgradeHeaders.first(PROTOCOL);
+    }
+
+    @Override
+    public Duration idleTime() {
+        return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+    }
+
+    @Override
+    public void close(boolean interrupt) {
+        // either way, finish
+        this.canRun = false;
+
+        if (interrupt) {
+            // interrupt regardless of current state
+            if (myThread != null) {
+                myThread.interrupt();
+            }
+        } else if (readingNetwork) {
+            // only interrupt when not processing a request (there is a chance of a race condition, this edge case
+            // is ignored
+            myThread.interrupt();
+        }
     }
 
     private boolean processFrame(ClientWsFrame frame) {

@@ -17,6 +17,7 @@
 package io.helidon.nima.webclient.http1;
 
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -149,7 +150,19 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                                     ClientConnection connection,
                                                     DataReader reader) {
-        Http.Status responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+        Http.Status responseStatus;
+        try {
+            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+        } catch (UncheckedIOException e) {
+            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
+            // data of this request on the next use of this connection
+            try {
+                connection.closeResource();
+            } catch (Exception ex) {
+                e.addSuppressed(ex);
+            }
+            throw e;
+        }
         connection.helidonSocket().log(LOGGER, TRACE, "client received status %n%s", responseStatus);
         ClientResponseHeaders responseHeaders = readHeaders(reader);
         connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);

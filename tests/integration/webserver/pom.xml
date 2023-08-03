@@ -37,5 +37,6 @@
     <modules>
         <module>gh2631</module>
         <module>upgrade</module>
+        <module>resource-limits</module>
     </modules>
 </project>

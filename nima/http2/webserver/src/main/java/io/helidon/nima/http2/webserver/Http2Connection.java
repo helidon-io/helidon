@@ -18,10 +18,13 @@ package io.helidon.nima.http2.webserver;
 
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -105,6 +108,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private int continuationExpectedStreamId;
     private int lastStreamId;
     private long maxClientConcurrentStreams;
+    private volatile ZonedDateTime lastRequestTimestamp;
+    private volatile Thread myThread;
+    private volatile boolean canRun = true;
 
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.ctx = ctx;
@@ -131,6 +137,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .blockTimeout(http2Config.flowControlTimeout())
                 .maxFrameSize(http2Config.maxFrameSize())
                 .build();
+        this.lastRequestTimestamp = Http.DateTime.timestamp();
     }
 
     private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
@@ -148,9 +155,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     @Override
-    public void handle() throws InterruptedException {
+    public void handle(Semaphore requestSemaphore) throws InterruptedException {
         try {
-            doHandle();
+            doHandle(requestSemaphore);
         } catch (Http2Exception e) {
             if (state == State.FINISHED) {
                 // already handled
@@ -282,6 +289,28 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return "[" + ctx.socketId() + " " + ctx.childSocketId() + "]";
     }
 
+    @Override
+    public Duration idleTime() {
+        return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+    }
+
+    @Override
+    public void close(boolean interrupt) {
+        // either way, finish
+        this.canRun = false;
+
+        if (interrupt) {
+            // interrupt regardless of current state
+            if (myThread != null) {
+                myThread.interrupt();
+            }
+        } else if (canInterrupt()) {
+            // only interrupt when not processing a request (there is a chance of a race condition, this edge case
+            // is ignored
+            myThread.interrupt();
+        }
+    }
+
     // jUnit Http2Config pkg only visible test accessor.
     Http2Config config() {
         return http2Config;
@@ -292,9 +321,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return serverSettings;
     }
 
-    private void doHandle() throws InterruptedException {
-
-        while (state != State.FINISHED) {
+    private void doHandle(Semaphore requestSemaphore) throws InterruptedException {
+        myThread = Thread.currentThread();
+        while (canRun && state != State.FINISHED) {
             if (expectPreface && state != State.WRITE_SERVER_SETTINGS) {
                 readPreface();
                 expectPreface = false;
@@ -307,15 +336,18 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     // no data to read -> connection is closed
                     throw new CloseConnectionException("Connection closed by client", e);
                 }
-                dispatchHandler();
-
+                dispatchHandler(requestSemaphore);
             } else {
-                dispatchHandler();
+                dispatchHandler(requestSemaphore);
             }
+        }
+        if (state != State.FINISHED) {
+            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "Idle timeout");
+            connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
         }
     }
 
-    private void dispatchHandler() {
+    private void dispatchHandler(Semaphore requestSemaphore) {
         switch (state) {
         case CONTINUATION -> doContinuation();
         case WRITE_SERVER_SETTINGS -> writeServerSettings();
@@ -323,7 +355,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         case SETTINGS -> doSettings();
         case ACK_SETTINGS -> ackSettings();
         case DATA -> dataFrame();
-        case HEADERS -> doHeaders();
+        case HEADERS -> doHeaders(requestSemaphore);
         case PRIORITY -> doPriority();
         case READ_PUSH_PROMISE -> throw new Http2Exception(Http2ErrorCode.REFUSED_STREAM, "Push promise not supported");
         case PING -> pingFrame();
@@ -556,7 +588,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         state = State.READ_FRAME;
     }
 
-    private void doHeaders() {
+    private void doHeaders(Semaphore requestSemaphore) {
         int streamId = frameHeader.streamId();
         StreamContext streamContext = stream(streamId);
 
@@ -604,9 +636,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                         path,
                                                         http2Config.validatePath());
         stream.prologue(httpPrologue);
+        stream.requestSemaphore(requestSemaphore);
         stream.headers(headers, endOfStream);
         state = State.READ_FRAME;
 
+        this.lastRequestTimestamp = Http.DateTime.timestamp();
         // we now have all information needed to execute
         ctx.executor()
                 .submit(new StreamRunnable(streams, stream, Thread.currentThread()));
@@ -754,7 +788,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                               flowControl));
             streams.put(streamId, streamContext);
         }
-
+        // any request for a specific stream is now considered a valid update of connection (ignoring management messages
+        // on stream 0)
+        this.lastRequestTimestamp = Http.DateTime.timestamp();
         return streamContext;
     }
 
