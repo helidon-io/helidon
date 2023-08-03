@@ -20,6 +20,12 @@ package io.helidon.metrics.api;
  */
 public interface DistributionSummary extends Meter {
 
+    /**
+     * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary}.
+     *
+     * @param name name for the summary
+     * @return new builder
+     */
     static Builder builder(String name) {
         return MetricsFactory.getInstance().distributionSummaryBuilder(name);
     }
@@ -60,9 +66,25 @@ public interface DistributionSummary extends Meter {
      */
     double max();
 
+    /**
+     * Builder for a {@link io.helidon.metrics.api.DistributionSummary}.
+     */
     interface Builder extends Meter.Builder<Builder, DistributionSummary> {
+
+        /**
+         * Sets the scale factor for observations recorded by the summary.
+         *
+         * @param scale scaling factor to apply to each observation
+         * @return updated builder
+         */
         Builder scale(double scale);
 
+        /**
+         * Sets the config for distribution statistics for the distribution summary.
+         *
+         * @param distributionStatisticsConfigBuilder builder for the distribution statistics config
+         * @return updated builder
+         */
         Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
     }
 }

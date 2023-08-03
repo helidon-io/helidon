@@ -20,6 +20,12 @@ package io.helidon.metrics.api;
  */
 public interface Counter extends Meter {
 
+    /**
+     * Creates a new builder for a counter.
+     *
+     * @param name counter name
+     * @return new builder
+     */
     static Builder builder(String name) {
         return MetricsFactory.getInstance().counterBuilder(name);
     }
@@ -44,6 +50,9 @@ public interface Counter extends Meter {
      */
     double count();
 
+    /**
+     * Builder for a new counter.
+     */
     interface Builder extends Meter.Builder<Builder, Counter> {
     }
 }

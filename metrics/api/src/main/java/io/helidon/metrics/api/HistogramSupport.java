@@ -20,7 +20,11 @@ package io.helidon.metrics.api;
  */
 public interface HistogramSupport extends Meter {
 
-
+    /**
+     * Creates a builder for a new {@link io.helidon.metrics.api.HistogramSupport} instance.
+     *
+     * @return new builder
+     */
     static Builder builder() {
         return MetricsFactory.getInstance().histogramSupportBuilder();
     }
@@ -32,6 +36,9 @@ public interface HistogramSupport extends Meter {
      */
     HistogramSnapshot takeSnapshot();
 
+    /**
+     * Builder for a new {@link io.helidon.metrics.api.HistogramSupport}.
+     */
     interface Builder extends Meter.Builder<Builder, HistogramSupport> {
     }
 }

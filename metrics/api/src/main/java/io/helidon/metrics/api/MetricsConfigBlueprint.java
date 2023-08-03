@@ -15,8 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
@@ -66,6 +64,7 @@ interface MetricsConfigBlueprint {
     @ConfiguredOption(key = KeyPerformanceIndicatorMetricsConfigBlueprint.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
     Optional<KeyPerformanceIndicatorMetricsConfig> keyPerformanceIndicatorMetricsConfig();
 
+// TODO fix mapping
 //    /**
 //     * Global tags.
 //     *

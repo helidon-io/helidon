@@ -25,6 +25,12 @@ import java.util.function.Supplier;
  */
 public interface Timer extends Meter, HistogramSupport {
 
+    /**
+     * Creates a builder for a new {@link io.helidon.metrics.api.Timer}.
+     *
+     * @param name timer name
+     * @return new builder
+     */
     static Builder builder(String name) {
         return MetricsFactory.getInstance().timerBuilder(name);
     }
@@ -180,8 +186,17 @@ public interface Timer extends Meter, HistogramSupport {
         long stop(Timer timer);
     }
 
+    /**
+     * Builder for a new {@link io.helidon.metrics.api.Timer}.
+     */
     interface Builder extends Meter.Builder<Builder, Timer> {
 
+        /**
+         * Configures the distribution statistics for the timer.
+         *
+         * @param distributionStatisticsConfigBuilder builder for the distribution statistics config
+         * @return updated builder
+         */
         Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
 
     }

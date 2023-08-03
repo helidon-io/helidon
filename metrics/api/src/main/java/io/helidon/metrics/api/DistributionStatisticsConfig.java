@@ -24,6 +24,11 @@ import java.time.Duration;
  */
 public interface DistributionStatisticsConfig extends Wrapped {
 
+    /**
+     * Creates a builder for a new {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance.
+     *
+     * @return new builder
+     */
     static Builder builder() {
         return MetricsFactory.getInstance().distributionStatisticsConfigBuilder();
     }
