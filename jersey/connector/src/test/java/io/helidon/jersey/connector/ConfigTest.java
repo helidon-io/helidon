@@ -71,10 +71,10 @@ class ConfigTest {
     }
 
     @Test
-    void testConfigNoProxy() {
+    void testConfigDefaut() {
         Client client = ClientBuilder.newClient();
         HelidonConnector connector = new HelidonConnector(client, client.getConfiguration());
-        assertThat(connector.proxy(), is(Proxy.noProxy()));
+        assertThat(connector.proxy(), is(Proxy.create()));
     }
 
     @Test

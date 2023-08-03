@@ -133,7 +133,7 @@ class HttpClientConfigSupport {
             }
 
             if (target.proxy().isEmpty()) {
-                target.proxy(Proxy.noProxy());
+                target.proxy(Proxy.create());
             }
         }
     }
