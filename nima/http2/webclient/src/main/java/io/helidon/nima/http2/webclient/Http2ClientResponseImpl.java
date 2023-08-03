@@ -85,7 +85,9 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     private BufferData readBytes(int estimate) {
         try {
-            byte[] buffer = new byte[estimate];
+            // Empty buffer is considered as a fully consumed entity
+            // so estimate can't be less than 1
+            byte[] buffer = new byte[estimate > 0 ? estimate : 16];
             int read = inputStream.read(buffer);
             if (read < 1) {
                 return BufferData.empty();
