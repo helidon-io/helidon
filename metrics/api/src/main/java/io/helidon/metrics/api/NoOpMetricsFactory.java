@@ -15,20 +15,17 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
-
-import io.helidon.metrics.spi.MetricsProvider;
 
 /**
  * No-op implementation of the {@link io.helidon.metrics.api.spi.MetricFactory} interface.
  */
-class NoOpMetricsProvider implements MetricsProvider {
+class NoOpMetricsFactory implements MetricsFactory {
 
     private final MeterRegistry meterRegistry = null;
 
-    static NoOpMetricsProvider create() {
-        return new NoOpMetricsProvider();
+    static NoOpMetricsFactory create() {
+        return new NoOpMetricsFactory();
     }
 
     @Override
@@ -42,60 +39,39 @@ class NoOpMetricsProvider implements MetricsProvider {
     }
 
     @Override
-    public Counter metricsCounter(String name, Iterable<Tag> tags) {
+    public Counter.Builder counterBuilder(String name) {
+        return NoOpMeter.Counter.builder(name);
+    }
+
+    @Override
+    public DistributionSummary.Builder distributionSummaryBuilder(String name) {
+        // TODO
         return null;
     }
 
     @Override
-    public Counter metricsCounter(String name, String... tags) {
+    public <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+        return NoOpMeter.Gauge.builder(name, stateObject, fn);
+    }
+
+    @Override
+    public Timer.Builder timerBuilder(String name) {
+        return NoOpMeter.Timer.builder(name);
+    }
+
+    @Override
+    public HistogramSupport.Builder histogramSupportBuilder() {
+        // TODO
         return null;
     }
 
     @Override
-    public <T> Counter metricsCounter(String name, Iterable<Tag> tags, T target, Function<T, Double> fn) {
+    public DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder() {
+        // TODO
         return null;
     }
 
-    @Override
-    public DistributionSummary metricsSummary(String name, Iterable<Tag> tags) {
-        return null;
-    }
-
-    @Override
-    public DistributionSummary metricsSummary(String name, String... tags) {
-        return null;
-    }
-
-    @Override
-    public Timer metricsTimer(String name, Iterable<Tag> tags) {
-        return null;
-    }
-
-    @Override
-    public Timer metricsTimer(String name, String... tags) {
-        return null;
-    }
-
-    @Override
-    public <T> T metricsGauge(String name, Iterable<Tag> tags, T obj, ToDoubleFunction<T> valueFunction) {
-        return null;
-    }
-
-    @Override
-    public <T extends Number> T metricsGauge(String name, Iterable<Tag> tags, T number) {
-        return null;
-    }
-
-    @Override
-    public <T extends Number> T metricsGauge(String name, T number) {
-        return null;
-    }
-
-    @Override
-    public <T> T metricsGauge(String name, T obj, ToDoubleFunction<T> valueFunction) {
-        return null;
-    }
-
+    // TODO fix remaining null returns
     @Override
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
         return null;

@@ -24,6 +24,10 @@ import java.time.Duration;
  */
 public interface DistributionStatisticsConfig extends Wrapped {
 
+    static Builder builder() {
+        return MetricsFactory.getInstance().distributionStatisticsConfigBuilder();
+    }
+
     /**
      * Returns whether the configuration is set for percentile histograms which can be aggregated for percentile approximations.
      *

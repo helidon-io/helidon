@@ -20,12 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 
 /**
  * No-op implementation of {@link io.helidon.metrics.api.MeterRegistry}.
@@ -91,278 +89,27 @@ class NoOpMeterRegistry implements MeterRegistry {
     }
 
     @Override
-    public Counter counter(Meter.Id id) {
-        return findOrRegister(id,
-                              Counter.class,
-                              () -> NoOpMeter.Counter.builder(id.name())
-                                      .tags(id.tags())
-                                      .build());
+    public <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
+        return Optional.ofNullable(mClass.cast(meters.get(NoOpMeter.Id.create(name, tags))));
     }
 
     @Override
-    public <T> Counter counter(Meter.Id id,
-                               T target,
-                               ToDoubleFunction<T> fn) {
-        return findOrRegister(id,
-                              Counter.class,
-                              () -> NoOpMeter.FunctionalCounter.builder(id.name(), target, fn)
-                                      .tags(id.tags())
-                                      .build());
-    }
-
-    @Override
-    public <T> Counter counter(String name,
-                               Iterable<Tag> tags,
-                               String baseUnit,
-                               String description,
-                               T target,
-                               ToDoubleFunction<T> fn) {
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              Counter.class,
-                              () -> NoOpMeter.FunctionalCounter.builder(name, target, fn)
-                                      .tags(tags)
-                                      .baseUnit(baseUnit)
-                                      .description(description)
-                                      .build());
-    }
-
-    @Override
-    public <T> Counter counter(Meter.Id id,
-                               String baseUnit,
-                               String description,
-                               T target,
-                               ToDoubleFunction<T> fn) {
-        return findOrRegister(id,
-                              Counter.class,
-                              () -> NoOpMeter.FunctionalCounter.builder(id.name(), target, fn)
-                                      .tags(id.tags())
-                                      .baseUnit(baseUnit)
-                                      .description(description)
-                                      .build());
-    }
-
-    @Override
-    public Optional<Counter> getCounter(String name, Iterable<Tag> tags) {
-        return find(NoOpMeter.Id.create(name, tags), Counter.class);
-    }
-
-
-    @Override
-    public Counter counter(String name, Iterable<Tag> tags) {
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              Counter.class,
-                              () -> NoOpMeter.Counter.builder(name)
-                                      .tags(tags)
-                                      .build());
-    }
-
-    @Override
-    public Counter counter(String name, String... tags) {
-        Meter.Id id = NoOpMeter.Id.create(name, NoOpTag.tags(tags));
-        return findOrRegister(id,
-                              Counter.class,
-                              () -> NoOpMeter.Counter.builder(name)
-                                      .tags(id.tags())
-                                      .build());
-    }
-
-    @Override
-    public Counter counter(String name,
-                           Iterable<Tag> tags,
-                           String baseUnit,
-                           String description) {
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              Counter.class,
-                              () -> NoOpMeter.Counter.builder(name)
-                                      .tags(tags)
-                                      .baseUnit(baseUnit)
-                                      .description(description)
-                                      .build());
-    }
-
-    @Override
-    public <T> Counter counter(String name,
-                               Iterable<Tag> tags,
-                               T target,
-                               ToDoubleFunction<T> fn) {
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              Counter.class,
-                              () -> NoOpMeter.Counter.builder(name, target, fn)
-                                      .tags(tags)
-                                      .build());
-    }
-
-    @Override
-    public Optional<Counter> getCounter(String name, String... tags) {
-        return find(NoOpMeter.Id.create(name, NoOpTag.tags(tags)),
-                    Counter.class);
-    }
-
-
-
-    @Override
-    public DistributionSummary summary(String name, Iterable<Tag> tags) {
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              DistributionSummary.class,
-                              () -> NoOpMeter.DistributionSummary.builder(name)
-                                      .tags(tags)
-                                      .build());
-    }
-
-    @Override
-    public DistributionSummary summary(Meter.Id id,
-                                       String baseUnit,
-                                       String description,
-                                       DistributionStatisticsConfig distributionStatisticsConfig,
-                                       double scale) {
-        return findOrRegister(id,
-                              DistributionSummary.class,
-                              () -> NoOpMeter.DistributionSummary.builder(id.name())
-                                      .baseUnit(baseUnit)
-                                      .description(description)
-                                      .build());
-    }
-
-    @Override
-    public Optional<DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
-        return find(NoOpMeter.Id.create(name, tags),
-                    DistributionSummary.class);
-    }
-
-    @Override
-    public Optional<DistributionSummary> getSummary(String name, Tag... tags) {
-        return find(NoOpMeter.Id.create(name, tags),
-                    DistributionSummary.class);
-    }
-
-
-
-    @Override
-    public <T> T gauge(String name, T stateObject, ToDoubleFunction<T> valueFunction) {
-        // We don't need a variant of the builder to handle the state object and function because the no-op gauges
-        // don't need to operate anyway.
-        findOrRegister(NoOpMeter.Id.create(name, Set.of()),
-                              Gauge.class,
-                              () -> NoOpMeter.Gauge.builder(name)
-                                      .build());
-        return stateObject;
-    }
-
-    @Override
-    public <T> T gauge(String name, Iterable<Tag> tags, T stateObject, ToDoubleFunction<T> valueFunction) {
-        findOrRegister(NoOpMeter.Id.create(name, tags),
-                       Gauge.class,
-                       () -> NoOpMeter.Gauge.builder(name)
-                               .build());
-        return stateObject;
-    }
-
-    @Override
-    public <T extends Number> T gauge(String name, Iterable<Tag> tags, T number) {
-        findOrRegister(NoOpMeter.Id.create(name, tags),
-                       Gauge.class,
-                       () -> NoOpMeter.Gauge.builder(name)
-                               .build());
-        return number;
-    }
-
-    @Override
-    public <T extends Number> T gauge(String name, T number) {
-        findOrRegister(NoOpMeter.Id.create(name, Set.of()),
-                       Gauge.class,
-                       () -> NoOpMeter.Gauge.builder(name)
-                               .build());
-        return number;
-    }
-
-    @Override
-    public <T> T gauge(String name,
-                       Iterable<Tag> tags,
-                       String baseUnit,
-                       String description,
-                       T stateObject,
-                       ToDoubleFunction<T> valueFunction) {
-        findOrRegister(NoOpMeter.Id.create(name, tags),
-                       Gauge.class,
-                       () -> NoOpMeter.Gauge.builder(name)
-                               .baseUnit(baseUnit)
-                               .description(description)
-                               .build());
-        return stateObject;
-    }
-
-    @Override
-    public Optional<Gauge> getGauge(String name, Iterable<Tag> tags) {
-        return find(NoOpMeter.Id.create(name, tags),
-                    Gauge.class);
-    }
-
-    @Override
-    public Optional<Gauge> getGauge(String name, Tag... tags) {
-        return find(NoOpMeter.Id.create(name, tags),
-                    Gauge.class);
-    }
-
-    @Override
-    public DistributionSummary summary(String name, String... tags) {
-        Meter.Id id = NoOpMeter.Id.create(name, NoOpTag.tags(tags));
-        return findOrRegister(id,
-                              DistributionSummary.class,
-                              () -> NoOpMeter.DistributionSummary.builder(name)
-                                      .tags(id.tags())
-                                      .build());
-    }
-
-    @Override
-    public Timer timer(String name, Iterable<Tag> tags) {
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              Timer.class,
-                              () -> NoOpMeter.Timer.builder(name)
-                                      .tags(tags)
-                                      .build());
-    }
-
-    @Override
-    public Timer timer(String name, String... tags) {
-        Meter.Id id = NoOpMeter.Id.create(name, NoOpTag.tags(tags));
-        return findOrRegister(id,
-                              Timer.class,
-                              () -> NoOpMeter.Timer.builder(name)
-                                      .tags(id.tags())
-                                      .build());
-    }
-
-    @Override
-    public Timer timer(String name,
-                       Iterable<Tag> tags,
-                       String baseUnit,
-                       String description,
-                       DistributionStatisticsConfig distributionStatisticsConfig) {
-        // The distribution is also a no-op, so we ignore the statistics config.
-        return findOrRegister(NoOpMeter.Id.create(name, tags),
-                              Timer.class,
-                              () -> NoOpMeter.Timer.builder(name)
-                                      .baseUnit(baseUnit)
-                                      .description(description)
-                                      .build());
-    }
-
-    @Override
-    public Optional<Timer> getTimer(String name, Tag... tags) {
-        return find(NoOpMeter.Id.create(name, tags),
-                    Timer.class);
-    }
-
-    @Override
-    public Optional<Timer> getTimer(String name, Iterable<Tag> tags) {
-        return find(NoOpMeter.Id.create(name, tags),
-                    Timer.class);
+    public <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder) {
+        NoOpMeter.Builder<?, ?> b = (NoOpMeter.Builder<?, ?>) builder;
+        return findOrRegister(NoOpMeter.Id.create(b.name(),
+                                                  b.tags()),
+                              builder);
     }
 
     private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
         return Optional.ofNullable(mClass.cast(meters.get(id)));
     }
 
+    private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
+        NoOpMeter.Builder<?, ?> noOpBuilder = (NoOpMeter.Builder<?, ?>) builder;
+        return (M) meters.computeIfAbsent(id,
+                                          thidId -> noOpBuilder.build());
+    }
     private <M extends Meter> M findOrRegister(Meter.Id id, Class<M> mClass, Supplier<M> meterSupplier) {
         // This next step is atomic because we are using a ConcurrentHashMap.
         Meter result = meters.computeIfAbsent(id,

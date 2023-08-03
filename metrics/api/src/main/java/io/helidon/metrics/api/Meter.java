@@ -21,6 +21,56 @@ package io.helidon.metrics.api;
 public interface Meter extends Wrapped {
 
     /**
+     * Common behavior of specific meter builders.
+     *
+     * @param <B> type of the builder
+     * @param <M> type of the meter the builder creates
+     */
+    interface Builder<B extends Builder<B, M>, M extends Meter> {
+
+        /**
+         * Returns the type-correct "this".
+         *
+         * @return properly-typed builder itself
+         */
+        default B identity() {
+            return (B) this;
+        }
+
+        /**
+         * Sets the tags to use in identifying the build meter.
+         *
+         * @param tags {@link io.helidon.metrics.api.Tag} instances to identify the meter
+         * @return updated builder
+         */
+        B tags(Iterable<Tag> tags);
+
+        /**
+         * Sets the description.
+         * @param description meter description
+         * @return updated builder
+         */
+        B description(String description);
+
+        /**
+         * Sets the units.
+         *
+         * @param baseUnit meter unit
+         * @return updated builder
+         */
+        B baseUnit(String baseUnit);
+
+
+//        String name();
+//
+//        Iterable<Tag> tags();
+//
+//        String description();
+//
+//        String baseUnit();
+    }
+
+    /**
      * Unique idenfier for a meter.
      */
     interface Id {

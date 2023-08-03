@@ -32,7 +32,7 @@ public interface HistogramSnapshot extends Wrapped {
      * @return empty snapshot reporting the values as specified
      */
     static HistogramSnapshot empty(long count, double total, double max) {
-        return MetricsProviderManager.INSTANCE.get().histogramSnapshotEmpty(count, total, max);
+        return MetricsFactory.getInstance().histogramSnapshotEmpty(count, total, max);
     }
 
     /**

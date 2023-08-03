@@ -15,23 +15,18 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.metrics.spi.MetricsFactoryProvider;
+
 /**
- * Common behavior among meters which support histograms.
+ * No-op implementation of {@link io.helidon.metrics.spi.MetricsFactoryProvider}.
  */
-public interface HistogramSupport extends Meter {
-
-
-    static Builder builder() {
-        return MetricsFactory.getInstance().histogramSupportBuilder();
+class NoOpMetricsFactoryProvider implements MetricsFactoryProvider {
+    static MetricsFactoryProvider create() {
+        return new NoOpMetricsFactoryProvider();
     }
 
-    /**
-     * Returns a snapshot of the data in a histogram.
-     *
-     * @return snapshot of the histogram
-     */
-    HistogramSnapshot takeSnapshot();
-
-    interface Builder extends Meter.Builder<Builder, HistogramSupport> {
+    @Override
+    public MetricsFactory create(MetricsConfig metricsConfig) {
+        return NoOpMetricsFactory.create();
     }
 }

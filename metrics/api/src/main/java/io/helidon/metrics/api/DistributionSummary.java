@@ -20,6 +20,10 @@ package io.helidon.metrics.api;
  */
 public interface DistributionSummary extends Meter {
 
+    static Builder builder(String name) {
+        return MetricsFactory.getInstance().distributionSummaryBuilder(name);
+    }
+
     /**
      * Updates the statistics kept by the summary with the specified amount.
      *
@@ -55,4 +59,10 @@ public interface DistributionSummary extends Meter {
      * @return maximum value of recorded events
      */
     double max();
+
+    interface Builder extends Meter.Builder<Builder, DistributionSummary> {
+        Builder scale(double scale);
+
+        Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
+    }
 }

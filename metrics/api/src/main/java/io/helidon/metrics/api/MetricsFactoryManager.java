@@ -19,24 +19,35 @@ import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.metrics.spi.MetricsProvider;
+import io.helidon.common.config.GlobalConfig;
+import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 /**
  * Locates and makes available the highest-weight implementation of {@link io.helidon.metrics.spi.MetricsProvider},
  * using a default no-op implementation if no other is available.
  */
-class MetricsProviderManager {
+class MetricsFactoryManager {
 
     /**
-     * Instance of the highest-weight implementation of {@code MetricFactory}.
+     * Instance of the highest-weight implementation of {@link io.helidon.metrics.spi.MetricsFactoryProvider}.
      */
-    static final LazyValue<MetricsProvider> INSTANCE =
-            LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(MetricsProvider.class))
-            .addService(NoOpMetricsProvider.create(), Double.MIN_VALUE)
+    private static final LazyValue<MetricsFactoryProvider> METRICS_FACTORY_PROVIDER =
+            LazyValue.create(() -> HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
+            .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
             .build()
             .iterator()
             .next());
 
-    private MetricsProviderManager() {
+    private static final LazyValue<MetricsFactory> METRICS_FACTORY =
+            LazyValue.create(() -> METRICS_FACTORY_PROVIDER.get().create(
+                    MetricsConfig.builder()
+                            .config(GlobalConfig.config().get(MetricsConfig.METRICS_CONFIG_KEY))
+                            .build()));
+
+    static MetricsFactory getInstance() {
+        return METRICS_FACTORY.get();
+    }
+
+    private MetricsFactoryManager() {
     }
 }

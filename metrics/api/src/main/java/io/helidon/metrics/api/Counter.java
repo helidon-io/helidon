@@ -20,6 +20,11 @@ package io.helidon.metrics.api;
  */
 public interface Counter extends Meter {
 
+    static Builder builder(String name) {
+        return MetricsFactory.getInstance().counterBuilder(name);
+    }
+
+
     /**
      * Updates the counter by one.
      */
@@ -38,4 +43,7 @@ public interface Counter extends Meter {
      * @return cumulative count since this counter was registered
      */
     double count();
+
+    interface Builder extends Meter.Builder<Builder, Counter> {
+    }
 }
