@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +77,23 @@ class NoOpMeter implements Meter {
                     .map(Tag::value)
                     .findFirst()
                     .orElse(null);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Id id = (Id) o;
+            return name.equals(id.name) && tags.equals(id.tags);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, tags);
         }
     }
 
