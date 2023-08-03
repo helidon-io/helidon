@@ -449,6 +449,12 @@ backend:
                   - "extensibility.adoc"
                   - "jep-290.adoc"
               - type: "PAGE"
+                title: Server-Sent Events (SSE)
+                source: sse/sse.adoc
+                glyph:
+                  type: "icon"
+                  value: "outbox"
+              - type: "PAGE"
                 title: "Tracing"
                 source: "tracing.adoc"
                 glyph:
