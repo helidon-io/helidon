@@ -23,6 +23,9 @@ import java.util.Set;
 
 import io.helidon.common.types.TypeName;
 
+/**
+ * Generic type argument model.
+ */
 public final class TypeArgument extends Type implements TypeName {
 
     private final TypeName token;
@@ -85,6 +88,11 @@ public final class TypeArgument extends Type implements TypeName {
         }
     }
 
+    /**
+     * Type argument token.
+     *
+     * @return token value
+     */
     public String token() {
         return token.className();
     }

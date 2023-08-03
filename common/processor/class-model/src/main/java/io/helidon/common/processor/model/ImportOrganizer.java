@@ -218,8 +218,8 @@ class ImportOrganizer {
                     processImportJavaLang(type, fqTypeName, typeSimpleName);
                 } else if (this.packageName.equals(typePackage)) {
                     processImportSamePackage(type, fqTypeName, typeSimpleName);
-                } else if (finalImports.containsKey(typeSimpleName) &&
-                        !finalImports.get(typeSimpleName).equals(fqTypeName)) {
+                } else if (finalImports.containsKey(typeSimpleName)
+                        && !finalImports.get(typeSimpleName).equals(fqTypeName)) {
                     //If there is imported class with this simple name already, but it is not in the same package as this one
                     //add this newly added among the forced full names
                     forcedFullImports.add(fqTypeName);

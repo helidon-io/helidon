@@ -77,7 +77,8 @@ class JavadocParser {
                     }
                     int secondSpace = line.indexOf(' ', space + 2);
                     if (secondSpace < 0) {
-                        throw new IllegalStateException("Failed to parse javadoc, @throws without exception name or docs: " + line);
+                        throw new IllegalStateException("Failed to parse javadoc, @throws without exception name or docs: "
+                                                                + line);
                     }
                     currentTagName = line.substring(space + 1, secondSpace);
                     currentTag.add(line.substring(secondSpace + 1));

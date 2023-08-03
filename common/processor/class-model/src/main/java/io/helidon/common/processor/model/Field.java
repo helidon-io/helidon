@@ -37,6 +37,11 @@ public final class Field extends AnnotatedComponent implements Comparable<Field>
         this.isStatic = builder.isStatic;
     }
 
+    /**
+     * Create new {@link Builder} instance.
+     *
+     * @return new builder instance
+     */
     public static Builder builder() {
         return new Builder().accessModifier(AccessModifier.PRIVATE);
     }
@@ -91,7 +96,7 @@ public final class Field extends AnnotatedComponent implements Comparable<Field>
     public int compareTo(Field other) {
         if (accessModifier() == other.accessModifier()) {
             if (isFinal == other.isFinal) {
-                if (type().simpleTypeName().equals(other.type().simpleTypeName())) {
+                if (type().simpleTypeName().compareTo(other.type().simpleTypeName()) == 0) {
                     return name().compareTo(other.name());
                 }
                 return type().simpleTypeName().compareTo(other.type().simpleTypeName());

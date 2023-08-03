@@ -735,7 +735,8 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                     } else {
                         assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 constructor can be injectable";
                     }
-                    String cn = dep2.ipType().resolved(); // fully qualified type of the injection point, as we are assigning to it
+                    // fully qualified type of the injection point, as we are assigning to it
+                    String cn = dep2.ipType().resolved();
                     String argName = dep2.ipName();
                     String id = dep2.id();
                     String argBuilder = cn + " "

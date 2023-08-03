@@ -38,7 +38,7 @@ abstract class AnnotatedComponent extends CommonComponent {
         return annotations;
     }
 
-    static abstract class Builder<B extends Builder<B, T>, T extends AnnotatedComponent> extends CommonComponent.Builder<B, T> {
+    abstract static class Builder<B extends Builder<B, T>, T extends AnnotatedComponent> extends CommonComponent.Builder<B, T> {
 
         private final List<Annotation> annotations = new ArrayList<>();
 

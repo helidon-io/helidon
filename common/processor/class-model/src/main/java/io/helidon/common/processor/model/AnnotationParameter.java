@@ -65,6 +65,9 @@ public final class AnnotationParameter extends CommonComponent {
         return value;
     }
 
+    /**
+     * Fluent API builder for {@link AnnotationParameter}.
+     */
     public static final class Builder extends CommonComponent.Builder<Builder, AnnotationParameter> {
 
         private Object value;

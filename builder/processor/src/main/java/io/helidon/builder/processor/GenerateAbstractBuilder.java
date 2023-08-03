@@ -81,10 +81,10 @@ final class GenerateAbstractBuilder {
                     .addConstructor(constructor -> createConstructor(constructor, typeContext));
             superType.ifPresent(type -> {
                 builder.superType(TypeName.builder()
-                                            .from(TypeName.create(type.fqName() + ".BuilderBase"))
-                                            .addTypeArgument(TypeName.createFromGenericDeclaration("BUILDER"))
-                                            .addTypeArgument(TypeName.createFromGenericDeclaration("PROTOTYPE"))
-                                            .build());
+                                          .from(TypeName.create(type.fqName() + ".BuilderBase"))
+                                          .addTypeArgument(TypeName.createFromGenericDeclaration("BUILDER"))
+                                          .addTypeArgument(TypeName.createFromGenericDeclaration("PROTOTYPE"))
+                                          .build());
             });
 
             if (typeContext.configuredData().configured() || hasConfig(typeContext.propertyData().properties())) {
@@ -110,7 +110,7 @@ final class GenerateAbstractBuilder {
             // method preBuildPrototype() - handles providers, decorator
             preBuildPrototypeMethod(builder, typeContext);
             validatePrototypeMethod(builder, typeContext);
-            
+
             //custom method adding
             addCustomBuilderMethods(typeContext, builder);
 
@@ -367,7 +367,9 @@ final class GenerateAbstractBuilder {
         builder.addMethod(methodBuilder);
     }
 
-    private static void fromBuilderMethod(InnerClass.Builder classBuilder, TypeContext typeContext, List<TypeArgument> arguments) {
+    private static void fromBuilderMethod(InnerClass.Builder classBuilder,
+                                          TypeContext typeContext,
+                                          List<TypeArgument> arguments) {
         TypeName prototype = typeContext.typeInfo().prototype();
         TypeName parameterType = TypeName.builder()
                 .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
@@ -548,7 +550,7 @@ final class GenerateAbstractBuilder {
                     .description("Generated implementation of the prototype, "
                                          + "can be extended by descendant prototype implementations.");
             superPrototype.ifPresent(it -> {
-                builder.superType(TypeName.create(it.className()+"Impl"));
+                builder.superType(TypeName.create(it.className() + "Impl"));
             });
             builder.addInterface(prototype);
             if (typeContext.blueprintData().isFactory()) {
@@ -567,15 +569,15 @@ final class GenerateAbstractBuilder {
              */
             builder.addConstructor(constructor -> {
                 constructor.description("Create an instance providing a builder.")
-                    .accessModifier(AccessModifier.PROTECTED)
-                    .addParameter(param -> param.name("builder")
-                            .type(TypeName.builder()
-                                          .from(TypeName.create(ifaceName + ".BuilderBase"))
-                                          .addTypeArguments(typeArguments)
-                                          .addTypeArgument(TypeArgument.create("?"))
-                                          .addTypeArgument(TypeArgument.create("?"))
-                                          .build())
-                            .description("extending builder base of this prototype"));
+                        .accessModifier(AccessModifier.PROTECTED)
+                        .addParameter(param -> param.name("builder")
+                                .type(TypeName.builder()
+                                              .from(TypeName.create(ifaceName + ".BuilderBase"))
+                                              .addTypeArguments(typeArguments)
+                                              .addTypeArgument(TypeArgument.create("?"))
+                                              .addTypeArgument(TypeArgument.create("?"))
+                                              .build())
+                                .description("extending builder base of this prototype"));
                 superPrototype.ifPresent(it -> {
                     constructor.addLine("super(builder);");
                 });
@@ -643,6 +645,7 @@ final class GenerateAbstractBuilder {
         equalsMethod(classBuilder, ifaceName, hasSuper, equalityFields);
         hashCodeMethod(classBuilder, hasSuper, equalityFields);
     }
+
     private static void equalsMethod(InnerClass.Builder classBuilder,
                                      String ifaceName,
                                      boolean hasSuper,
@@ -673,23 +676,25 @@ final class GenerateAbstractBuilder {
             method.add("true");
         } else {
             method.add(equalityFields.stream()
-                             .map(field -> {
-                                 if (field.typeName().array()) {
-                                     return "java.util.Arrays.equals(" + field.name() + ", other." + field.getterName() + "())";
-                                 }
-                                 if (field.typeName().primitive()) {
-                                     return field.name() + " == other." + field.getterName() + "()";
-                                 }
-
-                                 return "Objects.equals(" + field.name() + ", other." + field.getterName() + "())";
-                             })
-                             .collect(Collectors.joining(" && ")));
+                               .map(field -> {
+                                   if (field.typeName().array()) {
+                                       return "java.util.Arrays.equals(" + field.name() + ", other."
+                                               + field.getterName() + "())";
+                                   }
+                                   if (field.typeName().primitive()) {
+                                       return field.name() + " == other." + field.getterName() + "()";
+                                   }
+                                   return "Objects.equals(" + field.name() + ", other." + field.getterName() + "())";
+                               })
+                               .collect(Collectors.joining(" && ")));
         }
         method.addLine(";");
         classBuilder.addMethod(method);
     }
 
-    private static void hashCodeMethod(InnerClass.Builder classBuilder, boolean hasSuper, List<PrototypeProperty> equalityFields) {
+    private static void hashCodeMethod(InnerClass.Builder classBuilder,
+                                       boolean hasSuper,
+                                       List<PrototypeProperty> equalityFields) {
         Method.Builder method = Method.builder()
                 .name("hashCode")
                 .returnType(TypeName.create(int.class))
@@ -721,7 +726,6 @@ final class GenerateAbstractBuilder {
 
         classBuilder.addMethod(method);
     }
-
 
     private static void toString(InnerClass.Builder classBuilder,
                                  TypeContext typeContext,
@@ -778,7 +782,7 @@ final class GenerateAbstractBuilder {
                                          return "+ \"" + name + "=\" + " + name;
 
                                      })
-                                     .collect(Collectors.joining(" + \",\" \n")));
+                                     .collect(Collectors.joining(" + \",\"\n")));
             if (hasSuper) {
                 method.addLine("+ \"};\"");
             } else {

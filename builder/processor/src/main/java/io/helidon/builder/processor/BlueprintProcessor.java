@@ -47,10 +47,10 @@ import io.helidon.common.processor.TypeInfoFactory;
 import io.helidon.common.processor.model.AccessModifier;
 import io.helidon.common.processor.model.Annotation;
 import io.helidon.common.processor.model.ClassModel;
+import io.helidon.common.processor.model.ClassType;
 import io.helidon.common.processor.model.Javadoc;
 import io.helidon.common.processor.model.Method;
 import io.helidon.common.processor.model.TypeArgument;
-import io.helidon.common.processor.model.ClassType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -246,6 +246,7 @@ public class BlueprintProcessor extends AbstractProcessor {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:MethodLength") // will be fixed when we switch to model
     private void generatePrototypeWithBuilder(TypeElement builderInterface,
                                               TypeContext typeContext) throws IOException {
 
@@ -392,6 +393,33 @@ public class BlueprintProcessor extends AbstractProcessor {
             });
         }
 
+        generateCustomMethods(customMethods, classModel);
+
+        /*
+          abstract class BuilderBase...
+         */
+        GenerateAbstractBuilder.generate(classModel,
+                                         typeInformation.prototype(),
+                                         typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
+                                         typeArguments,
+                                         typeContext);
+        /*
+          class Builder extends BuilderBase ...
+         */
+        GenerateBuilder.generate(classModel,
+                                 typeInformation.prototype(),
+                                 typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
+                                 typeArguments,
+                                 typeContext.blueprintData().isFactory(),
+                                 typeContext);
+
+        try (PrintWriter pw = new PrintWriter(generatedIface.openWriter())) {
+            classModel.build()
+                    .saveToFile(pw, SOURCE_SPACING);
+        }
+    }
+
+    private static void generateCustomMethods(CustomMethods customMethods, ClassModel.Builder classModel) {
         for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
             // prototype definition - custom static factory methods
             // static TypeName create(Type type);
@@ -433,29 +461,6 @@ public class BlueprintProcessor extends AbstractProcessor {
                         .type(argument.typeName()));
             }
             classModel.addMethod(method);
-        }
-
-        /*
-          abstract class BuilderBase...
-         */
-        GenerateAbstractBuilder.generate(classModel,
-                                         typeInformation.prototype(),
-                                         typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
-                                         typeArguments,
-                                         typeContext);
-        /*
-          class Builder extends BuilderBase ...
-         */
-        GenerateBuilder.generate(classModel,
-                                 typeInformation.prototype(),
-                                 typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
-                                 typeArguments,
-                                 typeContext.blueprintData().isFactory(),
-                                 typeContext);
-
-        try (PrintWriter pw = new PrintWriter(generatedIface.openWriter())) {
-            classModel.build()
-                    .saveToFile(pw, SOURCE_SPACING);
         }
     }
 

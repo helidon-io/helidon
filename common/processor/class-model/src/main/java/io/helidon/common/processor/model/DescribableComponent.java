@@ -47,7 +47,7 @@ abstract class DescribableComponent extends ModelComponent {
         }
     }
 
-    static abstract class Builder<B extends Builder<B, T>, T extends DescribableComponent>
+    abstract static class Builder<B extends Builder<B, T>, T extends DescribableComponent>
             extends ModelComponent.Builder<B, T> {
 
         private final List<String> description = new ArrayList<>();

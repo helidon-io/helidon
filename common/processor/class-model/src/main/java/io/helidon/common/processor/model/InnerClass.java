@@ -41,6 +41,9 @@ public final class InnerClass extends ClassBase {
         return imports;
     }
 
+    /**
+     * Fluent API builder for {@link InnerClass}.
+     */
     public static final class Builder extends ClassBase.Builder<Builder, InnerClass> {
 
         private Builder() {

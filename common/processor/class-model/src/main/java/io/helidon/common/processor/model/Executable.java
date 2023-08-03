@@ -84,7 +84,7 @@ abstract class Executable extends AnnotatedComponent {
         return content.hasBody();
     }
 
-    static abstract class Builder<B extends Builder<B, T>, T extends Executable>
+    abstract static class Builder<B extends Builder<B, T>, T extends Executable>
             extends AnnotatedComponent.Builder<B, T> {
 
         private final Map<String, Parameter> parameters = new LinkedHashMap<>();

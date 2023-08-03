@@ -98,6 +98,7 @@ public final class Parameter extends AnnotatedComponent {
         private Builder() {
         }
 
+        @Override
         public Parameter build() {
             if (type() == null || name() == null) {
                 throw new ClassModelException("Annotation parameter must have name and type set");

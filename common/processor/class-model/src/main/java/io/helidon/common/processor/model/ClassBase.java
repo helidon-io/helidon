@@ -242,7 +242,10 @@ public abstract class ClassBase extends AnnotatedComponent {
         return classType;
     }
 
-    public static abstract class Builder<B extends Builder<B, T>, T extends ClassBase>
+    /**
+     * Fluent API builder for {@link ClassBase}
+     */
+    public abstract static class Builder<B extends Builder<B, T>, T extends ClassBase>
             extends AnnotatedComponent.Builder<B, T> {
 
         private final Set<Method> methods = new LinkedHashSet<>();
@@ -420,7 +423,8 @@ public abstract class ClassBase extends AnnotatedComponent {
             if (interfaceType.isInterface()) {
                 return addInterface(TypeName.create(interfaceType));
             } else {
-                throw new IllegalArgumentException("Provided value needs to be interface, but it was not: " + interfaceType.getName());
+                throw new IllegalArgumentException("Provided value needs to be interface, but it was not: "
+                                                           + interfaceType.getName());
             }
         }
 

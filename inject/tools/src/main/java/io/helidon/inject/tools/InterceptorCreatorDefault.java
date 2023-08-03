@@ -887,9 +887,10 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromReflection(ServiceInfoBasics interceptedService,
                                                                           InterceptorCreator realCreator) {
+        String resolvedType = interceptedService.serviceTypeName().resolved();
         return new ReflectionBased(Objects.requireNonNull(interceptedService),
                                    Objects.requireNonNull(realCreator),
-                                   Objects.requireNonNull(SCAN.get().getClassInfo(interceptedService.serviceTypeName().resolved())),
+                                   Objects.requireNonNull(SCAN.get().getClassInfo(resolvedType)),
                                    logger());
     }
 

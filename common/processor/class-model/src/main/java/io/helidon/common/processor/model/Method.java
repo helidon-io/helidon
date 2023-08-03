@@ -248,6 +248,7 @@ public final class Method extends Executable implements Comparable<Method> {
         Builder() {
         }
 
+        @Override
         public Method build() {
             if (name() == null) {
                 throw new ClassModelException("Method needs to have name specified");

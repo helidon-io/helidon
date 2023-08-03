@@ -120,6 +120,7 @@ public final class ClassModel extends ClassBase {
         imports.writeImports(writer);
         imports.writeStaticImports(writer);
         super.writeComponent(writer, declaredTokens, imports, classType);
+        writer.writeSeparatorLine();
     }
 
     @Override

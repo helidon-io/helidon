@@ -38,7 +38,7 @@ abstract class ModelComponent {
         return includeImport;
     }
 
-    static abstract class Builder<B extends Builder<B, T>, T extends ModelComponent>
+    abstract static class Builder<B extends Builder<B, T>, T extends ModelComponent>
             implements io.helidon.common.Builder<B, T> {
 
         private boolean includeImport = true;

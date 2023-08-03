@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.processor.model.ClassModel;
 import io.helidon.common.processor.spi.GeneratedAnnotationProvider;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;

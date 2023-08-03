@@ -49,12 +49,19 @@ public final class Annotation extends CommonComponent {
     /**
      * New {@link Annotation} instance based on the type.
      *
+     * @param type class type
      * @return new annotation instance
      */
     public static Annotation create(Class<?> type) {
         return builder().type(type).build();
     }
 
+    /**
+     * Parse new Annotation object out of the String.
+     *
+     * @param annotationDefinition annotation definition
+     * @return new annotation instance
+     */
     public static Annotation parse(String annotationDefinition) {
         int annotationBodyStart = annotationDefinition.indexOf("(");
         int annotationBodyEnd = annotationDefinition.indexOf(")");
