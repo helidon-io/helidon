@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
@@ -41,10 +42,12 @@ class MaxConcurrentRequestsTest {
     private static volatile CountDownLatch cdl;
     private final SocketHttpClient client;
     private final WebClient webClient;
+    private final Http2Client http2Client;
 
-    MaxConcurrentRequestsTest(SocketHttpClient client, WebClient webClient) {
+    MaxConcurrentRequestsTest(SocketHttpClient client, WebClient webClient, Http2Client http2Client) {
         this.client = client;
         this.webClient = webClient;
+        this.http2Client = http2Client;
     }
 
     @SetUpServer
@@ -70,6 +73,9 @@ class MaxConcurrentRequestsTest {
         client.request(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
         // now that we have request in progress, any other should fail
         ClientResponseTyped<String> response = webClient.get("/greet")
+                .request(String.class);
+        assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+        response = http2Client.get("/greet")
                 .request(String.class);
         assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
         cdl.countDown();

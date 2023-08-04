@@ -405,6 +405,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
                     response.status(Http.Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
+                    response.commit();
                 }
             } finally {
                 this.state = Http2StreamState.CLOSED;

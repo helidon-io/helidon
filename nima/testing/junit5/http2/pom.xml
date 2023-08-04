@@ -29,8 +29,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
-    <name>Helidon Níma Testing JUnit5 WebSocket</name>
+    <artifactId>helidon-nima-testing-junit5-http2</artifactId>
+    <name>Helidon Níma Testing JUnit5 HTTP/2</name>
 
     <dependencies>
         <dependency>
@@ -38,12 +38,16 @@
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-client</artifactId>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-webserver</artifactId>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webserver</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.integration</groupId>
+            <artifactId>helidon-security-integration-nima</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
