@@ -4,7 +4,7 @@ URI abstraction as required for routing and request handling.
 
 # URI Encoding
 URI has a limited set of allowed characters, with some characters having special meaning
-(such as `#`, `/`, `;`), also the URI is expected to be ASCII string.
+(such as `#`, `/`, `;`, `?`), also the URI is expected to be ASCII string.
 
 Special characters (and UTF-8) can be used through encoding (using the `%##` format).
 For example space character is encoded into `%20`.
@@ -12,24 +12,26 @@ For example space character is encoded into `%20`.
 We support encoding of paths, with access to raw (encoded) and decoded values.
 
 Usage in components:
-- Path 
+- Path (`UriPath`)
   - raw path - encoded path including path parameters
   - raw path no params - encoded path without path parameters
   - decoded path - decoded path without path parameters
   - decoded path parameter by name
   - path segments (may have path parameters associated) - ordered sequence
       of path parts (each segment is a section between `/`)
-- Query
+- Query (`UriQuery`)
   - raw query - full encoded query
   - raw parameter by name
   - decoded parameter by name
-- Fragment
+- Fragment (`UriFragment`)
   - raw fragment
   - decoded fragment
 
 Method names - if a method returns raw (encoded) value,
 it will always be prefixed with the word `raw`. All other 
-methods are returning decoded values.
+methods are returning decoded values. 
+
+There must be factory methods to create an instance from both encoded and decoded value.
 
 # URI Components
 ## Scheme
