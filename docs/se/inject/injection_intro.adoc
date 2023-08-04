@@ -76,7 +76,7 @@ Once you have planned how each of your resources should support Injection, you s
 
 == API
 
-Adding Injection behavior to your Helidon Níma application involves just a few simple steps.
+Adding Injection behavior to your Helidon WebServer application involves just a few simple steps.
 
 === Maven Coordinates
 

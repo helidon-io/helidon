@@ -105,7 +105,7 @@ The following table lists the injectable types (through constructor or method in
 - Type - type that can be injected
 - Socket - if checked, you can use the `@Socket` annotation to obtain a value specific to that named socket
 - Annotation - which annotations support this injection
-- Modules - which Níma extension modules support this injection
+- Modules - which WebServer extension modules support this injection
 - Notes - additional details
 
 .Injectable types.
@@ -197,13 +197,13 @@ class IntegrationTest {
 <5> Call the `client` to obtain server response
 <6> Perform the necessary assertions.
 
-To trigger the framework to start and configure the Níma server, annotate the testing class with the `@ServerTest` annotation.
+To trigger the framework to start and configure the server, annotate the testing class with the `@ServerTest` annotation.
 
 In this test, the `Http1Client` client is used, which means that the framework will create, configure, and inject this object as a parameter to the constructor.
 
 To set up routing, a static method annotated with `@SetUpRoute` is present. The framework uses this method to inject the configured routing to the subject of testing – in the current case, the `Quickstart` application.
 
-As everything above is performed by the testing framework, regular unit tests can be done. After completing all tests, the testing framework will shut down the Níma server.
+As everything above is performed by the testing framework, regular unit tests can be done. After completing all tests, the testing framework will shut down the server.
 
 === Routing Tests
 
@@ -268,7 +268,7 @@ If WebSocket testing is required, there is an additional module for it. It is ne
 
 === WebSocket Testing Example
 
-The WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as WebSockets and DirectWsClient in Helidon Níma unit tests.
+The WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as WebSockets and DirectWsClient in Helidon unit tests.
 
 .WebSocket sample test.
 [source,java]
