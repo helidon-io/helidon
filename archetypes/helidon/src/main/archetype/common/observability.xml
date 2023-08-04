@@ -72,11 +72,6 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                             <value key="groupId">io.helidon.microprofile.metrics</value>
                                             <value key="artifactId">helidon-microprofile-metrics</value>
                                         </map>
-                                        <map order="800" if="${flavor} == 'nima'">
-                                            <value key="groupId">io.helidon.nima.testing.junit5</value>
-                                            <value key="artifactId">helidon-nima-testing-junit5-webserver</value>
-                                            <value key="scope">test</value>
-                                        </map>
                                     </list>
                                     <list key="SimpleGreetService-imports" if="${flavor} == 'mp'">
                                         <value>org.eclipse.microprofile.metrics.MetricUnits</value>

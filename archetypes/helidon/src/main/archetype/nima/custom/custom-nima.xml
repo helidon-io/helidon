@@ -31,6 +31,7 @@
     <source src="/nima/custom/extra.xml"/>
     <exec src="/common/packaging.xml"/>
     <exec src="/common/security.xml"/>
+    <source src="/nima/custom/security.xml"/>
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
         <model>
