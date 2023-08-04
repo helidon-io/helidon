@@ -51,7 +51,7 @@ public class Http2ServerExtension implements ServerJunitExtension {
 
         if (Http2Client.class.equals(parameterType)) {
             return Http2Client.builder()
-                    .baseUri("ws://localhost:" + server.port(socketName))
+                    .baseUri("http://localhost:" + server.port(socketName))
                     .build();
         }
         throw new ParameterResolutionException("HTTP/2 extension only supports Http2Client parameter type");
