@@ -124,7 +124,10 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryNotDoubleEncoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.uri().query().rawValue(), is("first%26second%26=val%26ue%26"));
+            // this is the value we have provided, it must be given back
+            assertThat(request.uri().query().value(), is("first&second%26=val&ue%26"));
+            // what goes over the network is driven by the skipUriEncoding parameter, and must not be encoded
+            assertThat(request.uri().pathWithQueryAndFragment(), is("/greet?first&second%26=val&ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
