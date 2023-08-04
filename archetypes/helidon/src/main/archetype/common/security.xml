@@ -68,14 +68,6 @@
         authenticate: true
         roles-allowed: ["my_admins"]]]></value>
                                     </list>
-                                    <list key="security-properties">
-                                        <value if="${flavor} == 'nima'"><![CDATA[
-    # This is a nice way to be able to override this with local properties or env-vars
-    idcs-uri: "https://your-tenant-id.identity.oracle.com"
-    idcs-client-id: "your-client-id"
-    idcs-client-secret: "your-client-secret"
-    proxy-host: ""]]></value>
-                                    </list>
                                     <list key="dependencies">
                                         <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.microprofile</value>
@@ -204,12 +196,56 @@
                                 <model>
                                     <list key="providers-config-entries">
                                         <value file="files/application.google.yaml" if="${flavor} == 'mp'"/>
+                                        <value if="${flavor} == 'nima'"><![CDATA[    - google-login:
+        # Create your own application in Google developer console
+        # Also update the client id configured in header of index.html
+        # Detailed how-to for login button (including links how to create an application):
+        # https://developers.google.com/identity/sign-in/web/sign-in
+        client-id: "your-app-id.apps.googleusercontent.com"
+        # Defaults for Helidon
+        # realm: "helidon"
+        # Configure proxy host if needed
+        proxy-host: ""
+        # proxy-port: 80
+
+        # This is the default for GoogleTokenProvider
+        #token:
+        #  header: "Authorization"
+        # or do not specify - then the whole header is considered to be the token value
+        #  prefix: "bearer "
+        # optional alternative - looking for first matching group
+        #  regexp: "bearer (.*)"
+        #}]]></value>
                                     </list>
                                     <list key="dependencies">
-                                        <map if="${flavor} == 'mp'">
+                                        <map>
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-google-login</value>
                                         </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.config</value>
+                                            <value key="artifactId">helidon-config-encryption</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.bundles</value>
+                                            <value key="artifactId">helidon-bundles-config</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.nima.webserver</value>
+                                            <value key="artifactId">helidon-nima-webserver-static-content</value>
+                                        </map>
+                                    </list>
+                                    <list key="paths-config-entries">
+                                        <value><![CDATA[
+    paths:
+      - path: "/rest/profile"
+        methods: ["get"]
+        authenticate: true]]></value>
+                                    </list>
+                                    <list key="modules">
+                                        <value>io.helidon.nima.webserver.context</value>
+                                        <value>io.helidon.nima.webserver.staticcontent</value>
+                                        <value>io.helidon.security.providers.google.login</value>
                                     </list>
                                 </model>
                             </output>

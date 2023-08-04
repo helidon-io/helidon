@@ -26,6 +26,8 @@
                 <include if="${security.atn} == 'jwt'">src/*/java/**/OutboundOverrideJwtExample.java.mustache</include>
                 <include if="${security.atn} == 'jwt'">src/*/java/**/OutboundOverrideJwtExampleTest.java.mustache</include>
                 <include if="${security.atn} == 'jwt'">src/*/java/**/JwtOverrideService.java.mustache</include>
+                <include if="${security.atn} == 'google'">src/*/java/**/GoogleMain.java.mustache</include>
+                <include if="${security.atn} == 'google'">src/*/java/**/GoogleMainTest.java.mustache</include>
                 <include>/**/trick-to-avoid-empty-tag</include>
             </includes>
         </templates>
@@ -36,6 +38,7 @@
                 <include if="${security.atn} == 'jwt'">src/*/resources/**/client-service-jwt.yaml</include>
                 <include if="${security.atn} == 'jwt'">src/*/resources/**/signing-jwk.json</include>
                 <include if="${security.atn} == 'jwt'">src/*/resources/**/verifying-jwk.json</include>
+                <include if="${security.atn} == 'google'">src/*/resources/**/google.js/google-app.js</include>
                 <include>/**/trick-to-avoid-empty-tag</include>
             </includes>
         </templates>

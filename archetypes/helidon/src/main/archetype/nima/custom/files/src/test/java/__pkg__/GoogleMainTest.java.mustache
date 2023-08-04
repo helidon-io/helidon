@@ -1,0 +1,43 @@
+
+package {{package}};
+
+import io.helidon.common.http.Http;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServerConfig;
+
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+/**
+ * Unit test for {@link GoogleBuilderMain}.
+ */
+@ServerTest
+public class GoogleMainTest {
+
+    private final Http1Client client;
+
+    GoogleMainTest(Http1Client client) {
+        this.client = client;
+    }
+
+    @SetUpServer
+    public static void setup(WebServerConfig.Builder server) {
+        GoogleMain.setup(server);
+    }
+
+    @Test
+    public void testEndpoint() {
+        try (Http1ClientResponse response = client.get("/rest/profile").request()) {
+
+            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.headers().first(Http.Header.WWW_AUTHENTICATE),
+                    optionalValue(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
+        }
+    }
+}
