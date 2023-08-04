@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.common.context.Contexts;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 import jakarta.json.JsonObject;
@@ -61,6 +62,10 @@ public class GreetResourceProxy {
         builderClient = RestClientBuilder.newBuilder()
                 .baseUri(uriInfo.getBaseUri())
                 .build(GreetResourceClient.class);
+
+        // Register base URI to update dynamic port in GreetResourceFilter
+        // given that the request scope is not provided by Jersey with async
+        Contexts.globalContext().register(GreetResourceFilter.class, uriInfo.getBaseUri());
     }
 
     /**
