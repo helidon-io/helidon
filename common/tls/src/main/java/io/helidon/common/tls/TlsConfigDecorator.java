@@ -44,6 +44,7 @@ import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.ConfigException;
 
 class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.BuilderBase<?, ?>> {
     // secure random cannot be stored in native image, it must
@@ -52,8 +53,15 @@ class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.Builder
 
     @Override
     public void decorate(TlsConfig.BuilderBase<?, ?> target) {
+        validate(target);
         sslParameters(target);
         sslContext(target);
+    }
+
+    private void validate(TlsConfig.BuilderBase<?,?> target) {
+        if (target.managers().size() > 1) {
+            throw new ConfigException("Expected to have at most 1 manager");
+        }
     }
 
     private void sslContext(TlsConfig.BuilderBase<?, ?> target) {

@@ -39,6 +39,7 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.http.Http;
 import io.helidon.microprofile.cdi.RuntimeStart;
+import io.helidon.nima.common.tls.TlsManager;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
@@ -391,6 +392,16 @@ public class ServerCdiExtension implements Extension {
                                                              .build());
         }
         webserver = serverBuilder.build();
+
+        // setup reloadable Tls Managers
+        namedRoutings.forEach((name, value) -> {
+            ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
+            if (listenerConfig != null
+                    && listenerConfig.tlsManagerAutoReload()
+                    && listenerConfig.tls().isPresent()) {
+                listenerConfig.tls().get().manager().ifPresent(tlsManager -> tlsManager.register(webserver::reloadTls));
+            }
+        });
 
         try {
             webserver.start();

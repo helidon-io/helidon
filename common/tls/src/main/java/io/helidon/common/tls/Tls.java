@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
@@ -229,6 +230,15 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      */
     public SSLParameters sslParameters() {
         return sslParameters;
+    }
+
+    /**
+     * The manager for this TLS instance, if there is one.
+     *
+     * @return the tls manager
+     */
+    public Optional<TlsManager> manager() {
+        return tlsConfig.managers().isEmpty() ? Optional.empty() : Optional.of(tlsConfig.managers().get(0));
     }
 
     /**

@@ -36,6 +36,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.RequestedUriDiscoveryContext;
+import io.helidon.nima.common.tls.TlsConfig;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.http.DirectHandlers;
@@ -191,6 +192,15 @@ interface ListenerConfigBlueprint {
      */
     @ConfiguredOption
     Optional<Tls> tls();
+
+    /**
+     * Indicates whether the TLS should be automatically reloaded.
+     * This is only applicable when {@link #tls()} is set with a {@link TlsConfig#managers()} configured.
+     *
+     * @return tls auto reload configuration
+     */
+    @ConfiguredOption
+    boolean tlsManagerAutoReload();
 
     /**
      * Configure the listener specific {@link io.helidon.http.encoding.ContentEncodingContext}.
@@ -379,4 +389,3 @@ interface ListenerConfigBlueprint {
         }
     }
 }
-

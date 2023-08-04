@@ -30,6 +30,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
+import io.helidon.nima.common.tls.spi.TlsManagerProvider;
 
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
 @Configured
@@ -85,6 +86,15 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     @Prototype.Singular
     @ConfiguredOption
     List<X509Certificate> trust();
+
+    /**
+     * List of managers (enforced to be at most 1) to manage the lifecycle of the certificate and {@link Tls} creation.
+     *
+     * @return managers of the tls
+     */
+    // must be 0..1 (file an issue to allow this to not be a list)
+    @ConfiguredOption(provider = true, providerType = TlsManagerProvider.class, providerDiscoverServices = false)
+    List<TlsManager> managers();
 
     /**
      * Explicit secure random to use.
