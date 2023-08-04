@@ -1442,8 +1442,8 @@ public final class Http {
 
         /**
          * Find or create a header name.
-         * If a known indexed header exists for the lower case name, the instance is returned.
-         * Otherwise a new header name is created with the provided names.
+         * If a known indexed header exists for the name, the instance is returned.
+         * Otherwise a new header name is created with the provided name.
          *
          * @param name default case to use for custom header names (header names not known by Helidon)
          * @return header name instance
@@ -1481,9 +1481,6 @@ public final class Http {
          * @return a new header name
          */
         public static HeaderName createFromLowercase(String lowerCase) {
-            if (!Ascii.toLowerCase(lowerCase).equals(lowerCase)) {
-                throw new IllegalArgumentException("Lower case string required: " + lowerCase);
-            }
             HeaderName headerName = HeaderEnum.byName(lowerCase);
             if (headerName == null) {
                 return new HeaderImpl(lowerCase, lowerCase);
