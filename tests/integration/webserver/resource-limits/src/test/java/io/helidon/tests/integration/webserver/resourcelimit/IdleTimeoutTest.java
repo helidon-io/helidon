@@ -42,8 +42,8 @@ class IdleTimeoutTest {
 
     @SetUpServer
     static void serverSetup(WebServerConfig.Builder builder) {
-        builder.idleConnectionTimeout(Duration.ofMillis(100))
-                .idleConnectionPeriod(Duration.ofMillis(10));
+        builder.idleConnectionTimeout(Duration.ofSeconds(2))
+                .idleConnectionPeriod(Duration.ofMillis(100));
     }
 
     @SetUpRoute
@@ -53,21 +53,22 @@ class IdleTimeoutTest {
 
     @Test
     void testNoTimeout() throws InterruptedException {
-        for (int i = 0; i < 6; i++) {
+        // the timer is using second precision, we must run for longer than 3 seconds to make sure
+        for (int i = 0; i < 20; i++) {
             String response = client.sendAndReceive(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
             assertThat(response, containsString("200 OK"));
             // we sleep for 50, timeout is 250, it should be ok
-            Thread.sleep(50);
+            Thread.sleep(150);
         }
     }
 
     @Test
     void testTimeout() throws InterruptedException {
-
+        // the timer is using second precision, we must run for longer than 3 seconds to make sure
         String response = client.sendAndReceive(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
         assertThat(response, containsString("200 OK"));
         // this should be triggered correctly through the timer
-        Thread.sleep(1000);
+        Thread.sleep(3000);
         client.assertConnectionIsClosed();
     }
 }
