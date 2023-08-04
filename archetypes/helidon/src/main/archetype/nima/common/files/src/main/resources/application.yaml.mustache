@@ -5,3 +5,21 @@ server:
 {{#application-yaml-entries}}
 {{.}}
 {{/application-yaml-entries}}
+{{#security}}
+security:
+  config.require-encryption: false
+  properties:
+{{#security-properties}}
+{{.}}
+{{/security-properties}}
+  providers:
+{{#providers-config-entries}}
+{{.}}
+{{/providers-config-entries}}
+  web-server:
+    # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
+    paths:
+{{#paths-config-entries}}
+{{.}}
+{{/paths-config-entries}}
+{{/security}}

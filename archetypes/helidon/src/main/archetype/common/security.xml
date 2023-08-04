@@ -33,13 +33,132 @@
                             <output>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.oidc.yaml"/>
+                                        <value file="files/application.oidc.yaml" if="${flavor} == 'mp'"/>
+                                        <value if="${flavor} == 'nima'"><![CDATA[
+  - oidc:
+      client-id: "your-client-id"
+      client-secret: "your-client-secret"
+      identity-uri: "https://your-tenant-id.identity.oracle.com"
+      # A prefix used for custom scopes
+      scope-audience: "http://localhost:7987/test-application"
+      proxy-host: ""
+      # Used as a base for redirects back to us (based on Host header now, so no need to explicitly define it)
+      # If explicitly defined, will override host header
+      # frontend-uri: "http://localhost:7987"
+      # support for non-public signature JWK (and maybe other IDCS specific handling)
+      server-type: "idcs"
+      logout-enabled: true
+      # Can define just a path, host will be taken from header
+      post-logout-uri: "/loggedout"
+      # We want to redirect to login page (and token can be received either through cookie or header)
+      redirect: true
+  - idcs-role-mapper:
+      multitenant: false
+      oidc-config:
+        # we must repeat IDCS configuration, as in this case
+        # IDCS serves both as open ID connect authenticator and
+        # as a role mapper. Using minimal configuration here
+        client-id: "your-client-id"
+        client-secret: "your-client-secret"
+        identity-uri: "https://your-tenant-id.identity.oracle.com"]]></value>
                                     </list>
-                                    <list key="dependencies" if="${flavor} == 'mp'">
-                                        <map>
+                                    <list key="paths-config-entries">
+                                        <value if="${flavor} == 'nima'"><![CDATA[      - path: "/rest/profile"
+        methods: ["get"]
+        authenticate: true
+        roles-allowed: ["my_admins"]]]></value>
+                                    </list>
+                                    <list key="security-properties">
+                                        <value if="${flavor} == 'nima'"><![CDATA[
+    # This is a nice way to be able to override this with local properties or env-vars
+    idcs-uri: "https://your-tenant-id.identity.oracle.com"
+    idcs-client-id: "your-client-id"
+    idcs-client-secret: "your-client-secret"
+    proxy-host: ""]]></value>
+                                    </list>
+                                    <list key="dependencies">
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.microprofile</value>
                                             <value key="artifactId">helidon-microprofile-oidc</value>
                                         </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.security.providers</value>
+                                            <value key="artifactId">helidon-security-providers-oidc</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.security.providers</value>
+                                            <value key="artifactId">helidon-security-providers-idcs-mapper</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.security.integration</value>
+                                            <value key="artifactId">helidon-security-integration-nima</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.config</value>
+                                            <value key="artifactId">helidon-config-encryption</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.smallrye</value>
+                                            <value key="artifactId">jandex</value>
+                                            <value key="scope">runtime</value>
+                                            <value key="optional">true</value>
+                                        </map>
+                                    </list>
+                                    <list key="Main-java-imports" if="${flavor} == 'nima'">
+                                        <value>java.util.Optional</value>
+                                    </list>
+                                    <list key="Main-helidon-imports" if="${flavor} == 'nima'">
+                                        <value>io.helidon.common.context.Contexts</value>
+                                        <value>io.helidon.common.http.HttpMediaType</value>
+                                        <value>io.helidon.security.Security</value>
+                                        <value>io.helidon.security.SecurityContext</value>
+                                        <value>io.helidon.security.Subject</value>
+                                        <value>io.helidon.security.integration.nima.SecurityFeature</value>
+                                        <value>io.helidon.security.providers.oidc.OidcFeature</value>
+                                    </list>
+                                    <list key="Main-routing" if="${flavor} == 'nima'">
+                                        <value><![CDATA[
+        Security security = Security.create(config.get("security"));
+        // this is needed for proper encryption/decryption of cookies
+        Contexts.globalContext().register(security);
+
+        if (config.get("security.enabled").asBoolean().orElse(true)) {
+            // IDCS requires a web resource for redirects
+            routing.addFeature(OidcFeature.create(config));
+        }
+]]></value>
+                                    </list>
+                                    <list key="Main-routing-builder" if="${flavor} == 'nima'">
+                                        <value><![CDATA[                        .addFeature(SecurityFeature.create(security, config.get("security")))
+                        // web server does not (yet) have possibility to configure routes in config files, so explicit...
+                        .get("/rest/profile", (req, res) -> {
+                            Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
+                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.send("Response from config based service, you are: \n" + securityContext
+                                    .flatMap(SecurityContext::user)
+                                    .map(Subject::toString)
+                                    .orElse("Security context is null"));
+                        })
+                        .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]></value>
+                                    </list>
+                                    <list key="maven-plugins" if="${flavor} == 'nima'">
+                                        <value><![CDATA[
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>make-index</id>
+                    </execution>
+                </executions>
+            </plugin>]]></value>
+                                    </list>
+                                    <list key="modules" if="${flavor} == 'nima'">
+                                        <value>io.helidon.security.providers.oidc</value>
+                                        <value>io.helidon.security.integration.nima</value>
+                                    </list>
+                                    <list key="modules">
+                                        <value if="${flavor} == 'nima'">io.helidon.security</value>
                                     </list>
                                 </model>
                             </output>
@@ -48,10 +167,10 @@
                             <output>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.jwt.yaml"/>
+                                        <value file="files/application.jwt.yaml" if="${flavor} == 'mp'"/>
                                     </list>
                                     <list key="dependencies">
-                                        <map>
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-jwt</value>
                                         </map>
@@ -63,10 +182,10 @@
                             <output>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.google.yaml"/>
+                                        <value file="files/application.google.yaml" if="${flavor} == 'mp'"/>
                                     </list>
                                     <list key="dependencies">
-                                        <map>
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-google-login</value>
                                         </map>
@@ -76,7 +195,7 @@
                         </option>
                         <option value="http-signature" name="HTTP Signature" description="Service to service authentication">
                             <output>
-                                <files>
+                                <files if="${flavor} == 'mp'">
                                     <directory>files</directory>
                                     <includes>
                                         <include>src/main/resources/keystore.p12</include>
@@ -84,10 +203,10 @@
                                 </files>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.http-signature.yaml"/>
+                                        <value file="files/application.http-signature.yaml" if="${flavor} == 'mp'"/>
                                     </list>
                                     <list key="dependencies">
-                                        <map>
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-http-sign</value>
                                         </map>
@@ -101,16 +220,16 @@
                             <output>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.abac.yaml"/>
+                                        <value file="files/application.abac.yaml" if="${flavor} == 'mp'"/>
                                     </list>
                                     <list key="dependencies">
-                                        <map>
+                                        <map if="${flavor} == 'mp'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-abac</value>
                                         </map>
                                     </list>
                                     <list key="paths-config-entries">
-                                        <value order="90"><![CDATA[         roles-allowed: ["user"]]]></value>
+                                        <value order="90" if="${flavor} == 'mp'"><![CDATA[         roles-allowed: ["user"]]]></value>
                                     </list>
                                 </model>
                             </output>
@@ -127,9 +246,15 @@
                             </map>
                         </list>
                         <list key="paths-config-entries">
-                            <value><![CDATA[       - path: "/simple-greet"
+                            <value if="${flavor} == 'mp'"><![CDATA[       - path: "/simple-greet"
          methods: ["get"]
          authenticate: true]]></value>
+                        </list>
+                        <list key="config-test" if="${flavor} == 'nima'">
+                            <value><![CDATA[
+security:
+  enabled: false
+]]></value>
                         </list>
                     </model>
                 </output>

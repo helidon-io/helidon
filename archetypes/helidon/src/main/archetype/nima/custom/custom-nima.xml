@@ -29,6 +29,8 @@
     <source src="/common/media-sources.xml"/>
     <source src="/common/extra.xml"/>
     <source src="/nima/custom/extra.xml"/>
+    <exec src="/common/packaging.xml"/>
+    <exec src="/common/security.xml"/>
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
         <model>
