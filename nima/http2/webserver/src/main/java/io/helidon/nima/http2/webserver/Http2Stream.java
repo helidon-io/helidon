@@ -87,7 +87,9 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
     private long expectedLength = -1;
     private HttpRouting routing;
     private HttpPrologue prologue;
-    private Semaphore requestSemaphore;
+    // create a semaphore if accessed before we get the one from connection
+    // must be volatile, as it is accessed both from connection thread and from stream thread
+    private volatile Semaphore requestSemaphore = new Semaphore(1);
     private boolean semaphoreAcquired;
 
     /**
