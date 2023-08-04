@@ -49,6 +49,9 @@ $(basename ${0}) [ --build-number=N ] CMD
         Perform a release build
         This will create a local branch, deploy artifacts and push a tag
 
+    deploy_snapshot
+        Perform a snapshot build and deploy to snapshot repository
+
 EOF
 }
 
@@ -238,7 +241,7 @@ release_build(){
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
-       -Prelease,archetypes \
+       -Pdeploy,release,archetypes \
       -DskipTests \
       -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DretryFailedDeploymentCount="10"
@@ -260,6 +263,21 @@ release_build(){
 
     git tag -f "${FULL_VERSION}"
     git push --force origin refs/tags/"${FULL_VERSION}":refs/tags/"${FULL_VERSION}"
+}
+
+deploy_snapshot(){
+
+    # Make sure version ends in -SNAPSHOT
+    if [[ ${FULL_VERSION} != *-SNAPSHOT ]]; then
+        echo "Helidon version ${FULL_VERSION} is not a SNAPSHOT version. Failing snapshot release."
+        exit 1
+    fi
+
+    # Perform deployment. Since the version is SNAPSHOT this will go to snapshot repository
+    mvn ${MAVEN_ARGS} clean deploy \
+      -Pdeploy,archetypes \
+      -DskipTests \
+      -DretryFailedDeploymentCount="10"
 }
 
 # Invoke command
