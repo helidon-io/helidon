@@ -24,13 +24,12 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.SignStyle;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Predicate;
 
 import io.helidon.common.buffers.Ascii;
@@ -1767,24 +1766,23 @@ public final class Http {
          */
         private static final Map<Long, String> MONTH_NAME_3D;
 
+        private static volatile ZonedDateTime time;
         private static volatile String rfc1123String;
         private static volatile byte[] http1valueBytes;
 
         static {
-            Map<Long, String> map = new HashMap<>();
-            map.put(1L, "Jan");
-            map.put(2L, "Feb");
-            map.put(3L, "Mar");
-            map.put(4L, "Apr");
-            map.put(5L, "May");
-            map.put(6L, "Jun");
-            map.put(7L, "Jul");
-            map.put(8L, "Aug");
-            map.put(9L, "Sep");
-            map.put(10L, "Oct");
-            map.put(11L, "Nov");
-            map.put(12L, "Dec");
-            MONTH_NAME_3D = Collections.unmodifiableMap(map);
+            MONTH_NAME_3D = Map.ofEntries(Map.entry(1L, "Jan"),
+                                          Map.entry(2L, "Feb"),
+                                          Map.entry(3L, "Mar"),
+                                          Map.entry(4L, "Apr"),
+                                          Map.entry(5L, "May"),
+                                          Map.entry(6L, "Jun"),
+                                          Map.entry(7L, "Jul"),
+                                          Map.entry(8L, "Aug"),
+                                          Map.entry(9L, "Sep"),
+                                          Map.entry(10L, "Oct"),
+                                          Map.entry(11L, "Nov"),
+                                          Map.entry(12L, "Dec"));
 
             // manually code maps to ensure correct data always used
             // (locale data can be changed by application code)
@@ -1851,18 +1849,13 @@ public final class Http {
 
             update();
 
-            Thread thread = new Thread(() -> {
-                while (true) {
-                    update();
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
-            }, "helidon-http-timer");
-            thread.setDaemon(true);
-            thread.start();
+            // start a timer, scheduled every second to update server time (we do not need better precision)
+            new Timer("helidon-http-timer", true)
+                    .schedule(new TimerTask() {
+                        public void run() {
+                            update();
+                        }
+                    }, 1000, 1000);
         }
 
         private DateTime() {
@@ -1891,6 +1884,15 @@ public final class Http {
         }
 
         /**
+         * Last recorded timestamp.
+         *
+         * @return timestamp
+         */
+        public static ZonedDateTime timestamp() {
+            return time;
+        }
+
+        /**
          * Get current time as RFC-1123 string.
          *
          * @return formatted current time
@@ -1910,7 +1912,8 @@ public final class Http {
         }
 
         static void update() {
-            rfc1123String = ZonedDateTime.now().format(RFC_1123_DATE_TIME);
+            time = ZonedDateTime.now();
+            rfc1123String = time.format(RFC_1123_DATE_TIME);
             http1valueBytes = (rfc1123String + "\r\n").getBytes(StandardCharsets.US_ASCII);
         }
     }

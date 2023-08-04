@@ -82,8 +82,8 @@ class BadRequestTest {
     @Test
     void testInvalidRequest() {
         // wrong content length
-        String response = socketClient.sendAndReceive("/",
-                                                      Http.Method.GET,
+        String response = socketClient.sendAndReceive(Http.Method.GET,
+                                                      "/",
                                                       null,
                                                       List.of("Content-Length: 47a"));
 
@@ -94,8 +94,8 @@ class BadRequestTest {
     @Test
     void testInvalidRequestWithRedirect() {
         // wrong content length
-        String response = socketClient.sendAndReceive("/redirect",
-                                                      Http.Method.GET,
+        String response = socketClient.sendAndReceive(Http.Method.GET,
+                                                      "/redirect",
                                                       null,
                                                       List.of("Content-Length: 47a"));
 
@@ -108,8 +108,8 @@ class BadRequestTest {
     @Test
     void testInvalidUri() {
         // must fail on creation of bare request impl (URI.create())
-        String response = socketClient.sendAndReceive("/bad{",
-                                                      Http.Method.GET,
+        String response = socketClient.sendAndReceive(Http.Method.GET,
+                                                      "/bad{",
                                                       null);
 
         assertThat(response, containsString("400 " + CUSTOM_REASON_PHRASE));

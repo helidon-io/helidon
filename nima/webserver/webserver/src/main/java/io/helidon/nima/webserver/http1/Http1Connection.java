@@ -18,8 +18,11 @@ package io.helidon.nima.webserver.http1;
 
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -76,7 +79,11 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private long currentEntitySize;
     private long currentEntitySizeRead;
 
+    private volatile Thread myThread;
+    private volatile boolean canRun = true;
     private volatile boolean currentlyReadingPrologue;
+    private volatile ZonedDateTime lastRequestTimestamp;
+    private volatile ServerConnection upgradeConnection;
 
     /**
      * Create a new connection.
@@ -85,9 +92,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
      * @param http1Config             connection provider configuration
      * @param upgradeProviderMap map of upgrade providers (protocol id to provider)
      */
-    public Http1Connection(ConnectionContext ctx,
-                           Http1Config http1Config,
-                           Map<String, Http1Upgrader> upgradeProviderMap) {
+    Http1Connection(ConnectionContext ctx,
+                    Http1Config http1Config,
+                    Map<String, Http1Upgrader> upgradeProviderMap) {
         this.ctx = ctx;
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
@@ -102,22 +109,28 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
+        this.lastRequestTimestamp = Http.DateTime.timestamp();
     }
 
     @Override
     public boolean canInterrupt() {
-        return currentlyReadingPrologue;
+        if (upgradeConnection == null) {
+            return currentlyReadingPrologue;
+        }
+        return true;
     }
 
     @Override
-    public void handle() throws InterruptedException {
+    public void handle(Semaphore requestSemaphore) throws InterruptedException {
+        this.myThread = Thread.currentThread();
         try {
             // handle connection until an exception (or explicit connection close)
-            while (true) {
+            while (canRun) {
                 // prologue (first line of request)
                 currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
                 currentlyReadingPrologue = false;
+                lastRequestTimestamp = Http.DateTime.timestamp();
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
@@ -135,14 +148,32 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                 if (LOGGER.isLoggable(TRACE)) {
                                     LOGGER.log(TRACE, "Connection upgrade using " + upgradeConnection);
                                 }
+                                this.upgradeConnection = upgradeConnection;
                                 // this will block until the connection terminates
-                                upgradeConnection.handle();
+                                upgradeConnection.handle(requestSemaphore);
                                 return;
                             }
                         }
                     }
                 }
-                route(prologue, headers);
+                if (requestSemaphore.tryAcquire()) {
+                    try {
+                        this.lastRequestTimestamp = Http.DateTime.timestamp();
+                        route(prologue, headers);
+                        this.lastRequestTimestamp = Http.DateTime.timestamp();
+                    } finally {
+                        requestSemaphore.release();
+                    }
+                } else {
+                    ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
+                    throw RequestException.builder()
+                            .setKeepAlive(false)
+                            .status(Http.Status.SERVICE_UNAVAILABLE_503)
+                            .type(EventType.OTHER)
+                            .message("Too Many Concurrent Requests")
+                            .build();
+                }
+
             }
         } catch (CloseConnectionException | UncheckedIOException e) {
             throw e;
@@ -162,6 +193,36 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                            .type(EventType.INTERNAL_ERROR)
                                            .cause(e)
                                            .build());
+        }
+    }
+
+    @Override
+    public Duration idleTime() {
+        if (upgradeConnection == null) {
+            return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+        }
+        return upgradeConnection.idleTime();
+    }
+
+    @Override
+    public void close(boolean interrupt) {
+        ctx.log(LOGGER, TRACE, "Requested connection close, interrupt: %s", interrupt);
+        // either way, finish
+        this.canRun = false;
+
+        if (upgradeConnection == null) {
+            if (interrupt) {
+                // interrupt regardless of current state
+                if (myThread != null) {
+                    myThread.interrupt();
+                }
+            } else if (canInterrupt()) {
+                // only interrupt when not processing a request (there is a chance of a race condition, this edge case
+                // is ignored
+                myThread.interrupt();
+            }
+        } else {
+            upgradeConnection.close(interrupt);
         }
     }
 

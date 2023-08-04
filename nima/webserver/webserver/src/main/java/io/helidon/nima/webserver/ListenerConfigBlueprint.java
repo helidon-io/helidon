@@ -222,6 +222,46 @@ interface ListenerConfigBlueprint {
     SocketOptions connectionOptions();
 
     /**
+     * Limits the number of connections that can be opened at a single point in time.
+     * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
+     *
+     * @return number of TCP connections that can be opened to this listener, regardless of protocol
+     */
+    @ConfiguredOption("-1")
+    int maxTcpConnections();
+
+    /**
+     * Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests).
+     * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
+     * Also make sure that this number is higher than the expected time it takes to handle a single request in your application,
+     * as otherwise you may stop in-progress requests.
+     *
+     * @return number of requests that can be processed on this listener, regardless of protocol
+     */
+    @ConfiguredOption("-1")
+    int maxConcurrentRequests();
+
+    /**
+     * How long should we wait before closing a connection that has no traffic on it.
+     * Defaults to {@code PT5M} (5 minutes). Note that the timestamp is refreshed max. once per second, so this setting
+     * would be useless if configured for shorter periods of time (also not a very good support for connection keep alive,
+     * if the connections are killed so soon anyway).
+     *
+     * @return timeout of idle connections
+     */
+    @ConfiguredOption("PT5M")
+    Duration idleConnectionTimeout();
+
+    /**
+     * How often should we check for {@link #idleConnectionTimeout()}.
+     * Defaults to {@code PT2M} (2 minutes).
+     *
+     * @return period of checking for idle connections
+     */
+    @ConfiguredOption("PT2M")
+    Duration idleConnectionPeriod();
+
+    /**
      * Server listener socket options.
      * Unless configured through builder, {@code SO_REUSEADDR} is set to {@code true},
      * and {@code SO_RCVBUF} is set to {@code 4096}.

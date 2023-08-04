@@ -23,6 +23,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
@@ -109,7 +110,9 @@ class DirectWsConnection {
 
             ClientWsConnection clientConnection = ClientWsConnection.create(new DirectConnect(clientReader, clientWriter),
                                                                             clientListener);
-            serverFuture = executorService.submit(serverConnection::handle);
+            serverFuture = executorService.submit(() -> {
+                serverConnection.handle(new Semaphore(1024));
+            });
             clientFuture = executorService.submit(clientConnection);
         }
     }

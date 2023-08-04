@@ -158,7 +158,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             if (clients.putIfAbsent(socketName, new DirectClient(routing)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method
-                                                        + " defines WebSocket routing for socket \""
+                                                        + " defines HTTP routing for socket \""
                                                         + socketName
                                                         + "\""
                                                         + " that is already defined for class \""
@@ -169,7 +169,7 @@ public class Http1DirectJunitExtension implements DirectJunitExtension {
             if (webClients.putIfAbsent(socketName, new DirectWebClient(routing)) != null) {
                 throw new IllegalStateException("Method "
                                                         + method
-                                                        + " defines WebSocket routing for socket \""
+                                                        + " defines HTTP routing for socket \""
                                                         + socketName
                                                         + "\""
                                                         + " that is already defined for class \""

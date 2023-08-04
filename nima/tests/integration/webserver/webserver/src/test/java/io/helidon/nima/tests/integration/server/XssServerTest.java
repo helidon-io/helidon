@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,16 +46,18 @@ class XssServerTest {
 
     @Test
     void testScriptInjection() {
-        String s = socketHttpClient.sendAndReceive("/bar%3cscript%3eevil%3c%2fscript%3e",
-                                                   Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET,
+                                                   "/bar%3cscript%3eevil%3c%2fscript%3e",
+                                                   null);
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
 
     @Test
     void testScriptInjectionIllegalUrlChar() {
-        String s = socketHttpClient.sendAndReceive("/bar<script/>evil</script>",
-                                                   Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET,
+                                                   "/bar<script/>evil</script>",
+                                                   null);
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
@@ -63,16 +65,19 @@ class XssServerTest {
     @Test
     void testScriptInjectionContentType() {
         List<String> requestHeaders = List.of("Content-Type: <script>evil</script>");
-        String s = socketHttpClient.sendAndReceive("/foo",
-                                                   Http.Method.GET, null, requestHeaders);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET,
+                                                   "/foo",
+                                                   null,
+                                                   requestHeaders);
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }
 
     @Test
     void testResponseEncoding() {
-        String s = socketHttpClient.sendAndReceive("/foo",
-                                                   Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET,
+                                                   "/foo",
+                                                   null);
         assertThat(s, not(containsString("<script>")));
         assertThat(s, not(containsString("</script>")));
     }

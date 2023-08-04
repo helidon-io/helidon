@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Timer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -101,6 +102,7 @@ class LoomServer implements WebServer, Startable {
             routerBuilder.addRouting(HttpRouting.create());
         }
 
+        Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();
         sockets.forEach((name, socketConfig) -> {
             listenerMap.put(name,
@@ -108,6 +110,7 @@ class LoomServer implements WebServer, Startable {
                                                socketConfig,
                                                routerBuilder.build(),
                                                context,
+                                               idleConnectionTimer,
                                                serverConfig.mediaContext().orElseGet(MediaContext::create),
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
                                                serverConfig.directHandlers().orElseGet(DirectHandlers::create)));

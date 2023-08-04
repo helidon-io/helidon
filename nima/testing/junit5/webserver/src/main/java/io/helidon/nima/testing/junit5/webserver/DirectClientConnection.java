@@ -19,6 +19,7 @@ package io.helidon.nima.testing.junit5.webserver;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
@@ -152,7 +153,7 @@ class DirectClientConnection implements ClientConnection {
         serverContext.executor()
                 .submit(() -> {
                     try {
-                        connection.handle();
+                        connection.handle(new Semaphore(1024));
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }

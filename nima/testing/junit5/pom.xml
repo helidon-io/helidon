@@ -38,6 +38,7 @@
     <modules>
         <module>webserver</module>
         <module>websocket</module>
+        <module>http2</module>
     </modules>
 
 </project>

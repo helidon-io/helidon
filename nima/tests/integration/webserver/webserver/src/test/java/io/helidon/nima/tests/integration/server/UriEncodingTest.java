@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class UriEncodingTest {
      */
     @Test
     void testEncodedUrl() {
-        String s = socketHttpClient.sendAndReceive("/f%6F%6F", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/f%6F%6F", null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("It works!"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
@@ -59,7 +59,7 @@ class UriEncodingTest {
      */
     @Test
     void testEncodedUrlParams() {
-        String s = socketHttpClient.sendAndReceive("/f%6F%6F/b%61%72", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/f%6F%6F/b%61%72", null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("bar"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));

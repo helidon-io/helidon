@@ -19,7 +19,9 @@ package io.helidon.nima.webserver;
 import java.io.UncheckedIOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -45,8 +47,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
 
     private final ListenerContext listenerContext;
+    // we must safely release the semaphore whenever this connection is finished, so other connections can be created!
+    private final Semaphore connectionSemaphore;
+    private final Semaphore requestSemaphore;
     private final ConnectionProviders connectionProviders;
     private final List<ServerConnectionSelector> providerCandidates;
+    private final Map<String, ServerConnection> activeConnections;
     private final HelidonSocket socket;
     private final Router router;
     private final SocketWriter writer;
@@ -55,12 +61,18 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private ServerConnection connection;
 
     ConnectionHandler(ListenerContext listenerContext,
+                      Semaphore connectionSemaphore,
+                      Semaphore requestSemaphore,
                       ConnectionProviders connectionProviders,
+                      Map<String, ServerConnection> activeConnections,
                       HelidonSocket socket,
                       Router router) {
         this.listenerContext = listenerContext;
+        this.connectionSemaphore = connectionSemaphore;
+        this.requestSemaphore = requestSemaphore;
         this.connectionProviders = connectionProviders;
         this.providerCandidates = connectionProviders.providerCandidates();
+        this.activeConnections = activeConnections;
         this.socket = socket;
         this.router = router;
         this.writer = SocketWriter.create(listenerContext.executor(), socket, listenerContext.config().writeQueueLength());
@@ -74,7 +86,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     @Override
     public final void run() {
-        Thread.currentThread().setName("[" + socket.socketId() + " " + socket.childSocketId() + "] Nima socket");
+        String socketsId = socket.socketId() + " " + socket.childSocketId();
+        Thread.currentThread().setName("[" + socketsId + "] Nima socket");
         if (LOGGER.isLoggable(DEBUG)) {
             socket.log(LOGGER,
                        DEBUG,
@@ -96,19 +109,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             if (connection == null) {
                 throw new CloseConnectionException("No suitable connection provider");
             }
-
-            // removing structured concurrency for now - we should use this when we start more threads for a single
-            // request, which is not the case now for HTTP/1
-            //            try (var executor = StructuredTaskScope.open(serverChannelId + " " + channelId,
-            //                                                         Thread.ofVirtual().factory(), (scope, future) -> {})) {
-            //                try {
-            //                    connection.handle();
-            //                } finally {
-            //                    writer.close();
-            //                    executor.join();
-            //                }
-            //            }
-            connection.handle();
+            activeConnections.put(socketsId, connection);
+            connection.handle(requestSemaphore);
         } catch (RequestException e) {
             socket.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {
@@ -122,6 +124,9 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         } catch (Exception e) {
             socket.log(LOGGER, WARNING, "unexpected exception", e);
         } finally {
+            // connection has finished the loop of handling, release the semaphore
+            connectionSemaphore.release();
+            activeConnections.remove(socketsId);
             writer.close();
             closeChannel();
         }

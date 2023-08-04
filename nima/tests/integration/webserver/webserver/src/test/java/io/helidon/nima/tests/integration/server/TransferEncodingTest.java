@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ class TransferEncodingTest {
      */
     @Test
     void testEmptyContentLength() {
-        String s = socketHttpClient.sendAndReceive("/empty", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/empty", null);
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
@@ -87,7 +87,7 @@ class TransferEncodingTest {
      */
     @Test
     void testEmptyChunked() {
-        String s = socketHttpClient.sendAndReceive("/emptychunked", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/emptychunked", null);
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
@@ -97,7 +97,7 @@ class TransferEncodingTest {
      */
     @Test
     void testContentLength() {
-        String s = socketHttpClient.sendAndReceive("/length", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/length", null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(CONTENT_LENGTH_NINE));
@@ -108,7 +108,7 @@ class TransferEncodingTest {
      */
     @Test
     void testChunkedEncoding() {
-        String s = socketHttpClient.sendAndReceive("/chunked", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/chunked", null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
@@ -119,7 +119,7 @@ class TransferEncodingTest {
      */
     @Test
     void testOptimized() {
-        String s = socketHttpClient.sendAndReceive("/optimized", Http.Method.GET, null);
+        String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/optimized", null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("It works!"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
         assertThat(headers, hasHeader(CONTENT_LENGTH_NINE));

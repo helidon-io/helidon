@@ -28,12 +28,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLParameters;
@@ -54,6 +58,7 @@ import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.http.DirectHandlers;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.spi.ProtocolConfig;
+import io.helidon.nima.webserver.spi.ServerConnection;
 import io.helidon.nima.webserver.spi.ServerConnectionSelector;
 import io.helidon.nima.webserver.spi.ServerConnectionSelectorProvider;
 
@@ -88,6 +93,9 @@ class ServerListener implements ListenerContext {
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
     private final Context context;
+    private final Semaphore connectionSemaphore;
+    private final Semaphore requestSemaphore;
+    private final Map<String, ServerConnection> activeConnections = new ConcurrentHashMap<>();
 
     private volatile boolean running;
     private volatile int connectedPort;
@@ -98,6 +106,7 @@ class ServerListener implements ListenerContext {
                    ListenerConfig listenerConfig,
                    Router router,
                    Context serverContext,
+                   Timer idleConnectionTimer,
                    MediaContext defaultMediaContext,
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers) {
@@ -115,6 +124,12 @@ class ServerListener implements ListenerContext {
                     }
                 });
 
+        this.connectionSemaphore = listenerConfig.maxTcpConnections() == -1
+                ? new NoopSemaphore()
+                : new Semaphore(listenerConfig.maxTcpConnections());
+        this.requestSemaphore = listenerConfig.maxConcurrentRequests() == -1
+                ? new NoopSemaphore()
+                : new Semaphore(listenerConfig.maxConcurrentRequests());
         this.connectionProviders = ConnectionProviders.create(selectors);
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
@@ -166,6 +181,11 @@ class ServerListener implements ListenerContext {
             // customize routing
             this.router = routerBuilder.build();
         }
+        // handle idle connection timeout
+        IdleTimeoutHandler ith = new IdleTimeoutHandler(idleConnectionTimer,
+                                                        listenerConfig,
+                                                        this::activeConnections);
+        ith.start();
     }
 
     @Override
@@ -333,6 +353,8 @@ class ServerListener implements ListenerContext {
 
         while (running) {
             try {
+                // this must be done before we accept, and the semaphore must be released when connection is finished
+                connectionSemaphore.acquire();
                 // if accept fails itself, we consider it end of story, the listener is broken
                 Socket socket = serverSocket.accept();
 
@@ -361,16 +383,23 @@ class ServerListener implements ListenerContext {
                     }
 
                     handler = new ConnectionHandler(this,
+                                                    connectionSemaphore,
+                                                    requestSemaphore,
                                                     connectionProviders,
+                                                    activeConnections,
                                                     helidonSocket,
                                                     router);
 
                     readerExecutor.execute(handler);
                 } catch (RejectedExecutionException e) {
                     LOGGER.log(ERROR, "Executor rejected handler for new connection");
+                    // we never started the handler, so we must release the semaphore here
+                    connectionSemaphore.release();
                 } catch (Exception e) {
                     // we may get an SSL handshake errors, which should only fail one socket, not the listener
                     LOGGER.log(TRACE, "Failed to handle accepted socket", e);
+                    // we never started the handler, so we must release the semaphore here
+                    connectionSemaphore.release();
                 }
             } catch (SocketException e) {
                 if (!e.getMessage().contains("Socket closed")) {
@@ -389,5 +418,9 @@ class ServerListener implements ListenerContext {
 
         LOGGER.log(INFO, String.format("[%s] %s socket closed.", serverChannelId, socketName));
         closeFuture.complete(null);
+    }
+
+    private List<ServerConnection> activeConnections() {
+        return new ArrayList<>(activeConnections.values());
     }
 }
