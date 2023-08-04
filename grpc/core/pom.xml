@@ -37,11 +37,6 @@
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.grpc</groupId>
-            <artifactId>io.grpc</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty</artifactId>
             <exclusions>
@@ -58,6 +53,10 @@
                 <exclusion>
                     <groupId>io.grpc</groupId>
                     <artifactId>grpc-stub</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.j2objc</groupId>
+                    <artifactId>j2objc-annotations</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

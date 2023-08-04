@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ module io.helidon.config.etcd {
     requires java.logging;
     requires transitive io.helidon.config;
     requires etcd4j;
-    requires io.grpc;
+    requires grpc.api;
     requires grpc.protobuf;
     requires grpc.stub;
     requires com.google.protobuf;
