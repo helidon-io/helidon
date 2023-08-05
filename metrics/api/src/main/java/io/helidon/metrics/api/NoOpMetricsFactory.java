@@ -55,7 +55,7 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public DistributionSummary.Builder distributionSummaryBuilder(String name) {
+    public DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder) {
         // TODO
         return null;
     }

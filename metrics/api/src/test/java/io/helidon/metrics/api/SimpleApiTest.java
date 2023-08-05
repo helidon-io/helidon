@@ -100,7 +100,7 @@ public class SimpleApiTest {
 
     @Test
     void testFilteredMetersWithNoMatches() {
-        Collection<Meter> candidateCounters =
+        Collection<? extends Meter> candidateCounters =
         Metrics.globalRegistry()
                 .meters(m -> m.id().name().equals("no such meter"));
 

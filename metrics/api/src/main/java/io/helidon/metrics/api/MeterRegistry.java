@@ -30,7 +30,7 @@ public interface MeterRegistry extends Wrapped {
      *
      * @return registered meters
      */
-    List<Meter> meters();
+    List<? extends Meter> meters();
 
     /**
      * Returns previously-registered meters which match the specified {@link java.util.function.Predicate}.
@@ -38,7 +38,7 @@ public interface MeterRegistry extends Wrapped {
      * @param filter the predicate with which to evaluate each {@link io.helidon.metrics.api.Meter}
      * @return meters which match the predicate
      */
-    Collection<Meter> meters(Predicate<Meter> filter);
+    Collection<? extends Meter> meters(Predicate<Meter> filter);
 
     /**
      * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new
@@ -58,7 +58,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered counter; empty if not found
      */
-    default Optional<Counter> getCounter(String name, Iterable<Tag> tags) {
+    default Optional<? extends Counter> getCounter(String name, Iterable<Tag> tags) {
         return get(Counter.class, name, tags);
     }
 
@@ -69,7 +69,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered distribution summary; empty if not found
      */
-    default Optional<DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
+    default Optional<? extends DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
         return get(DistributionSummary.class, name, tags);
     }
 
@@ -80,7 +80,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered gauge; empty if not found
      */
-    default Optional<Gauge> getGauge(String name, Iterable<Tag> tags) {
+    default Optional<? extends Gauge> getGauge(String name, Iterable<Tag> tags) {
         return get(Gauge.class, name, tags);
     }
 
@@ -91,7 +91,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered timer; empty if not found
      */
-    default Optional<Timer> getTimer(String name, Iterable<Tag> tags) {
+    default Optional<? extends Timer> getTimer(String name, Iterable<Tag> tags) {
         return get(Timer.class, name, tags);
     }
 

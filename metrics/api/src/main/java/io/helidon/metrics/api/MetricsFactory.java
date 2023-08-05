@@ -76,7 +76,7 @@ public interface MetricsFactory {
      * @param name name of the summary
      * @return summary builder
      */
-    DistributionSummary.Builder distributionSummaryBuilder(String name);
+    DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Gauge}.

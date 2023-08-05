@@ -15,50 +15,91 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.function.ToDoubleFunction;
+
+import io.helidon.metrics.api.Clock;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionStatisticsConfig;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.HistogramSnapshot;
+import io.helidon.metrics.api.HistogramSupport;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
+
+import io.micrometer.core.instrument.Metrics;
+
 /**
  * Implementation of Helidon metrics based on Micrometer.
  */
-public class MicrometerMetricsProvider { /* implements MetricsFactory {
+public class MicrometerMetricsProvider implements MetricsFactory {
+
+
+    @Override
+    public MeterRegistry globalRegistry() {
+        return MMeterRegistry.create(Metrics.globalRegistry);
+    }
+
+    @Override
+    public Counter.Builder counterBuilder(String name) {
+        return MCounter.builder(name);
+    }
+
+    @Override
+    public DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder() {
+        return null;
+    }
+
+    @Override
+    public DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder) {
+        return MDistributionSummary.builder(name, configBuilder);
+    }
+
+    @Override
+    public <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+        return MGauge.builder(name, stateObject, fn);
+    }
+
+    @Override
+    public HistogramSupport.Builder histogramSupportBuilder() {
+        return null;
+    }
+
+    @Override
+    public Timer.Builder timerBuilder(String name) {
+        return Timer.builder(name);
+    }
+
+    @Override
+    public Timer.Sample timerStart() {
+        return null;
+    }
+
+    @Override
+    public Timer.Sample timerStart(MeterRegistry registry) {
+        return null;
+    }
+
+    @Override
+    public Timer.Sample timerStart(Clock clock) {
+        return null;
+    }
+
+    @Override
+    public Meter.Id idOf(String name, Iterable<Tag> tags) {
+        return null;
+    }
 
     @Override
     public Tag tagOf(String key, String value) {
-        return MicrometerTag.of(key, value);
+        return null;
     }
 
     @Override
-    public Tags tags_of(String key, String value) {
-        return MicrometerTags.of(key, value);
+    public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
+        return null;
     }
-
-    @Override
-    public Tags tags_concat(Iterable<? extends Tag> tags, Iterable<? extends Tag> other) {
-        return MicrometerTags.concat(tags, other);
-    }
-
-    @Override
-    public Tags tags_concat(Iterable<? extends Tag> tags, String... keyValues) {
-        return MicrometerTags.concat(tags, keyValues);
-    }
-
-    @Override
-    public Tags tags_of(Iterable<? extends Tag> tags) {
-        return MicrometerTags.of(tags);
-    }
-
-    @Override
-    public Tags tags_of(String... keyValues) {
-        return MicrometerTags.of(keyValues);
-    }
-
-    @Override
-    public Tags tags_of(Tag... tags) {
-        return MicrometerTags.of(tags);
-    }
-
-    @Override
-    public Tags tags_empty() {
-        return MicrometerTags.empty();
-    }
-*/
-
 }
