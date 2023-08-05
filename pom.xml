@@ -61,6 +61,7 @@
         <version.lib.checkstyle>9.1</version.lib.checkstyle>
         <version.lib.commons-io>2.11.0</version.lib.commons-io>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
+        <version.brotli>1.0.0-SNAPSHOT</version.brotli>
         <!-- Silence javadoc error org.jboss.logging.annotations.Message$Format not found -->
         <version.lib.jboss-logging-annotations>2.2.1.Final</version.lib.jboss-logging-annotations>
         <version.lib.jsoup>1.15.3</version.lib.jsoup>
@@ -896,6 +897,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.oracle.brotli</groupId>
+                <artifactId>brotli</artifactId>
+                <version>${version.brotli}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.12</artifactId>

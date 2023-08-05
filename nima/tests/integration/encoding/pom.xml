@@ -30,6 +30,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>brotli</module>
         <module>gzip</module>
         <module>deflate</module>
     </modules>
