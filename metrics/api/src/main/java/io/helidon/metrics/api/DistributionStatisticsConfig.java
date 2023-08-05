@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Configuration which controls the behavior of distribution statistics from meters that support them
@@ -34,46 +35,62 @@ public interface DistributionStatisticsConfig extends Wrapped {
     }
 
     /**
+     * Creates a new configuration by merging another one (called the "parent") with the current instance,
+     * using values from the current instance if they have been set and from the parent otherwise.
+     *
+     * @param parent the other configuration
+     * @return new config resulting from the merge
+     */
+    DistributionStatisticsConfig merge(DistributionStatisticsConfig parent);
+
+    /**
      * Returns whether the configuration is set for percentile histograms which can be aggregated for percentile approximations.
      *
      * @return whether percentile histograms are configured
      */
-    boolean isPercentileHistogram();
+    Optional<Boolean> isPercentileHistogram();
 
     /**
      * Returns whether the configuration is set to publish percentiles.
      *
      * @return true/false
      */
-    boolean isPublishingPercentiles();
+    Optional<Boolean> isPublishingPercentiles();
 
     /**
      * Returns whether the configuration is set to publish a histogram.
      *
      * @return true/false
      */
-    boolean isPublishingHistogram();
+    Optional<Boolean> isPublishingHistogram();
 
     /**
      * Returns the settings for non-aggregable percentiles.
      *
      * @return percentiles to compute and publish
      */
-    Iterable<Double> percentiles();
+    Optional<Iterable<Double>> percentiles();
 
     /**
      * Returns the configured number of digits of precision for percentiles.
      *
      * @return digits of precision to maintain for percentile approximations
      */
-    int percentilePrecision();
+    Optional<Integer> percentilePrecision();
+
+    /**
+     * Returns the minimum expected value that the meter is expected to observe.
+     *
+     * @return minimum expected value
+     */
+    Optional<Double> minimumExpectedValue();
 
     /**
      * Returns the maximum value that the meter is expected to observe.
      *
-     * @return maximum value that the meter is expected to observe
+     * @return maximum value
      */
-    double maximumExpectedValue();
+    Optional<Double> maximumExpectedValue();
 
     /**
      * Returns how long decaying past observations remain in the ring buffer.
@@ -81,35 +98,26 @@ public interface DistributionStatisticsConfig extends Wrapped {
      * @see #bufferLength()
      * @return time during which samples accumulate in a histogram
      */
-    Duration expiry();
+    Optional<Duration> expiry();
 
     /**
      * Returns the size of the ring buffer for holding decaying observations.
      *
      * @return number of observations to keep in the ring buffer
      */
-    int bufferLength();
+    Optional<Integer> bufferLength();
 
     /**
      * Returns the configured service level objective boundaries.
      *
      * @return the SLO boundaries
      */
-    Iterable<Double> serviceLevelObjectiveBoundaries();
+    Optional<Iterable<Double>> serviceLevelObjectiveBoundaries();
 
     /**
      * Builder for a new {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance.
      */
     interface Builder extends Wrapped, io.helidon.common.Builder<Builder, DistributionStatisticsConfig> {
-
-        /**
-         * Updates the builder with non-null settings from the specified existing config.
-         *
-         * @param config the {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance to use to
-         *               set values in this builder
-         * @return updated builder
-         */
-        Builder merge(DistributionStatisticsConfig config);
 
         /**
          * Sets how long to keep samples before they are assumed to have decayed to zero and are discareded.
@@ -125,7 +133,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
          * @param bufferLength number of histograms to keep in the ring buffer
          * @return updated builder
          */
-        Builder bufferLength(int bufferLength);
+        Builder bufferLength(Integer bufferLength);
 
         /**
          * Sets whether to publish percentiles histograms (which are aggregable).
@@ -133,7 +141,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
          * @param enabled true to publish percentile histograms; false otherwise
          * @return updated builder
          */
-        Builder percentilesHistogram(boolean enabled);
+        Builder percentilesHistogram(Boolean enabled);
 
         /**
          * Sets the minimum value that the meter is expected to observe.
@@ -141,7 +149,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
          * @param min minimum value that this distribution summary is expected to observe
          * @return updated builder
          */
-        Builder minimumExpectedValue(double min);
+        Builder minimumExpectedValue(Double min);
 
         /**
          * Sets the maximum value that the meter is expected to observe.
@@ -149,7 +157,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
          * @param max maximum value that the meter is expected to observe
          * @return updated builder
          */
-        Builder maximumExpectedValue(double max);
+        Builder maximumExpectedValue(Double max);
 
         /**
          * Specifies additional time series percentiles.
@@ -192,7 +200,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
 
         /**
          * Sets the service level objective (SLO) boundaries which, when used with
-         * {@link #percentilesHistogram(boolean)}, adds the boundaries defined here
+         * {@link #percentilesHistogram(Boolean)}, adds the boundaries defined here
          * to other buckets used to generate aggregable percentile approximations.
          *
          * @param slos SLO boundaries
@@ -202,7 +210,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
 
         /**
          * Sets the service level objective (SLO) boundaries which, when used with
-         * {@link #percentilesHistogram(boolean)}, adds the boundaries defined here
+         * {@link #percentilesHistogram(Boolean)}, adds the boundaries defined here
          * to other buckets used to generate aggregable percentile approximations.
          *
          * @param slos SLO boundaries

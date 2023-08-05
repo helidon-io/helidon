@@ -170,12 +170,20 @@ class NoOpMeter implements Meter {
             return (B) this;
         }
 
-        String name() {
+        public String name() {
             return name;
         }
 
-        Iterable<Tag> tags() {
+        public Iterable<Tag> tags() {
             return tags.values();
+        }
+
+        public String baseUnit() {
+            return unit;
+        }
+
+        public String description() {
+            return description;
         }
     }
 

@@ -15,31 +15,34 @@
  */
 package io.helidon.metrics.micrometer;
 
-import io.helidon.metrics.api.Tag;
+import java.util.concurrent.TimeUnit;
 
-class MicrometerTag implements Tag {
+import io.micrometer.core.instrument.distribution.CountAtBucket;
 
-    static MicrometerTag of(String key, String value) {
-        return new MicrometerTag(io.micrometer.core.instrument.Tag.of(key, value));
+class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
+
+    static MCountAtBucket of(CountAtBucket delegate) {
+        return new MCountAtBucket(delegate);
     }
 
-    static MicrometerTag of(io.micrometer.core.instrument.Tag mTag) {
-        return of(mTag.getKey(), mTag.getValue());
-    }
+    private final CountAtBucket delegate;
 
-    private final io.micrometer.core.instrument.Tag delegate;
-
-    private MicrometerTag(io.micrometer.core.instrument.Tag delegate) {
+    private MCountAtBucket(CountAtBucket delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    public String key() {
-        return delegate.getKey();
+    public double bucket() {
+        return delegate.bucket();
     }
 
     @Override
-    public String value() {
-        return delegate.getValue();
+    public double bucket(TimeUnit unit) {
+        return delegate.bucket(unit);
+    }
+
+    @Override
+    public double count() {
+        return delegate.count();
     }
 }

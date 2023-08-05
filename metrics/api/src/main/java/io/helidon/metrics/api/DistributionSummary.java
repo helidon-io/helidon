@@ -26,8 +26,10 @@ public interface DistributionSummary extends Meter {
      * @param name name for the summary
      * @return new builder
      */
-    static Builder builder(String name) {
-        return MetricsFactory.getInstance().distributionSummaryBuilder(name);
+    static Builder builder(String name,
+                           DistributionStatisticsConfig.Builder configBuilder) {
+        return MetricsFactory.getInstance()
+                .distributionSummaryBuilder(name, configBuilder);
     }
 
     /**
