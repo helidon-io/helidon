@@ -24,6 +24,7 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -41,10 +42,18 @@ final class TestH2IsolationLevelCases {
     @BeforeEach
     final void initializeDataSource() throws SQLException {
         final JdbcDataSource ds = new JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:test;INIT=SET DB_CLOSE_DELAY=-1");
+        ds.setURL("jdbc:h2:mem:testH2IsolationLevelCases;INIT=SET DB_CLOSE_DELAY=-1");
         ds.setUser("sa");
         ds.setPassword("sa");
         this.ds = ds;
+    }
+
+    @AfterEach
+    final void closeDataSource() throws SQLException {
+        try (final Connection c = this.ds.getConnection();
+             final Statement s = c.createStatement();) {
+            s.execute("SHUTDOWN");
+        }
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 import org.h2.jdbcx.JdbcDataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -40,10 +41,18 @@ final class TestConditionallyCloseableConnection {
     @BeforeEach
     final void initializeDataSource() throws SQLException {
         final JdbcDataSource ds = new JdbcDataSource();
-        ds.setURL("jdbc:h2:mem:test");
+        ds.setURL("jdbc:h2:mem:testConditionallyCloseableConnection");
         ds.setUser("sa");
         ds.setPassword("sa");
         this.ds = ds;
+    }
+
+    @AfterEach
+    final void closeDataSource() throws SQLException {
+        try (final Connection c = this.ds.getConnection();
+             final Statement s = c.createStatement();) {
+            s.execute("SHUTDOWN");
+        }
     }
 
     @SuppressWarnings("try")
