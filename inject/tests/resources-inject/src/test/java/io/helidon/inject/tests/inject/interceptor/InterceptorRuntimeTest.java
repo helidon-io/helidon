@@ -19,6 +19,7 @@ package io.helidon.inject.tests.inject.interceptor;
 import java.io.Closeable;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,8 +91,10 @@ class InterceptorRuntimeTest {
         File file = new File("./target/generated-sources/annotations", path);
         assertThat(file.exists(), is(true));
         String java = Files.readString(file.toPath());
-        assertEquals(loadStringFromResource("expected/ximpl-interceptor._java_"),
-                     java);
+        String expected = loadStringFromResource("expected/ximpl-interceptor._java_");
+        assertEquals(
+                expected.replaceFirst("#DATE#", Integer.toString(Calendar.getInstance().get(Calendar.YEAR))),
+                java);
     }
 
     @Disabled // will be handled in https://github.com/helidon-io/helidon/issues/6542
