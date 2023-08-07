@@ -292,8 +292,10 @@ public class BlueprintProcessor extends AbstractProcessor {
         }
         typeArguments.forEach(classModel::addGenericArgument);
 
-        classModel.addJavadocTag("see", "#builder()");
-        if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic()) {
+        if (blueprintDef.builderPublic()) {
+            classModel.addJavadocTag("see", "#builder()");
+        }
+        if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
             classModel.addJavadocTag("see", "#create()");
         }
 
@@ -379,18 +381,20 @@ public class BlueprintProcessor extends AbstractProcessor {
             classModel.addMethod(method);
         }
 
+        if (blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
         /*
           static X create()
          */
-        if (!propertyData.hasRequired()) {
-            classModel.addMethod(builder -> {
-                builder.isStatic(true)
-                        .name("create")
-                        .description("Create a new instance with default values.")
-                        .returnType(prototype, "a new instance")
-                        .addLine("return " + ifaceName + "." + typeArgumentString + "builder().buildPrototype();");
-                typeArguments.forEach(builder::addGenericArgument);
-            });
+            if (!propertyData.hasRequired()) {
+                classModel.addMethod(builder -> {
+                    builder.isStatic(true)
+                            .name("create")
+                            .description("Create a new instance with default values.")
+                            .returnType(prototype, "a new instance")
+                            .addLine("return " + ifaceName + "." + typeArgumentString + "builder().buildPrototype();");
+                    typeArguments.forEach(builder::addGenericArgument);
+                });
+            }
         }
 
         generateCustomMethods(customMethods, classModel);

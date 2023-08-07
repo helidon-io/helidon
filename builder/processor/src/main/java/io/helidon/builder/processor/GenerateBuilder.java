@@ -62,7 +62,14 @@ final class GenerateBuilder {
                                           .addTypeArgument(builderType)
                                           .addTypeArgument(runtimeType)
                                           .build())
-                    .addConstructor(constructor -> constructor.accessModifier(AccessModifier.PRIVATE))
+                    .addConstructor(constructor -> {
+                        if (typeContext.blueprintData().builderPublic()) {
+                            constructor.accessModifier(AccessModifier.PRIVATE);
+                        } else {
+                            // package private to allow instantiation
+                            constructor.accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                        }
+                    })
                     .addMethod(method -> {
                         method.name("buildPrototype")
                                 .returnType(prototype)

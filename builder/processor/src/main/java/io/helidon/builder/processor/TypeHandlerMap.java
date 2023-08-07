@@ -88,15 +88,11 @@ class TypeHandlerMap extends TypeHandler {
     void generateFromConfig(Method.Builder method,
                             PrototypeProperty.ConfiguredOption configured,
                             FactoryMethods factoryMethods) {
-        if (STRING_TYPE.equals(actualType)) {
-            method.addLine("config.get(\"" + configured.configKey() + "\").asMap().ifPresent(this::" + setterName() + ");");
-        } else {
-            method.addLine("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
-                                   + "(node -> "
-                                   + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"
-                                   + generateFromConfig(factoryMethods)
-                                   + ".get())));");
-        }
+        method.addLine("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
+                               + "(node -> "
+                               + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"
+                               + generateFromConfig(factoryMethods)
+                               + ".get())));");
     }
 
     @Override
