@@ -32,7 +32,7 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.tracing.WebClientTracing;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.tracing.Tracer;
-import io.helidon.tracing.opentracing.OpenTracing;
+import io.helidon.tracing.providers.opentracing.OpenTracing;
 
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;

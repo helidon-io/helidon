@@ -50,7 +50,7 @@ module io.helidon.microprofile.tracing {
     requires io.helidon.tracing.config;
     requires transitive io.helidon.tracing.jersey;
     requires io.helidon.tracing.tracerresolver;
-    requires io.helidon.tracing.opentelemetry;
+    requires io.helidon.tracing.providers.opentelemetry;
 
     requires transitive microprofile.opentracing.api;
     requires microprofile.rest.client.api;

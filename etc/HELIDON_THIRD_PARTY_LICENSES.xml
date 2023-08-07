@@ -8,7 +8,7 @@
             <licensor>The OpenZipkin Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-tracing-zipkin</consumer>
+                <consumer>helidon-tracing-providers-zipkin</consumer>
             </consumers>
             <attribution>Zipkin OpenTracing Brave (io.opentracing.brave:brave-opentracing)
   Copyright 2016-2020 The OpenZipkin Authors
@@ -3073,9 +3073,9 @@ Fourth Party Runtime Dependencies
                 <consumer>helidon-integrations-common-rest</consumer>
                 <consumer>helidon-reactive-dbclient-tracing</consumer>
                 <consumer>helidon-security-integration-jersey</consumer>
-                <consumer>helidon-tracing-opentracing</consumer>
+                <consumer>helidon-tracing-providers-opentracing</consumer>
                 <consumer>helidon-tracing-tracer-resolver</consumer>
-                <consumer>helidon-tracing-zipkin</consumer>
+                <consumer>helidon-tracing-providers-zipkin</consumer>
             </consumers>
             <attribution>opentracing-util: 0.33.0, Apache 2.0
 opentracing-mock: 0.33.0, Apache 2.0
@@ -3146,7 +3146,7 @@ See full text at the bottom of this document for license: Apache-2.0
                 <consumer>helidon-messaging-kafka</consumer>
                 <consumer>helidon-microprofile-grpc-metrics</consumer>
                 <consumer>helidon-microprofile-grpc-server</consumer>
-                <consumer>helidon-tracing-jaeger</consumer>
+                <consumer>helidon-tracing-providers-jaeger</consumer>
             </consumers>
             <attribution>Simple Logging Facade for Java (SLF4J )
 
@@ -3442,7 +3442,7 @@ See full text at the bottom of this document for license: EPL-2.0-plus-GPLv2-CPE
             <licensor>The OpenZipkin Authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-tracing-zipkin</consumer>
+                <consumer>helidon-tracing-providers-zipkin</consumer>
             </consumers>
             <attribution>Zipkin Reporter for Java
 Zipkin Sender: URLConnection (io.zipkin.reporter2:zipkin-sender-urlconnection)
@@ -7584,7 +7584,7 @@ decompression for Java., which can be obtained at:
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-tracing-opentelemetry</consumer>
+                <consumer>helidon-tracing-providers-opentelemetry</consumer>
             </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-api)
   Copyright (C) 2008 The Guava Authors
@@ -7613,8 +7613,8 @@ Apache License 2.0
             <licenseName>Apache 2.0</licenseName>
             <consumers>
                 <consumer>helidon-microprofile-tracing</consumer>
-                <consumer>helidon-tracing-jaeger</consumer>
-                <consumer>helidon-tracing-opentelemetry</consumer>
+                <consumer>helidon-tracing-providers-jaeger</consumer>
+                <consumer>helidon-tracing-providers-opentelemetry</consumer>
             </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-exporter-jaeger)
   Copyright The OpenTelemetry Authors
@@ -7721,7 +7721,7 @@ Fourth Party Dependencies
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-tracing-opentelemetry</consumer>
+                <consumer>helidon-tracing-providers-opentelemetry</consumer>
             </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-extension-trace-propagators)
   Copyright The OpenTelemetry Authors
@@ -7754,7 +7754,7 @@ Fourth Party Dependencies
             <licensor>OpenTelemetry authors</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>
-                <consumer>helidon-tracing-jaeger</consumer>
+                <consumer>helidon-tracing-providers-jaeger</consumer>
             </consumers>
             <attribution>OpenTelemetry Java (io.opentelemetry:opentelemetry-sdk)
   Copyright The OpenTelemetry Authors

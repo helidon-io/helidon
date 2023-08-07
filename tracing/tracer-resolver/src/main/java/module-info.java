@@ -21,7 +21,7 @@ module io.helidon.tracing.tracerresolver {
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.tracing;
-    requires io.helidon.tracing.opentracing;
+    requires io.helidon.tracing.providers.opentracing;
 
     requires io.opentracing.util;
     requires io.opentracing.noop;
@@ -30,5 +30,6 @@ module io.helidon.tracing.tracerresolver {
 
     exports io.helidon.tracing.tracerresolver;
 
-    provides io.helidon.tracing.opentracing.spi.OpenTracingProvider with io.helidon.tracing.tracerresolver.TracerResolverProvider;
+    provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider
+            with io.helidon.tracing.tracerresolver.TracerResolverProvider;
 }

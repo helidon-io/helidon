@@ -21,7 +21,7 @@ import java.util.Map;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
-import io.helidon.tracing.opentelemetry.HelidonOpenTelemetry;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
