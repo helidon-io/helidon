@@ -25,7 +25,6 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -69,7 +68,6 @@ class MainTest {
     }
 
     @Test
-    @Disabled
     void testHelloWorldAsync() {
         JsonObject jsonObject = target
                 .path("proxy")

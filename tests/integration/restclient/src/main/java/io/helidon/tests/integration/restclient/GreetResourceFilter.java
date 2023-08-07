@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.tests.integration.restclient;
 
-import jakarta.ws.rs.client.ClientRequestContext;
-import jakarta.ws.rs.client.ClientRequestFilter;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.net.URI;
+
+import io.helidon.common.context.Contexts;
+import jakarta.ws.rs.client.ClientRequestContext;
+import jakarta.ws.rs.client.ClientRequestFilter;
 
 /**
  * A client request filter that replaces port 8080 by the ephemeral port allocated for the
@@ -29,9 +29,6 @@ import java.net.URI;
  * to specify the base URI, and its value cannot be changed dynamically.
  */
 public class GreetResourceFilter implements ClientRequestFilter  {
-
-    @Context
-    UriInfo uriInfo;
 
     @Override
     public void filter(ClientRequestContext requestContext) throws IOException {
@@ -41,7 +38,8 @@ public class GreetResourceFilter implements ClientRequestFilter  {
     }
 
     private String extractDynamicPort() {
-        String uriString = uriInfo.getBaseUri().toString();
+        URI uri = Contexts.globalContext().get(getClass(), URI.class).orElseThrow();
+        String uriString = uri.toString();
         int k = uriString.lastIndexOf(":");
         int j = uriString.indexOf("/", k);
         return uriString.substring(k + 1, j);
