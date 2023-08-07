@@ -17,6 +17,7 @@
 package io.helidon.common.processor.model;
 
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.common.types.TypeName;
@@ -93,13 +94,35 @@ public final class Field extends AnnotatedComponent implements Comparable<Field>
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Field field = (Field) o;
+        return name().equals(field.name())
+                && type().equals(field.type())
+                && isStatic == field.isStatic
+                && isFinal == field.isFinal
+                && accessModifier().equals(field.accessModifier());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name(), type(), isFinal, isStatic, accessModifier());
+    }
+
+    @Override
     public int compareTo(Field other) {
+        //This is here for ordering purposes.
         if (accessModifier() == other.accessModifier()) {
             if (isFinal == other.isFinal) {
-                if (type().simpleTypeName().compareTo(other.type().simpleTypeName()) == 0) {
+                if (type().fqTypeName().compareTo(other.type().fqTypeName()) == 0) {
                     return name().compareTo(other.name());
                 }
-                return type().simpleTypeName().compareTo(other.type().simpleTypeName());
+                return type().fqTypeName().compareTo(other.type().fqTypeName());
             }
             //final fields should be before non-final
             return Boolean.compare(other.isFinal, isFinal);
