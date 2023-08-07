@@ -110,31 +110,29 @@ public interface MeterRegistry extends Wrapped {
      */
     <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags);
 
-
-
     /**
      * Removes a previously-registered meter.
      *
      * @param meter the meter to remove
-     * @return the removed meter; null if the meter is not currently registered
+     * @return the removed meter; empty if the meter is not currently registered
      */
-    Meter remove(Meter meter);
+    Optional<Meter> remove(Meter meter);
 
     /**
      * Removes a previously-registered meter with the specified ID.
      *
      * @param id ID for the meter to remove
-     * @return the removed meter; null if the meter is not currently registered
+     * @return the removed meter; empty if the meter is not currently registered
      */
-    Meter remove(Meter.Id id);
+    Optional<Meter> remove(Meter.Id id);
 
     /**
      * Removes a previously-registered meter with the specified name and tags.
      *
      * @param name counter name
      * @param tags tags for further identifying the meter
-     * @return the removed meter; null if the specified name and tags does not correspond to a registered meter
+     * @return the removed meter; empty if the specified name and tags does not correspond to a registered meter
      */
-    Meter remove(String name,
+    Optional<Meter> remove(String name,
                  Iterable<Tag> tags);
 }

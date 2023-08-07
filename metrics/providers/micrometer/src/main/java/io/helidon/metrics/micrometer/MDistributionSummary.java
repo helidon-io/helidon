@@ -25,7 +25,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         return new Builder(name, configBuilder);
     }
 
-    static MDistributionSummary of(DistributionSummary summary) {
+    static MDistributionSummary create(DistributionSummary summary) {
         return new MDistributionSummary(summary);
     }
 
@@ -91,7 +91,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
 
         @Override
         MDistributionSummary register(MeterRegistry meterRegistry) {
-            return MDistributionSummary.of(delegate().register(meterRegistry));
+            return MDistributionSummary.create(delegate().register(meterRegistry));
         }
     }
 }

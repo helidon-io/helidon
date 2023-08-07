@@ -33,9 +33,9 @@ import io.helidon.metrics.api.Timer;
 import io.micrometer.core.instrument.Metrics;
 
 /**
- * Implementation of Helidon metrics based on Micrometer.
+ * Implementation of the neutral Helidon metrics factory based on Micrometer.
  */
-public class MicrometerMetricsProvider implements MetricsFactory {
+public class MicrometerMetricsFactory implements MetricsFactory {
 
 
     @Override

@@ -16,21 +16,18 @@
 package io.helidon.metrics.micrometer;
 
 import java.time.Duration;
-import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.HistogramSnapshot;
 
-import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
 class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
 
-    static MTimer of(Timer timer) {
+    static MTimer create(Timer timer) {
         return new MTimer(timer);
     }
 
@@ -40,7 +37,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
 
     @Override
     public HistogramSnapshot takeSnapshot() {
-        return MHistogramSnapshot.of(delegate().takeSnapshot());
+        return MHistogramSnapshot.create(delegate().takeSnapshot());
     }
 
     @Override
@@ -111,27 +108,62 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         }
 
         @Override
-        public io.helidon.metrics.api.Timer.Builder distributionStatisticsConfig(
-                DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
-            io.helidon.metrics.api.DistributionStatisticsConfig config = distributionStatisticsConfigBuilder.build();
-            Timer.Builder delegate = delegate();
-
-            config.percentiles().ifPresent(p -> delegate.publishPercentiles(Util.doubleArray(p)));
-            config.percentilePrecision().ifPresent(delegate::percentilePrecision);
-            config.isPercentileHistogram().ifPresent(delegate::publishPercentileHistogram);
-            config.serviceLevelObjectiveBoundaries().ifPresent(slos -> delegate.serviceLevelObjectives(Util.doubleArray(slos)));
-            config.minimumExpectedValue().ifPresent(delegate::minimumExpectedValue);
-            config.maximumExpectedValue().ifPresent(delegate::maximumExpectedValue);
-            config.expiry().ifPresent(delegate::distributionStatisticExpiry);
-            config.bufferLength().ifPresent(delegate::distributionStatisticBufferLength);
-
-            return identity();
-            return null;
+        MTimer register(MeterRegistry meterRegistry) {
+            return MTimer.create(delegate().register(meterRegistry));
         }
 
         @Override
-        MTimer register(MeterRegistry meterRegistry) {
-            return MTimer.of(delegate().register(meterRegistry));
+        public Builder publishPercentiles(double... percentiles) {
+            delegate().publishPercentiles(percentiles);
+            return identity();
+        }
+
+        @Override
+        public Builder percentilePrecision(Integer digitsOfPrecision) {
+            delegate().percentilePrecision(digitsOfPrecision);
+            return identity();
+        }
+
+        @Override
+        public Builder publishPercentileHistogram() {
+            delegate().publishPercentileHistogram();
+            return identity();
+        }
+
+        @Override
+        public Builder publishPercentileHistogram(Boolean enabled) {
+            delegate().publishPercentileHistogram(enabled);
+            return identity();
+        }
+
+        @Override
+        public Builder serviceLevelObjectives(Duration... slos) {
+            delegate().serviceLevelObjectives(slos);
+            return identity();
+        }
+
+        @Override
+        public Builder minimumExpectedValue(Duration min) {
+            delegate().minimumExpectedValue(min);
+            return identity();
+        }
+
+        @Override
+        public Builder maximumExpectedValue(Duration max) {
+            delegate().maximumExpectedValue(max);
+            return identity();
+        }
+
+        @Override
+        public Builder distributionStatisticExpiry(Duration expiry) {
+            delegate().distributionStatisticExpiry(expiry);
+            return identity();
+        }
+
+        @Override
+        public Builder distributionStatisticBufferLength(Integer bufferLength) {
+            delegate().distributionStatisticBufferLength(bufferLength);
+            return identity();
         }
     }
 }

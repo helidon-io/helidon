@@ -192,12 +192,76 @@ public interface Timer extends Meter, HistogramSupport {
     interface Builder extends Meter.Builder<Builder, Timer> {
 
         /**
-         * Configures the distribution statistics for the timer.
+         * Sets the percentiles to compute and publish (expressing, for example, the 95th percentile as 0.95).
          *
-         * @param distributionStatisticsConfigBuilder builder for the distribution statistics config
+         * @param percentiles percentiles to compute and publish
          * @return updated builder
          */
-        Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
+        Builder publishPercentiles(double... percentiles);
 
+        /**
+         * Sets the precision for computing histogram percentile approximations.
+         *
+         * @param digitsOfPrecision number of digits of precision
+         * @return updated builder
+         */
+        Builder percentilePrecision(Integer digitsOfPrecision);
+
+        /**
+         * Sets to add histogram buckets.
+         * <p>
+         *     Equivalent to {@code publishPercentilHistogram(true)}).
+         * </p>
+         *
+         * @return updated builder
+         */
+        Builder publishPercentileHistogram();
+
+        /**
+         * Sets whether to add histogram buckets.
+         *
+         * @param enabled true/false
+         * @return updated builder
+         */
+        Builder publishPercentileHistogram(Boolean enabled);
+
+        /**
+         * Sets the service level objectives, guaranteeing at least those buckets in the histogram.
+         *
+         * @param slos service-level objective bucket boundaries
+         * @return updated builder
+         */
+        Builder serviceLevelObjectives(Duration... slos);
+
+        /**
+         * Sets the minimum expected value the timer is expected to record.
+         * @param min minimum expected value
+         * @return updated builder
+         */
+        Builder minimumExpectedValue(Duration min);
+
+        /**
+         * Sets the maximum expected value the timer is expected to record.
+         *
+         * @param max maximum expected value
+         * @return updated builder
+         */
+        Builder maximumExpectedValue(Duration max);
+
+        /**
+         * Sets how long age-decayed samples are retained in ring buffers for use in the timer histograms.
+         *
+         * @param expiry amount of time to keep samples
+         * @return updated builder
+         */
+        Builder distributionStatisticExpiry(Duration expiry);
+
+        /**
+         * Sets the size of the ring buffer for retaining samples for histograms.
+         *
+         * @param bufferLength size of the ring buffer to use
+         * @return updated builder
+         */
+        Builder distributionStatisticBufferLength(Integer bufferLength);
     }
 }

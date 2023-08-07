@@ -370,8 +370,47 @@ class NoOpMeter implements Meter {
             }
 
             @Override
-            public io.helidon.metrics.api.Timer.Builder distributionStatisticsConfig(
-                    DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
+            public Builder publishPercentiles(double... percentiles) {
+                return identity();
+            }
+
+            @Override
+            public Builder percentilePrecision(Integer digitsOfPrecision) {
+                return identity();
+            }
+
+            @Override
+            public Builder publishPercentileHistogram() {
+                return identity();
+            }
+
+            @Override
+            public Builder publishPercentileHistogram(Boolean enabled) {
+                return identity();
+            }
+
+            @Override
+            public Builder serviceLevelObjectives(Duration... slos) {
+                return identity();
+            }
+
+            @Override
+            public Builder minimumExpectedValue(Duration min) {
+                return identity();
+            }
+
+            @Override
+            public Builder maximumExpectedValue(Duration max) {
+                return identity();
+            }
+
+            @Override
+            public Builder distributionStatisticExpiry(Duration expiry) {
+                return identity();
+            }
+
+            @Override
+            public Builder distributionStatisticBufferLength(Integer bufferLength) {
                 return identity();
             }
         }

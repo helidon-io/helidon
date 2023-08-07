@@ -26,7 +26,7 @@ import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 
 class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
 
-    static MHistogramSnapshot of(HistogramSnapshot delegate) {
+    static MHistogramSnapshot create(HistogramSnapshot delegate) {
         return new MHistogramSnapshot(delegate);
     }
 
@@ -105,7 +105,7 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return MCountAtBucket.of(counts[slot++]);
+                return MCountAtBucket.create(counts[slot++]);
             }
         };
     }

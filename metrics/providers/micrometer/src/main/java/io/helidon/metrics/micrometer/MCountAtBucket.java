@@ -21,7 +21,7 @@ import io.micrometer.core.instrument.distribution.CountAtBucket;
 
 class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
 
-    static MCountAtBucket of(CountAtBucket delegate) {
+    static MCountAtBucket create(CountAtBucket delegate) {
         return new MCountAtBucket(delegate);
     }
 

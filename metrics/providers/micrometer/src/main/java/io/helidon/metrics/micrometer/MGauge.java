@@ -25,7 +25,7 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
     static <T> MGauge.Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return new MGauge.Builder<>(name, stateObject, fn);
     }
-    static MGauge of(Gauge gauge) {
+    static MGauge create(Gauge gauge) {
         return new MGauge(gauge);
     }
 
@@ -50,7 +50,7 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
 
         @Override
         MGauge register(MeterRegistry meterRegistry) {
-            return MGauge.of(delegate().register(meterRegistry));
+            return MGauge.create(delegate().register(meterRegistry));
         }
     }
 }
