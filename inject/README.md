@@ -18,10 +18,6 @@ Over the foundation of these three main features of "services registry", "lifecy
 
 4. Interception. Annotations are provided, that in conjunction with Helidon Injection's code-generation annotation processors, allow services in the service registry to support interception and decoration patterns - without the use of reflection at runtime, which is conducive to native image.
 
-***
-__Helidon Injection currently support Java 11+, using jakarta.inject or javax.inject, jakarta.annotations or javax.annotations.__
-***
-
 The Helidon Team believes that the above features help developers achieve the following goals:
 * More IoC options. With Helidon Injection... developers can choose to use an imperative coding style or a declarative IoC style previously only available with CDI using Helidon MP. At the initial release (Helidon 4.0), however, Injection will only be available with Helidon Nima support.
 * Compile-time benefits. With Injection... developers can decide to use compile-time code generation into their build process, thereby statically and deterministically wiring their injection model while still enjoying the benefits of a declarative approach for writing their application. Added to this, all code-generated artifacts are in source form instead of bytecode thereby making your application more readable, understandable, consistent, and debuggable. Furthermore, DI model inconsistencies can be found during compile-time instead of at runtime.
@@ -55,8 +51,6 @@ Request and Session scopes are simply not made available in Helidon Injection. W
 
 ## Getting Started
 As stated in the introduction above, the Injection framework aims to provide a minimalist API implementation. As a result, it might be surprising to learn how small the actual API is for Injection - see [inject api](./inject) and the API/annotation types at [inject api](./api/src/main/java/io/helidon/inject).  If you are already familiar with [jakarta.inject](https://javadoc.io/doc/jakarta.inject/jakarta.inject-api/latest/index.html) and optionally, [jakarta.annotation](https://javadoc.io/doc/jakarta.annotation/jakarta.annotation-api/latest/jakarta.annotation/jakarta/annotation/package-summary.html) then basically you are ready to go. But if you've never used DI before then first review the basics of [dependency injection](https://en.wikipedia.org/wiki/Dependency_injection).
-
-The prerequisites are familiarity with dependency injection, Java 11+, and maven 3.8.5+.
 
 The best way to learn Helidon Injection is by looking at [the examples](../examples/inject). But if you want to immediately get started here are the basics steps:
 
