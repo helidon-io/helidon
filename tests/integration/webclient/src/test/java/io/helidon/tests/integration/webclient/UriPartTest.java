@@ -17,12 +17,12 @@
 package io.helidon.tests.integration.webclient;
 
 import io.helidon.common.http.Http;
+import io.helidon.nima.webclient.api.ClientResponseTyped;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.WebServer;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -124,7 +124,10 @@ class UriPartTest extends TestParent {
     @Test
     void testQueryNotDoubleEncoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.uri().query().rawValue(), is("first%26second%26=val%26ue%26"));
+            // this is the value we have provided, it must be given back
+            assertThat(request.uri().query().value(), is("first&second%26=val&ue%26"));
+            // what goes over the network is driven by the skipUriEncoding parameter, and must not be encoded
+            assertThat(request.uri().pathWithQueryAndFragment(), is("/greet?first&second%26=val&ue%26"));
             return chain.proceed(request);
         });
         String response = webClient.get()
@@ -135,20 +138,19 @@ class UriPartTest extends TestParent {
     }
 
     @Test
-    @Disabled
     void testPathNotDecoded() {
         Http1Client webClient = createNewClient((chain, request) -> {
-            assertThat(request.uri().path().rawPath(), is("/greet/path%26"));
+            assertThat(request.uri().path().path(), is("/greet/path%26"));
             return chain.proceed(request);
         });
-        // as the %26 is a valid encoding of path, when we encode it, it does not change
-        // as a result, the path is stored as this in encoded state, and the decoded state is different
-        // to fix this, we would need to have support for skip URI encoding all the way to UriPath, so we store
-        // the same value for decoded/encoded and we never re-encode it when skipped
-        webClient.get()
+
+        ClientResponseTyped<String> response = webClient.get()
                 .skipUriEncoding(true)
                 .path("path%26")
-                .requestEntity(String.class);
+                .request(String.class);
+
+        // the path is not valid
+        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
     }
 
 }

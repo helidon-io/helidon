@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2000, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Support for encoding and decoding of URI in HTTP.
@@ -79,32 +80,22 @@ public final class UriEncoding {
      *          must be percent-encoded
      * @return the encoded string
      */
-    public static String encode(final String s, final Type t) {
-        final boolean[] table = ENCODING_TABLES[t.ordinal()];
+    public static String encode(String s, Type t) {
+        Objects.requireNonNull(s, "String to encode must not be null");
+        Objects.requireNonNull(t, "Type of encoded component must not be null");
+        boolean[] table = ENCODING_TABLES[t.ordinal()];
 
-        StringBuilder sb = null;
+        StringBuilder sb = new StringBuilder();
         for (int offset = 0, codePoint; offset < s.length(); offset += Character.charCount(codePoint)) {
             codePoint = s.codePointAt(offset);
 
             if (codePoint < 0x80 && table[codePoint]) {
-                if (sb != null) {
-                    sb.append((char) codePoint);
-                }
+               sb.append((char) codePoint);
             } else {
-                if (codePoint == '%'
-                        && offset + 2 < s.length()
-                        && isHexCharacter(s.charAt(offset + 1))
-                        && isHexCharacter(s.charAt(offset + 2))) {
-                    if (sb != null) {
-                        sb.append('%').append(s.charAt(offset + 1)).append(s.charAt(offset + 2));
-                    }
-                    offset += 2;
+                // we need to encode percent to %25, as otherwise we are ignoring the decoded string
+                if (codePoint == '%') {
+                    sb.append("%25");
                     continue;
-                }
-
-                if (sb == null) {
-                    sb = new StringBuilder();
-                    sb.append(s, 0, offset);
                 }
 
                 if (codePoint < 0x80) {
@@ -119,7 +110,7 @@ public final class UriEncoding {
             }
         }
 
-        return (sb == null) ? s : sb.toString();
+        return sb.toString();
     }
 
     private static String encode(String uriSegment) {
