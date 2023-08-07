@@ -48,7 +48,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface TypeName extends Comparable<TypeName>, Prototype.Api, TypeNameBlueprint {
+public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
 
     /**
      * Creates a type name from a generic alias type name.
@@ -564,7 +564,11 @@ public interface TypeName extends Comparable<TypeName>, Prototype.Api, TypeNameB
                 if (!(o instanceof TypeName other)) {
                     return false;
                 }
-                return Objects.equals(packageName, other.packageName()) && Objects.equals(className, other.className()) && Objects.equals(enclosingNames, other.enclosingNames()) && primitive == other.primitive() && array == other.array();
+                return Objects.equals(packageName, other.packageName())
+                        && Objects.equals(className, other.className())
+                        && Objects.equals(enclosingNames, other.enclosingNames())
+                        && primitive == other.primitive()
+                        && array == other.array();
             }
 
             @Override

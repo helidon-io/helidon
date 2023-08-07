@@ -154,7 +154,6 @@ class TypeHandlerMap extends TypeHandler {
             String singularName = singular.singularName();
             setterAddValueToCollection(classBuilder,
                                        configured,
-                                       "add" + GeneratorTools.capitalize(singularName),
                                        singularName,
                                        keyType,
                                        actualType().typeArguments().get(0),
@@ -327,12 +326,12 @@ class TypeHandlerMap extends TypeHandler {
 
     private void setterAddValueToCollection(InnerClass.Builder classBuilder,
                                             PrototypeProperty.ConfiguredOption configured,
-                                            String methodName,
                                             String singularName,
                                             TypeName keyType,
                                             TypeName valueType,
                                             TypeName returnType,
                                             Javadoc blueprintJavadoc) {
+        String methodName = "add" + GeneratorTools.capitalize(singularName);
         TypeName implType = collectionImplType(actualType());
 
         classBuilder.addMethod(builder -> builder.name(methodName)

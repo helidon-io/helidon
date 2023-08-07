@@ -32,7 +32,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface Annotation extends AnnotationBlueprint, Comparable<Annotation>, Prototype.Api {
+public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparable<Annotation> {
 
     /**
      * Create a new fluent API builder to customize configuration.
@@ -357,7 +357,8 @@ public interface Annotation extends AnnotationBlueprint, Comparable<Annotation>,
                 if (!(o instanceof Annotation other)) {
                     return false;
                 }
-                return Objects.equals(typeName, other.typeName()) && Objects.equals(values, other.values());
+                return Objects.equals(typeName, other.typeName())
+                        && Objects.equals(values, other.values());
             }
 
             @Override

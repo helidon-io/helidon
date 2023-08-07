@@ -33,7 +33,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface TypedElementInfo extends Prototype.Api, TypedElementInfoBlueprint {
+public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.Api {
 
     /**
      * Create a new fluent API builder from an existing instance.
@@ -790,7 +790,12 @@ public interface TypedElementInfo extends Prototype.Api, TypedElementInfoBluepri
                 if (!(o instanceof TypedElementInfo other)) {
                     return false;
                 }
-                return Objects.equals(typeName, other.typeName()) && Objects.equals(elementName, other.elementName()) && Objects.equals(elementTypeKind, other.elementTypeKind()) && Objects.equals(enclosingType, other.enclosingType()) && Objects.equals(parameterArguments, other.parameterArguments()) && Objects.equals(annotations, other.annotations());
+                return Objects.equals(typeName, other.typeName())
+                        && Objects.equals(elementName, other.elementName())
+                        && Objects.equals(elementTypeKind, other.elementTypeKind())
+                        && Objects.equals(enclosingType, other.enclosingType())
+                        && Objects.equals(parameterArguments, other.parameterArguments())
+                        && Objects.equals(annotations, other.annotations());
             }
 
             @Override

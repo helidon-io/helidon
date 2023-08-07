@@ -650,6 +650,7 @@ final class GenerateAbstractBuilder {
                                      String ifaceName,
                                      boolean hasSuper,
                                      List<PrototypeProperty> equalityFields) {
+        String newLine = "\n" + ClassModel.PADDING_TOKEN + ClassModel.PADDING_TOKEN + "&& ";
         Method.Builder method = Method.builder()
                 .name("equals")
                 .returnType(TypeName.create(boolean.class))
@@ -669,7 +670,7 @@ final class GenerateAbstractBuilder {
         if (hasSuper) {
             method.add("super.equals(other)");
             if (!equalityFields.isEmpty()) {
-                method.add(" && ");
+                method.add(newLine);
             }
         }
         if (!hasSuper && equalityFields.isEmpty()) {
@@ -686,7 +687,7 @@ final class GenerateAbstractBuilder {
                                    }
                                    return "Objects.equals(" + field.name() + ", other." + field.getterName() + "())";
                                })
-                               .collect(Collectors.joining(" && ")));
+                               .collect(Collectors.joining(newLine)));
         }
         method.addLine(";");
         classBuilder.addMethod(method);

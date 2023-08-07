@@ -18,6 +18,7 @@ package io.helidon.common.processor.model;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -61,7 +62,7 @@ public abstract class ClassBase extends AnnotatedComponent {
         this.methods = builder.methods.stream().sorted().toList();
         this.staticMethods = builder.staticMethods.stream().sorted().toList();
         this.constructors = List.copyOf(builder.constructors);
-        this.interfaces = Set.copyOf(builder.interfaces);
+        this.interfaces = Collections.unmodifiableSet(new LinkedHashSet<>(builder.interfaces));
         this.innerClasses = List.copyOf(builder.innerClasses.values());
         this.genericParameters = List.copyOf(builder.genericParameters);
         this.tokenNames = this.genericParameters.stream()
@@ -243,19 +244,22 @@ public abstract class ClassBase extends AnnotatedComponent {
     }
 
     /**
-     * Fluent API builder for {@link ClassBase}
+     * Fluent API builder for {@link ClassBase}.
+     *
+     * @param <B> builder type
+     * @param <T> built object type
      */
     public abstract static class Builder<B extends Builder<B, T>, T extends ClassBase>
             extends AnnotatedComponent.Builder<B, T> {
 
         private final Set<Method> methods = new LinkedHashSet<>();
         private final Set<Method> staticMethods = new HashSet<>();
+        private final Set<Type> interfaces = new LinkedHashSet<>();
         private final Map<String, Field> fields = new LinkedHashMap<>();
         private final Map<String, Field> staticFields = new LinkedHashMap<>();
         private final Map<String, InnerClass> innerClasses = new LinkedHashMap<>();
         private final List<Constructor> constructors = new ArrayList<>();
         private final List<TypeArgument> genericParameters = new ArrayList<>();
-        private final Set<Type> interfaces = new HashSet<>();
         private final ImportOrganizer.Builder importOrganizer = ImportOrganizer.builder();
         private ClassType classType = ClassType.CLASS;
         private Type superType;

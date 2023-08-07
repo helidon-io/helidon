@@ -35,7 +35,7 @@ import io.helidon.common.Errors;
  *
  * @see #builder()
  */
-public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
+public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
     /**
      * Create a new fluent API builder from an existing instance.
@@ -305,7 +305,8 @@ public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
          */
-        public BUILDER referencedTypeNamesToAnnotations(Map<? extends TypeName, List<Annotation>> referencedTypeNamesToAnnotations) {
+        public BUILDER referencedTypeNamesToAnnotations(Map<? extends TypeName,
+                List<Annotation>> referencedTypeNamesToAnnotations) {
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
             this.referencedTypeNamesToAnnotations.clear();
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
@@ -319,7 +320,8 @@ public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
          * @return updated builder instance
          * @see #referencedTypeNamesToAnnotations()
          */
-        public BUILDER addReferencedTypeNamesToAnnotations(Map<? extends TypeName, List<Annotation>> referencedTypeNamesToAnnotations) {
+        public BUILDER addReferencedTypeNamesToAnnotations(Map<? extends TypeName,
+                List<Annotation>> referencedTypeNamesToAnnotations) {
             Objects.requireNonNull(referencedTypeNamesToAnnotations);
             this.referencedTypeNamesToAnnotations.putAll(referencedTypeNamesToAnnotations);
             return self();
@@ -785,7 +787,8 @@ public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
                 this.typeKind = builder.typeKind().get();
                 this.elementInfo = List.copyOf(builder.elementInfo());
                 this.otherElementInfo = List.copyOf(builder.otherElementInfo());
-                this.referencedTypeNamesToAnnotations = Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedTypeNamesToAnnotations()));
+                this.referencedTypeNamesToAnnotations = Collections.unmodifiableMap(
+                        new LinkedHashMap<>(builder.referencedTypeNamesToAnnotations()));
                 this.referencedModuleNames = Collections.unmodifiableMap(new LinkedHashMap<>(builder.referencedModuleNames()));
                 this.superTypeInfo = builder.superTypeInfo();
                 this.interfaceTypeInfo = List.copyOf(builder.interfaceTypeInfo());
@@ -863,7 +866,12 @@ public interface TypeInfo extends Prototype.Api, TypeInfoBlueprint {
                 if (!(o instanceof TypeInfo other)) {
                     return false;
                 }
-                return Objects.equals(typeName, other.typeName()) && Objects.equals(typeKind, other.typeKind()) && Objects.equals(elementInfo, other.elementInfo()) && Objects.equals(superTypeInfo, other.superTypeInfo()) && Objects.equals(modifiers, other.modifiers()) && Objects.equals(annotations, other.annotations());
+                return Objects.equals(typeName, other.typeName())
+                        && Objects.equals(typeKind, other.typeKind())
+                        && Objects.equals(elementInfo, other.elementInfo())
+                        && Objects.equals(superTypeInfo, other.superTypeInfo())
+                        && Objects.equals(modifiers, other.modifiers())
+                        && Objects.equals(annotations, other.annotations());
             }
 
             @Override
