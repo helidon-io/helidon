@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry.Type;
 
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 
-public class OciMetricsDataTest {
+class OciMetricsDataTest {
     private final OciMetricsSupport.NameFormatter nameFormatter = new OciMetricsSupport.NameFormatter() { };
     private final Type[] types = {Type.BASE, Type.VENDOR, Type.APPLICATION};
     private final String dimensionScopeName = "scope";
@@ -45,21 +45,15 @@ public class OciMetricsDataTest {
     private final MetricRegistry appMetricRegistry = rf.getRegistry(Type.APPLICATION);
 
     @BeforeEach
-    private void beforeEach() {
-        // clear all registry
+    void clearAllRegistry() {
         for (Type type: types) {
             MetricRegistry metricRegistry = rf.getRegistry(type);
-            metricRegistry.removeMatching(new MetricFilter() {
-                @Override
-                public boolean matches(MetricID metricID, Metric metric) {
-                    return true;
-                }
-            });
+            metricRegistry.removeMatching(MetricFilter.ALL);
         }
     }
 
     @Test
-    public void testMetricRegistries() {
+    void testMetricRegistries() {
         String counterName = "DummyCounter";
         String meterName = "DummyMeter";
         String timerName = "DummyTimer";
@@ -94,7 +88,7 @@ public class OciMetricsDataTest {
     }
 
     @Test
-    public void testOciMonitoringParameters() {
+    void testOciMonitoringParameters() {
         String compartmentId = "dummy.compartmentId";
         String namespace = "dummy-namespace";
         String resourceGroup = "dummy_resourceGroup";
@@ -112,7 +106,7 @@ public class OciMetricsDataTest {
     }
 
     @Test
-    public void testDimensions() {
+    void testDimensions() {
         String dummyTagName = "DummyTag";
         String dummyTagValue = "DummyValue";
 
