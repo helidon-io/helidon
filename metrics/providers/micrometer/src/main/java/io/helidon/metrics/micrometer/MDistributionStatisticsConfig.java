@@ -133,7 +133,6 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
 
     static class Builder implements io.helidon.metrics.api.DistributionStatisticsConfig.Builder {
 
-
         private final DistributionStatisticConfig.Builder delegate;
 
         private Builder() {

@@ -24,7 +24,7 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
         return new Builder(name);
     }
 
-    static MCounter of(Counter counter) {
+    static MCounter create(Counter counter) {
         return new MCounter(counter);
     }
 
@@ -59,7 +59,7 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
 
         @Override
         MCounter register(MeterRegistry meterRegistry) {
-            return MCounter.of(delegate().register(meterRegistry));
+            return MCounter.create(delegate().register(meterRegistry));
         }
     }
 }

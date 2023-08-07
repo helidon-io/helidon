@@ -28,7 +28,7 @@ import java.util.function.ToDoubleFunction;
  *     {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
  * </p>
  * <p>
- *     ALso, various static methods create or return previously-created instances.
+ *     Also, various static methods create or return previously-created instances.
  * </p>
  * <p>
  *     Note that this is not intended to be the interface which developers use to work with Helidon metrics.

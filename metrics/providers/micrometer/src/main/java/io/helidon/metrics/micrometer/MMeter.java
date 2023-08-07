@@ -31,18 +31,18 @@ import io.micrometer.core.instrument.Timer;
  */
 class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
-    static MMeter of(Meter meter) {
+    static MMeter<?> create(Meter meter) {
         if (meter instanceof Counter counter) {
-            return MCounter.of(counter);
+            return MCounter.create(counter);
         }
         if (meter instanceof DistributionSummary summary) {
-            return MDistributionSummary.of(summary);
+            return MDistributionSummary.create(summary);
         }
         if (meter instanceof Gauge gauge) {
-            return MGauge.of(gauge);
+            return MGauge.create(gauge);
         }
         if (meter instanceof Timer timer) {
-            return MTimer.of(timer);
+            return MTimer.create(timer);
         }
         throw new IllegalArgumentException("Unrecognized meter type " + meter.getClass().getName());
     }
@@ -130,24 +130,8 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
         abstract HM register(MeterRegistry meterRegistry);
 
-//        String name() {
-//            return name;
-//        }
-//
-//        Iterable<io.helidon.metrics.api.Tag> tags() {
-//            return ;
-//        }
-//
-//        @Override
-//        public String description() {
-//            return null;
-//        }
-//
-//        @Override
-//        public String baseUnit() {
-//            return null;
-//        }
     }
+
     static class Id implements io.helidon.metrics.api.Meter.Id {
 
         static Id of(Meter.Id id) {
@@ -180,7 +164,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
                         @Override
                         public io.helidon.metrics.api.Tag next() {
-                            return MTag.of(iter.next());
+                            return MTag.create(iter.next());
                         }
                     };
                 }

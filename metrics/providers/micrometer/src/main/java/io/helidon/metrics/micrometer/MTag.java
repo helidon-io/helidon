@@ -39,7 +39,7 @@ class MTag implements io.helidon.metrics.api.Tag {
 
             @Override
             public io.helidon.metrics.api.Tag next() {
-                return MTag.of(iter.next());
+                return MTag.create(iter.next());
             }
         };
     }
@@ -68,7 +68,7 @@ class MTag implements io.helidon.metrics.api.Tag {
      * @param tag Micrometer tag
      * @return Helidon tag
      */
-    static MTag of(Tag tag) {
+    static MTag create(Tag tag) {
         return new MTag(tag);
     }
 

@@ -16,10 +16,13 @@
 package io.helidon.metrics.micrometer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+
+import io.micrometer.core.instrument.Tag;
 
 class Util {
 
@@ -38,6 +41,12 @@ class Util {
 
     static double[] doubleArray(Optional<Iterable<Double>> iter) {
         return iter.map(Util::doubleArray).orElse(null);
+    }
+
+    static <T> List<T> list(Iterable<T> iterable) {
+        List<T> result = new ArrayList<>();
+        iterable.forEach(result::add);
+        return result;
     }
 
     static Iterable<Double> iterable(double[] items) {
@@ -60,5 +69,41 @@ class Util {
                         return items[slot++];
                     }
                 };
+    }
+
+    static Iterable<io.helidon.metrics.api.Tag> neutralTags(Iterable<Tag> tags) {
+        return () -> new Iterator<>() {
+
+            private final Iterator<Tag> tagsIter = tags.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return tagsIter.hasNext();
+            }
+
+            @Override
+            public io.helidon.metrics.api.Tag next() {
+                Tag next = tagsIter.next();
+                return io.helidon.metrics.api.Tag.of(next.getKey(), next.getValue());
+            }
+        };
+    }
+
+    static <T extends io.helidon.metrics.api.Tag> Iterable<Tag> tags(Iterable<T> tags) {
+        return () -> new Iterator<>() {
+
+            private final Iterator<T> tagsIter = tags.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return tagsIter.hasNext();
+            }
+
+            @Override
+            public Tag next() {
+                io.helidon.metrics.api.Tag next = tagsIter.next();
+                return Tag.of(next.key(), next.value());
+            }
+        };
     }
 }
