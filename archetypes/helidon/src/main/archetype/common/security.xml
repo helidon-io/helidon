@@ -183,9 +183,9 @@
                                         </map>
                                     </list>
                                     <list key="modules">
+                                        <value if="${flavor} == 'nima'">io.helidon.nima.webclient.security</value>
                                         <value>io.helidon.security.providers.jwt</value>
                                         <value>io.helidon.nima.webserver.context</value>
-                                        <value>io.helidon.nima.webclient.security</value>
                                         <value>io.helidon.nima.webclient.http1</value>
                                     </list>
                                 </model>
@@ -252,7 +252,7 @@
                         </option>
                         <option value="http-signature" name="HTTP Signature" description="Service to service authentication">
                             <output>
-                                <files if="${flavor} == 'mp'">
+                                <files>
                                     <directory>files</directory>
                                     <includes>
                                         <include>src/main/resources/keystore.p12</include>
@@ -263,10 +263,34 @@
                                         <value file="files/application.http-signature.yaml" if="${flavor} == 'mp'"/>
                                     </list>
                                     <list key="dependencies">
-                                        <map if="${flavor} == 'mp'">
+                                        <map>
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-http-sign</value>
                                         </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.nima.webclient</value>
+                                            <value key="artifactId">helidon-nima-webclient-security</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.bundles</value>
+                                            <value key="artifactId">helidon-bundles-security</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.config</value>
+                                            <value key="artifactId">helidon-config-hocon</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.config</value>
+                                            <value key="artifactId">helidon-config-hocon</value>
+                                        </map>
+                                    </list>
+                                    <list key="modules" if="${flavor} == 'nima'">
+                                        <value>io.helidon.nima.webclient.http1</value>
+                                        <value>io.helidon.common.pki</value>
+                                        <value>io.helidon.nima.webserver.context</value>
+                                        <value>io.helidon.security.providers.common</value>
+                                        <value>io.helidon.security.providers.httpauth</value>
+                                        <value>io.helidon.security.providers.httpsign</value>
                                     </list>
                                 </model>
                             </output>

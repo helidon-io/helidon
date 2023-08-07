@@ -28,6 +28,10 @@
                 <include if="${security.atn} == 'jwt'">src/*/java/**/JwtOverrideService.java.mustache</include>
                 <include if="${security.atn} == 'google'">src/*/java/**/GoogleMain.java.mustache</include>
                 <include if="${security.atn} == 'google'">src/*/java/**/GoogleMainTest.java.mustache</include>
+                <include if="${security.atn} == 'http-signature'">src/*/java/**/Service1.java.mustache</include>
+                <include if="${security.atn} == 'http-signature'">src/*/java/**/Service2.java.mustache</include>
+                <include if="${security.atn} == 'http-signature'">src/*/java/**/SignatureMain.java.mustache</include>
+                <include if="${security.atn} == 'http-signature'">src/*/java/**/SignatureMainTest.java.mustache</include>
                 <include>/**/trick-to-avoid-empty-tag</include>
             </includes>
         </templates>
