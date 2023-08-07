@@ -113,6 +113,7 @@ public final class ClassModel extends ClassBase {
                 }
                 writer.write(lines[0] + "\n");
             }
+            writer.writeSeparatorLine();
         }
         if (packageName != null && !packageName.isEmpty()) {
             writer.write("package " + packageName + ";\n\n");
