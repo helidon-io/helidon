@@ -301,16 +301,24 @@
                             <output>
                                 <model>
                                     <list key="providers-config-entries">
-                                        <value file="files/application.abac.yaml" if="${flavor} == 'mp'"/>
+                                        <value file="files/application.abac.yaml"/>
                                     </list>
                                     <list key="dependencies">
-                                        <map if="${flavor} == 'mp'">
+                                        <map>
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-abac</value>
                                         </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.security.abac</value>
+                                            <value key="artifactId">helidon-security-abac-scope</value>
+                                        </map>
+                                        <map if="${flavor} == 'nima'">
+                                            <value key="groupId">io.helidon.security.abac</value>
+                                            <value key="artifactId">helidon-security-abac-role</value>
+                                        </map>
                                     </list>
                                     <list key="paths-config-entries">
-                                        <value order="90" if="${flavor} == 'mp'"><![CDATA[         roles-allowed: ["user"]]]></value>
+                                        <value order="90"><![CDATA[         roles-allowed: ["user"]]]></value>
                                     </list>
                                 </model>
                             </output>
