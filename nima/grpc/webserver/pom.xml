@@ -44,8 +44,8 @@
             <artifactId>helidon-nima-http2-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.grpc</groupId>
-            <artifactId>io.grpc</artifactId>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>

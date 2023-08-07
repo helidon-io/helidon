@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ module io.helidon.config.etcd {
     requires etcd4j;
     requires grpc.protobuf;
     requires grpc.stub;
+    requires grpc.api;
     requires com.google.protobuf;
     requires com.google.common;
     requires io.helidon.common;
     requires io.helidon.common.media.type;
-    requires io.grpc;
     requires static java.annotation;
 
     exports io.helidon.config.etcd;

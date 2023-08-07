@@ -192,7 +192,6 @@
         <module>bundles</module>
         <module>metrics</module>
         <module>health</module>
-        <module>grpc</module>
         <module>openapi</module>
         <module>jersey</module>
         <module>dbclient</module>

@@ -72,12 +72,6 @@
                 <artifactId>helidon-jersey-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <!-- gRPC -->
-            <dependency>
-                <groupId>io.helidon.grpc</groupId>
-                <artifactId>io.grpc</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
             <!-- graphQL -->
             <dependency>
                 <groupId>io.helidon.graphql</groupId>
