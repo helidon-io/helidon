@@ -166,6 +166,18 @@ class ProxyTest {
         assertThat(proxy.type(), is(Proxy.ProxyType.HTTP));
     }
 
+    @Test
+    void testDefaultSystem1() {
+        Proxy proxy = Proxy.create();
+        assertThat(proxy.type(), is(Proxy.ProxyType.SYSTEM));
+    }
+
+    @Test
+    void testDefaultSystem2() {
+        Proxy proxy = Proxy.create(Config.empty());
+        assertThat(proxy.type(), is(Proxy.ProxyType.SYSTEM));
+    }
+
     private void validateRelativizeNoProxy(WebClientConfiguration webConfig) {
         boolean relativeUris = webConfig.relativeUris();
         Proxy proxy = webConfig.proxy().get();
