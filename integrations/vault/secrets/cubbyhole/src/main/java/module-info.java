@@ -31,6 +31,7 @@ module io.helidon.integrations.vault.secrets.cubbyhole {
     requires java.logging;
 
     requires transitive io.helidon.integrations.vault;
+    requires io.helidon.integrations.common.rest;
     requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.cubbyhole;

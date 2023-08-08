@@ -40,7 +40,7 @@ module io.helidon.microprofile.openapi {
     requires io.helidon.openapi;
     requires org.jboss.jandex;
 
-    requires transitive org.yaml.snakeyaml;
+    requires org.yaml.snakeyaml;
 
     requires transitive microprofile.openapi.api;
 

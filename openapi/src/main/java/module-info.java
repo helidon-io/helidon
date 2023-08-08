@@ -22,7 +22,7 @@ import io.helidon.openapi.OpenApiUiNoOpFactory;
 module io.helidon.openapi {
     requires static io.helidon.common.features.api;
 
-    requires io.helidon.common;
+    requires transitive io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
     requires transitive io.helidon.servicecommon;

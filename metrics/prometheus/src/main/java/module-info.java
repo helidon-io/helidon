@@ -18,7 +18,8 @@
  * Prometheus support.
  */
 module io.helidon.metrics.prometheus {
-    requires transitive io.helidon.servicecommon;
+    requires io.helidon.servicecommon;
+    requires transitive io.helidon.webserver;
     // prometheus :(
     requires simpleclient;
 

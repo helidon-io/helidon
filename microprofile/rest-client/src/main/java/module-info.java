@@ -32,7 +32,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.microprofile.restclient {
     requires static io.helidon.common.features.api;
 
-    requires transitive microprofile.rest.client.api;
+    requires microprofile.rest.client.api;
     requires io.helidon.common.context;
     requires jersey.common;
     requires jersey.mp.rest.client;
