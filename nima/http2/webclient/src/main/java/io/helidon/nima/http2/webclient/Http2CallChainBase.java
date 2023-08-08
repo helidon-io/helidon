@@ -43,6 +43,7 @@ import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
+import static io.helidon.common.http.Http.Header.CONTENT_ENCODING;
 import static io.helidon.nima.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -177,8 +178,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
     private ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders) {
         ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
-        if (encodingSupport.contentDecodingEnabled()) {
-            String contentEncoding = responseHeaders.get(Http.Header.CONTENT_ENCODING).value();
+        if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(CONTENT_ENCODING)) {
+            String contentEncoding = responseHeaders.get(CONTENT_ENCODING).value();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 return encodingSupport.decoder(contentEncoding);
             } else {
