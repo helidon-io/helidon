@@ -75,7 +75,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * the one configured on this type's builder will win:
      * <ul>
      *     <li>{@link #readTimeout()}</li>
-     *     <li>{@link #connectTimeout()} eout(java.time.Duration)} (Duration)}</li>
+     *     <li>{@link #connectTimeout()}</li>
      * </ul>
      *
      * @return socket options
