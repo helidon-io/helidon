@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Jaeger",
         description = "Jaeger tracer integration",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"Tracing", "Jaeger"}
 )
 module io.helidon.tracing.providers.jaeger {

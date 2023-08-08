@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "PKI",
         description = "PKI Secrets Engine",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"HCP Vault", "Secrets", "PKI"}
 )
 module io.helidon.integrations.vault.secrets.pki {

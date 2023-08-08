@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Database",
         description = "Database Secrets Engine",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"HCP Vault", "Secrets", "Database"}
 )
 module io.helidon.integrations.vault.secrets.database {

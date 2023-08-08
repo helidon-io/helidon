@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Security",
         description = "Security support",
-        in = {HelidonFlavor.SE, HelidonFlavor.NIMA}
+        in = HelidonFlavor.SE
 )
 module io.helidon.security {
     requires java.logging;

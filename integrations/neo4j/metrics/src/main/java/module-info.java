@@ -24,7 +24,7 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "Neo4j Metrics",
         description = "Metrics for Neo4j integration",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Neo4j", "Metrics"}
 )
 module io.helidon.integrations.neo4j.metrics {

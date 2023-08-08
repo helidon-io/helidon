@@ -23,7 +23,7 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
  */
 @Feature(value = "Jersey Client",
         description = "Tracing integration with Jersey client",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Tracing", "Integration", "JerseyClient"}
 )
 module io.helidon.tracing.jersey.client {

@@ -22,8 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Web Client",
          description = "Web Client",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = "Web Client"
 )
 module io.helidon.nima.webclient.api {

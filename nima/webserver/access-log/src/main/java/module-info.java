@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Access Log",
         description = "Access log support",
-        in = HelidonFlavor.NIMA,
-        invalidIn = HelidonFlavor.SE,
+        in = HelidonFlavor.SE,
         path = {"WebServer", "AccessLog"}
 )
 module io.helidon.nima.webserver.accesslog {

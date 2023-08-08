@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Config",
         description = "Configuration module",
-        in = {HelidonFlavor.NIMA, HelidonFlavor.SE}
+        in = HelidonFlavor.SE
 )
 module io.helidon.config {
 

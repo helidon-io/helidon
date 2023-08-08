@@ -24,8 +24,7 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "GRPC",
          description = "gRPC Support",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"GRPC", "WebServer"}
 )
 module io.helidon.nima.grpc.server {

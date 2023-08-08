@@ -23,7 +23,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Google Login",
         description = "Security provider for Google login button authentication and outbound",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"Security", "Provider", "Google-Login"}
 )
 @Aot(false)

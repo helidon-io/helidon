@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Jersey Server",
         description = "Tracing integration with Jersey server",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Tracing", "Integration", "Jersey"}
 )
 module io.helidon.tracing.jersey {

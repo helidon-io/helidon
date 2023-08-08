@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "HTTP Signatures",
         description = "Security provider for HTTP Signature authentication and outbound",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"Security", "Provider", "HttpSign"}
 )
 module io.helidon.security.providers.httpsign {

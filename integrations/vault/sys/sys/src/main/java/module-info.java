@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Sys",
         description = "System operations",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"HCP Vault", "Sys"}
 )
 module io.helidon.integrations.vault.sys {
