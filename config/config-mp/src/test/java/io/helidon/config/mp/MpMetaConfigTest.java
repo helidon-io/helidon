@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,13 +21,13 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 class MpMetaConfigTest {
@@ -107,10 +107,7 @@ class MpMetaConfigTest {
     void testMetaPropertiesNotOptional() {
         System.setProperty(MpMetaConfig.META_CONFIG_SYSTEM_PROPERTY,
                 "custom-mp-meta-config-not-optional.properties");
-        try {
-            config = ConfigProvider.getConfig();
-            Assertions.fail("Expecting meta-config to fail due to not optional non-existent config source");
-        } catch (ConfigException e) {}
+        assertThrows(ConfigException.class, ConfigProvider::getConfig, "Expecting meta-config to fail due to not optional non-existent config source");
     }
 
     @Test
