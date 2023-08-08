@@ -24,6 +24,7 @@ public interface DistributionSummary extends Meter {
      * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary}.
      *
      * @param name name for the summary
+     * @param configBuilder distribution stats config for the summary
      * @return new builder
      */
     static Builder builder(String name,

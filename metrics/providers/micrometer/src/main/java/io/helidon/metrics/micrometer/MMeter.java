@@ -18,34 +18,14 @@ package io.helidon.metrics.micrometer;
 import java.util.Iterator;
 import java.util.function.Function;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Timer;
 
 /**
  * Adapter to Micrometer meter for Helidon metrics.
  */
 class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
-
-    static MMeter<?> create(Meter meter) {
-        if (meter instanceof Counter counter) {
-            return MCounter.create(counter);
-        }
-        if (meter instanceof DistributionSummary summary) {
-            return MDistributionSummary.create(summary);
-        }
-        if (meter instanceof Gauge gauge) {
-            return MGauge.create(gauge);
-        }
-        if (meter instanceof Timer timer) {
-            return MTimer.create(timer);
-        }
-        throw new IllegalArgumentException("Unrecognized meter type " + meter.getClass().getName());
-    }
 
     private final M delegate;
 
@@ -81,7 +61,9 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
     }
 
     abstract static class Builder<B, HB extends Builder<B, HB, HM>, HM extends io.helidon.metrics.api.Meter>
-            /* implements io.helidon.metrics.api.Meter.Builder<HB, HM> */{
+        // TODO check if we need the following or something similar
+
+            /* implements io.helidon.metrics.api.Meter.Builder<HB, HM> */ {
 
         private final String name;
         private final B delegate;

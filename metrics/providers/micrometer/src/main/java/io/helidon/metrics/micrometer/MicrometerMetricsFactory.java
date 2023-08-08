@@ -23,24 +23,47 @@ import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.HistogramSnapshot;
-import io.helidon.metrics.api.HistogramSupport;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
-import io.micrometer.core.instrument.Metrics;
-
 /**
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
  */
-public class MicrometerMetricsFactory implements MetricsFactory {
+class MicrometerMetricsFactory implements MetricsFactory {
 
+    static MicrometerMetricsFactory create(MetricsConfig metricsConfig) {
+        return new MicrometerMetricsFactory(metricsConfig);
+    }
+
+    private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
+    }
 
     @Override
     public MeterRegistry globalRegistry() {
-        return MMeterRegistry.create(Metrics.globalRegistry);
+        // TODO fix following null
+        return MMeterRegistry.create(null);
+    }
+
+    @Override
+    public Clock clockSystem() {
+        return new Clock() {
+
+            private final io.micrometer.core.instrument.Clock delegate = io.micrometer.core.instrument.Clock.SYSTEM;
+
+            @Override
+            public long wallTime() {
+                return delegate.wallTime();
+            }
+
+            @Override
+            public long monotonicTime() {
+                return delegate.monotonicTime();
+            }
+        };
     }
 
     @Override
@@ -50,11 +73,12 @@ public class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder() {
-        return null;
+        return MDistributionStatisticsConfig.builder();
     }
 
     @Override
-    public DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder) {
+    public DistributionSummary.Builder distributionSummaryBuilder(String name,
+                                                                  DistributionStatisticsConfig.Builder configBuilder) {
         return MDistributionSummary.builder(name, configBuilder);
     }
 
@@ -64,28 +88,23 @@ public class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public HistogramSupport.Builder histogramSupportBuilder() {
-        return null;
-    }
-
-    @Override
     public Timer.Builder timerBuilder(String name) {
         return Timer.builder(name);
     }
 
     @Override
     public Timer.Sample timerStart() {
-        return null;
+        return MTimer.start();
     }
 
     @Override
     public Timer.Sample timerStart(MeterRegistry registry) {
-        return null;
+        return MTimer.start(registry);
     }
 
     @Override
     public Timer.Sample timerStart(Clock clock) {
-        return null;
+        return MTimer.start(clock);
     }
 
     @Override
@@ -95,11 +114,11 @@ public class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public Tag tagOf(String key, String value) {
-        return null;
+        return MTag.of(key, value);
     }
 
     @Override
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
-        return null;
+        return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
 }

@@ -22,6 +22,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -285,7 +286,7 @@ class NoOpMeter implements Meter {
 
             @Override
             public Builder distributionStatisticsConfig(
-                    DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
+                    io.helidon.metrics.api.DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
                 return identity();
             }
         }
@@ -486,6 +487,130 @@ class NoOpMeter implements Meter {
         @Override
         public double max(TimeUnit unit) {
             return 0;
+        }
+    }
+
+    static class DistributionStatisticsConfig implements io.helidon.metrics.api.DistributionStatisticsConfig {
+
+        static Builder builder() {
+            return new Builder();
+        }
+
+        static class Builder implements io.helidon.metrics.api.DistributionStatisticsConfig.Builder {
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig build() {
+                return new NoOpMeter.DistributionStatisticsConfig(this);
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder expiry(Duration expiry) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder bufferLength(Integer bufferLength) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder percentilesHistogram(Boolean enabled) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder minimumExpectedValue(Double min) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder maximumExpectedValue(Double max) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder percentiles(double... percentiles) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder percentiles(Iterable<Double> percentiles) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder percentilePrecision(Integer digitsOfPrecision) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder serviceLevelObjectives(double... slos) {
+                return identity();
+            }
+
+            @Override
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder serviceLevelObjectives(Iterable<Double> slos) {
+                return identity();
+            }
+        }
+
+        private DistributionStatisticsConfig(DistributionStatisticsConfig.Builder builder) {
+        }
+
+        @Override
+        public io.helidon.metrics.api.DistributionStatisticsConfig merge(
+                io.helidon.metrics.api.DistributionStatisticsConfig parent) {
+            return builder().build();
+        }
+
+        @Override
+        public Optional<Boolean> isPercentileHistogram() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Boolean> isPublishingPercentiles() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Boolean> isPublishingHistogram() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Iterable<Double>> percentiles() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Integer> percentilePrecision() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Double> minimumExpectedValue() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Double> maximumExpectedValue() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Duration> expiry() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Integer> bufferLength() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Iterable<Double>> serviceLevelObjectiveBoundaries() {
+            return Optional.empty();
         }
     }
 }

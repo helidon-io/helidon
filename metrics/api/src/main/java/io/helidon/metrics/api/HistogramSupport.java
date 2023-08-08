@@ -18,16 +18,7 @@ package io.helidon.metrics.api;
 /**
  * Common behavior among meters which support histograms.
  */
-public interface HistogramSupport extends Meter {
-
-    /**
-     * Creates a builder for a new {@link io.helidon.metrics.api.HistogramSupport} instance.
-     *
-     * @return new builder
-     */
-    static Builder builder() {
-        return MetricsFactory.getInstance().histogramSupportBuilder();
-    }
+public interface HistogramSupport {
 
     /**
      * Returns a snapshot of the data in a histogram.
@@ -35,10 +26,4 @@ public interface HistogramSupport extends Meter {
      * @return snapshot of the histogram
      */
     HistogramSnapshot takeSnapshot();
-
-    /**
-     * Builder for a new {@link io.helidon.metrics.api.HistogramSupport}.
-     */
-    interface Builder extends Meter.Builder<Builder, HistogramSupport> {
-    }
 }
