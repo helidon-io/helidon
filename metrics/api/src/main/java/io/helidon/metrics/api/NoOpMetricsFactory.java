@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Set;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -24,6 +23,18 @@ import java.util.function.ToDoubleFunction;
 class NoOpMetricsFactory implements MetricsFactory {
 
     private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
+
+    private static final Clock SYSTEM_CLOCK = new Clock() {
+        @Override
+        public long wallTime() {
+            return System.currentTimeMillis();
+        }
+
+        @Override
+        public long monotonicTime() {
+            return System.nanoTime();
+        }
+    };
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();
@@ -35,8 +46,8 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public Meter.Id idOf(String name) {
-        return idOf(name, Set.of());
+    public Clock clockSystem() {
+        return SYSTEM_CLOCK;
     }
 
     @Override
@@ -55,9 +66,10 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder) {
-        // TODO
-        return null;
+    public DistributionSummary.Builder distributionSummaryBuilder(String name,
+                                                                  DistributionStatisticsConfig.Builder configBuilder) {
+        return NoOpMeter.DistributionSummary.builder(name)
+                .distributionStatisticsConfig(configBuilder);
     }
 
     @Override
@@ -68,12 +80,6 @@ class NoOpMetricsFactory implements MetricsFactory {
     @Override
     public Timer.Builder timerBuilder(String name) {
         return NoOpMeter.Timer.builder(name);
-    }
-
-    @Override
-    public HistogramSupport.Builder histogramSupportBuilder() {
-        // TODO
-        return null;
     }
 
     @Override

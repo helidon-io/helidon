@@ -51,17 +51,17 @@ class NoOpMeterRegistry implements MeterRegistry {
     }
 
     @Override
-    public Meter remove(Meter.Id id) {
-        return meters.remove(id);
+    public Optional<Meter> remove(Meter.Id id) {
+        return Optional.ofNullable(meters.remove(id));
     }
 
     @Override
-    public Meter remove(Meter meter) {
-        return meters.remove(meter.id());
+    public Optional<Meter> remove(Meter meter) {
+        return Optional.ofNullable(meters.remove(meter.id()));
     }
 
     @Override
-    public Meter remove(String name, Iterable<Tag> tags) {
+    public Optional<Meter> remove(String name, Iterable<Tag> tags) {
         return remove(NoOpMeter.Id.create(name, tags));
     }
 

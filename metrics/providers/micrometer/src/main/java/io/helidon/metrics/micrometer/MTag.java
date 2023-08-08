@@ -18,6 +18,7 @@ package io.helidon.metrics.micrometer;
 import java.util.Iterator;
 
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 
 class MTag implements io.helidon.metrics.api.Tag {
 
@@ -42,6 +43,10 @@ class MTag implements io.helidon.metrics.api.Tag {
                 return MTag.create(iter.next());
             }
         };
+    }
+
+    static Tags mTags(Iterable<io.helidon.metrics.api.Tag> tags) {
+        return Tags.of(tags(tags));
     }
 
     static Iterable<Tag> tags(Iterable<io.helidon.metrics.api.Tag> tags) {
@@ -70,6 +75,10 @@ class MTag implements io.helidon.metrics.api.Tag {
      */
     static MTag create(Tag tag) {
         return new MTag(tag);
+    }
+
+    static MTag of(String key, String value) {
+        return MTag.create(Tag.of(key, value));
     }
 
     private final Tag delegate;

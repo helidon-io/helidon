@@ -31,6 +31,52 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         return new MTimer(timer);
     }
 
+    static io.helidon.metrics.api.Timer.Builder builder(String name) {
+        return new Builder(name);
+    }
+
+    static Sample start() {
+        return Sample.create(Timer.start());
+    }
+
+    static Sample start(io.helidon.metrics.api.MeterRegistry meterRegistry) {
+        if (meterRegistry instanceof MeterRegistry mMeterRegistry) {
+            return Sample.create(Timer.start(mMeterRegistry));
+        }
+        throw new IllegalArgumentException("Expected meter registry type " + MMeterRegistry.class.getName()
+        + " but was " + meterRegistry.getClass().getName());
+    }
+
+    static Sample start(io.helidon.metrics.api.Clock clock) {
+        if (clock instanceof MClock mClock) {
+            return Sample.create(Timer.start(mClock.delegate()));
+        }
+        throw new IllegalArgumentException("Expected clock type " + MClock.class.getName()
+        + " but was " + clock.getClass().getName());
+    }
+
+    static class Sample implements io.helidon.metrics.api.Timer.Sample {
+
+        static Sample create(io.micrometer.core.instrument.Timer.Sample delegate) {
+            return new Sample(delegate);
+        }
+
+        private final Timer.Sample delegate;
+
+        private Sample(io.micrometer.core.instrument.Timer.Sample delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public long stop(io.helidon.metrics.api.Timer timer) {
+            if (timer instanceof MTimer mTimer) {
+                return delegate.stop(mTimer.delegate());
+            }
+            throw new IllegalArgumentException("Expected timer type " + MTimer.class.getName()
+            + " but was " + timer.getClass().getName());
+        }
+    }
+
     private MTimer(Timer delegate) {
         super(delegate);
     }

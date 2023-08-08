@@ -20,41 +20,6 @@ package io.helidon.metrics.api;
  */
 public interface Meter extends Wrapped {
 
-//    /**
-//     * Behavior for adapters to builder in implementations.
-//     */
-//    interface BuilderAdapter {
-//
-//        /**
-//         * Returns the name assigned to the builder.
-//         *
-//         * @return name
-//         */
-//        String name();
-//
-//        /**
-//         * Returns the tags assigned to the builder.
-//         *
-//         * @return tags
-//         */
-//        Iterable<Tag> tags();
-//
-//        /**
-//         * Returns the description assigned to the builder.
-//         *
-//         * @return description
-//         */
-//        String description();
-//
-//        /**
-//         * Returns the unit assigned to the builder.
-//         *
-//         * @return unit
-//         */
-//        String baseUnit();
-//
-//    }
-
     /**
      * Common behavior of specific meter builders.
      *

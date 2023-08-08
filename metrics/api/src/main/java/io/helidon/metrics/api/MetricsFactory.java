@@ -56,6 +56,14 @@ public interface MetricsFactory {
     MeterRegistry globalRegistry();
 
     /**
+     * Returns the system {@link io.helidon.metrics.api.Clock} clock from the
+     * underlying metrics implementation.
+     *
+     * @return the system clock
+     */
+    Clock clockSystem();
+
+    /**
      * Creates a builder for a {@link io.helidon.metrics.api.Counter}.
      *
      * @param name name of the counter
@@ -74,6 +82,7 @@ public interface MetricsFactory {
      * Creates a builder for a {@link io.helidon.metrics.api.DistributionSummary}.
      *
      * @param name name of the summary
+     * @param configBuilder distribution stats config the summary should use
      * @return summary builder
      */
     DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder);
@@ -89,12 +98,13 @@ public interface MetricsFactory {
      */
     <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
-    /**
-     * Creates a builder for a {@link io.helidon.metrics.api.HistogramSupport}.
-     *
-     * @return summary builder
-     */
-    HistogramSupport.Builder histogramSupportBuilder();
+    // TODO probably remove this but doublecheck
+//    /**
+//     * Creates a builder for a {@link io.helidon.metrics.api.HistogramSupport}.
+//     *
+//     * @return summary builder
+//     */
+//    HistogramSupport.Builder histogramSupportBuilder();
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Timer}.
