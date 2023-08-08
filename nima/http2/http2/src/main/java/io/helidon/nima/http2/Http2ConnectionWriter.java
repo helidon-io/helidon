@@ -53,7 +53,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
         // initial size is based on our settings, then updated with client settings
         this.outboundDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
-        this.responseHuffman = new Http2HuffmanEncoder();
+        this.responseHuffman = Http2HuffmanEncoder.create();
     }
 
     @Override

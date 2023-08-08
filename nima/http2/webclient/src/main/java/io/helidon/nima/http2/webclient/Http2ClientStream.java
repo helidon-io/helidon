@@ -292,7 +292,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
             case HEADERS, CONTINUATION:
                 continuationData.add(frameData);
                 if (endOfHeaders) {
-                    var requestHuffman = new Http2HuffmanDecoder();
+                    var requestHuffman = Http2HuffmanDecoder.create();
                     Http2Headers http2Headers = Http2Headers.create(this,
                                                                     connection.getInboundDynamicTable(),
                                                                     requestHuffman,
