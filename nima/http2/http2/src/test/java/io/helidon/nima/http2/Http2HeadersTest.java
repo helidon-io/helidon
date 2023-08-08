@@ -171,7 +171,7 @@ class Http2HeadersTest {
         http2Headers.path("/");
         http2Headers.authority("www.example.com");
 
-        Http2HuffmanEncoder huffman = new Http2HuffmanEncoder();
+        Http2HuffmanEncoder huffman = Http2HuffmanEncoder.create();
 
         BufferData buffer = BufferData.growing(32);
         http2Headers.write(dynamicTable, huffman, buffer);
@@ -262,7 +262,7 @@ class Http2HeadersTest {
 
         return Http2Headers.create(stream,
                                    dynamicTable,
-                                   new Http2HuffmanDecoder(),
+                                   Http2HuffmanDecoder.create(),
                                    new Http2FrameData(header, data));
     }
 }

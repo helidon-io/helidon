@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ import static java.lang.System.Logger.Level.TRACE;
 /**
  * A trust manager factory that trusts all peers.
  */
-public class TrustAllManagerFactory extends TrustManagerFactory {
+class TrustAllManagerFactory extends TrustManagerFactory {
     private static final TrustAllManagerFactorySpi SPI = new TrustAllManagerFactorySpi();
     private static final Provider PROVIDER = new Provider("helidon",
                                                           "0.0",
@@ -43,7 +43,7 @@ public class TrustAllManagerFactory extends TrustManagerFactory {
     /**
      * Create a new instance.
      */
-    public TrustAllManagerFactory() {
+    TrustAllManagerFactory() {
         super(SPI, PROVIDER, "insecure-trust-all");
     }
 

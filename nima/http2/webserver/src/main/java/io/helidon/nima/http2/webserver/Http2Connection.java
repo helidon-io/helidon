@@ -125,7 +125,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.subProviders = subProviders;
         this.requestDynamicTable = Http2Headers.DynamicTable.create(
                 serverSettings.value(Http2Setting.HEADER_TABLE_SIZE));
-        this.requestHuffman = new Http2HuffmanDecoder();
+        this.requestHuffman = Http2HuffmanDecoder.create();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.reader = ctx.dataReader();
         this.sendErrorDetails = http2Config.sendErrorDetails();

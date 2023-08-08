@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ package io.helidon.nima.http2;
 import io.helidon.common.buffers.BufferData;
 
 /**
- * Implementation of HPack Huffman decoding and encoding.
+ * Implementation of HPack Huffman encoding.
  */
 public class Http2HuffmanEncoder {
     private static final int HUFFMAN_ENCODED = 1 << 7;
@@ -45,7 +45,16 @@ public class Http2HuffmanEncoder {
     /**
      * Huffman encoder.
      */
-    public Http2HuffmanEncoder() {
+    private Http2HuffmanEncoder() {
+    }
+
+    /**
+     * Creates a new HPack Huffman encoder.
+     *
+     * @return a new Huffman encoder
+     */
+    public static Http2HuffmanEncoder create() {
+        return new Http2HuffmanEncoder();
     }
 
     void encode(BufferData buffer, String string) {
