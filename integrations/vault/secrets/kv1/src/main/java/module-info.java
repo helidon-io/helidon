@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "K/V 1",
         description = "Key/Value Version 1 Secrets Engine",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"HCP Vault", "Secrets", "K/V 1"}
 )
 module io.helidon.integrations.vault.secrets.kvone {

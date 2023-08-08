@@ -22,8 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Jackson",
          description = "Jackson media support",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"Media", "Jackson"}
 )
 module io.helidon.nima.http.media.jackson {

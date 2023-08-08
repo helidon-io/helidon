@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Built-ins",
         description = "Built in health checks",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Health", "Builtins"}
 )
 module io.helidon.health.checks {

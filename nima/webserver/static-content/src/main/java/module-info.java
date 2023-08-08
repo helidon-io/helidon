@@ -22,8 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Nima Static Content",
          description = "Static content support for WebServer",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"WebServer", "Static Content"}
 )
 module io.helidon.nima.webserver.staticcontent {

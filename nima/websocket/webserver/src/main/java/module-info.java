@@ -22,8 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "WebSocket",
          description = "WebSocket server support",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"WebSocket", "WebServer"}
 )
 module io.helidon.nima.websocket.webserver {

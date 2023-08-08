@@ -24,7 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Transit",
         description = "Transit Secrets Engine",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"HCP Vault", "Secrets", "Transit"}
 )
 module io.helidon.integrations.vault.secrets.transit {

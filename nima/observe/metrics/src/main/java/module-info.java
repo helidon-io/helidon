@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Metrics",
          description = "Metrics support",
-         in = HelidonFlavor.NIMA)
+         in = HelidonFlavor.SE)
 module io.helidon.nima.observe.metrics {
     requires transitive io.helidon.nima.observe;
     requires io.helidon.nima.webserver;

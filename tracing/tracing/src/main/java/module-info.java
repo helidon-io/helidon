@@ -25,7 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Tracing",
         description = "Tracing support",
-        in = {HelidonFlavor.SE, HelidonFlavor.NIMA}
+        in = HelidonFlavor.SE
 )
 module io.helidon.tracing {
     requires io.helidon.common;

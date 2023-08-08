@@ -137,8 +137,8 @@ class LoomServer implements WebServer, Startable {
 
     @Override
     public WebServer start() {
-        HelidonFeatures.flavor(HelidonFlavor.NIMA);
-        HelidonFeatures.print(HelidonFlavor.NIMA, Version.VERSION, false);
+        HelidonFeatures.flavor(HelidonFlavor.SE);
+        HelidonFeatures.print(HelidonFlavor.SE, Version.VERSION, false);
 
         try {
             lifecycleLock.lockInterruptibly();

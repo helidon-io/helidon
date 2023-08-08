@@ -24,7 +24,7 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "Neo4j Health",
         description = "Health check for Neo4j integration",
-        in = {HelidonFlavor.SE, HelidonFlavor.NIMA},
+        in = HelidonFlavor.SE,
         path = {"Neo4j", "Health"}
 )
 module io.helidon.integrations.neo4j.health {

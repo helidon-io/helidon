@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Zipkin",
         description = "Zipkin tracer integration",
-        in = {HelidonFlavor.MP, HelidonFlavor.SE, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Tracing", "Zipkin"}
 )
 module io.helidon.tracing.providers.zipkin {

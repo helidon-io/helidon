@@ -23,7 +23,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "IDCS Role Mapper",
         description = "Security provider role mapping - Oracle IDCS",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"Security", "Provider", "IdcsRoleMapper"}
 )
 @Aot(false)

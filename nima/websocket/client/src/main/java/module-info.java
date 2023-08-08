@@ -23,7 +23,7 @@ import io.helidon.nima.webclient.spi.ClientProtocolProvider;
  */
 @Feature(value = "WebSocket Client",
          description = "WebSocket Client",
-         in = HelidonFlavor.NIMA, invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"WebSocket", "Client"}
 )
 module io.helidon.nima.websocket.client {

@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "Fault Tolerance",
          description = "Fault Tolerance support",
-         in = HelidonFlavor.NIMA,
+         in = HelidonFlavor.SE,
          path = "FT"
 )
 module io.helidon.nima.faulttolerance {

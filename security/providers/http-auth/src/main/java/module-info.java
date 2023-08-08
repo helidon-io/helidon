@@ -22,7 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "HTTP Basic",
         description = "Security provider for HTTP Basic authentication and outbound",
-        in = {HelidonFlavor.SE, HelidonFlavor.MP, HelidonFlavor.NIMA},
+        in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"Security", "Provider", "HttpBasic"}
 )
 module io.helidon.security.providers.httpauth {

@@ -24,8 +24,7 @@ import io.helidon.nima.webserver.http.spi.SinkProvider;
  */
 @Feature(value = "SSE",
          description = "SSE WebServer",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"WebServer", "SSE"}
 )
 module io.helidon.nima.sse.webserver {

@@ -22,8 +22,7 @@ import io.helidon.common.features.api.HelidonFlavor;
  */
 @Feature(value = "HTTP/1.1",
          description = "Web Client HTTP/1.1 support",
-         in = HelidonFlavor.NIMA,
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = {"Web Client", "HTTP/1.1"}
 )
 module io.helidon.nima.webclient.http1 {
