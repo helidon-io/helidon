@@ -19,7 +19,8 @@ package io.helidon.integrations.microstream.metrics;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
+import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
@@ -68,7 +69,7 @@ public class MicrostreamMetricsSupport {
         this.embeddedStorageManager = builder.embeddedStorageManager();
 
         if (builder.registryFactory() == null) {
-            registryFactory = RegistryFactory.getInstance(config);
+            registryFactory = RegistryFactory.getInstance(MetricsSettings.create(config));
         } else {
             registryFactory = builder.registryFactory();
         }

@@ -38,8 +38,8 @@
             <artifactId>helidon-common-http</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

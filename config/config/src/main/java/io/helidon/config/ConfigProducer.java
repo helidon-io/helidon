@@ -107,6 +107,11 @@ class ConfigProducer implements Config {
     }
 
     @Override
+    public <T> ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws ConfigException {
+        return config.mapList(mapper);
+    }
+
+    @Override
     public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
         return config.asNodeList();
     }

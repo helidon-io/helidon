@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 
 /**
@@ -124,11 +124,6 @@ class RegistryFactoryManager {
         return accessMetricsSettings(() -> componentMetricsSettings.isEnabled()
                 ? INSTANCE.get()
                 : NO_OP_INSTANCE);
-    }
-
-    @Deprecated
-    static RegistryFactory getInstance(Config config) {
-        return getInstance(MetricsSettings.create(config));
     }
 
     private static <T> T accessMetricsSettings(Supplier<T> operation) {

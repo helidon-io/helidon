@@ -89,7 +89,7 @@ public class CoordinatorService implements HttpService {
 
     CoordinatorService(LraPersistentRegistry lraPersistentRegistry, Supplier<URI> coordinatorUriSupplier, Config config) {
         this.lraPersistentRegistry = lraPersistentRegistry;
-        coordinatorURL = LazyValue.create(coordinatorUriSupplier);
+        this.coordinatorURL = LazyValue.create(coordinatorUriSupplier);
         this.config = config;
         init();
     }
@@ -418,7 +418,6 @@ public class CoordinatorService implements HttpService {
      */
     public static CoordinatorService create() {
         return builder()
-                .config(Config.create().get(CoordinatorService.CONFIG_PREFIX))
                 .build();
     }
 
@@ -480,7 +479,7 @@ public class CoordinatorService implements HttpService {
         @Override
         public CoordinatorService build() {
             if (config == null) {
-                config = Config.create().get(CoordinatorService.CONFIG_PREFIX);
+                config = Config.empty();
             }
             if (lraPersistentRegistry == null) {
                 lraPersistentRegistry = new LraDatabasePersistentRegistry(config);

@@ -234,6 +234,16 @@ public interface Config {
     <T> ConfigValue<List<T>> asList(Class<T> type) throws ConfigException;
 
     /**
+     * Returns this node as a list mapping each list value using the provided mapper.
+     *
+     * @param mapper mapper to convert each list node into a typed value
+     * @param <T>    type of list elements
+     * @return a typed list with values
+     * @throws io.helidon.common.config.ConfigException in case the mapper fails to map the values
+     */
+    <T> ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws ConfigException;
+
+    /**
      * Returns a list of child {@code Config} nodes if the node is {@code Type#OBJECT}.
      * Returns a list of element nodes if the node is {@code Type#LIST}.
      * Throws {@code MissingValueException} if the node is {@code Type#MISSING}.
