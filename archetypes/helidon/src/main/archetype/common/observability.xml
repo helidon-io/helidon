@@ -136,7 +136,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     private MetricRegistry registry;]]></value>
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'nima'">
-                                        <value><![CDATA[                .register(HttpStatusMetricService.create())]]></value>
+                                        <value><![CDATA[.register(HttpStatusMetricService.create())]]></value>
                                     </list>
                                     <list key="modules">
                                         <value if="${flavor} == 'mp'">io.helidon.microprofile.metrics</value>
@@ -477,9 +477,9 @@ curl -s -X GET http://localhost:8080/health
                                 </list>
                                 <list key="Main-content" if="${flavor} == 'nima'">
                                     <value><![CDATA[
-private static boolean isStarted() {
-    return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;
-}
+    private static boolean isStarted() {
+        return Duration.ofMillis(System.currentTimeMillis() - serverStartTime).getSeconds() >= 8;
+    }
 ]]></value>
                                 </list>
                                 <list key="readme-sections" if="${flavor} == 'nima'">

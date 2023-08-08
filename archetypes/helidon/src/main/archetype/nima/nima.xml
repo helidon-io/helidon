@@ -37,6 +37,11 @@
                         description="Custom Helidon Nima project">
                     <exec src="custom/custom-nima.xml"/>
                 </option>
+                <option value="database"
+                        name="Database"
+                        description="Helidon SE application that uses a database with JPA">
+                    <exec src="database/database-nima.xml"/>
+                </option>
             </enum>
         </inputs>
     </step>
