@@ -33,6 +33,7 @@
 
     <modules>
         <module>cdi</module>
+        <module>sdk</module>
     </modules>
 
 </project>
