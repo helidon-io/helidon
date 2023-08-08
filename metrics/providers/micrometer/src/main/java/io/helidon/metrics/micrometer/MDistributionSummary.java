@@ -62,7 +62,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
                          implements io.helidon.metrics.api.DistributionSummary.Builder {
 
         private Builder(String name, io.helidon.metrics.api.DistributionStatisticsConfig.Builder configBuilder) {
-            super(name, DistributionSummary.builder(name));
+            super(DistributionSummary.builder(name));
         }
 
         @Override

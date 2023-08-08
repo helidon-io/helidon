@@ -23,7 +23,6 @@ import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.HistogramSnapshot;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -105,11 +104,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public Timer.Sample timerStart(Clock clock) {
         return MTimer.start(clock);
-    }
-
-    @Override
-    public Meter.Id idOf(String name, Iterable<Tag> tags) {
-        return null;
     }
 
     @Override

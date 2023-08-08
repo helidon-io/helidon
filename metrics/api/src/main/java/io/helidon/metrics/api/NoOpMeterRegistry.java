@@ -84,26 +84,11 @@ class NoOpMeterRegistry implements MeterRegistry {
 
     private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
         NoOpMeter.Builder<?, ?> noOpBuilder = (NoOpMeter.Builder<?, ?>) builder;
+        // The following cast will always succeed if we create the meter by invoking the builder,
+        // it will success if we retrieved a previously-registered meter of a compatible type,
+        // and it will (correctly) fail if we found a previously-registered meter of an incompatible
+        // type compared to what the caller requested.
         return (M) meters.computeIfAbsent(id,
                                           thidId -> noOpBuilder.build());
     }
-// TODO
-//    private <M extends Meter> M findOrRegister(Meter.Id id, Class<M> mClass, Supplier<M> meterSupplier) {
-//        // This next step is atomic because we are using a ConcurrentHashMap.
-//        Meter result = meters.computeIfAbsent(id,
-//                                              theId -> meterSupplier.get());
-//
-//        // Check the type in case we retrieved a previously-registered meter with the specified ID. The type will always
-//        // be correct if we ran the supplier, in which this test is unneeded by mostly harmless.
-//        // We could just attempt the cast and let Java throw a class cast exception itself if needed, but this is nicer.
-//        if (!mClass.isInstance(result)) {
-//            throw new IllegalArgumentException(
-//                    String.format("Found previously-registered meter with ID %s of type %s when expecting %s",
-//                                  id,
-//                                  result.getClass().getName(),
-//                                  mClass.getName()));
-//        }
-//
-//        return mClass.cast(meters.put(id, meterSupplier.get()));
-//    }
 }
