@@ -49,14 +49,6 @@ public class ObserverForTesting implements ExecutorServiceSupplierObserver {
         return supplierInfo.context;
     }
 
-    @Override
-    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                    int supplierIndex,
-                                                    String supplierCategory,
-                                                    List<MethodInvocation> methodInvocations) {
-        return registerSupplier(supplier, supplierIndex, supplierCategory);
-    }
-
     Map<Supplier<? extends ExecutorService>, SupplierInfo> suppliers() {
         return suppliers;
     }

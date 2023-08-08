@@ -17,13 +17,11 @@
 package io.helidon.common.configurable;
 
 import java.lang.System.Logger.Level;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -59,10 +57,6 @@ class ObserverManager {
 
     private static final Map<ExecutorService, SupplierInfo> EXECUTOR_SERVICES = new ConcurrentHashMap<>();
 
-    // Defer building list until use to avoid loading problems if this JDK does not support ThreadPerTaskExecutor.
-    private static final LazyValue<List<ExecutorServiceSupplierObserver.MethodInvocation>> METRICS_RELATED_METHOD_INVOCATIONS =
-            LazyValue.create(() -> List.of(
-                    MethodInvocationImpl.create("Thread count", "thread-count", "threadCount")));
 
     private ObserverManager() {
     }
@@ -73,33 +67,17 @@ class ObserverManager {
      * @param supplier the supplier of {@code ExecutorService} instances
      * @param supplierCategory category of the supplier (e.g., scheduled, server)
      * @param executorServiceCategory category of executor services the supplier creates (e.g., ad-hoc)
-     * @param useVirtualThreads whether virtual threads should be used
      */
     static void registerSupplier(Supplier<? extends ExecutorService> supplier,
                                  String supplierCategory,
-                                 String executorServiceCategory,
-                                 boolean useVirtualThreads) {
+                                 String executorServiceCategory) {
         int supplierIndex = SUPPLIER_CATEGORY_NEXT_INDEX_VALUES.computeIfAbsent(supplierCategory, key -> new AtomicInteger())
                 .getAndIncrement();
         SUPPLIERS.computeIfAbsent(supplier,
                                   s -> SupplierInfo.create(s,
                                                            executorServiceCategory,
                                                            supplierCategory,
-                                                           supplierIndex,
-                                                           useVirtualThreads));
-    }
-
-    /**
-     * Registers a supplier which will never use thread-per-task thread pools.
-     *
-     * @param supplier the supplier of {@code ExecutorService} instances
-     * @param supplierCategory category of the supplier (e.g., server, scheduled)
-     * @param executorServiceCategory category of thread pools which the supplier provides
-     */
-    static void registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                 String supplierCategory,
-                                 String executorServiceCategory) {
-        registerSupplier(supplier, supplierCategory, executorServiceCategory, false);
+                                                           supplierIndex));
     }
 
     /**
@@ -152,44 +130,31 @@ class ObserverManager {
         private final String executorServiceCategory;
         private final String supplierCategory;
         private final int supplierIndex;
-        private final boolean useVirtualThreads;
         private final AtomicInteger nextThreadPoolIndex = new AtomicInteger(0);
         private final List<ExecutorServiceSupplierObserver.SupplierObserverContext> observerContexts;
 
         private static SupplierInfo create(Supplier<? extends ExecutorService> supplier,
                                            String executorServiceCategory,
                                            String supplierCategory,
-                                           int supplierIndex,
-                                           boolean useVirtualThreads) {
-            return new SupplierInfo(supplier, supplierCategory, executorServiceCategory, supplierIndex, useVirtualThreads);
+                                           int supplierIndex) {
+            return new SupplierInfo(supplier, supplierCategory, executorServiceCategory, supplierIndex);
         }
 
         private SupplierInfo(Supplier<? extends ExecutorService> supplier,
                              String supplierCategory,
                              String executorServiceCategory,
-                             int supplierIndex,
-                             boolean useVirtualThreads) {
+                             int supplierIndex) {
             this.supplier = supplier;
             this.supplierCategory = supplierCategory;
             this.executorServiceCategory = executorServiceCategory;
             this.supplierIndex = supplierIndex;
-            this.useVirtualThreads = useVirtualThreads;
             observerContexts = collectObserverContexts();
         }
 
         private List<ExecutorServiceSupplierObserver.SupplierObserverContext> collectObserverContexts() {
             return OBSERVERS.get()
                     .stream()
-                    .map(observer ->
-                                 useVirtualThreads
-                                         ? observer.registerSupplier(supplier,
-                                                                     supplierIndex,
-                                                                     supplierCategory,
-                                                                     METRICS_RELATED_METHOD_INVOCATIONS.get())
-                                         : observer.registerSupplier(supplier,
-                                                                     supplierIndex,
-                                                                     supplierCategory))
-
+                    .map(this::apply)
                     .collect(Collectors.toList());
         }
 
@@ -205,57 +170,11 @@ class ObserverManager {
                     .forEach(observer -> observer.unregisterExecutorService(executorService));
             EXECUTOR_SERVICES.remove(executorService);
         }
-    }
 
-    /**
-     * Encapsulation of information needed to invoke methods on {@code ThreadPerTaskExecutor} and to create metrics from the
-     * returned values.
-     */
-    private static class MethodInvocationImpl implements ExecutorServiceSupplierObserver.MethodInvocation {
-        private final String displayName;
-        private final String description;
-        private final Method method;
-        private final Class<?> type;
-
-        private static final LazyValue<ExecutorService> VIRTUAL_EXECUTOR_SERVICE = LazyValue
-                .create(Executors::newVirtualThreadPerTaskExecutor);
-
-        static MethodInvocationImpl create(String displayName, String description, String methodName)  {
-            ExecutorService executorService = VIRTUAL_EXECUTOR_SERVICE.get();
-            Method method = null;
-            try {
-                method = executorService.getClass().getDeclaredMethod(methodName);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
-            return new MethodInvocationImpl(displayName, description, method);
-        }
-
-        MethodInvocationImpl(String displayName, String description, Method method) {
-            this.displayName = displayName;
-            this.description = description;
-            this.method = method;
-            this.type = method.getReturnType();
-        }
-
-        @Override
-        public String displayName() {
-            return displayName;
-        }
-
-        @Override
-        public String description() {
-            return description;
-        }
-
-        @Override
-        public Method method() {
-            return method;
-        }
-
-        @Override
-        public Class<?> type() {
-            return type;
+        private ExecutorServiceSupplierObserver.SupplierObserverContext apply(ExecutorServiceSupplierObserver observer) {
+            return observer.registerSupplier(supplier,
+                    supplierIndex,
+                    supplierCategory);
         }
     }
 }

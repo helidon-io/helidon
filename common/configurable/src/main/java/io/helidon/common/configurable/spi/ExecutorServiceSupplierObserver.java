@@ -15,8 +15,6 @@
  */
 package io.helidon.common.configurable.spi;
 
-import java.lang.reflect.Method;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
@@ -53,23 +51,6 @@ public interface ExecutorServiceSupplierObserver {
                                              int supplierIndex,
                                              String supplierCategory);
 
-    /**
-     * Makes a supplier known to the observer and returns a supplier context for the supplier to use for future interactions
-     * with the observer, using the {@link io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver.MethodInvocation}
-     * abstraction for invoking methods to obtain metric values.
-     *
-     * @param supplier the executor service supplier registering with the observer
-     * @param supplierIndex unique index across suppliers with the same name
-     * @param supplierCategory the category of supplier registering (e.g., scheduled, server, thread-pool)
-     * @param methodInvocations method invocation information for retrieving interesting information from the supplier's
-     *                          executor services
-     *
-     * @return the {@code SupplierObserverContext} for the supplier
-     */
-    SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                     int supplierIndex,
-                                                     String supplierCategory,
-                                                     List<MethodInvocation> methodInvocations);
 
     /**
      * Context with which suppliers (or their surrogates) interact with observers.
@@ -90,42 +71,5 @@ public interface ExecutorServiceSupplierObserver {
          * @param executorService the executor service shutting down
          */
         void unregisterExecutorService(ExecutorService executorService);
-    }
-
-    /**
-     * Information about method invocations to retrieve interesting (e.g., metrics) values from an executor service.
-     * <p>
-     *     Used for dealing with {@code ThreadPerTaskExecutor} executor services which might not exist in every JDK we support.
-     * </p>
-     */
-    interface MethodInvocation {
-
-        /**
-         * Returns a displayable name for the value.
-         *
-         * @return display name for the value
-         */
-        String displayName();
-
-        /**
-         * Returns a brief description of the interesting value.
-         *
-         * @return description
-         */
-        String description();
-
-        /**
-         * Returns the method to invoke to retrieve the value.
-         *
-         * @return {@code Method} which returns the value.
-         */
-        Method method();
-
-        /**
-         * Returns the data type of the interesting value.
-         *
-         * @return the type
-         */
-        Class<?> type();
     }
 }
