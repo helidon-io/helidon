@@ -139,7 +139,7 @@ Example: `TypeName` would have the following structure (as can be seen in the [b
 
 ### Blueprint -> Prototype -> Runtime type
 For cases, where the `Prototype` serves as a configuration object of a runtime type (such as `WebServerConfig`, `RetryConfig`),
-the prototype name has a `Config` suffix, and the runtime type is a name of the type we represent.
+the prototype name should have a `Config` suffix, and the runtime type is a name of the type we represent.
 
 Example: `Retry` would have the following structure (can be seen in Fault Tolerance):
 
