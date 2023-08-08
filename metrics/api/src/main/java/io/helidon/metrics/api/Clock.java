@@ -21,10 +21,23 @@ package io.helidon.metrics.api;
 public interface Clock extends Wrapped {
 
     /**
+     * Returns the system clock for the Helidon metrics implementation.
+     * <p>
+     *     The system clock methods are functionally equivalent to {@link System#currentTimeMillis()}
+     *     and {@link System#nanoTime()}.
+     * </p>
+     *
+     * @return the system clock
+     */
+    static Clock system() {
+        return MetricsFactoryManager.getInstance().clockSystem();
+    }
+
+    /**
      * Returns the current wall time in milliseconds since the epoch.
      *
      * <p>
-     *     Typically equivalent to System.currentTimeMillis. Should not be used to determine durations.
+     *     Typically equivalent to {@link System#currentTimeMillis()}. Should not be used to determine durations.
      *     For that use {@link #monotonicTime()} instead.
      * </p>
      *
@@ -38,7 +51,7 @@ public interface Clock extends Wrapped {
      * <p>
      *     The value is only meaningful when compared with another value returned from this method to determine the elapsed time
      *     for an operation. The difference between two samples will have a unit of nanoseconds. The returned value is
-     *     typically equivalent to System.nanoTime.
+     *     typically equivalent to {@link System#nanoTime()}.
      * </p>
      *
      * @return monotonic time in nanoseconds

@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Set;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -44,6 +43,11 @@ import java.util.function.ToDoubleFunction;
  */
 public interface MetricsFactory {
 
+    /**
+     * Returns the highest-weight implementation of the factory available at runtime.
+     *
+     * @return highest-weight metrics factory
+     */
     static MetricsFactory getInstance() {
         return MetricsFactoryManager.getInstance();
     }
@@ -56,7 +60,7 @@ public interface MetricsFactory {
     MeterRegistry globalRegistry();
 
     /**
-     * Returns the system {@link io.helidon.metrics.api.Clock} clock from the
+     * Returns the system {@link io.helidon.metrics.api.Clock} from the
      * underlying metrics implementation.
      *
      * @return the system clock
@@ -98,14 +102,6 @@ public interface MetricsFactory {
      */
     <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
-    // TODO probably remove this but doublecheck
-//    /**
-//     * Creates a builder for a {@link io.helidon.metrics.api.HistogramSupport}.
-//     *
-//     * @return summary builder
-//     */
-//    HistogramSupport.Builder histogramSupportBuilder();
-
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Timer}.
      *
@@ -139,24 +135,6 @@ public interface MetricsFactory {
      * @return new sample
      */
     Timer.Sample timerStart(Clock clock);
-
-    /**
-     * Creates a {@link io.helidon.metrics.api.Meter.Id} from the specified name and tags.
-     * @param name name to use in the ID
-     * @param tags tags to use in the ID
-     * @return new meter ID
-     */
-    Meter.Id idOf(String name, Iterable<Tag> tags);
-
-    /**
-     * Creates a {@link io.helidon.metrics.api.Meter.Id} from the specified name.
-     *
-     * @param name name to use in the ID
-     * @return new meter ID
-     */
-    default Meter.Id idOf(String name) {
-        return idOf(name, Set.of());
-    }
 
     /**
      * Creates a {@link io.helidon.metrics.api.Tag} from the specified key and value.

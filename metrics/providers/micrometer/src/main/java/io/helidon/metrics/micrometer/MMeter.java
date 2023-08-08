@@ -28,15 +28,16 @@ import io.micrometer.core.instrument.Tag;
 class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     private final M delegate;
+    private final io.helidon.metrics.api.Meter.Id id;
 
     protected MMeter(M delegate) {
         this.delegate = delegate;
+        id = Id.of(delegate.getId());
     }
 
     @Override
     public io.helidon.metrics.api.Meter.Id id() {
-        return io.helidon.metrics.api.Meter.Id.of(delegate.getId().getName(),
-                                                  MTag.neutralTags(delegate.getId().getTags()));
+        return id;
     }
 
     @Override
@@ -65,14 +66,12 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
             /* implements io.helidon.metrics.api.Meter.Builder<HB, HM> */ {
 
-        private final String name;
         private final B delegate;
         private Function<Iterable<Tag>, B> tagsSetter;
         private Function<String, B> descriptionSetter;
         private Function<String, B> baseUnitSetter;
 
-        protected Builder(String name, B delegate) {
-            this.name = name;
+        protected Builder(B delegate) {
             this.delegate = delegate;
         }
 

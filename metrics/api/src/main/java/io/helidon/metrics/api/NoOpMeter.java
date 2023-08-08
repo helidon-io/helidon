@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.io.PrintStream;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +42,6 @@ class NoOpMeter implements Meter {
     private final Type type;
 
     static class Id implements Meter.Id {
-
         static Id create(String name, Iterable<Tag> tags) {
             return new Id(name, tags);
         }
@@ -324,6 +325,67 @@ class NoOpMeter implements Meter {
         }
     }
 
+    static class HistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
+
+        private final long count;
+        private final double total;
+        private final double max;
+
+        static HistogramSnapshot empty(long count, double total, double max) {
+            return new HistogramSnapshot(count, total, max);
+        }
+
+        private HistogramSnapshot(long count, double total, double max) {
+            this.count = count;
+            this.total = total;
+            this.max = max;
+        }
+
+        @Override
+        public long count() {
+            return count;
+        }
+
+        @Override
+        public double total() {
+            return total;
+        }
+
+        @Override
+        public double total(TimeUnit timeUnit) {
+            return timeUnit.convert((long) total, TimeUnit.NANOSECONDS);
+        }
+
+        @Override
+        public double max() {
+            return max;
+        }
+
+        @Override
+        public double mean() {
+            return total / count;
+        }
+
+        @Override
+        public double mean(TimeUnit timeUnit) {
+            return timeUnit.convert((long) mean(), TimeUnit.NANOSECONDS);
+        }
+
+        @Override
+        public Iterable<ValueAtPercentile> percentileValues() {
+            return Set.of();
+        }
+
+        @Override
+        public Iterable<CountAtBucket> histogramCounts() {
+            return Set.of();
+        }
+
+        @Override
+        public void outputSummary(PrintStream out, double scale) {
+        }
+    }
+
     static class Gauge extends NoOpMeter implements io.helidon.metrics.api.Gauge {
 
         static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
@@ -358,6 +420,29 @@ class NoOpMeter implements Meter {
     }
 
     static class Timer extends NoOpMeter implements io.helidon.metrics.api.Timer {
+
+        static class Sample implements io.helidon.metrics.api.Timer.Sample {
+
+            private Sample() {
+            }
+
+            @Override
+            public long stop(io.helidon.metrics.api.Timer timer) {
+                return 0;
+            }
+        }
+
+        static Sample start() {
+            return new Sample();
+        }
+
+        static Sample start(MeterRegistry meterRegistry) {
+            return new Sample();
+        }
+
+        static Sample start(Clock clock) {
+            return new Sample();
+        }
 
         static class Builder extends NoOpMeter.Builder<Builder, Timer> implements io.helidon.metrics.api.Timer.Builder {
 
@@ -425,7 +510,7 @@ class NoOpMeter implements Meter {
         }
 
         @Override
-        public HistogramSnapshot takeSnapshot() {
+        public io.helidon.metrics.api.HistogramSnapshot takeSnapshot() {
             return null;
         }
 

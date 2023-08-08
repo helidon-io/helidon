@@ -51,11 +51,6 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public Meter.Id idOf(String name, Iterable<Tag> tags) {
-        return NoOpMeter.Id.create(name, tags);
-    }
-
-    @Override
     public Tag tagOf(String key, String value) {
         return new NoOpTag(key, value);
     }
@@ -84,28 +79,26 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder() {
-        // TODO
-        return null;
+        return NoOpMeter.DistributionStatisticsConfig.builder();
     }
 
-    // TODO fix remaining null returns
     @Override
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
-        return null;
+        return NoOpMeter.HistogramSnapshot.empty(count, total, max);
     }
 
     @Override
     public Timer.Sample timerStart() {
-        return null;
+        return NoOpMeter.Timer.start();
     }
 
     @Override
     public Timer.Sample timerStart(MeterRegistry registry) {
-        return null;
+        return NoOpMeter.Timer.start(registry);
     }
 
     @Override
     public Timer.Sample timerStart(Clock clock) {
-        return null;
+        return NoOpMeter.Timer.start(clock);
     }
 }

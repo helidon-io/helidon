@@ -28,6 +28,7 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.search.Search;
 import io.micrometer.prometheus.PrometheusConfig;
@@ -139,20 +140,22 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter.Id id) {
-        Meter nativeMeter = delegate.find(id.name())
-                .tags(Util.tags(id.tags()))
-                .meter();
-        if (nativeMeter == null) {
-            return Optional.empty();
-        }
-        return Optional.ofNullable(meters.remove(nativeMeter));
+        return internalRemove(id.name(), Util.tags(id.tags()));
     }
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(String name,
                                                Iterable<io.helidon.metrics.api.Tag> tags) {
+        return internalRemove(name, Util.tags(tags));
+    }
+    MeterRegistry delegate() {
+        return delegate;
+    }
+
+    private Optional<io.helidon.metrics.api.Meter> internalRemove(String name,
+                                                                  Iterable<Tag> tags) {
         Meter nativeMeter = delegate.find(name)
-                .tags(Util.tags(tags))
+                .tags(tags)
                 .meter();
         if (nativeMeter != null) {
             io.helidon.metrics.api.Meter result = meters.get(nativeMeter);
@@ -160,10 +163,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             return Optional.of(result);
         }
         return Optional.empty();
-    }
-
-    MeterRegistry delegate() {
-        return delegate;
     }
 
     private void recordAdd(Meter addedMeter) {

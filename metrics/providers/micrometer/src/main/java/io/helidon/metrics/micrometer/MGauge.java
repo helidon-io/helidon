@@ -42,7 +42,7 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
             implements io.helidon.metrics.api.Gauge.Builder<T> {
 
         private Builder(String name,  T stateObject, ToDoubleFunction<T> fn) {
-            super(name, Gauge.builder(name, stateObject, fn));
+            super(Gauge.builder(name, stateObject, fn));
             prep(delegate()::tags,
                  delegate()::description,
                  delegate()::baseUnit);

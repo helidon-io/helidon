@@ -51,7 +51,7 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
                          implements io.helidon.metrics.api.Counter.Builder {
 
         private Builder(String name) {
-            super(name, Counter.builder(name));
+            super(Counter.builder(name));
             prep(delegate()::tags,
                   delegate()::description,
                   delegate()::baseUnit);

@@ -150,7 +150,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
     implements io.helidon.metrics.api.Timer.Builder {
 
         private Builder(String name) {
-            super(name, Timer.builder(name));
+            super(Timer.builder(name));
         }
 
         @Override
