@@ -37,7 +37,7 @@ package io.helidon.nima.http2;
 import io.helidon.common.buffers.BufferData;
 
 /**
- * Implementation of HPack Huffman decoding.
+ * Implementation of HPack Huffman encoding.
  */
 public class Http2HuffmanEncoder {
     private static final int HUFFMAN_ENCODED = 1 << 7;
