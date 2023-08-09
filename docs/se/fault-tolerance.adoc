@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -16,29 +16,28 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Fault Tolerance in Helidon SE
+= Fault Tolerance in Helidon 
 :toc:
 :toc-placement: preamble
-:description: Fault Tolerance in Helidon SE
-:keywords: helidon, java, fault, tolerance, fault tolerance, se
+:description: Fault Tolerance in Helidon 
+:keywords: helidon, java, fault, tolerance, fault tolerance
 :feature-name: Fault Tolerance
 :rootdir: {docdir}/..
 
 include::{rootdir}/includes/se.adoc[]
-
 
 == Contents
 
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
-- <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
 
 == Overview
 
-Helidon SE Fault Tolerance support is inspired by link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance].
+Helidon Fault Tolerance support is inspired by
+link:{microprofile-fault-tolerance-spec-url}[MicroProfile Fault Tolerance].
 The API defines the notion of a _fault handler_ that can be combined with other handlers to
 improve application robustness. Handlers are created to manage error conditions (faults)
 that may occur in real-world application environments. Examples include service restarts,
@@ -52,13 +51,13 @@ of these sources is unreachable or offline. Similarly, if a non-essential source
 flagged as unreachable, an application should avoid continuous access to that source
 as that would result in much higher response times.
 
-In order to tackle the most common types of application faults, the Helidon SE Fault Tolerance API
-provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks.
+In order to tackle the most common types of application faults, the Helidon Fault
+Tolerance API provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks.
 In addition, the API makes it very easy to create and monitor asynchronous tasks that
 do not require explicit creation and management of threads or executors.
 
-For more information the reader is referred to the
-link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance SE API Javadocs].
+For more information, see
+link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance API Javadocs].
 
 include::{rootdir}/includes/dependencies.adoc[]
 
@@ -72,38 +71,12 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == API
 
-The SE Fault Tolerance API is _reactive_ in order to fit the overall processing model in
-Helidon SE. A task returns either a `Single<T>` or a `Multi<T>`.
-A `Single<T>` is a promise to produce zero or one value of type `T` or signal an error;
-while a `Multi<T>` is a promise to produce zero or more values of type `T` or signal an error.
-
-NOTE: A `Single<T>`, like `CompletableFuture<T>`, extends `CompletionStage<T>`
-so conversion among these types is straightforward.
+The Fault Tolerance API is _blocking_ and based on the JDK's virtual thread model.
+As a result, methods return _direct_ values instead of promises in the form of
+`Single<T>` or `Multi<T>`.
 
 In the sections that follow, we shall briefly explore each of the constructs provided
 by this API.
-
-=== Asynchronous
-
-Asynchronous tasks can be created or forked by using an `Async` instance. A supplier of type
-`T` is provided as the argument when invoking this handler. For example:
-
-[source,java]
-----
-Single<Thread> s = Async.create().invoke(() -> Thread.currentThread()));
-s.thenAccept(t -> System.out.println("Async task executed in thread " + t));
-----
-
-The supplier `() -> Thread.currentThread()` is executed in a new thread and
-the value it produces printed by the consumer and passed to `thenAccept`.
-
-NOTE: The method reference `Thread::currentThread` is a simplified way of
-providing a supplier in the example above.
-
-Asynchronous tasks are executed in a thread pool managed by the Helidon SE
-Fault Tolerance module. Thread pools are created during the initialization
-phase of class `io.helidon.reactive.faulttolerance.FaultTolerance` and can be
-configured for your application.
 
 === Retries
 
@@ -119,23 +92,22 @@ Retry retry = Retry.builder()
                                      .delay(Duration.ofMillis(100))
                                      .build())
                    .build();
-retry.invoke(this::retryOnFailure);
+T result = retry.invoke(this::retryOnFailure);
 ----
 
 The sample code above will retry calls to the supplier `this::retryOnFailure`
 for up to 3 times with a 100 millisecond delay between them.
 
 NOTE: The return type of method `retryOnFailure` in the example above must
-be `CompletionStage<T>` and the parameter to the retry handler's `invoke`
-method `Supplier<? extends CompletionStage<T>>`.
+be some `T` and the parameter to the retry handler's `invoke`
+method `Supplier<? extends T>`.
 
-If the `CompletionStage<T>` returned by the method completes exceptionally,
-the call will be treated as a failure and retried until the maximum number
-of attempts is reached; finer control is
-possible by creating a retry policy and using methods such as
+If the call to the supplier provided completes exceptionally, it will be treated as
+a failure and retried until the maximum number of attempts is reached; finer control
+is possible by creating a retry policy and using methods such as
 `applyOn(Class<? extends Throwable>... classes)` and
-`skipOn(Class<? extends Throwable>... classes)` to control those exceptions
-on which to act and those that can be ignored.
+`skipOn(Class<? extends Throwable>... classes)` to control the exceptions
+that must be retried and those that must be ignored.
 
 === Timeouts
 
@@ -147,14 +119,12 @@ if a timeout expires as we shall cover in the next section.
 The following is an example of using `Timeout`:
 [source,java]
 ----
-Single<T> s = Timeout.create(Duration.ofMillis(10)).invoke(this::mayTakeVeryLong);
-s.handle((t, e) -> {
-    if (e instanceof TimeoutException) {
-        // Invocation has timed out!
-    }
-    //...
-});
+T result = Timeout.create(Duration.ofMillis(10))
+                  .invoke(this::mayTakeVeryLong);
 ----
+
+NOTE: Using a handler's `create` method is an alternative to using a builder that is
+more convenient when default settings are acceptable.
 
 The example above monitors the call to method `mayTakeVeryLong` and reports a
 `TimeoutException` if the execution takes more than 10 milliseconds to complete.
@@ -163,26 +133,24 @@ The example above monitors the call to method `mayTakeVeryLong` and reports a
 
 A fallback to a _known_ result can sometimes be an alternative to
 reporting an error. For example, if we are unable to access a service
-we may fall back to the last result obtained from that service.
+we may fall back to the last result obtained from that service at an
+earlier time.
 
 A `Fallback` instance is created by providing a function that takes a `Throwable`
-and produces a `CompletionStage<T>` as shown next:
+and produces some `T` to be used when the intended method failed to return a value:
 
 [source,java]
 ----
-Single<T> single = Fallback.create(
-    throwable -> Single.just(lastKnownValue).invoke(this::mayFail);
-single.thenAccept(t -> {
-    //...
-});
+T result = Fallback.create(throwable -> lastKnownValue)
+                   .invoke(this::mayFail);
 ----
 
-In this example, we register a function that can produce a `Single<T>` (which implements
-`CompletionStage<T>`) if the call to `this::mayFail` completes exceptionally.
+This example calls the method `mayFail` and if it produces a `Throwable`, it maps
+it to the last known value using the fallback handler.
 
 === Circuit Breakers
 
-Failing to execute a certain task or call another service repeatedly can have a direct
+Failing to execute a certain task or to call another service repeatedly can have a direct
 impact on application performance. It is often preferred to avoid calls to non-essential
 services by simply preventing that logic to execute altogether. A circuit breaker can be
 configured to monitor such calls and block attempts that are likely to fail, thus improving
@@ -194,7 +162,7 @@ prevent additional failures. After a circuit has been opened, it can transition
 first to a _half-open_ state before finally transitioning back to a closed state.
 The use of an intermediate state (half-open)
 makes transitions from open to close more progressive, and prevents a circuit breaker
-from eagerly transitioning to states without considering "sufficient" observations.
+from eagerly transitioning to states without considering sufficient observations.
 
 NOTE: Any failure while a circuit breaker is in half-open state will immediately
 cause it to transition back to an open state.
@@ -209,7 +177,7 @@ CircuitBreaker breaker = CircuitBreaker.builder()
                                        .delay(Duration.ofMillis(200))
                                        .successThreshold(2)
                                        .build();
-Single<T> result = breaker.invoke(this::mayFail);
+T result = breaker.invoke(this::mayFail);
 ----
 
 The circuit breaker in this example defines a processing window of size 10, an error
@@ -217,12 +185,12 @@ ratio of 30%, a duration to transition to half-open state of 200 milliseconds, a
 a success threshold to transition from half-open to closed state of 2 observations.
 It follows that,
 
-* After completing the processing window, if at least 3 errors were detected, the
+* After completing the processing window, if at least 3 errors are detected, the
 circuit breaker will transition to the open state, thus blocking the execution
 of any subsequent calls.
 
 * After 200 millis, the circuit breaker will transition back to half-open and
-enable calls to proceed again.
+allow calls to proceed again.
 
 * If the next two calls after transitioning to half-open are successful, the
 circuit breaker will transition to closed state; otherwise, it will
@@ -230,7 +198,7 @@ transition back to open state, waiting for another 200 milliseconds
 before attempting to transition to half-open again.
 
 A circuit breaker will throw a
-`io.helidon.reactive.faulttolerance.CircuitBreakerOpenException`
+`io.helidon.faulttolerance.CircuitBreakerOpenException`
 if an attempt to make an invocation takes place while it is in open state.
 
 === Bulkheads
@@ -257,14 +225,34 @@ Bulkhead bulkhead = Bulkhead.builder()
                             .limit(3)
                             .queueLength(5)
                             .build();
-Single<T> single = bulkhead.invoke(this::usesResources);
+T result = bulkhead.invoke(this::usesResources);
 ----
 
 This example creates a bulkhead that limits concurrent execution
 to `this:usesResources` to at most 3, and with a queue of size 5. The
-bulkhead will report a `io.helidon.reactive.faulttolerance.BulkheadException` if unable to proceed
-with the call: either due to the limit being reached or the queue
+bulkhead will report a `io.helidon.faulttolerance.BulkheadException` if unable
+to proceed with the call: either due to the limit being reached or the queue
 being at maximum capacity.
+
+=== Asynchronous
+
+Asynchronous tasks can be created or forked by using an `Async` instance. A supplier of type
+`T` is provided as the argument when invoking this handler. For example:
+
+[source,java]
+----
+CompletableFuture<Thread> cf = Async.create().invoke(Thread::currentThread));
+cf.thenAccept(t -> System.out.println("Async task executed in thread " + t));
+----
+
+The supplier `() -> Thread.currentThread()` is executed in a new thread and
+the value it produces printed by the consumer and passed to `thenAccept`.
+
+By default, asynchronous tasks are executed using a _new virtual thread per
+task_ based on the `ExecutorService` defined in
+`io.helidon.faulttolerance.FaultTolerance` and
+configurable by an application. Alternatively, an `ExecutorService` can be specified
+when building a non-standard `Async` instance.
 
 === Handler Composition
 
@@ -280,11 +268,9 @@ The easiest way to achieve handler composition is by using a builder in the
 ----
 FaultTolerance.TypedBuilder<T> builder = FaultTolerance.typedBuilder();
 
-// Create and add timeout
 Timeout timeout = Timeout.create(Duration.ofMillis(10));
 builder.addTimeout(timeout);
 
-// Create and add retry
 Retry retry = Retry.builder()
                    .retryPolicy(Retry.JitterRetryPolicy.builder()
                                      .calls(3)
@@ -293,12 +279,10 @@ Retry retry = Retry.builder()
                    .build();
 builder.addRetry(retry);
 
-// Create and add fallback
-Fallback fallback = Fallback.create(throwable -> Single.just(lastKnownValue));
+Fallback<T> fallback = Fallback.create(throwable ->lastKnownValue);
 builder.addFallback(fallback);
 
-// Finally call the method
-Single<T> single = builder.build().invoke(this::mayTakeVeryLong);
+T result = builder.build().invoke(this::mayTakeVeryLong);
 ----
 
 The exact order in which handlers are added to a builder depends on the use case,
@@ -310,149 +294,6 @@ and bulkhead is the last one (the first to be executed once a value is returned)
 NOTE: This is the ordering used by the MicroProfile Fault Tolerance implementation
 in Helidon when a method is decorated with multiple annotations.
 
-=== Revisiting Multi's
-
-All the examples presented so far have focused on invocations returning
-a single value of type `Single<T>`. If the invocation in question can return
-more than one value (i.e., a `Multi<T>`) then all that is needed is to use
-the method `invokeMulti` instead of `invoke`. The supplier passed to this
-method must return a `Flow.Publisher<T>` instead of a `CompletionStage<T>`.
-
-A `Flow.Publisher<T>` is a generalization of a `Single<T>` that can
-produce zero or more values. Note that a `Flow.Publisher<T>`, unlike a
-`Single<T>`, can report an error after
-producing one or more values, introducing additional challenges if all
-values must be processed transactionally, that is, in an all or nothing
-manner.
-
-The following example creates an instance of `Retry` and invokes
-the `invokeMulti` method, it then registers a subscriber to process
-the results:
-
-[source,java]
-----
-Retry retry = Retry.builder()
-                   .retryPolicy(Retry.JitterRetryPolicy.builder()
-                                     .calls(2)
-                                     .build())
-                   .build();
-Multi<Integer> multi = retry.invokeMulti(() -> Multi.just(0, 1, 2));
-
-IntSubscriber ts = new IntSubscriber();
-multi.subscribe(ts);
-ts.request(Integer.MAX_VALUE);
-----
-
-The call to `Multi.just(0, 1, 2)` simply returns a multi that produces
-the integers 0, 1 and 2. If an error was generated during this process,
-the policy will retry the call one more time &mdash;for a total of 2
-calls.
-
-== Configuration
-
-Each Fault Tolerance handler can be individually configured at build
-time. This is supported by calling the `config` method on the corresponding
-builder and specifying a config element. For example, a `Timeout` handler
-can be externally configured as follows:
-
-[source,java]
-----
-   Timeout timeout = Timeout.builder()
-           .config(config.get("timeout"))
-           .build();
-----
-
-and using the following config entry:
-
-[source,yaml]
-----
-timeout:
-  timeout: "PT20S"
-  current-thread: true
-  name: "MyTimeout"
-  cancel-source: false
-----
-
-Note that the actual timeout value is of type `Duration`, hence the use
-of `PT20S` that represents a timeout of 20 seconds. See the Javadoc for the `Duration`
-class for more information.
-
-The following tables list all the config elements for each type of
-handler supported by this API.
-
-=== Timeout
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type | Description
-| name | String | A name given to the task for debugging purposes. Default is `Timeout-N`.
-| timeout | Duration | The timeout length as a Duration string. Default is `PT10S` or 10 seconds.
-| current-thread| boolean | A flag indicating whether the task should execute in the current thread or not.
-Default is `false`.
-| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
-Default is `true`.
-|===
-
-=== Circuit Breaker
-
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type | Description
-| name | String | A name given to the task for debugging purposes. Default is `CircuitBreaker-N`.
-| delay | Duration | Delay to transition from _half-open_ state. Default is `PT5S` or 5 seconds.
-| error-ratio | int | Failure percentage to transition to _open_ state. Default is 60.
-| volume | int | Size of rolling window to calculate ratios. Size is 10.
-| success-threshold | int | Number of successful calls to transition to _closed_ state. Default is 1.
-| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
-Default is `true`.
-|===
-
-=== Bulkhead
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type | Description
-| limit | int | Max number of parallel calls. Default is 10.
-| name | String | A name given to the task for debugging purposes. Default is `Bulkhead-N`.
-| queue-length| int | Length of queue for tasks waiting to enter. Default is 10.
-| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
-Default is `true`.
-|===
-
-=== Retry
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type | Description
-| name | String | A name given to the task for debugging purposes. Default is `Retry-N`.
-| overall-timeout | Duration | Timeout for overall retry execution. Default is `PT1S` or 1 second.
-| delaying-retry-policy | Config | Config section describing delaying retry policy (see below).
-| jitter-retry-policy | Config |Config section describing jitter retry policy (see below)
-| cancel-source| boolean | A flag indicating if this task's source should be cancelled if the task is cancelled.
-Default is `true`.
-|===
-
-==== Delaying Retry Policy
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type | Description
-| calls | int | Number of retry attempts. Default is 3.
-| delay | Duration | Delay between retries. Default is `PT0.2S` or 200 milliseconds.
-| delay-factor | double | A delay multiplication factor applied after each retry.
-|===
-
-==== Jitter Retry Policy
-
-[cols="2,2,6", role="flex, sm7"]
-|===
-| Property | Type |Description
-| calls | int | Number of retry attempts. Default is 3.
-| delay | Duration | Delay between retries. Default is `PT0.2S` or 200 milliseconds.
-| jitter | Duration | A random delay additive factor in the range `[-jitter, +jitter]`
-applied after each retry.
-|===
 == Examples
 
 See <<API>> section for examples.
@@ -460,5 +301,5 @@ See <<API>> section for examples.
 == Additional Information
 
 For additional information, see the
-link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance SE API Javadocs].
+link:{faulttolerance-javadoc-base-url}/module-summary.html[Fault Tolerance API Javadocs].
 

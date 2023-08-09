@@ -29,8 +29,6 @@ https://helidon.io/starter[Helidon Project Starter] allows you to choose from a 
 
 === Helidon MP
 
-=== Nima
-
 
 == Choose an Application Type
 Helidon provides the following set of archetypes to bootstrap your application development journey.

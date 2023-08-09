@@ -18,7 +18,7 @@
 
 = Helidon Documentation Overview
 :description: Helidon Documentation Sitemap
-:keywords: helidon, java, microservices, microprofile, documentation, nima
+:keywords: helidon, java, microservices, microprofile, documentation
 :rootdir: {docdir}/..
 
 == Using This Site
@@ -31,7 +31,6 @@ New to Helidon? Start with the xref:{rootdir}/about/introduction.adoc[Helidon Do
 
 Once you've settled on your preferred programming framework, visit the Helidon flavor sections of this site for more information. 
 
-* xref:{rootdir}/nima/introduction.adoc[Helidon Nima]
 * xref:{rootdir}/se/introduction.adoc[Helidon SE]
 * xref:{rootdir}/mp/introduction.adoc[Helidon MP]
 
