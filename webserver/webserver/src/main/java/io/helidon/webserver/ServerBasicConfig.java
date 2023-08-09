@@ -70,21 +70,25 @@ class ServerBasicConfig implements ServerConfiguration {
     }
 
     @Override
+    @SuppressWarnings({"deprecation", "removal"})
     public SSLContext ssl() {
         return socketConfig.ssl();
     }
 
     @Override
+    @SuppressWarnings({"deprecation", "removal"})
     public Set<String> enabledSslProtocols() {
         return socketConfig.enabledSslProtocols();
     }
 
     @Override
+    @SuppressWarnings({"deprecation", "removal"})
     public Set<String> allowedCipherSuite() {
         return socketConfig.allowedCipherSuite();
     }
 
     @Override
+    @SuppressWarnings({"deprecation", "removal"})
     public ClientAuthentication clientAuth() {
         return socketConfig.clientAuth();
     }
@@ -289,21 +293,25 @@ class ServerBasicConfig implements ServerConfiguration {
         }
 
         @Override
+        @SuppressWarnings({"deprecation", "removal"})
         public SSLContext ssl() {
             return tls().map(WebServerTls::sslContext).orElse(null);
         }
 
         @Override
+        @SuppressWarnings({"deprecation", "removal"})
         public Set<String> enabledSslProtocols() {
             return tls().map(WebServerTls::enabledTlsProtocols).map(Set::copyOf).orElseGet(Set::of);
         }
 
         @Override
+        @SuppressWarnings({"deprecation", "removal"})
         public Set<String> allowedCipherSuite() {
             return tls().map(WebServerTls::cipherSuite).orElseGet(Set::of);
         }
 
         @Override
+        @SuppressWarnings({"deprecation", "removal"})
         public ClientAuthentication clientAuth() {
             return tls().map(WebServerTls::clientAuth).orElse(ClientAuthentication.NONE);
         }

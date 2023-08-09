@@ -158,7 +158,7 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.9.1</version>
+                <version>1.13.4</version>
                 <configuration>
                     <nodeVersion>${version.nodejs}</nodeVersion>
                     <npmVersion>${version.npm}</npmVersion>
