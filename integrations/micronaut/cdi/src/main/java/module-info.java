@@ -18,19 +18,16 @@
  * Integration of Micronaut into CDI.
  */
 module io.helidon.integrations.micronaut.cdi {
-    requires jakarta.annotation;
-    requires java.logging;
-
-    requires io.micronaut.inject;
-    requires io.micronaut.core;
+    requires io.helidon.common;
     requires io.micronaut.aop;
-
+    requires jakarta.annotation;
     requires jakarta.cdi;
     requires jakarta.inject;
-
+    requires java.logging;
     requires microprofile.config.api;
 
-    requires io.helidon.common;
+    requires transitive io.micronaut.core;
+    requires transitive io.micronaut.inject;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.MicronautCdiExtension;
 
