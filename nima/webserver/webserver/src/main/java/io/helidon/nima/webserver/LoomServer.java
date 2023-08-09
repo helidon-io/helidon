@@ -39,6 +39,7 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.SerializationConfig;
 import io.helidon.common.Version;
 import io.helidon.common.config.ConfigException;
 import io.helidon.common.context.Context;
@@ -279,6 +280,8 @@ class LoomServer implements WebServer, Startable {
 
     private void startIt() {
         long now = System.currentTimeMillis();
+        // make sure we do not allow runtime without JEP-290 enforcement
+        SerializationConfig.configureRuntime();
         boolean result = parallel("start", ServerListener::start);
         if (!result) {
             LOGGER.log(System.Logger.Level.ERROR, "Níma server failed to start, shutting down");

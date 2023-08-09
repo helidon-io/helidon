@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,6 +99,7 @@ public final class SerializationConfig {
     private static final String REJECT_ALL_PATTERN = "!*";
     private static final System.Logger LOGGER = System.getLogger(SerializationConfig.class.getName());
     private static final AtomicReference<ConfigOptions> EXISTING_CONFIG = new AtomicReference<>();
+    private static final AtomicBoolean RUNTIME_CONFIGURED = new AtomicBoolean();
 
     private final ConfigOptions options;
 
@@ -125,7 +126,10 @@ public final class SerializationConfig {
      * This is a one-off call to set up global filter.
      */
     public static void configureRuntime() {
-        builder().build().configureDefaults();
+        if (RUNTIME_CONFIGURED.compareAndSet(false, true)) {
+            // we only want to call this once
+            builder().build().configureDefaults();
+        }
     }
 
     /*

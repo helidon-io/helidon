@@ -19,6 +19,7 @@ package io.helidon;
 import java.util.ServiceLoader;
 
 import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.SerializationConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.spi.HelidonStartupProvider;
 
@@ -46,6 +47,8 @@ public class Main {
     public static void main(String[] args) {
         // we always initialize logging
         LogConfig.configureRuntime();
+        // and make sure JEP-290 is enforced (deserialization)
+        SerializationConfig.configureRuntime();
 
         // this should only be called once in a lifetime of the server, so no need to optimize
         var services = HelidonServiceLoader.create(ServiceLoader.load(HelidonStartupProvider.class))
