@@ -51,13 +51,13 @@ Each of these generators supports two _libraries_:
 * `mp` - for Helidon MP code generation
 * `se` - for Helidon SE code generation
 
-Use the Helidon _client_ generator and its `{flavor-lc}` library to create a
-ifdef::mp-flavor[]
-xref:{helidon-client-xref}[Helidon MicroProfile REST client].
-endif::mp-flavor[]
-ifdef::se-flavor[]
-Helidon SE client based on xref:{helidon-client-xref}[Helidon WebClients].
-endif::se-flavor[]
+//Use the Helidon _client_ generator and its `{flavor-lc}` library to create a
+//ifdef::mp-flavor[]
+//xref:{helidon-client-xref}[Helidon MicroProfile REST client].
+//endif::mp-flavor[]
+//ifdef::se-flavor[]
+//Helidon SE client based on xref:{helidon-client-xref}[Helidon WebClients].
+//endif::se-flavor[]
 The resulting client library works with any server that implements the API declared in the OpenAPI document you specified when you ran the generator.
 The client library provides an abstraction similar to remote procedure calls (RPC).
 To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
@@ -423,7 +423,7 @@ The next example runs the Helidon client generator using the same input file.
 
 :example-project-type: client
 .Creating or updating a client project using the OpenAPI generator CLI
-include::openapi-generator.adoc[tag=example-cli-usage]
+//include::openapi-generator.adoc[tag=example-cli-usage]
 
 The key differences between the commands are:
 
@@ -534,7 +534,9 @@ The generated client code represents a true library. Typically, you do not need 
 
 // tag::common-references[]
 == References
-* link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
-* link:{openapi-generator-tool-base-url}[OpenAPI Generator GitHub Repository]
-* link:{openapi-spec-url}[OpenAPI specification]
+//* link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
+
+//* link:{openapi-generator-tool-base-url}[OpenAPI Generator GitHub Repository]
+
+//* link:{openapi-spec-url}[OpenAPI specification]
 // end::common-references[]
