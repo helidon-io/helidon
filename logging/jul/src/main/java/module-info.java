@@ -18,11 +18,12 @@
  * Helidon Java Util Logging MDC support module.
  */
 module io.helidon.logging.jul {
-    requires java.logging;
 
     requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.logging.common;
+    requires java.logging;
+
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.logging.common;
 
     exports  io.helidon.logging.jul;
 

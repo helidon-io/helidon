@@ -28,11 +28,13 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @Aot(description = "Only programmatic configuration supported, does not work with Helidon loggers")
 module io.helidon.logging.log4j {
+
+    requires org.apache.logging.log4j;
+
     requires static io.helidon.common.features.api;
 
-    requires io.helidon.common.context;
-    requires org.apache.logging.log4j;
-    requires io.helidon.logging.common;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.logging.common;
 
     exports io.helidon.logging.log4j;
 

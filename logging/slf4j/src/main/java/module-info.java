@@ -20,10 +20,10 @@ import io.helidon.logging.slf4j.Slf4jProvider;
  * Helidon Slf4j MDC module.
  */
 module io.helidon.logging.slf4j {
-    requires io.helidon.common.context;
-    requires io.helidon.logging.common;
-
     requires org.slf4j;
+
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.logging.common;
 
     exports io.helidon.logging.slf4j;
 
