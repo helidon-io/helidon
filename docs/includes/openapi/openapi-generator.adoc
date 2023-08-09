@@ -533,6 +533,7 @@ The generated client code represents a true library. Typically, you do not need 
 // end::using-generated-code-client-intro[]
 
 // tag::common-references[]
+
 == References
 //* link:{openapi-generator-tool-site-url}[OpenAPI Generator Official Website]
 
