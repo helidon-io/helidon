@@ -302,6 +302,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
                     Http2Headers http2Headers = Http2Headers.create(this,
                                                                     connection.getInboundDynamicTable(),
                                                                     requestHuffman,
+                                                                    null,
                                                                     continuationData.toArray(new Http2FrameData[0]));
                     recvListener.headers(ctx, streamId, http2Headers);
                     this.headers(http2Headers, endOfStream);

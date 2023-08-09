@@ -29,6 +29,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
+import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
@@ -49,6 +50,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
+import static io.helidon.common.http.Http.HeaderNames.X_HELIDON_CN;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -136,6 +138,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentEntitySizeRead = 0;
 
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
+                ctx.remotePeer().tlsCertificates()
+                        .flatMap(TlsUtils::parseCn)
+                        .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
 
                 if (canUpgrade) {

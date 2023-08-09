@@ -106,6 +106,7 @@ public class Http2Headers {
      * @param stream  stream that owns these headers
      * @param table   dynamic table for this connection
      * @param huffman huffman decoder
+     * @param headers http2 headers
      * @param frames  frames of the headers
      * @return new headers parsed from the frames
      * @throws Http2Exception in case of protocol errors
@@ -113,6 +114,7 @@ public class Http2Headers {
     public static Http2Headers create(Http2Stream stream,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
+                                      Http2Headers headers,
                                       Http2FrameData... frames) {
 
         if (frames.length == 0) {
@@ -135,7 +137,9 @@ public class Http2Headers {
             stream.priority(priority);
         }
 
-        WritableHeaders<?> headers = WritableHeaders.create();
+        WritableHeaders<?> writableHeaders = headers == null
+                ? WritableHeaders.create()
+                : WritableHeaders.create(headers.httpHeaders());
 
         BufferData[] buffers = new BufferData[frames.length];
         for (int i = 0; i < frames.length; i++) {
@@ -151,14 +155,14 @@ public class Http2Headers {
                 if (padLength > 0) {
                     data.skip(padLength);
                 }
-                return create(ServerRequestHeaders.create(headers), pseudoHeaders);
+                return create(ServerRequestHeaders.create(writableHeaders), pseudoHeaders);
             }
 
             if (data.available() == 0) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Expecting more header bytes");
             }
 
-            lastIsPseudoHeader = readHeader(headers, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
+            lastIsPseudoHeader = readHeader(writableHeaders, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
         }
     }
 
