@@ -28,22 +28,20 @@ import io.helidon.common.features.api.Preview;
         path = "Micrometer"
 )
 module io.helidon.integrations.micrometer.cdi {
-    requires static io.helidon.common.features.api;
-
+    requires io.helidon.common;
+    requires io.helidon.config.mp;
+    requires io.helidon.config;
     requires jakarta.annotation;
-
     requires jakarta.cdi;
     requires jakarta.inject;
-
-    requires io.helidon.http;
-    requires io.helidon.microprofile.servicecommon;
-    requires io.helidon.config;
-    requires io.helidon.config.mp;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.integrations.micrometer;
-
-    requires transitive micrometer.core;
+    requires micrometer.core;
     requires simpleclient;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.integrations.micrometer;
+    requires transitive io.helidon.microprofile.server;
+    requires transitive io.helidon.microprofile.servicecommon;
 
     exports io.helidon.integrations.micrometer.cdi;
 
