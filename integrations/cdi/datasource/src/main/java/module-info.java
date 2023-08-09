@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,11 @@
  * io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension
  */
 module io.helidon.integrations.datasource.cdi {
-    requires jakarta.cdi;
-    requires jakarta.inject;
     requires java.sql;
     requires microprofile.config.api;
+
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
 
     exports io.helidon.integrations.datasource.cdi;
 }

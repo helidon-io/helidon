@@ -33,17 +33,18 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Aot(false)
 @SuppressWarnings("deprecation")
 module io.helidon.integrations.cdi.eclipselink {
-    requires static io.helidon.common.features.api;
-
-    requires java.management;
 
     requires io.helidon.integrations.jdbc;
-    requires jakarta.transaction;
     requires jakarta.cdi;
     requires jakarta.inject;
+    requires jakarta.transaction;
+    requires java.management;
     requires java.sql;
-    requires org.eclipse.persistence.jpa;
-    requires org.eclipse.persistence.core;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive org.eclipse.persistence.core;
+    requires transitive org.eclipse.persistence.jpa;
 
     exports io.helidon.integrations.cdi.eclipselink;
 
