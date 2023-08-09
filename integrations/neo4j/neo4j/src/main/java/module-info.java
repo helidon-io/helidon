@@ -30,6 +30,7 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.neo4j {
 
     requires java.logging;
+    requires io.helidon.common;
 
     requires static io.helidon.common.features.api;
 

@@ -28,14 +28,13 @@ import io.helidon.common.features.api.Preview;
         path = {"CDI", "Micronaut", "Data"}
 )
 module io.helidon.integrations.micronaut.data {
-    requires static io.helidon.common.features.api;
-
-    requires jakarta.annotation;
-    requires java.sql;
-
-    requires jakarta.cdi;
 
     requires io.micronaut.inject;
+    requires jakarta.annotation;
+    requires jakarta.cdi;
+    requires java.sql;
+
+    requires static io.helidon.common.features.api;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.data.MicronautDataCdiExtension;
 

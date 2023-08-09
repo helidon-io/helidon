@@ -18,11 +18,11 @@
  * Integrating with OCI Metrics Using CDI.
  */
 module io.helidon.integrations.oci.metrics.cdi {
+
     requires io.helidon.config.mp;
     requires io.helidon.integrations.oci.metrics;
     requires io.helidon.microprofile.config;
     requires io.helidon.microprofile.server;
-
     requires oci.java.sdk.monitoring;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.oci.metrics.cdi.OciMetricsCdiExtension;
