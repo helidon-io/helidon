@@ -33,6 +33,11 @@
             <artifactId>helidon-nima-grpc-webserver</artifactId>
         </dependency>
         <dependency>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </dependency>
+
+        <dependency>
             <!-- todo required for @Generated -->
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
