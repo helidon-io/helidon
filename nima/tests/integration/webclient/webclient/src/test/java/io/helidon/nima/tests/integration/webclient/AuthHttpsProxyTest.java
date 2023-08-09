@@ -16,10 +16,6 @@
 
 package io.helidon.nima.tests.integration.webclient;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.ProxySelector;
-
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
 import io.helidon.common.pki.Keys;
@@ -37,25 +33,28 @@ import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig.Builder;
 import io.helidon.nima.webserver.http.HttpRouting;
 
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.http.Http.Method.GET;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
-class HttpsProxyTest {
+class AuthHttpsProxyTest {
 
     private static final String PROXY_HOST = "localhost";
-    private static int PROXY_PORT;
-    private static HttpProxy httpProxy;
+    private static final String USER = "user";
+    private static final String PASSWORD = "password";
+    private int proxyPort;
+    private HttpProxy httpProxy;
 
     private final HttpClient<?> clientHttp1;
     private final HttpClient<?> clientHttp2;
 
-    HttpsProxyTest(WebServer server) {
+    AuthHttpsProxyTest(WebServer server) {
         int port = server.port();
 
         Tls tls = Tls.builder()
@@ -75,16 +74,9 @@ class HttpsProxyTest {
                 .build();
     }
 
-    @BeforeAll
-    static void beforeAll() throws IOException {
-        httpProxy = new HttpProxy(0);
-        httpProxy.start();
-        PROXY_PORT = httpProxy.connectedPort();
-    }
-
-    @AfterAll
-    static void afterAll() {
-        httpProxy.stop();
+    @SetUpRoute
+    static void routing(HttpRouting.Builder router) {
+        router.route(GET, "/get", Routes::get);
     }
 
     @SetUpServer
@@ -105,91 +97,58 @@ class HttpsProxyTest {
         builder.tls(tls);
     }
 
-    @SetUpRoute
-    static void routing(HttpRouting.Builder router) {
-        router.route(GET, "/get", Routes::get);
+    @BeforeEach
+    void before() {
+        httpProxy = new HttpProxy(0, USER, PASSWORD);
+        httpProxy.start();
+        proxyPort = httpProxy.connectedPort();
+        assertThat(httpProxy.counter(), is(0));
+    }
+
+    @AfterEach
+    void after() {
+        httpProxy.stop();
     }
 
     @Test
-    void testNoProxy1() {
-        noProxyChecks(clientHttp1);
-    }
-
-    @Test
-    void testNoProxy2() {
-        noProxyChecks(clientHttp2);
-    }
-
-    @Test
-    void testNoProxyTypeButHasHost1() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).build();
+    void testUserPasswordCorrect1() {
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST)
+                .username(USER).password(PASSWORD.toCharArray()).port(proxyPort).build();
         successVerify(proxy, clientHttp1);
     }
 
     @Test
-    void testNoProxyTypeButHasHost2() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(PROXY_PORT).build();
+    void testUserPasswordCorrect2() {
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST)
+                .username(USER).password(PASSWORD.toCharArray()).port(proxyPort).build();
         successVerify(proxy, clientHttp2);
     }
 
     @Test
-    void testProxyNoneTypeButHasHost1() {
-        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(PROXY_PORT).build();
-        successVerify(proxy, clientHttp1);
+    void testUserPasswordNotCorrect1() {
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST)
+                .username(USER).password("wrong".toCharArray()).port(proxyPort).build();
+        failVerify(proxy, clientHttp1);
     }
 
     @Test
-    void testProxyNoneTypeButHasHost2() {
-        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(PROXY_PORT).build();
-        successVerify(proxy, clientHttp2);
+    void testUserPasswordNotCorrect2() {
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST)
+                .username(USER).password("wrong".toCharArray()).port(proxyPort).build();
+        failVerify(proxy, clientHttp2);
     }
 
-    @Test
-    void testSimpleProxy1() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(PROXY_PORT).build();
-        successVerify(proxy, clientHttp1);
-    }
-
-    @Test
-    void testSimpleProxy2() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(PROXY_PORT).build();
-        successVerify(proxy, clientHttp2);
-    }
-
-    @Test
-    void testSystemProxy1() {
-        ProxySelector original = ProxySelector.getDefault();
-        try {
-            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, PROXY_PORT)));
-            Proxy proxy = Proxy.create();
-            successVerify(proxy, clientHttp1);
-        } finally {
-            ProxySelector.setDefault(original);
+    private void failVerify(Proxy proxy, HttpClient<?> client) {
+        try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
+            fail("Expected exception");
+        } catch (IllegalStateException e) {
+            assertThat(e.getMessage(), is("Proxy sent wrong HTTP response code: 401 Unauthorized"));
         }
-    }
-
-    @Test
-    void testSystemProxy2() {
-        ProxySelector original = ProxySelector.getDefault();
-        try {
-            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, PROXY_PORT)));
-            Proxy proxy = Proxy.create();
-            successVerify(proxy, clientHttp2);
-        } finally {
-            ProxySelector.setDefault(original);
-        }
+        assertThat(httpProxy.counter(), is(1));
     }
 
     private void successVerify(Proxy proxy, HttpClient<?> client) {
         try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String entity = response.entity().as(String.class);
-            assertThat(entity, is("Hello"));
-        }
-    }
-
-    private void noProxyChecks(HttpClient<?> client) {
-        try (HttpClientResponse response = client.get("/get").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));

@@ -31,6 +31,8 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.Method;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.socket.HelidonSocket;
@@ -117,15 +119,20 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                 BufferData writeBuffer);
 
     void prologue(BufferData nonEntityData, WebClientServiceRequest request, ClientUri uri) {
-        // TODO When proxy is implemented, change default value of Http1ClientConfig.relativeUris to false
-        //  and below conditional statement to:
-        //  proxy == Proxy.create() || proxy.noProxyPredicate().apply(finalUri) || clientConfig.relativeUris
-        String schemeHostPort = clientConfig.relativeUris() ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
-        nonEntityData.writeAscii(request.method().text()
-                                         + " "
-                                         + schemeHostPort
-                                         + uri.pathWithQueryAndFragment()
-                                         + " HTTP/1.1\r\n");
+        if (request.method() == Method.CONNECT) {
+            // When CONNECT, the first line contains the remote host:port, in the same way as the HOST header.
+            nonEntityData.writeAscii(request.method().text()
+                    + " "
+                    + request.headers().get(Header.HOST).value()
+                    + " HTTP/1.1\r\n");
+        } else {
+            String schemeHostPort = clientConfig.relativeUris() ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
+            nonEntityData.writeAscii(request.method().text()
+                    + " "
+                    + schemeHostPort
+                    + uri.pathWithQueryAndFragment()
+                    + " HTTP/1.1\r\n");
+        }
     }
 
     ClientResponseHeaders readHeaders(DataReader reader) {

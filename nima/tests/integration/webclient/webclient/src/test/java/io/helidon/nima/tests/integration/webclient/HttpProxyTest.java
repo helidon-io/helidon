@@ -16,25 +16,29 @@
 
 package io.helidon.nima.tests.integration.webclient;
 
-import static io.helidon.common.http.Http.Method.GET;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 
 import io.helidon.common.http.Http;
+import io.helidon.nima.http2.webclient.Http2Client;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webclient.api.HttpClient;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.Proxy;
 import io.helidon.nima.webclient.api.Proxy.ProxyType;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static io.helidon.common.http.Http.Method.GET;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @ServerTest
 class HttpProxyTest {
@@ -43,43 +47,148 @@ class HttpProxyTest {
     private int proxyPort;
     private HttpProxy httpProxy;
 
-    private final Http1Client client;
-    
+    private final HttpClient<?> clientHttp1;
+    private final HttpClient<?> clientHttp2;
+
+    HttpProxyTest(WebServer server) {
+        String uri = "http://localhost:" + server.port();
+        this.clientHttp1 = Http1Client.builder()
+                .baseUri(uri)
+                .proxy(Proxy.noProxy())
+                .build();
+        this.clientHttp2 = Http2Client.builder()
+                .baseUri(uri)
+                .proxy(Proxy.noProxy())
+                .build();
+    }
+
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         router.route(GET, "/get", Routes::get);
     }
 
     @BeforeEach
-    public void before() {
+    void before() {
         httpProxy = new HttpProxy(0);
         httpProxy.start();
         proxyPort = httpProxy.connectedPort();
+        assertThat(httpProxy.counter(), is(0));
     }
 
     @AfterEach
-    public void after() {
+    void after() {
         httpProxy.stop();
     }
 
-    HttpProxyTest(Http1Client client) {
-        this.client = client;
+    @Test
+    void testDefaultIsSystem1() {
+        ProxySelector original = ProxySelector.getDefault();
+        try {
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
+            Proxy proxy = Proxy.builder().build();
+            assertEquals(ProxyType.SYSTEM, proxy.type());
+            successVerify(proxy, clientHttp1);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
     }
 
     @Test
-    void testNoProxy() {
-        noProxyChecks();
+    void testDefaultIsSystem2() {
+        ProxySelector original = ProxySelector.getDefault();
+        try {
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
+            Proxy proxy = Proxy.builder().build();
+            assertEquals(ProxyType.SYSTEM, proxy.type());
+            successVerify(proxy, clientHttp2);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
     }
 
     @Test
-    void testNoProxyTypeDefaultsToNone() {
-        noProxyChecks();
+    void testNoProxy1() {
+        noProxyChecks(clientHttp1);
     }
 
     @Test
-    void testNoHosts() {
+    void testNoProxy2() {
+        noProxyChecks(clientHttp2);
+    }
+
+    @Test
+    void testNoHosts1() {
+        noHosts(clientHttp1);
+    }
+
+    @Test
+    void testNoHosts2() {
+        noHosts(clientHttp2);
+    }
+
+    @Test
+    void testNoProxyTypeButHasHost1() {
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy, clientHttp1);
+    }
+
+    @Test
+    void testNoProxyTypeButHasHost2() {
+        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy, clientHttp2);
+    }
+
+    @Test
+    void testProxyNoneTypeButHasHost1() {
+        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy, clientHttp1);
+    }
+
+    @Test
+    void testProxyNoneTypeButHasHost2() {
+        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy, clientHttp2);
+    }
+
+    @Test
+    void testSimpleProxy1() {
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy, clientHttp1);
+    }
+
+    @Test
+    void testSimpleProxy2() {
+        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
+        successVerify(proxy, clientHttp2);
+    }
+
+    @Test
+    void testSystemProxy1() {
+        ProxySelector original = ProxySelector.getDefault();
+        try {
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
+            Proxy proxy = Proxy.create();
+            successVerify(proxy, clientHttp1);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
+    }
+
+    @Test
+    void testSystemProxy2() {
+        ProxySelector original = ProxySelector.getDefault();
+        try {
+            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
+            Proxy proxy = Proxy.create();
+            successVerify(proxy, clientHttp2);
+        } finally {
+            ProxySelector.setDefault(original);
+        }
+    }
+
+    private void noHosts(HttpClient<?> client) {
         Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).addNoProxy(PROXY_HOST).build();
-        try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
+        try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
@@ -87,38 +196,8 @@ class HttpProxyTest {
         assertThat(httpProxy.counter(), is(0));
     }
 
-    @Test
-    void testNoProxyTypeButHasHost() {
-        Proxy proxy = Proxy.builder().host(PROXY_HOST).port(proxyPort).build();
-        successVerify(proxy);
-    }
-
-    @Test
-    void testProxyNoneTypeButHasHost() {
-        Proxy proxy = Proxy.builder().type(ProxyType.NONE).host(PROXY_HOST).port(proxyPort).build();
-        successVerify(proxy);
-    }
-
-    @Test
-    void testSimpleProxy() {
-        Proxy proxy = Proxy.builder().type(ProxyType.HTTP).host(PROXY_HOST).port(proxyPort).build();
-        successVerify(proxy);
-    }
-
-    @Test
-    void testSystemProxy() {
-        ProxySelector original = ProxySelector.getDefault();
-        try {
-            ProxySelector.setDefault(ProxySelector.of(new InetSocketAddress(PROXY_HOST, proxyPort)));
-            Proxy proxy = Proxy.create();
-            successVerify(proxy);
-        } finally {
-            ProxySelector.setDefault(original);
-        }
-    }
-
-    private void successVerify(Proxy proxy) {
-        try (Http1ClientResponse response = client.get("/get").proxy(proxy).request()) {
+    private void successVerify(Proxy proxy, HttpClient<?> client) {
+        try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
@@ -126,8 +205,8 @@ class HttpProxyTest {
         assertThat(httpProxy.counter(), is(1));
     }
 
-    private void noProxyChecks() {
-        try (Http1ClientResponse response = client.get("/get").request()) {
+    private void noProxyChecks(HttpClient<?> client) {
+        try (HttpClientResponse response = client.get("/get").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
