@@ -40,11 +40,43 @@
     <dependencies>
 
         <!-- Compile-scoped dependencies. -->
+
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.oci.sdk</groupId>
+            <artifactId>helidon-integrations-oci-sdk</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Provided-scoped dependencies. -->
+
+        <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Runtime-scoped dependencies. -->
+
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
             <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
@@ -61,44 +93,17 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- For dependency convergence. To make sure we use Jersey version of org.apache.httpcomponents:httpclient and httpcore -->
-        <dependency>
-            <groupId>org.glassfish.jersey.connectors</groupId>
-            <artifactId>jersey-apache-connector</artifactId>
-            <scope>runtime</scope>
-
-        </dependency>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.ws.rs</groupId>
-            <artifactId>jakarta.ws.rs-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.config</groupId>
-            <artifactId>microprofile-config-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <!-- Provided-scoped dependencies. -->
-
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- Runtime-scoped dependencies. -->
-
         <dependency>
             <groupId>io.helidon.microprofile.config</groupId>
             <artifactId>helidon-microprofile-config</artifactId>
             <scope>runtime</scope>
             <optional>true</optional>
+        </dependency>
+        <!-- For dependency convergence. To make sure we use Jersey version of org.apache.httpcomponents:httpclient and httpcore -->
+        <dependency>
+            <groupId>org.glassfish.jersey.connectors</groupId>
+            <artifactId>jersey-apache-connector</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>

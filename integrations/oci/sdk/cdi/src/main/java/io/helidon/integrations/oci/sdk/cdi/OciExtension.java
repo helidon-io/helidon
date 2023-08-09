@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -40,6 +41,13 @@ import java.util.regex.Pattern;
 
 import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.common.ClientBuilderBase;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
@@ -59,6 +67,10 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 import static java.lang.invoke.MethodType.methodType;
+import static io.helidon.integrations.oci.sdk.AdpSuppliers.configFile;
+import static io.helidon.integrations.oci.sdk.AdpSuppliers.instancePrincipals;
+import static io.helidon.integrations.oci.sdk.AdpSuppliers.resourcePrincipal;
+import static io.helidon.integrations.oci.sdk.AdpSuppliers.simple;
 
 /**
  * A <a
@@ -818,6 +830,95 @@ public final class OciExtension implements Extension {
      */
 
 
+    private static void installAdps2(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiersArray) {
+        Set<Annotation> qualifiers = Set.of(qualifiersArray);
+
+        Instance<Object> bmi = bm.createInstance();
+        Instance<Config> ci = bmi.select(Config.class);
+        Function<String, Optional<String>> c = s -> ci.get().getOptionalValue(s, String.class);
+
+        // Simple first
+        TypeAndQualifiers builderTaq = new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray);
+        if (isUnsatisfied(bm, builderTaq)) {
+            event.addBean()
+                .types(SimpleAuthenticationDetailsProviderBuilder.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> produceAdpBuilder2(SimpleAuthenticationDetailsProvider::builder,
+                                                     i,
+                                                     qualifiersArray));
+        }
+        TypeAndQualifiers taq = new TypeAndQualifiers(SimpleAuthenticationDetailsProvider.class, qualifiersArray);
+        if (isUnsatisfied(bm, taq)) {
+            event.addBean()
+                .types(SimpleAuthenticationDetailsProvider.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> simple(c,
+                                         i.select(SimpleAuthenticationDetailsProviderBuilder.class,
+                                                  qualifiersArray)::get)
+                                             .orElseThrow(CreationException::new).get());
+        }
+
+        // Configuration file next
+        taq = new TypeAndQualifiers(ConfigFileAuthenticationDetailsProvider.class, qualifiersArray);
+        if (isUnsatisfied(bm, taq)) {
+            event.addBean()
+                .types(ConfigFileAuthenticationDetailsProvider.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> configFile(c).orElseThrow(CreationException::new).get());
+        }
+
+        // Instance principals next
+        builderTaq = new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray);
+        if (isUnsatisfied(bm, builderTaq)) {
+            event.addBean()
+                .types(InstancePrincipalsAuthenticationDetailsProviderBuilder.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> produceAdpBuilder2(InstancePrincipalsAuthenticationDetailsProvider::builder,
+                                                     i,
+                                                     qualifiersArray));
+        }
+        taq = new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray);
+        if (isUnsatisfied(bm, taq)) {
+            event.addBean()
+                .types(InstancePrincipalsAuthenticationDetailsProvider.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> instancePrincipals(c,
+                                                     i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class,
+                                                              qualifiersArray)::get)
+                                                         .orElseThrow(CreationException::new).get());
+        }
+
+        // Resource principal next
+        builderTaq = new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray);
+        if (isUnsatisfied(bm, builderTaq)) {
+            event.addBean()
+                .types(ResourcePrincipalAuthenticationDetailsProviderBuilder.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> produceAdpBuilder2(ResourcePrincipalAuthenticationDetailsProvider::builder,
+                                                     i,
+                                                     qualifiersArray));
+        }
+        taq = new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray);
+        if (isUnsatisfied(bm, taq)) {
+            event.addBean()
+                .types(ResourcePrincipalAuthenticationDetailsProvider.class) // note: just the one
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i -> resourcePrincipal(i.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class,
+                                                             qualifiersArray)::get)
+                                                        .orElseThrow(CreationException::new).get());
+        }
+
+        // TODO: RESUME; need to do "AUTO"
+
+    }
+
     private static void installAdps(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiersArray) {
         Set<Annotation> qualifiers = Set.of(qualifiersArray);
         for (AdpSelectionStrategy s : EnumSet.allOf(AdpSelectionStrategy.class)) {
@@ -853,9 +954,18 @@ public final class OciExtension implements Extension {
         return builder;
     }
 
+    private static Object produceAdpBuilder2(Supplier<?> s,
+                                             Instance<? super Object> instance,
+                                             Annotation[] qualifiersArray) {
+        Object builder = s.get();
+        // Permit arbitrary customization.
+        fire(instance, builder, qualifiersArray);
+        return builder;
+    }
+
     private static AbstractAuthenticationDetailsProvider produceAdp(AdpSelectionStrategy s,
-                                     Instance<? super Object> instance,
-                                     Annotation[] qualifiersArray) {
+                                                                    Instance<? super Object> instance,
+                                                                    Annotation[] qualifiersArray) {
         return s.produce(SelectorShim.of(instance), ConfigShim.of(instance), qualifiersArray);
     }
 
