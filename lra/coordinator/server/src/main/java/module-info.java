@@ -18,17 +18,18 @@
  * Helidon LRA coordinator.
  */
 module io.helidon.lra.coordinator {
-    requires jakarta.json;
-    requires microprofile.lra.api;
-    requires io.helidon.webclient;
-    requires io.helidon.webserver;
-    requires transitive io.helidon.webserver.observe.metrics;
-    requires io.helidon.webserver.observe.health;
-    requires io.helidon.http.media.jsonp;
-    requires io.helidon.scheduling;
-    requires io.helidon.dbclient;
     requires io.helidon.dbclient.jdbc;
+    requires io.helidon.dbclient;
     requires io.helidon.health.checks;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.api;
+    requires io.helidon.http.media.jsonp;
+    requires io.helidon.observe.health;
+    requires io.helidon.observe.metrics;
+    requires io.helidon.webclient;
+    requires io.helidon.scheduling;
+    requires jakarta.json;
+    requires microprofile.lra.api;
+
+    requires transitive io.helidon.webserver;
 }
