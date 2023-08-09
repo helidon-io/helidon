@@ -28,12 +28,13 @@ import io.helidon.common.features.api.Preview;
          path = "Neo4j"
 )
 module io.helidon.integrations.neo4j {
+
     requires java.logging;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config;
 
-    requires org.neo4j.driver;
+    requires transitive io.helidon.common.config;
+    requires transitive org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j;
 }

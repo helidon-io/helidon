@@ -28,14 +28,14 @@ import io.helidon.common.features.api.Preview;
         path = {"Neo4j", "Metrics"}
 )
 module io.helidon.integrations.neo4j.metrics {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
     requires io.helidon.integrations.neo4j;
     requires io.helidon.metrics;
-
-    requires org.neo4j.driver;
     requires microprofile.metrics.api;
+    requires org.neo4j.driver;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.integrations.neo4j.metrics;
 }

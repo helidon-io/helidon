@@ -29,10 +29,9 @@ import io.helidon.common.features.api.Preview;
 )
 module io.helidon.integrations.neo4j.health {
     requires static io.helidon.common.features.api;
-    requires io.helidon.health;
 
-    requires org.neo4j.driver;
-
+    requires transitive io.helidon.health;
+    requires transitive org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j.health;
 
