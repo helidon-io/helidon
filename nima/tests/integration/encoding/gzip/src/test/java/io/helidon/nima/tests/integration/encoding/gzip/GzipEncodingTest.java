@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.nima.tests.integration.encoding.gzip;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -30,14 +31,19 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.http.Http;
+import io.helidon.nima.http2.webclient.Http2Client;
+import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webclient.api.ClientResponseTyped;
+import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,21 +51,41 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ServerTest
 class GzipEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
+    private static final byte[] GZIP_ENTITY;
+    private static final Http.HeaderValue CONTENT_ENCODING_GZIP = Http.Header.create(Http.Header.CONTENT_ENCODING, "gzip");
+
+    static {
+        ByteArrayOutputStream baos;
+        try {
+            baos = new ByteArrayOutputStream();
+            OutputStream os = new GZIPOutputStream(baos);
+            os.write(ENTITY.getBytes(StandardCharsets.UTF_8));
+            os.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create gzipped bytes", e);
+        }
+        GZIP_ENTITY = baos.toByteArray();
+    }
 
     private final URI uri;
+    private final Http1Client http1Client;
+    private final Http2Client http2Client;
     private final HttpClient client;
 
-    GzipEncodingTest(URI uri) {
+    GzipEncodingTest(URI uri, Http1Client http1Client, Http2Client http2Client) {
         this.uri = uri;
+        this.http1Client = http1Client;
+        this.http2Client = http2Client;
         this.client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
+                .version(HttpClient.Version.HTTP_1_1)
                 .build();
     }
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
         builder.route(Http1Route.route(Http.Method.PUT,
-                                       "/",
+                                       "/http1",
                                        (req, res) -> {
                                            String entity = req.content().as(String.class);
                                            if (!ENTITY.equals(entity)) {
@@ -67,29 +93,69 @@ class GzipEncodingTest {
                                            } else {
                                                res.send(entity);
                                            }
-                                       }));
+                                       }))
+                .route(Http2Route.route(Http.Method.PUT,
+                                        "/http2",
+                                        (req, res) -> {
+                                            String entity = req.content().as(String.class);
+                                            if (!ENTITY.equals(entity)) {
+                                                res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
+                                            } else {
+                                                res.send(entity);
+                                            }
+                                        }));
     }
 
     @Test
-    void testGzipRequestAndResponse() throws IOException, InterruptedException {
+    void testGzipJdkClient() throws IOException, InterruptedException {
         testIt("gzip");
     }
 
+
     @Test
-    void testGzipRequestAndResponseMultipleAcceptedEncodings() throws IOException, InterruptedException {
+    void testGzipHttp1Client() {
+        testIt(http1Client, "/http1", "gzip");
+    }
+
+    @Test
+    void testGzipHttp2Client() throws IOException {
+        testIt(http2Client, "/http2", "gzip");
+    }
+
+    @Test
+    void testGzipMultipleAcceptedEncodingsJdkClient() throws IOException, InterruptedException {
         testIt("br;q=0.9, gzip, *;q=0.1");
     }
 
+    @Test
+    void testDeflateMultipleAcceptedEncodingsHttp1Client() {
+        testIt(http1Client, "/http1", "br;q=0.9, gzip, *;q=0.1");
+    }
+
+    @Test
+    void testDeflateMultipleAcceptedEncodingsHttp2Client() {
+        testIt(http2Client, "/http2", "br;q=0.9, gzip, *;q=0.1");
+    }
+
+    void testIt(io.helidon.nima.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
+        ClientResponseTyped<String> response = client.put(path)
+                .header(Http.Header.ACCEPT_ENCODING, acceptEncodingValue)
+                .header(CONTENT_ENCODING_GZIP)
+                .submit(GZIP_ENTITY, String.class);
+
+        Assertions.assertAll(
+                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.entity(), is(ENTITY)),
+                () -> assertThat(response.headers(), hasHeader(CONTENT_ENCODING_GZIP))
+        );
+    }
+
     void testIt(String acceptEncodingValue) throws IOException, InterruptedException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        GZIPOutputStream gos = new GZIPOutputStream(baos);
-        gos.write(ENTITY.getBytes(StandardCharsets.UTF_8));
-        gos.close();
         HttpResponse<byte[]> response = client.send(HttpRequest.newBuilder()
-                                                            .PUT(HttpRequest.BodyPublishers.ofByteArray(baos.toByteArray()))
+                                                            .PUT(HttpRequest.BodyPublishers.ofByteArray(GZIP_ENTITY))
                                                             .header("Accept-Encoding", acceptEncodingValue)
                                                             .headers("Content-Encoding", "gzip")
-                                                            .uri(uri)
+                                                            .uri(uri.resolve("/http1"))
                                                             .build(),
                                                     HttpResponse.BodyHandlers.ofByteArray());
 

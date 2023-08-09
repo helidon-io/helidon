@@ -251,7 +251,8 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 throw new IOException("Stream already closed");
             }
             if (firstByte && firstBuffer == null) {
-                firstBuffer = buffer;
+                // if somebody re-uses the byte buffer sent to us, we must copy it
+                firstBuffer = buffer.copy();
                 return;
             }
 

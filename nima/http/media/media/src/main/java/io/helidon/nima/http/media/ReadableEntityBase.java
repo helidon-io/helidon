@@ -219,7 +219,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         }
 
         @Override
-        public int read(byte[] b, int off, int len) throws IOException {
+        public int read(byte[] b, int off, int len) {
             if (finished) {
                 return -1;
             }

@@ -17,6 +17,7 @@
 package io.helidon.nima.http2.webclient;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -27,6 +28,8 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.nima.common.tls.Tls;
+import io.helidon.nima.http.encoding.ContentDecoder;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.ConnectionKey;
@@ -40,6 +43,7 @@ import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
+import static io.helidon.common.http.Http.Header.CONTENT_ENCODING;
 import static io.helidon.nima.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -157,7 +161,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         // we need an instance to create it, so let's just use a reference
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
         if (stream.hasEntity()) {
-            builder.inputStream(new RequestingInputStream(stream, whenComplete, response));
+            ContentDecoder decoder = contentDecoder(responseHeaders);
+            builder.inputStream(decoder.apply(new RequestingInputStream(stream, whenComplete, response)));
         }
         WebClientServiceResponse serviceResponse = builder
                 .serviceRequest(serviceRequest)
@@ -169,6 +174,21 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
 
         response.set(serviceResponse);
         return serviceResponse;
+    }
+
+    private ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders) {
+        ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
+        if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(CONTENT_ENCODING)) {
+            String contentEncoding = responseHeaders.get(CONTENT_ENCODING).value();
+            if (encodingSupport.contentDecodingSupported(contentEncoding)) {
+                return encodingSupport.decoder(contentEncoding);
+            } else {
+                throw new IllegalStateException("Unsupported content encoding: \n"
+                                                        + BufferData.create(contentEncoding.getBytes(StandardCharsets.UTF_8))
+                        .debugDataHex());
+            }
+        }
+        return ContentDecoder.NO_OP;
     }
 
     protected Http2Headers prepareHeaders(Http.Method method, ClientRequestHeaders headers, ClientUri uri) {

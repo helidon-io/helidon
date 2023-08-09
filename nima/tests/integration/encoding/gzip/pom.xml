@@ -33,12 +33,21 @@
             <artifactId>helidon-nima-webserver</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.nima.http2</groupId>
+            <artifactId>helidon-nima-http2-webserver</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.nima.http.encoding</groupId>
             <artifactId>helidon-nima-http-encoding-gzip</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.nima.testing.junit5</groupId>
             <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.nima.testing.junit5</groupId>
+            <artifactId>helidon-nima-testing-junit5-http2</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

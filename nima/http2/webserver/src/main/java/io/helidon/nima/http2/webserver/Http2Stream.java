@@ -31,6 +31,7 @@ import io.helidon.common.http.RequestException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.nima.http.encoding.ContentDecoder;
+import io.helidon.nima.http.encoding.ContentEncodingContext;
 import io.helidon.nima.http2.ConnectionFlowControl;
 import io.helidon.nima.http2.Http2ErrorCode;
 import io.helidon.nima.http2.Http2Exception;
@@ -374,23 +375,27 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
         }
 
         if (subProtocolHandler == null) {
-            //            ContentDecoder decoder;
-            //            if (contentEncodingContext.contentDecodingEnabled()) {
-            //                if (httpHeaders.contains(Header.CONTENT_ENCODING)) {
-            //                    String contentEncoding = httpHeaders.get(Header.CONTENT_ENCODING).value();
-            //                    if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
-            //                        decoder = contentEncodingContext.decoder(contentEncoding);
-            //                    } else {
-            //                        throw new Http2Exception(Http2ErrorCode.INTERNAL, "Unsupported content encoding " +
-            //                        contentEncoding);
-            //                    }
-            //                } else {
-            //                    decoder = ContentDecoder.NO_OP;
-            //                }
-            //            } else {
-            //                decoder = ContentDecoder.NO_OP;
-            //            }
-            ContentDecoder decoder = ContentDecoder.NO_OP;
+            ContentEncodingContext contentEncodingContext = ctx.listenerContext().contentEncodingContext();
+            ContentDecoder decoder;
+            if (contentEncodingContext.contentDecodingEnabled()) {
+                if (httpHeaders.contains(Header.CONTENT_ENCODING)) {
+                    String contentEncoding = httpHeaders.get(Header.CONTENT_ENCODING).value();
+                    if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
+                        decoder = contentEncodingContext.decoder(contentEncoding);
+                    } else {
+                        throw RequestException.builder()
+                                .type(DirectHandler.EventType.OTHER)
+                                .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
+                                .message("Unsupported content encoding")
+                                .build();
+                    }
+                } else {
+                    decoder = ContentDecoder.NO_OP;
+                }
+            } else {
+                decoder = ContentDecoder.NO_OP;
+            }
+
             Http2ServerRequest request = Http2ServerRequest.create(ctx,
                                                                    routing.security(),
                                                                    prologue,
