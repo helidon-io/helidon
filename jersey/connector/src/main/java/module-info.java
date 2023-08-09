@@ -21,13 +21,14 @@ import io.helidon.jersey.connector.HelidonConnectorProvider;
  * and receive HTTP request and responses.
  */
 module io.helidon.jersey.connector {
-    requires java.logging;
 
-    requires jakarta.ws.rs;
-    requires transitive jersey.client;
-    requires jersey.common;
-    requires io.helidon.webclient;
     requires io.helidon.config;
+    requires io.helidon.webclient;
+    requires jakarta.ws.rs;
+    requires java.logging;
+    requires jersey.common;
+
+    requires transitive jersey.client;
 
     exports io.helidon.jersey.connector;
     provides org.glassfish.jersey.client.spi.ConnectorProvider with HelidonConnectorProvider;

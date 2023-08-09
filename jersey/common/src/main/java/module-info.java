@@ -18,12 +18,10 @@
  * Utilities for Jersey handling.
  */
 module io.helidon.jersey.common {
-    requires java.logging;
-    requires jakarta.annotation;
-
     requires io.helidon.common;
-
+    requires jakarta.annotation;
     requires jakarta.ws.rs;
+    requires java.logging;
     requires jersey.common;
     requires jersey.server;
 
