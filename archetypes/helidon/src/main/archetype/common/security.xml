@@ -34,7 +34,7 @@
                                 <model>
                                     <list key="providers-config-entries">
                                         <value file="files/application.oidc.yaml" if="${flavor} == 'mp'"/>
-                                        <value if="${flavor} == 'nima'"><![CDATA[
+                                        <value if="${flavor} == 'se'"><![CDATA[
   - oidc:
       client-id: "your-client-id"
       client-secret: "your-client-secret"
@@ -63,7 +63,7 @@
         identity-uri: "https://your-tenant-id.identity.oracle.com"]]></value>
                                     </list>
                                     <list key="paths-config-entries">
-                                        <value if="${flavor} == 'nima'"><![CDATA[      - path: "/rest/profile"
+                                        <value if="${flavor} == 'se'"><![CDATA[      - path: "/rest/profile"
         methods: ["get"]
         authenticate: true
         roles-allowed: ["my_admins"]]]></value>
@@ -73,42 +73,38 @@
                                             <value key="groupId">io.helidon.microprofile</value>
                                             <value key="artifactId">helidon-microprofile-oidc</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-oidc</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-idcs-mapper</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
-                                            <value key="groupId">io.helidon.security.integration</value>
-                                            <value key="artifactId">helidon-security-integration-nima</value>
-                                        </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.config</value>
                                             <value key="artifactId">helidon-config-encryption</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.smallrye</value>
                                             <value key="artifactId">jandex</value>
                                             <value key="scope">runtime</value>
                                             <value key="optional">true</value>
                                         </map>
                                     </list>
-                                    <list key="Main-java-imports" if="${flavor} == 'nima'">
+                                    <list key="Main-java-imports" if="${flavor} == 'se'">
                                         <value>java.util.Optional</value>
                                     </list>
-                                    <list key="Main-helidon-imports" if="${flavor} == 'nima'">
+                                    <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                         <value>io.helidon.common.context.Contexts</value>
-                                        <value>io.helidon.common.http.HttpMediaType</value>
+                                        <value>io.helidon.http.HttpMediaTypes</value>
                                         <value>io.helidon.security.Security</value>
                                         <value>io.helidon.security.SecurityContext</value>
                                         <value>io.helidon.security.Subject</value>
-                                        <value>io.helidon.security.integration.nima.SecurityFeature</value>
+                                        <value>io.helidon.webserver.security.SecurityFeature</value>
                                         <value>io.helidon.security.providers.oidc.OidcFeature</value>
                                     </list>
-                                    <list key="Main-routing" if="${flavor} == 'nima'">
+                                    <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
         Security security = Security.create(config.get("security"));
         // this is needed for proper encryption/decryption of cookies
@@ -120,12 +116,12 @@
         }
 ]]></value>
                                     </list>
-                                    <list key="Main-routing-builder" if="${flavor} == 'nima'">
+                                    <list key="Main-routing-builder" if="${flavor} == 'se'">
                                         <value><![CDATA[                        .addFeature(SecurityFeature.create(security, config.get("security")))
                         // web server does not (yet) have possibility to configure routes in config files, so explicit...
                         .get("/rest/profile", (req, res) -> {
                             Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                             res.send("Response from config based service, you are: \n" + securityContext
                                     .flatMap(SecurityContext::user)
                                     .map(Subject::toString)
@@ -133,7 +129,7 @@
                         })
                         .get("/loggedout", (req, res) -> res.send("You have been logged out"))]]></value>
                                     </list>
-                                    <list key="maven-plugins" if="${flavor} == 'nima'">
+                                    <list key="maven-plugins" if="${flavor} == 'se'">
                                         <value><![CDATA[
             <plugin>
                 <groupId>io.smallrye</groupId>
@@ -145,11 +141,11 @@
                 </executions>
             </plugin>]]></value>
                                     </list>
-                                    <list key="modules" if="${flavor} == 'nima'">
+                                    <list key="modules" if="${flavor} == 'se'">
                                         <value>io.helidon.security.providers.oidc</value>
                                     </list>
                                     <list key="modules">
-                                        <value if="${flavor} == 'nima'">io.helidon.security</value>
+                                        <value if="${flavor} == 'se'">io.helidon.security</value>
                                     </list>
                                 </model>
                             </output>
@@ -165,28 +161,28 @@
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-jwt</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
-                                            <value key="groupId">io.helidon.nima.webclient</value>
-                                            <value key="artifactId">helidon-nima-webclient-security</value>
+                                        <map if="${flavor} == 'se'">
+                                            <value key="groupId">io.helidon.webclient</value>
+                                            <value key="artifactId">helidon-webclient-security</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-http-auth</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-jwt</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.bundles</value>
                                             <value key="artifactId">helidon-bundles-config</value>
                                         </map>
                                     </list>
                                     <list key="modules">
-                                        <value if="${flavor} == 'nima'">io.helidon.nima.webclient.security</value>
+                                        <value if="${flavor} == 'se'">io.helidon.webclient.security</value>
                                         <value>io.helidon.security.providers.jwt</value>
-                                        <value>io.helidon.nima.webserver.context</value>
-                                        <value>io.helidon.nima.webclient.http1</value>
+                                        <value>io.helidon.webserver.context</value>
+                                        <value>io.helidon.webclient.http1</value>
                                     </list>
                                 </model>
                             </output>
@@ -196,7 +192,7 @@
                                 <model>
                                     <list key="providers-config-entries">
                                         <value file="files/application.google.yaml" if="${flavor} == 'mp'"/>
-                                        <value if="${flavor} == 'nima'"><![CDATA[    - google-login:
+                                        <value if="${flavor} == 'se'"><![CDATA[    - google-login:
         # Create your own application in Google developer console
         # Also update the client id configured in header of index.html
         # Detailed how-to for login button (including links how to create an application):
@@ -222,17 +218,17 @@
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-google-login</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.config</value>
                                             <value key="artifactId">helidon-config-encryption</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.bundles</value>
                                             <value key="artifactId">helidon-bundles-config</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
-                                            <value key="groupId">io.helidon.nima.webserver</value>
-                                            <value key="artifactId">helidon-nima-webserver-static-content</value>
+                                        <map if="${flavor} == 'se'">
+                                            <value key="groupId">io.helidon.webserver</value>
+                                            <value key="artifactId">helidon-webserver-static-content</value>
                                         </map>
                                     </list>
                                     <list key="paths-config-entries">
@@ -243,8 +239,8 @@
         authenticate: true]]></value>
                                     </list>
                                     <list key="modules">
-                                        <value>io.helidon.nima.webserver.context</value>
-                                        <value>io.helidon.nima.webserver.staticcontent</value>
+                                        <value>io.helidon.webserver.context</value>
+                                        <value>io.helidon.webserver.staticcontent</value>
                                         <value>io.helidon.security.providers.google.login</value>
                                     </list>
                                 </model>
@@ -267,27 +263,27 @@
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-http-sign</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
-                                            <value key="groupId">io.helidon.nima.webclient</value>
-                                            <value key="artifactId">helidon-nima-webclient-security</value>
+                                        <map if="${flavor} == 'se'">
+                                            <value key="groupId">io.helidon.webclient</value>
+                                            <value key="artifactId">helidon-webclient-security</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.bundles</value>
                                             <value key="artifactId">helidon-bundles-security</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.config</value>
                                             <value key="artifactId">helidon-config-hocon</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.config</value>
                                             <value key="artifactId">helidon-config-hocon</value>
                                         </map>
                                     </list>
-                                    <list key="modules" if="${flavor} == 'nima'">
-                                        <value>io.helidon.nima.webclient.http1</value>
+                                    <list key="modules" if="${flavor} == 'se'">
+                                        <value>io.helidon.webclient.http1</value>
                                         <value>io.helidon.common.pki</value>
-                                        <value>io.helidon.nima.webserver.context</value>
+                                        <value>io.helidon.webserver.context</value>
                                         <value>io.helidon.security.providers.common</value>
                                         <value>io.helidon.security.providers.httpauth</value>
                                         <value>io.helidon.security.providers.httpsign</value>
@@ -308,11 +304,11 @@
                                             <value key="groupId">io.helidon.security.providers</value>
                                             <value key="artifactId">helidon-security-providers-abac</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.security.abac</value>
                                             <value key="artifactId">helidon-security-abac-scope</value>
                                         </map>
-                                        <map if="${flavor} == 'nima'">
+                                        <map if="${flavor} == 'se'">
                                             <value key="groupId">io.helidon.security.abac</value>
                                             <value key="artifactId">helidon-security-abac-role</value>
                                         </map>
@@ -333,9 +329,9 @@
                                 <value key="groupId">io.helidon.microprofile</value>
                                 <value key="artifactId">helidon-microprofile-security</value>
                             </map>
-                            <map if="${flavor} == 'nima'">
-                                <value key="groupId">io.helidon.security.integration</value>
-                                <value key="artifactId">helidon-security-integration-nima</value>
+                            <map if="${flavor} == 'se'">
+                                <value key="groupId">io.helidon.webserver</value>
+                                <value key="artifactId">helidon-webserver-security</value>
                             </map>
                         </list>
                         <list key="paths-config-entries">
@@ -343,14 +339,15 @@
          methods: ["get"]
          authenticate: true]]></value>
                         </list>
-                        <list key="config-test" if="${flavor} == 'nima'">
+                        <list key="config-test" if="${flavor} == 'se'">
                             <value><![CDATA[
 security:
   enabled: false
 ]]></value>
                         </list>
-                        <list key="modules" if="${flavor} == 'nima'">
-                            <value>io.helidon.security.integration.nima</value>
+                        <list key="modules" if="${flavor} == 'se'">
+                            <value>io.helidon.security.integration.common</value>
+                            <value>io.helidon.webserver.security</value>
                         </list>
                     </model>
                 </output>

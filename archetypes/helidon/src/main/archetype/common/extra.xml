@@ -23,7 +23,7 @@
     <step name="Extra" optional="true">
         <inputs>
             <list id="extra" name="Select Additional Components" optional="true">
-                <option value="webclient" name="WebClient" description="Nima HTTP client" if="${flavor} == 'nima'">
+                <option value="webclient" name="WebClient" description="Nima HTTP client" if="${flavor} == 'se'">
                     <output>
                         <templates engine="mustache" transformations="mustache,packaged">
                             <directory>files</directory>
@@ -34,12 +34,12 @@
                         <model>
                             <list key="dependencies">
                                 <map>
-                                    <value key="groupId">io.helidon.nima.webclient</value>
-                                    <value key="artifactId">helidon-nima-webclient</value>
+                                    <value key="groupId">io.helidon.webclient</value>
+                                    <value key="artifactId">helidon-webclient</value>
                                 </map>
                             </list>
                             <list key="modules">
-                                <value>io.helidon.nima.webclient</value>
+                                <value>io.helidon.webclient</value>
                             </list>
                             <list key="Abstract-tests">
                                 <value><![CDATA[
@@ -51,7 +51,32 @@
 ]]></value>
                             </list>
                             <list key="MainTest-static-imports">
-                                <value if="${flavor} == 'nima'">org.hamcrest.CoreMatchers.containsString</value>
+                                <value if="${flavor} == 'se'">org.hamcrest.CoreMatchers.containsString</value>
+                            </list>
+                            <list key="readme-sections" if="${flavor} == 'se'">
+                                <value template="mustache"><![CDATA[
+## Exercise Webclient
+
+First, start the server:
+
+```
+java -jar target/{{artifactId}}.jar
+```
+
+Note the port number that it displays. For example:
+
+```
+WEB server is up! http://localhost:PORT/simple-greet
+```
+
+Then run the client, passing the port number. It will connect
+to the server:
+
+```
+java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
+```
+
+]]></value>
                             </list>
                         </model>
                     </output>
@@ -63,7 +88,7 @@
                             <includes>
                                 <include if="${flavor} == 'mp'">src/*/java/**/FtResource.java.mustache</include>
                                 <include if="${flavor} == 'mp'">src/*/java/**/FtResourceTest.java.mustache</include>
-                                <include if="${flavor} == 'nima'">src/*/java/**/FtService.java.mustache</include>
+                                <include if="${flavor} == 'se'">src/*/java/**/FtService.java.mustache</include>
                             </includes>
                         </templates>
                         <model>
@@ -116,11 +141,11 @@
                                     <value key="groupId">io.helidon.microprofile</value>
                                     <value key="artifactId">helidon-microprofile-cors</value>
                                 </map>
-                                <map if="${flavor} == 'nima'">
-                                    <value key="groupId">io.helidon.nima.webserver</value>
-                                    <value key="artifactId">helidon-nima-webserver-cors</value>
+                                <map if="${flavor} == 'se'">
+                                    <value key="groupId">io.helidon.webserver</value>
+                                    <value key="artifactId">helidon-webserver-cors</value>
                                 </map>
-                                <map if="${flavor} == 'nima'">
+                                <map if="${flavor} == 'se'">
                                     <value key="groupId">io.helidon.cors</value>
                                     <value key="artifactId">helidon-cors</value>
                                 </map>
@@ -134,9 +159,9 @@
                             </list>
                             <list key="modules">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.cors</value>
-                                <value if="${flavor} == 'nima'">io.helidon.nima.webserver.cors</value>
-                                <value if="${flavor} == 'nima'">io.helidon.cors</value>
-                                <value if="${flavor} == 'nima'">java.logging</value>
+                                <value if="${flavor} == 'se'">io.helidon.webserver.cors</value>
+                                <value if="${flavor} == 'se'">io.helidon.cors</value>
+                                <value if="${flavor} == 'se'">java.logging</value>
                             </list>
                             <list key="FileServiceTest-annotations" if="${media} contains 'multipart'">
                                 <value if="${flavor} == 'mp'">@AddExtension(CorsCdiExtension.class)</value>
@@ -237,14 +262,14 @@ Hola World!
 Note that the tests in the example `MainTest` class follow these same steps.
 ]]></value>
                             </list>
-                            <list key="Main-helidon-imports" if="${flavor} == 'nima'">
+                            <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.cors.CrossOriginConfig</value>
-                                <value>io.helidon.nima.webserver.cors.CorsSupport</value>
+                                <value>io.helidon.webserver.cors.CorsSupport</value>
                             </list>
-                            <list key="Main-java-imports" if="${flavor} == 'nima'">
+                            <list key="Main-java-imports" if="${flavor} == 'se'">
                                 <value>java.util.logging.Logger</value>
                             </list>
-                            <list key="application-yaml-entries" if="${flavor} == 'nima'">
+                            <list key="application-yaml-entries" if="${flavor} == 'se'">
                                 <value><![CDATA[
 restrictive-cors:
   allow-origins: ["http://foo.com", "http://there.com"]
@@ -258,11 +283,11 @@ restrictive-cors:
 #      allow-methods: ["PUT", "DELETE"]
 ]]></value>
                             </list>
-                            <list key="Main-routing-builder" if="${flavor} == 'nima'">
+                            <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value><![CDATA[        .register("/cors-greet", corsSupportForGreeting(config), new GreetService())
 ]]></value>
                             </list>
-                            <list key="Main-content" if="${flavor} == 'nima'">
+                            <list key="Main-content" if="${flavor} == 'se'">
                                 <value><![CDATA[
     private static CorsSupport corsSupportForGreeting(Config config) {
         Config restrictiveConfig = config.get("restrictive-cors");
@@ -287,22 +312,22 @@ restrictive-cors:
     }
 ]]></value>
                             </list>
-                            <list key="MainTest-java-imports" if="${flavor} == 'nima'">
+                            <list key="MainTest-java-imports" if="${flavor} == 'se'">
                                 <value>java.util.Optional</value>
                             </list>
-                            <list key="MainTest-helidon-imports" if="${flavor} == 'nima'">
-                                <value>io.helidon.common.http.Headers</value>
+                            <list key="MainTest-helidon-imports" if="${flavor} == 'se'">
+                                <value>io.helidon.http.Headers</value>
                                 <value>io.helidon.cors.CrossOriginConfig</value>
                             </list>
-                            <list key="MainTest-static-imports" if="${flavor} == 'nima'">
-                                <value>io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN</value>
-                                <value>io.helidon.common.http.Http.Header.HOST</value>
-                                <value>io.helidon.common.http.Http.Header.ORIGIN</value>
+                            <list key="MainTest-static-imports" if="${flavor} == 'se'">
+                                <value>io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
+                                <value>io.helidon.http.Http.HeaderNames.HOST</value>
+                                <value>io.helidon.http.Http.HeaderNames.ORIGIN</value>
                             </list>
                             <list key="MainTest-static-imports">
-                                <value if="${flavor} == 'nima'">org.hamcrest.CoreMatchers.containsString</value>
+                                <value if="${flavor} == 'se'">org.hamcrest.CoreMatchers.containsString</value>
                             </list>
-                            <list key="Abstract-tests" if="${flavor} == 'nima'">
+                            <list key="Abstract-tests" if="${flavor} == 'se'">
                                 <value><![CDATA[
     @Test
     void testAnonymousGreetWithCors() {
@@ -323,6 +348,31 @@ restrictive-cors:
             assertThat(allowOrigin.get(), is("*"));
         }
     }
+]]></value>
+                            </list>
+                            <list key="readme-sections" if="${flavor} == 'se'">
+                                <value><![CDATA[
+## Using CORS
+
+The following requests illustrate the CORS protocol with the example app.
+
+By setting `Origin` and `Host` headers that do not indicate the same system we trigger CORS processing in the
+ server:
+
+```bash
+# Follow the CORS protocol for GET
+curl -i -X GET -H "Origin: http://foo.com" -H "Host: here.com" http://localhost:8080/cors-greet
+
+HTTP/1.1 200 OK
+Access-Control-Allow-Origin: *
+Content-Type: application/json
+Date: Thu, 30 Apr 2020 17:25:51 -0500
+Vary: Origin
+connection: keep-alive
+content-length: 27
+
+Hello World
+```
 ]]></value>
                             </list>
                         </model>
