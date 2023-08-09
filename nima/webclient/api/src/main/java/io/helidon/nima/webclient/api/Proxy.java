@@ -62,8 +62,6 @@ public class Proxy {
      * No proxy instance.
      */
     private static final Proxy NO_PROXY = new Proxy(builder().type(ProxyType.NONE));
-    private static final Proxy SYSTEM_PROXY = new Proxy(builder().type(ProxyType.SYSTEM));
-
     private static final Pattern PORT_PATTERN = Pattern.compile(".*:(\\d+)");
     private static final Pattern IP_V4 = Pattern.compile("^(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)(\\."
                                                                  + "(25[0-5]|2[0-4]\\d|[0-1]?\\d?\\d)){3}$");
@@ -87,6 +85,7 @@ public class Proxy {
     private final Function<InetSocketAddress, Boolean> noProxy;
     private final Optional<String> username;
     private final Optional<char[]> password;
+    private final ProxySelector systemProxySelector;
     private final Optional<HeaderValue> proxyAuthHeader;
 
     private Proxy(Proxy.Builder builder) {
@@ -103,11 +102,13 @@ public class Proxy {
 
         if (type == ProxyType.SYSTEM) {
             this.noProxy = inetSocketAddress -> true;
+            this.systemProxySelector = ProxySelector.getDefault();
         } else {
             this.noProxy = prepareNoProxy(builder.noProxyHosts());
+            this.systemProxySelector = null;
         }
 
-        if (!username.isEmpty()) {
+        if (username.isPresent()) {
             char[] pass = password.orElse(new char[0]);
             // Making the password char[] to String looks not correct, but it is done in the same way in HttpBasicAuthProvider
             String b64 = Base64.getEncoder().encodeToString((username.get() + ":" + new String(pass))
@@ -162,7 +163,8 @@ public class Proxy {
      * @return a proxy instance configured based on this system settings
      */
     public static Proxy create() {
-        return SYSTEM_PROXY;
+        // we must create a new instance, as the system proxy may be reset
+        return builder().type(ProxyType.SYSTEM).build();
     }
 
     static Function<InetSocketAddress, Boolean> prepareNoProxy(Set<String> noProxyHosts) {
@@ -361,6 +363,7 @@ public class Proxy {
         Proxy proxy = (Proxy) o;
         return port == proxy.port
                 && type == proxy.type
+                && Objects.equals(systemProxySelector, proxy.systemProxySelector)
                 && Objects.equals(host, proxy.host)
                 && Objects.equals(noProxy, proxy.noProxy)
                 && Objects.equals(username, proxy.username)
@@ -506,7 +509,10 @@ public class Proxy {
                            SocketOptions socketOptions,
                            boolean tls) {
                 String scheme = tls ? "https" : "http";
-                List<java.net.Proxy> proxies = ProxySelector.getDefault()
+                if (proxy.systemProxySelector == null) {
+                    return NONE.connect(webClient, proxy, targetAddress, socketOptions, tls);
+                }
+                List<java.net.Proxy> proxies = proxy.systemProxySelector
                         .select(URI.create(scheme + "://" + targetAddress.getHostName() + ":" + targetAddress.getPort()));
                 if (proxies.isEmpty()) {
                     return NONE.connect(webClient, proxy, targetAddress, socketOptions, tls);
