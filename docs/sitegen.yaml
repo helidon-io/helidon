@@ -58,6 +58,12 @@ backend:
           glyph:
             type: "icon"
             value: "lightbulb"
+        - type: "PAGE"
+          title: "Get Started"
+          source: "about/prerequisites.adoc"
+          glyph:
+            type: "icon"
+            value: "rocket_launch"
         - type: "GROUPS"
           items:
           - type: "GROUP"
