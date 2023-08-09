@@ -43,6 +43,13 @@
         <module>tck-reactive-operators</module>
         <module>tck-lra</module>
         <module>tck-telemetry</module>
+        <module>tck-core-profile</module>
+        <module>tck-cdi</module>
+        <module>tck-restfull</module>
+        <module>tck-jsonb</module>
+        <module>tck-jsonp</module>
+        <module>tck-inject</module>
+        <module>tck-annotations</module>
     </modules>
 
     <properties>
@@ -51,34 +58,6 @@
          -->
         <enforcer.skip>true</enforcer.skip>
     </properties>
-
-
-
-    <dependencies>
-         <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <dependencies>
-                        <dependency>
-                            <groupId>org.apache.maven.surefire</groupId>
-                            <artifactId>surefire-testng</artifactId>
-                            <version>${version.plugin.surefire}</version>
-                        </dependency>
-                    </dependencies>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
 
     <profiles>
         <profile>

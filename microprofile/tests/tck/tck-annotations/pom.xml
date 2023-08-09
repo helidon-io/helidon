@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.helidon.microprofile.tests</groupId>
+        <artifactId>tck-project</artifactId>
+        <version>4.0.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>tck-annotations</artifactId>
+    <name>Helidon Microprofile Tests TCK Annotations</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <!-- If you use proxy you need to set it as a system properties -->
+                                <get skipexisting="true" src="https://download.eclipse.org/jakartaee/annotations/2.1/jakarta-annotations-tck-${version.lib.jakarta.annotation-api}.zip" dest="jakarta-annotations-tck-${version.lib.jakarta.annotation-api}.zip"/>
+                                <unzip src="jakarta-annotations-tck-${version.lib.jakarta.annotation-api}.zip" dest="./target"/>
+                                <exec executable="java">
+                                    <arg line="-cp ${project.build.directory}/annotations-tck/lib/sigtest.jar:${project.build.directory}/lib/jakarta.annotation-api-${version.lib.jakarta.annotation-api}.jar"/>
+                                    <arg line="com.sun.tdk.signaturetest.SignatureTest"/>
+                                    <arg line="-FileName ${project.build.directory}/annotations-tck/src/com/sun/ts/tests/signaturetest/signature-repository/jakarta.annotation.sig"/>
+                                    <arg line="-Package jakarta.annotation"/>
+                                    <arg line="-Package jakarta.annotation.security"/>
+                                    <arg line="-Package jakarta.annotation.sql"/>
+                                    <arg line="-IgnoreJDKClass java.lang.Enum"/>
+                                    <arg line="-IgnoreJDKClass java.lang.annotation.Repeatable"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
