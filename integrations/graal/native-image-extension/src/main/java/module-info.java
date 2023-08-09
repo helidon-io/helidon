@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,16 @@
  * Extension for Graal VM native image to correctly build Helidon applications.
  */
 module io.helidon.graal.nativeimage {
+    requires io.github.classgraph;
+    requires io.helidon.common.features.api;
+    requires io.helidon.common.features;
+    requires io.helidon.config.mp;
     requires io.helidon.config;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;
-    requires io.github.classgraph;
-    requires io.helidon.config.mp;
-    requires org.graalvm.sdk;
     requires jakarta.json;
-    requires io.helidon.common.features.api;
-    requires io.helidon.common.features;
+
+    requires transitive org.graalvm.sdk;
 
     exports io.helidon.integrations.graal.nativeimage.extension;
 }

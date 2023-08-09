@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@
  */
 module io.helidon.graal.nativeimage.mp {
     requires jakarta.cdi;
-    requires io.helidon.graal.nativeimage;
     requires jakarta.json;
     requires org.graalvm.sdk;
     requires weld.core.impl;
+
+    requires transitive io.helidon.graal.nativeimage;
 
     exports io.helidon.integrations.graal.mp.nativeimage.extension;
 }
