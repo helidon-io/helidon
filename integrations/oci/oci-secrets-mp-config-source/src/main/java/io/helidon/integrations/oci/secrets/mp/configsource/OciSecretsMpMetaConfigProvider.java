@@ -27,12 +27,11 @@ import io.helidon.common.Prioritized;
 import io.helidon.config.Config;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
-import com.oracle.bmc.secrets.Secrets;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
-import static io.helidon.integrations.oci.secrets.mp.configsource.AdpSuppliers.adpSupplier;
 import static io.helidon.integrations.oci.secrets.mp.configsource.SecretsSuppliers.secrets;
 import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memoizedSupplier;
 
@@ -115,18 +114,22 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
         Pattern acceptPattern =
             Pattern.compile(metaConfig.get(ACCEPT_PATTERN_KEY)
                             .asString()
-                            .or(() -> Optional.ofNullable(System.getProperty(ACCEPT_PATTERN_KEY)))
+                            .or(() -> Optional.ofNullable(System.getProperty(ACCEPT_PATTERN_KEY))) // useful for testing
                             .orElseThrow());
         String vaultId = metaConfig.get(VAULT_OCID_KEY)
             .asString()
-            .orElse(System.getProperty(VAULT_OCID_KEY));
-        Config ociYaml = Config.just(classpath("oci.yaml").optional(), file(Paths.get("oci.yaml")).optional());
-        Supplier<? extends Secrets> secretsSupplier =
-            memoizedSupplier(secrets(adpSupplier(s -> ociYaml.get(s).asString().asOptional())));
+            .orElse(System.getProperty(VAULT_OCID_KEY)); // useful for testing
         return
             List.of(new SecretBundleByNameConfigSource(acceptPattern,
                                                        vaultId,
-                                                       secretsSupplier));
+                                                       memoizedSupplier(secrets(adpSupplier()))));
+    }
+
+    private Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier() {
+        // Provisional? until the "real" mechanism is approved/decided on.
+        // The approach below is behaviorally identical to that of io.helidon.integrations.oci.cdi.OciExtension.
+        Config ociYaml = Config.just(classpath("oci.yaml").optional(), file(Paths.get("oci.yaml")).optional());
+        return memoizedSupplier(AdpSuppliers.adpSupplier(s -> ociYaml.get(s).asString().asOptional()));
     }
 
     /**

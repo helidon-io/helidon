@@ -33,16 +33,26 @@ final class UsageTest {
     }
 
     @Test
-    final void testSpike() {
+    final void testUsage() {
         Config c = ConfigProvider.getConfig();
 
         // Make sure non-existent, and therefore non-secret, properties are rejected idiomatically.
         assertNull(c.getOptionalValue("bogus", String.class).orElse(null));
-        
+
         // Make sure non-secret properties are handled by, e.g., System properties etc.
         assertEquals(System.getProperty("java.home"), c.getValue("java.home", String.class));
 
-        // Do the rest of this test only if the following assumptions hold.
+        // Do the rest of this test only if the following assumptions hold. To avoid skipping the rest of this test:
+        //
+        // 1. Set up a ${HOME}/.oci/config file following
+        //    https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm or similar
+        //
+        // 2. Run Maven with all of the following properties:
+        //
+        //    -Dvault-ocid=ocid1.vault.oci1.iad.123xyz (a valid OCI Vault OCID)
+        //    -DFrancqueSecret.expectedValue='Some Value' (some value for a secret named FrancqueSecret in that vault)
+        //    -Daccept-pattern='^FrancqueSecret$' (or similar; the pattern must fully match)
+        //
         String vaultId = System.getProperty("vault-ocid");
         assumeTrue(vaultId != null && !vaultId.isBlank());
         String expectedValue = System.getProperty("FrancqueSecret.expectedValue");
