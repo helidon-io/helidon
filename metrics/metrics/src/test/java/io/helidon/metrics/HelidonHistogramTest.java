@@ -82,24 +82,26 @@ class HelidonHistogramTest {
             850, 870, 870, 880, 880, 880, 890, 890, 890, 890, 900, 910, 920, 920, 920, 930, 940, 950, 950, 950, 960,
             960, 960, 960, 970, 970, 970, 970, 980, 980, 980, 990, 990};
 
-    private static final String EXPECTED_PROMETHEUS_OUTPUT = "# TYPE application_file_sizes_mean_bytes gauge\n"
-            + "application_file_sizes_mean_bytes 50634.99999999998\n"
-            + "# TYPE application_file_sizes_max_bytes gauge\n"
-            + "application_file_sizes_max_bytes 99000\n"
-            + "# TYPE application_file_sizes_min_bytes gauge\n"
-            + "application_file_sizes_min_bytes 0\n"
-            + "# TYPE application_file_sizes_stddev_bytes gauge\n"
-            + "application_file_sizes_stddev_bytes 29438.949964290514\n"
-            + "# TYPE application_file_sizes_bytes summary\n"
-            + "# HELP application_file_sizes_bytes Users file size\n"
-            + "application_file_sizes_bytes_count 200\n"
-            + "application_file_sizes_bytes_sum 10127\n"
-            + "application_file_sizes_bytes{quantile=\"0.5\"} 48000\n"
-            + "application_file_sizes_bytes{quantile=\"0.75\"} 75000\n"
-            + "application_file_sizes_bytes{quantile=\"0.95\"} 96000\n"
-            + "application_file_sizes_bytes{quantile=\"0.98\"} 98000\n"
-            + "application_file_sizes_bytes{quantile=\"0.99\"} 98000\n"
-            + "application_file_sizes_bytes{quantile=\"0.999\"} 99000\n";
+    private static final String EXPECTED_PROMETHEUS_OUTPUT = """
+            # TYPE application_file_sizes_mean_bytes gauge
+            application_file_sizes_mean_bytes 50634.99999999998
+            # TYPE application_file_sizes_max_bytes gauge
+            application_file_sizes_max_bytes 99000
+            # TYPE application_file_sizes_min_bytes gauge
+            application_file_sizes_min_bytes 0
+            # TYPE application_file_sizes_stddev_bytes gauge
+            application_file_sizes_stddev_bytes 29438.949964290514
+            # TYPE application_file_sizes_bytes summary
+            # HELP application_file_sizes_bytes Users file size
+            application_file_sizes_bytes_count 200
+            application_file_sizes_bytes_sum 10127
+            application_file_sizes_bytes{quantile="0.5"} 48000
+            application_file_sizes_bytes{quantile="0.75"} 75000
+            application_file_sizes_bytes{quantile="0.95"} 96000
+            application_file_sizes_bytes{quantile="0.98"} 98000
+            application_file_sizes_bytes{quantile="0.99"} 98000
+            application_file_sizes_bytes{quantile="0.999"} 99000
+            """;
 
     private static final Tag[] HISTO_INT_TAGS = new Tag[] {
             new Tag("tag1", "val1"),

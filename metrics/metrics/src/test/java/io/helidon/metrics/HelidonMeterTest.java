@@ -42,11 +42,12 @@ import static org.hamcrest.Matchers.notNullValue;
  * Unit test for {@link HelidonMeter}.
  */
 class HelidonMeterTest {
-    private static final String EXPECTED_PROMETHEUS_START = "# TYPE application_requests_total counter\n"
-            + "# HELP application_requests_total Tracks the number of requests to the server\n"
-            + "application_requests_total 1000\n"
-            + "# TYPE application_requests_rate_per_second gauge\n"
-            + "application_requests_rate_per_second ";
+    private static final String EXPECTED_PROMETHEUS_START = """
+            # TYPE application_requests_total counter
+            # HELP application_requests_total Tracks the number of requests to the server
+            application_requests_total 1000
+            # TYPE application_requests_rate_per_second gauge
+            application_requests_rate_per_second\s""";
     private static HelidonMeter meter;
     private static MetricID meterID;
 

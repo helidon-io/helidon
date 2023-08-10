@@ -302,9 +302,14 @@ class SchemaFieldDefinitionTest {
         schemaFieldDefinition.addArgument(schemaArgument1);
         schemaFieldDefinition.addArgument(schemaArgument2);
         assertThat(schemaFieldDefinition.getSchemaAsString(),
-                   is("\"Description of field definition\"\nperson(\n\"Optional filter\"\nfilter: String, \n\"Mandatory "
-                              + "age\"\nage: "
-                              + "Int!\n): Person!"));
+                   is("""
+                           "Description of field definition"
+                           person(
+                           "Optional filter"
+                           filter: String,\s
+                           "Mandatory age"
+                           age: Int!
+                           ): Person!"""));
     }
 
     @Test
