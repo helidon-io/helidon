@@ -29,8 +29,8 @@ import java.util.OptionalLong;
 import java.util.Random;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -52,10 +52,10 @@ class GetTest {
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
     private static final String RESPONSE_HEADER_NAME_STRING = "X-REsponSE-HeADER";
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderName REQUEST_HEADER_NAME = Header.create(REQUEST_HEADER_NAME_STRING);
-    private static final HeaderName RESPONSE_HEADER_NAME = Header.create(RESPONSE_HEADER_NAME_STRING);
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.createCached(RESPONSE_HEADER_NAME,
-                                                                                 RESPONSE_HEADER_VALUE_STRING);
+    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create(REQUEST_HEADER_NAME_STRING);
+    private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create(RESPONSE_HEADER_NAME_STRING);
+    private static final HeaderValue RESPONSE_HEADER_VALUE = HeaderNames.createCached(RESPONSE_HEADER_NAME,
+                                                                                      RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -94,7 +94,7 @@ class GetTest {
         assertThat(response.body(), is("Hello"));
 
         java.net.http.HttpHeaders headers = response.headers();
-        assertThat(headers.firstValueAsLong(Header.CONTENT_LENGTH.defaultCase()),
+        assertThat(headers.firstValueAsLong(HeaderNames.CONTENT_LENGTH.defaultCase()),
                    is(OptionalLong.of(5)));
     }
 
@@ -109,7 +109,7 @@ class GetTest {
         assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
         assertThat(response.body(), is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
-        assertThat(headers.firstValueAsLong(Header.CONTENT_LENGTH.defaultCase()),
+        assertThat(headers.firstValueAsLong(HeaderNames.CONTENT_LENGTH.defaultCase()),
                    is(OptionalLong.of(BYTES.length)));
     }
 
@@ -125,7 +125,7 @@ class GetTest {
         assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
         assertThat(response.body(), is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
-        assertThat(headers.firstValueAsLong(Header.CONTENT_LENGTH.defaultCase()),
+        assertThat(headers.firstValueAsLong(HeaderNames.CONTENT_LENGTH.defaultCase()),
                    is(OptionalLong.of(BYTES.length)));
     }
 
@@ -143,7 +143,7 @@ class GetTest {
         assertThat(response.body(), is("Hello"));
 
         java.net.http.HttpHeaders headers = response.headers();
-        assertThat(headers.firstValueAsLong(Header.CONTENT_LENGTH.defaultCase()),
+        assertThat(headers.firstValueAsLong(Http.HeaderNames.CONTENT_LENGTH.defaultCase()),
                    is(OptionalLong.of(5)));
         assertThat("Should contain echoed request header",
                    headers.firstValue(REQUEST_HEADER_NAME_STRING), is(Optional.of(REQUEST_HEADER_VALUE_STRING)));

@@ -49,9 +49,9 @@ class NonJaxRsResource {
 
     private static final System.Logger LOGGER = System.getLogger(NonJaxRsResource.class.getName());
     private static final String LRA_PARTICIPANT = "lra-participant";
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_ENDED_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_PARENT_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_ENDED_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_PARENT_CONTEXT_HEADER);
     private static final Map<ParticipantStatus, Supplier<Response>> PARTICIPANT_RESPONSE_BUILDERS =
             Map.of(
                     ParticipantStatus.Compensating, () -> LRAResponse.compensating(ParticipantStatus.Compensating),
@@ -182,7 +182,7 @@ class NonJaxRsResource {
     private void sendResponse(ServerResponse res, Response response) {
         res.status(Http.Status.create(response.getStatus()));
         response.getHeaders()
-                .forEach((k, values) -> res.header(Http.Header.create(k),
+                .forEach((k, values) -> res.header(Http.HeaderNames.create(k),
                                                    values.stream()
                                                            .map(String::valueOf)
                                                            .toArray(String[]::new)));

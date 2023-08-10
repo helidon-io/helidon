@@ -17,7 +17,6 @@
 package io.helidon.nima.tests.integration.server;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServer;
@@ -150,7 +149,7 @@ class MultiPortTest {
                     listener.routing(routing -> routing
                                               .any((req, res) -> {
                                                   res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                                          .header(Header.LOCATION,
+                                                          .header(Http.HeaderNames.LOCATION,
                                                                   String.format("http://%s:%s%s",
                                                                                 host(req.authority()),
                                                                                 server.port(),
@@ -167,7 +166,7 @@ class MultiPortTest {
                 .request()) {
             assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(),
-                       hasHeader(Header.create(Header.LOCATION, "http://localhost:" + server.port() + "/foo")));
+                       hasHeader(Http.HeaderNames.create(Http.HeaderNames.LOCATION, "http://localhost:" + server.port() + "/foo")));
         }
     }
 

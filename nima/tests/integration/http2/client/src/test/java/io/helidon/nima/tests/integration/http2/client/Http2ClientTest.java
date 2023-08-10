@@ -18,7 +18,7 @@ package io.helidon.nima.tests.integration.http2.client;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.pki.Keys;
 import io.helidon.nima.common.tls.Tls;
@@ -44,7 +44,7 @@ class Http2ClientTest {
     private static final String MESSAGE = "Hello World!";
     private static final String TEST_HEADER_NAME = "custom_header";
     private static final String TEST_HEADER_VALUE = "as!fd";
-    private static final HeaderValue TEST_HEADER = Header.create(Header.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
+    private static final HeaderValue TEST_HEADER = HeaderNames.create(HeaderNames.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
     private final Http1Client http1Client;
     private final Http2Client tlsClient;
     private final Http2Client plainClient;

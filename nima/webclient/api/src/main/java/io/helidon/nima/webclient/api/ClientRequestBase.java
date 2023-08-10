@@ -53,8 +53,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Helidon user agent request header.
      */
-    public static final Http.HeaderValue USER_AGENT_HEADER = Http.Header.create(Http.Header.USER_AGENT,
-                                                                                "Helidon " + Version.VERSION);
+    public static final Http.HeaderValue USER_AGENT_HEADER = Http.HeaderNames.create(Http.HeaderNames.USER_AGENT,
+                                                                                     "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
 
     private final Map<String, String> pathParams = new HashMap<>();

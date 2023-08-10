@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
@@ -62,7 +62,7 @@ class FormParamsSupportTest {
     void urlEncodedTest() {
         String result = client.method(Http.Method.PUT)
                 .path("/params")
-                .header(Header.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
+                .header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
                 .submit("key1=val+1&key2=val2_1&key2=val2_2")
                 .as(String.class);
 

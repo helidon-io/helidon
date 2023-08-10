@@ -17,8 +17,8 @@
 package io.helidon.nima.tests.integration.server;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -48,7 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class ConfiguredLimitsTest {
-    private static final HeaderName CUSTOM_HEADER = Header.create("X_HEADER");
+    private static final HeaderName CUSTOM_HEADER = HeaderNames.create("X_HEADER");
 
     private final Http1Client client;
 
@@ -129,7 +129,7 @@ class ConfiguredLimitsTest {
         String headerValue = "m".repeat(size);
 
         try (Http1ClientResponse response = client.get("any")
-                .header(Header.create(CUSTOM_HEADER, headerValue))
+                .header(Http.HeaderNames.create(CUSTOM_HEADER, headerValue))
                 .request()) {
             if (success) {
                 assertThat("Header of size " + size + " should have passed",

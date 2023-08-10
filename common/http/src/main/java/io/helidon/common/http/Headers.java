@@ -58,7 +58,7 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      */
     @Deprecated(forRemoval = true)
     default List<String> all(String headerName) {
-        return all(Http.Header.create(headerName), List::of);
+        return all(Http.HeaderNames.create(headerName), List::of);
     }
 
     /**
@@ -164,11 +164,11 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * Content length if defined.
      *
      * @return content length or empty if not defined
-     * @see io.helidon.common.http.Http.Header#CONTENT_LENGTH
+     * @see io.helidon.common.http.Http.HeaderNames#CONTENT_LENGTH
      */
     default OptionalLong contentLength() {
-        if (contains(HeaderEnum.CONTENT_LENGTH)) {
-            return OptionalLong.of(get(HeaderEnum.CONTENT_LENGTH).value(long.class));
+        if (contains(HeaderNameEnum.CONTENT_LENGTH)) {
+            return OptionalLong.of(get(HeaderNameEnum.CONTENT_LENGTH).value(long.class));
         }
         return OptionalLong.empty();
     }
@@ -177,11 +177,11 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * Content type (if defined).
      *
      * @return content type, empty if content type is not present
-     * @see io.helidon.common.http.Http.Header#CONTENT_TYPE
+     * @see io.helidon.common.http.Http.HeaderNames#CONTENT_TYPE
      */
     default Optional<HttpMediaType> contentType() {
-        if (contains(HeaderEnum.CONTENT_TYPE)) {
-            return Optional.of(HttpMediaType.create(get(HeaderEnum.CONTENT_TYPE)
+        if (contains(HeaderNameEnum.CONTENT_TYPE)) {
+            return Optional.of(HttpMediaType.create(get(HeaderNameEnum.CONTENT_TYPE)
                                                             .value()));
         }
         return Optional.empty();
@@ -195,7 +195,7 @@ public interface Headers extends Iterable<Http.HeaderValue> {
     int size();
 
     /**
-     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.Header#ACCEPT} header) content discoveryTypes in
+     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.HeaderNames#ACCEPT} header) content discoveryTypes in
      * quality factor order. Never {@code null}.
      * Returns an empty list by default.
      *

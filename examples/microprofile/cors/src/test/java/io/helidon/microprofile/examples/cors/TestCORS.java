@@ -21,11 +21,10 @@ import java.util.Optional;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
-import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
@@ -118,15 +117,15 @@ public class TestCORS {
     @Test
     void testAnonymousGreetWithCors() {
         Http1ClientRequest req = client.get()
-                .header(Header.ORIGIN, "http://foo.com")
-                .header(Header.HOST, "here.com");
+                .header(HeaderNames.ORIGIN, "http://foo.com")
+                .header(HeaderNames.HOST, "here.com");
 
         Http1ClientResponse r = getResponse("/greet", req);
         assertThat("HTTP response", r.status().code(), is(200));
         String payload = fromPayload(r);
         assertThat("HTTP response payload", payload, is("Hola World!"));
         Headers responseHeaders = r.headers();
-        Optional<String> allowOrigin = responseHeaders.value(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Optional<String> allowOrigin = responseHeaders.value(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN + " is present",
                 allowOrigin.isPresent(), is(true));
         assertThat("CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigin.get(), is("*"));
@@ -139,9 +138,9 @@ public class TestCORS {
         // Send the pre-flight request and check the response.
 
         Http1ClientRequest req = client.method(Http.Method.OPTIONS)
-                .header(Header.ORIGIN, "http://foo.com")
-                .header(Header.HOST, "here.com")
-                .header(Header.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
+                .header(HeaderNames.ORIGIN, "http://foo.com")
+                .header(Http.HeaderNames.HOST, "here.com")
+                .header(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");
 
         List<String> allowOrigins;
         Headers responseHeaders;
@@ -151,11 +150,11 @@ public class TestCORS {
             preflightResponseHeaders = res.headers();
         }
 
-        List<String> allowMethods = preflightResponseHeaders.values(Header.ACCESS_CONTROL_ALLOW_METHODS);
+        List<String> allowMethods = preflightResponseHeaders.values(HeaderNames.ACCESS_CONTROL_ALLOW_METHODS);
         assertThat("pre-flight response check for " + ACCESS_CONTROL_ALLOW_METHODS, allowMethods, is(not(empty())));
         assertThat("Header " + ACCESS_CONTROL_ALLOW_METHODS, allowMethods, contains("PUT"));
 
-        allowOrigins = preflightResponseHeaders.values(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
+        allowOrigins = preflightResponseHeaders.values(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN);
 
         assertThat("pre-flight response check for " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, is(not(empty())));
         assertThat("Header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
@@ -163,8 +162,8 @@ public class TestCORS {
         // Send the follow-up request.
 
         req = client.put()
-                .header(Header.ORIGIN, "http://foo.com")
-                .header(Header.HOST, "here.com");
+                .header(HeaderNames.ORIGIN, "http://foo.com")
+                .header(HeaderNames.HOST, "here.com");
         preflightResponseHeaders.forEach(req.headers()::add);
 
         try (Http1ClientResponse res = putResponse("/greet/greeting", "Cheers", req)) {
@@ -172,7 +171,7 @@ public class TestCORS {
             responseHeaders = res.headers();
         }
 
-        allowOrigins = responseHeaders.values(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
+        allowOrigins = responseHeaders.values(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, is(not(empty())));
         assertThat("Header " + ACCESS_CONTROL_ALLOW_ORIGIN, allowOrigins, contains("http://foo.com"));
     }
@@ -181,14 +180,14 @@ public class TestCORS {
     @Test
     void testNamedGreetWithCors() {
         Http1ClientRequest req = client.get()
-                .header(Header.ORIGIN, "http://foo.com")
-                .header(Header.HOST, "here.com");
+                .header(HeaderNames.ORIGIN, "http://foo.com")
+                .header(HeaderNames.HOST, "here.com");
 
         Http1ClientResponse r = getResponse("/greet/Maria", req);
         assertThat("HTTP response", r.status().code(), is(200));
         assertThat(fromPayload(r), containsString("Cheers Maria"));
         Headers responseHeaders = r.headers();
-        Optional<String> allowOrigin = responseHeaders.value(Header.ACCESS_CONTROL_ALLOW_ORIGIN);
+        Optional<String> allowOrigin = responseHeaders.value(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN);
         assertThat("Expected CORS header " + ACCESS_CONTROL_ALLOW_ORIGIN + " presence check", allowOrigin.isPresent(), is(true));
         assertThat(allowOrigin.get(), is("*"));
     }
@@ -197,8 +196,8 @@ public class TestCORS {
     @Test
     void testGreetingChangeWithCorsAndOtherOrigin() {
         Http1ClientRequest req = client.put()
-                .header(Header.ORIGIN, "http://foo.com")
-                .header(Header.HOST, "here.com");
+                .header(HeaderNames.ORIGIN, "http://foo.com")
+                .header(HeaderNames.HOST, "here.com");
 
         try (Http1ClientResponse r = putResponse("/greet/greeting", "Ahoy", req)) {
             // Result depends on whether we are using overrides or not.

@@ -139,8 +139,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.headers(ctx, headers);
 
                 if (canUpgrade) {
-                    if (headers.contains(Http.Header.UPGRADE)) {
-                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.Header.UPGRADE).value());
+                    if (headers.contains(Http.HeaderNames.UPGRADE)) {
+                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.HeaderNames.UPGRADE).value());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
                             // upgrader may decide not to upgrade this connection
@@ -285,9 +285,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
-        } else if (headers.contains(Http.Header.CONTENT_LENGTH)) {
+        } else if (headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
             try {
-                this.currentEntitySize = headers.get(Http.Header.CONTENT_LENGTH).value(long.class);
+                this.currentEntitySize = headers.get(Http.HeaderNames.CONTENT_LENGTH).value(long.class);
                 if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                     throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
@@ -339,8 +339,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         ContentDecoder decoder;
         if (contentEncodingContext.contentDecodingEnabled()) {
             // there may be some decoder used
-            if (headers.contains(Http.Header.CONTENT_ENCODING)) {
-                String contentEncoding = headers.get(Http.Header.CONTENT_ENCODING).value();
+            if (headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
+                String contentEncoding = headers.get(Http.HeaderNames.CONTENT_ENCODING).value();
                 if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                     decoder = contentEncodingContext.decoder(contentEncoding);
                 } else {
@@ -355,7 +355,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             }
         } else {
             // Check whether Content-Encoding header is present when headers validation is enabled
-            if (http1Config.validateHeaders() && headers.contains(Http.Header.CONTENT_ENCODING)) {
+            if (http1Config.validateHeaders() && headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
                         .request(DirectTransportRequest.create(prologue, headers))
@@ -434,7 +434,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             headers.set(HeaderValues.CONNECTION_CLOSE);
         }
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, String.valueOf(message.length)));
+        headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 
         Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
         if (message.length != 0) {

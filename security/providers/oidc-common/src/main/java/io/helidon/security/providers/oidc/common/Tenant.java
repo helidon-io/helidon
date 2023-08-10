@@ -126,7 +126,7 @@ public final class Tenant {
             //This is workaround for missing Níma client security. This adds Authorization header to be used in every request.
             byte[] byteArray = (tenantConfig.clientId() + ":" + tenantConfig.clientSecret()).getBytes(StandardCharsets.UTF_8);
             String base64 = Base64.getEncoder().encodeToString(byteArray);
-            webClientBuilder.addHeader(Http.Header.AUTHORIZATION, "Basic " + base64);
+            webClientBuilder.addHeader(Http.HeaderNames.AUTHORIZATION, "Basic " + base64);
         }
 
         WebClient appWebClient = webClientBuilder.build();

@@ -18,17 +18,22 @@ package io.helidon.common.http;
 
 import java.util.Objects;
 
-record HeaderImpl(String lowerCase, String defaultCase) implements Http.HeaderName {
+record HeaderNameImpl(String lowerCase, String defaultCase) implements Http.HeaderName {
 
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
         }
+        /*
+        A Http.HeaderName can only be HeaderNameImpl, or HeaderNameEnum.
+        If you attempt to create a new name that is already an enum, you should get that enum, so we only have to
+        care about HeaderNameImpl here
+         */
         if (obj == null || obj.getClass() != this.getClass()) {
             return false;
         }
-        var that = (HeaderImpl) obj;
+        var that = (HeaderNameImpl) obj;
         return this.lowerCase.equals(that.lowerCase);
     }
 

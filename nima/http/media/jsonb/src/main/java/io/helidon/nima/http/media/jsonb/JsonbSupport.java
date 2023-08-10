@@ -151,7 +151,7 @@ public class JsonbSupport implements MediaSupport {
         if (type.equals(JSON_OBJECT_TYPE)) {
             return WriterResponse.unsupported();
         }
-        if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
+        if (requestHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }

@@ -33,7 +33,7 @@ import java.util.function.Function;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.NotFoundException;
@@ -78,10 +78,10 @@ abstract class StaticContentHandler implements StaticContentService {
         }
         etag = unquoteETag(etag);
         // Put ETag into the response
-        responseHeaders.set(Header.ETAG, '"' + etag + '"');
+        responseHeaders.set(HeaderNames.ETAG, '"' + etag + '"');
         // Process If-None-Match header
-        if (requestHeaders.contains(Header.IF_NONE_MATCH)) {
-            List<String> ifNoneMatches = requestHeaders.get(Header.IF_NONE_MATCH).allValues();
+        if (requestHeaders.contains(Http.HeaderNames.IF_NONE_MATCH)) {
+            List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
@@ -91,9 +91,9 @@ abstract class StaticContentHandler implements StaticContentService {
             }
         }
 
-        if (requestHeaders.contains(Header.IF_MATCH)) {
+        if (requestHeaders.contains(Http.HeaderNames.IF_MATCH)) {
             // Process If-Match header
-            List<String> ifMatches = requestHeaders.get(Header.IF_MATCH).allValues();
+            List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
             if (!ifMatches.isEmpty()) {
                 boolean ifMatchChecked = false;
                 for (String ifMatch : ifMatches) {
@@ -312,7 +312,7 @@ abstract class StaticContentHandler implements StaticContentService {
 
     void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Optional<Instant> lastModified) {
         int contentLength = bytes.length;
-        Http.HeaderValue contentLengthHeader = Http.Header.create(Http.Header.CONTENT_LENGTH, contentLength);
+        Http.HeaderValue contentLengthHeader = HeaderNames.create(HeaderNames.CONTENT_LENGTH, contentLength);
 
         CachedHandlerInMemory inMemoryResource;
         if (lastModified.isEmpty()) {
@@ -324,7 +324,7 @@ abstract class StaticContentHandler implements StaticContentService {
                                                          contentLengthHeader);
         } else {
             // we can cache this, as this is a jar record
-            Http.HeaderValue lastModifiedHeader = Http.Header.create(Http.Header.LAST_MODIFIED,
+            Http.HeaderValue lastModifiedHeader = HeaderNames.create(HeaderNames.LAST_MODIFIED,
                                                                      true,
                                                                      false,
                                                                      formatLastModified(lastModified.get()));

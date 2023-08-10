@@ -63,8 +63,8 @@ import jakarta.json.JsonBuilderFactory;
 public class Main {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final Http.HeaderName BAR_HEADER = Http.Header.create("bar");
-    private static final Http.HeaderName FOO_HEADER = Http.Header.create("foo");
+    private static final Http.HeaderName BAR_HEADER = Http.HeaderNames.create("bar");
+    private static final Http.HeaderName FOO_HEADER = Http.HeaderNames.create("foo");
 
     // ---------------- EXAMPLES
 

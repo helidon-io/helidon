@@ -61,7 +61,7 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
 
 import jakarta.json.JsonObject;
 
-import static io.helidon.common.http.Http.Header.HOST;
+import static io.helidon.common.http.Http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -320,7 +320,7 @@ public final class OidcFeature implements HttpFeature {
             headers.addCookie(tenantCookieHandler.removeCookie().build());
 
             res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.Header.LOCATION, sb.toString())
+                    .header(Http.HeaderNames.LOCATION, sb.toString())
                     .send();
         } catch (Exception e) {
             sendError(res, e);
@@ -461,7 +461,7 @@ public final class OidcFeature implements HttpFeature {
         }
 
         state = increaseRedirectCounter(state);
-        res.headers().add(Http.Header.LOCATION, state);
+        res.headers().add(Http.HeaderNames.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
             try {

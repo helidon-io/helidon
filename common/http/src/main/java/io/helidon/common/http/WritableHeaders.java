@@ -72,7 +72,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B add(HeaderName header, String... value) {
-        return add(Http.Header.create(header, value));
+        return add(Http.HeaderNames.create(header, value));
     }
 
     /**
@@ -100,7 +100,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentType(MediaType contentType) {
-        return set(Http.Header.create(HeaderEnum.CONTENT_TYPE, contentType.text()));
+        return set(Http.HeaderNames.create(HeaderNameEnum.CONTENT_TYPE, contentType.text()));
     }
 
     /**
@@ -110,7 +110,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentType(HttpMediaType contentType) {
-        return set(Http.Header.create(HeaderEnum.CONTENT_TYPE, contentType.text()));
+        return set(Http.HeaderNames.create(HeaderNameEnum.CONTENT_TYPE, contentType.text()));
     }
 
     /**
@@ -132,7 +132,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B set(HeaderName name, String... values) {
-        return set(Http.Header.create(name, true, false, values));
+        return set(Http.HeaderNames.create(name, true, false, values));
     }
 
     /**
@@ -146,7 +146,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B set(HeaderName name, List<String> values) {
-        return set(Http.Header.create(name, values));
+        return set(Http.HeaderNames.create(name, values));
     }
 
     /**
@@ -159,10 +159,10 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentLength(long length) {
-        return set(Http.Header.create(HeaderEnum.CONTENT_LENGTH,
-                                      true,
-                                      false,
-                                      String.valueOf(length)));
+        return set(Http.HeaderNames.create(HeaderNameEnum.CONTENT_LENGTH,
+                                           true,
+                                           false,
+                                           String.valueOf(length)));
     }
 
     /**

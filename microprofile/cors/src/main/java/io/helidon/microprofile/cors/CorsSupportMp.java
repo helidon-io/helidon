@@ -110,7 +110,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         @Override
         public String authority() {
             // TODO Níma we want authority - we should set it in integration with Nima as request property
-            return firstHeader(Http.Header.HOST).orElse("localhost");
+            return firstHeader(Http.HeaderNames.HOST).orElse("localhost");
         }
 
         @Override

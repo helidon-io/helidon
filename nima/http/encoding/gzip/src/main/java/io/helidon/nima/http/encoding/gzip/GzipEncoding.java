@@ -30,16 +30,16 @@ import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncoder;
 import io.helidon.nima.http.encoding.ContentEncoding;
 
-import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
+import static io.helidon.common.http.Http.HeaderNames.CONTENT_LENGTH;
 
 /**
  * Support for gzip content encoding.
  */
 public class GzipEncoding implements ContentEncoding {
-    private static final HeaderValue CONTENT_ENCODING_GZIP = Http.Header.createCached(Http.Header.CONTENT_ENCODING,
-                                                                                      false,
-                                                                                      false,
-                                                                                      "gzip");
+    private static final HeaderValue CONTENT_ENCODING_GZIP = Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_ENCODING,
+                                                                                           false,
+                                                                                           false,
+                                                                                           "gzip");
 
     private final String name;
 

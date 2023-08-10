@@ -33,7 +33,7 @@ import io.helidon.common.http.Http.HeaderValueWriteable;
 
 @SuppressWarnings("unchecked")
 class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
-    static final int KNOWN_HEADER_SIZE = HeaderEnum.values().length;
+    static final int KNOWN_HEADER_SIZE = HeaderNameEnum.values().length;
     /*
      Optimization for most commonly used header names
      */
@@ -94,8 +94,8 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public List<HttpMediaType> acceptedTypes() {
-        if (contains(Http.Header.ACCEPT)) {
-            List<String> accepts = get(Http.Header.ACCEPT).allValues(true);
+        if (contains(Http.HeaderNames.ACCEPT)) {
+            List<String> accepts = get(Http.HeaderNames.ACCEPT).allValues(true);
 
             List<HttpMediaType> mediaTypes = new ArrayList<>(accepts.size());
             for (String accept : accepts) {
@@ -220,8 +220,8 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     public HeaderValue doRemove(HeaderName name) {
-        if (name instanceof HeaderEnum) {
-            int index = ((HeaderEnum) name).ordinal();
+        if (name instanceof HeaderNameEnum) {
+            int index = ((HeaderNameEnum) name).ordinal();
             HeaderValue value = knownHeaders[index];
             knownHeaders[index] = null;
             knownHeaderIndices.remove(index);

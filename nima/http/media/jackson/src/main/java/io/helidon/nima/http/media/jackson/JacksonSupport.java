@@ -179,7 +179,7 @@ public class JacksonSupport implements MediaSupport {
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
+        if (requestHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 if (objectMapper.canSerialize(type.rawType())) {
                     return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);

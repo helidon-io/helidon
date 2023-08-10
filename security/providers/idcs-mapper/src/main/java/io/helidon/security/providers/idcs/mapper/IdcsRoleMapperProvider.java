@@ -196,7 +196,7 @@ public class IdcsRoleMapperProvider extends IdcsRoleMapperProviderBase implement
                 .post()
                 .uri(asserterUri)
                 .headers(it -> {
-                    it.add(Http.Header.AUTHORIZATION, "Bearer " + appToken);
+                    it.add(Http.HeaderNames.AUTHORIZATION, "Bearer " + appToken);
                 });
 
         return processRoleRequest(request, requestBuilder.build(), subjectName);

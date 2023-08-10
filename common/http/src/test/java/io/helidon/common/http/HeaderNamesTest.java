@@ -25,6 +25,8 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +34,7 @@ import static org.hamcrest.collection.IsEmptyCollection.emptyCollectionOf;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class HeaderNamesTest {
-    private static final Class<Http.Header> clazz = Http.Header.class;
+    private static final Class<Http.HeaderNames> clazz = Http.HeaderNames.class;
     private static final Set<String> constants = Stream.of(clazz.getDeclaredFields())
             .filter(it -> Modifier.isStatic(it.getModifiers()))
             .filter(it -> Modifier.isFinal(it.getModifiers()))
@@ -42,11 +44,11 @@ class HeaderNamesTest {
 
     @Test
     void testAllEnumValuesHaveConstants() {
-        HeaderEnum[] expectedNames = HeaderEnum.values();
+        HeaderNameEnum[] expectedNames = HeaderNameEnum.values();
 
         Set<String> missing = new LinkedHashSet<>();
 
-        for (HeaderEnum expectedName : expectedNames) {
+        for (HeaderNameEnum expectedName : expectedNames) {
             String name = expectedName.name();
             if (!constants.contains(name)) {
                 missing.add(name);
@@ -76,5 +78,45 @@ class HeaderNamesTest {
             );
 
         }
+    }
+
+    @Test
+    void testEqualsAndHashCodeKnownHeader() {
+        Http.HeaderName customAccept = Http.HeaderNames.create("ACCEPT");
+
+        assertThat(customAccept, equalTo(Http.HeaderNames.ACCEPT));
+        assertThat(Http.HeaderNames.ACCEPT, equalTo(customAccept));
+        assertThat(customAccept.hashCode(), is(Http.HeaderNames.ACCEPT.hashCode()));
+
+
+        customAccept = Http.HeaderNames.createName("accept", "ACCEPT");
+
+        assertThat(customAccept, equalTo(Http.HeaderNames.ACCEPT));
+        assertThat(Http.HeaderNames.ACCEPT, equalTo(customAccept));
+        assertThat(customAccept.hashCode(), is(Http.HeaderNames.ACCEPT.hashCode()));
+    }
+
+    @Test
+    void testEqualsAndHashCodeCustomHeader() {
+        Http.HeaderName custom1 = Http.HeaderNames.create("My-Custom-Header");
+        Http.HeaderName custom2 = Http.HeaderNames.create("my-custom-header");
+
+
+        assertThat(custom1, equalTo(custom2));
+        assertThat(custom2, equalTo(custom1));
+        assertThat(custom1.hashCode(), is(custom2.hashCode()));
+
+
+        custom1 = Http.HeaderNames.createName("my-custom-header", "My-Custom-Header");
+        custom2 = Http.HeaderNames.createName("my-custom-header", "my-custom-header");
+
+        assertThat(custom1, equalTo(custom2));
+        assertThat(custom2, equalTo(custom1));
+        assertThat(custom1.hashCode(), is(custom2.hashCode()));
+
+        assertThat(custom1.lowerCase(), is("my-custom-header"));
+        assertThat(custom1.defaultCase(), is("My-Custom-Header"));
+        assertThat(custom2.lowerCase(), is("my-custom-header"));
+        assertThat(custom2.defaultCase(), is("my-custom-header"));
     }
 }

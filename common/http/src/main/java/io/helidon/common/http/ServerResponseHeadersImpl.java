@@ -35,7 +35,7 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
 
     @Override
     public ServerResponseHeaders addCookie(SetCookie cookie) {
-        add(Http.Header.create(Http.Header.SET_COOKIE, cookie.toString()));
+        add(Http.HeaderNames.create(Http.HeaderNames.SET_COOKIE, cookie.toString()));
         return this;
     }
 
@@ -46,8 +46,8 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                 .expires(START_OF_YEAR_1970.get())
                 .build();
 
-        if (contains(Http.Header.SET_COOKIE)) {
-            remove(Http.Header.SET_COOKIE, it -> {
+        if (contains(Http.HeaderNames.SET_COOKIE)) {
+            remove(Http.HeaderNames.SET_COOKIE, it -> {
                 List<String> currentValues = it.allValues();
                 String[] newValues = new String[currentValues.size()];
                 boolean found = false;
@@ -67,7 +67,7 @@ class ServerResponseHeadersImpl extends HeadersImpl<ServerResponseHeaders> imple
                     newValues = values;
                 }
 
-                set(Http.Header.create(Http.Header.SET_COOKIE, newValues));
+                set(Http.HeaderNames.create(Http.HeaderNames.SET_COOKIE, newValues));
             });
         } else {
             addCookie(expiredCookie);

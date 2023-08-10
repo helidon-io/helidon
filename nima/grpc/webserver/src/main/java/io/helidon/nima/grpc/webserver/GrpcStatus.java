@@ -16,8 +16,9 @@
 
 package io.helidon.nima.grpc.webserver;
 
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValue;
 
 import io.grpc.Status;
@@ -33,15 +34,15 @@ public final class GrpcStatus {
     /**
      * grpc status header name.
      */
-    public static final HeaderName STATUS_NAME = Header.createFromLowercase("grpc-status");
+    public static final HeaderName STATUS_NAME = HeaderNames.createFromLowercase("grpc-status");
     /**
      * The operation completed successfully.
      */
-    public static final HeaderValue OK = Header.createCached(STATUS_NAME, Status.Code.OK.value());
+    public static final HeaderValue OK = HeaderNames.createCached(STATUS_NAME, Status.Code.OK.value());
     /**
      * The operation was cancelled (typically by the caller).
      */
-    public static final HeaderValue CANCELLED = Header.createCached(STATUS_NAME, Status.Code.CANCELLED.value());
+    public static final HeaderValue CANCELLED = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.CANCELLED.value());
     /**
      * Unknown error.  An example of where this error may be returned is
      * if a Status value received from another address space belongs to
@@ -49,14 +50,14 @@ public final class GrpcStatus {
      * errors raised by APIs that do not return enough error information
      * may be converted to this error.
      */
-    public static final HeaderValue UNKNOWN = Header.createCached(STATUS_NAME, Status.Code.UNKNOWN.value());
+    public static final HeaderValue UNKNOWN = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.UNKNOWN.value());
     /**
      * Client specified an invalid argument.  Note that this differs
      * from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
      * that are problematic regardless of the state of the system
      * (e.g., a malformed file name).
      */
-    public static final HeaderValue INVALID_ARGUMENT = Header.createCached(STATUS_NAME, Status.Code.INVALID_ARGUMENT.value());
+    public static final HeaderValue INVALID_ARGUMENT = HeaderNames.createCached(STATUS_NAME, Status.Code.INVALID_ARGUMENT.value());
     /**
      * Deadline expired before operation could complete.  For operations
      * that change the state of the system, this error may be returned
@@ -64,15 +65,15 @@ public final class GrpcStatus {
      * successful response from a server could have been delayed long
      * enough for the deadline to expire.
      */
-    public static final HeaderValue DEADLINE_EXCEEDED = Header.createCached(STATUS_NAME, Status.Code.DEADLINE_EXCEEDED.value());
+    public static final HeaderValue DEADLINE_EXCEEDED = HeaderNames.createCached(STATUS_NAME, Status.Code.DEADLINE_EXCEEDED.value());
     /**
      * Some requested entity (e.g., file or directory) was not found.
      */
-    public static final HeaderValue NOT_FOUND = Header.createCached(STATUS_NAME, Status.Code.NOT_FOUND.value());
+    public static final HeaderValue NOT_FOUND = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.NOT_FOUND.value());
     /**
      * Some entity that we attempted to create (e.g., file or directory) already exists.
      */
-    public static final HeaderValue ALREADY_EXISTS = Header.createCached(STATUS_NAME, Status.Code.ALREADY_EXISTS.value());
+    public static final HeaderValue ALREADY_EXISTS = HeaderNames.createCached(STATUS_NAME, Status.Code.ALREADY_EXISTS.value());
     /**
      * The caller does not have permission to execute the specified
      * operation.  PERMISSION_DENIED must not be used for rejections
@@ -81,12 +82,12 @@ public final class GrpcStatus {
      * used if the caller cannot be identified (use UNAUTHENTICATED
      * instead for those errors).
      */
-    public static final HeaderValue PERMISSION_DENIED = Header.createCached(STATUS_NAME, Status.Code.PERMISSION_DENIED.value());
+    public static final HeaderValue PERMISSION_DENIED = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.PERMISSION_DENIED.value());
     /**
      * Some resource has been exhausted, perhaps a per-user quota, or
      * perhaps the entire file system is out of space.
      */
-    public static final HeaderValue RESOURCE_EXHAUSTED = Header.createCached(STATUS_NAME, Status.Code.RESOURCE_EXHAUSTED.value());
+    public static final HeaderValue RESOURCE_EXHAUSTED = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.RESOURCE_EXHAUSTED.value());
     /**
      * Operation was rejected because the system is not in a state
      * required for the operation's execution.  For example, directory
@@ -104,8 +105,8 @@ public final class GrpcStatus {
      * should be returned since the client should not retry unless
      * they have first fixed up the directory by deleting files from it.
      */
-    public static final HeaderValue FAILED_PRECONDITION = Header.createCached(STATUS_NAME,
-                                                                              Status.Code.FAILED_PRECONDITION.value());
+    public static final HeaderValue FAILED_PRECONDITION = Http.HeaderNames.createCached(STATUS_NAME,
+                                                                                        Status.Code.FAILED_PRECONDITION.value());
     /**
      * The operation was aborted, typically due to a concurrency issue
      * like sequencer check failures, transaction aborts, etc.
@@ -113,7 +114,7 @@ public final class GrpcStatus {
      * <p>See litmus test above for deciding between FAILED_PRECONDITION,
      * ABORTED, and UNAVAILABLE.
      */
-    public static final HeaderValue ABORTED = Header.createCached(STATUS_NAME, Status.Code.ABORTED.value());
+    public static final HeaderValue ABORTED = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.ABORTED.value());
     /**
      * Operation was attempted past the valid range.  E.g., seeking or
      * reading past end of file.
@@ -130,17 +131,17 @@ public final class GrpcStatus {
      * so that callers who are iterating through
      * a space can easily look for an OUT_OF_RANGE error to detect when they are done.
      */
-    public static final HeaderValue OUT_OF_RANGE = Header.createCached(STATUS_NAME, Status.Code.OUT_OF_RANGE.value());
+    public static final HeaderValue OUT_OF_RANGE = HeaderNames.createCached(STATUS_NAME, Status.Code.OUT_OF_RANGE.value());
     /**
      * Operation is not implemented or not supported/enabled in this service.
      */
-    public static final HeaderValue UNIMPLEMENTED = Header.createCached(STATUS_NAME, Status.Code.UNIMPLEMENTED.value());
+    public static final HeaderValue UNIMPLEMENTED = HeaderNames.createCached(STATUS_NAME, Status.Code.UNIMPLEMENTED.value());
     /**
      * Internal errors.  Means some invariants expected by underlying
      * system has been broken.  If you see one of these errors,
      * something is very broken.
      */
-    public static final HeaderValue INTERNAL = Header.createCached(STATUS_NAME, Status.Code.INTERNAL.value());
+    public static final HeaderValue INTERNAL = HeaderNames.createCached(STATUS_NAME, Status.Code.INTERNAL.value());
     /**
      * The service is currently unavailable.  This is a most likely a
      * transient condition and may be corrected by retrying with
@@ -150,16 +151,16 @@ public final class GrpcStatus {
      * <p>See litmus test above for deciding between FAILED_PRECONDITION,
      * ABORTED, and UNAVAILABLE.
      */
-    public static final HeaderValue UNAVAILABLE = Header.createCached(STATUS_NAME, Status.Code.UNAVAILABLE.value());
+    public static final HeaderValue UNAVAILABLE = HeaderNames.createCached(STATUS_NAME, Status.Code.UNAVAILABLE.value());
     /**
      * Unrecoverable data loss or corruption.
      */
-    public static final HeaderValue DATA_LOSS = Header.createCached(STATUS_NAME, Status.Code.DATA_LOSS.value());
+    public static final HeaderValue DATA_LOSS = Http.HeaderNames.createCached(STATUS_NAME, Status.Code.DATA_LOSS.value());
     /**
      * The request does not have valid authentication credentials for the
      * operation.
      */
-    public static final HeaderValue UNAUTHENTICATED = Header.createCached(STATUS_NAME, Status.Code.UNAUTHENTICATED.value());
+    public static final HeaderValue UNAUTHENTICATED = HeaderNames.createCached(STATUS_NAME, Status.Code.UNAUTHENTICATED.value());
 
     private GrpcStatus() {
     }

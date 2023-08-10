@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.media.MediaContext;
@@ -83,12 +83,12 @@ class MultiPartImpl extends MultiPart {
         if (probablyBoundary.equals(boundary)) {
             dataReader.skip(2); // skip the new line after boundary
             WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
-            if (headers.contains(Header.CONTENT_LENGTH)) {
+            if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 next = new ReadablePartLength(context,
                                               headers,
                                               dataReader,
                                               index++,
-                                              headers.get(Header.CONTENT_LENGTH).value(long.class));
+                                              headers.get(HeaderNames.CONTENT_LENGTH).value(long.class));
                 return true;
             } else {
                 next = new ReadablePartNoLength(context, headers, dataReader, index++, boundary, endBoundary);

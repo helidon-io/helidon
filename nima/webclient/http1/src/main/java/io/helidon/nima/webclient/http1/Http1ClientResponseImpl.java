@@ -28,7 +28,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
@@ -89,14 +89,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
 
-        if (responseHeaders.contains(Header.CONTENT_LENGTH)) {
-            this.entityLength = Long.parseLong(responseHeaders.get(Header.CONTENT_LENGTH).value());
+        if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            this.entityLength = Long.parseLong(responseHeaders.get(HeaderNames.CONTENT_LENGTH).value());
         } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = -1;
         }
-        if (responseHeaders.contains(Header.TRAILER)) {
+        if (responseHeaders.contains(Http.HeaderNames.TRAILER)) {
             this.hasTrailers = true;
-            this.trailerNames = responseHeaders.get(Header.TRAILER).allValues(true);
+            this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
         } else {
             this.hasTrailers = false;
             this.trailerNames = List.of();

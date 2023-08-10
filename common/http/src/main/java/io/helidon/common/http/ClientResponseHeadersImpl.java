@@ -55,8 +55,8 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     @Override
     public Optional<HttpMediaType> contentType() {
         if (parserMode == ParserMode.RELAXED) {
-            return contains(HeaderEnum.CONTENT_TYPE)
-                    ? Optional.of(HttpMediaType.create(get(HeaderEnum.CONTENT_TYPE).value(), parserMode))
+            return contains(HeaderNameEnum.CONTENT_TYPE)
+                    ? Optional.of(HttpMediaType.create(get(HeaderNameEnum.CONTENT_TYPE).value(), parserMode))
                     : Optional.empty();
         }
         return headers.contentType();

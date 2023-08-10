@@ -5,6 +5,20 @@ Proposed changes:
 
 HTTP Header:
 1. Rename `Http.Header` to `Http.HeaderNames`
+2. Rename `Http.HeaderValue` to `Http.Header`
+3. Rename `Http.HeaderValues` to `Http.Headers`
+
+So we have (public API):
+
+- `Http.HeaderName` - abstraction of a name of a header (such as `Content-Length`)
+- `Http.HeaderNames` - constants with "known" header names (such as `HeaderNames.CONTENT_LENGTH`)
+- `Http.Header` - abstraction of a header with a value (such as `Content-Length: 0`)
+- `Http.Headers` - constants with commonly used headers with values (such as `Headers.CONTENT_LENGTH_ZERO`)
+
+Internal types:
+- `Http.HeaderNameEnum` - "known" headers, optimized for performance in header containers
+- `Http.HeaderNameImpl` - custom headers 
+
 2. Rename all methods that create header names to `create` (no `createName` method)
 3. Move methods that create values to `Http.HeaderValues`
 4. Rename all methods that create header values to `create` (no `createValue` method)

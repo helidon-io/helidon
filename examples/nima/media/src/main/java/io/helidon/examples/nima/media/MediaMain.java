@@ -17,7 +17,7 @@
 package io.helidon.examples.nima.media;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.staticcontent.StaticContentService;
@@ -26,7 +26,7 @@ import io.helidon.nima.webserver.staticcontent.StaticContentService;
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public class MediaMain {
-    private static final Http.HeaderValue UI_LOCATION = Header.createCached(Header.LOCATION, "/ui");
+    private static final Http.HeaderValue UI_LOCATION = Http.HeaderNames.createCached(HeaderNames.LOCATION, "/ui");
 
     private MediaMain() {
     }

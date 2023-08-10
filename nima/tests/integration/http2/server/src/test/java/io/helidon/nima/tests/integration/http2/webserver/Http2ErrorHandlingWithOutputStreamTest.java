@@ -34,8 +34,8 @@ import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.ErrorHandler;
 import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -57,8 +57,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class Http2ErrorHandlingWithOutputStreamTest {
 
-    private static final Http.HeaderName MAIN_HEADER_NAME = Http.Header.create("main-handler");
-    private static final Http.HeaderName ERROR_HEADER_NAME = Http.Header.create("error-handler");
+    private static final Http.HeaderName MAIN_HEADER_NAME = Http.HeaderNames.create("main-handler");
+    private static final Http.HeaderName ERROR_HEADER_NAME = Http.HeaderNames.create("error-handler");
     private static HttpClient httpClient;
     private final int plainPort;
     private final int tlsPort;

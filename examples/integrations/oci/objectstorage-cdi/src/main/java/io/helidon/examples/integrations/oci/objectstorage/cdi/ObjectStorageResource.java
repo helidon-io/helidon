@@ -90,10 +90,10 @@ public class ObjectStorageResource {
         try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             Response.ResponseBuilder ok = Response.ok(objectContent)
-                    .header(Http.Header.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
+                    .header(Http.HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
                     .header("request-id", getObjectResponse.getOpcClientRequestId())
-                    .header(Http.Header.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength());
+                    .header(Http.HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength());
 
             return ok.build();
         } catch (IOException e) {

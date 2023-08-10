@@ -102,9 +102,9 @@ abstract class WebSecurityTests {
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
 
             String header = response.headers()
-                    .first(Http.Header.WWW_AUTHENTICATE)
+                    .first(Http.HeaderNames.WWW_AUTHENTICATE)
                     .orElseThrow(() -> new IllegalStateException(
-                            "Header " + Http.Header.WWW_AUTHENTICATE + " is" + " not present in response!"));
+                            "Header " + Http.HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
 
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
@@ -113,9 +113,9 @@ abstract class WebSecurityTests {
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
 
             String header = response.headers()
-                    .first(Http.Header.WWW_AUTHENTICATE)
+                    .first(Http.HeaderNames.WWW_AUTHENTICATE)
                     .orElseThrow(() -> new IllegalStateException(
-                            "Header " + Http.Header.WWW_AUTHENTICATE + " is" + " not present in response!"));
+                            "Header " + Http.HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
     }

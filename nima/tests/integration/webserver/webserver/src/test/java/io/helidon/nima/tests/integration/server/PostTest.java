@@ -24,8 +24,8 @@ import java.util.Random;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -40,7 +40,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
+import static io.helidon.common.http.Http.HeaderNames.CONTENT_LENGTH;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,13 +49,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class PostTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
+    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final HeaderValue REQUEST_HEADER_VALUE = Header.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
-    private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
+    private static final HeaderValue REQUEST_HEADER_VALUE = HeaderNames.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
-                                                                           RESPONSE_HEADER_VALUE_STRING);
+    private static final HeaderValue RESPONSE_HEADER_VALUE = Http.HeaderNames.create(RESPONSE_HEADER_NAME,
+                                                                                     RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -89,7 +89,7 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(HeaderNames.create(CONTENT_LENGTH, "5")));
         assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
@@ -105,7 +105,7 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
+        assertThat(headers, hasHeader(HeaderNames.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
         assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
@@ -142,7 +142,7 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(Http.HeaderNames.create(CONTENT_LENGTH, "5")));
         assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));

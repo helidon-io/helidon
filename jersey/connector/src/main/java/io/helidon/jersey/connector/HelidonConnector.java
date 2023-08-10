@@ -126,7 +126,7 @@ class HelidonConnector implements Connector {
         // map request headers
         request.getRequestHeaders().forEach((key, value) -> {
             String[] values = value.toArray(new String[0]);
-            httpRequest.header(Http.Header.create(key), values);
+            httpRequest.header(Http.HeaderNames.create(key), values);
         });
 
         // SSL context

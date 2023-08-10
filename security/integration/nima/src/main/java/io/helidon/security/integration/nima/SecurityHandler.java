@@ -619,7 +619,7 @@ public final class SecurityHandler implements Handler {
             AuthenticationResponse response = clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit();
             // copy headers to be returned with the current response
             response.responseHeaders()
-                    .forEach((key, value) -> res.headers().set(Http.Header.create(Http.Header.create(key), value)));
+                    .forEach((key, value) -> res.headers().set(Http.HeaderNames.create(Http.HeaderNames.create(key), value)));
 
             switch (response.status()) {
             case SUCCESS:
@@ -671,7 +671,7 @@ public final class SecurityHandler implements Handler {
         abortRequest(res,
                      response,
                      Http.Status.UNAUTHORIZED_401.code(),
-                     Map.of(Http.Header.WWW_AUTHENTICATE,
+                     Map.of(Http.HeaderNames.WWW_AUTHENTICATE,
                             List.of("Basic realm=\"Security Realm\"")));
         return true;
     }
@@ -705,7 +705,7 @@ public final class SecurityHandler implements Handler {
         } else {
             Map<Http.HeaderName, List<String>> tmpHeaders = new HashMap<>();
             response.responseHeaders()
-                    .forEach((key, value) -> tmpHeaders.put(Http.Header.create(key), value));
+                    .forEach((key, value) -> tmpHeaders.put(Http.HeaderNames.create(key), value));
             responseHeaders = tmpHeaders;
         }
 

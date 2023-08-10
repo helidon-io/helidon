@@ -86,7 +86,7 @@ public class Gh3246Test {
         String response = webTarget.path("/test/secured")
                 .queryParam("port", port)
                 .request()
-                .header(Http.Header.AUTHORIZATION.defaultCase(), "Bearer " + tokenContent)
+                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), "Bearer " + tokenContent)
                 .get(String.class);
 
         assertThat(response, is("hello"));

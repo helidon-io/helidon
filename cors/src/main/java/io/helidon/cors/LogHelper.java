@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.cors.CorsSupportHelper.RequestType;
 
 class LogHelper {
@@ -77,26 +77,26 @@ class LogHelper {
         List<String> factorsWhyCrossHost = new ArrayList<>();
 
         if (originOpt.isEmpty()) {
-            reasonsWhyNormal.add("header " + Header.ORIGIN + " is absent");
+            reasonsWhyNormal.add("header " + Http.HeaderNames.ORIGIN + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", Header.ORIGIN, originOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.ORIGIN, originOpt.get()));
         }
 
         if (hostOpt.isEmpty()) {
-            reasonsWhyNormal.add("header " + Header.HOST + " is absent");
+            reasonsWhyNormal.add("header " + HeaderNames.HOST + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", Header.HOST, hostOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", Http.HeaderNames.HOST, hostOpt.get()));
         }
 
         if (hostOpt.isPresent() && originOpt.isPresent()) {
             String partOfOriginMatchingHost = "://" + hostOpt.get();
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
-                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", Header.ORIGIN,
-                                                   originOpt.get(), Header.HOST, hostOpt.get()));
+                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", HeaderNames.ORIGIN,
+                                                   originOpt.get(), HeaderNames.HOST, hostOpt.get()));
             } else {
-                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", Header.ORIGIN,
-                                                      originOpt.get(), Header.HOST, hostOpt.get()));
+                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", HeaderNames.ORIGIN,
+                                                      originOpt.get(), Http.HeaderNames.HOST, hostOpt.get()));
             }
         }
 
@@ -135,10 +135,10 @@ class LogHelper {
         }
 
         if (!requestContainsAccessControlRequestMethodHeader) {
-            reasonsWhyCORS.add(String.format("header %s is absent", Header.ACCESS_CONTROL_REQUEST_METHOD.defaultCase()));
+            reasonsWhyCORS.add(String.format("header %s is absent", HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase()));
         } else {
-            factorsWhyPreflight.add(String.format("header %s is present(%s)", Header.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
-                                                  requestAdapter.firstHeader(Header.ACCESS_CONTROL_REQUEST_METHOD)));
+            factorsWhyPreflight.add(String.format("header %s is present(%s)", Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
+                                                  requestAdapter.firstHeader(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD)));
         }
 
         if (CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {

@@ -21,7 +21,7 @@ import java.util.List;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -44,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
     public static final String CUSTOM_ENTITY = "There we go";
-    private static final Http.HeaderValue LOCATION_ERROR_PAGE = Header.create(Header.LOCATION, "/errorPage");
+    private static final Http.HeaderValue LOCATION_ERROR_PAGE = HeaderNames.create(Http.HeaderNames.LOCATION, "/errorPage");
 
     private final Http1Client client;
     private final SocketHttpClient socketClient;
@@ -153,7 +153,7 @@ class BadRequestTest {
         if (request.path().equals("/redirect")) {
             return DirectHandler.TransportResponse.builder()
                     .status(Http.Status.TEMPORARY_REDIRECT_307)
-                    .header(Header.LOCATION, "/errorPage")
+                    .header(HeaderNames.LOCATION, "/errorPage")
                     .build();
         }
         return DirectHandler.TransportResponse.builder()

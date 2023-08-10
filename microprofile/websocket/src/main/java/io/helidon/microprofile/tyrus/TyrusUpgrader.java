@@ -123,8 +123,8 @@ public class TyrusUpgrader extends WsUpgrader {
 
         // Validate origin
         if (!anyOrigin()) {
-            if (headers.contains(Http.Header.ORIGIN)) {
-                String origin = headers.get(Http.Header.ORIGIN).value();
+            if (headers.contains(Http.HeaderNames.ORIGIN)) {
+                String origin = headers.get(Http.HeaderNames.ORIGIN).value();
                 if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")
@@ -229,8 +229,8 @@ public class TyrusUpgrader extends WsUpgrader {
         // Map Tyrus response headers back to Nima
         upgradeResponse.getHeaders()
                 .forEach((key, value) -> headers.add(
-                        Http.Header.create(
-                                Http.Header.createName(key, key.toLowerCase(Locale.ROOT)),
+                        Http.HeaderNames.create(
+                                Http.HeaderNames.createName(key, key.toLowerCase(Locale.ROOT)),
                                 value)));
         return upgradeInfo;
     }

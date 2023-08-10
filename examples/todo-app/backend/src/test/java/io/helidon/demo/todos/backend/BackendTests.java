@@ -113,7 +113,7 @@ class BackendTests {
         JsonObject returnedTodo = webTarget
                 .path("/api/backend")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.Header.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .post(Entity.json(todo), JsonObject.class);
 
         assertThat(returnedTodo.getString("user"), is("john"));
@@ -122,7 +122,7 @@ class BackendTests {
         // Get the todo created earlier
         JsonObject fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.Header.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .get(JsonObject.class);
 
         assertThat(fromServer, is(returnedTodo));
@@ -135,7 +135,7 @@ class BackendTests {
 
         fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.Header.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .put(Entity.json(updatedTodo), JsonObject.class);
 
         assertThat(fromServer.getString("title"), is(updatedTodo.getString("title")));
@@ -143,7 +143,7 @@ class BackendTests {
         // Delete the todo created earlier
         fromServer = webTarget.path("/api/backend/" + returnedTodo.getString("id"))
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.Header.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .delete(JsonObject.class);
 
         assertThat(fromServer.getString("id"), is(returnedTodo.getString("id")));
@@ -151,7 +151,7 @@ class BackendTests {
         // Get list of todos
         JsonArray jsonValues = webTarget.path("/api/backend")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .header(Http.Header.AUTHORIZATION.defaultCase(), basicAuth)
+                .header(Http.HeaderNames.AUTHORIZATION.defaultCase(), basicAuth)
                 .get(JsonArray.class);
 
         assertThat("There should be no todos on server", jsonValues.size(), is(0));

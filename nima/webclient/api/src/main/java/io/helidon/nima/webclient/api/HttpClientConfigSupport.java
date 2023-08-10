@@ -73,7 +73,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, String value) {
-            builder.addHeader(Http.Header.create(name, value));
+            builder.addHeader(Http.HeaderNames.create(name, value));
         }
 
         /**
@@ -88,7 +88,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
-            builder.addHeader(Http.Header.create(Http.Header.create(name), value));
+            builder.addHeader(Http.HeaderNames.create(Http.HeaderNames.create(name), value));
         }
     }
 
@@ -115,7 +115,7 @@ class HttpClientConfigSupport {
             }
 
             target.defaultHeadersMap()
-                    .forEach((key, value) -> target.addHeader(Http.Header.create(Http.Header.create(key), value)));
+                    .forEach((key, value) -> target.addHeader(Http.HeaderNames.create(Http.HeaderNames.create(key), value)));
 
             if (!target.mediaSupports().isEmpty()) {
                 target.mediaContext(MediaContext.builder()

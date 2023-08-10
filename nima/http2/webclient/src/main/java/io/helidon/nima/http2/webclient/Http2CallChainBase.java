@@ -43,7 +43,7 @@ import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
-import static io.helidon.common.http.Http.Header.CONTENT_ENCODING;
+import static io.helidon.common.http.Http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.nima.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -82,8 +82,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
-        requestHeaders.setIfAbsent(Http.Header.create(Http.Header.HOST, uri.authority()));
-        requestHeaders.remove(Http.Header.CONNECTION, LogHeaderConsumer.INSTANCE);
+        requestHeaders.setIfAbsent(Http.HeaderNames.create(Http.HeaderNames.HOST, uri.authority()));
+        requestHeaders.remove(Http.HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         Http2ConnectionAttemptResult result = Http2ConnectionCache.newStream(webClient,

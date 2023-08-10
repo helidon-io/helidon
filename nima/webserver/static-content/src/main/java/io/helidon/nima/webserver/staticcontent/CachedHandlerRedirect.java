@@ -41,7 +41,7 @@ record CachedHandlerRedirect(String location) implements CachedHandler {
         }
 
         response.status(Http.Status.MOVED_PERMANENTLY_301);
-        response.headers().set(Http.Header.LOCATION, locationWithQuery);
+        response.headers().set(Http.HeaderNames.LOCATION, locationWithQuery);
         response.send();
         return true;
     }

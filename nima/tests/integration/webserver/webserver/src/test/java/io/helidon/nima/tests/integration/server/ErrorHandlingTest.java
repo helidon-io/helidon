@@ -39,11 +39,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
 class ErrorHandlingTest {
-    private static final Http.HeaderName CONTROL_HEADER = Http.Header.create("X-HELIDON-JUNIT");
-    private static final Http.HeaderValue FIRST = Http.Header.create(CONTROL_HEADER, "first");
-    private static final Http.HeaderValue SECOND = Http.Header.create(CONTROL_HEADER, "second");
-    private static final Http.HeaderValue ROUTING = Http.Header.create(CONTROL_HEADER, "routing");
-    private static final Http.HeaderValue CUSTOM = Http.Header.create(CONTROL_HEADER, "custom");
+    private static final Http.HeaderName CONTROL_HEADER = Http.HeaderNames.create("X-HELIDON-JUNIT");
+    private static final Http.HeaderValue FIRST = Http.HeaderNames.create(CONTROL_HEADER, "first");
+    private static final Http.HeaderValue SECOND = Http.HeaderNames.create(CONTROL_HEADER, "second");
+    private static final Http.HeaderValue ROUTING = Http.HeaderNames.create(CONTROL_HEADER, "routing");
+    private static final Http.HeaderValue CUSTOM = Http.HeaderNames.create(CONTROL_HEADER, "custom");
 
     private final Http1Client client;
 

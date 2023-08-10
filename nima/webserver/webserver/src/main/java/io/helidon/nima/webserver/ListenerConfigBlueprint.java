@@ -132,7 +132,7 @@ interface ListenerConfigBlueprint {
 
     /**
      * Maximal number of bytes an entity may have.
-     * If {@link io.helidon.common.http.Http.Header#CONTENT_LENGTH} is used, this is checked immediately,
+     * If {@link io.helidon.common.http.Http.HeaderNames#CONTENT_LENGTH} is used, this is checked immediately,
      * if {@link io.helidon.common.http.Http.HeaderValues#TRANSFER_ENCODING_CHUNKED} is used, we will fail when the
      * number of bytes read would exceed the max payload size.
      * Defaults to unlimited ({@code -1}).

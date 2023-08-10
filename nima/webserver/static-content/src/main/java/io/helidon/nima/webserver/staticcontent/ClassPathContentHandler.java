@@ -243,10 +243,10 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                     null));
         } else {
             // we can cache this, as this is a jar record
-            Http.HeaderValue lastModifiedHeader = Http.Header.create(Http.Header.LAST_MODIFIED,
-                                                                     true,
-                                                                     false,
-                                                                     formatLastModified(lastModified));
+            Http.HeaderValue lastModifiedHeader = Http.HeaderNames.create(Http.HeaderNames.LAST_MODIFIED,
+                                                                          true,
+                                                                          false,
+                                                                          formatLastModified(lastModified));
             return Optional.of(new CachedHandlerJar(extrEntry.tempFile,
                                                     detectType(extrEntry.entryName),
                                                     extrEntry.lastModified(),

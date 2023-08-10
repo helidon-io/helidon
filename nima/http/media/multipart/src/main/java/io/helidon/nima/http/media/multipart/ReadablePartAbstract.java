@@ -78,8 +78,8 @@ abstract class ReadablePartAbstract implements ReadablePart {
     protected abstract void finish();
 
     private void contentDisposition() {
-        if (headers.contains(Http.Header.CONTENT_DISPOSITION)) {
-            this.contentDisposition = ContentDisposition.parse(headers.get(Http.Header.CONTENT_DISPOSITION).value());
+        if (headers.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
+            this.contentDisposition = ContentDisposition.parse(headers.get(Http.HeaderNames.CONTENT_DISPOSITION).value());
         } else {
             this.contentDisposition = ContentDisposition.empty();
         }

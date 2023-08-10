@@ -116,11 +116,11 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
 
     @Override
     public ContentEncoder encoder(Headers headers) {
-        if (!contentEncodingEnabled() || !headers.contains(Http.Header.ACCEPT_ENCODING)) {
+        if (!contentEncodingEnabled() || !headers.contains(Http.HeaderNames.ACCEPT_ENCODING)) {
             return ContentEncoder.NO_OP;
         }
 
-        String acceptEncoding = headers.get(Http.Header.ACCEPT_ENCODING).value();
+        String acceptEncoding = headers.get(Http.HeaderNames.ACCEPT_ENCODING).value();
         /*
             Accept-Encoding: gzip
             Accept-Encoding: gzip, compress, br

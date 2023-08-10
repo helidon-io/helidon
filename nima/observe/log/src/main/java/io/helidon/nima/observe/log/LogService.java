@@ -261,8 +261,8 @@ class LogService implements HttpService {
     static class Builder implements io.helidon.common.Builder<Builder, LogService> {
         private boolean permitAll = false;
         private boolean logStreamEnabled = true;
-        private Http.HeaderValue logStreamMediaTypeHeader = Http.Header.create(Http.Header.CONTENT_TYPE,
-                                                                               HttpMediaType.PLAINTEXT_UTF_8.text());
+        private Http.HeaderValue logStreamMediaTypeHeader = Http.HeaderNames.create(Http.HeaderNames.CONTENT_TYPE,
+                                                                                    HttpMediaType.PLAINTEXT_UTF_8.text());
         private Charset logStreamCharset = StandardCharsets.UTF_8;
         private long logStreamSleepSeconds = 5L;
         private int logStreamQueueSize = 100;
@@ -304,7 +304,7 @@ class LogService implements HttpService {
         }
 
         Builder logStreamMediaType(HttpMediaType logStreamMediaType) {
-            this.logStreamMediaTypeHeader = Http.Header.createCached(Http.Header.CONTENT_TYPE, logStreamMediaType.text());
+            this.logStreamMediaTypeHeader = Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE, logStreamMediaType.text());
             this.logStreamCharset = logStreamMediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
             return this;
         }

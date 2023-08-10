@@ -29,7 +29,6 @@ import java.util.OptionalLong;
 import java.util.Random;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -46,12 +45,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class GetTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-ReQUEst-header");
+    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-ReQUEst-header");
     private static final String REQUEST_HEADER_VALUE = "some nice value";
-    private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
+    private static final HeaderName RESPONSE_HEADER_NAME = Http.HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
-                                                                           RESPONSE_HEADER_VALUE_STRING);
+    private static final HeaderValue RESPONSE_HEADER_VALUE = Http.HeaderNames.create(RESPONSE_HEADER_NAME,
+                                                                                     RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();

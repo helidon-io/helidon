@@ -175,7 +175,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
                 writer.write(BufferData.create(TERMINATING_CHUNK));
             } else {
-                headers.remove(Http.Header.TRANSFER_ENCODING);
+                headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
                 if (noData) {
                     headers.set(Http.HeaderValues.CONTENT_LENGTH_ZERO);
                     contentLength = 0;
@@ -228,7 +228,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
             if (chunked) {
                 // Add chunked encoding, if there is no other transfer-encoding headers
-                if (!headers.contains(Http.Header.TRANSFER_ENCODING)) {
+                if (!headers.contains(Http.HeaderNames.TRANSFER_ENCODING)) {
                     headers.set(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
@@ -236,7 +236,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         headers.add(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
-                headers.remove(Http.Header.CONTENT_LENGTH);
+                headers.remove(Http.HeaderNames.CONTENT_LENGTH);
             }
 
             writer.writeNow(prologue);

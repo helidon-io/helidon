@@ -119,13 +119,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     /**
      * Configuration of Cookie property name which contains JWT token.
      *
-     * This will be ignored unless {@link #CONFIG_JWT_HEADER} is set to {@link Http.Header#COOKIE}.
+     * This will be ignored unless {@link #CONFIG_JWT_HEADER} is set to {@link io.helidon.common.http.Http.HeaderNames#COOKIE}.
      */
     private static final String CONFIG_COOKIE_PROPERTY_NAME = "mp.jwt.token.cookie";
     /**
      * Configuration of the header where the JWT token is set.
      *
-     * Default value is {@link Http.Header#AUTHORIZATION}.
+     * Default value is {@link io.helidon.common.http.Http.HeaderNames#AUTHORIZATION}.
      */
     private static final String CONFIG_JWT_HEADER = "mp.jwt.token.header";
     private static final System.Logger LOGGER = System.getLogger(JwtAuthProvider.class.getName());
@@ -315,7 +315,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     }
 
     private Optional<String> findCookie(Map<String, List<String>> headers) {
-        List<String> cookies = headers.get(Http.Header.COOKIE.defaultCase());
+        List<String> cookies = headers.get(Http.HeaderNames.COOKIE.defaultCase());
         if ((null == cookies) || cookies.isEmpty()) {
             return Optional.empty();
         }
@@ -1153,7 +1153,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @return updated builder instance
          */
         public Builder jwtHeader(String header) {
-            if (Http.Header.COOKIE.defaultCase().equalsIgnoreCase(header)) {
+            if (Http.HeaderNames.COOKIE.defaultCase().equalsIgnoreCase(header)) {
                 useCookie = true;
             } else {
                 useCookie = false;

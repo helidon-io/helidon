@@ -215,7 +215,7 @@ public class FormParamsSupport implements MediaSupport {
                            WritableHeaders<?> writableHeaders) {
 
             Charset charset;
-            if (writableHeaders.contains(Http.Header.CONTENT_TYPE)) {
+            if (writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
                 charset = writableHeaders.contentType()
                         .flatMap(HttpMediaType::charset)
                         .map(Charset::forName)
@@ -252,8 +252,8 @@ public class FormParamsSupport implements MediaSupport {
 
     private static class FormParamsUrlWriter extends FormParamsWriter {
         private static final HeaderValue CONTENT_TYPE_URL_ENCODED =
-                Http.Header.createCached(Http.Header.CONTENT_TYPE,
-                                         HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
+                Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE,
+                                              HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
                                                  .withCharset("utf-8")
                                                  .text());
         private static final String SEPARATOR = "&";
@@ -267,8 +267,8 @@ public class FormParamsSupport implements MediaSupport {
 
     private static class FormParamsPlaintextWriter extends FormParamsWriter {
         private static final HeaderValue CONTENT_TYPE_TEXT =
-                Http.Header.createCached(Http.Header.CONTENT_TYPE,
-                                         HttpMediaType.create(MediaTypes.TEXT_PLAIN)
+                Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE,
+                                              HttpMediaType.create(MediaTypes.TEXT_PLAIN)
                                                  .withCharset("utf-8")
                                                  .text());
         private static final String SEPARATOR = "\n";

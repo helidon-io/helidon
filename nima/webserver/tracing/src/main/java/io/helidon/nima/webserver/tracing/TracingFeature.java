@@ -375,17 +375,17 @@ public class TracingFeature implements HttpFeature, Weighted {
 
         @Override
         public Optional<String> get(String key) {
-            return request.headers().first(Http.Header.create(key));
+            return request.headers().first(Http.HeaderNames.create(key));
         }
 
         @Override
         public Iterable<String> getAll(String key) {
-            return request.headers().all(Http.Header.create(key), List::of);
+            return request.headers().all(Http.HeaderNames.create(key), List::of);
         }
 
         @Override
         public boolean contains(String key) {
-            return request.headers().contains(Http.Header.create(key));
+            return request.headers().contains(Http.HeaderNames.create(key));
         }
     }
 }

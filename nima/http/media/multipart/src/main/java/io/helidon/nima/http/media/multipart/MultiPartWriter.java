@@ -37,7 +37,7 @@ class MultiPartWriter implements EntityWriter<WriteableMultiPart> {
 
     MultiPartWriter(MediaContext context, HttpMediaType mediaType, String boundary) {
         this.context = context;
-        this.contentType = Http.Header.create(Http.Header.CONTENT_TYPE, false, false, mediaType.text());
+        this.contentType = Http.HeaderNames.create(Http.HeaderNames.CONTENT_TYPE, false, false, mediaType.text());
         this.boundaryPrefix = ("--" + boundary).getBytes(StandardCharsets.UTF_8);
     }
 

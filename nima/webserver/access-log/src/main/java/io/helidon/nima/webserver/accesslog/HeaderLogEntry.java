@@ -81,7 +81,7 @@ public final class HeaderLogEntry extends AbstractLogEntry {
         private final HeaderName headerName;
 
         private Builder(String headerName) {
-            this.headerName = Http.Header.create(headerName);
+            this.headerName = Http.HeaderNames.create(headerName);
         }
 
         /**

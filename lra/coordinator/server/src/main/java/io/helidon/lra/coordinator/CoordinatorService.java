@@ -72,8 +72,8 @@ public class CoordinatorService implements HttpService {
     static final String DEFAULT_COORDINATOR_URL = "http://localhost:8070/lra-coordinator";
 
     private static final System.Logger LOGGER = System.getLogger(CoordinatorService.class.getName());
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.Header.create(LRA.LRA_HTTP_RECOVERY_HEADER);
+    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
@@ -228,7 +228,7 @@ public class CoordinatorService implements HttpService {
     private void join(ServerRequest req, ServerResponse res) {
 
         String lraId = req.path().pathParameters().value("LraId");
-        String compensatorLink = req.headers().first(Http.Header.LINK).orElse("");
+        String compensatorLink = req.headers().first(Http.HeaderNames.LINK).orElse("");
 
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
@@ -243,7 +243,7 @@ public class CoordinatorService implements HttpService {
         String recoveryUrl = coordinatorUriWithPath("/" + lraId + "/recovery").toASCIIString();
 
         res.headers().set(LRA_HTTP_RECOVERY_HEADER, recoveryUrl);
-        res.headers().set(Http.Header.LOCATION, recoveryUrl);
+        res.headers().set(Http.HeaderNames.LOCATION, recoveryUrl);
         res.status(OK_200)
                 .send(recoveryUrl);
     }

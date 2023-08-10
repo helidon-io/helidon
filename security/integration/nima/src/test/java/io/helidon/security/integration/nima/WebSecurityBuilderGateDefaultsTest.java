@@ -173,13 +173,13 @@ class WebSecurityBuilderGateDefaultsTest {
                         is(Http.Status.UNAUTHORIZED_401));
             }
 
-            assertThat(response.headers().first(Http.Header.WWW_AUTHENTICATE),
+            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
-            assertThat(response.headers().first(Http.Header.WWW_AUTHENTICATE),
+            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 

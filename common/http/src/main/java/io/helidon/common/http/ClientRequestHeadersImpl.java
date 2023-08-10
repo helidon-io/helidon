@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderValue;
 
@@ -67,8 +66,8 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     @Override
     public List<HttpMediaType> acceptedTypes() {
         if (mediaTypes == null) {
-            if (delegate.contains(Header.ACCEPT)) {
-                List<String> accepts = delegate.get(Header.ACCEPT).allValues(true);
+            if (delegate.contains(Http.HeaderNames.ACCEPT)) {
+                List<String> accepts = delegate.get(Http.HeaderNames.ACCEPT).allValues(true);
 
                 List<HttpMediaType> mediaTypes = new ArrayList<>(accepts.size());
                 for (String accept : accepts) {

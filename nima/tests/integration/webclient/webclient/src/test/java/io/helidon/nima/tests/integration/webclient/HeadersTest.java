@@ -60,7 +60,7 @@ class HeadersTest {
                 .path("/test/invalidContentType")
                 .request()) {
             ClientResponseHeaders h = res.headers();
-            Http.HeaderValue contentType = h.get(Http.Header.CONTENT_TYPE);
+            Http.HeaderValue contentType = h.get(Http.HeaderNames.CONTENT_TYPE);
             assertThat(res.status(), is(Http.Status.OK_200));
             assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_VALUE));
         }
@@ -75,7 +75,7 @@ class HeadersTest {
             assertThat(res.status(), is(Http.Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
+            Http.HeaderValue rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value is invalid, IllegalArgumentException shall be thrown
             try {
@@ -100,7 +100,7 @@ class HeadersTest {
             assertThat(res.status(), is(Http.Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.HeaderValue rawContentType = h.get(Http.Header.CONTENT_TYPE);
+            Http.HeaderValue rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value
             Optional<HttpMediaType> contentType = h.contentType();
@@ -124,7 +124,7 @@ class HeadersTest {
         private static final String INVALID_CONTENT_TYPE_VALUE = "invalid header value";
 
         private void invalidContentType(ServerRequest request, ServerResponse response) {
-            response.header(Http.Header.CONTENT_TYPE, INVALID_CONTENT_TYPE_VALUE)
+            response.header(Http.HeaderNames.CONTENT_TYPE, INVALID_CONTENT_TYPE_VALUE)
                     .send();
         }
 
@@ -133,7 +133,7 @@ class HeadersTest {
 
         // Returns Content-Type: text instead of text/plain
         private void invalidTextContentType(ServerRequest request, ServerResponse response) {
-            response.header(Http.Header.CONTENT_TYPE, INVALID_CONTENT_TYPE_TEXT)
+            response.header(Http.HeaderNames.CONTENT_TYPE, INVALID_CONTENT_TYPE_TEXT)
                     .send();
         }
 

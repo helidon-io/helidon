@@ -61,7 +61,7 @@ class IdcsSupport {
                 // get the jwk from server
                 JsonObject jwkJson = generalClient.get()
                         .uri(signJwkUri)
-                        .header(Http.Header.AUTHORIZATION, "Bearer " + accessToken)
+                        .header(Http.HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
                         .requestEntity(JsonObject.class);
 
                 return JwkKeys.create(jwkJson);

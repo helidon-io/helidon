@@ -67,12 +67,12 @@ class ClientRequestImplTest {
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
     public static final String BAD_HEADER_PATH = "/badHeader";
     public static final String HEADER_NAME_VALUE_DELIMETER = "->";
-    private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.create(
-            Http.Header.create("X-Req-Chunked"), "true");
-    private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.create(
-            Http.Header.create("X-Req-Expect100"), "true");
-    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
-    private static final Http.HeaderName BAD_HEADER_NAME = Http.Header.create("Bad-Header");
+    private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.HeaderNames.create(
+            Http.HeaderNames.create("X-Req-Chunked"), "true");
+    private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.HeaderNames.create(
+            Http.HeaderNames.create("X-Req-Expect100"), "true");
+    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+    private static final Http.HeaderName BAD_HEADER_NAME = Http.HeaderNames.create("Bad-Header");
     private static final long NO_CONTENT_LENGTH = -1L;
     private static final Http1Client client = Http1Client.builder()
             .sendExpectContinue(false)
@@ -136,7 +136,7 @@ class ClientRequestImplTest {
         long contentLength = requestEntityParts[0].length();
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
+                .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -241,7 +241,7 @@ class ClientRequestImplTest {
     @MethodSource("headerValues")
     void testHeaderValues(List<String> headerValues, boolean expectsValid) {
         Http1ClientRequest request = client.get("http://localhost:" + dummyPort + "/test");
-        request.header(Http.Header.create(Http.Header.create("HeaderName"), headerValues));
+        request.header(Http.HeaderNames.create(Http.HeaderNames.create("HeaderName"), headerValues));
         request.connection(new FakeHttp1ClientConnection());
         if (expectsValid) {
             HttpClientResponse response = request.request();
@@ -291,7 +291,7 @@ class ClientRequestImplTest {
         if (expectsValid) {
             HttpClientResponse response = request.submit(headerNameAndValue);
             assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.Header.create(headerName)).values();
+            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.submit(headerNameAndValue));
@@ -308,7 +308,7 @@ class ClientRequestImplTest {
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = request.submit(headerName + HEADER_NAME_VALUE_DELIMETER + headerValue);
         assertThat(response.status(), is(Http.Status.OK_200));
-        String responseHeaderValue = response.headers().get(Http.Header.create(headerName)).values();
+        String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
@@ -411,25 +411,25 @@ class ClientRequestImplTest {
                 arguments(Http.HeaderValues.ACCEPT_TEXT, true),
                 arguments(Http.HeaderValues.CACHE_NO_CACHE, true),
                 arguments(Http.HeaderValues.TE_TRAILERS, true),
-                arguments(Http.Header.create(Http.Header.create("!#$Custom~%&\'*Header+^`|"), "!Header\tValue~"), true),
-                arguments(Http.Header.create(Http.Header.create("Custom_0-9_a-z_A-Z_Header"),
-                                             "\u0080Header Value\u00ff"), true),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("!#$Custom~%&\'*Header+^`|"), "!Header\tValue~"), true),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("Custom_0-9_a-z_A-Z_Header"),
+                                                  "\u0080Header Value\u00ff"), true),
                 // Invalid headers
-                arguments(Http.Header.create(Http.Header.create(VALID_HEADER_NAME), "H\u001ceaderValue1"), false),
-                arguments(Http.Header.create(Http.Header.create(VALID_HEADER_NAME),
-                                             "HeaderValue1, Header\u007fValue"), false),
-                arguments(Http.Header.create(Http.Header.create(VALID_HEADER_NAME),
-                                             "HeaderValue1\u001f, HeaderValue2"), false),
-                arguments(Http.Header.create(Http.Header.create("Header\u001aName"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("Header\u000EName"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("HeaderName\r\n"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("HeaderName\u00FF\u0124"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("(Header:Name)"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("<Header?Name>"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("{Header=Name}"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("\"HeaderName\""), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("[\\HeaderName]"), VALID_HEADER_VALUE), false),
-                arguments(Http.Header.create(Http.Header.create("@Header,Name;"), VALID_HEADER_VALUE), false)
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create(VALID_HEADER_NAME), "H\u001ceaderValue1"), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create(VALID_HEADER_NAME),
+                                                  "HeaderValue1, Header\u007fValue"), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create(VALID_HEADER_NAME),
+                                                  "HeaderValue1\u001f, HeaderValue2"), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("Header\u001aName"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("Header\u000EName"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("HeaderName\r\n"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("HeaderName\u00FF\u0124"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("(Header:Name)"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("<Header?Name>"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("{Header=Name}"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("\"HeaderName\""), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("[\\HeaderName]"), VALID_HEADER_VALUE), false),
+                arguments(Http.HeaderNames.create(Http.HeaderNames.create("@Header,Name;"), VALID_HEADER_VALUE), false)
         );
     }
 
@@ -655,8 +655,8 @@ class ClientRequestImplTest {
                         serverReader.skip(2);
                         entitySize += chunkLength;
                     }
-                } else if (reqHeaders.contains(Http.Header.CONTENT_LENGTH)) {
-                    entitySize = reqHeaders.get(Http.Header.CONTENT_LENGTH).value(int.class);
+                } else if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+                    entitySize = reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value(int.class);
                     if (entitySize > 0) {
                         entity.write(serverReader.getBuffer(entitySize));
                     }
@@ -671,8 +671,8 @@ class ClientRequestImplTest {
                 if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
                     resHeaders.set(REQ_EXPECT_100_HEADER_NAME);
                 }
-                if (reqHeaders.contains(Http.Header.CONTENT_LENGTH)) {
-                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.Header.CONTENT_LENGTH).value());
+                if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
                 }
                 if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                     resHeaders.set(REQ_CHUNKED_HEADER);
@@ -682,14 +682,14 @@ class ClientRequestImplTest {
             // if prologue contains "/badHeader" path, send back the entity (name and value delimited by ->) as a header
             if (getPrologue().contains(BAD_HEADER_PATH)) {
                 String[] header = entity.readString(entitySize, StandardCharsets.US_ASCII).split(HEADER_NAME_VALUE_DELIMETER);
-                resHeaders.add(Http.Header.create(Http.Header.create(header[0]), header[1]));
+                resHeaders.add(Http.HeaderNames.create(Http.HeaderNames.create(header[0]), header[1]));
             }
 
             String responseMessage = !requestFailed ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 400 Bad Request\r\n";
             serverWriter.write(BufferData.create(responseMessage.getBytes(StandardCharsets.UTF_8)));
 
             // Send the headers
-            resHeaders.add(Http.Header.CONTENT_LENGTH, Integer.toString(entitySize));
+            resHeaders.add(Http.HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
             for (Http.HeaderValue header : resHeaders) {
                 header.writeHttp1Header(entityBuffer);

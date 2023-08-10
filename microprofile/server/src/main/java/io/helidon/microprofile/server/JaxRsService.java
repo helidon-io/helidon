@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.uri.UriPath;
@@ -333,16 +333,16 @@ class JaxRsService implements HttpService {
                 String name = entry.getKey();
                 List<String> values = entry.getValue();
                 if (values.size() == 1) {
-                    res.header(Header.create(Header.create(name), values.get(0)));
+                    res.header(HeaderNames.create(HeaderNames.create(name), values.get(0)));
                 } else {
-                    res.header(Header.create(Header.create(entry.getKey()), entry.getValue()));
+                    res.header(Http.HeaderNames.create(Http.HeaderNames.create(entry.getKey()), entry.getValue()));
                 }
             }
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
             res.status(Http.Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
             if (contentLength > 0) {
-                res.header(Header.create(Header.CONTENT_LENGTH, String.valueOf(contentLength)));
+                res.header(HeaderNames.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
             this.outputStream = new NoFlushOutputStream(res.outputStream());
             return outputStream;

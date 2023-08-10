@@ -67,11 +67,11 @@ record CachedHandlerInMemory(MediaType mediaType,
     private void send(ServerRequest request, ServerResponse response) {
         ServerRequestHeaders headers = request.headers();
 
-        if (headers.contains(Http.Header.RANGE)) {
+        if (headers.contains(Http.HeaderNames.RANGE)) {
             long contentLength = contentLength();
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
-                                                                   headers.get(Http.Header.RANGE).values(),
+                                                                   headers.get(Http.HeaderNames.RANGE).values(),
                                                                    contentLength);
             if (ranges.size() == 1) {
                 // single response

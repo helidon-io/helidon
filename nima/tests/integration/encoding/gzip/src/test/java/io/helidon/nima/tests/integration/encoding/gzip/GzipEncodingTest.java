@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class GzipEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
     private static final byte[] GZIP_ENTITY;
-    private static final Http.HeaderValue CONTENT_ENCODING_GZIP = Http.Header.create(Http.Header.CONTENT_ENCODING, "gzip");
+    private static final Http.HeaderValue CONTENT_ENCODING_GZIP = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
 
     static {
         ByteArrayOutputStream baos;
@@ -139,7 +139,7 @@ class GzipEncodingTest {
 
     void testIt(io.helidon.nima.webclient.api.HttpClient<?> client, String path, String acceptEncodingValue) {
         ClientResponseTyped<String> response = client.put(path)
-                .header(Http.Header.ACCEPT_ENCODING, acceptEncodingValue)
+                .header(Http.HeaderNames.ACCEPT_ENCODING, acceptEncodingValue)
                 .header(CONTENT_ENCODING_GZIP)
                 .submit(GZIP_ENTITY, String.class);
 

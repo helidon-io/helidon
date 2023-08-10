@@ -130,7 +130,7 @@ public abstract class BasicExampleTest {
         try (Http1ClientResponse response = client.get().uri(uri).request()) {
 
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
-            String header = response.headers().get(Http.Header.WWW_AUTHENTICATE).value();
+            String header = response.headers().get(Http.HeaderNames.WWW_AUTHENTICATE).value();
 
             assertThat(header.toLowerCase(), containsString("basic"));
             assertThat(header, containsString("helidon"));

@@ -129,9 +129,9 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .request()) {
             Headers h = res.headers();
-            assertThat(h.first(Http.Header.create("test")).orElse(null), is("before"));
+            assertThat(h.first(Http.HeaderNames.create("test")).orElse(null), is("before"));
             assertThat(res.as(String.class), is(DATA));
-            assertThat(h.first(Http.Header.create("Trailer-header")).orElse(null), is("trailer-test"));
+            assertThat(h.first(Http.HeaderNames.create("Trailer-header")).orElse(null), is("trailer-test"));
         }
     }
 
@@ -148,7 +148,7 @@ class HeadersTest {
             Headers h = res.headers();
             for (int i = 0; i < 500; i++) {
                 String name = "test-header-" + i;
-                assertThat("Headers " + name, h.first(Http.Header.create(name)).orElse(null), is(DATA));
+                assertThat("Headers " + name, h.first(Http.HeaderNames.create(name)).orElse(null), is(DATA));
             }
 
             assertThat(res.as(String.class), is(DATA));
@@ -166,7 +166,7 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.Header.createCached("test-header-" + i, DATA + i));
+                        hv.add(Http.HeaderNames.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })
@@ -187,7 +187,7 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.Header.createCached("test-header-" + i, DATA + i));
+                        hv.add(Http.HeaderNames.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })

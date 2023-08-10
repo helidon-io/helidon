@@ -15,19 +15,14 @@
  */
 package io.helidon.integrations.micrometer;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -40,6 +35,9 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class MicrometerSimplePrometheusTest {
 
@@ -88,7 +86,7 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, HttpMediaType.TEXT_PLAIN.toString())
+                .header(Http.HeaderNames.ACCEPT, HttpMediaType.TEXT_PLAIN.toString())
                 .path("/micrometer")
                 .request();
 
@@ -103,7 +101,7 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .queryParam("type", "prometheus")
                 .request();
@@ -116,7 +114,7 @@ public class MicrometerSimplePrometheusTest {
     @Test
     public void checkNoMatch() throws ExecutionException, InterruptedException {
         Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .request();
 

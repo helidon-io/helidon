@@ -26,10 +26,10 @@ import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.ParserMode;
 
-import static io.helidon.common.http.Http.Header.ACCEPT_PATCH;
-import static io.helidon.common.http.Http.Header.EXPIRES;
-import static io.helidon.common.http.Http.Header.LAST_MODIFIED;
-import static io.helidon.common.http.Http.Header.LOCATION;
+import static io.helidon.common.http.Http.HeaderNames.ACCEPT_PATCH;
+import static io.helidon.common.http.Http.HeaderNames.EXPIRES;
+import static io.helidon.common.http.Http.HeaderNames.LAST_MODIFIED;
+import static io.helidon.common.http.Http.HeaderNames.LOCATION;
 
 /**
  * HTTP Headers of a client response.
@@ -72,7 +72,7 @@ public interface ClientResponseHeaders extends Headers {
     }
 
     /**
-     * Optionally gets the value of {@link io.helidon.common.http.Http.Header#LOCATION} header.
+     * Optionally gets the value of {@link io.helidon.common.http.Http.HeaderNames#LOCATION} header.
      * <p>
      * Used in redirection, or when a new resource has been created.
      *
@@ -88,7 +88,7 @@ public interface ClientResponseHeaders extends Headers {
     }
 
     /**
-     * Optionally gets the value of {@link io.helidon.common.http.Http.Header#LAST_MODIFIED} header.
+     * Optionally gets the value of {@link io.helidon.common.http.Http.HeaderNames#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object.
      *
@@ -104,7 +104,7 @@ public interface ClientResponseHeaders extends Headers {
     }
 
     /**
-     * Optionally gets the value of {@link io.helidon.common.http.Http.Header#EXPIRES} header.
+     * Optionally gets the value of {@link io.helidon.common.http.Http.HeaderNames#EXPIRES} header.
      * <p>
      * Gives the date/time after which the response is considered stale.
      *

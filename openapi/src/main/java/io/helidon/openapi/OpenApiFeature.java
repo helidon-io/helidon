@@ -390,7 +390,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         ServerRequestHeaders headersToCheck = req.headers();
         if (headersToCheck.acceptedTypes().isEmpty()) {
             WritableHeaders<?> writableHeaders = WritableHeaders.create(headersToCheck);
-            writableHeaders.add(Http.Header.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+            writableHeaders.add(Http.HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
             headersToCheck = ServerRequestHeaders.create(writableHeaders);
         }
         return headersToCheck

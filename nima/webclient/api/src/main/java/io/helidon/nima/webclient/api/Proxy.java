@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
 import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
@@ -56,7 +56,7 @@ public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final HeaderValue PROXY_CONNECTION =
-            Header.create(Http.Header.create("Proxy-Connection"), "keep-alive");
+            Http.HeaderNames.create(Http.HeaderNames.create("Proxy-Connection"), "keep-alive");
 
     /**
      * No proxy instance.
@@ -113,7 +113,7 @@ public class Proxy {
             // Making the password char[] to String looks not correct, but it is done in the same way in HttpBasicAuthProvider
             String b64 = Base64.getEncoder().encodeToString((username.get() + ":" + new String(pass))
                     .getBytes(StandardCharsets.UTF_8));
-            this.proxyAuthHeader = Optional.of(Header.create(Header.PROXY_AUTHORIZATION, "Basic " + b64));
+            this.proxyAuthHeader = Optional.of(Http.HeaderNames.create(HeaderNames.PROXY_AUTHORIZATION, "Basic " + b64));
         } else {
             this.proxyAuthHeader = Optional.empty();
         }
@@ -455,7 +455,7 @@ public class Proxy {
                 .connection(connection)
                 .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())
                 .protocolId("http/1.1") // MUST be 1.1, if not available, proxy connection will fail
-                .header(Http.Header.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
+                .header(HeaderNames.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
                 .accept(MediaTypes.WILDCARD);
         if (clientConfig.keepAlive()) {
             request.header(Http.HeaderValues.CONNECTION_KEEP_ALIVE)

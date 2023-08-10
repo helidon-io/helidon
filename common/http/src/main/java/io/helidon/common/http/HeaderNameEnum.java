@@ -21,7 +21,11 @@ import java.util.Map;
 
 import io.helidon.common.buffers.Ascii;
 
-enum HeaderEnum implements Http.HeaderName {
+/*
+ * Do not add random headers here. These headers are optimized for performance, and each header added to this enum
+ * will slightly increase the memory used by each HTTP request.
+ */
+enum HeaderNameEnum implements Http.HeaderName {
     ACCEPT("Accept"),
     ACCEPT_CHARSET("Accept-Charset"),
     ACCEPT_ENCODING("Accept-Encoding"),
@@ -40,7 +44,7 @@ enum HeaderEnum implements Http.HeaderName {
     EXPECT("Expect"),
     FORWARDED("Forwarded"),
     FROM("From"),
-    HOST(Http.Header.HOST_STRING),
+    HOST(Http.HeaderNames.HOST_STRING),
     IF_MATCH("If-Match"),
     IF_MODIFIED_SINCE("If-Modified-Since"),
     IF_NONE_MATCH("If-None-Match"),
@@ -103,7 +107,7 @@ enum HeaderEnum implements Http.HeaderName {
     static {
         Map<String, Http.HeaderName> byName = new HashMap<>();
         Map<String, Http.HeaderName> byCapName = new HashMap<>();
-        for (HeaderEnum value : HeaderEnum.values()) {
+        for (HeaderNameEnum value : HeaderNameEnum.values()) {
             byName.put(value.lowerCase(), value);
             byCapName.put(value.defaultCase(), value);
         }
@@ -115,7 +119,7 @@ enum HeaderEnum implements Http.HeaderName {
     private final String http1Case;
     private final int index;
 
-    HeaderEnum(String http1Case) {
+    HeaderNameEnum(String http1Case) {
         this.http1Case = http1Case;
         this.lowerCase = this.http1Case.toLowerCase();
         this.index = this.ordinal();

@@ -126,11 +126,11 @@ public class PathSupport implements MediaSupport {
                            OutputStream outputStream,
                            WritableHeaders<?> writableHeaders) {
 
-            if (!writableHeaders.contains(Http.Header.CONTENT_TYPE)) {
+            if (!writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
                 MediaType mediaType = MediaTypes.detectType(toWrite).orElse(MediaTypes.APPLICATION_OCTET_STREAM);
                 writableHeaders.contentType(mediaType);
             }
-            if (!writableHeaders.contains(Http.Header.CONTENT_DISPOSITION)) {
+            if (!writableHeaders.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
                 writableHeaders.set(ContentDisposition.builder()
                                             .filename(String.valueOf(toWrite.getFileName()))
                                             .build());
