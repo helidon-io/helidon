@@ -53,6 +53,8 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
 
     /**
      * An unmodifiable, unchanging {@link Set} of types returned by the {@link #supportedTypes()} method.
+     *
+     * <p>The {@link Set} consists of a single {@link String} whose value is "oci-secrets".</p>
      */
     public static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
 
@@ -74,6 +76,8 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
      * assembled.
      *
      * @return a non-{@code null}, unmodifiable, unchanging, determinate {@link Set} of identifiers
+     *
+     * @see #SUPPORTED_TYPES
      */
     @Override
     public Set<String> supportedTypes() {
