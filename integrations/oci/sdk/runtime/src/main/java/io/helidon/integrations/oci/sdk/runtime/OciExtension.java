@@ -111,7 +111,7 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
-    static String overrideOciConfigFile;
+    private static String overrideOciConfigFile;
     static final String DEFAULT_OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
