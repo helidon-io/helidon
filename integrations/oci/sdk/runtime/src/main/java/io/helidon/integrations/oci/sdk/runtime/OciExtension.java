@@ -16,11 +16,13 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Optional;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.config.Config;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.inject.api.Bootstrap;
 import io.helidon.inject.api.InjectionServices;
 
@@ -109,6 +111,7 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
+    static final String OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
             .authStrategies(Arrays.stream(OciAuthenticationDetailsProvider.AuthStrategy.values())
@@ -121,28 +124,46 @@ public final class OciExtension {
     }
 
     /**
-     * Returns the {@link OciConfig} that is currently defined in the bootstrap environment. If one is not defined under
-     * config {@value OciConfig#CONFIG_KEY} then a default implementation will be constructed.
+     * Returns the global {@link OciConfig} that is currently defined in the bootstrap environment.
+     * <p>
+     * The implementation will first look for an {@code oci.yaml} file, and if found will use that file to establish the global
+     * oci-specific bootstrap {@link io.helidon.config.spi.ConfigSource}.
+     * <p>
+     * If the implementation is unable to find this file, then a fallback mechanism will be used to find it in the configuration
+     * found in the {@link InjectionServices#globalBootstrap()}, using a top-level attribute key named
+     * {@value OciConfigBlueprint#CONFIG_KEY}.
+     * <p>
+     * The final fallback mechanism will use an {@code auto} authentication strategy - see {@link OciConfigBlueprint} for details.
      *
      * @return the bootstrap oci config bean
+     * @see OciConfigBlueprint
      */
     public static OciConfig ociConfig() {
-        Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
-        if (bootstrap.isEmpty()) {
-            LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
+        // we do it this way to allow for the possibility of system and env vars to be used for the auth-strategy definition
+        // (not advertised in the javadoc)
+        io.helidon.common.config.Config config = Config.create(
+                ConfigSources.classpath(OCI_GLOBAL_CONFIG_FILE).optional()::build,
+                ConfigSources.file(Paths.get(OCI_GLOBAL_CONFIG_FILE)).optional()::build);
+        if (!config.exists()
+                || !config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()) {
+            // fallback
+            Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
+            if (bootstrap.isEmpty()) {
+                LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
+                return DEFAULT_OCI_CONFIG_BEAN.get();
+            }
 
-        Config config = bootstrap.get().config().orElse(null);
-        if (config == null) {
-            LOGGER.log(System.Logger.Level.DEBUG, "No config in bootstrap - using default oci config");
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
+            config = bootstrap.get().config().orElse(null);
+            if (config == null) {
+                LOGGER.log(System.Logger.Level.DEBUG, "No config in bootstrap - using default oci config");
+                return DEFAULT_OCI_CONFIG_BEAN.get();
+            }
 
-        config = config.get(OciConfig.CONFIG_KEY);
-        if (!config.exists()) {
-            LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
-            return DEFAULT_OCI_CONFIG_BEAN.get();
+            config = config.get(OciConfig.CONFIG_KEY);
+            if (!config.exists()) {
+                LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
+                return DEFAULT_OCI_CONFIG_BEAN.get();
+            }
         }
 
         LOGGER.log(System.Logger.Level.DEBUG, "Using specified oci config");

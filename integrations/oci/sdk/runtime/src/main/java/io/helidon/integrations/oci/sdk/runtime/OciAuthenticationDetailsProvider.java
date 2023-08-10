@@ -51,6 +51,7 @@ import static io.helidon.common.types.Annotations.findFirst;
  * This (overridable) provider will provide the default implementation for {@link AbstractAuthenticationDetailsProvider}.
  *
  * @see OciExtension
+ * @see OciConfigBlueprint
  * @see OciConfig
  */
 @Singleton
@@ -58,16 +59,19 @@ import static io.helidon.common.types.Annotations.findFirst;
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 
-    static final String TAG_AUTO = "auto";
-    static final String TAG_CONFIG = "config";
-    static final String TAG_CONFIG_FILE = "config-file";
-    static final String TAG_INSTANCE_PRINCIPALS = "instance-principals";
-    static final String TAG_RESOURCE_PRINCIPALS = "resource-principals";
+    static final String KEY_AUTH_STRATEGY = "auth-strategy";
+    static final String TAG_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
+    static final String VAL_AUTO = "auto";
+    static final String VAL_CONFIG = "config";
+    static final String VAL_CONFIG_FILE = "config-file";
+    static final String VAL_INSTANCE_PRINCIPALS = "instance-principals";
+    static final String VAL_RESOURCE_PRINCIPALS = "resource-principals";
 
-    static final List<String> ALL_STRATEGIES = List.of(TAG_CONFIG,
-                                                       TAG_CONFIG_FILE,
-                                                       TAG_INSTANCE_PRINCIPALS,
-                                                       TAG_RESOURCE_PRINCIPALS);
+    // order is important here - see the tests and the docs
+    static final List<String> ALL_STRATEGIES = List.of(VAL_INSTANCE_PRINCIPALS,
+                                                       VAL_RESOURCE_PRINCIPALS,
+                                                       VAL_CONFIG,
+                                                       VAL_CONFIG_FILE);
 
     OciAuthenticationDetailsProvider() {
     }
@@ -146,7 +150,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         /**
          * Auto selection of the auth strategy.
          */
-        AUTO(TAG_AUTO,
+        AUTO(VAL_AUTO,
              AbstractAuthenticationDetailsProvider.class,
              (ociConfig) -> true,
              OciAuthenticationDetailsProvider::select),
@@ -156,7 +160,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
          *
          * @see OciConfig#simpleConfigIsPresent()
          */
-        CONFIG(TAG_CONFIG,
+        CONFIG(VAL_CONFIG,
                SimpleAuthenticationDetailsProvider.class,
                OciConfig::simpleConfigIsPresent,
                (ociConfig) -> {
@@ -175,14 +179,14 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                }),
 
         /**
-         * Corresponds to {@link ConfigFileAuthenticationDetailsProvider}.
+         * Corresponds to {@link ConfigFileAuthenticationDetailsProvider}, i.e., "$HOME/.oci/config/.
          *
-         * @see OciConfig
+         * @see OciConfig#fileConfigIsPresent()
          */
-        CONFIG_FILE(TAG_CONFIG_FILE,
+        CONFIG_FILE(VAL_CONFIG_FILE,
                     ConfigFileAuthenticationDetailsProvider.class,
                     (configBean) -> configBean.fileConfigIsPresent()
-                            && canReadPath(configBean.configPath().orElse(null)),
+                            && (configBean.configPath().isEmpty() || canReadPath(configBean.configPath().orElse(null))),
                     (configBean) -> {
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-examples/src/main/java/ObjectStorageSyncExample.java
@@ -200,20 +204,24 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
 
         /**
          * Corresponds to {@link InstancePrincipalsAuthenticationDetailsProvider}.
+         *
+         * @see OciConfig
          */
-        INSTANCE_PRINCIPALS(TAG_INSTANCE_PRINCIPALS,
+        INSTANCE_PRINCIPALS(VAL_INSTANCE_PRINCIPALS,
                             InstancePrincipalsAuthenticationDetailsProvider.class,
                             OciAvailabilityDefault::runningOnOci,
                             (configBean) -> InstancePrincipalsAuthenticationDetailsProvider.builder().build()),
 
         /**
          * Corresponds to {@link ResourcePrincipalAuthenticationDetailsProvider}.
+         *
+         * @see OciConfig
          */
-        RESOURCE_PRINCIPAL(TAG_RESOURCE_PRINCIPALS,
+        RESOURCE_PRINCIPAL(VAL_RESOURCE_PRINCIPALS,
                            ResourcePrincipalAuthenticationDetailsProvider.class,
                            (configBean) -> {
                                // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
-                               return (System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null);
+                               return (System.getenv(TAG_RESOURCE_PRINCIPAL_VERSION) != null);
                            },
                            (configBean) -> ResourcePrincipalAuthenticationDetailsProvider.builder().build());
 

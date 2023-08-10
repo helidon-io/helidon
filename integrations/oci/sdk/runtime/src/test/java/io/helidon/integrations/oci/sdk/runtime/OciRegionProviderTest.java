@@ -59,7 +59,7 @@ class OciRegionProviderTest {
     void regionProviderService() {
         Config config = OciConfigTest.createTestConfig(
                 OciConfigTest.basicTestingConfigSource(),
-                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.TAG_AUTO),
+                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
                 OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
         resetWith(config);
 

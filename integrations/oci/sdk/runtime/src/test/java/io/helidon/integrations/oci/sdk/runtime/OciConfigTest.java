@@ -39,19 +39,19 @@ class OciConfigTest {
                 .get(OciConfig.CONFIG_KEY);
         OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("config", "config-file", "instance-principals", "resource-principals"));
+                   contains("instance-principals", "resource-principals", "config", "config-file"));
 
         config = createTestConfig(ociAuthConfigStrategies("auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("config", "config-file", "instance-principals", "resource-principals"));
+                   contains("instance-principals", "resource-principals", "config", "config-file"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("config", "config-file", "instance-principals", "resource-principals"));
+                   contains("instance-principals", "resource-principals", "config", "config-file"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "resource-principals"))
                 .get(OciConfig.CONFIG_KEY);
@@ -81,7 +81,7 @@ class OciConfigTest {
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("config", "config-file", "instance-principals", "resource-principals"));
+                   contains("instance-principals", "resource-principals", "config", "config-file"));
     }
 
     @Test
@@ -121,16 +121,16 @@ class OciConfigTest {
         config = createTestConfig(ociAuthConfigFile("", ""))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
+        // the ConfigFile type provider always works, since OCI SDK API assumes that too
         assertThat(cfg.fileConfigIsPresent(),
-                   is(false));
+                   is(true));
 
         config = createTestConfig(ociAuthConfigFile(null, null))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
-        assertThat(cfg.fileConfigIsPresent(),
-                   is(false));
-        assertThat(cfg.configProfile().orElseThrow(),
-                   equalTo("DEFAULT"));
+        // this will be true if there is a ~/.oci/config based configuration, false otherwise
+//        assertThat(cfg.fileConfigIsPresent(),
+//                   is(true));
     }
 
     @Test

@@ -23,7 +23,7 @@ module io.helidon.integrations.oci.sdk.runtime {
 
     requires io.helidon.builder.api;
     requires io.helidon.common;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.config.metadata;
     requires transitive io.helidon.inject.runtime;
     requires oci.java.sdk.common;

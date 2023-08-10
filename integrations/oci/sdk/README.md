@@ -90,6 +90,7 @@ Besides being able to inject OCI SDK APIs, note also that these contracts are in
 * [OciAvailability](runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/OciAvailability.java) - can be used to determine if the current runtime environment is executing on an OCI compute node.
 * [Region](runtime/src/main/java/io/helidon/integrations/oci/sdk/runtime/OciRegionProvider.java) - can be used to determine the current region where the current compute environment is running. It is recommended to inject this as an _java.lang.Optional_ instance.
 
+See the [runtime](./runtime) module for additional notes for configuration and programmatic accessors.
 
 ### How it works
 See the [InjectionProcessorObserverForOci](processor/src/main/java/io/helidon/integrations/oci/sdk/processor/InjectionProcessorObserverForOCI.java) for a more technical description for how the processor observes _@Inject_ usage. In summary, this processor will observe **OCI SDK** injection points and then code generate **Activators** enabling injection of SDK services in conjunction with the [runtime](./runtime) module on the classpath.
