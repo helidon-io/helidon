@@ -21,10 +21,11 @@ import java.util.List;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,18 +35,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SimpleMeterRegistryTests {
 
-     @Test
+    private static MeterRegistry meterRegistry;
+
+    @BeforeAll
+    static void prep() {
+        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @Test
     void testConflictingMetadata() {
-        Counter c1 = Metrics.getOrCreate(Counter.builder("b"));
+        Counter c1 = meterRegistry.getOrCreate(Counter.builder("b"));
 
         assertThrows(IllegalArgumentException.class, () ->
-                Metrics.getOrCreate(Timer.builder("b")));
+                meterRegistry.getOrCreate(Timer.builder("b")));
     }
 
     @Test
     void testSameNameNoTags() {
-        Counter counter1 = Metrics.getOrCreate(Counter.builder("a"));
-        Counter counter2 = Metrics.getOrCreate(Counter.builder("a"));
+        Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a"));
+        Counter counter2 = meterRegistry.getOrCreate(Counter.builder("a"));
         assertThat("Counter with same name, no tags", counter1, is(sameInstance(counter2)));
     }
 
@@ -53,7 +61,27 @@ class SimpleMeterRegistryTests {
     void testSameNameSameTwoTags() {
         var tags = List.of(Tag.of("foo", "1"),
                            Tag.of("bar", "1"));
+
+        Counter counter1 = meterRegistry.getOrCreate(Counter.builder("c")
+                                                       .tags(tags));
+        Counter counter2 = meterRegistry.getOrCreate(Counter.builder("c")
+                                                       .tags(tags));
+        assertThat("Counter with same name, same two tags", counter1, is(sameInstance(counter2)));
     }
 
+    @Test
+    void testSameNameOverlappingButDifferentTags() {
+        var tags1 = List.of(Tag.of("foo", "1"),
+                           Tag.of("bar", "1"),
+                           Tag.of("baz", "1"));
 
+        var tags2 = List.of(Tag.of("foo", "1"),
+                            Tag.of("bar", "1"));
+
+        meterRegistry.getOrCreate(Counter.builder("c")
+                                                             .tags(tags1));
+        assertThrows(IllegalArgumentException.class, () ->
+                meterRegistry.getOrCreate(Counter.builder("c")
+                        .tags(tags2)));
+    }
 }

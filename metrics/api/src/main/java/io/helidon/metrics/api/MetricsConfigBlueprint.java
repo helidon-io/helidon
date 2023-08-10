@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -40,9 +41,16 @@ interface MetricsConfigBlueprint {
             return Optional.empty();
         }
 
+//        @Prototype.BuilderMethod
+//        static MetricsConfig.BuilderBase<?, ?> metricsConfig(MetricsConfig.BuilderBase<?, ?> metricsConfigBuilder, Config config) {
+//            metricsConfigBuilder.config(config);
+//            return metricsConfigBuilder;
+//        }
+
         private CustomMethods() {
         }
     }
+
     /**
      * The config key containing settings for all of metrics.
      */
@@ -56,7 +64,7 @@ interface MetricsConfigBlueprint {
     /**
      * Config key for the app tag value to be applied to all metrics in this application.
      */
-    String APP_TAG_CONFIG_KEY = "appName";
+    String APP_TAG_CONFIG_KEY = "app-name";
 
     /**
      * Whether metrics functionality is enabled.
@@ -82,8 +90,16 @@ interface MetricsConfigBlueprint {
     @ConfiguredOption(key = GLOBAL_TAGS_CONFIG_KEY)
     List<Tag> globalTags();
 
+    /**
+     * Application tag value added to each meter ID.
+     *
+     * @return  application tag value
+     */
     @ConfiguredOption(key = APP_TAG_CONFIG_KEY)
     Optional<String> appTagValue();
+
+    @ConfiguredOption(builderMethod = false, configured = false)
+    Config metricsConfig();
 
     class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
