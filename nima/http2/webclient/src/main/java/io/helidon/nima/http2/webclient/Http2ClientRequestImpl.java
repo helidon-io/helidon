@@ -26,41 +26,40 @@ import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.FullClientRequest;
-import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
 class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2ClientResponse>
         implements Http2ClientRequest, Http2StreamConfig, FullClientRequest<Http2ClientRequest> {
 
-    private final WebClient webClient;
-    private final Http2ClientProtocolConfig protocolConfig;
-
+    private final Http2ClientImpl http2Client;
     private int priority;
     private boolean priorKnowledge;
     private int requestPrefetch = 0;
     private Duration flowControlTimeout = Duration.ofMillis(100);
     private Duration timeout = Duration.ofSeconds(10);
 
-    Http2ClientRequestImpl(WebClient webClient,
-                           HttpClientConfig clientConfig,
-                           Http2ClientProtocolConfig protocolConfig,
+    Http2ClientRequestImpl(Http2ClientImpl http2Client,
                            Http.Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        super(clientConfig, webClient.cookieManager(), Http2Client.PROTOCOL_ID, method, clientUri, properties);
+        super(http2Client.clientConfig(),
+                http2Client.webClient().cookieManager(),
+                Http2Client.PROTOCOL_ID,
+                method,
+                clientUri,
+                properties);
 
+        this.http2Client = http2Client;
+        Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         this.priorKnowledge = protocolConfig.priorKnowledge();
-        this.webClient = webClient;
-        this.protocolConfig = protocolConfig;
     }
 
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
                            Http.Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, properties);
+        this(request.http2Client, method, clientUri, properties);
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -118,10 +117,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     public Http2ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        Http2CallChainBase callChain = new Http2CallOutputStreamChain(webClient,
+        Http2CallChainBase callChain = new Http2CallOutputStreamChain(http2Client,
                                                                       this,
-                                                                      clientConfig(),
-                                                                      protocolConfig,
                                                                       whenSent,
                                                                       whenComplete,
                                                                       streamHandler);
@@ -200,9 +197,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     private Http2ClientResponseImpl invokeEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        Http2CallChainBase httpCall = new Http2CallEntityChain(webClient,
-                                                               clientConfig(),
-                                                               protocolConfig,
+        Http2CallChainBase httpCall = new Http2CallEntityChain(http2Client,
                                                                this,
                                                                whenSent,
                                                                whenComplete,

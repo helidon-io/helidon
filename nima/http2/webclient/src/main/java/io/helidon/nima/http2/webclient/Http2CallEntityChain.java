@@ -26,8 +26,6 @@ import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientUri;
-import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
@@ -35,14 +33,12 @@ class Http2CallEntityChain extends Http2CallChainBase {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final Object entity;
 
-    Http2CallEntityChain(WebClient webClient,
-                         HttpClientConfig clientConfig,
-                         Http2ClientProtocolConfig protocolConfig,
+    Http2CallEntityChain(Http2ClientImpl http2Client,
                          Http2ClientRequestImpl request,
                          CompletableFuture<WebClientServiceRequest> whenSent,
                          CompletableFuture<WebClientServiceResponse> whenComplete,
                          Object entity) {
-        super(webClient, clientConfig, protocolConfig, request, whenComplete, it -> it.submit(entity));
+        super(http2Client, request, whenComplete, it -> it.submit(entity));
         this.whenSent = whenSent;
         this.entity = entity;
     }

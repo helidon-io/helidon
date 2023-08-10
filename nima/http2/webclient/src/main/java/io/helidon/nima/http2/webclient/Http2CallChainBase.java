@@ -36,7 +36,6 @@ import io.helidon.nima.webclient.api.ConnectionKey;
 import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.ReleasableResource;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
@@ -49,9 +48,8 @@ import static io.helidon.nima.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 abstract class Http2CallChainBase implements WebClientService.Chain {
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
 
-    private final WebClient webClient;
+    private final Http2ClientImpl http2Client;
     private final HttpClientConfig clientConfig;
-    private final Http2ClientProtocolConfig protocolConfig;
     private final Http2ClientRequestImpl clientRequest;
     private final Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
@@ -62,16 +60,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     private Http.Status responseStatus;
     private Http2ConnectionAttemptResult.Result result;
 
-    Http2CallChainBase(WebClient webClient,
-                       HttpClientConfig clientConfig,
-                       Http2ClientProtocolConfig protocolConfig,
+    Http2CallChainBase(Http2ClientImpl http2Client,
                        Http2ClientRequestImpl clientRequest,
                        CompletableFuture<WebClientServiceResponse> whenComplete,
                        Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
 
-        this.webClient = webClient;
-        this.clientConfig = clientConfig;
-        this.protocolConfig = protocolConfig;
+        this.http2Client = http2Client;
+        this.clientConfig = http2Client.clientConfig();
         this.clientRequest = clientRequest;
         this.whenComplete = whenComplete;
         this.http1EntityHandler = http1EntityHandler;
@@ -86,23 +81,26 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         requestHeaders.remove(Http.HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
-        Http2ConnectionAttemptResult result = Http2ConnectionCache.newStream(webClient,
-                                                                             protocolConfig,
-                                                                             connectionKey(serviceRequest),
-                                                                             clientRequest,
-                                                                             uri,
-                                                                             http1EntityHandler);
+        ConnectionKey connectionKey = connectionKey(serviceRequest);
+
+        Http2ConnectionAttemptResult result = http2Client.connectionCache()
+                .newStream(connectionKey, clientRequest, uri, http1EntityHandler);
 
         this.result = result.result();
 
-        if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
-            // ALPN, prior knowledge, or upgrade success
-            this.stream = result.stream();
-            return doProceed(serviceRequest, requestHeaders, result.stream());
-        } else {
-            // upgrade failed
-            this.response = result.response();
-            return doProceed(serviceRequest, result.response());
+        try {
+            if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
+                // ALPN, prior knowledge, or upgrade success
+                this.stream = result.stream();
+                return doProceed(serviceRequest, requestHeaders, result.stream());
+            } else {
+                // upgrade failed
+                this.response = result.response();
+                return doProceed(serviceRequest, result.response());
+            }
+        } catch (StreamTimeoutException e){
+            http2Client.connectionCache().remove(connectionKey);
+            throw e;
         }
     }
 

@@ -226,4 +226,12 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @ConfiguredOption("PT1S")
     Duration readContinueTimeout();
+
+    /**
+     * Whether to share connection cache between all the WebClient instances in JVM.
+     *
+     * @return true if connection cache is shared
+     */
+    @ConfiguredOption("true")
+    boolean shareConnectionCache();
 }

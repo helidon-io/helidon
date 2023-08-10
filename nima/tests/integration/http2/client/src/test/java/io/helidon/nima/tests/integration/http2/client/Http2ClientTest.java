@@ -36,6 +36,8 @@ import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.function.Supplier;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -46,8 +48,8 @@ class Http2ClientTest {
     private static final String TEST_HEADER_VALUE = "as!fd";
     private static final Header TEST_HEADER = Http.Headers.create(HeaderNames.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
     private final Http1Client http1Client;
-    private final Http2Client tlsClient;
-    private final Http2Client plainClient;
+    private final Supplier<Http2Client> tlsClient;
+    private final Supplier<Http2Client> plainClient;
 
     Http2ClientTest(WebServer server, Http1Client http1Client) {
         int plainPort = server.port();
@@ -58,12 +60,14 @@ class Http2ClientTest {
                 .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
                 .trustAll(true)
                 .build();
-        this.tlsClient = Http2Client.builder()
+        this.tlsClient = () -> Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
                 .tls(insecureTls)
+                .shareConnectionCache(false)
                 .build();
-        this.plainClient = Http2Client.builder()
+        this.plainClient = () -> Http2Client.builder()
                 .baseUri("http://localhost:" + plainPort + "/")
+                .shareConnectionCache(false)
                 .build();
     }
 
@@ -104,7 +108,7 @@ class Http2ClientTest {
 
     @Test
     void testUpgrade() {
-        try (Http2ClientResponse response = plainClient
+        try (Http2ClientResponse response = plainClient.get()
                 .get("/")
                 .request()) {
 
@@ -117,7 +121,7 @@ class Http2ClientTest {
 
     @Test
     void testAppProtocol() {
-        try (Http2ClientResponse response = tlsClient
+        try (Http2ClientResponse response = tlsClient.get()
                 .get("/")
                 .request()) {
 
@@ -130,7 +134,7 @@ class Http2ClientTest {
 
     @Test
     void testPriorKnowledge() {
-        try (Http2ClientResponse response = tlsClient
+        try (Http2ClientResponse response = tlsClient.get()
                 .get("/")
                 .priorKnowledge(true)
                 .request()) {

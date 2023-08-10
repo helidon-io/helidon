@@ -223,13 +223,16 @@ class Http1ClientTest {
         for (int i = 0; i < 5; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
             // connection will be dequeued if queue is not empty
-            connectionNow = Http1ConnectionCache.connection(WebClient.create(),
-                                                            Http1ClientConfig.create(),
-                                                            injectedHttp1client.prototype().tls(),
-                                                            Proxy.noProxy(),
-                                                            request.resolvedUri(),
-                                                            request.headers(),
-                                                            true);
+            WebClient webClient = WebClient.create();
+            Http1ClientConfig clientConfig = Http1ClientConfig.create();
+            Http1ClientImpl http1Client = new Http1ClientImpl(webClient, clientConfig);
+            connectionNow = http1Client
+                    .connectionCache()
+                    .connection(injectedHttp1client.prototype().tls(),
+                                Proxy.noProxy(),
+                                request.resolvedUri(),
+                                request.headers(),
+                                true);
             request.connection(connectionNow);
             HttpClientResponse response = request.request();
             // connection will be queued up
@@ -251,13 +254,17 @@ class Http1ClientTest {
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
 
-            connectionList.add(Http1ConnectionCache.connection(WebClient.create(),
-                                                               injectedHttp1client.prototype(),
-                                                               injectedHttp1client.prototype().tls(),
-                                                               Proxy.noProxy(),
-                                                               request.resolvedUri(),
-                                                               request.headers(),
-                                                               true));
+            WebClient webClient = WebClient.create();
+            Http1ClientConfig clientConfig = Http1ClientConfig.create();
+            Http1ClientImpl http1Client = new Http1ClientImpl(webClient, clientConfig);
+
+            connectionList.add(http1Client
+                                       .connectionCache()
+                                       .connection(clientConfig.tls(),
+                                                   Proxy.noProxy(),
+                                                   request.resolvedUri(),
+                                                   request.headers(),
+                                                   true));
             request.connection(connectionList.get(i));
             responseList.add(request.request());
         }
@@ -272,13 +279,19 @@ class Http1ClientTest {
         HttpClientResponse response = null;
         for (int i = 0; i < connectionQueueSize + 1; ++i) {
             HttpClientRequest request = injectedHttp1client.put("/test");
-            connection = Http1ConnectionCache.connection(WebClient.create(),
-                                                         injectedHttp1client.prototype(),
-                                                         injectedHttp1client.prototype().tls(),
-                                                         Proxy.noProxy(),
-                                                         request.resolvedUri(),
-                                                         request.headers(),
-                                                         true);
+
+            WebClient webClient = WebClient.create();
+            Http1ClientConfig clientConfig = Http1ClientConfig.create();
+            Http1ClientImpl http1Client = new Http1ClientImpl(webClient, clientConfig);
+
+            connection = http1Client
+                    .connectionCache()
+                    .connection(clientConfig.tls(),
+                                Proxy.noProxy(),
+                                request.resolvedUri(),
+                                request.headers(),
+                                true);
+
             request.connection(connection);
             response = request.request();
             if (i < connectionQueueSize) {
@@ -293,13 +306,19 @@ class Http1ClientTest {
         // The queue is currently empty so check if we can add the last created connection into it.
         response.close();
         HttpClientRequest request = injectedHttp1client.put("/test");
-        ClientConnection connectionNow = Http1ConnectionCache.connection(WebClient.create(),
-                                                                         injectedHttp1client.prototype(),
-                                                                         injectedHttp1client.prototype().tls(),
-                                                                         Proxy.noProxy(),
-                                                                         request.resolvedUri(),
-                                                                         request.headers(),
-                                                                         true);
+
+        WebClient webClient = WebClient.create();
+        Http1ClientConfig clientConfig = Http1ClientConfig.create();
+        Http1ClientImpl http1Client = new Http1ClientImpl(webClient, clientConfig);
+
+        ClientConnection connectionNow = http1Client
+                .connectionCache()
+                .connection(clientConfig.tls(),
+                            Proxy.noProxy(),
+                            request.resolvedUri(),
+                            request.headers(),
+                            true);
+
         request.connection(connectionNow);
         HttpClientResponse responseNow = request.request();
         // Verify that the connection was dequeued

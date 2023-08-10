@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
@@ -52,6 +53,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());
+    private static final Set<Http2StreamState> NON_CANCELABLE = Set.of(Http2StreamState.CLOSED, Http2StreamState.IDLE);
     private final Http2ClientConnection connection;
     private final Http2Settings serverSettings;
     private final SocketContext ctx;
@@ -167,6 +169,9 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     void cancel() {
+        if (NON_CANCELABLE.contains(state)) {
+            return;
+        }
         Http2RstStream rstStream = new Http2RstStream(Http2ErrorCode.CANCEL);
         Http2FrameData frameData = rstStream.toFrameData(settings, streamId, Http2Flag.NoFlags.create());
         sendListener.frameHeader(ctx, streamId, frameData.header());
@@ -224,6 +229,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
             // §5.1.1 - The identifier of a newly established stream MUST be numerically
             //          greater than all streams that the initiating endpoint has opened or reserved.
             this.streamId = streamIdSeq.lockAndNext();
+            this.connection.updateLastStreamId(streamId);
             this.buffer = new StreamBuffer(streamId, timeout);
 
             // fixme Configurable initial win size, max frame size

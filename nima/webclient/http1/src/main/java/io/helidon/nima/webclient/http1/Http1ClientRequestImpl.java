@@ -23,27 +23,23 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.api.ClientRequestBase;
 import io.helidon.nima.webclient.api.ClientUri;
-import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
+    private final Http1ClientImpl http1Client;
 
-    private final WebClient webClient;
-    private final Http1ClientProtocolConfig protocolConfig;
-
-    Http1ClientRequestImpl(WebClient webClient,
-                           HttpClientConfig clientConfig,
-                           Http1ClientProtocolConfig protocolConfig,
+    Http1ClientRequestImpl(Http1ClientImpl http1Client,
                            Http.Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        super(clientConfig, webClient.cookieManager(), Http1Client.PROTOCOL_ID, method, clientUri, properties);
-
-        this.webClient = webClient;
-        this.protocolConfig = protocolConfig;
+        super(http1Client.clientConfig(),
+                http1Client.webClient().cookieManager(),
+                Http1Client.PROTOCOL_ID,
+                method, clientUri,
+                properties);
+        this.http1Client = http1Client;
     }
 
     //Copy constructor for redirection purposes
@@ -51,7 +47,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                            Http.Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
-        this(request.webClient, request.clientConfig(), request.protocolConfig, method, clientUri, properties);
+        this(request.http1Client,
+                method,
+                clientUri,
+                properties);
 
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
@@ -70,10 +69,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     public Http1ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        Http1CallChainBase callChain = new Http1CallOutputStreamChain(webClient,
+        Http1CallChainBase callChain = new Http1CallOutputStreamChain(http1Client,
                                                                       this,
-                                                                      clientConfig(),
-                                                                      protocolConfig,
                                                                       whenSent,
                                                                       whenComplete,
                                                                       streamHandler);
@@ -129,13 +126,15 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return UpgradeResponse.failure(response);
     }
 
+    Http1ClientImpl http1Client() {
+        return http1Client;
+    }
+
     Http1ClientResponseImpl invokeRequestWithEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        Http1CallChainBase callChain = new Http1CallEntityChain(webClient,
+        Http1CallChainBase callChain = new Http1CallEntityChain(http1Client,
                                                                 this,
-                                                                clientConfig(),
-                                                                protocolConfig,
                                                                 whenSent,
                                                                 whenComplete,
                                                                 entity);
