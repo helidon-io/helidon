@@ -27,5 +27,10 @@
         <Class name="io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider"/>
         <Bug pattern="PATH_TRAVERSAL_IN"/>
     </Match>
+    <Match>
+        <!-- Path comes from config or code -->
+        <Class name="io.helidon.integrations.oci.sdk.runtime.OciExtension"/>
+        <Bug pattern="PATH_TRAVERSAL_IN"/>
+    </Match>
 
 </FindBugsFilter>
