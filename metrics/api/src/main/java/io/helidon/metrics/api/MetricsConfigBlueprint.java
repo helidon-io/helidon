@@ -30,8 +30,19 @@ import io.helidon.inject.configdriven.api.ConfigBean;
 @ConfigBean()
 @Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)
 @Prototype.Blueprint(decorator = MetricsConfigBlueprint.BuilderDecorator.class)
+@Prototype.CustomMethods(MetricsConfigBlueprint.CustomMethods.class)
 interface MetricsConfigBlueprint {
 
+    class CustomMethods {
+
+        @Prototype.PrototypeMethod
+        static Optional<String> lookupConfig(MetricsConfig metricsConfig, String key) {
+            return Optional.empty();
+        }
+
+        private CustomMethods() {
+        }
+    }
     /**
      * The config key containing settings for all of metrics.
      */
@@ -46,8 +57,6 @@ interface MetricsConfigBlueprint {
      * Config key for the app tag value to be applied to all metrics in this application.
      */
     String APP_TAG_CONFIG_KEY = "appName";
-
-
 
     /**
      * Whether metrics functionality is enabled.

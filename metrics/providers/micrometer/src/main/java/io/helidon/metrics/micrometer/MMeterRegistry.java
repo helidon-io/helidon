@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
-import io.helidon.common.config.Config;
+import io.helidon.metrics.api.MetricsConfig;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -38,11 +38,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
-    static MMeterRegistry create(Config helidonConfig) {
+    static MMeterRegistry create(MeterRegistry meterRegistry) {
+        return new MMeterRegistry(meterRegistry);
+    }
+
+    static MMeterRegistry create(MetricsConfig metricsConfig) {
         return new MMeterRegistry(new PrometheusMeterRegistry(new PrometheusConfig() {
             @Override
             public String get(String key) {
-                return helidonConfig.get(key).asString().orElse(null);
+                return metricsConfig.lookupConfig(key).orElse(null);
             }
         }));
     }
@@ -72,16 +76,30 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public <M extends io.helidon.metrics.api.Meter,
-            B extends io.helidon.metrics.api.Meter.Builder<B, M>> M getOrCreate(B builder) {
+    public <HM extends io.helidon.metrics.api.Meter,
+            HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>> HM getOrCreate(HB builder) {
+
+        // The Micrometer builders do not have a shared inherited declaration of the register method.
+        // Each type of builder declares its own so we need to decide here which specific one to invoke.
+        // That's so we can invoke the Micrometer builder's register method, which acts as
+        // get-or-create.
+        Meter meter;
+
+        // Micrometer itself will throw an IllegalArgumentException if the caller specifies a builder that finds an existing
+        // meter but it is of the wrong type.
+
         if (builder instanceof MCounter.Builder cBuilder) {
-            return (M) cBuilder.register(delegate);
+            Counter counter = cBuilder.delegate().register(delegate);
+            meter = counter;
         } else if (builder instanceof MDistributionSummary.Builder sBuilder) {
-            return (M) sBuilder.delegate().register(delegate);
+            DistributionSummary summary = sBuilder.delegate().register(delegate);
+            meter = summary;
         } else if (builder instanceof MGauge.Builder<?> gBuilder) {
-            return (M) gBuilder.delegate().register(delegate);
+            Gauge gauge = gBuilder.delegate().register(delegate);
+            meter = gauge;
         } else if (builder instanceof MTimer.Builder tBuilder) {
-            return (M) tBuilder.delegate().register(delegate);
+            Timer timer = tBuilder.delegate().register(delegate);
+            meter = timer;
         } else {
             throw new IllegalArgumentException(String.format("Unexpected builder type %s, expected one of %s",
                                                              builder.getClass().getName(),
@@ -90,6 +108,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                      MGauge.Builder.class.getName(),
                                                                      MTimer.Builder.class.getName())));
         }
+        return (HM) meters.get(meter);
     }
 
     @Override
@@ -148,6 +167,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                Iterable<io.helidon.metrics.api.Tag> tags) {
         return internalRemove(name, Util.tags(tags));
     }
+
     MeterRegistry delegate() {
         return delegate;
     }

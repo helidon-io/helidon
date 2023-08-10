@@ -16,7 +16,6 @@
 package io.helidon.metrics.micrometer;
 
 import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.MeterRegistry;
 
 class MDistributionSummary extends MMeter<DistributionSummary> implements io.helidon.metrics.api.DistributionSummary {
 
@@ -89,9 +88,10 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
             return identity();
         }
 
-        @Override
-        MDistributionSummary register(MeterRegistry meterRegistry) {
-            return MDistributionSummary.create(delegate().register(meterRegistry));
-        }
+        // TODO remove if not used
+//        @Override
+//        MDistributionSummary register(MeterRegistry meterRegistry) {
+//            return MDistributionSummary.create(delegate().register(meterRegistry));
+//        }
     }
 }

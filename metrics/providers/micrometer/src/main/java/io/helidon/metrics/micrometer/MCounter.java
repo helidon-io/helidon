@@ -16,7 +16,6 @@
 package io.helidon.metrics.micrometer;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 
 class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter {
 
@@ -57,9 +56,11 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
                   delegate()::baseUnit);
         }
 
-        @Override
-        MCounter register(MeterRegistry meterRegistry) {
-            return MCounter.create(delegate().register(meterRegistry));
-        }
+        // TODO remove if truly not used
+//        @Override
+//        MCounter register(MMeterRegistry mMeterRegistry) {
+//
+//            return MCounter.create(delegate().register(mMeterRegistry));
+//        }
     }
 }

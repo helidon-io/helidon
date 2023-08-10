@@ -36,6 +36,17 @@ public interface Metrics {
     }
 
     /**
+     * Creates a meter registry, not added to the global registry, based on
+     * the provide metrics config.
+     *
+     * @param metricsConfig metrics config
+     * @return new meter registry
+     */
+    static MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
+        return MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+    }
+
+    /**
      * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new
      * one using the provided builder.
      *
