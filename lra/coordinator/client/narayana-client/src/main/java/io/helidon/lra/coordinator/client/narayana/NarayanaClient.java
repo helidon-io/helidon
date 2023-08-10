@@ -199,8 +199,10 @@ public class NarayanaClient implements CoordinatorClient {
                     .put()
                     .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
                     .headers(h -> {
-                        h.add(Http.Headers.createCached(HEADER_LINK, links)); // links are expected either in header
-                        headers.toMap().forEach((name, value) -> h.set(Http.HeaderNames.create(name), value)); // header propagation
+                        // links are expected either in header
+                        h.add(Http.Headers.createCached(HEADER_LINK, links));
+                        // header propagation
+                        headers.toMap().forEach((name, value) -> h.set(Http.HeaderNames.create(name), value));
                     });
 
             try (var res = req.submit(links)) {

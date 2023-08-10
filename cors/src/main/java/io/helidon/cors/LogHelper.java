@@ -78,7 +78,7 @@ class LogHelper {
         List<String> factorsWhyCrossHost = new ArrayList<>();
 
         if (originOpt.isEmpty()) {
-            reasonsWhyNormal.add("header " + Http.HeaderNames.ORIGIN + " is absent");
+            reasonsWhyNormal.add("header " + HeaderNames.ORIGIN + " is absent");
         } else {
             factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.ORIGIN, originOpt.get()));
         }
@@ -86,7 +86,7 @@ class LogHelper {
         if (hostOpt.isEmpty()) {
             reasonsWhyNormal.add("header " + HeaderNames.HOST + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", Http.HeaderNames.HOST, hostOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.HOST, hostOpt.get()));
         }
 
         if (hostOpt.isPresent() && originOpt.isPresent()) {
@@ -97,7 +97,7 @@ class LogHelper {
                                                    originOpt.get(), HeaderNames.HOST, hostOpt.get()));
             } else {
                 factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", HeaderNames.ORIGIN,
-                                                      originOpt.get(), Http.HeaderNames.HOST, hostOpt.get()));
+                                                      originOpt.get(), HeaderNames.HOST, hostOpt.get()));
             }
         }
 
@@ -138,7 +138,8 @@ class LogHelper {
         if (!requestContainsAccessControlRequestMethodHeader) {
             reasonsWhyCORS.add(String.format("header %s is absent", HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase()));
         } else {
-            factorsWhyPreflight.add(String.format("header %s is present(%s)", Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
+            factorsWhyPreflight.add(String.format("header %s is present(%s)",
+                                                  HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
                                                   requestAdapter.firstHeader(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD)));
         }
 

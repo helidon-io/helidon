@@ -65,7 +65,8 @@ public final class GrpcStatus {
      * successful response from a server could have been delayed long
      * enough for the deadline to expire.
      */
-    public static final Http.Header DEADLINE_EXCEEDED = Http.Headers.createCached(STATUS_NAME, Status.Code.DEADLINE_EXCEEDED.value());
+    public static final Http.Header DEADLINE_EXCEEDED =
+            Http.Headers.createCached(STATUS_NAME, Status.Code.DEADLINE_EXCEEDED.value());
     /**
      * Some requested entity (e.g., file or directory) was not found.
      */
@@ -82,12 +83,14 @@ public final class GrpcStatus {
      * used if the caller cannot be identified (use UNAUTHENTICATED
      * instead for those errors).
      */
-    public static final Http.Header PERMISSION_DENIED = Http.Headers.createCached(STATUS_NAME, Status.Code.PERMISSION_DENIED.value());
+    public static final Http.Header PERMISSION_DENIED =
+            Http.Headers.createCached(STATUS_NAME, Status.Code.PERMISSION_DENIED.value());
     /**
      * Some resource has been exhausted, perhaps a per-user quota, or
      * perhaps the entire file system is out of space.
      */
-    public static final Http.Header RESOURCE_EXHAUSTED = Http.Headers.createCached(STATUS_NAME, Status.Code.RESOURCE_EXHAUSTED.value());
+    public static final Http.Header RESOURCE_EXHAUSTED =
+            Http.Headers.createCached(STATUS_NAME, Status.Code.RESOURCE_EXHAUSTED.value());
     /**
      * Operation was rejected because the system is not in a state
      * required for the operation's execution.  For example, directory

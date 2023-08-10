@@ -56,60 +56,6 @@ public final class Http {
     }
 
     /**
-     * Enumeration of supported HTTP protocol versions.
-     */
-    public enum Version {
-
-        /**
-         * HTTP version {@code HTTP/1.0}.
-         */
-        V1_0("HTTP/1.0"),
-
-        /**
-         * HTTP version {@code HTTP/1.1}.
-         */
-        V1_1("HTTP/1.1"),
-
-        /**
-         * HTTP version {@code HTTP/2.0}.
-         */
-        V2_0("HTTP/2.0");
-
-        private final String value;
-
-        Version(String value) {
-            this.value = value;
-        }
-
-        /**
-         * Returns HTTP version for provided parameter.
-         *
-         * @param version HTTP version.
-         * @return Version instance.
-         * @throws NullPointerException     if parameter {@code version} is null.
-         * @throws IllegalArgumentException if it is not provided version.
-         */
-        public static Version create(String version) {
-            Objects.requireNonNull(version, "Version value is null!");
-            for (Version v : Version.values()) {
-                if (version.equals(v.value)) {
-                    return v;
-                }
-            }
-            throw new IllegalArgumentException("Unknown HTTP version: " + version + "!");
-        }
-
-        /**
-         * Returns {@code String} representation of this {@link io.helidon.common.http.Http.Version}.
-         *
-         * @return a string representation.
-         */
-        public String value() {
-            return value;
-        }
-    }
-
-    /**
      * Interface representing an HTTP request method, all standard methods are in {@link io.helidon.common.http.Http.Method}
      * enumeration.
      * <p>
@@ -1596,6 +1542,30 @@ public final class Http {
          * @param value value of the header
          * @return a new header
          */
+        public static Header createCached(String name, int value) {
+            return createCached(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static Header createCached(String name, long value) {
+            return createCached(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
         public static Header createCached(HeaderName name, String value) {
             return new HeaderValueCached(name, false,
                                          false,
@@ -1612,6 +1582,18 @@ public final class Http {
          * @return a new header
          */
         public static Header createCached(HeaderName name, int value) {
+            return createCached(name, String.valueOf(value));
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static Header createCached(HeaderName name, long value) {
             return createCached(name, String.valueOf(value));
         }
 
@@ -1691,6 +1673,34 @@ public final class Http {
         }
 
         /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, int value) {
+            Objects.requireNonNull(name, "Header name must not be null");
+
+            return create(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, long value) {
+            Objects.requireNonNull(name, "Header name must not be null");
+
+            return create(HeaderNames.create(name), value);
+        }
+
+        /**
          * Create a new header. This header is considered unchanging and not sensitive.
          *
          * @param name   name of the header
@@ -1699,6 +1709,9 @@ public final class Http {
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
         public static Header create(HeaderName name, String... values) {
+            if (values.length == 0) {
+                throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
+            }
             return new HeaderValueArray(name, false, false, values);
         }
 
@@ -1763,6 +1776,32 @@ public final class Http {
          */
         public static Header create(HeaderName name, boolean changing, boolean sensitive, String... values) {
             return new HeaderValueArray(name, changing, sensitive, values);
+        }
+
+        /**
+         * Create a new header.
+         *
+         * @param name      name of the header
+         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+         * @param value     value of the header
+         * @return a new header
+         */
+        public static Header create(HeaderName name, boolean changing, boolean sensitive, int value) {
+            return create(name, changing, sensitive, String.valueOf(value));
+        }
+
+        /**
+         * Create a new header.
+         *
+         * @param name      name of the header
+         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+         * @param value     value of the header
+         * @return a new header
+         */
+        public static Header create(HeaderName name, boolean changing, boolean sensitive, long value) {
+            return create(name, changing, sensitive, String.valueOf(value));
         }
     }
 

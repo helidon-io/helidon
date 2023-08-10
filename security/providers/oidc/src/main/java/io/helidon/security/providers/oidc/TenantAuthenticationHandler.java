@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.api.HttpClientResponse;
@@ -118,7 +119,7 @@ class TenantAuthenticationHandler {
                         .post()
                         .uri(tenant.introspectUri())
                         .header(Http.Headers.ACCEPT_JSON)
-                        .headers(it -> it.add(Http.HeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate"));
+                        .headers(it -> it.add(HeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate"));
 
                 OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);
 
@@ -364,14 +365,15 @@ class TenantAuthenticationHandler {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(Http.Status.UNAUTHORIZED_401.code())
-                    .responseHeader(Http.HeaderNames.WWW_AUTHENTICATE.defaultCase(), "Bearer realm=\"" + tenantConfig.realm() + "\"")
+                    .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(),
+                                    "Bearer realm=\"" + tenantConfig.realm() + "\"")
                     .description(description)
                     .build();
         } else {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
                     .statusCode(status.code())
-                    .responseHeader(Http.HeaderNames.WWW_AUTHENTICATE.defaultCase(), errorHeader(code, description))
+                    .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(), errorHeader(code, description))
                     .description(description)
                     .build();
         }

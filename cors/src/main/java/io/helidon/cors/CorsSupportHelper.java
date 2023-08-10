@@ -443,7 +443,8 @@ public class CorsSupportHelper<Q, R> {
         //
         // Throw an exception if there is no ORIGIN because we should not even be here unless this is a CORS request, which would
         // have required the ORIGIN heading to be present when we determined the request type.
-        String origin = requestAdapter.firstHeader(Http.HeaderNames.ORIGIN).orElseThrow(noRequiredHeaderExcFactory(Http.HeaderNames.ORIGIN));
+        String origin = requestAdapter.firstHeader(Http.HeaderNames.ORIGIN)
+                .orElseThrow(noRequiredHeaderExcFactory(Http.HeaderNames.ORIGIN));
 
         if (crossOrigin.allowCredentials()) {
             new Headers()

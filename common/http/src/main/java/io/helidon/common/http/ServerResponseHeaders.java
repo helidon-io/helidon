@@ -60,23 +60,6 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @param acceptableMediaTypes media types to add.
      * @return this instance
      */
-    default ServerResponseHeaders addAcceptPatches(HttpMediaType... acceptableMediaTypes) {
-        String[] values = new String[acceptableMediaTypes.length];
-        for (int i = 0; i < acceptableMediaTypes.length; i++) {
-            HttpMediaType acceptableMediaType = acceptableMediaTypes[i];
-            values[i] = acceptableMediaType.text();
-        }
-        return add(Http.Headers.create(Http.HeaderNames.ACCEPT_PATCH,
-                                       values));
-    }
-
-    /**
-     * Adds one or more acceptedTypes path document formats
-     * (header {@link io.helidon.common.http.Http.HeaderNames#ACCEPT_PATCH}).
-     *
-     * @param acceptableMediaTypes media types to add.
-     * @return this instance
-     */
     default ServerResponseHeaders addAcceptPatches(MediaType... acceptableMediaTypes) {
         String[] values = new String[acceptableMediaTypes.length];
         for (int i = 0; i < acceptableMediaTypes.length; i++) {

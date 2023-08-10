@@ -76,6 +76,28 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
     }
 
     /**
+     * Add a header or add a header value if the header is already present.
+     *
+     * @param header header name
+     * @param value header value
+     * @return this instance
+     */
+    default B add(HeaderName header, int value) {
+        return add(Http.Headers.create(header, value));
+    }
+
+    /**
+     * Add a header or add a header value if the header is already present.
+     *
+     * @param header header name
+     * @param value header value
+     * @return this instance
+     */
+    default B add(HeaderName header, long value) {
+        return add(Http.Headers.create(header, value));
+    }
+
+    /**
      * Remove a header.
      *
      * @param name name of the header to remove
@@ -123,6 +145,35 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      */
     default B set(HeaderName name, String... values) {
         return set(Http.Headers.create(name, true, false, values));
+    }
+
+
+    /**
+     * Set a header and replace it if it already existed.
+     * Use {@link #set(io.helidon.common.http.Http.Header)} for headers that are known in advance (use a constant),
+     * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
+     * value often.
+     *
+     * @param name header name to set
+     * @param value integer value of the header
+     * @return this instance
+     */
+    default B set(HeaderName name, int value) {
+        return set(Http.Headers.create(name, true, false, value));
+    }
+
+    /**
+     * Set a header and replace it if it already existed.
+     * Use {@link #set(io.helidon.common.http.Http.Header)} for headers that are known in advance (use a constant),
+     * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
+     * value often.
+     *
+     * @param name header name to set
+     * @param value long value of the header
+     * @return this instance
+     */
+    default B set(HeaderName name, long value) {
+        return set(Http.Headers.create(name, true, false, value));
     }
 
     /**
