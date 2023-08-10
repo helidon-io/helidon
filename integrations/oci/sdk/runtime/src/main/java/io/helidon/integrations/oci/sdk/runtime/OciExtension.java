@@ -111,7 +111,6 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
-    private static String overrideOciConfigFile;
     static final String DEFAULT_OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
@@ -120,6 +119,8 @@ public final class OciExtension {
                                     .map(OciAuthenticationDetailsProvider.AuthStrategy::id)
                                     .toList())
             .build());
+    private static String overrideOciConfigFile;
+    private static OciConfig ociConfig;
 
     private OciExtension() {
     }
@@ -140,6 +141,10 @@ public final class OciExtension {
      * @see OciConfigBlueprint
      */
     public static OciConfig ociConfig() {
+        if (ociConfig != null) {
+            return ociConfig;
+        }
+
         // we do it this way to allow for the possibility of system and env vars to be used for the auth-strategy definition
         // (not advertised in the javadoc)
         String ociConfigFile = ociConfigFilename();
@@ -169,11 +174,13 @@ public final class OciExtension {
         }
 
         LOGGER.log(System.Logger.Level.DEBUG, "Using specified oci config");
-        return OciConfig.create(config);
+        ociConfig = OciConfig.create(config);
+        return ociConfig;
     }
 
     static void ociConfigFileName(String fileName) {
         overrideOciConfigFile = fileName;
+        ociConfig = null;
     }
 
     static String ociConfigFilename() {

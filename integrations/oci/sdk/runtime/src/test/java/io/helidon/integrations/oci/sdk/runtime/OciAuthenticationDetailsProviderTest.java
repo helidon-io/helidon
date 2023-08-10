@@ -36,6 +36,8 @@ import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import jakarta.inject.Named;
 import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
@@ -51,6 +53,12 @@ class OciAuthenticationDetailsProviderTest {
 
     InjectionServices injectionServices;
     Services services;
+
+    @BeforeEach
+    @AfterEach
+    void reset() {
+        OciExtension.ociConfigFileName(null);
+    }
 
     @AfterAll
     static void tearDown() {

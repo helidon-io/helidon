@@ -23,6 +23,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.MapConfigSource;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
@@ -30,9 +32,16 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OciConfigTest {
+
+    @BeforeEach
+    @AfterEach
+    void reset() {
+        OciExtension.ociConfigFileName(null);
+    }
 
     @Test
     void potentialAuthStrategies() {
@@ -203,15 +212,16 @@ class OciConfigTest {
 
     @Test
     void ociYamlConfigFile() {
+        // setup
         OciExtension.ociConfigFileName("test-oci.yaml");
 
-        try {
-            OciConfig ociConfig = OciExtension.ociConfig();
-            assertThat(ociConfig.authStrategy(),
-                       optionalValue(equalTo("resource-principal")));
-        } finally {
-            OciExtension.ociConfigFileName(null);
-        }
+        OciConfig ociConfig = OciExtension.ociConfig();
+        assertThat(ociConfig.authStrategy(),
+                   optionalValue(equalTo("resource-principal")));
+
+        assertSame(ociConfig,
+                   OciExtension.ociConfig(),
+                   "The oci configuration from the config source should be cached");
     }
 
     static Config createTestConfig(MapConfigSource.Builder... builders) {
