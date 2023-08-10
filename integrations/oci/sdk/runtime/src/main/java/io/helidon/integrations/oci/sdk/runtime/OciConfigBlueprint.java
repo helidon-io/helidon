@@ -63,6 +63,7 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
  * is used, with a final fallback set to be {@code config-file} (i.e., $HOME/.oci/config).
  *
  * @see OciExtension
+ * @see OciAvailabilityDefault
  */
 // note: this is intended to be a replica to the properties carried from the cdi integrations previously done for MP
 @Prototype.Blueprint

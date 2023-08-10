@@ -111,7 +111,8 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
-    static final String OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
+    static String overrideOciConfigFile;
+    static final String DEFAULT_OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
             .authStrategies(Arrays.stream(OciAuthenticationDetailsProvider.AuthStrategy.values())
@@ -141,9 +142,10 @@ public final class OciExtension {
     public static OciConfig ociConfig() {
         // we do it this way to allow for the possibility of system and env vars to be used for the auth-strategy definition
         // (not advertised in the javadoc)
+        String ociConfigFile = ociConfigFilename();
         io.helidon.common.config.Config config = Config.create(
-                ConfigSources.classpath(OCI_GLOBAL_CONFIG_FILE).optional()::build,
-                ConfigSources.file(Paths.get(OCI_GLOBAL_CONFIG_FILE)).optional()::build);
+                ConfigSources.classpath(ociConfigFile).optional(),
+                ConfigSources.file(Paths.get(ociConfigFile)).optional());
         if (!config.exists()
                 || !config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()) {
             // fallback
@@ -168,6 +170,14 @@ public final class OciExtension {
 
         LOGGER.log(System.Logger.Level.DEBUG, "Using specified oci config");
         return OciConfig.create(config);
+    }
+
+    static void ociConfigFileName(String fileName) {
+        overrideOciConfigFile = fileName;
+    }
+
+    static String ociConfigFilename() {
+        return (overrideOciConfigFile == null) ? DEFAULT_OCI_GLOBAL_CONFIG_FILE : overrideOciConfigFile;
     }
 
 }

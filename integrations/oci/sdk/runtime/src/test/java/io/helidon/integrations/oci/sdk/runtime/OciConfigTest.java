@@ -25,6 +25,7 @@ import io.helidon.config.MapConfigSource;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -198,6 +199,19 @@ class OciConfigTest {
                    equalTo(OciConfig.IMDS_HOSTNAME));
         assertThat(OciExtension.ociConfig().imdsTimeout().toMillis(),
                    equalTo(100L));
+    }
+
+    @Test
+    void ociYamlConfigFile() {
+        OciExtension.ociConfigFileName("test-oci.yaml");
+
+        try {
+            OciConfig ociConfig = OciExtension.ociConfig();
+            assertThat(ociConfig.authStrategy(),
+                       optionalValue(equalTo("resource-principals")));
+        } finally {
+            OciExtension.ociConfigFileName(null);
+        }
     }
 
     static Config createTestConfig(MapConfigSource.Builder... builders) {
