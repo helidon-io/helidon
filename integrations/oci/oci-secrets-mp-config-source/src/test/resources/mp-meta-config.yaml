@@ -18,4 +18,4 @@ add-default-sources: true
 sources:
   - type: 'oci-secrets'
     # vault-ocid: 123
-    # accept-pattern: '^.+\.password$'
+    accept-pattern: '^FrancqueSecret$'
