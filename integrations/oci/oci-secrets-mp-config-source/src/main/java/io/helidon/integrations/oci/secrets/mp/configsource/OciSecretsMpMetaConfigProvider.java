@@ -37,8 +37,42 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memo
 /**
  * An {@link MpMetaConfigProvider} implementation that {@linkplain #create(String, Config, String) creates} {@link
  * ConfigSource} implementations backed by the <a
- * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/secrets/package-summary.html">OCI Secrets
- * Retrieval API</a>.
+ * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/secrets/package-summary.html">Oracle Cloud
+ * Infrastructure (OCI) Secrets Retrieval API</a>.
+ *
+ * <p>Instances of this class are designed to be created by a {@link java.util.ServiceLoader} or the equivalent.</p>
+ *
+ * <p>Instances of this class are participants in Helidon's <a href="https://helidon.io/docs/v3/#/mp/config/advanced-configuration">meta-configuration facility for MicroProfile Config</a>. Following this facility's rules, here is one way to use the features of this class:</p>
+ *
+ * <ol>
+ *
+ * <li>Ensure you have at least one valid <a
+ * href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">mechanism set up properly for
+ * authenticating with OCI</a>.</li>
+ *
+ * <li>Create a (or locate an existing) classpath resource named {@code mp-meta-config.yaml}.</li>
+ *
+ * <li>Ensure it has YAML analogous to the following:<blockquote><pre>sources:
+ *  # (other sources may be present here)
+ *  - type: {@value #OCI_SECRETS} # must be exactly {@value #OCI_SECRETS} (double- or single-quoted)
+ *    accept-pattern: '^.+\.password$' # a {@linkplain java.util.regex.Matcher#matches() fully-matching} regular expression
+ *    vault-ocid: 'ocid...' # a valid OCI Vault <a href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/identifiers.htm">OCID</a>
+ *  # (other sources may be present here)
+ *</pre></blockquote></li>
+ *
+ * <li>Ensure the packaging artifact containing this class is present on the classpath or module path as
+ * appropriate.</li>
+ *
+ * </ol>
+ *
+ * <p>After registering this class for use in this way, a {@link ConfigSource} will be {@linkplain #create(String,
+ * Config, String) made available for use} by the standard MicroProfile Config {@link
+ * org.eclipse.microprofile.config.Config Config} object. This {@link ConfigSource} will {@linkplain
+ * ConfigSource#getValue(String) source its property values} from the OCI Vault identified by the relevant Vault OCID
+ * you supplied in your {@code mp-meta-config.yaml} classpath resource, provided that the name of any property in
+ * question is {@linkplain java.util.regex.Matcher#matches() entirely matched by} the {@code accept-pattern} regular
+ * expression in your {@code mp-meta-config.yaml} resource (this is to prevent needless communication with a Vault for
+ * property values that will never exist there).</p>
  *
  * @see MpMetaConfigProvider
  *
@@ -46,7 +80,10 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memo
  */
 public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
 
-    private static final int PRIORITY = 300;
+    /**
+     * An {@code int}, {@value #PRIORITY}, returned by the {@link #priority()} method.
+     */
+    public static final int PRIORITY = 300;
 
     /**
      * An unmodifiable, unchanging {@link Set} of types returned by the {@link #supportedTypes()} method.
@@ -54,6 +91,8 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
      * <p>The {@link Set} consists of a single {@link String} whose value is "oci-secrets".</p>
      */
     public static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
+
+    private static final String OCI_SECRETS = "oci-secrets";
 
     private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
 
@@ -133,6 +172,8 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
      * Returns a (determinate) priority for this {@link OciSecretsMpMetaConfigProvider} when invoked.
      *
      * @return a determinate priority
+     *
+     * @see #PRIORITY
      */
     @Override
     public int priority() {
