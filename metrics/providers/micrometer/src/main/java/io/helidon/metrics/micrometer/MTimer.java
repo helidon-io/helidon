@@ -153,10 +153,11 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
             super(Timer.builder(name));
         }
 
-        @Override
-        MTimer register(MeterRegistry meterRegistry) {
-            return MTimer.create(delegate().register(meterRegistry));
-        }
+        // TODO remove if not used
+//        @Override
+//        MTimer register(MeterRegistry meterRegistry) {
+//            return MTimer.create(delegate().register(meterRegistry));
+//        }
 
         @Override
         public Builder publishPercentiles(double... percentiles) {

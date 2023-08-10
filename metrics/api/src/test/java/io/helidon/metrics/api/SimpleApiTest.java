@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
@@ -58,72 +59,12 @@ public class SimpleApiTest {
     void testNoOpRegistrations() {
 
         Optional<Counter> fetchedCounter = Metrics.getCounter("counter1");
-        assertThat("Fetched counter 1",
-                   fetchedCounter.map(Counter::description),
-                   OptionalMatcher.optionalValue(is(COUNTER_1_DESC)));
-
+        assertThat("Fetched counter 1", fetchedCounter, OptionalMatcher.optionalEmpty());
         fetchedCounter = Metrics.getCounter("counter2", Set.of());
-        assertThat("Fetched counter 2",
-                   fetchedCounter.map(Meter::description),
-                   OptionalMatcher.optionalEmpty());
+        assertThat("Fetched counter 2", fetchedCounter, OptionalMatcher.optionalEmpty());
 
         Optional<Timer> fetchedTimer = Metrics.getTimer("timer1", Metrics.tags("t1", "v1",
                                                                                "t2", "v2"));
-        assertThat("Fetched timer",
-                   fetchedTimer.map(Meter::baseUnit),
-                   OptionalMatcher.optionalEmpty());
-
-    }
-
-    @Test
-    void testAllMetersFetch() {
-        Meter meter = Metrics.globalRegistry()
-                .meters()
-                .stream()
-                .filter(m -> m.id().name().equals("counter1"))
-                .findFirst()
-                .orElse(null);
-
-        assertThat("Counter1 via meters()", meter, sameInstance(counter1));
-    }
-
-    @Test
-    void testFilteredMetersFetch() {
-        List<Meter> candidateCounters = new ArrayList<>(Metrics.globalRegistry()
-                .meters(m -> m.id().name().equals("counter1")));
-
-        assertThat("Results", candidateCounters, hasSize(1));
-        assertThat("Single result", candidateCounters.get(0), instanceOf(Counter.class));
-        assertThat("Result name", candidateCounters.get(0).id().name(), is(equalTo("counter1")));
-        assertThat("Result", candidateCounters.get(0), sameInstance(counter1));
-    }
-
-    @Test
-    void testFilteredMetersWithNoMatches() {
-        Collection<? extends Meter> candidateCounters =
-        Metrics.globalRegistry()
-                .meters(m -> m.id().name().equals("no such meter"));
-
-        assertThat("Results", candidateCounters, hasSize(0));
-    }
-
-    @Test
-    void testRemoval() {
-        MeterRegistry reg = Metrics.globalRegistry();
-
-        assertThat("Precheck of test counter",
-                   Metrics.getCounter("doomedCounter"),
-                   OptionalMatcher.optionalEmpty());
-
-        reg.getOrCreate(Counter.builder("doomedCounter")
-                                .description("doomed counter")
-        );
-
-        reg.remove("doomedCounter", Set.of());
-
-        assertThat("Post-check of doomed counter",
-                   Metrics.getCounter("doomedCounter"),
-                   OptionalMatcher.optionalEmpty());
-
+        assertThat("Fetched timer", fetchedTimer, OptionalMatcher.optionalEmpty());
     }
 }

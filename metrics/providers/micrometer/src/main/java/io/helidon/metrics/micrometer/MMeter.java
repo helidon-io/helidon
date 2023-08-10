@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.function.Function;
 
 import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 
 /**
@@ -61,10 +60,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         return delegate;
     }
 
-    abstract static class Builder<B, HB extends Builder<B, HB, HM>, HM extends io.helidon.metrics.api.Meter>
-        // TODO check if we need the following or something similar
-
-            /* implements io.helidon.metrics.api.Meter.Builder<HB, HM> */ {
+    abstract static class Builder<B, HB extends Builder<B, HB, HM>, HM extends io.helidon.metrics.api.Meter> {
 
         private final B delegate;
         private Function<Iterable<Tag>, B> tagsSetter;
@@ -87,19 +83,16 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return delegate;
         }
 
-//        @Override
         public HB tags(Iterable<io.helidon.metrics.api.Tag> tags) {
            tagsSetter.apply(MTag.tags(tags));
            return identity();
         }
 
-//        @Override
         public HB description(String description) {
             descriptionSetter.apply(description);
             return identity();
         }
 
-//        @Override
         public HB baseUnit(String baseUnit) {
             baseUnitSetter.apply(baseUnit);
             return identity();
@@ -109,7 +102,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return (HB) this;
         }
 
-        abstract HM register(MeterRegistry meterRegistry);
+//        abstract HM register(MMeterRegistry meterRegistry);
 
     }
 

@@ -18,7 +18,6 @@ package io.helidon.metrics.micrometer;
 import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 
 class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
 
@@ -48,9 +47,10 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
                  delegate()::baseUnit);
         }
 
-        @Override
-        MGauge register(MeterRegistry meterRegistry) {
-            return MGauge.create(delegate().register(meterRegistry));
-        }
+        // TODO remove if not used
+//        @Override
+//        MGauge register(MeterRegistry meterRegistry) {
+//            return MGauge.create(delegate().register(meterRegistry));
+//        }
     }
 }

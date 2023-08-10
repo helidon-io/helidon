@@ -15,17 +15,21 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 /**
  * No-op implementation of {@link io.helidon.metrics.api.MeterRegistry}.
+ * <p>
+ *     Note that the no-op meter registry implement <em>does not</em> actually
+ *     store meters or their IDs, in line with the documented behavior of disabled metrics.
+ * </p>
  */
 class NoOpMeterRegistry implements MeterRegistry {
 
@@ -40,24 +44,17 @@ class NoOpMeterRegistry implements MeterRegistry {
 
     @Override
     public Collection<Meter> meters(Predicate<Meter> filter) {
-        List<Meter> result = new ArrayList<>();
-        meters.values()
-                .forEach(m -> {
-                    if (filter.test(m)) {
-                        result.add(m);
-                    }
-                });
-        return result;
+        return Set.of();
     }
 
     @Override
     public Optional<Meter> remove(Meter.Id id) {
-        return Optional.ofNullable(meters.remove(id));
+        return Optional.empty();
     }
 
     @Override
     public Optional<Meter> remove(Meter meter) {
-        return Optional.ofNullable(meters.remove(meter.id()));
+        return Optional.empty();
     }
 
     @Override
@@ -67,7 +64,7 @@ class NoOpMeterRegistry implements MeterRegistry {
 
     @Override
     public <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
-        return Optional.ofNullable(mClass.cast(meters.get(NoOpMeter.Id.create(name, tags))));
+        return Optional.empty();
     }
 
     @Override
@@ -79,7 +76,7 @@ class NoOpMeterRegistry implements MeterRegistry {
     }
 
     private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
-        return Optional.ofNullable(mClass.cast(meters.get(id)));
+        return Optional.empty();
     }
 
     private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
@@ -88,7 +85,6 @@ class NoOpMeterRegistry implements MeterRegistry {
         // it will success if we retrieved a previously-registered meter of a compatible type,
         // and it will (correctly) fail if we found a previously-registered meter of an incompatible
         // type compared to what the caller requested.
-        return (M) meters.computeIfAbsent(id,
-                                          thidId -> noOpBuilder.build());
+        return (M) noOpBuilder.build();
     }
 }

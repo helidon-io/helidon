@@ -17,6 +17,7 @@ package io.helidon.metrics.micrometer;
 
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -29,6 +30,10 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+
 /**
  * Implementation of the neutral Helidon metrics factory based on Micrometer.
  */
@@ -38,13 +43,40 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return new MicrometerMetricsFactory(metricsConfig);
     }
 
+    private final io.micrometer.core.instrument.MeterRegistry micrometerGlobalRegistry;
+
+    private LazyValue<MeterRegistry> globalMeterRegistry;
+
+    private final MetricsConfig metricsConfig;
+
     private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
+        micrometerGlobalRegistry = Metrics.globalRegistry;
+        this.metricsConfig = metricsConfig;
+        globalMeterRegistry = LazyValue.create(() -> {
+            ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
+            return MMeterRegistry.create(Metrics.globalRegistry);
+        });
+    }
+
+    @Override
+    public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
+        return MMeterRegistry.create(metricsConfig);
     }
 
     @Override
     public MeterRegistry globalRegistry() {
-        // TODO fix following null
-        return MMeterRegistry.create(null);
+        return globalMeterRegistry.get();
+    }
+
+    private static void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
+                                                 MetricsConfig metricsConfig) {
+        boolean prometheusRegistryPresent = compositeMeterRegistry
+                .getRegistries()
+                .stream()
+                .anyMatch(mr -> mr instanceof PrometheusMeterRegistry);
+        if (!prometheusRegistryPresent) {
+            compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
+        }
     }
 
     @Override
@@ -88,7 +120,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public Timer.Builder timerBuilder(String name) {
-        return Timer.builder(name);
+        return MTimer.builder(name);
     }
 
     @Override
