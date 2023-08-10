@@ -229,8 +229,8 @@ public class TyrusUpgrader extends WsUpgrader {
         // Map Tyrus response headers back to Nima
         upgradeResponse.getHeaders()
                 .forEach((key, value) -> headers.add(
-                        Http.HeaderNames.create(
-                                Http.HeaderNames.createName(key, key.toLowerCase(Locale.ROOT)),
+                        Http.Headers.create(
+                                Http.HeaderNames.create(key, key.toLowerCase(Locale.ROOT)),
                                 value)));
         return upgradeInfo;
     }

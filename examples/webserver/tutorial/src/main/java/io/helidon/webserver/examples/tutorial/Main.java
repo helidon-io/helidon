@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.examples.tutorial;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -42,7 +42,7 @@ public final class Main {
         routing.any(new UserFilter())
                 .register("/article", new CommentService())
                 .post("/mgmt/shutdown", (req, res) -> {
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                     res.send("Shutting down TUTORIAL server. Good bye!\n");
                     req.context()
                             .get(WebServer.class)

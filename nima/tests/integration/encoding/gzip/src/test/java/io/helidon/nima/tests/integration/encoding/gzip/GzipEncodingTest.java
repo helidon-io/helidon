@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class GzipEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
     private static final byte[] GZIP_ENTITY;
-    private static final Http.Header CONTENT_ENCODING_GZIP = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
+    private static final Http.Header CONTENT_ENCODING_GZIP = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
 
     static {
         ByteArrayOutputStream baos;

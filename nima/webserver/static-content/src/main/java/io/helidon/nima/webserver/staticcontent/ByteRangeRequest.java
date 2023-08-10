@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,9 +73,9 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         // Content-Range: bytes 0-1023/146515
         // Content-Length: 1024
         long last = (offset + length) - 1;
-        response.header(HeaderNames.create(HeaderNames.CONTENT_RANGE, true,
-                                           false,
-                                           "bytes " + offset + "-" + last + "/" + fileLength));
+        response.header(Http.Headers.create(HeaderNames.CONTENT_RANGE, true,
+                                            false,
+                                            "bytes " + offset + "-" + last + "/" + fileLength));
         response.contentLength(length);
         response.status(Http.Status.PARTIAL_CONTENT_206);
     }

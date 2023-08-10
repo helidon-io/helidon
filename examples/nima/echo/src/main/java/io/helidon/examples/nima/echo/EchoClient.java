@@ -27,8 +27,8 @@ import io.helidon.nima.webclient.api.WebClient;
  * A client that invokes the echo server.
  */
 public class EchoClient {
-    private static final Http.Header HEADER = Http.HeaderNames.create(Http.HeaderNames.create("MY-HEADER"), "header-value");
-    private static final Header HEADERS = Http.HeaderNames.create(Http.HeaderNames.create("MY-HEADERS"), "ha", "hb", "hc");
+    private static final Http.Header HEADER = Http.Headers.create("MY-HEADER", "header-value");
+    private static final Header HEADERS = Http.Headers.create("MY-HEADERS", "ha", "hb", "hc");
 
     private EchoClient() {
     }

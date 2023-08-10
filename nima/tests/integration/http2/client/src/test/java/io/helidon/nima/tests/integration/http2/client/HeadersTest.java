@@ -166,7 +166,7 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.HeaderNames.createCached("test-header-" + i, DATA + i));
+                        hv.add(Http.Headers.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })
@@ -187,7 +187,7 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.HeaderNames.createCached("test-header-" + i, DATA + i));
+                        hv.add(Http.Headers.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })

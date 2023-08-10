@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.config.Config;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
@@ -59,7 +59,7 @@ public class WebSecurityFromConfigTest extends WebSecurityTests {
                 .get("/*", (req, res) -> {
                     Optional<SecurityContext> securityContext = Contexts.context()
                             .flatMap(ctx -> ctx.get(SecurityContext.class));
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));

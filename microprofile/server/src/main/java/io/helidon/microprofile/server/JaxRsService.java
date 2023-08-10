@@ -333,16 +333,16 @@ class JaxRsService implements HttpService {
                 String name = entry.getKey();
                 List<String> values = entry.getValue();
                 if (values.size() == 1) {
-                    res.header(HeaderNames.create(HeaderNames.create(name), values.get(0)));
+                    res.header(Http.Headers.create(HeaderNames.create(name), values.get(0)));
                 } else {
-                    res.header(Http.HeaderNames.create(Http.HeaderNames.create(entry.getKey()), entry.getValue()));
+                    res.header(Http.Headers.create(entry.getKey(), entry.getValue()));
                 }
             }
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
             res.status(Http.Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
             if (contentLength > 0) {
-                res.header(HeaderNames.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
+                res.header(Http.Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
             this.outputStream = new NoFlushOutputStream(res.outputStream());
             return outputStream;

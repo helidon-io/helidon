@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ class MultiPartWriter implements EntityWriter<WriteableMultiPart> {
 
     MultiPartWriter(MediaContext context, HttpMediaType mediaType, String boundary) {
         this.context = context;
-        this.contentType = Http.HeaderNames.create(Http.HeaderNames.CONTENT_TYPE, false, false, mediaType.text());
+        this.contentType = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE, false, false, mediaType.text());
         this.boundaryPrefix = ("--" + boundary).getBytes(StandardCharsets.UTF_8);
     }
 

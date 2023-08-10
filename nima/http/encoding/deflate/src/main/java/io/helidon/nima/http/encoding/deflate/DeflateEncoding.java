@@ -32,10 +32,10 @@ import io.helidon.nima.http.encoding.ContentEncoding;
  */
 public class DeflateEncoding implements ContentEncoding {
     private static final Http.Header CONTENT_ENCODING_DEFLATE =
-            Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_ENCODING,
-                                          false,
-                                          false,
-                                          "deflate");
+            Http.Headers.createCached(Http.HeaderNames.CONTENT_ENCODING,
+                                      false,
+                                      false,
+                                      "deflate");
     private final String name;
 
     DeflateEncoding(String name) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,8 +66,8 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             HttpMediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(Http.HeaderNames.create(Http.HeaderNames.ACCEPT_PATCH,
-                                           values));
+        return add(Http.Headers.create(Http.HeaderNames.ACCEPT_PATCH,
+                                       values));
     }
 
     /**
@@ -83,8 +83,8 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             MediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(Http.HeaderNames.create(Http.HeaderNames.ACCEPT_PATCH,
-                                           values));
+        return add(Http.Headers.create(Http.HeaderNames.ACCEPT_PATCH,
+                                       values));
     }
 
     /**
@@ -139,7 +139,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      */
     default ServerResponseHeaders lastModified(Instant modified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
-        return set(Http.HeaderNames.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Http.Headers.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -151,7 +151,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return this instance
      */
     default ServerResponseHeaders lastModified(ZonedDateTime modified) {
-        return set(Http.HeaderNames.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Http.Headers.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -163,7 +163,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders location(URI location) {
-        return set(Http.HeaderNames.create(LOCATION, true, false, location.toASCIIString()));
+        return set(Http.Headers.create(LOCATION, true, false, location.toASCIIString()));
     }
 
     /**
@@ -175,7 +175,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(ZonedDateTime dateTime) {
-        return set(Http.HeaderNames.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Http.Headers.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -187,7 +187,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(Instant dateTime) {
-        return set(Http.HeaderNames.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
+        return set(Http.Headers.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
                 .format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 }

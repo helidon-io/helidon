@@ -434,7 +434,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             headers.set(Http.Headers.CONNECTION_CLOSE);
         }
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+        headers.set(Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 
         Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
         if (message.length != 0) {

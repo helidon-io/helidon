@@ -89,7 +89,7 @@ class HeaderNamesTest {
         assertThat(customAccept.hashCode(), is(Http.HeaderNames.ACCEPT.hashCode()));
 
 
-        customAccept = Http.HeaderNames.createName("accept", "ACCEPT");
+        customAccept = Http.HeaderNames.create("accept", "ACCEPT");
 
         assertThat(customAccept, equalTo(Http.HeaderNames.ACCEPT));
         assertThat(Http.HeaderNames.ACCEPT, equalTo(customAccept));
@@ -107,8 +107,8 @@ class HeaderNamesTest {
         assertThat(custom1.hashCode(), is(custom2.hashCode()));
 
 
-        custom1 = Http.HeaderNames.createName("my-custom-header", "My-Custom-Header");
-        custom2 = Http.HeaderNames.createName("my-custom-header", "my-custom-header");
+        custom1 = Http.HeaderNames.create("my-custom-header", "My-Custom-Header");
+        custom2 = Http.HeaderNames.create("my-custom-header", "my-custom-header");
 
         assertThat(custom1, equalTo(custom2));
         assertThat(custom2, equalTo(custom1));

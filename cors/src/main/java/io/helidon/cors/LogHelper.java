@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.cors;
 
 import java.util.AbstractMap;
@@ -128,8 +129,8 @@ class LogHelper {
         List<String> reasonsWhyCORS = new ArrayList<>(); // any reason is determinative
         List<String> factorsWhyPreflight = new ArrayList<>(); // factors contribute but, individually, do not determine
 
-        if (!methodName.equalsIgnoreCase(Http.Method.OPTIONS.name())) {
-            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Http.Method.OPTIONS.name()));
+        if (!methodName.equalsIgnoreCase(Http.Method.OPTIONS.text())) {
+            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Http.Method.OPTIONS.text()));
         } else {
             factorsWhyPreflight.add(String.format("method is %s", methodName));
         }

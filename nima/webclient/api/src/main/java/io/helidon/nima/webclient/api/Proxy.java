@@ -55,7 +55,7 @@ public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final Http.Header PROXY_CONNECTION =
-            Http.HeaderNames.create(Http.HeaderNames.create("Proxy-Connection"), "keep-alive");
+            Http.Headers.create("Proxy-Connection", "keep-alive");
 
     /**
      * No proxy instance.
@@ -112,7 +112,7 @@ public class Proxy {
             // Making the password char[] to String looks not correct, but it is done in the same way in HttpBasicAuthProvider
             String b64 = Base64.getEncoder().encodeToString((username.get() + ":" + new String(pass))
                     .getBytes(StandardCharsets.UTF_8));
-            this.proxyAuthHeader = Optional.of(Http.HeaderNames.create(HeaderNames.PROXY_AUTHORIZATION, "Basic " + b64));
+            this.proxyAuthHeader = Optional.of(Http.Headers.create(HeaderNames.PROXY_AUTHORIZATION, "Basic " + b64));
         } else {
             this.proxyAuthHeader = Optional.empty();
         }

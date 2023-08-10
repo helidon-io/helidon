@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class DeflateEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
     private static final byte[] DEFLATED_ENTITY;
-    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
+    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
 
     static {
         ByteArrayOutputStream baos;

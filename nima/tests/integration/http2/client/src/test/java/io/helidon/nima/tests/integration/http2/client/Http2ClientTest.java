@@ -44,7 +44,7 @@ class Http2ClientTest {
     private static final String MESSAGE = "Hello World!";
     private static final String TEST_HEADER_NAME = "custom_header";
     private static final String TEST_HEADER_VALUE = "as!fd";
-    private static final Header TEST_HEADER = HeaderNames.create(HeaderNames.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
+    private static final Header TEST_HEADER = Http.Headers.create(HeaderNames.create(TEST_HEADER_NAME), TEST_HEADER_VALUE);
     private final Http1Client http1Client;
     private final Http2Client tlsClient;
     private final Http2Client plainClient;

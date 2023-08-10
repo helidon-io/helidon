@@ -188,6 +188,14 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
+    public T from(Headers headers) {
+        for (Header header : headers) {
+            set(header);
+        }
+        return (T) this;
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
 

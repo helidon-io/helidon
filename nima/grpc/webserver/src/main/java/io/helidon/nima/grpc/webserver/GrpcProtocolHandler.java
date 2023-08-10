@@ -49,8 +49,8 @@ import static java.lang.System.Logger.Level.ERROR;
 
 class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProtocolHandler {
     private static final System.Logger LOGGER = System.getLogger(GrpcProtocolHandler.class.getName());
-    private static final Header GRPC_CONTENT_TYPE = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "application/grpc");
-    private static final Header GRPC_ENCODING_IDENTITY = HeaderNames.createCached("grpc-encoding", "identity");
+    private static final Header GRPC_CONTENT_TYPE = Http.Headers.createCached(HeaderNames.CONTENT_TYPE, "application/grpc");
+    private static final Header GRPC_ENCODING_IDENTITY = Http.Headers.createCached("grpc-encoding", "identity");
 
     private final HttpPrologue prologue;
     private final Http2Headers headers;

@@ -252,8 +252,8 @@ public class FormParamsSupport implements MediaSupport {
 
     private static class FormParamsUrlWriter extends FormParamsWriter {
         private static final Http.Header CONTENT_TYPE_URL_ENCODED =
-                Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE,
-                                              HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
+                Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+                                          HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
                                                  .withCharset("utf-8")
                                                  .text());
         private static final String SEPARATOR = "&";
@@ -267,8 +267,8 @@ public class FormParamsSupport implements MediaSupport {
 
     private static class FormParamsPlaintextWriter extends FormParamsWriter {
         private static final Http.Header CONTENT_TYPE_TEXT =
-                Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE,
-                                              HttpMediaType.create(MediaTypes.TEXT_PLAIN)
+                Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+                                          HttpMediaType.create(MediaTypes.TEXT_PLAIN)
                                                  .withCharset("utf-8")
                                                  .text());
         private static final String SEPARATOR = "\n";

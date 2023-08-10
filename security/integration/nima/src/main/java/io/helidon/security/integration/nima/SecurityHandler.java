@@ -619,7 +619,7 @@ public final class SecurityHandler implements Handler {
             AuthenticationResponse response = clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit();
             // copy headers to be returned with the current response
             response.responseHeaders()
-                    .forEach((key, value) -> res.headers().set(Http.HeaderNames.create(Http.HeaderNames.create(key), value)));
+                    .forEach((key, value) -> res.headers().set(Http.Headers.create(key, value)));
 
             switch (response.status()) {
             case SUCCESS:

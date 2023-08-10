@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
@@ -20,7 +21,6 @@ import java.util.List;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderNames;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -95,7 +95,7 @@ public final class HttpHeaderMatcher {
      * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
      */
     public static Matcher<Headers> hasHeader(Http.HeaderName name, String... value) {
-        return new HasValueMatcher(HeaderNames.create(name, value));
+        return new HasValueMatcher(Http.Headers.create(name, value));
     }
 
     /**

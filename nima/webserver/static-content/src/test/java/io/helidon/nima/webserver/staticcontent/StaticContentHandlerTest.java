@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RoutedPath;
@@ -64,7 +63,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderNames.create(IF_NONE_MATCH, "\"ccc\"", "\"ddd\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(Http.Headers.create(IF_NONE_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(ETAG, ETAG_VALUE);
@@ -75,7 +74,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(true);
         when(req.contains(IF_MATCH)).thenReturn(false);
-        when(req.get(IF_NONE_MATCH)).thenReturn(HeaderNames.create(IF_NONE_MATCH, "\"ccc\"", "W/\"aaa\""));
+        when(req.get(IF_NONE_MATCH)).thenReturn(Http.Headers.create(IF_NONE_MATCH, "\"ccc\"", "W/\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
         verify(res).set(ETAG, ETAG_VALUE);
@@ -86,7 +85,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.get(IF_MATCH)).thenReturn(Http.HeaderNames.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
+        when(req.get(IF_MATCH)).thenReturn(Http.Headers.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
         verify(res).set(ETAG, ETAG_VALUE);
@@ -97,7 +96,7 @@ class StaticContentHandlerTest {
         ServerRequestHeaders req = mock(ServerRequestHeaders.class);
         when(req.contains(IF_NONE_MATCH)).thenReturn(false);
         when(req.contains(IF_MATCH)).thenReturn(true);
-        when(req.get(IF_MATCH)).thenReturn(HeaderNames.create(IF_MATCH, "\"ccc\"", "\"aaa\""));
+        when(req.get(IF_MATCH)).thenReturn(Http.Headers.create(IF_MATCH, "\"ccc\"", "\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         StaticContentHandler.processEtag("aaa", req, res);
         verify(res).set(ETAG, ETAG_VALUE);

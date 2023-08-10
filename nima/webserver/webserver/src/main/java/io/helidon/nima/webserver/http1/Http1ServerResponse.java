@@ -56,7 +56,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final HeaderName STREAM_STATUS_NAME = Http.HeaderNames.create("stream-status");
     private static final HeaderName STREAM_RESULT_NAME = Http.HeaderNames.create("stream-result");
     private static final Header STREAM_TRAILERS =
-            Http.HeaderNames.create(Http.HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
+            Http.Headers.create(Http.HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
     private static final List<SinkProvider> SINK_PROVIDERS
@@ -285,7 +285,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
         if (!headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-            headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(bytes.length)));
+            headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(bytes.length)));
         }
 
         sendListener.headers(ctx, headers);
@@ -502,7 +502,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
+                headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
             isChunked = false;

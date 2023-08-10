@@ -127,12 +127,15 @@ public class WebClientTracing implements WebClientService {
 
         @Override
         public void setIfAbsent(String key, String... values) {
-            headers.setIfAbsent(Http.HeaderNames.create(Http.HeaderNames.create(key), values));
+            Http.HeaderName name = Http.HeaderNames.create(key);
+            if (!headers.contains(name)) {
+                headers.set(name, values);
+            }
         }
 
         @Override
         public void set(String key, String... values) {
-            headers.set(Http.HeaderNames.create(Http.HeaderNames.create(key), values));
+            headers.set(Http.Headers.create(key, values));
         }
 
         @Override

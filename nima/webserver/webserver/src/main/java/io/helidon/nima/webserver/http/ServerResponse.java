@@ -58,7 +58,7 @@ public interface ServerResponse {
 
     /**
      * Set a header. If the values are constant, please use
-     * {@link io.helidon.common.http.Http.HeaderNames#create(io.helidon.common.http.Http.HeaderName, String...)} and store the header
+     * {@link io.helidon.common.http.Http.Headers#create(io.helidon.common.http.Http.HeaderName, String...)} and store the header
      * in a constant field and call {@link #header(io.helidon.common.http.Http.Header)}.
      *
      * @param name   header name
@@ -66,7 +66,7 @@ public interface ServerResponse {
      * @return this instance
      */
     default ServerResponse header(HeaderName name, String... values) {
-        return header(Http.HeaderNames.create(name, values));
+        return header(Http.Headers.create(name, values));
     }
 
     /**
@@ -80,7 +80,7 @@ public interface ServerResponse {
      * @return this instance
      */
     default ServerResponse header(String name, String... values) {
-        return header(Http.HeaderNames.create(Http.HeaderNames.create(name), values));
+        return header(Http.Headers.create(name, values));
     }
 
     /**
@@ -202,7 +202,7 @@ public interface ServerResponse {
      * @param length content length
      */
     default void contentLength(long length) {
-        header(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
+        header(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
     }
 
     /**

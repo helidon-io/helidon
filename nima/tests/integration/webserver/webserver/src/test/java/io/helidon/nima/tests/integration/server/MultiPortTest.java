@@ -166,7 +166,7 @@ class MultiPortTest {
                 .request()) {
             assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(),
-                       hasHeader(Http.HeaderNames.create(Http.HeaderNames.LOCATION, "http://localhost:" + server.port() + "/foo")));
+                       hasHeader(Http.Headers.create(Http.HeaderNames.LOCATION, "http://localhost:" + server.port() + "/foo")));
         }
     }
 

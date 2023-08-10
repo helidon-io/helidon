@@ -46,11 +46,11 @@ class PostTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final Http.Header REQUEST_HEADER_VALUE = Http.HeaderNames.createCached(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final Http.Header REQUEST_HEADER_VALUE = Http.Headers.createCached(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final Http.Header RESPONSE_HEADER_VALUE = HeaderNames.create(RESPONSE_HEADER_NAME,
-                                                                                RESPONSE_HEADER_VALUE_STRING);
+    private static final Http.Header RESPONSE_HEADER_VALUE = Http.Headers.create(RESPONSE_HEADER_NAME,
+                                                                                 RESPONSE_HEADER_VALUE_STRING);
 
     private static WebServer server;
     private static Http2Client client;

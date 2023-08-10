@@ -22,7 +22,7 @@ import java.util.Optional;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
@@ -212,7 +212,7 @@ public class TestCORS {
     }
 
     private static Http1ClientResponse getResponse(String path, Http1ClientRequest builder) {
-        return builder.accept(HttpMediaType.APPLICATION_JSON)
+        return builder.accept(MediaTypes.APPLICATION_JSON)
                       .path(path)
                       .request();
     }
@@ -233,7 +233,7 @@ public class TestCORS {
     }
 
     private static Http1ClientResponse putResponse(String path, String message, Http1ClientRequest builder) {
-        return builder.accept(HttpMediaType.APPLICATION_JSON)
+        return builder.accept(MediaTypes.APPLICATION_JSON)
                       .path(path)
                       .submit(toPayload(message));
     }

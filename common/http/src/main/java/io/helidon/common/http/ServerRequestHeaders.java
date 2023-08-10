@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
      */
-    Http.Header HUC_ACCEPT_DEFAULT = Http.HeaderNames.create(Http.HeaderNames.ACCEPT,
-                                                             "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
+    Http.Header HUC_ACCEPT_DEFAULT = Http.Headers.create(Http.HeaderNames.ACCEPT,
+                                                         "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
 
     /**
      * Accepted types for {@link #HUC_ACCEPT_DEFAULT}.

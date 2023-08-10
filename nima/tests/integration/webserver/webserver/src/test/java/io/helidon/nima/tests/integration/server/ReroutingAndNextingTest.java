@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.nima.tests.integration.server;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -32,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class ReroutingAndNextingTest {
-    private static final Header NEXTED_HEADER = HeaderNames.create(Http.HeaderNames.create("NEXTED"), "yes");
+    private static final Header NEXTED_HEADER = Http.Headers.create("NEXTED", "yes");
 
     private final Http1Client client;
 

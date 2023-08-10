@@ -66,9 +66,9 @@ that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
 class ClientRequestImplTest {
-    private static final Http.Header REQ_CHUNKED_HEADER = Http.HeaderNames.createCached(
+    private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
             Http.HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.HeaderNames.createCached(
+    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
             Http.HeaderNames.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";

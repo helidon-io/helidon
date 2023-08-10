@@ -48,8 +48,8 @@ import static org.mockito.Mockito.when;
 
 class CachedHandlerTest {
     private static final MediaType MEDIA_TYPE_ICON = MediaTypes.create("image/x-icon");
-    private static final Http.Header ICON_TYPE = Http.HeaderNames.create(Http.HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
-    private static final Http.Header RESOURCE_CONTENT_LENGTH = Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, 7);
+    private static final Http.Header ICON_TYPE = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
+    private static final Http.Header RESOURCE_CONTENT_LENGTH = Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, 7);
 
     private static ClassPathContentHandler classpathHandler;
     private static FileSystemContentHandler fsHandler;

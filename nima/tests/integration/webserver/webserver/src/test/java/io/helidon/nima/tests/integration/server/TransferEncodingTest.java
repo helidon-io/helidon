@@ -38,7 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class TransferEncodingTest {
-    private static final Http.Header CONTENT_LENGTH_NINE = Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, "9");
+    private static final Http.Header CONTENT_LENGTH_NINE = Headers.create(Http.HeaderNames.CONTENT_LENGTH, "9");
     private final SocketHttpClient socketHttpClient;
 
     TransferEncodingTest(SocketHttpClient socketHttpClient) {

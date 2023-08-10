@@ -293,7 +293,7 @@ public class Http2Stream implements Runnable, io.helidon.nima.http2.Http2Stream 
             ServerResponseHeaders headers = response.headers();
             byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
             if (message.length != 0) {
-                headers.set(HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+                headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
             }
             Http2Headers http2Headers = Http2Headers.create(headers);
             if (message.length == 0) {

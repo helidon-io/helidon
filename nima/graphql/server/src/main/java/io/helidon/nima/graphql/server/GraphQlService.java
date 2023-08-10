@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
@@ -134,7 +134,7 @@ public class GraphQlService implements HttpService {
                                 String operationName,
                                 Map<String, Object> variables) {
 
-        res.headers().contentType(HttpMediaType.APPLICATION_JSON);
+        res.headers().contentType(MediaTypes.APPLICATION_JSON);
         res.send(JSONB.toJson(invocationHandler.execute(query, operationName, variables)));
     }
 

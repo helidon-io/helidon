@@ -26,7 +26,7 @@ import io.helidon.nima.webserver.staticcontent.StaticContentService;
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public class MediaMain {
-    private static final Http.Header UI_LOCATION = Http.HeaderNames.createCached(HeaderNames.LOCATION, "/ui");
+    private static final Http.Header UI_LOCATION = Http.Headers.createCached(HeaderNames.LOCATION, "/ui");
 
     private MediaMain() {
     }

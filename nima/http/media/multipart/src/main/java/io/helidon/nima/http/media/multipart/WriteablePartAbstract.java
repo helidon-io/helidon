@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
     }
 
     protected void send(OutputStream outputStream, WritableHeaders<?> headers, byte[] bytes) {
-        headers.set(HeaderNames.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
+        headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
 
         try (outputStream) {
             sendHeaders(outputStream, headers);
@@ -100,7 +100,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
                 disposition.add("form-data");
                 disposition.add("name=\"" + URLEncoder.encode(name(), UTF_8) + "\"");
                 fileName().ifPresent(it -> disposition.add("filename=\"" + URLEncoder.encode(it, UTF_8) + "\""));
-                headers.setIfAbsent(HeaderNames.create(HeaderNames.CONTENT_DISPOSITION, String.join("; ", disposition)));
+                headers.setIfAbsent(Http.Headers.create(HeaderNames.CONTENT_DISPOSITION, String.join("; ", disposition)));
             }
         }
         if (!headers.contains(HeaderNames.CONTENT_TYPE)) {

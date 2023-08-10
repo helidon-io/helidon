@@ -40,27 +40,6 @@ import io.helidon.common.media.type.MediaType;
  * if uppercase letters are used to obtain HTTP/2 headers).
  */
 public interface Headers extends Iterable<Http.Header> {
-
-    /**
-     * Returns an unmodifiable {@link java.util.List} of all header fields - each element represents a value of a single header
-     * field
-     * in the request. Consider to use {@link #value(io.helidon.common.http.Http.HeaderName)}
-     * or {@link #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)} method instead.
-     * <p>
-     * Always returns a List, which may be empty if the parameter is not present.
-     *
-     * @param headerName the header name
-     * @return a {@code List} of values with zero or greater size
-     * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #value(io.helidon.common.http.Http.HeaderName)
-     * @see #values(io.helidon.common.http.Http.HeaderName)
-     * @deprecated use {@link #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)} instead
-     */
-    @Deprecated(forRemoval = true)
-    default List<String> all(String headerName) {
-        return all(Http.HeaderNames.create(headerName), List::of);
-    }
-
     /**
      * Get all values of a header.
      *
@@ -97,9 +76,9 @@ public interface Headers extends Iterable<Http.Header> {
 
     /**
      * Returns a header value as a single {@link String} potentially concatenated using comma character
-     * from {@link #all(String) all} header fields.
+     * from {@link #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)} header fields.
      * <p>
-     * Accordingly to <a href="https://tools.ietf.org/html/rfc2616#section-4.2">RFC2616, Message Headers</a>:
+     * According to <a href="https://tools.ietf.org/html/rfc2616#section-4.2">RFC2616, Message Headers</a>:
      * <blockquote>
      * Multiple message-header fields with the same field-name MAY be
      * present in a message if and only if the entire field-value for that
@@ -146,16 +125,17 @@ public interface Headers extends Iterable<Http.Header> {
      * Result is composed from all header fields with requested {@code headerName} where each header value is tokenized by
      * a comma character. Tokenization respects value quoting by <i>double-quote</i> character.
      * <p>
-     * Always returns a List, which may be empty if the parameter is not present.
+     * Always returns a List, which may be empty if the header is not present.
      *
      * @param headerName the header name
      * @return a {@code List} of values with zero or greater size, never {@code null}
      * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #all(String)
+     * @see #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)
      * @see #value(io.helidon.common.http.Http.HeaderName)
      */
     default List<String> values(Http.HeaderName headerName) {
-        return all(headerName, List::of).stream()
+        return all(headerName, List::of)
+                .stream()
                 .flatMap(val -> Utils.tokenize(',', "\"", true, val).stream())
                 .collect(Collectors.toList());
     }

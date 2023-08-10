@@ -106,7 +106,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         writeBuffer.clear();
         prologue(writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(Http.HeaderNames.create(Http.HeaderNames.HOST, uri.authority()));
+        headers.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
 
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }

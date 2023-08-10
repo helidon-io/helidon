@@ -1464,7 +1464,7 @@ public final class Http {
          * @param defaultCase default case to use for custom header names (header names not known by Helidon)
          * @return header name instance
          */
-        public static HeaderName createName(String lowerCase, String defaultCase) {
+        public static HeaderName create(String lowerCase, String defaultCase) {
             HeaderName headerName = HeaderNameEnum.byName(lowerCase);
             if (headerName == null) {
                 return new HeaderNameImpl(lowerCase, defaultCase);
@@ -1488,6 +1488,94 @@ public final class Http {
             }
         }
 
+    }
+
+    /**
+     * Values of commonly used headers.
+     */
+    public static final class Headers {
+        /**
+         * Accept byte ranges for file download.
+         */
+        public static final Header ACCEPT_RANGES_BYTES = createCached(HeaderNames.ACCEPT_RANGES, "bytes");
+        /**
+         * Not accepting byte ranges for file download.
+         */
+        public static final Header ACCEPT_RANGES_NONE = createCached(HeaderNames.ACCEPT_RANGES, "none");
+        /**
+         * Chunked transfer encoding.
+         * Used in {@code HTTP/1}.
+         */
+        public static final Header TRANSFER_ENCODING_CHUNKED = createCached(HeaderNames.TRANSFER_ENCODING, "chunked");
+        /**
+         * Connection keep-alive.
+         * Used in {@code HTTP/1}.
+         */
+        public static final Header CONNECTION_KEEP_ALIVE = createCached(HeaderNames.CONNECTION, "keep-alive");
+        /**
+         * Connection close.
+         * Used in {@code HTTP/1}.
+         */
+        public static final Header CONNECTION_CLOSE = createCached(HeaderNames.CONNECTION, "close");
+        /**
+         * Content type application/json with no charset.
+         */
+        public static final Header CONTENT_TYPE_JSON = createCached(HeaderNames.CONTENT_TYPE, "application/json");
+        /**
+         * Content type text plain with no charset.
+         */
+        public static final Header CONTENT_TYPE_TEXT_PLAIN = createCached(HeaderNames.CONTENT_TYPE, "text/plain");
+        /**
+         * Content type octet stream.
+         */
+        public static final Header CONTENT_TYPE_OCTET_STREAM = createCached(HeaderNames.CONTENT_TYPE,
+                                                                                        "application/octet-stream");
+        /**
+         * Content type SSE event stream.
+         */
+        public static final Header CONTENT_TYPE_EVENT_STREAM = createCached(HeaderNames.CONTENT_TYPE,
+                                                                                        "text/event-stream");
+
+        /**
+         * Accept application/json.
+         */
+        public static final Header ACCEPT_JSON = createCached(HeaderNames.ACCEPT, "application/json");
+        /**
+         * Accept text/plain with UTF-8.
+         */
+        public static final Header ACCEPT_TEXT = createCached(HeaderNames.ACCEPT, "text/plain;charset=UTF-8");
+        /**
+         * Accept text/event-stream.
+         */
+        public static final Header ACCEPT_EVENT_STREAM = createCached(HeaderNames.ACCEPT, "text/event-stream");
+        /**
+         * Expect 100 header.
+         */
+        public static final Header EXPECT_100 = createCached(HeaderNames.EXPECT, "100-continue");
+        /**
+         * Content length with 0 value.
+         */
+        public static final Header CONTENT_LENGTH_ZERO = createCached(HeaderNames.CONTENT_LENGTH, "0");
+        /**
+         * Cache control without any caching.
+         */
+        public static final Header CACHE_NO_CACHE = create(HeaderNames.CACHE_CONTROL, "no-cache",
+                                                                       "no-store",
+                                                                       "must-revalidate",
+                                                                       "no-transform");
+        /**
+         * Cache control that allows caching with no transform.
+         */
+        public static final Header CACHE_NORMAL = createCached(HeaderNames.CACHE_CONTROL, "no-transform");
+
+        /**
+         * TE header set to {@code trailers}, used to enable trailer headers.
+         */
+        public static final Header TE_TRAILERS = createCached(HeaderNames.TE, "trailers");
+
+        private Headers() {
+        }
+
         /**
          * Create and cache byte value.
          * Use this method if the header value is stored in a constant, or used repeatedly.
@@ -1497,7 +1585,7 @@ public final class Http {
          * @return a new header
          */
         public static Header createCached(String name, String value) {
-            return createCached(create(name), value);
+            return createCached(HeaderNames.create(name), value);
         }
 
         /**
@@ -1589,9 +1677,23 @@ public final class Http {
         }
 
         /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, String value) {
+            Objects.requireNonNull(name, "Header name must not be null");
+
+            return create(HeaderNames.create(name), value);
+        }
+
+        /**
          * Create a new header. This header is considered unchanging and not sensitive.
          *
-         * @param name   name of the header*
+         * @param name   name of the header
          * @param values values of the header
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
@@ -1608,8 +1710,32 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static Header create(HeaderName name, List<String> values) {
+        public static Header create(String name, String... values) {
+            return create(HeaderNames.create(name), values);
+        }
+
+        /**
+         * Create a new header. This header is considered unchanging and not sensitive.
+         *
+         * @param name   name of the header
+         * @param values values of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(HeaderName name, Collection<String> values) {
             return new HeaderValueList(name, false, false, values);
+        }
+
+        /**
+         * Create a new header. This header is considered unchanging and not sensitive.
+         *
+         * @param name   name of the header
+         * @param values values of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, Collection<String> values) {
+            return create(HeaderNames.create(name), values);
         }
 
         /**
@@ -1637,93 +1763,6 @@ public final class Http {
          */
         public static Header create(HeaderName name, boolean changing, boolean sensitive, String... values) {
             return new HeaderValueArray(name, changing, sensitive, values);
-        }
-    }
-
-    /**
-     * Values of commonly used headers.
-     */
-    public static final class Headers {
-        /**
-         * Accept byte ranges for file download.
-         */
-        public static final Header ACCEPT_RANGES_BYTES = HeaderNames.createCached(HeaderNames.ACCEPT_RANGES, "bytes");
-        /**
-         * Not accepting byte ranges for file download.
-         */
-        public static final Header ACCEPT_RANGES_NONE = HeaderNames.createCached(HeaderNames.ACCEPT_RANGES, "none");
-        /**
-         * Chunked transfer encoding.
-         * Used in {@code HTTP/1}.
-         */
-        public static final Header TRANSFER_ENCODING_CHUNKED = HeaderNames.createCached(HeaderNames.TRANSFER_ENCODING, "chunked");
-        /**
-         * Connection keep-alive.
-         * Used in {@code HTTP/1}.
-         */
-        public static final Header CONNECTION_KEEP_ALIVE = HeaderNames.createCached(HeaderNames.CONNECTION, "keep-alive");
-        /**
-         * Connection close.
-         * Used in {@code HTTP/1}.
-         */
-        public static final Header CONNECTION_CLOSE = HeaderNames.createCached(HeaderNames.CONNECTION, "close");
-        /**
-         * Content type application/json with no charset.
-         */
-        public static final Header CONTENT_TYPE_JSON = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "application/json");
-        /**
-         * Content type text plain with no charset.
-         */
-        public static final Header CONTENT_TYPE_TEXT_PLAIN = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "text/plain");
-        /**
-         * Content type octet stream.
-         */
-        public static final Header CONTENT_TYPE_OCTET_STREAM = HeaderNames.createCached(HeaderNames.CONTENT_TYPE,
-                                                                                        "application/octet-stream");
-        /**
-         * Content type SSE event stream.
-         */
-        public static final Header CONTENT_TYPE_EVENT_STREAM = HeaderNames.createCached(HeaderNames.CONTENT_TYPE,
-                                                                                        "text/event-stream");
-
-        /**
-         * Accept application/json.
-         */
-        public static final Header ACCEPT_JSON = HeaderNames.createCached(HeaderNames.ACCEPT, "application/json");
-        /**
-         * Accept text/plain with UTF-8.
-         */
-        public static final Header ACCEPT_TEXT = HeaderNames.createCached(HeaderNames.ACCEPT, "text/plain;charset=UTF-8");
-        /**
-         * Accept text/event-stream.
-         */
-        public static final Header ACCEPT_EVENT_STREAM = HeaderNames.createCached(HeaderNames.ACCEPT, "text/event-stream");
-        /**
-         * Expect 100 header.
-         */
-        public static final Header EXPECT_100 = HeaderNames.createCached(HeaderNames.EXPECT, "100-continue");
-        /**
-         * Content length with 0 value.
-         */
-        public static final Header CONTENT_LENGTH_ZERO = HeaderNames.createCached(HeaderNames.CONTENT_LENGTH, "0");
-        /**
-         * Cache control without any caching.
-         */
-        public static final Header CACHE_NO_CACHE = HeaderNames.create(HeaderNames.CACHE_CONTROL, "no-cache",
-                                                                       "no-store",
-                                                                       "must-revalidate",
-                                                                       "no-transform");
-        /**
-         * Cache control that allows caching with no transform.
-         */
-        public static final Header CACHE_NORMAL = HeaderNames.createCached(HeaderNames.CACHE_CONTROL, "no-transform");
-
-        /**
-         * TE header set to {@code trailers}, used to enable trailer headers.
-         */
-        public static final Header TE_TRAILERS = HeaderNames.createCached(HeaderNames.TE, "trailers");
-
-        private Headers() {
         }
     }
 

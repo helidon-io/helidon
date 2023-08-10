@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ class AccessLogFeatureTest {
     private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "0";
     private static final long TIME_TAKEN_MICROS = 1140000;
-    private static final Http.Header REFERER_HEADER = Http.HeaderNames.create(HeaderNames.REFERER, "first", "second");
+    private static final Http.Header REFERER_HEADER = Http.Headers.create(HeaderNames.REFERER, "first", "second");
 
     @Test
     void testHelidonFormat() {

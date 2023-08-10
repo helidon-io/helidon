@@ -38,7 +38,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 class RoutingTestBase {
-    private static final Http.Header MULTI_HANDLER = Http.HeaderNames.createCached(
+    private static final Http.Header MULTI_HANDLER = Http.Headers.createCached(
             Http.HeaderNames.create("X-Multi-Handler"), "true");
     static Http1Client client;
     // Functions that will be used to execute http webclient shortcut methods

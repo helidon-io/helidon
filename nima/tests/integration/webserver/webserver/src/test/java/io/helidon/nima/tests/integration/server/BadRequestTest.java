@@ -44,7 +44,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
     public static final String CUSTOM_ENTITY = "There we go";
-    private static final Http.Header LOCATION_ERROR_PAGE = HeaderNames.create(Http.HeaderNames.LOCATION, "/errorPage");
+    private static final Http.Header LOCATION_ERROR_PAGE = Http.Headers.create(Http.HeaderNames.LOCATION, "/errorPage");
 
     private final Http1Client client;
     private final SocketHttpClient socketClient;

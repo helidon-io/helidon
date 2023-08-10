@@ -17,7 +17,7 @@ package io.helidon.security.examples.signatures;
 
 import java.util.Optional;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -34,7 +34,7 @@ class Service2 implements HttpService {
 
     private void handle(ServerRequest req, ServerResponse res) {
         Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-        res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+        res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
         res.send("Response from service2, you are: \n" + securityContext
                 .flatMap(SecurityContext::user)
                 .map(Subject::toString)

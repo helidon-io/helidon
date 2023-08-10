@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,11 +50,11 @@ class PostTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final Header REQUEST_HEADER_VALUE = HeaderNames.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final Header REQUEST_HEADER_VALUE = Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final Http.Header RESPONSE_HEADER_VALUE = Http.HeaderNames.create(RESPONSE_HEADER_NAME,
-                                                                                     RESPONSE_HEADER_VALUE_STRING);
+    private static final Http.Header RESPONSE_HEADER_VALUE = Headers.create(RESPONSE_HEADER_NAME,
+                                                                            RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -88,7 +88,7 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(HeaderNames.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, "5")));
         assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
@@ -104,7 +104,7 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(HeaderNames.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
+        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
         assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
@@ -141,7 +141,7 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Http.HeaderNames.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, "5")));
         assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));

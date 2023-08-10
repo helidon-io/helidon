@@ -17,7 +17,7 @@
 package io.helidon.webserver.examples.comments;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
 import io.helidon.nima.testing.junit5.webserver.RoutingTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -50,7 +50,7 @@ public class MainTest {
     public void argot() {
         try (Http1ClientResponse response = client.post("/comments/one")
                 .header(Main.USER_IDENTITY_HEADER, "Joe")
-                .contentType(HttpMediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("Spring framework is the BEST!")) {
 
             assertThat(response.status(), is(Http.Status.NOT_ACCEPTABLE_406));

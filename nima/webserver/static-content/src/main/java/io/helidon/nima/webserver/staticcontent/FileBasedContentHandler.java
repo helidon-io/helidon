@@ -61,7 +61,7 @@ abstract class FileBasedContentHandler extends StaticContentHandler {
     }
 
     static void processContentLength(Path path, ServerResponseHeaders headers) {
-        headers.set(Http.HeaderNames.create(HeaderNames.CONTENT_LENGTH, contentLength(path)));
+        headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, contentLength(path)));
     }
 
     static long contentLength(Path path) {
