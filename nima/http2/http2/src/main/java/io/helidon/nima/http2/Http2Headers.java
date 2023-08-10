@@ -28,9 +28,9 @@ import java.util.function.Supplier;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
 
@@ -431,7 +431,7 @@ public class Http2Headers {
             writeHeader(huffman, table, growingBuffer, AUTHORITY_NAME, pseudoHeaders.authority, true, false);
         }
 
-        for (HeaderValue header : headers) {
+        for (Header header : headers) {
             String value = header.value();
             boolean shouldIndex = !header.changing();
             boolean neverIndex = header.sensitive();

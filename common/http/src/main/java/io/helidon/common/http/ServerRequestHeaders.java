@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
@@ -36,7 +36,7 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
      */
-    HeaderValue HUC_ACCEPT_DEFAULT = Http.HeaderNames.create(Http.HeaderNames.ACCEPT,
+    Http.Header HUC_ACCEPT_DEFAULT = Http.HeaderNames.create(Http.HeaderNames.ACCEPT,
                                                              "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
 
     /**
@@ -79,7 +79,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifModifiedSince() {
         if (contains(Http.HeaderNames.IF_MODIFIED_SINCE)) {
             return Optional.of(get(Http.HeaderNames.IF_MODIFIED_SINCE))
-                    .map(HeaderValue::value)
+                    .map(Header::value)
                     .map(Http.DateTime::parse);
         }
 
@@ -96,7 +96,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifUnmodifiedSince() {
         if (contains(Http.HeaderNames.IF_UNMODIFIED_SINCE)) {
             return Optional.of(get(Http.HeaderNames.IF_UNMODIFIED_SINCE))
-                    .map(HeaderValue::value)
+                    .map(Http.Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
@@ -187,7 +187,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> acceptDatetime() {
         if (contains(Http.HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(Http.HeaderNames.ACCEPT_DATETIME))
-                    .map(HeaderValue::value)
+                    .map(Http.Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
@@ -201,7 +201,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> date() {
         if (contains(Http.HeaderNames.DATE)) {
             return Optional.of(get(Http.HeaderNames.DATE))
-                    .map(HeaderValue::value)
+                    .map(Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
@@ -219,7 +219,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<URI> referer() {
         if (contains(Http.HeaderNames.REFERER)) {
             return Optional.of(get(Http.HeaderNames.REFERER))
-                    .map(HeaderValue::value)
+                    .map(Header::value)
                     .map(URI::create);
         }
         return Optional.empty();

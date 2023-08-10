@@ -27,8 +27,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValueWriteable;
 
 @SuppressWarnings("unchecked")
@@ -37,23 +37,23 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     /*
      Optimization for most commonly used header names
      */
-    private final HeaderValue[] knownHeaders = new HeaderValue[KNOWN_HEADER_SIZE];
+    private final Header[] knownHeaders = new Http.Header[KNOWN_HEADER_SIZE];
     // custom (unknown) headers are slower
-    private final Map<HeaderName, HeaderValue> customHeaders = new HashMap<>();
+    private final Map<HeaderName, Http.Header> customHeaders = new HashMap<>();
     private IntSet knownHeaderIndices = new IntSet(KNOWN_HEADER_SIZE);
 
     HeadersImpl() {
     }
 
     HeadersImpl(Headers headers) {
-        for (HeaderValue header : headers) {
+        for (Header header : headers) {
             set(header);
         }
     }
 
     @Override
     public List<String> all(HeaderName name, Supplier<List<String>> defaultSupplier) {
-        HeaderValue headerValue = find(name);
+        Header headerValue = find(name);
         if (headerValue == null) {
             return defaultSupplier.get();
         }
@@ -66,8 +66,8 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
-    public boolean contains(HeaderValue headerWithValue) {
-        HeaderValue headerValue = find(headerWithValue.headerName());
+    public boolean contains(Http.Header headerWithValue) {
+        Http.Header headerValue = find(headerWithValue.headerName());
         if (headerValue == null) {
             return false;
         }
@@ -79,8 +79,8 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
-    public HeaderValue get(HeaderName name) {
-        HeaderValue headerValue = find(name);
+    public Http.Header get(HeaderName name) {
+        Header headerValue = find(name);
         if (headerValue == null) {
             throw new NoSuchElementException("Header " + name + " is not present in these headers");
         }
@@ -109,13 +109,13 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
-    public Iterator<HeaderValue> iterator() {
+    public Iterator<Http.Header> iterator() {
         return new HeaderIterator();
     }
 
     @Override
-    public T setIfAbsent(HeaderValue header) {
-        HeaderValue found = find(header.headerName());
+    public T setIfAbsent(Header header) {
+        Http.Header found = find(header.headerName());
         if (found == null) {
             set(header);
         }
@@ -124,9 +124,9 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
-    public T add(HeaderValue header) {
+    public T add(Header header) {
         HeaderName name = header.headerName();
-        HeaderValue headerValue = find(name);
+        Http.Header headerValue = find(name);
         if (headerValue == null) {
             set(header);
         } else {
@@ -152,8 +152,8 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
-    public T remove(HeaderName name, Consumer<HeaderValue> removedConsumer) {
-        HeaderValue remove = doRemove(name);
+    public T remove(HeaderName name, Consumer<Http.Header> removedConsumer) {
+        Http.Header remove = doRemove(name);
         if (remove != null) {
             removedConsumer.accept(remove);
         }
@@ -161,10 +161,10 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     }
 
     @Override
-    public T set(HeaderValue header) {
+    public T set(Http.Header header) {
         HeaderName name = header.headerName();
 
-        HeaderValue usedHeader = header;
+        Header usedHeader = header;
         if (header instanceof HeaderValueWriteable) {
             // we must create a new instance, as we risk modifying state of the provided header
             usedHeader = new HeaderValueCopy(header);
@@ -191,7 +191,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
-        for (HeaderValue headerValue : this) {
+        for (Http.Header headerValue : this) {
             for (String value : headerValue.allValues()) {
                 builder.append(headerValue.name())
                         .append(": ");
@@ -219,17 +219,17 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         return builder.toString();
     }
 
-    public HeaderValue doRemove(HeaderName name) {
+    public Header doRemove(HeaderName name) {
         if (name instanceof HeaderNameEnum) {
             int index = ((HeaderNameEnum) name).ordinal();
-            HeaderValue value = knownHeaders[index];
+            Http.Header value = knownHeaders[index];
             knownHeaders[index] = null;
             knownHeaderIndices.remove(index);
             return value;
         }
         return customHeaders.remove(name);
     }
-    private HeaderValue find(HeaderName name) {
+    private Header find(HeaderName name) {
         int index = name.index();
 
         if (index > -1) {
@@ -239,12 +239,12 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         return customHeaders.get(name);
     }
 
-    private class HeaderIterator implements Iterator<HeaderValue> {
+    private class HeaderIterator implements Iterator<Header> {
         private final boolean noCustom = customHeaders.isEmpty();
 
         private boolean inKnown = true;
         private int last = -1;
-        private Iterator<HeaderValue> customHeadersIterator;
+        private Iterator<Header> customHeadersIterator;
 
         @Override
         public boolean hasNext() {
@@ -264,7 +264,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         }
 
         @Override
-        public HeaderValue next() {
+        public Header next() {
             if (last >= 0) {
                 return knownHeaders[last];
             }

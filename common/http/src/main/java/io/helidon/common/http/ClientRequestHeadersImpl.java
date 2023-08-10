@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 
 /**
  * Client request headers.
@@ -49,12 +48,12 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public boolean contains(HeaderValue headerWithValue) {
+    public boolean contains(Http.Header headerWithValue) {
         return delegate.contains(headerWithValue);
     }
 
     @Override
-    public HeaderValue get(HeaderName name) {
+    public Http.Header get(HeaderName name) {
         return delegate.get(name);
     }
 
@@ -84,13 +83,13 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public ClientRequestHeaders setIfAbsent(HeaderValue header) {
+    public ClientRequestHeaders setIfAbsent(Http.Header header) {
         delegate.setIfAbsent(header);
         return this;
     }
 
     @Override
-    public ClientRequestHeaders add(HeaderValue header) {
+    public ClientRequestHeaders add(Http.Header header) {
         delegate.add(header);
         return this;
     }
@@ -102,19 +101,19 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public ClientRequestHeaders remove(HeaderName name, Consumer<HeaderValue> removedConsumer) {
+    public ClientRequestHeaders remove(HeaderName name, Consumer<Http.Header> removedConsumer) {
         delegate.remove(name, removedConsumer);
         return this;
     }
 
     @Override
-    public ClientRequestHeaders set(HeaderValue header) {
+    public ClientRequestHeaders set(Http.Header header) {
         delegate.set(header);
         return this;
     }
 
     @Override
-    public Iterator<HeaderValue> iterator() {
+    public Iterator<Http.Header> iterator() {
         return delegate.iterator();
     }
 

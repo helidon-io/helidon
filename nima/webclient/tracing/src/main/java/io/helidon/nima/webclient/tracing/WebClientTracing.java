@@ -138,7 +138,7 @@ public class WebClientTracing implements WebClientService {
         @Override
         public Iterable<String> keys() {
             return headers.stream()
-                    .map(Http.HeaderValue::name)
+                    .map(Http.Header::name)
                     .toList();
         }
 

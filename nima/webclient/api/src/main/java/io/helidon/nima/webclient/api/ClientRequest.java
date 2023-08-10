@@ -100,7 +100,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param header header to set
      * @return updated request
      */
-    T header(Http.HeaderValue header);
+    T header(Http.Header header);
 
     /**
      * Set an HTTP header.

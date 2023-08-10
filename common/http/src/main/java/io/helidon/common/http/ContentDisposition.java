@@ -47,7 +47,7 @@ import io.helidon.common.mapper.MapperManager;
  * </li>
  * </ul>
  */
-public class ContentDisposition implements Http.HeaderValue {
+public class ContentDisposition implements Http.Header {
     private static final String NAME_PARAMETER = "name";
     private static final String FILENAME_PARAMETER = "filename";
     private static final String CREATION_DATE_PARAMETER = "creation-date";

@@ -47,12 +47,12 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
     }
 
     @Override
-    public boolean contains(Http.HeaderValue headerWithValue) {
+    public boolean contains(Http.Header headerWithValue) {
         return headers.contains(headerWithValue);
     }
 
     @Override
-    public Http.HeaderValue get(HeaderName name) {
+    public Http.Header get(HeaderName name) {
         return headers.get(name);
     }
 
@@ -97,7 +97,7 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
     }
 
     @Override
-    public Iterator<Http.HeaderValue> iterator() {
+    public Iterator<Http.Header> iterator() {
         return headers.iterator();
     }
 

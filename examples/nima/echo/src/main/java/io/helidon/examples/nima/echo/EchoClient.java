@@ -18,7 +18,7 @@ package io.helidon.examples.nima.echo;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.Header;
 import io.helidon.nima.webclient.api.HttpClientRequest;
 import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.api.WebClient;
@@ -27,8 +27,8 @@ import io.helidon.nima.webclient.api.WebClient;
  * A client that invokes the echo server.
  */
 public class EchoClient {
-    private static final HeaderValue HEADER = Http.HeaderNames.create(Http.HeaderNames.create("MY-HEADER"), "header-value");
-    private static final HeaderValue HEADERS = Http.HeaderNames.create(Http.HeaderNames.create("MY-HEADERS"), "ha", "hb", "hc");
+    private static final Http.Header HEADER = Http.HeaderNames.create(Http.HeaderNames.create("MY-HEADER"), "header-value");
+    private static final Header HEADERS = Http.HeaderNames.create(Http.HeaderNames.create("MY-HEADERS"), "ha", "hb", "hc");
 
     private EchoClient() {
     }
@@ -52,7 +52,7 @@ public class EchoClient {
                 .request()) {
 
             Headers headers = response.headers();
-            for (HeaderValue header : headers) {
+            for (Http.Header header : headers) {
                 System.out.println("Header: " + header.name() + "=" + header.value());
             }
             System.out.println("Entity:");

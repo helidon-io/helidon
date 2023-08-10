@@ -38,7 +38,7 @@ record CachedHandlerInMemory(MediaType mediaType,
                              BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                              byte[] bytes,
                              int contentLength,
-                             Http.HeaderValue contentLengthHeader) implements CachedHandler {
+                             Http.Header contentLengthHeader) implements CachedHandler {
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,

@@ -367,7 +367,7 @@ public class TracingFeature implements HttpFeature, Weighted {
         @Override
         public Iterable<String> keys() {
             List<String> result = new LinkedList<>();
-            for (Http.HeaderValue header : request.headers()) {
+            for (Http.Header header : request.headers()) {
                 result.add(header.headerName().lowerCase());
             }
             return result;

@@ -83,7 +83,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     static void writeHeaders(Headers headers, BufferData bufferData, boolean validate) {
-        for (Http.HeaderValue header : headers) {
+        for (Http.Header header : headers) {
             if (validate) {
                 header.validate();
             }

@@ -69,7 +69,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
 
     protected void sendHeaders(OutputStream outputStream, Headers headers) throws IOException {
         BufferData bufferData = BufferData.growing(128);
-        for (Http.HeaderValue header : headers) {
+        for (Http.Header header : headers) {
             header.writeHttp1Header(bufferData);
         }
         bufferData.writeTo(outputStream);

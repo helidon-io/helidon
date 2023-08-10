@@ -67,9 +67,9 @@ class ClientRequestImplTest {
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
     public static final String BAD_HEADER_PATH = "/badHeader";
     public static final String HEADER_NAME_VALUE_DELIMETER = "->";
-    private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.HeaderNames.create(
+    private static final Http.Header REQ_CHUNKED_HEADER = Http.HeaderNames.create(
             Http.HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.HeaderNames.create(
+    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.HeaderNames.create(
             Http.HeaderNames.create("X-Req-Expect100"), "true");
     private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
     private static final Http.HeaderName BAD_HEADER_NAME = Http.HeaderNames.create("Bad-Header");
@@ -253,7 +253,7 @@ class ClientRequestImplTest {
 
     @ParameterizedTest
     @MethodSource("headers")
-    void testHeaders(Http.HeaderValue header, boolean expectsValid) {
+    void testHeaders(Http.Header header, boolean expectsValid) {
         Http1ClientRequest request = client.get("http://localhost:" + dummyPort + "/test");
         request.connection(new FakeHttp1ClientConnection());
         request.header(header);
@@ -267,7 +267,7 @@ class ClientRequestImplTest {
 
     @ParameterizedTest
     @MethodSource("headers")
-    void testDisableHeaderValidation(Http.HeaderValue header, boolean expectsValid) {
+    void testDisableHeaderValidation(Http.Header header, boolean expectsValid) {
         Http1Client clientWithNoHeaderValidation = Http1Client.builder()
                 .protocolConfig(it -> it.validateHeaders(false))
                 .build();
@@ -625,8 +625,8 @@ class ClientRequestImplTest {
             WritableHeaders<?> reqHeaders = null;
             try {
                 reqHeaders = Http1HeadersParser.readHeaders(serverReader, 16384, false);
-                for (Iterator<Http.HeaderValue> it = reqHeaders.iterator(); it.hasNext(); ) {
-                    Http.HeaderValue header = it.next();
+                for (Iterator<Http.Header> it = reqHeaders.iterator(); it.hasNext(); ) {
+                    Http.Header header = it.next();
                     header.validate();
                 }
             } catch (IllegalArgumentException e) {
@@ -691,7 +691,7 @@ class ClientRequestImplTest {
             // Send the headers
             resHeaders.add(Http.HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
-            for (Http.HeaderValue header : resHeaders) {
+            for (Http.Header header : resHeaders) {
                 header.writeHttp1Header(entityBuffer);
             }
             entityBuffer.write(Bytes.CR_BYTE);

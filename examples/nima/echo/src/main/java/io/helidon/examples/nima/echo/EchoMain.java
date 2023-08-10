@@ -76,7 +76,7 @@ public class EchoMain {
             res.header("R-QUERY_" + queryName, query.all(queryName).toString());
         }
 
-        for (Http.HeaderValue header : headers) {
+        for (Http.Header header : headers) {
             res.header("R-" + header.name(), header.allValues().toString());
         }
 

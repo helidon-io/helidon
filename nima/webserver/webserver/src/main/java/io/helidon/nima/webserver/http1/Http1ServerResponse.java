@@ -32,8 +32,8 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.DateTime;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.ServerResponseHeaders;
@@ -57,7 +57,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final HeaderName STREAM_STATUS_NAME = Http.HeaderNames.create("stream-status");
     private static final HeaderName STREAM_RESULT_NAME = Http.HeaderNames.create("stream-result");
-    private static final HeaderValue STREAM_TRAILERS =
+    private static final Header STREAM_TRAILERS =
             Http.HeaderNames.create(Http.HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
@@ -133,7 +133,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     @Override
-    public Http1ServerResponse header(HeaderValue header) {
+    public Http1ServerResponse header(Header header) {
         this.headers.set(header);
         return this;
     }
@@ -270,7 +270,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     private static void writeHeaders(Headers headers, BufferData buffer) {
-        for (HeaderValue header : headers) {
+        for (Header header : headers) {
             header.writeHttp1Header(buffer);
         }
     }

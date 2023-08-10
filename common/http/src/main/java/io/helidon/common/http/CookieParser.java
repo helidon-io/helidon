@@ -43,7 +43,7 @@ final class CookieParser {
      * @param httpHeader cookie header
      * @return a cookie name and values parsed into a parameter format.
      */
-    static Parameters parse(Http.HeaderValue httpHeader) {
+    static Parameters parse(Http.Header httpHeader) {
         Map<String, List<String>> allCookies = new HashMap<>();
         for (String value : httpHeader.allValues()) {
             parse(allCookies, value);

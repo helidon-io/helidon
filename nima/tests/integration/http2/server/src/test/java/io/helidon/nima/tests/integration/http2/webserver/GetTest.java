@@ -30,7 +30,6 @@ import java.util.Random;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -49,7 +48,7 @@ class GetTest {
     private static final String REQUEST_HEADER_VALUE = "some nice value";
     private static final HeaderName RESPONSE_HEADER_NAME = Http.HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Http.HeaderNames.create(RESPONSE_HEADER_NAME,
+    private static final Http.Header RESPONSE_HEADER_VALUE = Http.HeaderNames.create(RESPONSE_HEADER_NAME,
                                                                                      RESPONSE_HEADER_VALUE_STRING);
 
     static {

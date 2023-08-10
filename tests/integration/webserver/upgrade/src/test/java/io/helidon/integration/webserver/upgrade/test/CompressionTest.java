@@ -36,8 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 public class CompressionTest {
-    private static final Http.HeaderValue CONTENT_ENCODING_GZIP = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
-    private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
+    private static final Http.Header CONTENT_ENCODING_GZIP = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
+    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.HeaderNames.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
 
     private final Http1Client webClient;
 

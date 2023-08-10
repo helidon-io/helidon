@@ -26,7 +26,7 @@ import io.helidon.nima.webserver.staticcontent.StaticContentService;
  * The application main class.
  */
 public final class Main {
-    private static final Http.HeaderValue UI_REDIRECT = Http.HeaderNames.createCached(Http.HeaderNames.LOCATION, "/ui");
+    private static final Http.Header UI_REDIRECT = Http.HeaderNames.createCached(Http.HeaderNames.LOCATION, "/ui");
 
     /**
      * Cannot be instantiated.

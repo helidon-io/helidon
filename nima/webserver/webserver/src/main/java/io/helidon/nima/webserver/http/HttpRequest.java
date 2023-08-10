@@ -85,7 +85,7 @@ public interface HttpRequest {
      *
      * @param header header to set
      */
-    void header(Http.HeaderValue header);
+    void header(Http.Header header);
 
     /**
      * Request ID on this connection.

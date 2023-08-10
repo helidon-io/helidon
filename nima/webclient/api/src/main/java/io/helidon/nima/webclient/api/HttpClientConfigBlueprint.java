@@ -112,7 +112,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * @return default headers
      */
     @Prototype.Singular
-    Set<Http.HeaderValue> headers();
+    Set<Http.Header> headers();
 
     /**
      * Default headers as a headers object. Creates a new instance for each call, so the returned value

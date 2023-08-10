@@ -176,7 +176,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public void header(Http.HeaderValue header) {
+    public void header(Http.Header header) {
         if (writable == null) {
             writable = WritableHeaders.create(headers);
         }

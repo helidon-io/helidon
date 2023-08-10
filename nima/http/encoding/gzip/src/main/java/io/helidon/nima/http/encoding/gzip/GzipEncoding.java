@@ -24,7 +24,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.http.encoding.ContentDecoder;
 import io.helidon.nima.http.encoding.ContentEncoder;
@@ -36,7 +35,7 @@ import static io.helidon.common.http.Http.HeaderNames.CONTENT_LENGTH;
  * Support for gzip content encoding.
  */
 public class GzipEncoding implements ContentEncoding {
-    private static final HeaderValue CONTENT_ENCODING_GZIP = Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_ENCODING,
+    private static final Http.Header CONTENT_ENCODING_GZIP = Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_ENCODING,
                                                                                            false,
                                                                                            false,
                                                                                            "gzip");

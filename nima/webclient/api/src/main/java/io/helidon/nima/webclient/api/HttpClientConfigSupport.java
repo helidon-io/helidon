@@ -79,12 +79,12 @@ class HttpClientConfigSupport {
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
          * obtained from a string, in other cases, use an alternative with {@link io.helidon.common.http.Http.HeaderName}
-         * or {@link io.helidon.common.http.Http.HeaderValue}.
+         * or {@link io.helidon.common.http.Http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(Http.HeaderValue)
+         * @see #addHeader(io.helidon.common.http.Http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {

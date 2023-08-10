@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 class HeaderValueCopy extends HeaderValueBase {
-    private final Http.HeaderValue original;
+    private final Http.Header original;
     private List<String> values;
 
-    HeaderValueCopy(Http.HeaderValue header) {
+    HeaderValueCopy(Http.Header header) {
         super(header.headerName(), header.changing(), header.sensitive(), header.value());
 
         this.original = header;

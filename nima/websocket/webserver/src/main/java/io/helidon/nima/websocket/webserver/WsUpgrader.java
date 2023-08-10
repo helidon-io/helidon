@@ -87,7 +87,7 @@ public class WsUpgrader implements Http1Upgrader {
     /**
      * Supported version header.
      */
-    protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = HeaderNames.create(WS_VERSION, SUPPORTED_VERSION);
+    protected static final Http.Header SUPPORTED_VERSION_HEADER = HeaderNames.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);

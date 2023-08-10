@@ -60,7 +60,7 @@ class HeadersTest {
                 .path("/test/invalidContentType")
                 .request()) {
             ClientResponseHeaders h = res.headers();
-            Http.HeaderValue contentType = h.get(Http.HeaderNames.CONTENT_TYPE);
+            Http.Header contentType = h.get(Http.HeaderNames.CONTENT_TYPE);
             assertThat(res.status(), is(Http.Status.OK_200));
             assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_VALUE));
         }
@@ -75,7 +75,7 @@ class HeadersTest {
             assertThat(res.status(), is(Http.Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.HeaderValue rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
+            Http.Header rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value is invalid, IllegalArgumentException shall be thrown
             try {
@@ -100,7 +100,7 @@ class HeadersTest {
             assertThat(res.status(), is(Http.Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.HeaderValue rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
+            Http.Header rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value
             Optional<HttpMediaType> contentType = h.contentType();

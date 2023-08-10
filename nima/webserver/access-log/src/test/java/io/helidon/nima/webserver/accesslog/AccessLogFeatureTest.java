@@ -57,7 +57,7 @@ class AccessLogFeatureTest {
     private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "0";
     private static final long TIME_TAKEN_MICROS = 1140000;
-    private static final Http.HeaderValue REFERER_HEADER = Http.HeaderNames.create(HeaderNames.REFERER, "first", "second");
+    private static final Http.Header REFERER_HEADER = Http.HeaderNames.create(HeaderNames.REFERER, "first", "second");
 
     @Test
     void testHelidonFormat() {

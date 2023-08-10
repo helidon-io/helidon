@@ -67,7 +67,7 @@ public final class Http1HeadersParser {
             reader.skip(2);
             maxLength -= eol + 1;
 
-            Http.HeaderValue headerValue = Http.HeaderNames.create(header, value);
+            Http.Header headerValue = Http.HeaderNames.create(header, value);
             headers.add(headerValue);
             if (validate) {
                 headerValue.validate();

@@ -87,7 +87,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         if (!headers().contains(Http.HeaderNames.UPGRADE)) {
             headers().set(Http.HeaderNames.UPGRADE, protocol);
         }
-        Http.HeaderValue requestedUpgrade = headers().get(Http.HeaderNames.UPGRADE);
+        Http.Header requestedUpgrade = headers().get(Http.HeaderNames.UPGRADE);
         Http1ClientResponseImpl response;
 
         if (followRedirects()) {

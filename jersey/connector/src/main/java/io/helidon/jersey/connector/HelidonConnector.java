@@ -184,7 +184,7 @@ class HelidonConnector implements Connector {
         }, request);
 
         // copy headers
-        for (Http.HeaderValue header : httpResponse.headers()) {
+        for (Http.Header header : httpResponse.headers()) {
             for (String v : header.allValues()) {
                 response.getHeaders().add(header.name(), v);
             }

@@ -32,7 +32,7 @@ import io.helidon.nima.http.media.MediaContext;
 
 class MultiPartWriter implements EntityWriter<WriteableMultiPart> {
     private final MediaContext context;
-    private final Http.HeaderValue contentType;
+    private final Http.Header contentType;
     private final byte[] boundaryPrefix;
 
     MultiPartWriter(MediaContext context, HttpMediaType mediaType, String boundary) {

@@ -42,7 +42,6 @@ import io.helidon.common.config.Config;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.metadata.Configured;
@@ -55,7 +54,7 @@ import io.helidon.nima.common.tls.Tls;
 public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
-    private static final HeaderValue PROXY_CONNECTION =
+    private static final Http.Header PROXY_CONNECTION =
             Http.HeaderNames.create(Http.HeaderNames.create("Proxy-Connection"), "keep-alive");
 
     /**
@@ -86,7 +85,7 @@ public class Proxy {
     private final Optional<String> username;
     private final Optional<char[]> password;
     private final ProxySelector systemProxySelector;
-    private final Optional<HeaderValue> proxyAuthHeader;
+    private final Optional<Http.Header> proxyAuthHeader;
 
     private Proxy(Proxy.Builder builder) {
         this.host = builder.host();

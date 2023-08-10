@@ -28,7 +28,7 @@ import java.util.Optional;
 import io.helidon.common.GenericType;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 
@@ -119,8 +119,8 @@ public class StringSupport implements MediaSupport {
 
     private static final class StringWriter implements EntityWriter<String> {
 
-        private static final HeaderValue HEADER_PLAIN_TEXT = Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE,
-                                                                                           HttpMediaType.PLAINTEXT_UTF_8.text());
+        private static final Header HEADER_PLAIN_TEXT = Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_TYPE,
+                                                                                      HttpMediaType.PLAINTEXT_UTF_8.text());
 
         @Override
         public void write(GenericType<String> type,

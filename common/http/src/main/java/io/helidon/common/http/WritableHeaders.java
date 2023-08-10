@@ -19,8 +19,8 @@ package io.helidon.common.http;
 import java.util.List;
 import java.util.function.Consumer;
 
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.MediaType;
 
 /**
@@ -54,7 +54,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @param header header with value to set
      * @return this instance
      */
-    B setIfAbsent(HeaderValue header);
+    B setIfAbsent(Http.Header header);
 
     /**
      * Add a header or add a header value if the header is already present.
@@ -62,7 +62,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @param header header with value
      * @return this instance
      */
-    B add(HeaderValue header);
+    B add(Header header);
 
     /**
      * Add a header or add a header value if the header is already present.
@@ -91,7 +91,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      *                        called
      * @return this instance
      */
-    B remove(HeaderName name, Consumer<HeaderValue> removedConsumer);
+    B remove(HeaderName name, Consumer<Header> removedConsumer);
 
     /**
      * Sets the MIME type of the response body.
@@ -119,11 +119,11 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @param header header to set
      * @return this instance
      */
-    B set(HeaderValue header);
+    B set(Http.Header header);
 
     /**
      * Set a header and replace it if it already existed.
-     * Use {@link #set(io.helidon.common.http.Http.HeaderValue)} for headers that are known in advance (use a constant),
+     * Use {@link #set(io.helidon.common.http.Http.Header)} for headers that are known in advance (use a constant),
      * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
      * value often.
      *
@@ -137,7 +137,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
 
     /**
      * Set a header and replace it if it already existed.
-     * Use {@link #set(io.helidon.common.http.Http.HeaderValue)} for headers that are known in advance (use a constant),
+     * Use {@link #set(io.helidon.common.http.Http.Header)} for headers that are known in advance (use a constant),
      * or for headers obtained from Helidon server or client. This method is intended for headers that are unknown or change
      * value often.
      *

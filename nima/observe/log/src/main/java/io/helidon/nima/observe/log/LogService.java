@@ -67,7 +67,7 @@ class LogService implements HttpService {
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
     private final boolean permitAll;
     private final boolean logStreamEnabled;
-    private final Http.HeaderValue logStreamMediaTypeHeader;
+    private final Http.Header logStreamMediaTypeHeader;
     private final long logStreamSleepSeconds;
     private final int logStreamQueueSize;
     private final String logStreamIdleString;
@@ -261,8 +261,8 @@ class LogService implements HttpService {
     static class Builder implements io.helidon.common.Builder<Builder, LogService> {
         private boolean permitAll = false;
         private boolean logStreamEnabled = true;
-        private Http.HeaderValue logStreamMediaTypeHeader = Http.HeaderNames.create(Http.HeaderNames.CONTENT_TYPE,
-                                                                                    HttpMediaType.PLAINTEXT_UTF_8.text());
+        private Http.Header logStreamMediaTypeHeader = Http.HeaderNames.create(Http.HeaderNames.CONTENT_TYPE,
+                                                                               HttpMediaType.PLAINTEXT_UTF_8.text());
         private Charset logStreamCharset = StandardCharsets.UTF_8;
         private long logStreamSleepSeconds = 5L;
         private int logStreamQueueSize = 100;

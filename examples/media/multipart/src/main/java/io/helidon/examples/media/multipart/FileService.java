@@ -49,7 +49,7 @@ import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
  * File service.
  */
 public final class FileService implements HttpService {
-    private static final Http.HeaderValue UI_LOCATION = Http.HeaderNames.createCached(Http.HeaderNames.LOCATION, "/ui");
+    private static final Http.Header UI_LOCATION = Http.HeaderNames.createCached(Http.HeaderNames.LOCATION, "/ui");
     private final JsonBuilderFactory jsonFactory;
     private final Path storage;
 

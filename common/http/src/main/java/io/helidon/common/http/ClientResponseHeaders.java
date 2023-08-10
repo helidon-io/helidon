@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Http.DateTime;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.media.type.ParserMode;
 
 import static io.helidon.common.http.Http.HeaderNames.ACCEPT_PATCH;
@@ -81,7 +80,7 @@ public interface ClientResponseHeaders extends Headers {
     default Optional<URI> location() {
         if (contains(LOCATION)) {
             return Optional.of(get(LOCATION))
-                    .map(HeaderValue::value)
+                    .map(Http.Header::value)
                     .map(URI::create);
         }
         return Optional.empty();
@@ -97,7 +96,7 @@ public interface ClientResponseHeaders extends Headers {
     default Optional<ZonedDateTime> lastModified() {
         if (contains(LAST_MODIFIED)) {
             return Optional.of(get(LAST_MODIFIED))
-                    .map(HeaderValue::value)
+                    .map(Http.Header::value)
                     .map(DateTime::parse);
         }
         return Optional.empty();
@@ -113,7 +112,7 @@ public interface ClientResponseHeaders extends Headers {
     default Optional<ZonedDateTime> expires() {
         if (contains(EXPIRES)) {
             return Optional.of(get(EXPIRES))
-                    .map(HeaderValue::value)
+                    .map(Http.Header::value)
                     .map(DateTime::parse);
         }
         return Optional.empty();

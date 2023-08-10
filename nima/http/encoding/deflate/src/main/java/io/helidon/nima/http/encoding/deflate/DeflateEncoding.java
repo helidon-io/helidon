@@ -31,7 +31,7 @@ import io.helidon.nima.http.encoding.ContentEncoding;
  * Support for {@code deflate} content encoding.
  */
 public class DeflateEncoding implements ContentEncoding {
-    private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE =
+    private static final Http.Header CONTENT_ENCODING_DEFLATE =
             Http.HeaderNames.createCached(Http.HeaderNames.CONTENT_ENCODING,
                                           false,
                                           false,

@@ -22,8 +22,8 @@ import java.io.UncheckedIOException;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.nima.http2.FlowControl;
@@ -65,7 +65,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
     }
 
     @Override
-    public Http2ServerResponse header(HeaderValue header) {
+    public Http2ServerResponse header(Header header) {
         headers.set(header);
         return this;
     }

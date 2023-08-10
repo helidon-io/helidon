@@ -844,7 +844,7 @@ public final class Http {
      *
      * @see io.helidon.common.http.Http.HeaderValues
      */
-    public interface HeaderValue {
+    public interface Header {
 
         /**
          * Name of the header as configured by user
@@ -1015,14 +1015,14 @@ public final class Http {
     /**
      * Mutable header value.
      */
-    public interface HeaderValueWriteable extends HeaderValue {
+    public interface HeaderValueWriteable extends Header {
         /**
          * Create a new mutable header from an existing header.
          *
          * @param header header to copy
          * @return a new mutable header
          */
-        static HeaderValueWriteable create(HeaderValue header) {
+        static HeaderValueWriteable create(Header header) {
             return new HeaderValueCopy(header);
         }
 
@@ -1496,7 +1496,7 @@ public final class Http {
          * @param value value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(String name, String value) {
+        public static Header createCached(String name, String value) {
             return createCached(create(name), value);
         }
 
@@ -1508,7 +1508,7 @@ public final class Http {
          * @param value value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(HeaderName name, String value) {
+        public static Header createCached(HeaderName name, String value) {
             return new HeaderValueCached(name, false,
                                          false,
                                          value.getBytes(StandardCharsets.US_ASCII),
@@ -1523,7 +1523,7 @@ public final class Http {
          * @param value value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(HeaderName name, int value) {
+        public static Header createCached(HeaderName name, int value) {
             return createCached(name, String.valueOf(value));
         }
 
@@ -1535,7 +1535,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, LazyString value) {
+        public static Header create(HeaderName name, LazyString value) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(value);
 
@@ -1550,7 +1550,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, int value) {
+        public static Header create(HeaderName name, int value) {
             Objects.requireNonNull(name);
 
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
@@ -1564,7 +1564,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, long value) {
+        public static Header create(HeaderName name, long value) {
             Objects.requireNonNull(name);
 
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
@@ -1578,7 +1578,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, String value) {
+        public static Header create(HeaderName name, String value) {
             Objects.requireNonNull(name, "HeaderName must not be null");
             Objects.requireNonNull(value, "HeaderValue must not be null");
 
@@ -1596,7 +1596,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, String... values) {
+        public static Header create(HeaderName name, String... values) {
             return new HeaderValueArray(name, false, false, values);
         }
 
@@ -1608,7 +1608,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, List<String> values) {
+        public static Header create(HeaderName name, List<String> values) {
             return new HeaderValueList(name, false, false, values);
         }
 
@@ -1622,7 +1622,7 @@ public final class Http {
          * @param value     value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
+        public static Header createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
             return new HeaderValueCached(name, changing, sensitive, value.getBytes(StandardCharsets.UTF_8), value);
         }
 
@@ -1635,7 +1635,7 @@ public final class Http {
          * @param values    value(s) of the header
          * @return a new header
          */
-        public static HeaderValue create(HeaderName name, boolean changing, boolean sensitive, String... values) {
+        public static Header create(HeaderName name, boolean changing, boolean sensitive, String... values) {
             return new HeaderValueArray(name, changing, sensitive, values);
         }
     }
@@ -1647,81 +1647,81 @@ public final class Http {
         /**
          * Accept byte ranges for file download.
          */
-        public static final HeaderValue ACCEPT_RANGES_BYTES = HeaderNames.createCached(HeaderNames.ACCEPT_RANGES, "bytes");
+        public static final Header ACCEPT_RANGES_BYTES = HeaderNames.createCached(HeaderNames.ACCEPT_RANGES, "bytes");
         /**
          * Not accepting byte ranges for file download.
          */
-        public static final HeaderValue ACCEPT_RANGES_NONE = HeaderNames.createCached(HeaderNames.ACCEPT_RANGES, "none");
+        public static final Header ACCEPT_RANGES_NONE = HeaderNames.createCached(HeaderNames.ACCEPT_RANGES, "none");
         /**
          * Chunked transfer encoding.
          * Used in {@code HTTP/1}.
          */
-        public static final HeaderValue TRANSFER_ENCODING_CHUNKED = HeaderNames.createCached(HeaderNames.TRANSFER_ENCODING, "chunked");
+        public static final Header TRANSFER_ENCODING_CHUNKED = HeaderNames.createCached(HeaderNames.TRANSFER_ENCODING, "chunked");
         /**
          * Connection keep-alive.
          * Used in {@code HTTP/1}.
          */
-        public static final HeaderValue CONNECTION_KEEP_ALIVE = HeaderNames.createCached(HeaderNames.CONNECTION, "keep-alive");
+        public static final Header CONNECTION_KEEP_ALIVE = HeaderNames.createCached(HeaderNames.CONNECTION, "keep-alive");
         /**
          * Connection close.
          * Used in {@code HTTP/1}.
          */
-        public static final HeaderValue CONNECTION_CLOSE = HeaderNames.createCached(HeaderNames.CONNECTION, "close");
+        public static final Header CONNECTION_CLOSE = HeaderNames.createCached(HeaderNames.CONNECTION, "close");
         /**
          * Content type application/json with no charset.
          */
-        public static final HeaderValue CONTENT_TYPE_JSON = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "application/json");
+        public static final Header CONTENT_TYPE_JSON = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "application/json");
         /**
          * Content type text plain with no charset.
          */
-        public static final HeaderValue CONTENT_TYPE_TEXT_PLAIN = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "text/plain");
+        public static final Header CONTENT_TYPE_TEXT_PLAIN = HeaderNames.createCached(HeaderNames.CONTENT_TYPE, "text/plain");
         /**
          * Content type octet stream.
          */
-        public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = HeaderNames.createCached(HeaderNames.CONTENT_TYPE,
-                                                                                             "application/octet-stream");
+        public static final Header CONTENT_TYPE_OCTET_STREAM = HeaderNames.createCached(HeaderNames.CONTENT_TYPE,
+                                                                                        "application/octet-stream");
         /**
          * Content type SSE event stream.
          */
-        public static final HeaderValue CONTENT_TYPE_EVENT_STREAM = HeaderNames.createCached(HeaderNames.CONTENT_TYPE,
-                                                                                             "text/event-stream");
+        public static final Header CONTENT_TYPE_EVENT_STREAM = HeaderNames.createCached(HeaderNames.CONTENT_TYPE,
+                                                                                        "text/event-stream");
 
         /**
          * Accept application/json.
          */
-        public static final HeaderValue ACCEPT_JSON = HeaderNames.createCached(HeaderNames.ACCEPT, "application/json");
+        public static final Header ACCEPT_JSON = HeaderNames.createCached(HeaderNames.ACCEPT, "application/json");
         /**
          * Accept text/plain with UTF-8.
          */
-        public static final HeaderValue ACCEPT_TEXT = HeaderNames.createCached(HeaderNames.ACCEPT, "text/plain;charset=UTF-8");
+        public static final Header ACCEPT_TEXT = HeaderNames.createCached(HeaderNames.ACCEPT, "text/plain;charset=UTF-8");
         /**
          * Accept text/event-stream.
          */
-        public static final HeaderValue ACCEPT_EVENT_STREAM = HeaderNames.createCached(HeaderNames.ACCEPT, "text/event-stream");
+        public static final Header ACCEPT_EVENT_STREAM = HeaderNames.createCached(HeaderNames.ACCEPT, "text/event-stream");
         /**
          * Expect 100 header.
          */
-        public static final HeaderValue EXPECT_100 = HeaderNames.createCached(HeaderNames.EXPECT, "100-continue");
+        public static final Header EXPECT_100 = HeaderNames.createCached(HeaderNames.EXPECT, "100-continue");
         /**
          * Content length with 0 value.
          */
-        public static final HeaderValue CONTENT_LENGTH_ZERO = HeaderNames.createCached(HeaderNames.CONTENT_LENGTH, "0");
+        public static final Header CONTENT_LENGTH_ZERO = HeaderNames.createCached(HeaderNames.CONTENT_LENGTH, "0");
         /**
          * Cache control without any caching.
          */
-        public static final HeaderValue CACHE_NO_CACHE = HeaderNames.create(HeaderNames.CACHE_CONTROL, "no-cache",
-                                                                            "no-store",
-                                                                            "must-revalidate",
-                                                                            "no-transform");
+        public static final Header CACHE_NO_CACHE = HeaderNames.create(HeaderNames.CACHE_CONTROL, "no-cache",
+                                                                       "no-store",
+                                                                       "must-revalidate",
+                                                                       "no-transform");
         /**
          * Cache control that allows caching with no transform.
          */
-        public static final HeaderValue CACHE_NORMAL = HeaderNames.createCached(HeaderNames.CACHE_CONTROL, "no-transform");
+        public static final Header CACHE_NORMAL = HeaderNames.createCached(HeaderNames.CACHE_CONTROL, "no-transform");
 
         /**
          * TE header set to {@code trailers}, used to enable trailer headers.
          */
-        public static final HeaderValue TE_TRAILERS = HeaderNames.createCached(HeaderNames.TE, "trailers");
+        public static final Header TE_TRAILERS = HeaderNames.createCached(HeaderNames.TE, "trailers");
 
         private HeaderValues() {
         }

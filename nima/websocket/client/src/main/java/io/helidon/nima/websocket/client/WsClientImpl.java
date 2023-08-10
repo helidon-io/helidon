@@ -44,13 +44,13 @@ class WsClientImpl implements WsClient {
      * Supported WebSocket version.
      */
     static final String SUPPORTED_VERSION = "13";
-    static final Http.HeaderValue HEADER_UPGRADE_WS = Http.HeaderNames.createCached(Http.HeaderNames.UPGRADE, "websocket");
+    static final Http.Header HEADER_UPGRADE_WS = Http.HeaderNames.createCached(Http.HeaderNames.UPGRADE, "websocket");
     static final Http.HeaderName HEADER_WS_PROTOCOL = Http.HeaderNames.create("Sec-WebSocket-Protocol");
-    private static final Http.HeaderValue HEADER_WS_VERSION = Http.HeaderNames.createCached(Http.HeaderNames.create(
+    private static final Http.Header HEADER_WS_VERSION = Http.HeaderNames.createCached(Http.HeaderNames.create(
             "Sec-WebSocket-Version"), SUPPORTED_VERSION);
 
     private static final System.Logger LOGGER = System.getLogger(WsClient.class.getName());
-    private static final Http.HeaderValue HEADER_CONN_UPGRADE = Http.HeaderNames.create(Http.HeaderNames.CONNECTION, "Upgrade");
+    private static final Http.Header HEADER_CONN_UPGRADE = Http.HeaderNames.create(Http.HeaderNames.CONNECTION, "Upgrade");
     private static final Http.HeaderName HEADER_WS_ACCEPT = Http.HeaderNames.create("Sec-WebSocket-Accept");
     private static final Http.HeaderName HEADER_WS_KEY = Http.HeaderNames.create("Sec-WebSocket-Key");
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);

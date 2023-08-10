@@ -89,7 +89,7 @@ class CookieTest {
 
     private static void getHandler(ServerRequest req, ServerResponse res) {
         if (req.headers().contains(Http.HeaderNames.COOKIE)) {
-            Http.HeaderValue cookies = req.headers().get(Http.HeaderNames.COOKIE);
+            Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
             if (cookies.allValues().size() == 2
                     && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
                     && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
@@ -105,7 +105,7 @@ class CookieTest {
 
     private static void putHandler(ServerRequest req, ServerResponse res) {
         if (req.headers().contains(Http.HeaderNames.COOKIE)) {
-            Http.HeaderValue cookies = req.headers().get(Http.HeaderNames.COOKIE);
+            Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
             if (cookies.allValues().size() == 4
                     && cookies.allValues().contains("flavor1=chocolate")
                     && cookies.allValues().contains("flavor2=vanilla")
