@@ -18,7 +18,6 @@ package io.helidon.integrations.oci.secrets.mp.configsource;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -47,8 +46,6 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memo
  */
 public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
 
-    private static final String ACCEPT_PATTERN_KEY = "accept-pattern";
-
     private static final int PRIORITY = 300;
 
     /**
@@ -58,7 +55,7 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
      */
     public static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
 
-    private static final String VAULT_OCID_KEY = "vault-ocid";
+    private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
 
     /**
      * Creates a new {@link OciSecretsMpMetaConfigProvider}.
@@ -115,14 +112,10 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
         if (!this.supportedTypes().contains(Objects.requireNonNull(type, "type"))) {
             throw new IllegalArgumentException("type: " + type);
         }
-        Pattern acceptPattern =
-            Pattern.compile(metaConfig.get(ACCEPT_PATTERN_KEY)
-                            .asString()
-                            .or(() -> Optional.ofNullable(System.getProperty(ACCEPT_PATTERN_KEY))) // useful for testing
-                            .orElseThrow());
-        String vaultId = metaConfig.get(VAULT_OCID_KEY)
+        Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().get());
+        String vaultId = metaConfig.get(VAULT_OCID_PROPERTY_NAME)
             .asString()
-            .orElse(System.getProperty(VAULT_OCID_KEY)); // useful for testing
+            .orElse(System.getProperty(VAULT_OCID_PROPERTY_NAME)); // useful for testing
         return
             List.of(new SecretBundleByNameConfigSource(acceptPattern,
                                                        vaultId,
