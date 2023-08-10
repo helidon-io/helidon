@@ -94,8 +94,8 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                                  supplierInfo.supplierCategory(),
                                                  supplierInfo.supplierIndex()));
 
-            if (executorService instanceof ThreadPoolExecutor) {
-                registerMetrics((ThreadPoolExecutor) executorService, index);
+            if (executorService instanceof ThreadPoolExecutor tpe) {
+                registerMetrics(tpe, index);
             }
         }
 
