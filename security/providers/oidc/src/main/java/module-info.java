@@ -26,26 +26,25 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Security", "OIDC"}
 )
 module io.helidon.security.providers.oidc {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.config;
-    requires io.helidon.common;
     requires io.helidon.common.crypto;
+    requires io.helidon.common;
+    requires io.helidon.cors;
     requires io.helidon.webclient;
-    requires io.helidon.security;
-
-    requires io.helidon.security.providers.oidc.common;
-    requires io.helidon.security.providers.common;
-    requires io.helidon.security.util;
     requires io.helidon.security.abac.scope;
     requires io.helidon.security.jwt;
+    requires io.helidon.security.providers.common;
+    requires io.helidon.security.providers.oidc.common;
+    requires io.helidon.security.util;
 
-    requires io.helidon.cors;
-    requires static io.helidon.webserver;
-    requires static io.helidon.webserver.cors;
-    requires static io.helidon.webserver.security;
-
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+    requires static io.helidon.webserver.cors;
+    requires static io.helidon.webserver;
+    requires static io.helidon.security;
+
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.security;
 
     exports io.helidon.security.providers.oidc;
 

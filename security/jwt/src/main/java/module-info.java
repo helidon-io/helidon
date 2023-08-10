@@ -18,11 +18,13 @@
  * Http signature provider.
  */
 module io.helidon.security.jwt {
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.configurable;
-    requires transitive jakarta.json;
+
     requires io.helidon.security.util;
+
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive jakarta.json;
 
     exports io.helidon.security.jwt;
     exports io.helidon.security.jwt.jwk;

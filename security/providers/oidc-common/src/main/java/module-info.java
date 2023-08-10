@@ -19,23 +19,21 @@
  */
 module io.helidon.security.providers.oidc.common {
 
-    requires transitive io.helidon.webclient;
-    // EncryptionProvider.EncryptionSupport is part of API
-    requires transitive io.helidon.security;
-    // TokenHandler is part of API
-    requires transitive io.helidon.security.util;
-    requires io.helidon.common.parameters;
-
-    requires io.helidon.security.providers.common;
-    requires io.helidon.security.jwt;
-    requires io.helidon.security.providers.httpauth;
     requires io.helidon.common.context;
     requires io.helidon.common.crypto;
-    requires static io.helidon.config.metadata;
+    requires io.helidon.common.parameters;
     requires io.helidon.cors;
     requires io.helidon.http.media.jsonp;
-    requires io.helidon.webclient.security;
     requires io.helidon.webclient.tracing;
+    requires io.helidon.security.providers.common;
+    requires io.helidon.security.providers.httpauth;
+
+    requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.webclient;
+    requires transitive io.helidon.security.jwt;
+    requires transitive io.helidon.security.util; // TokenHandler is part of API
+    requires transitive io.helidon.security; // EncryptionProvider.EncryptionSupport is part of API
 
     exports io.helidon.security.providers.oidc.common;
     exports io.helidon.security.providers.oidc.common.spi;

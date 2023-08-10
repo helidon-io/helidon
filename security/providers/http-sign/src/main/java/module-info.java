@@ -26,16 +26,17 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Security", "Provider", "HttpSign"}
 )
 module io.helidon.security.providers.httpsign {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.common.pki;
+    requires io.helidon.common;
+    requires io.helidon.security.providers.common;
+    requires io.helidon.security.util;
+
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
     requires transitive io.helidon.security;
-    requires transitive io.helidon.common.pki;
-    requires transitive io.helidon.security.util;
-    requires transitive io.helidon.security.providers.common;
 
     exports io.helidon.security.providers.httpsign;
 

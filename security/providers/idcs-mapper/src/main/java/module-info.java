@@ -28,20 +28,20 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @Aot(false)
 module io.helidon.security.providers.idcs.mapper {
-    requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.security;
-    requires transitive io.helidon.security.providers.common;
-    requires transitive io.helidon.security.jwt;
-    requires transitive io.helidon.security.providers.oidc.common;
-
-    requires static io.helidon.config.metadata;
-
+    requires  io.helidon.common;
+    requires  io.helidon.security.providers.common;
+    requires io.helidon.common.context;
     requires io.helidon.security.integration.common;
     requires io.helidon.security.util;
+
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.security.jwt;
+    requires transitive io.helidon.security.providers.oidc.common;
+    requires transitive io.helidon.security;
 
     requires jakarta.ws.rs;
 

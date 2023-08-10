@@ -18,7 +18,12 @@
  * Policy attribute validator.
  */
 module io.helidon.security.abac.policy {
+
     requires io.helidon.security.providers.abac;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.security;
 
     exports io.helidon.security.abac.policy;
     exports io.helidon.security.abac.policy.spi;

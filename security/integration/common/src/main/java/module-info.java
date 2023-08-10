@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,13 @@
  * Security integration common.
  */
 module io.helidon.security.integration.common {
+
+    requires io.helidon.common.context;
     requires java.logging;
 
     requires transitive io.helidon.security;
     requires transitive io.helidon.tracing.config;
-
-    requires io.helidon.common.context;
+    requires transitive io.helidon.tracing;
 
     exports io.helidon.security.integration.common;
 }

@@ -26,12 +26,15 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Security", "Provider", "ConfigVault"}
 )
 module io.helidon.security.providers.config.vault {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.security;
     requires io.helidon.common.crypto;
     requires io.helidon.config.encryption;
+    requires io.helidon.security;
+
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common.config;
 
     exports io.helidon.security.providers.config.vault;
 
