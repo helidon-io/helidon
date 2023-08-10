@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 final class UsageTest {
@@ -51,13 +52,11 @@ final class UsageTest {
         //
         //    -Dvault-ocid=ocid1.vault.oci1.iad.123xyz (a valid OCI Vault OCID)
         //    -DFrancqueSecret.expectedValue='Some Value' (some value for a secret named FrancqueSecret in that vault)
-        //    -Daccept-pattern='^FrancqueSecret$' (or similar; the pattern must fully match)
         //
-        String vaultId = System.getProperty("vault-ocid");
-        assumeTrue(vaultId != null && !vaultId.isBlank());
-        String expectedValue = System.getProperty("FrancqueSecret.expectedValue");
-        assumeTrue(expectedValue != null && !expectedValue.isBlank());
         assumeTrue(Files.exists(Paths.get(System.getProperty("user.home"), ".oci", "config")));
+        assumeFalse(System.getProperty("vault-ocid", "").isBlank());
+        String expectedValue = System.getProperty("FrancqueSecret.expectedValue", "");
+        assumeFalse(expectedValue.isBlank());
 
         // The vault designated by the vault OCID must hold a secret named FrancqueSecret, and its value must be equal
         // to the expected value.
