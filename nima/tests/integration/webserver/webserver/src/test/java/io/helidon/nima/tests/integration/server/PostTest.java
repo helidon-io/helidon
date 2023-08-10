@@ -22,12 +22,11 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Random;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -79,7 +78,7 @@ class PostTest {
 
     @Test
     void testStringRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/string")
                 .submit("Hello")) {
@@ -90,12 +89,12 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderNames.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testByteRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/bytes")
                 .submit(BYTES)) {
@@ -106,13 +105,13 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(HeaderNames.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     @Disabled("Optimization kicks in")
     void testChunkedRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/chunked")
                 .outputStream(outputStream -> {
@@ -125,13 +124,13 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testHeadersRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/headers")
                 .header(REQUEST_HEADER_VALUE)
@@ -143,14 +142,14 @@ class PostTest {
             headers = response.headers();
         }
         assertThat(headers, hasHeader(Http.HeaderNames.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));
     }
 
     @Test
     void testCloseRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/close")
                 .submit("Hello")) {
@@ -159,12 +158,12 @@ class PostTest {
             assertThrows(IllegalStateException.class, () -> response.entity().as(String.class));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
+        assertThat(headers, hasHeader(Headers.CONNECTION_CLOSE));
     }
 
     private static class Routes {
         public static void close(ServerRequest req, ServerResponse res) {
-            res.header(HeaderValues.CONNECTION_CLOSE);
+            res.header(Headers.CONNECTION_CLOSE);
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
         }

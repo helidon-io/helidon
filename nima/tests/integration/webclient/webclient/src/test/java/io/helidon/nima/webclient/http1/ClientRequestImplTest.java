@@ -150,7 +150,7 @@ class ClientRequestImplTest {
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-        assertThat(response.headers(), hasHeader(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED));
+        assertThat(response.headers(), hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
     }
 
     @Test
@@ -180,7 +180,7 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First"};
 
         HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
@@ -432,13 +432,13 @@ class ClientRequestImplTest {
 
     private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
         Headers reqHeaders = req.headers();
-        if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
+        if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
         if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
             res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
         }
-        if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
             res.headers().set(REQ_CHUNKED_HEADER);
         }
 

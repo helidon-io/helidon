@@ -842,7 +842,7 @@ public final class Http {
     /**
      * HTTP Header with {@link io.helidon.common.http.Http.HeaderName} and value.
      *
-     * @see io.helidon.common.http.Http.HeaderValues
+     * @see io.helidon.common.http.Http.Headers
      */
     public interface Header {
 
@@ -1643,7 +1643,7 @@ public final class Http {
     /**
      * Values of commonly used headers.
      */
-    public static final class HeaderValues {
+    public static final class Headers {
         /**
          * Accept byte ranges for file download.
          */
@@ -1723,7 +1723,7 @@ public final class Http {
          */
         public static final Header TE_TRAILERS = HeaderNames.createCached(HeaderNames.TE, "trailers");
 
-        private HeaderValues() {
+        private Headers() {
         }
     }
 

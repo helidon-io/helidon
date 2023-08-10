@@ -31,7 +31,7 @@ import io.helidon.common.http.BadRequestException;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.DirectHandler.EventType;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.http.RequestException;
@@ -282,7 +282,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private void route(HttpPrologue prologue, WritableHeaders<?> headers) {
         EntityStyle entity = EntityStyle.NONE;
 
-        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
         } else if (headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
@@ -319,7 +319,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    writer,
                                                                    request,
                                                                    !request.headers()
-                                                                           .contains(HeaderValues.CONNECTION_CLOSE));
+                                                                           .contains(Headers.CONNECTION_CLOSE));
 
             routing.route(ctx, request, response);
             // we have handled a request without request entity
@@ -329,7 +329,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         boolean expectContinue = false;
 
         // Expect: 100-continue
-        if (headers.contains(HeaderValues.EXPECT_100)) {
+        if (headers.contains(Headers.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
                 writer.writeNow(BufferData.create(CONTINUE_100));
             }
@@ -382,7 +382,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                writer,
                                                                request,
                                                                !request.headers()
-                                                                       .contains(HeaderValues.CONNECTION_CLOSE));
+                                                                       .contains(Headers.CONNECTION_CLOSE));
 
         routing.route(ctx, request, response);
 
@@ -400,7 +400,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response) {
-        if (response.headers().contains(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
+        if (response.headers().contains(Headers.CONNECTION_CLOSE) || request.content().consumed()) {
             // we do not care about request entity if connection is getting closed
             return;
         }
@@ -408,7 +408,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             request.content().consume();
         } catch (Exception e) {
-            boolean keepAlive = request.content().consumed() && response.headers().contains(HeaderValues.CONNECTION_KEEP_ALIVE);
+            boolean keepAlive = request.content().consumed() && response.headers().contains(Headers.CONNECTION_KEEP_ALIVE);
             // we must close connection, as we could not consume request
             if (!response.isSent()) {
                 throw new InternalServerException(e.getMessage(), e, keepAlive);
@@ -431,7 +431,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();
         if (!e.keepAlive()) {
-            headers.set(HeaderValues.CONNECTION_CLOSE);
+            headers.set(Http.Headers.CONNECTION_CLOSE);
         }
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
         headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));

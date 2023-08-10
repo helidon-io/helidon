@@ -50,7 +50,7 @@ class JsonpWriter<T extends JsonStructure> implements EntityWriter<T> {
                       Headers requestHeaders,
                       WritableHeaders<?> responseHeaders) {
 
-        responseHeaders.setIfAbsent(Http.HeaderValues.CONTENT_TYPE_JSON);
+        responseHeaders.setIfAbsent(Http.Headers.CONTENT_TYPE_JSON);
 
         for (HttpMediaType acceptedType : requestHeaders.acceptedTypes()) {
             if (acceptedType.test(MediaTypes.APPLICATION_JSON)) {
@@ -70,7 +70,7 @@ class JsonpWriter<T extends JsonStructure> implements EntityWriter<T> {
 
     @Override
     public void write(GenericType<T> type, T object, OutputStream outputStream, WritableHeaders<?> headers) {
-        headers.setIfAbsent(Http.HeaderValues.CONTENT_TYPE_JSON);
+        headers.setIfAbsent(Http.Headers.CONTENT_TYPE_JSON);
         write(type, object, outputStream);
     }
 

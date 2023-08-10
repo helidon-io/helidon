@@ -379,7 +379,7 @@ public final class OidcFeature implements HttpFeature {
 
         HttpClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
-                .header(Http.HeaderValues.ACCEPT_JSON);
+                .header(Http.Headers.ACCEPT_JSON);
 
         OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
 

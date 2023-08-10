@@ -120,7 +120,7 @@ class CachedHandlerTest {
         boolean result = classpathHandler.doHandle(Http.Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));
@@ -196,7 +196,7 @@ class CachedHandlerTest {
         boolean result = fsHandler.doHandle(Http.Method.GET, "nested/resource.txt", req, res, false);
 
         assertThat("Handler should have found nested/resource.txt", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));
     }
@@ -216,7 +216,7 @@ class CachedHandlerTest {
         boolean result = fsHandler.doHandle(Http.Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));

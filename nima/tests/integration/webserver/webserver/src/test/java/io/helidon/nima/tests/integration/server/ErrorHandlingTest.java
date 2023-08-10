@@ -98,7 +98,7 @@ class ErrorHandlingTest {
                 .header(ROUTING)
                 .request()) {
             assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
-            assertThat(response.headers(), hasHeader(Http.HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
         }
     }
 

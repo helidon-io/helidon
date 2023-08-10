@@ -71,7 +71,7 @@ class WsClientImpl implements WsClient {
         ClientRequestHeaders headers = http1Client.prototype().defaultRequestHeaders();
         headers.set(HEADER_UPGRADE_WS);
         headers.set(HEADER_WS_VERSION);
-        headers.set(Http.HeaderValues.CONTENT_LENGTH_ZERO);
+        headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
         if (clientConfig.protocolConfig().subProtocols().isEmpty()) {
             headers.remove(HEADER_WS_PROTOCOL);
         } else {

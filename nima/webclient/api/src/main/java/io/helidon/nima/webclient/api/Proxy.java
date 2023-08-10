@@ -457,7 +457,7 @@ public class Proxy {
                 .header(HeaderNames.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
                 .accept(MediaTypes.WILDCARD);
         if (clientConfig.keepAlive()) {
-            request.header(Http.HeaderValues.CONNECTION_KEEP_ALIVE)
+            request.header(Http.Headers.CONNECTION_KEEP_ALIVE)
                 .header(PROXY_CONNECTION);
         }
         proxy.proxyAuthHeader.ifPresent(request::header);

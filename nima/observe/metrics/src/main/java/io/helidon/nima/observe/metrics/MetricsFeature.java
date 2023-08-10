@@ -194,7 +194,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                              Iterable<String> scopeSelection,
                              Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
-        res.header(Http.HeaderValues.CACHE_NO_CACHE);
+        res.header(Http.Headers.CACHE_NO_CACHE);
         if (mediaType == null) {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();

@@ -124,7 +124,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.clientConfig = clientConfig;
             this.protocolConfig = protocolConfig;
             this.contentLength = headers.contentLength().orElse(-1);
-            this.chunked = contentLength == -1 || headers.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            this.chunked = contentLength == -1 || headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
             this.whenSent = whenSent;
         }
@@ -177,7 +177,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             } else {
                 headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
                 if (noData) {
-                    headers.set(Http.HeaderValues.CONTENT_LENGTH_ZERO);
+                    headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
                     contentLength = 0;
                 }
                 if (noData || firstPacket != null) {
@@ -223,17 +223,17 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private void sendPrologueAndHeader() {
             boolean expects100Continue = clientConfig.sendExpectContinue() && !noData;
             if (expects100Continue) {
-                headers.add(Http.HeaderValues.EXPECT_100);
+                headers.add(Http.Headers.EXPECT_100);
             }
 
             if (chunked) {
                 // Add chunked encoding, if there is no other transfer-encoding headers
                 if (!headers.contains(Http.HeaderNames.TRANSFER_ENCODING)) {
-                    headers.set(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    headers.set(Http.Headers.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-                        headers.add(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    if (!headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(Http.Headers.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
                 headers.remove(Http.HeaderNames.CONTENT_LENGTH);

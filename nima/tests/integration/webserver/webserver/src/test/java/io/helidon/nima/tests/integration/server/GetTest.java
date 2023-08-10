@@ -22,11 +22,10 @@ import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.Random;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -85,9 +84,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -99,9 +98,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(Http.HeaderNames.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -114,9 +113,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
-            Headers headers = response.headers();
-            assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            io.helidon.common.http.Headers headers = response.headers();
+            assertThat(headers, hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
 
     }
@@ -130,12 +129,12 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
 
             assertThat("Should contain echoed request header", headers, hasHeader(REQUEST_HEADER_VALUE));
             assertThat("Should contain configured response header", headers, hasHeader(RESPONSE_HEADER_VALUE));
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -147,9 +146,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_CLOSE));
         }
     }
 
@@ -171,7 +170,7 @@ class GetTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -187,7 +186,7 @@ class GetTest {
         }
 
         private static void close(ServerRequest req, ServerResponse res) {
-            res.header(HeaderValues.CONNECTION_CLOSE);
+            res.header(Http.Headers.CONNECTION_CLOSE);
             res.send("Hello");
         }
 

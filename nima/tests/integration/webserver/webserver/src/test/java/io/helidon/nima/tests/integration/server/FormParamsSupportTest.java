@@ -21,7 +21,6 @@ import java.util.Map;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -74,7 +73,7 @@ class FormParamsSupportTest {
     void plainTextTest() {
         String result = client.method(Http.Method.PUT)
                 .path("/params")
-                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN)
                 .submit("key1=val 1\nkey2=val2_1\nkey2=val2_2")
                 .as(String.class);
         assertThat(result, containsString("key1=[val 1]"));

@@ -117,7 +117,7 @@ class TenantAuthenticationHandler {
                 HttpClientRequest post = tenant.appWebClient()
                         .post()
                         .uri(tenant.introspectUri())
-                        .header(Http.HeaderValues.ACCEPT_JSON)
+                        .header(Http.Headers.ACCEPT_JSON)
                         .headers(it -> it.add(Http.HeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate"));
 
                 OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);

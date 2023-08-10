@@ -159,7 +159,7 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First"};
 
         Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -405,12 +405,12 @@ class ClientRequestImplTest {
     private static Stream<Arguments> headers() {
         return Stream.of(
                 // Valid headers
-                arguments(Http.HeaderValues.ACCEPT_RANGES_BYTES, true),
-                arguments(Http.HeaderValues.CONNECTION_KEEP_ALIVE, true),
-                arguments(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN, true),
-                arguments(Http.HeaderValues.ACCEPT_TEXT, true),
-                arguments(Http.HeaderValues.CACHE_NO_CACHE, true),
-                arguments(Http.HeaderValues.TE_TRAILERS, true),
+                arguments(Http.Headers.ACCEPT_RANGES_BYTES, true),
+                arguments(Http.Headers.CONNECTION_KEEP_ALIVE, true),
+                arguments(Http.Headers.CONTENT_TYPE_TEXT_PLAIN, true),
+                arguments(Http.Headers.ACCEPT_TEXT, true),
+                arguments(Http.Headers.CACHE_NO_CACHE, true),
+                arguments(Http.Headers.TE_TRAILERS, true),
                 arguments(Http.HeaderNames.create(Http.HeaderNames.create("!#$Custom~%&\'*Header+^`|"), "!Header\tValue~"), true),
                 arguments(Http.HeaderNames.create(Http.HeaderNames.create("Custom_0-9_a-z_A-Z_Header"),
                                                   "\u0080Header Value\u00ff"), true),
@@ -635,9 +635,9 @@ class ClientRequestImplTest {
 
             int entitySize = 0;
             if (!requestFailed) {
-                if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
                     // Send 100-Continue if requested
-                    if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
+                    if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
                         serverWriter.write(
                                 BufferData.create("HTTP/1.1 100 Continue\r\n".getBytes(StandardCharsets.UTF_8)));
                     }
@@ -664,17 +664,17 @@ class ClientRequestImplTest {
             }
 
             WritableHeaders<?> resHeaders = WritableHeaders.create();
-            resHeaders.add(Http.HeaderValues.CONNECTION_KEEP_ALIVE);
+            resHeaders.add(Http.Headers.CONNECTION_KEEP_ALIVE);
 
             if (reqHeaders != null) {
                 // Send headers that can be validated if Expect-100-Continue, Content_Length, and Chunked request headers exist
-                if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
+                if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
                     resHeaders.set(REQ_EXPECT_100_HEADER_NAME);
                 }
                 if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
                     resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
                 }
-                if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
                     resHeaders.set(REQ_CHUNKED_HEADER);
                 }
             }

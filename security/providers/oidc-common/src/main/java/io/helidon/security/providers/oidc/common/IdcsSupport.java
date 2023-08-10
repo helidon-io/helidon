@@ -50,7 +50,7 @@ class IdcsSupport {
 
         try (HttpClientResponse response = appWebClient.post()
                 .uri(tokenEndpointUri)
-                .header(Http.HeaderValues.ACCEPT_JSON)
+                .header(Http.Headers.ACCEPT_JSON)
                 .submit(form)) {
 
             if (response.status().family() == Http.Status.Family.SUCCESSFUL) {

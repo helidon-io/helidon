@@ -29,12 +29,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.DateTime;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValues;
 import io.helidon.common.http.HttpException;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.http.WritableHeaders;
@@ -119,10 +117,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         // either content-length or chunked encoding
         // if content length - make sure to compare it when writing actual entity (streaming and send(entity))
         if (keepAlive) {
-            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
+            headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
         } else {
             // we must override even if user sets keep alive, as close was requested
-            headers.set(HeaderValues.CONNECTION_CLOSE);
+            headers.set(Http.Headers.CONNECTION_CLOSE);
         }
 
         // write headers followed by empty line
@@ -269,7 +267,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
     }
 
-    private static void writeHeaders(Headers headers, BufferData buffer) {
+    private static void writeHeaders(io.helidon.common.http.Headers headers, BufferData buffer) {
         for (Header header : headers) {
             header.writeHttp1Header(buffer);
         }
@@ -285,7 +283,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
         isSent = true;
 
-        headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
+        headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
         if (!headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
             headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(bytes.length)));
         }
@@ -349,7 +347,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
-            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            this.forcedChunked = headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
         }
 
         @Override
@@ -419,7 +417,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (isChunked || forcedChunked) {
-                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                if (request.headers().contains(Http.Headers.TE_TRAILERS)) {
                     // not optimized, trailers enabled: we need to write trailers
                     trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
                     trailers.set(STREAM_RESULT_NAME, streamResult.get());
@@ -484,7 +482,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
+                if (request.headers().contains(Http.Headers.TE_TRAILERS)) {
                     // proper stream with multiple buffers, write status amd headers
                     headers.add(STREAM_TRAILERS);
                 }
@@ -501,7 +499,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private void sendFirstChunkOnly() {
             int contentLength;
             if (firstBuffer == null) {
-                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
                 headers.set(Http.HeaderNames.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
@@ -532,11 +530,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 contentLength = -1;
                 // Add chunked encoding, if there is no other transfer-encoding headers
                 if (!headers.contains(Http.HeaderNames.TRANSFER_ENCODING)) {
-                    headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    headers.set(Http.Headers.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                    if (!headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(Http.Headers.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
             }

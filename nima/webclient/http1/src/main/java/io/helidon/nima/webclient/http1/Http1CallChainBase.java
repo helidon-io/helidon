@@ -217,7 +217,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             return decoder.apply(new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length));
-        } else if (responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
             return new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
@@ -226,7 +226,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private boolean mayHaveEntity(Http.Status responseStatus, ClientResponseHeaders responseHeaders) {
-        if (responseHeaders.contains(Http.HeaderValues.CONTENT_LENGTH_ZERO)) {
+        if (responseHeaders.contains(Http.Headers.CONTENT_LENGTH_ZERO)) {
             return false;
         }
         if (responseStatus == Http.Status.NO_CONTENT_204) {
@@ -234,7 +234,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         if ((
                 responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+                        && !responseHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }

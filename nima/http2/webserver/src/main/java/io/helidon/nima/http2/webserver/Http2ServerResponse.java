@@ -24,7 +24,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.nima.http2.FlowControl;
 import io.helidon.nima.http2.Http2Flag;
@@ -268,7 +268,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private void sendFirstChunkOnly() {
             int contentLength;
             if (firstBuffer == null) {
-                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
+                headers.set(Headers.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
                 headers.set(Http.HeaderNames.create(HeaderNames.CONTENT_LENGTH,

@@ -29,7 +29,7 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.ParserMode;
@@ -91,7 +91,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             this.entityLength = Long.parseLong(responseHeaders.get(HeaderNames.CONTENT_LENGTH).value());
-        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = -1;
         }
         if (responseHeaders.contains(Http.HeaderNames.TRAILER)) {
@@ -122,7 +122,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
+                if (headers().contains(Http.Headers.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0) {

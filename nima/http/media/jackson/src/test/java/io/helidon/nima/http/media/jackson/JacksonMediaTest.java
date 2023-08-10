@@ -70,7 +70,7 @@ class JacksonMediaTest {
         res.supplier().get()
                 .write(BOOK_TYPE, new Book("test-title"), os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.HeaderValues.CONTENT_TYPE_JSON));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.Headers.CONTENT_TYPE_JSON));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"test-title\""));
@@ -97,7 +97,7 @@ class JacksonMediaTest {
         res.supplier().get()
                 .write(BOOK_LIST_TYPE, books, os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.HeaderValues.CONTENT_TYPE_JSON));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.Headers.CONTENT_TYPE_JSON));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"first\""));
