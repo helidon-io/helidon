@@ -357,7 +357,8 @@ interface OciConfigBlueprint {
         }
 
         try {
-            ConfigFileReader.ConfigFile ignoredCfgFile = Objects.requireNonNull(ConfigFileReader.parseDefault());
+            ConfigFileReader.ConfigFile ignoredCfgFile = ConfigFileReader.parseDefault();
+            Objects.requireNonNull(ignoredCfgFile);
             return true;
         } catch (Exception e) {
             return false;
