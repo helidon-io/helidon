@@ -23,11 +23,11 @@ import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 module io.helidon.metrics.api {
 
     requires io.helidon.http;
-    requires transitive io.helidon.common.config;
 
-    requires transitive microprofile.metrics.api;
     requires static io.helidon.config.metadata;
-    requires micrometer.core;
+
+    requires transitive io.helidon.config;
+    requires transitive microprofile.metrics.api;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;
