@@ -20,17 +20,17 @@ import io.helidon.openapi.OpenApiUiNoOpFactory;
  * Helidon common OpenAPI behavior.
  */
 module io.helidon.openapi {
-    requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
-    requires transitive io.helidon.servicecommon;
-
-
     requires jakarta.json;
 
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.servicecommon;
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.openapi;
 
