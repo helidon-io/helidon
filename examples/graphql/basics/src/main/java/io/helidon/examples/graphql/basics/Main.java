@@ -18,8 +18,8 @@ package io.helidon.examples.graphql.basics;
 
 import java.util.List;
 
-import io.helidon.nima.graphql.server.GraphQlService;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.graphql.GraphQlService;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;

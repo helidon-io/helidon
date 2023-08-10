@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-telemetry-secondary</artifactId>
-    <name>Microprofile Telemetry Secondary service</name>
+    <name>Helidon Examples MicroProfile Telemetry Secondary service</name>
 
     <dependencies>
         <dependency>

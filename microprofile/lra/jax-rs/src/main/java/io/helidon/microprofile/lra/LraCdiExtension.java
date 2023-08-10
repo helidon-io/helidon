@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.Reflected;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

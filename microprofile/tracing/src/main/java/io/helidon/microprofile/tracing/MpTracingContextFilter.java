@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package io.helidon.microprofile.tracing;
 import java.util.Optional;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.jersey.client.internal.TracingContext;
+import io.helidon.webserver.http.ServerRequest;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

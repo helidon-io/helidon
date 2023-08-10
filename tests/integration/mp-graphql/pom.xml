@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-tests-integration-mp-graphql</artifactId>
-    <name>Helidon Integration Test MP GraphQL</name>
+    <name>Helidon Tests Integration MP GraphQL</name>
 
     <dependencies>
         <dependency>

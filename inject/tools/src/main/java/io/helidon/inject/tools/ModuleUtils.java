@@ -68,6 +68,14 @@ public class ModuleUtils {
     static final String SERVICE_PROVIDER_MODULE_INFO_HBS = "module-info.hbs";
     static final String SRC_MAIN_JAVA_DIR = "/src/main/java";
     static final String SRC_TEST_JAVA_DIR = "/src/test/java";
+    static final ModuleInfoItem MODULE_COMPONENT_MODULE_INFO = ModuleInfoItem.builder()
+            .provides(true)
+            .target(ModuleComponent.class.getName())
+            .build();
+    static final ModuleInfoItem APPLICATION_MODULE_INFO = ModuleInfoItem.builder()
+            .provides(true)
+            .target(Application.class.getName())
+            .build();
 
     private ModuleUtils() {
     }
@@ -75,7 +83,7 @@ public class ModuleUtils {
     /**
      * Returns the suggested package name to use.
      *
-     * @param typeNames          the set of types that are being codegen'ed
+     * @param typeNames          the set of types that are being code generated
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @param descriptor         the module-info descriptor
      * @return the suggested package name
@@ -90,7 +98,7 @@ public class ModuleUtils {
     /**
      * Returns the suggested package name to use.
      *
-     * @param typeNames          the set of types that are being codegen'ed
+     * @param typeNames          the set of types that are being code generated
      * @param defaultPackageName the default package name to use if all options are exhausted
      * @return the suggested package name
      */
@@ -104,9 +112,9 @@ public class ModuleUtils {
                                                        String defaultPackageName) {
         String export = null;
         if (descriptor != null) {
-            Optional<ModuleInfoItem> provides = descriptor.first(Application.class.getName());
+            Optional<ModuleInfoItem> provides = descriptor.first(APPLICATION_MODULE_INFO);
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {
-                provides = descriptor.first(ModuleComponent.class.getName());
+                provides = descriptor.first(MODULE_COMPONENT_MODULE_INFO);
             }
             if (provides.isEmpty() || provides.get().withOrTo().isEmpty()) {
                 export = descriptor.firstUnqualifiedPackageExport().orElse(null);

@@ -23,7 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;

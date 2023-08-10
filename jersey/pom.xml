@@ -43,8 +43,12 @@
         <module>common</module>
     </modules>
 
-    <properties>
-        <!-- these modules do not contain source code -->
-        <spotbugs.skip>true</spotbugs.skip>
-    </properties>
+    <profiles>
+        <profile>
+            <id>tests</id>
+            <modules>
+                <module>tests</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

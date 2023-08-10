@@ -25,8 +25,8 @@ import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;

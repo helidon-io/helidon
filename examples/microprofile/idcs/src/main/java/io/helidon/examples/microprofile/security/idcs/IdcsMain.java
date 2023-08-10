@@ -38,8 +38,8 @@ public final class IdcsMain {
         System.out.println("  http://localhost:7987/rest/login");
         System.out.println("Full security with scopes and roles (see IdcsResource.java)");
         System.out.println("  http://localhost:7987/rest/scopes");
-        System.out.println("A protected nima service (see application.yaml - security.web-server)");
-        System.out.println("  http://localhost:7987/nima");
+        System.out.println("A protected service (see application.yaml - security.web-server)");
+        System.out.println("  http://localhost:7987/service");
         System.out.println("A protected static resource (see application.yaml - security.web-server");
         System.out.println("  http://localhost:7987/web/resource.html");
     }

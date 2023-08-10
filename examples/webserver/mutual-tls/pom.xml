@@ -26,32 +26,32 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-mutual-tls</artifactId>
-    <name>Helidon WebServer Examples Mutual TLS</name>
+    <name>Helidon Examples WebServer Mutual TLS</name>
 
     <description>
         Application demonstrates the use of mutual TLS with WebServer and WebClient
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.mtls.ServerConfigMain</mainClass>
+        <mainClass>io.helidon.examples.webserver.mtls.ServerConfigMain</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

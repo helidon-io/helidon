@@ -28,28 +28,28 @@
 
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-fault-tolerance</artifactId>
-    <name>Helidon WebServer Examples FT</name>
+    <name>Helidon Examples WebServer FT</name>
 
     <description>
         Application demonstrates Fault tolerance used in webserver.
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.faulttolerance.Main</mainClass>
+        <mainClass>io.helidon.examples.webserver.faulttolerance.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.fault-tolerance</groupId>
-            <artifactId>helidon-nima-fault-tolerance</artifactId>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

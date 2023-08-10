@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.integration.yamlparsing;
 
-import io.helidon.nima.testing.junit5.webserver.DirectClient;
-import io.helidon.nima.testing.junit5.webserver.RoutingTest;
+import io.helidon.webserver.testing.junit5.DirectClient;
+import io.helidon.webserver.testing.junit5.RoutingTest;
 import org.junit.jupiter.api.Disabled;
 
 @RoutingTest

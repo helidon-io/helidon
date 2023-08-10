@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import io.helidon.jersey.client.JerseyClientBuilderListener;
+
 /**
  * Jersey client.
  */
@@ -28,5 +30,5 @@ module io.helidon.jersey.client {
     exports io.helidon.jersey.client;
 
     provides org.glassfish.jersey.client.spi.ClientBuilderListener
-            with io.helidon.jersey.client.ClientBuilderListener;
+            with JerseyClientBuilderListener;
 }

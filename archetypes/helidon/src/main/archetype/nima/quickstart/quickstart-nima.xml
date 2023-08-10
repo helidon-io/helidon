@@ -60,12 +60,12 @@ curl -X GET http://localhost:8080/greet/Jose
             </list>
             <list key="dependencies">
                 <map order="999">
-                    <value key="groupId">io.helidon.nima.webclient</value>
-                    <value key="artifactId">helidon-nima-webclient</value>
+                    <value key="groupId">io.helidon.webclient</value>
+                    <value key="artifactId">helidon-webclient</value>
                 </map>
             </list>
             <list key="modules">
-                <value>io.helidon.nima.webclient</value>
+                <value>io.helidon.webclient</value>
             </list>
         </model>
     </output>

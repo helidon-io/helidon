@@ -29,7 +29,7 @@
     <groupId>io.helidon.examples.messaging.aq</groupId>
     <artifactId>aq-websocket-mp</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>oracle-aq-websocket-mp</name>
+    <name>Helidon Examples Messaging Oracle AQ WebSocket MP</name>
 
     <dependencies>
         <dependency>

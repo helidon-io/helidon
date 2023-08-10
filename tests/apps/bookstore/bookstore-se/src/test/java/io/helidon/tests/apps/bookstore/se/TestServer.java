@@ -16,8 +16,7 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.webserver.WebServerConfig;
 
 import javax.net.ssl.*;
 import java.io.BufferedReader;

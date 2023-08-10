@@ -17,6 +17,7 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
 
 /**
  * MP Tyrus Integration
@@ -40,8 +41,8 @@ module io.helidon.microprofile.tyrus {
     requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;
-    requires io.helidon.nima.webserver;
-    requires io.helidon.nima.websocket.webserver;
+    requires io.helidon.webserver;
+    requires io.helidon.webserver.websocket;
 
     requires org.glassfish.tyrus.core;
     requires org.glassfish.tyrus.server;
@@ -56,6 +57,6 @@ module io.helidon.microprofile.tyrus {
             with io.helidon.microprofile.tyrus.TyrusCdiExtension;
     provides org.glassfish.tyrus.core.ComponentProvider
             with io.helidon.microprofile.tyrus.HelidonComponentProvider;
-    provides io.helidon.nima.webserver.http1.spi.Http1UpgradeProvider
+    provides Http1UpgradeProvider
             with io.helidon.microprofile.tyrus.TyrusUpgradeProvider;
 }

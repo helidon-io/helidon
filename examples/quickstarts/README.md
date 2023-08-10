@@ -1,4 +1,4 @@
-# Helidon Quickstart Examples
+# Helidon Examples Quickstart
 
 These are the examples used by the Helidon Getting Started guide, and
 the quickstart Maven archetypes. All examples implement the same

@@ -29,15 +29,15 @@ import javax.net.ssl.SSLContext;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.Version;
-import io.helidon.common.http.Http;
+import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
-import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.media.ReadableEntity;
-import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.http.Http;
+import io.helidon.http.media.ReadableEntity;
+import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.http1.Http1ClientResponse;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;

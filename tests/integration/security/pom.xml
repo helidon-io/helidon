@@ -28,7 +28,7 @@
 
     <packaging>pom</packaging>
     <artifactId>helidon-tests-integration-security</artifactId>
-    <name>Helidon Integration Tests Security</name>
+    <name>Helidon Tests Integration Security</name>
 
     <description>
         Security integration tests

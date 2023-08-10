@@ -28,7 +28,7 @@
         <relativePath>../../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-examples-integrations-micronaut-data</artifactId>
-    <name>Helidon Example Integration Micronaut Data</name>
+    <name>Helidon Examples Integration Micronaut Data</name>
 
     <dependencies>
         <dependency>

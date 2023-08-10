@@ -20,11 +20,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.Http;
 import io.helidon.cors.CorsRequestAdapter;
 import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.cors.CorsSupportBase;
 import io.helidon.cors.CrossOriginConfig;
+import io.helidon.http.Http;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -110,7 +110,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
 
         @Override
         public String authority() {
-            // TODO Níma we want authority - we should set it in integration with Nima as request property
+            // TODO we want authority - we should set it in integration with WebServer as request property
             return firstHeader(Http.HeaderNames.HOST).orElse("localhost");
         }
 

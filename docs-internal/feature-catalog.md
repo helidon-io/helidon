@@ -27,14 +27,14 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
 
 /**
- * GraphQL server integration with Helidon Reactive WebServer.
+ * GraphQL server integration with Helidon WebServer.
  */
 @Preview
 @Feature(value = "GraphQL", 
         in = HelidonFlavor.SE, 
-        invalidIn = {HelidonFlavor.MP, HelidonFlavor.NIMA})
+        invalidIn = {HelidonFlavor.MP})
 @Aot(description = "Incubating support, tested on limited use cases")
-module io.helidon.nima.graphql.server {
+module io.helidon.webserver.graphql {
     requires static io.helidon.common.features.api;
     // other module dependencies and configuration
 }

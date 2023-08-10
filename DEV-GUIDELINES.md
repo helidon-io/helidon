@@ -72,7 +72,7 @@ Some of these rules are enforced by checkstyle, some are checked during code rev
             configured (e.g. a component may expect tracing endpoint - if not defined, tracing may be disabled)         
 5. We have introduced `helidon-builder` module, that provides capability to generate builders that support both programmatic and configuration approach. See [helidon-builder](builder/README.md) for more details about modules, and [helidon-builder-api](builder/api/README.md) for explanation of APIs and naming rules. The `Blueprint` approach should be used for all builders (and the API of the prototype). Exceptions must be consulted with project architect (this may result in either changing the processor to support the required feature, or in removing such feature and redesigning the problem, or in an exception (documented) to the rule)  
 
-Example: [io.helidon.nima.faulttolerance.RetryConfigBlueprint](nima/fault-tolerance/fault-tolerance/src/main/java/io/helidon/nima/faulttolerance/RetryConfigBlueprint.java)
+Example: [io.helidon.faulttolerance.RetryConfigBlueprint](nima/fault-tolerance/fault-tolerance/src/main/java/io/helidon/nima/faulttolerance/RetryConfigBlueprint.java)
 
 # Getters and Setters
 1. We do not use the verb, e.g. when a property "port" exists, the following methods are used:  

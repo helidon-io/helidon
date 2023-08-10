@@ -62,8 +62,8 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-http</artifactId>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.service-common</groupId>
@@ -89,8 +89,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

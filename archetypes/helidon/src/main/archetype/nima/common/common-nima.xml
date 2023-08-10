@@ -24,11 +24,11 @@
     <output>
         <model>
             <value key="mainClass">${package}.Main</value>
-            <value key="parent-artifactId">helidon-nima</value>
+            <value key="parent-artifactId">helidon-se</value>
             <list key="dependencies">
                 <map order="999">
-                    <value key="groupId">io.helidon.nima.webserver</value>
-                    <value key="artifactId">helidon-nima-webserver</value>
+                    <value key="groupId">io.helidon.webserver</value>
+                    <value key="artifactId">helidon-webserver</value>
                 </map>
                 <map order="999">
                     <value key="groupId">io.helidon.config</value>
@@ -45,23 +45,23 @@
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
-                    <value key="groupId">io.helidon.nima.testing.junit5</value>
-                    <value key="artifactId">helidon-nima-testing-junit5-webserver</value>
+                    <value key="groupId">io.helidon.webserver.testing.junit5</value>
+                    <value key="artifactId">helidon-webserver-testing-junit5</value>
                     <value key="scope">test</value>
                 </map>
             </list>
             <list key="Main-helidon-imports">
                 <value>io.helidon.logging.common.LogConfig</value>
                 <value>io.helidon.config.Config</value>
-                <value>io.helidon.nima.webserver.WebServer</value>
-                <value>io.helidon.nima.webserver.http.HttpRouting</value>
+                <value>io.helidon.webserver.WebServer</value>
+                <value>io.helidon.webserver.http.HttpRouting</value>
             </list>
             <list key="MainTest-helidon-imports">
-                <value>io.helidon.common.http.Http</value>
-                <value>io.helidon.nima.testing.junit5.webserver.SetUpRoute</value>
-                <value>io.helidon.nima.webclient.http1.Http1Client</value>
-                <value>io.helidon.nima.webclient.http1.Http1ClientResponse</value>
-                <value>io.helidon.nima.webserver.http.HttpRouting</value>
+                <value>io.helidon.http.Http</value>
+                <value>io.helidon.webserver.testing.junit5.SetUpRoute</value>
+                <value>io.helidon.webclient.http1.Http1Client</value>
+                <value>io.helidon.webclient.http1.Http1ClientResponse</value>
+                <value>io.helidon.webserver.http.HttpRouting</value>
             </list>
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.Test</value>
@@ -71,8 +71,8 @@
                 <value>static org.hamcrest.Matchers.is</value>
             </list>
             <list key="modules">
-                <value>io.helidon.nima.webserver</value>
-                <value>io.helidon.common.http</value>
+                <value>io.helidon.webserver</value>
+                <value>io.helidon.http</value>
                 <value>io.helidon.config</value>
             </list>
         </model>

@@ -18,8 +18,8 @@ package io.helidon.tests.integration.dbclient.app.tests;
 import java.util.Map;
 
 import io.helidon.dbclient.DbClient;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.tests.integration.harness.RemoteTestException;
 
 /**

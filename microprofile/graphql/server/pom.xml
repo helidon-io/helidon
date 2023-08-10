@@ -39,12 +39,8 @@
             <artifactId>microprofile-graphql-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.graphql</groupId>
-            <artifactId>helidon-graphql-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.graphql</groupId>
-            <artifactId>helidon-nima-graphql-server</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-graphql</artifactId>
         </dependency>
         <dependency>
             <groupId>com.graphql-java</groupId>

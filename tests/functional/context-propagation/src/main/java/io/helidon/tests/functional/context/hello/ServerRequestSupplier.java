@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package io.helidon.tests.functional.context.hello;
 
 import java.util.function.Supplier;
 
-import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerRequest;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.core.Context;

@@ -24,11 +24,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Base64Value;
-import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.Http;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import com.oracle.bmc.keymanagement.KmsCrypto;
 import com.oracle.bmc.keymanagement.model.DecryptDataDetails;

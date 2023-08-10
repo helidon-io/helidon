@@ -15,6 +15,6 @@
  */
 
 /**
- * Example of integration with OCI object storage in Nima application.
+ * Example of integration with OCI object storage in a Helidon SE application.
  */
 package io.helidon.examples.integrations.oci.objecstorage;

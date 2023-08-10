@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.security</groupId>
     <artifactId>helidon-examples-security-webserver-basic-auth</artifactId>
-    <name>Helidon Security Examples HTTP Basic Authentication with Static Content</name>
+    <name>Helidon Examples Security HTTP Basic Auth with Static Content</name>
 
     <description>
         This example demonstrates Integration of Web Server based application with Security component, HTTP Basic
@@ -37,13 +37,13 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.security.examples.webserver.basic.BasicExampleConfigMain</mainClass>
+        <mainClass>io.helidon.examples.security.basicauth.BasicExampleConfigMain</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-nima</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -54,12 +54,12 @@
             <artifactId>helidon-security-providers-http-auth</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-static-content</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -70,13 +70,13 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient-security</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-security</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

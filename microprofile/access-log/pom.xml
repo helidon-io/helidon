@@ -37,8 +37,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-access-log</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-access-log</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.interceptor</groupId>

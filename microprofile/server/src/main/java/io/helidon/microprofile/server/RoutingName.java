@@ -25,8 +25,8 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * Binds an {@link jakarta.ws.rs.core.Application} or {@link io.helidon.nima.webserver.http.HttpService} to a specific (named)
- * routing on {@link io.helidon.nima.webserver.WebServer}. The routing should have a corresponding named socket configured on the
+ * Binds an {@link jakarta.ws.rs.core.Application} or {@link io.helidon.webserver.http.HttpService} to a specific (named)
+ * routing on {@link io.helidon.webserver.WebServer}. The routing should have a corresponding named socket configured on the
  *  WebServer to run the routing on.
  *
  * Configuration can be overridden using configuration:

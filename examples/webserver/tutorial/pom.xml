@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-tutorial</artifactId>
-    <name>Helidon WebServer Examples Tutorial</name>
+    <name>Helidon Examples WebServer Tutorial</name>
 
     <description>
         A tutorial documentation server.
@@ -38,17 +38,17 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.tutorial.Main</mainClass>
+        <mainClass>io.helidon.examples.webserver.tutorial.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

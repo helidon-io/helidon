@@ -15,6 +15,6 @@
  */
 
 /**
- * Example of OCI Vault integration in a Nima application.
+ * Example of OCI Vault integration in a SE application.
  */
 package io.helidon.examples.integrations.oci.vault;

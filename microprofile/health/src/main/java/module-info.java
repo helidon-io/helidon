@@ -35,7 +35,7 @@ module io.helidon.microprofile.health {
     requires io.helidon.common;
 
     requires io.helidon.health;
-    requires io.helidon.nima.observe.health;
+    requires io.helidon.webserver.observe.health;
     requires io.helidon.microprofile.servicecommon;
     requires io.helidon.microprofile.server;
 

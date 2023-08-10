@@ -14,7 +14,7 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-    
+
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>
     <artifactId>helidon-integrations-examples-datasource-hikaricp-h2</artifactId>
-    <name>Helidon CDI Extensions Examples DataSource/HikariCP H2</name>
+    <name>Helidon Examples CDI Extensions DataSource/HikariCP H2</name>
 
     <dependencies>
         <!-- Compile-scoped dependencies. -->

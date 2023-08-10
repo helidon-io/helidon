@@ -18,7 +18,7 @@
 
 = Helidon Documentation
 :description: Helidon
-:keywords: helidon, java, microservices, microprofile, documentation, nima
+:keywords: helidon, java, microservices, microprofile, documentation
 :rootdir: {docdir}/..
 
 Check out the xref:{rootdir}/about/doc_sitemap.adoc[Documentation Overview] for information about this site and the materials we provide.
@@ -53,7 +53,7 @@ xref:{rootdir}/about/intro.adoc[What's New in Helidon 4]
 .Getting Started
 [icon=rocket_launch]
 --
-There are several ways to generate your first Helidon project. In a hurry? Try the Helidon CLI or Project Starter which provide a set of predefined archetypes to choose from.    
+There are several ways to generate your first Helidon project. In a hurry? Try the Helidon CLI or Project Starter which provide a set of predefined archetypes to choose from.
 
 xref:{rootdir}/about/prerequisites.adoc[Prerequisites and System Requirements]
 
@@ -92,7 +92,7 @@ xref:{rootdir}/se/guides/migration.adoc[Upgrade From Helidon SE 2.x]
 .Developing Your First Application From Scratch
 [icon=terminal]
 --
-Use these hands-on development tutorials to learn how to generate a small "Hello World!" greeting service that demonstrates some of Helidon's core features. 
+Use these hands-on development tutorials to learn how to generate a small "Hello World!" greeting service that demonstrates some of Helidon's core features.
 
 xref:{rootdir}/mp/guides/mp-tutorial.adoc[Helidon MP Tutorial]
 
@@ -114,7 +114,7 @@ xref:{rootdir}/mp/guides/overview.adoc[MP Guides]
 --
 //Advanced Features
 [CARD]
-.Advanced Features 
+.Advanced Features
 [icon=swap_horiz]
 --
 

@@ -28,8 +28,8 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.observe.health.HealthFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

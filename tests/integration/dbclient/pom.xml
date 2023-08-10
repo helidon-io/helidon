@@ -29,7 +29,7 @@
     <groupId>io.helidon.tests.integration.dbclient</groupId>
     <artifactId>helidon-tests-integration-dbclient-project</artifactId>
     <packaging>pom</packaging>
-    <name>Integration Tests: Database Client</name>
+    <name>Helidon Tests Integration Database Client</name>
     <description>A set of tests that validate Database Client</description>
 
     <modules>

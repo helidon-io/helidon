@@ -29,15 +29,15 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.cors.LogHelper.Headers;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderNames;
 
 import static io.helidon.cors.LogHelper.DECISION_LEVEL;
 import static java.lang.Character.isDigit;
 
 /**
- * Centralizes internal logic common to Reactive, Níma, and MP CORS support for processing requests and preparing responses.
+ * Centralizes internal CORS support common logic for processing requests and preparing responses.
  *
  * <p>This class is reserved for internal Helidon use. Do not use it from your applications. It might change or vanish at
  *  any time.</p>

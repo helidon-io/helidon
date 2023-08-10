@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.tests.integration.jpa</groupId>
     <artifactId>helidon-tests-integration-jpa-appl</artifactId>
-    <name>Integration Tests: JPA MP Application</name>
+    <name>Helidon Tests Integration JPA MP Application</name>
 
     <properties>
         <mainClass>io.helidon.microprofile.cdi.Main</mainClass>
@@ -316,7 +316,7 @@
                                 </configuration>
                             </execution>
                         </executions>
-                    </plugin>                   
+                    </plugin>
                 </plugins>
             </build>
         </profile>

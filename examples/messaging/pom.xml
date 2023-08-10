@@ -27,11 +27,11 @@
     </parent>
     <groupId>io.helidon.examples.messaging</groupId>
     <artifactId>helidon-examples-messaging-project</artifactId>
-    <name>Helidon Examples Reactive Messaging</name>
+    <name>Helidon Examples Messaging</name>
     <packaging>pom</packaging>
 
     <description>
-        Examples of Reactive Messaging usage
+        Examples of Messaging usage
     </description>
 
     <modules>

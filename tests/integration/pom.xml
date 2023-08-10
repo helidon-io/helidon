@@ -30,7 +30,7 @@
     <artifactId>helidon-tests-integration</artifactId>
     <packaging>pom</packaging>
 
-    <name>Helidon Integration Tests</name>
+    <name>Helidon Tests Integration</name>
 
     <properties>
         <version.lib.testcontainers>1.17.5</version.lib.testcontainers>
@@ -38,15 +38,16 @@
     </properties>
 
     <modules>
+        <module>config</module>
+        <module>dbclient</module>
+        <module>gh-5792</module>
         <module>harness</module>
-        <module>zipkin-mp-2.2</module>
-        <module>mp-graphql</module>
-        <module>mp-security-client</module>
         <module>health</module>
-        <module>mp-ws-services</module>
-        <module>webclient</module>
-        <module>webserver</module>
-        <module>security</module>
+        <module>jep290</module>
+        <module>jms</module>
+        <module>jpa</module>
+        <module>kafka</module>
+        <module>mp-bean-validation</module>
         <module>mp-gh-2421</module>
         <module>mp-gh-2461</module>
         <module>mp-gh-3246</module>
@@ -54,19 +55,15 @@
         <module>mp-gh-4123</module>
         <module>mp-gh-4654</module>
         <module>mp-gh-5328</module>
-        <module>kafka</module>
-        <module>jpa</module>
-        <module>jms</module>
-        <module>config</module>
-        <module>dbclient</module>
-        <module>jep290</module>
-        <module>mp-bean-validation</module>
-        <module>restclient</module>
+        <module>mp-graphql</module>
+        <module>mp-security-client</module>
+        <module>mp-ws-services</module>
         <module>native-image</module>
-        <module>vault</module>
         <module>oidc</module>
-        <module>gh-5792</module>
-        <module>jersey-connector</module>
+        <module>restclient</module>
+        <module>security</module>
+        <module>vault</module>
+        <module>zipkin-mp-2.2</module>
     </modules>
 
     <dependencyManagement>

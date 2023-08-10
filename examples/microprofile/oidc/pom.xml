@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-security-oidc-login</artifactId>
-    <name>Helidon Microprofile Examples OIDC Security</name>
+    <name>Helidon Examples Microprofile OIDC Security</name>
 
     <description>
         Microprofile example with (any) OIDC provider integration.

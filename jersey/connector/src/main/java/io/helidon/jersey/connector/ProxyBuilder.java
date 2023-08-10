@@ -20,7 +20,7 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Optional;
 
-import io.helidon.nima.webclient.api.Proxy;
+import io.helidon.webclient.api.Proxy;
 
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Configuration;

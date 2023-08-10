@@ -18,15 +18,15 @@ package io.helidon.examples.dbclient.pokemons;
 
 import java.util.Map;
 
-import io.helidon.common.http.BadRequestException;
-import io.helidon.common.http.NotFoundException;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.dbclient.DbClient;
-import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.BadRequestException;
+import io.helidon.http.NotFoundException;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;

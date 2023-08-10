@@ -23,16 +23,16 @@ import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.common.tls.Tls;
-import io.helidon.nima.http.media.jackson.JacksonSupport;
-import io.helidon.nima.http.media.jsonb.JsonbSupport;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.observe.metrics.MetricsFeature;
-import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.common.tls.Tls;
+import io.helidon.http.media.jackson.JacksonSupport;
+import io.helidon.http.media.jsonb.JsonbSupport;
+import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.webserver.observe.health.HealthFeature;
+import io.helidon.webserver.observe.metrics.MetricsFeature;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
 
 /**
  * Simple Hello World rest application.

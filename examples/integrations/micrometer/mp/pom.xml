@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Helidon MP Examples Micrometer</name>
+    <name>Helidon Examples Integration Micrometer MP</name>
 
     <description>
         Basic illustration of Micrometer integration in Helidon MP
@@ -65,8 +65,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

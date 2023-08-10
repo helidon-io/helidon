@@ -28,7 +28,7 @@
         <relativePath>../../../applications/mp/pom.xml</relativePath>
     </parent>
     <artifactId>helidon-examples-microprofile-hello-world-explicit</artifactId>
-    <name>Helidon Microprofile Examples Explicit Hello World</name>
+    <name>Helidon Examples Microprofile Explicit Hello World</name>
 
     <description>
         Microprofile example with explicit bootstrapping (Server.create(Application.class).start())

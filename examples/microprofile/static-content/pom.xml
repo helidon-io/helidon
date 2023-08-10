@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-mp1_1-static-content</artifactId>
-    <name>Helidon Microprofile Examples MP 1.1 Static Content</name>
+    <name>Helidon Examples Microprofile MP 1.1 Static Content</name>
 
     <description>
         Microprofile 1.1 example with static content

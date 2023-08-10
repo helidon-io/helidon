@@ -31,25 +31,25 @@
     <name>Helidon Common Project</name>
 
     <modules>
+        <module>buffers</module>
         <module>common</module>
-        <module>reactive</module>
         <module>config</module>
         <module>configurable</module>
-        <module>key-util</module>
-        <module>http</module>
         <module>context</module>
+        <module>crypto</module>
+        <module>features</module>
+        <module>key-util</module>
         <module>mapper</module>
         <module>media-type</module>
-        <module>crypto</module>
         <module>parameters</module>
-        <module>buffers</module>
-        <module>socket</module>
-        <module>uri</module>
-        <module>security</module>
-        <module>testing</module>
-        <module>features</module>
-        <module>task</module>
-        <module>types</module>
         <module>processor</module>
+        <module>reactive</module>
+        <module>security</module>
+        <module>socket</module>
+        <module>task</module>
+        <module>testing</module>
+        <module>tls</module>
+        <module>types</module>
+        <module>uri</module>
     </modules>
 </project>

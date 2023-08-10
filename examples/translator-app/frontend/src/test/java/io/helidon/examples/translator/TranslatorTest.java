@@ -18,11 +18,11 @@ package io.helidon.examples.translator;
 
 import io.helidon.examples.translator.backend.TranslatorBackendService;
 import io.helidon.examples.translator.frontend.TranslatorFrontendService;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.Test;
 

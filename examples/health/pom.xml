@@ -27,7 +27,7 @@
     <groupId>io.helidon.examples.health</groupId>
     <artifactId>helidon-examples-health-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Health Examples</name>
+    <name>Helidon Examples Health</name>
 
     <modules>
         <module>basics</module>

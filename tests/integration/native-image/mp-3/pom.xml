@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-native-image-mp-3</artifactId>
-    <name>Helidon Integration Tests GraalVM Native image MP3</name>
+    <name>Helidon Tests Integration GraalVM Native image MP3</name>
 
     <description>
         This test uses quickstart application with minimal number of changes

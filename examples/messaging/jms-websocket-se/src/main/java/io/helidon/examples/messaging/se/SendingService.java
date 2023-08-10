@@ -22,8 +22,8 @@ import io.helidon.messaging.Emitter;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.Type;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 

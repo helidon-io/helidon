@@ -28,14 +28,14 @@
     </parent>
     <groupId>io.helidon.examples.config</groupId>
     <artifactId>helidon-examples-config-mapping</artifactId>
-    <name>Helidon Config Examples Mapping</name>
+    <name>Helidon Examples Config Mapping</name>
 
     <description>
         The example shows how to use Config Mapping functionality.
     </description>
 
     <properties>
-        <mainClass>io.helidon.config.examples.mapping.Main</mainClass>
+        <mainClass>io.helidon.examples.config.mapping.Main</mainClass>
     </properties>
 
     <dependencies>

@@ -51,8 +51,8 @@ import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
 import io.helidon.microprofile.metrics.spi.MetricRegistrationObserver;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.servicecommon.HelidonRestCdiExtension;
-import io.helidon.nima.observe.metrics.MetricsFeature;
-import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.observe.metrics.MetricsFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

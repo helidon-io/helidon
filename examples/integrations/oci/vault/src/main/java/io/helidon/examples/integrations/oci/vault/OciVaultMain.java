@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
 
 import com.oracle.bmc.ConfigFileReader;
 import com.oracle.bmc.auth.AuthenticationDetailsProvider;

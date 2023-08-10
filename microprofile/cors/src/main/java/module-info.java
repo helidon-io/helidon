@@ -31,11 +31,11 @@ module io.helidon.microprofile.cors {
     requires jakarta.ws.rs;
     requires io.helidon.config;
     requires io.helidon.config.mp;
-    requires io.helidon.nima.webserver.cors;
+    requires io.helidon.webserver.cors;
 
     // Following to help with JavaDoc...
     requires io.helidon.jersey.common;
-    requires io.helidon.nima.webserver;
+    requires io.helidon.webserver;
     requires io.helidon.microprofile.config;
 
     // ---

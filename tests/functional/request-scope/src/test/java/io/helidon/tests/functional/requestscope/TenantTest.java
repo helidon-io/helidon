@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.nima.faulttolerance.Async;
+import io.helidon.faulttolerance.Async;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;

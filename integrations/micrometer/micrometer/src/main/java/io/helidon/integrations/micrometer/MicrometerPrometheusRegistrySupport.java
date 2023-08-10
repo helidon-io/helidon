@@ -25,6 +25,8 @@ import java.util.function.Function;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.ServerRequest;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
@@ -65,12 +67,12 @@ class MicrometerPrometheusRegistrySupport extends MicrometerBuiltInRegistrySuppo
     }
 
     @Override
-    public Function<io.helidon.nima.webserver.http.ServerRequest,
-            Optional<io.helidon.nima.webserver.http.Handler>> requestToHandlerFn(MeterRegistry registry) {
+    public Function<ServerRequest,
+            Optional<Handler>> requestToHandlerFn(MeterRegistry registry) {
         /*
          * Deal with a request if the MediaType is text/plain or the query parameter "type" specifies "prometheus".
          */
-        return (io.helidon.nima.webserver.http.ServerRequest req) -> {
+        return (ServerRequest req) -> {
             if (req.headers()
                     .bestAccepted(MediaTypes.TEXT_PLAIN).isPresent()
                     || req.query()

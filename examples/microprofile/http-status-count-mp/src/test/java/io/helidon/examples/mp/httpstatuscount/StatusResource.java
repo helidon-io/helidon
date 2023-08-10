@@ -15,7 +15,7 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.GET;

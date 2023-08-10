@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.nima.servicecommon.HelidonFeatureSupport;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.HttpMediaType;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;

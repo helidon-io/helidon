@@ -18,12 +18,12 @@ package io.helidon.tests.apps.bookstore.se;
 
 import java.util.Collection;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.tests.apps.bookstore.common.Book;
 import io.helidon.tests.apps.bookstore.common.BookMapper;
 import io.helidon.tests.apps.bookstore.common.BookStore;

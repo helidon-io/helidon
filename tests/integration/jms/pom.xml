@@ -27,7 +27,7 @@
 
     <groupId>io.helidon.tests.integration.jms</groupId>
     <artifactId>helidon-tests-integration-jms</artifactId>
-    <name>Helidon Tests Integrations JMS</name>
+    <name>Helidon Tests Integration JMS</name>
 
     <dependencies>
         <dependency>

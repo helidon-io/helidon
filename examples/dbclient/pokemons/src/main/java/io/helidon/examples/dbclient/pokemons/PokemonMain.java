@@ -20,9 +20,9 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.dbclient.DbClient;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Simple Hello World rest application.

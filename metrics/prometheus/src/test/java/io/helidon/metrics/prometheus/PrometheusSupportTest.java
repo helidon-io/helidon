@@ -16,12 +16,12 @@
 
 package io.helidon.metrics.prometheus;
 
-import io.helidon.common.http.Http;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.http.Http;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Counter;

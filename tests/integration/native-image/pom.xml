@@ -28,7 +28,7 @@
     </parent>
     <packaging>pom</packaging>
     <artifactId>helidon-tests-integration-native-image</artifactId>
-    <name>Helidon Integration Tests GraalVM Native image</name>
+    <name>Helidon Tests Integration GraalVM Native image</name>
 
     <description>
         A set of tests that make sure various Helidon modules can compile with native-image.
@@ -39,7 +39,7 @@
         <module>mp-1</module>
         <module>mp-2</module>
         <module>mp-3</module>
-        <module>nima-1</module>
+        <module>se-1</module>
     </modules>
 
 </project>

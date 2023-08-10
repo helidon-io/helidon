@@ -58,23 +58,26 @@
             files="DerUtils\.java"/>
 
     <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
-    <suppress files="nima/http2/webserver/src/main/java/io/helidon/nima/http2/webserver/spi/Http2SubProtocolSelector.java"
+    <suppress files="webserver/http2/src/main/java/io/helidon/webserver/http2/spi/Http2SubProtocolSelector.java"
             checks="ParameterNumber"/>
 
     <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
-    <suppress files="nima/webserver/webserver/src/main/java/io/helidon/nima/webserver/ConnectionContext.java"
+    <suppress files="webserver/webserver/src/main/java/io/helidon/webserver/ConnectionContext.java"
             checks="ParameterNumber"/>
 
     <!-- this is a record style, all parameters are always needed, no benefit of changing to builder -->
-    <suppress files="nima/webserver/webserver/src/main/java/io/helidon/nima/webserver/http1/Http1ServerRequest.java"
+    <suppress files="webserver/webserver/src/main/java/io/helidon/webserver/http1/Http1ServerRequest.java"
             checks="ParameterNumber"/>
 
     <!-- the huffman constants are long, but this is not actual code, just a set of constants -->
-    <suppress files="nima/http2/http2/src/main/java/io/helidon/nima/http2/Http2HuffmanConstants.java"
+    <suppress files="http/http2/src/main/java/io/helidon/http/http2/Http2HuffmanConstants.java"
             checks="FileLength"/>
 
+    <suppress files="webserver/benchmark/"
+            checks=".*"/>
+
     <!-- builder brings no benefit, all parameters always needed -->
-    <suppress files="nima/http2/webserver/src/main/java/io/helidon/nima/http2/webserver/spi/Http2SubProtocolProvider.java"
+    <suppress files="webserver/http2/webserver/src/main/java/io/helidon/webserver/http2/spi/Http2SubProtocolProvider.java"
             checks="ParameterNumber"/>
 
     <!-- builder brings no benefit, all parameters always needed, and a private method -->
@@ -128,6 +131,5 @@
               files="examples/openapi-tools/"/>
     <suppress checks="HideUtilityClassConstructor"
               files="examples/openapi-tools/"/>
-
 
 </suppressions>

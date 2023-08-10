@@ -35,33 +35,33 @@ import io.helidon.common.Weight;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.ServerRequestHeaders;
-import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.nima.webclient.api.HttpClientRequest;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webserver.cors.CorsSupport;
-import io.helidon.nima.webserver.http.HttpFeature;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.Http;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
-import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.OidcCookieHandler;
 import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
 import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.cors.CorsSupport;
+import io.helidon.webserver.http.HttpFeature;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.security.SecurityFeature;
 
 import jakarta.json.JsonObject;
 
-import static io.helidon.common.http.Http.HeaderNames.HOST;
+import static io.helidon.http.Http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**

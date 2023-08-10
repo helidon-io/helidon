@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * {@link InterruptableTask}s and can be efficiently terminated. A thread that is
  * waiting to read on an open connection cannot be efficiently stopped. This
  * executor will query the thread and interrupt it if possible. It is important
- * to efficiently shut down the Nima webserver in certain environments.
+ * to efficiently shut down the webserver in certain environments.
  */
 public interface HelidonTaskExecutor extends Closeable {
 

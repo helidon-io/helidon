@@ -25,8 +25,8 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;

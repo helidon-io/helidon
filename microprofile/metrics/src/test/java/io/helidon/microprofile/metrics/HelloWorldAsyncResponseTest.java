@@ -23,7 +23,7 @@ import java.util.stream.LongStream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.WebTarget;
@@ -32,7 +32,6 @@ import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.Timer;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;

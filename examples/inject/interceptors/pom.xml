@@ -22,13 +22,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-nima</artifactId>
+        <artifactId>helidon-se</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../applications/nima/pom.xml</relativePath>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.inject</groupId>
     <artifactId>helidon-examples-inject-interceptors</artifactId>
-    <name>Helidon Injection Examples Interceptors</name>
+    <name>Helidon Examples Injection Interceptors</name>
 
     <description>
         Example usages of Injection in Interceptors.

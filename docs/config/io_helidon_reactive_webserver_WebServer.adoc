@@ -73,7 +73,7 @@ This is a standalone configuration type, prefix from configuration root: `server
 |`features.print-details` |boolean |`false` |Set to `true` to print detailed feature information on startup.
 |`host` |string |{nbsp} |A helper method that just calls #bindAddress(String).
 |`max-header-size` |int |`16384` |Maximal number of bytes of all header values combined. When a bigger value is received, a
- io.helidon.common.http.Http.Status#BAD_REQUEST_400
+ io.helidon.http.Http.Status#BAD_REQUEST_400
  is returned.
 
  Default is `16384`

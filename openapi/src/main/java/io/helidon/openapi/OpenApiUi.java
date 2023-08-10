@@ -18,14 +18,14 @@ package io.helidon.openapi;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.HttpMediaType;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Behavior for OpenAPI UI implementations.
@@ -51,7 +51,7 @@ public interface OpenApiUi extends HttpService {
      * Indicates the media types the UI implementation itself supports.
      *
      * @return the media types the
-     * {@link #prepareTextResponseFromMainEndpoint(io.helidon.nima.webserver.http.ServerRequest, io.helidon.nima.webserver.http.ServerResponse)}
+     * {@link #prepareTextResponseFromMainEndpoint(io.helidon.webserver.http.ServerRequest, io.helidon.webserver.http.ServerResponse)}
      * method responds to
      */
     HttpMediaType[] supportedMediaTypes();

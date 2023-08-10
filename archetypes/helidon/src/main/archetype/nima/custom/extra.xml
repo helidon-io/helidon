@@ -24,15 +24,15 @@
         <model>
             <list key="dependencies">
                 <map if="${extra} contains 'fault-tolerance'">
-                    <value key="groupId">io.helidon.nima.fault-tolerance</value>
-                    <value key="artifactId">helidon-nima-fault-tolerance</value>
+                    <value key="groupId">io.helidon.fault-tolerance</value>
+                    <value key="artifactId">helidon-fault-tolerance</value>
                 </map>
             </list>
             <list key="Main-helidon-imports" if="${extra} contains 'fault-tolerance'">
-                <value>io.helidon.common.http.Http</value>
-                <value>io.helidon.nima.faulttolerance.BulkheadException</value>
-                <value>io.helidon.nima.faulttolerance.CircuitBreakerOpenException</value>
-                <value>io.helidon.nima.faulttolerance.TimeoutException</value>
+                <value>io.helidon.http.Http</value>
+                <value>io.helidon.faulttolerance.BulkheadException</value>
+                <value>io.helidon.faulttolerance.CircuitBreakerOpenException</value>
+                <value>io.helidon.faulttolerance.TimeoutException</value>
             </list>
             <list key="Main-routing-builder" if="${extra} contains 'fault-tolerance'">
                 <value><![CDATA[.register("/", new FtService())

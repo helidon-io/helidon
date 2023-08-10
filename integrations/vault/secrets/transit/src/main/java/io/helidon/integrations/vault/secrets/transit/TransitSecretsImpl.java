@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;

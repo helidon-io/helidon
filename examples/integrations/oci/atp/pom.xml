@@ -30,8 +30,8 @@
 
     <groupId>io.helidon.examples.integrations.oci</groupId>
     <artifactId>helidon-examples-integrations-oci-atp</artifactId>
-    <name>Helidon Examples Integration OCI ATP Nima</name>
-    <description>Nima integration with OCI ATP.</description>
+    <name>Helidon Examples Integration OCI ATP</name>
+    <description>Integration with OCI ATP.</description>
 
     <properties>
         <mainClass>io.helidon.examples.integrations.oci.atp.OciAtpMain</mainClass>
@@ -39,8 +39,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>

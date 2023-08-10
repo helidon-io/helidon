@@ -48,7 +48,7 @@
                                 <value>io.helidon.microprofile.faulttolerance</value>
                             </list>
                             <list key="Main-helidon-imports">
-                                <value>io.helidon.common.http.Http</value>
+                                <value>io.helidon.http.Http</value>
                             </list>
                             <list key="Main-other-imports" if="${flavor} != 'nima'">
                                 <value>java.util.concurrent.TimeoutException</value>

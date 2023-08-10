@@ -93,8 +93,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <artifactId>helidon-nima-webclient</artifactId>
-            <groupId>io.helidon.nima.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
             <scope>test</scope>
         </dependency>
     </dependencies>

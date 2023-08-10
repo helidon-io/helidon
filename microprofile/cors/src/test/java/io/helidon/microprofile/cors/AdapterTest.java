@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 
 import jakarta.enterprise.context.ApplicationScoped;

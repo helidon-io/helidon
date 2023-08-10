@@ -28,7 +28,7 @@
 
     <groupId>io.helidon.tests.integration.vault</groupId>
     <artifactId>helidon-tests-integration-vault</artifactId>
-    <name>Helidon Integration Tests Vault</name>
+    <name>Helidon Tests Integration Vault</name>
 
     <description>
         Tests for Hashicorp Vault, requires Vault and mysql to test most options, except for k8s integration.

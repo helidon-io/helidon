@@ -29,7 +29,7 @@
     <packaging>pom</packaging>
 
     <artifactId>helidon-examples-metrics-project</artifactId>
-    <name>Helidon Metrics Examples</name>
+    <name>Helidon Examples Metrics</name>
     <modules>
 
         <module>exemplar</module>

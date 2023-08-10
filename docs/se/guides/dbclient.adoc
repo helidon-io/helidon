@@ -341,7 +341,7 @@ Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.common.http.Http;     // <1>
+import io.helidon.http.Http;     // <1>
 import io.helidon.reactive.dbclient.DbClient;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;

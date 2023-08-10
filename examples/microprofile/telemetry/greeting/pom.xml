@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-telemetry-greeting</artifactId>
-    <name>Microprofile Telemetry Greeting Example</name>
+    <name>Helidon Examples MicroProfile Telemetry Greeting</name>
 
     <dependencies>
         <dependency>

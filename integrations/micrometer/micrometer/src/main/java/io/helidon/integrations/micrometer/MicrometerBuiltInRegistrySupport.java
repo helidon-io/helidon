@@ -23,6 +23,8 @@ import java.util.function.Function;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.ServerRequest;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterRegistryConfig;
@@ -91,8 +93,8 @@ abstract class MicrometerBuiltInRegistrySupport {
 
     abstract MeterRegistry createRegistry(MeterRegistryConfig meterRegistryConfig);
 
-    abstract Function<io.helidon.nima.webserver.http.ServerRequest,
-            Optional<io.helidon.nima.webserver.http.Handler>> requestToHandlerFn(
+    abstract Function<ServerRequest,
+            Optional<Handler>> requestToHandlerFn(
             MeterRegistry meterRegistry);
 
 

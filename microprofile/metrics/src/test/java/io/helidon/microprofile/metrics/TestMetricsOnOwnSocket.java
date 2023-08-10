@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;

@@ -33,7 +33,6 @@ module io.helidon.security {
     requires transitive io.helidon.common;
     requires transitive io.helidon.common.security;
     requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.config;
 
     requires static io.helidon.common.features.api;
@@ -50,7 +49,7 @@ module io.helidon.security {
 
     exports io.helidon.security.internal to
             io.helidon.microprofile.security,
-            io.helidon.security.integration.nima;
+            io.helidon.webserver.security;
 
     // needed for CDI integration
     opens io.helidon.security to weld.core.impl, io.helidon.microprofile.cdi;

@@ -21,9 +21,9 @@ import java.io.InputStream;
 import java.util.logging.LogManager;
 
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.staticcontent.StaticContentService;
-import io.helidon.nima.websocket.webserver.WsRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.websocket.WsRouting;
 
 /**
  * The application main class.

@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-websocket</artifactId>
-    <name>Helidon Microprofile Examples WebSocket</name>
+    <name>Helidon Examples Microprofile WebSocket</name>
 
     <description>
         Microprofile example that uses websockets

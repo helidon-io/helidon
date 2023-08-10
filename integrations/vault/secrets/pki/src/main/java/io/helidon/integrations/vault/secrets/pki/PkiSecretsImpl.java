@@ -18,7 +18,7 @@ package io.helidon.integrations.vault.secrets.pki;
 
 import java.util.function.Function;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;

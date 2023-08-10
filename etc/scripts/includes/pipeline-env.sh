@@ -69,7 +69,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
       export PIPELINE="true"
       MAVEN_ARGS="${MAVEN_ARGS} -B ${MAVEN_HTTP_ARGS}"
       export MAVEN_ARGS
-      # temporary fix for copyright plugin (currently fails on big renaming action for Nima)
+      # temporary fix for copyright plugin
       git config diff.renameLimit 32768
     fi
 
@@ -130,7 +130,7 @@ if [ -z "${__PIPELINE_ENV_INCLUDED__}" ]; then
             GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
             /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
         fi
-        # temporary fix for copyright plugin (currently fails on big renaming action for Nima)
+        # temporary fix for copyright plugin
         git config diff.renameLimit 32768
     fi
 

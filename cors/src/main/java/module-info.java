@@ -15,11 +15,11 @@
  */
 
 /**
- * CORS configuration and types shared between Helidon Reactive, Níma and MicroProfile.
+ * CORS configuration and types.
  */
 module io.helidon.cors {
     requires java.logging;
-    requires io.helidon.common.http;
+    requires io.helidon.http;
     requires io.helidon.common.config;
 
     requires static io.helidon.config.metadata;

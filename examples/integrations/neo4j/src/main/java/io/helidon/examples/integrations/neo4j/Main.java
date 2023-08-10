@@ -25,14 +25,14 @@ import io.helidon.integrations.neo4j.Neo4j;
 import io.helidon.integrations.neo4j.health.Neo4jHealthCheck;
 import io.helidon.integrations.neo4j.metrics.Neo4jMetricsSupport;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.observe.health.HealthObserveProvider;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthFeature;
+import io.helidon.webserver.observe.health.HealthObserveProvider;
 
 import org.neo4j.driver.Driver;
 
-import static io.helidon.nima.webserver.http.HttpRouting.Builder;
+import static io.helidon.webserver.http.HttpRouting.Builder;
 
 /**
  * The application main class.

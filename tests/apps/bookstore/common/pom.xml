@@ -28,7 +28,7 @@
     </parent>
     <groupId>io.helidon.tests.apps.bookstore.common</groupId>
     <artifactId>helidon-tests-apps-bookstore-common</artifactId>
-    <name>Helidon Test Applications Bookstore Common</name>
+    <name>Helidon Tests Applications Bookstore Common</name>
 
     <dependencies>
         <dependency>

@@ -29,14 +29,14 @@
     </parent>
     <groupId>io.helidon.examples.security</groupId>
     <artifactId>helidon-examples-security-abac</artifactId>
-    <name>Helidon Security Examples ABAC</name>
+    <name>Helidon Examples Security ABAC</name>
 
     <description>
         Example of attribute based access control.
     </description>
 
     <properties>
-        <mainClass>io.helidon.security.examples.abac.AbacJerseyMain</mainClass>
+        <mainClass>io.helidon.examples.security.abac.AbacJerseyMain</mainClass>
     </properties>
 
     <dependencies>

@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import io.helidon.common.http.SetCookie;
+import io.helidon.http.SetCookie;
 
 /**
  * Handler of cookies used in OIDC.
@@ -108,7 +108,7 @@ public class OidcCookieHandler {
     }
 
     /**
-     * {@link io.helidon.common.http.SetCookie} builder to set a new cookie,
+     * {@link io.helidon.http.SetCookie} builder to set a new cookie,
      * returns a future, as the value may need to be encrypted using a remote service.
      *
      * @param value value of the cookie
@@ -128,7 +128,7 @@ public class OidcCookieHandler {
     }
 
     /**
-     * {@link io.helidon.common.http.SetCookie} builder to remove an existing cookie (such as during logout).
+     * {@link io.helidon.http.SetCookie} builder to remove an existing cookie (such as during logout).
      *
      * @return a new builder to configure set cookie configured from OIDC Config with expiration set to epoch begin and
      *  empty value

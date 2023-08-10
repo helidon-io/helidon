@@ -26,8 +26,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;

@@ -1,4 +1,4 @@
-# Helidon Standalone Quickstart MP Example
+# Helidon Examples Standalone Quickstart MP
 
 This example implements a simple Hello World REST service using MicroProfile
  with a standalone Maven pom.

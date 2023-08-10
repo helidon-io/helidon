@@ -32,7 +32,7 @@ module io.helidon.integrations.vault.secrets.kv {
 
     requires transitive io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
-    requires io.helidon.common.http;
+    requires io.helidon.http;
     requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.kv2;

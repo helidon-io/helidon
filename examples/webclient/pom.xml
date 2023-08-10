@@ -27,7 +27,7 @@
 
     <groupId>io.helidon.examples.webclient</groupId>
     <artifactId>helidon-examples-webclient-project</artifactId>
-    <name>Helidon WebClient Example</name>
+    <name>Helidon Examples WebClient</name>
 
     <packaging>pom</packaging>
 

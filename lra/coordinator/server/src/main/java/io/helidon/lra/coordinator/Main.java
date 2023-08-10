@@ -19,10 +19,10 @@ package io.helidon.lra.coordinator;
 import io.helidon.config.Config;
 import io.helidon.health.checks.HealthChecks;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.observe.metrics.MetricsFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.health.HealthFeature;
+import io.helidon.webserver.observe.metrics.MetricsFeature;
 
 /**
  * In memory Lra coordinator.

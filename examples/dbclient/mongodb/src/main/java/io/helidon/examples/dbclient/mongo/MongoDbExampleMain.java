@@ -22,12 +22,12 @@ import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.metrics.DbClientMetrics;
 import io.helidon.dbclient.tracing.DbClientTracing;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.tracing.TracingFeature;
 
 /**
  * Simple Hello World rest application.

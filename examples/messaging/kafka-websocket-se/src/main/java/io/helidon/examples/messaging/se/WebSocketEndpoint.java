@@ -26,8 +26,8 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.kafka.KafkaConfigBuilder;
 import io.helidon.messaging.connectors.kafka.KafkaConnector;
-import io.helidon.nima.websocket.WsListener;
-import io.helidon.nima.websocket.WsSession;
+import io.helidon.websocket.WsListener;
+import io.helidon.websocket.WsSession;
 
 import org.apache.kafka.common.serialization.StringDeserializer;
 

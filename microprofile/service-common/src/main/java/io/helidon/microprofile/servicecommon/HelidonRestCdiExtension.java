@@ -32,8 +32,8 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.server.RoutingBuilders;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.servicecommon.FeatureSupport;
-import io.helidon.nima.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.servicecommon.FeatureSupport;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -63,7 +63,7 @@ import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
  * </p>
  * <p>
  *     Each CDI extension is presumed to layer on an SE-style service support class which itself is a subclass of
- *     {@link io.helidon.nima.servicecommon.HelidonFeatureSupport} with an associated {@code Builder} class.
+ *     {@link io.helidon.webserver.servicecommon.HelidonFeatureSupport} with an associated {@code Builder} class.
  *     The service support base class and its builder are both type parameters to this class.
  * </p>
  * <p>

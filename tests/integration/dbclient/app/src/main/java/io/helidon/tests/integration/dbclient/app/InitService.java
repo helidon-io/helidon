@@ -27,10 +27,10 @@ import io.helidon.dbclient.DbTransaction;
 import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.dbclient.common.model.Type;
 

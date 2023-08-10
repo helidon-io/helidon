@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-messaging-sse</artifactId>
-    <name>Microprofile Reactive Messaging with SSE</name>
+    <name>Helidon Examples Microprofile Messaging with SSE </name>
 
     <description>
         Microprofile Reactive Messaging with Server-Sent Events example

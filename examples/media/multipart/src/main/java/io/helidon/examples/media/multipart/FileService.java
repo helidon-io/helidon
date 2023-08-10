@@ -26,24 +26,24 @@ import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import io.helidon.common.http.ContentDisposition;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.http.media.multipart.MultiPart;
-import io.helidon.nima.http.media.multipart.ReadablePart;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.ContentDisposition;
+import io.helidon.http.Http;
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.media.multipart.MultiPart;
+import io.helidon.http.media.multipart.ReadablePart;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
 
-import static io.helidon.common.http.Http.Status.BAD_REQUEST_400;
-import static io.helidon.common.http.Http.Status.MOVED_PERMANENTLY_301;
-import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
+import static io.helidon.http.Http.Status.BAD_REQUEST_400;
+import static io.helidon.http.Http.Status.MOVED_PERMANENTLY_301;
+import static io.helidon.http.Http.Status.NOT_FOUND_404;
 
 /**
  * File service.
@@ -78,7 +78,6 @@ public final class FileService implements HttpService {
     }
 
     private static Stream<String> listFiles(Path storage) {
-
         try (Stream<Path> walk = Files.walk(storage)) {
             return walk.filter(Files::isRegularFile)
                        .map(storage::relativize)

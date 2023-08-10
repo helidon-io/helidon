@@ -50,5 +50,5 @@ Try the endpoints:
 |:--------------------|:-----------------------------------------------------------------------|
 | `rest/login`        | Login                                                                  |
 | `rest/scopes`       | Full security with scopes and roles (see IdcsResource.java)            |
-| `rest/nima`         | Protected nima service (see application.yaml - security.web-server)    |
+| `rest/service`      | Protected service (see application.yaml - security.web-server)         |
 | `web/resource.html` | Protected static resource (see application.yaml - security.web-server) |

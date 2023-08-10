@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-lra</artifactId>
-    <name>Microprofile LRA Example</name>
+    <name>Helidon Examples Microprofile LRA</name>
 
     <description>
         Microprofile Long Running Actions Example

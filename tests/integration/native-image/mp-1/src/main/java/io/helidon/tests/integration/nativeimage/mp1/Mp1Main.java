@@ -55,9 +55,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException;
 
-import static io.helidon.common.http.Http.Status.FORBIDDEN_403;
-import static io.helidon.common.http.Http.Status.OK_200;
-import static io.helidon.common.http.Http.Status.UNAUTHORIZED_401;
+import static io.helidon.http.Http.Status.FORBIDDEN_403;
+import static io.helidon.http.Http.Status.OK_200;
+import static io.helidon.http.Http.Status.UNAUTHORIZED_401;
 
 /**
  * Main class of this integration test.
@@ -233,7 +233,7 @@ public final class Mp1Main {
         validateMetrics(collector, target);
 
         // Access Log
-        vaidateAccessLog(collector);
+        validateAccessLog(collector);
 
         // Tracing
         validateTracing(collector);
@@ -575,7 +575,7 @@ public final class Mp1Main {
         }
     }
 
-    private static void vaidateAccessLog(Errors.Collector collector) {
+    private static void validateAccessLog(Errors.Collector collector) {
         Path path = Paths.get("access.log");
         // 1. File access.log must be present on filesystem (in current dir)
         if (Files.exists(path)) {

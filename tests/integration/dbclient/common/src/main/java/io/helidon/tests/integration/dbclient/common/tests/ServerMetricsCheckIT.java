@@ -27,8 +27,8 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbStatementType;
 import io.helidon.dbclient.metrics.DbClientMetrics;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.WebServer;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 
 import io.helidon.tests.integration.harness.SetUp;

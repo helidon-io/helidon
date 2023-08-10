@@ -32,7 +32,7 @@ module io.helidon.integrations.vault.secrets.pki {
 
     requires io.helidon.integrations.common.rest;
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.common.http;
+    requires io.helidon.http;
 
     exports io.helidon.integrations.vault.secrets.pki;
 

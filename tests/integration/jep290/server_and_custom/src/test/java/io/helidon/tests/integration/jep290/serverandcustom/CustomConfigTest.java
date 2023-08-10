@@ -25,9 +25,9 @@ import java.io.ObjectOutputStream;
 import java.util.Random;
 
 import io.helidon.common.SerializationConfig;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.WebServerConfig;
 
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;

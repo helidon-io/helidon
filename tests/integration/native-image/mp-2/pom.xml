@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-native-image-mp-2</artifactId>
-    <name>Helidon Integration Tests GraalVM Native image MP2</name>
+    <name>Helidon Tests Integration GraalVM Native image MP2</name>
 
     <description>
         This test makes sure the following helidon modules can be compiled into native image: - JPA in MicroProfile app - JTA in

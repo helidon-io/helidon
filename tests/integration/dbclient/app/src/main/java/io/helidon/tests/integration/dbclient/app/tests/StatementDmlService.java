@@ -19,11 +19,11 @@ import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.common.http.NotFoundException;
+import io.helidon.http.NotFoundException;
 import io.helidon.dbclient.DbClient;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.dbclient.app.tools.QueryParams;
 

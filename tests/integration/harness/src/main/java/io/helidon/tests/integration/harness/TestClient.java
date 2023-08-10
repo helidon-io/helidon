@@ -27,9 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientRequest;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;

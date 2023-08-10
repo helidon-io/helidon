@@ -20,7 +20,6 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>io.helidon.integrations.microstream</groupId>
         <artifactId>helidon-integrations-microstream-project</artifactId>
@@ -29,7 +28,6 @@
 
     <artifactId>helidon-integrations-microstream-health</artifactId>
     <name>Helidon Integrations Microstream Health</name>
-    <packaging>jar</packaging>
 
     <description>Health check for Microstream</description>
 
@@ -39,8 +37,8 @@
             <artifactId>helidon-integrations-microstream</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe-health</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-health</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

@@ -58,7 +58,7 @@ public class ExtensibleGetTemplateProducer implements CustomAnnotationTemplateCr
                 .className(classname)
                 .build();
         GenericTemplateCreatorDefault genericTemplateCreator = new GenericTemplateCreatorDefault(getClass());
-        CharSequence template = genericTemplateCreator.supplyFromResources("nima", "extensible-get.hbs");
+        CharSequence template = genericTemplateCreator.supplyFromResources("helidon", "extensible-get.hbs");
         GenericTemplateCreatorRequest genericCreatorRequest = GenericTemplateCreatorRequest.builder()
                 .customAnnotationTemplateRequest(request)
                 .generatedTypeName(generatedTypeName)

@@ -41,12 +41,12 @@ module io.helidon.microprofile.metrics {
 
     requires transitive io.helidon.metrics.api;
 
-    requires io.helidon.nima.observe.metrics;
+    requires io.helidon.webserver.observe.metrics;
 
     requires transitive microprofile.config.api;
     requires microprofile.metrics.api;
     requires io.helidon.config.mp;
-    
+
     requires micrometer.registry.prometheus;
     requires simpleclient.common;
 

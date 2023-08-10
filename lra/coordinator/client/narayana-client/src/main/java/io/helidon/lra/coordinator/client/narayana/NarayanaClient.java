@@ -27,18 +27,18 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.Http;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Http;
+import io.helidon.http.media.MediaContext;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
 import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
-import io.helidon.nima.faulttolerance.Retry;
-import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.webclient.api.HttpClientRequest;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;

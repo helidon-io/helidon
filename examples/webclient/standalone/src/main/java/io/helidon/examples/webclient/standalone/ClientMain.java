@@ -22,15 +22,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
+import io.helidon.http.Http;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.metrics.WebClientMetrics;
-import io.helidon.nima.webclient.spi.WebClientService;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.metrics.WebClientMetrics;
+import io.helidon.webclient.spi.WebClientService;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

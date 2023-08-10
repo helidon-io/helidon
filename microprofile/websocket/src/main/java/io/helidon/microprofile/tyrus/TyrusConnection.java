@@ -25,12 +25,12 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.websocket.WsCloseCodes;
-import io.helidon.nima.websocket.WsListener;
-import io.helidon.nima.websocket.WsSession;
+import io.helidon.http.Http;
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.websocket.WsCloseCodes;
+import io.helidon.websocket.WsListener;
+import io.helidon.websocket.WsSession;
 
 import jakarta.websocket.CloseReason;
 import org.glassfish.tyrus.spi.CompletionHandler;

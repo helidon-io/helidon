@@ -34,6 +34,5 @@
 
     <modules>
         <module>common</module>
-        <module>nima</module>
     </modules>
 </project>

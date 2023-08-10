@@ -22,17 +22,17 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.Reflected;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderName;
+import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;

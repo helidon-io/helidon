@@ -19,16 +19,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderNames;
+import io.helidon.http.Headers;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderNames;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
+import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.http1.Http1ClientResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

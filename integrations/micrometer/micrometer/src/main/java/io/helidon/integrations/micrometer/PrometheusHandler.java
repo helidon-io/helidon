@@ -18,11 +18,11 @@ package io.helidon.integrations.micrometer;
 
 import java.io.StringWriter;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.Http;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;

@@ -28,14 +28,14 @@
     </parent>
     <groupId>io.helidon.examples.config</groupId>
     <artifactId>helidon-examples-config-git</artifactId>
-    <name>Helidon Config Examples Git</name>
+    <name>Helidon Examples Config Git</name>
 
     <description>
         The example shows how to use GitConfigSource.
     </description>
 
     <properties>
-        <mainClass>io.helidon.config.examples.git.Main</mainClass>
+        <mainClass>io.helidon.examples.config.git.Main</mainClass>
     </properties>
 
     <dependencies>

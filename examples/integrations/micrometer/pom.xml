@@ -26,7 +26,7 @@
     </parent>
 
     <artifactId>helidon-examples-micrometer-project</artifactId>
-    <name>Helidon Micrometer Examples</name>
+    <name>Helidon Examples Integration Micrometer</name>
 
     <packaging>pom</packaging>
 

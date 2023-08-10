@@ -1,4 +1,4 @@
-# Helidon Standalone Quickstart SE Example
+# Helidon Examples Standalone Quickstart SE
 
 This project implements a simple Hello World REST service using Helidon SE with
  a standalone Maven pom.

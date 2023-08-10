@@ -22,8 +22,8 @@ module io.helidon.integrations.oci.metrics {
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.common;
-    requires io.helidon.common.http;
-    requires io.helidon.nima.webserver;
+    requires io.helidon.http;
+    requires io.helidon.webserver;
     requires static io.helidon.config.metadata;
     requires io.helidon.metrics.api;
 

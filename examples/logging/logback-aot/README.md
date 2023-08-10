@@ -21,7 +21,7 @@ Expected output should be similar to the following (for both hotspot and native)
 15:40:44.240 [INFO ] [io.helidon.examples.logging.logback.aot.Main.logging:128] Starting up startup
 15:40:44.241 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Using System logger startup
 15:40:44.245 [INFO ] [io.helidon.examples.logging.logback.aot.Main.log:146] Running on another thread propagated
-15:40:44.395 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Helidon NIMA 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer] 
+15:40:44.395 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Helidon 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer] 
 15:40:44.538 [INFO ] [o.slf4j.jdk.platform.logging.SLF4JPlatformLogger.performLog:151] Started all channels in 15 milliseconds. 647 milliseconds since JVM startup. Java 20.0.1+9-29 propagated
 ```
 

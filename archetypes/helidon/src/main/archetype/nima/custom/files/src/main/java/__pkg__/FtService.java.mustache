@@ -5,17 +5,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.nima.faulttolerance.Async;
-import io.helidon.nima.faulttolerance.Bulkhead;
-import io.helidon.nima.faulttolerance.CircuitBreaker;
-import io.helidon.nima.faulttolerance.Fallback;
-import io.helidon.nima.faulttolerance.FallbackConfig;
-import io.helidon.nima.faulttolerance.Retry;
-import io.helidon.nima.faulttolerance.Timeout;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.faulttolerance.Async;
+import io.helidon.faulttolerance.Bulkhead;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.Fallback;
+import io.helidon.faulttolerance.FallbackConfig;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.Timeout;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 public class FtService implements HttpService {
 

@@ -28,7 +28,7 @@
     <groupId>io.helidon.examples.config</groupId>
     <artifactId>helidon-examples-config-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Config Examples</name>
+    <name>Helidon Examples Config</name>
 
     <modules>
         <module>basics</module>

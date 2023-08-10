@@ -24,10 +24,10 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfigValue;
-import io.helidon.common.http.PathMatcher;
-import io.helidon.common.http.PathMatchers;
 import io.helidon.common.uri.UriPath;
 import io.helidon.cors.LogHelper.MatcherChecks;
+import io.helidon.http.PathMatcher;
+import io.helidon.http.PathMatchers;
 
 /**
  * Collects CORS set-up information from various sources and looks up the relevant CORS information given a request's path and

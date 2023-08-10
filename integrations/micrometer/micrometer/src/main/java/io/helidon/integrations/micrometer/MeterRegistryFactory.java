@@ -29,10 +29,10 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.Http;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -227,8 +227,8 @@ public final class MeterRegistryFactory {
         }
     }
 
-    io.helidon.nima.webserver.http.Handler matchingHandler(io.helidon.nima.webserver.http.ServerRequest serverRequest,
-                                                           io.helidon.nima.webserver.http.ServerResponse serverResponse) {
+    Handler matchingHandler(ServerRequest serverRequest,
+                            ServerResponse serverResponse) {
         return registryEnrollments.stream()
                 .map(e -> e.handlerFn().apply(serverRequest))
                 .flatMap(Optional::stream)
@@ -400,12 +400,12 @@ public final class MeterRegistryFactory {
     private static class Enrollment {
 
         private final MeterRegistry meterRegistry;
-        private final Function<io.helidon.nima.webserver.http.ServerRequest,
-                Optional<io.helidon.nima.webserver.http.Handler>> handlerFn;
+        private final Function<ServerRequest,
+                Optional<Handler>> handlerFn;
 
         private Enrollment(MeterRegistry meterRegistry,
-                               Function<io.helidon.nima.webserver.http.ServerRequest,
-                                       Optional<io.helidon.nima.webserver.http.Handler>> handlerFn) {
+                               Function<ServerRequest,
+                                       Optional<Handler>> handlerFn) {
             this.meterRegistry = meterRegistry;
             this.handlerFn = handlerFn;
         }
@@ -414,8 +414,8 @@ public final class MeterRegistryFactory {
             return meterRegistry;
         }
 
-        private Function<io.helidon.nima.webserver.http.ServerRequest,
-                Optional<io.helidon.nima.webserver.http.Handler>> handlerFn() {
+        private Function<ServerRequest,
+                Optional<Handler>> handlerFn() {
             return handlerFn;
         }
     }

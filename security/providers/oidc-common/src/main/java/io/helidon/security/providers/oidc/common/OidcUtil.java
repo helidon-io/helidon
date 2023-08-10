@@ -22,12 +22,12 @@ import java.time.Duration;
 import io.helidon.common.Errors;
 import io.helidon.common.config.Config;
 import io.helidon.common.socket.SocketOptions;
-import io.helidon.nima.http.media.MediaContext;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.api.WebClientConfig;
-import io.helidon.nima.webclient.tracing.WebClientTracing;
+import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientConfig;
+import io.helidon.webclient.tracing.WebClientTracing;
 
 final class OidcUtil {
     private static final System.Logger LOGGER = System.getLogger(OidcUtil.class.getName());

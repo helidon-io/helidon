@@ -20,17 +20,17 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Method;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.FaultTolerance;
+import io.helidon.faulttolerance.FtHandler;
+import io.helidon.http.Http;
+import io.helidon.http.Http.Method;
+import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
-import io.helidon.nima.faulttolerance.FaultTolerance;
-import io.helidon.nima.faulttolerance.FtHandler;
-import io.helidon.nima.http.media.jsonp.JsonpSupport;
-import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.api.WebClientConfig;
-import io.helidon.nima.webclient.http1.Http1Client;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientConfig;
+import io.helidon.webclient.http1.Http1Client;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -43,7 +43,7 @@ import jakarta.json.JsonWriterFactory;
  */
 public interface RestApi {
     /**
-     * Get with an optional response. In case the call returns {@link io.helidon.common.http.Http.Status#NOT_FOUND_404}
+     * Get with an optional response. In case the call returns {@link io.helidon.http.Http.Status#NOT_FOUND_404}
      * this would return an empty optional entity, rather than fail.
      * This may also be the case for requests that use {@code If-Modified-Since} that return a
      * {@link Http.Status#NOT_MODIFIED_304} response code.
@@ -218,7 +218,7 @@ public interface RestApi {
      * Invoke API call that is expected to return bytes.
      * This method collects all bytes in memory, so it cannot be used for large data.
      * See
-     * {@link #invokeEntityResponse(io.helidon.common.http.Http.Method, String, ApiRequest, BuilderBase)}.
+     * {@link #invokeEntityResponse(io.helidon.http.Http.Method, String, ApiRequest, BuilderBase)}.
      * <p>
      * The accepted media type must be provided in request, falls back to
      * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.

@@ -41,7 +41,7 @@ module io.helidon.microprofile.graphql.server {
     requires org.jboss.jandex;
 
     requires io.helidon.config;
-    requires io.helidon.nima.graphql.server;
+    requires io.helidon.webserver.graphql;
     requires io.helidon.graphql.server;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.server;

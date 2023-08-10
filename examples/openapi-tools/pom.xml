@@ -29,7 +29,7 @@
     <packaging>pom</packaging>
     <groupId>io.helidon.examples.openapi.tools</groupId>
     <artifactId>helidon-examples-openapi-tools-project</artifactId>
-    <name>Helidon OpenApi Tools Examples</name>
+    <name>Helidon Examples OpenApi Tools</name>
 
     <modules>
         <!-- Temporarily removed until we regenerate the examples after updating the generators. -->

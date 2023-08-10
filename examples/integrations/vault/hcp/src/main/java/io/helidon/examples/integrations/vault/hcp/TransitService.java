@@ -31,10 +31,10 @@ import io.helidon.integrations.vault.secrets.transit.TransitSecrets;
 import io.helidon.integrations.vault.secrets.transit.UpdateKeyConfig;
 import io.helidon.integrations.vault.secrets.transit.Verify;
 import io.helidon.integrations.vault.sys.Sys;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 class TransitService implements HttpService {
     private static final String ENCRYPTION_KEY = "encryption-key";

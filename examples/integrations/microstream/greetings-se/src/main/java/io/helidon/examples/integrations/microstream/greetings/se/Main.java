@@ -19,10 +19,10 @@ package io.helidon.examples.integrations.microstream.greetings.se;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Microstream demo with a simple rest application.

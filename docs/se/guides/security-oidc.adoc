@@ -508,8 +508,8 @@ In the `MainTest.java` file, tests need to be modified to check the application 
 [source,java]
 .Import the following class:
 ----
-import java.util.Base64;
-import io.helidon.common.http.Http;
+
+import io.helidon.http.Http;
 ----
 
 [source,java]

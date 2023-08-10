@@ -20,8 +20,8 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.http1.Http1ClientRequest;
 
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;

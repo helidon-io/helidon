@@ -34,7 +34,6 @@
 
     <modules>
         <module>parent</module>
-        <module>nima</module>
         <module>se</module>
         <module>mp</module>
     </modules>

@@ -29,7 +29,7 @@ module io.helidon.microprofile.security {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.security;
-    requires transitive io.helidon.security.integration.nima;
+    requires transitive io.helidon.webserver.security;
     requires io.helidon.security.providers.abac;
     requires io.helidon.microprofile.server;
     requires io.helidon.microprofile.cdi;

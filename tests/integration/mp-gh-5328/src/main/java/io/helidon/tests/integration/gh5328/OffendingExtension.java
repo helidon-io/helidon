@@ -20,9 +20,9 @@ import java.time.Duration;
 
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.tracing.WebClientTracing;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.tracing.WebClientTracing;
+import io.helidon.webserver.WebServer;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;

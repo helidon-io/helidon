@@ -28,14 +28,14 @@
     </parent>
     <groupId>io.helidon.examples.config</groupId>
     <artifactId>helidon-examples-config-changes</artifactId>
-    <name>Helidon Config Examples Changes</name>
+    <name>Helidon Examples Config Changes</name>
 
     <description>
         The example shows how to use Configuration Changes API.
     </description>
 
     <properties>
-        <mainClass>io.helidon.config.examples.changes.Main</mainClass>
+        <mainClass>io.helidon.examples.config.changes.Main</mainClass>
     </properties>
 
     <dependencies>

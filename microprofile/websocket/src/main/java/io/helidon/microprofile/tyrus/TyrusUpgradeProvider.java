@@ -16,10 +16,10 @@
 
 package io.helidon.microprofile.tyrus;
 
-import io.helidon.nima.webserver.ProtocolConfigs;
-import io.helidon.nima.webserver.http1.spi.Http1Upgrader;
-import io.helidon.nima.websocket.webserver.WsConfig;
-import io.helidon.nima.websocket.webserver.WsUpgradeProvider;
+import io.helidon.webserver.ProtocolConfigs;
+import io.helidon.webserver.http1.spi.Http1Upgrader;
+import io.helidon.webserver.websocket.WsConfig;
+import io.helidon.webserver.websocket.WsUpgradeProvider;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to Tyrus connection.
