@@ -69,7 +69,7 @@ for ((i=0;i<${#ARGS[@]};i++))
         exit 0
         ;;
     *)
-        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] ; then
+        if [ "${ARG}" = "update_version" ] || [ "${ARG}" = "release_build" ] || [ "${ARG}" = "deploy_snapshot" ] ; then
             readonly COMMAND="${ARG}"
         else
             echo "ERROR: unknown argument: ${ARG}"
@@ -268,16 +268,28 @@ release_build(){
 deploy_snapshot(){
 
     # Make sure version ends in -SNAPSHOT
-    if [[ ${FULL_VERSION} != *-SNAPSHOT ]]; then
-        echo "Helidon version ${FULL_VERSION} is not a SNAPSHOT version. Failing snapshot release."
+    if [[ ${MVN_VERSION} != *-SNAPSHOT ]]; then
+        echo "Helidon version ${MVN_VERSION} is not a SNAPSHOT version. Failing snapshot release."
         exit 1
     fi
 
-    # Perform deployment. Since the version is SNAPSHOT this will go to snapshot repository
-    mvn ${MAVEN_ARGS} clean deploy \
-      -Pdeploy,archetypes \
+    readonly NEXUS_SNAPSHOT_URL="https://oss.sonatype.org/content/repositories/snapshots/"
+    echo "Deploying snapshot build ${MVN_VERSION} to ${NEXUS_SNAPSHOT_URL}"
+
+    # The nexus-staging-maven-plugin had issues deploying the module
+    # helidon-applications because the distributionManagement section is empty.
+    # So we deploy using the apache maven-deploy-plugin and altDeploymentRepository
+    # property. The deployAtEnd option requires version 3.0.0 of maven-deploy-plugin
+    # or newer to work correctly on multi-module systems
+    set -x
+    mvn ${MAVEN_ARGS} -e clean deploy \
+      -Parchetypes \
       -DskipTests \
+      -DaltDeploymentRepository="ossrh::${NEXUS_SNAPSHOT_URL}" \
+      -DdeployAtEnd=true \
       -DretryFailedDeploymentCount="10"
+
+    echo "Done. ${MVN_VERSION} deployed to ${NEXUS_SNAPSHOT_URL}"
 }
 
 # Invoke command
