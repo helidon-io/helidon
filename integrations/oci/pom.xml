@@ -34,6 +34,7 @@
 
     <modules>
         <module>metrics</module>
+        <module>oci-secrets-mp-config-source</module>
         <module>sdk</module>
     </modules>
 </project>

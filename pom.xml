@@ -158,6 +158,8 @@
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
         <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/3.0/</javadoc.link.eclipselink>
 
+        <javadoc.link.oci>https://docs.oracle.com/en-us/iaas/tools/java/${version.lib.oci}/</javadoc.link.oci>
+
         <javadoc.jackson.version>2.12</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
@@ -373,6 +375,11 @@
                             <offlineLink>
                                 <url>${javadoc.link.microprofile-tracing}</url>
                                 <location>${javadoc.packagelist.dir}/microprofile-tracing</location>
+                            </offlineLink>
+
+                            <offlineLink>
+                                <url>${javadoc.link.oci}</url>
+                                <location>${javadoc.packagelist.dir}/oci</location>
                             </offlineLink>
 
                             <offlineLink>
