@@ -40,25 +40,25 @@ class OciConfigTest {
                 .get(OciConfig.CONFIG_KEY);
         OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principals", "config", "config-file"));
+                   contains("instance-principals", "resource-principal", "config", "config-file"));
 
         config = createTestConfig(ociAuthConfigStrategies("auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principals", "config", "config-file"));
+                   contains("instance-principals", "resource-principal", "config", "config-file"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principals", "config", "config-file"));
+                   contains("instance-principals", "resource-principal", "config", "config-file"));
 
-        config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "resource-principals"))
+        config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "resource-principal"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principals"));
+                   contains("instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies("config", "auto"))
                 .get(OciConfig.CONFIG_KEY);
@@ -82,7 +82,7 @@ class OciConfigTest {
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principals", "config", "config-file"));
+                   contains("instance-principals", "resource-principal", "config", "config-file"));
     }
 
     @Test
@@ -208,7 +208,7 @@ class OciConfigTest {
         try {
             OciConfig ociConfig = OciExtension.ociConfig();
             assertThat(ociConfig.authStrategy(),
-                       optionalValue(equalTo("resource-principals")));
+                       optionalValue(equalTo("resource-principal")));
         } finally {
             OciExtension.ociConfigFileName(null);
         }

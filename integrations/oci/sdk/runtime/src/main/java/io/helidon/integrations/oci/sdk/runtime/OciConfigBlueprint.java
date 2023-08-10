@@ -35,7 +35,7 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.VAL_CONFIG;
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.VAL_CONFIG_FILE;
 import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.VAL_INSTANCE_PRINCIPALS;
-import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.VAL_RESOURCE_PRINCIPALS;
+import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.VAL_RESOURCE_PRINCIPAL;
 
 /**
  * Configuration used by {@link OciAuthenticationDetailsProvider}.
@@ -45,7 +45,7 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
  * Each configured {@link OciAuthenticationDetailsProvider#KEY_AUTH_STRATEGY} has varying constraints:
  * <ul>
  *     <li>instance-principals - the JVM must be able to detect that it is running on a OCI compute node instance.</li>
- *     <li>resource-principals - the env variable {@value OciAuthenticationDetailsProvider#TAG_RESOURCE_PRINCIPAL_VERSION} is
+ *     <li>resource-principal - the env variable {@value OciAuthenticationDetailsProvider#TAG_RESOURCE_PRINCIPAL_VERSION} is
  *     required to be set in the runtime environment.</li>
  *     <li>config-file - the {@code $HOME/.oci/config} is available on the file system. This configuration also allows for the
  *     optional key named {@code config-profile} to be used to override the file location in the runtime environment.</li>
@@ -93,7 +93,7 @@ interface OciConfigBlueprint {
             @ConfiguredValue(value = VAL_CONFIG, description = "simple authentication provider"),
             @ConfiguredValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
             @ConfiguredValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
-            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPALS, description = "resource principals authentication provider"),
+            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principals authentication provider"),
     })
     Optional<String> authStrategy();
 
@@ -132,7 +132,7 @@ interface OciConfigBlueprint {
             @ConfiguredValue(value = VAL_CONFIG, description = "simple authentication provider"),
             @ConfiguredValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
             @ConfiguredValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
-            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPALS, description = "resource principals authentication provider"),
+            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principals authentication provider"),
     })
     List<String> authStrategies();
 

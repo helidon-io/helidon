@@ -64,12 +64,14 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     static final String VAL_AUTO = "auto";
     static final String VAL_CONFIG = "config";
     static final String VAL_CONFIG_FILE = "config-file";
+    // com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider
     static final String VAL_INSTANCE_PRINCIPALS = "instance-principals";
-    static final String VAL_RESOURCE_PRINCIPALS = "resource-principals";
+    // com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider
+    static final String VAL_RESOURCE_PRINCIPAL = "resource-principal";
 
     // order is important here - see the tests and the docs
     static final List<String> ALL_STRATEGIES = List.of(VAL_INSTANCE_PRINCIPALS,
-                                                       VAL_RESOURCE_PRINCIPALS,
+                                                       VAL_RESOURCE_PRINCIPAL,
                                                        VAL_CONFIG,
                                                        VAL_CONFIG_FILE);
 
@@ -217,7 +219,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
          *
          * @see OciConfig
          */
-        RESOURCE_PRINCIPAL(VAL_RESOURCE_PRINCIPALS,
+        RESOURCE_PRINCIPAL(VAL_RESOURCE_PRINCIPAL,
                            ResourcePrincipalAuthenticationDetailsProvider.class,
                            (configBean) -> {
                                // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251

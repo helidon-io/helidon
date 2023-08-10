@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-auth-strategy: "resource-principals"
+auth-strategy: "resource-principal"
