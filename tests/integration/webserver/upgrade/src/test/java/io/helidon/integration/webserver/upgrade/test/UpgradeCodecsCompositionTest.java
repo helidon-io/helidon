@@ -198,7 +198,7 @@ class UpgradeCodecsCompositionTest {
     })
     void versionSpecificHttp20Negative(String url) throws IOException, InterruptedException {
         assertThat(httpClient(GET, url, HTTP_1_1).statusCode(), is(404));
-        try (HttpClientResponse response = doRequest(webClient2, GET, url)) {
+        try (HttpClientResponse response = doRequest(webClient1, GET, url)) {
             assertThat(response.status().code(), is(404));
         }
     }
