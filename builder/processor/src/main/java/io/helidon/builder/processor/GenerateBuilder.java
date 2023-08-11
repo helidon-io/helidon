@@ -19,10 +19,10 @@ package io.helidon.builder.processor;
 import java.util.List;
 
 import io.helidon.common.Builder;
-import io.helidon.common.processor.model.AccessModifier;
 import io.helidon.common.processor.model.Annotation;
 import io.helidon.common.processor.model.ClassModel;
 import io.helidon.common.processor.model.TypeArgument;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
 /**

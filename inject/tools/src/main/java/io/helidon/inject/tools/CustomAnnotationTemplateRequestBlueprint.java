@@ -19,11 +19,11 @@ package io.helidon.inject.tools;
 import java.util.List;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ServiceInfoBasics;
 
 /**

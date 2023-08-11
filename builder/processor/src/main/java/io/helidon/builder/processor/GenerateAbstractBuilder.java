@@ -26,7 +26,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
-import io.helidon.common.processor.model.AccessModifier;
 import io.helidon.common.processor.model.Annotation;
 import io.helidon.common.processor.model.ClassModel;
 import io.helidon.common.processor.model.Constructor;
@@ -34,6 +33,7 @@ import io.helidon.common.processor.model.InnerClass;
 import io.helidon.common.processor.model.Javadoc;
 import io.helidon.common.processor.model.Method;
 import io.helidon.common.processor.model.TypeArgument;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.CHAR_ARRAY_TYPE;

@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 
 import javax.annotation.processing.RoundEnvironment;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.Application;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.ModuleComponent;

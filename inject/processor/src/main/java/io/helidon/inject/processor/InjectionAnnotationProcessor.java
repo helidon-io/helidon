@@ -43,13 +43,13 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.processor.TypeFactory;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.Contract;
 import io.helidon.inject.api.DependenciesInfo;

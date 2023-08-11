@@ -44,13 +44,13 @@ import io.helidon.common.Errors;
 import io.helidon.common.processor.CopyrightHandler;
 import io.helidon.common.processor.GeneratedAnnotationHandler;
 import io.helidon.common.processor.TypeInfoFactory;
-import io.helidon.common.processor.model.AccessModifier;
 import io.helidon.common.processor.model.Annotation;
 import io.helidon.common.processor.model.ClassModel;
 import io.helidon.common.processor.model.ClassType;
 import io.helidon.common.processor.model.Javadoc;
 import io.helidon.common.processor.model.Method;
 import io.helidon.common.processor.model.TypeArgument;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -268,9 +268,9 @@ public class BlueprintProcessor extends AbstractProcessor {
         ClassModel.Builder classModel = ClassModel.builder()
                 .type(prototype)
                 .classType(ClassType.INTERFACE)
-                .licenseHeader(CopyrightHandler.copyright(GENERATOR,
-                                                          typeInfo.typeName(),
-                                                          prototype));
+                .copyright(CopyrightHandler.copyright(GENERATOR,
+                                                      typeInfo.typeName(),
+                                                      prototype));
 
         String javadocString = blueprintDef.javadoc();
         List<TypeArgument> typeArguments = new ArrayList<>();
@@ -419,7 +419,7 @@ public class BlueprintProcessor extends AbstractProcessor {
 
         try (PrintWriter pw = new PrintWriter(generatedIface.openWriter())) {
             classModel.build()
-                    .saveToFile(pw, SOURCE_SPACING);
+                    .write(pw, SOURCE_SPACING);
         }
     }
 

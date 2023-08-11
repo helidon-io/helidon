@@ -51,10 +51,10 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.processor.AnnotationFactory;
 import io.helidon.common.processor.TypeFactory;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ElementInfo;
 import io.helidon.inject.api.InjectionPointInfo;
 import io.helidon.inject.api.InjectionPointProvider;

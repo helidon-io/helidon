@@ -21,8 +21,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.DependencyInfo;

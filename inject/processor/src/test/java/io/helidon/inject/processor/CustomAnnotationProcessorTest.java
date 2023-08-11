@@ -21,12 +21,12 @@ import java.util.Set;
 
 import javax.lang.model.element.ElementKind;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.api.ServiceInfoBasics;
 import io.helidon.inject.processor.testsubjects.BasicEndpoint;

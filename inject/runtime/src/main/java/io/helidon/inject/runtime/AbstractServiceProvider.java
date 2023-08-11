@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ActivationLog;
 import io.helidon.inject.api.ActivationLogEntry;
 import io.helidon.inject.api.ActivationPhaseReceiver;

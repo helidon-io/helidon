@@ -45,12 +45,12 @@ public final class ClassModel extends ClassBase {
      */
     public static final String DEFAULT_PADDING = "    ";
     private final String packageName;
-    private final String licenseHeader;
+    private final String copyright;
     private ImportOrganizer imports;
 
     private ClassModel(Builder builder) {
         super(builder);
-        this.licenseHeader = builder.licenseHeader;
+        this.copyright = builder.copyright;
         this.packageName = builder.packageName;
     }
 
@@ -64,24 +64,24 @@ public final class ClassModel extends ClassBase {
     }
 
     /**
-     * Generate created type model.
+     * Write created type model.
      * Default padding {@link #DEFAULT_PADDING} is used.
      *
      * @param writer writer to be used
      * @throws IOException write operation failure
      */
-    public void saveToFile(Writer writer) throws IOException {
-        saveToFile(writer, DEFAULT_PADDING);
+    public void write(Writer writer) throws IOException {
+        write(writer, DEFAULT_PADDING);
     }
 
     /**
-     * Generate created type model.
+     * Write created type model.
      *
      * @param writer writer to be used
      * @param padding padding to be used
      * @throws IOException write operation failure
      */
-    public void saveToFile(Writer writer, String padding) throws IOException {
+    public void write(Writer writer, String padding) throws IOException {
         ModelWriter innerWriter = new ModelWriter(writer, padding);
         writeComponent(innerWriter, Set.of(), imports, classType());
     }
@@ -91,8 +91,8 @@ public final class ClassModel extends ClassBase {
                         Set<String> declaredTokens,
                         ImportOrganizer imports,
                         ClassType classType) throws IOException {
-        if (licenseHeader != null) {
-            String[] lines = licenseHeader.split("\n");
+        if (copyright != null) {
+            String[] lines = copyright.split("\n");
             if (lines.length > 1) {
                 boolean applyFormatting = !lines[0].startsWith("/*");
                 if (applyFormatting) {
@@ -139,7 +139,7 @@ public final class ClassModel extends ClassBase {
     public static final class Builder extends ClassBase.Builder<Builder, ClassModel> {
 
         private String packageName = "";
-        private String licenseHeader;
+        private String copyright;
 
         private Builder() {
         }
@@ -177,13 +177,13 @@ public final class ClassModel extends ClassBase {
         }
 
         /**
-         * License header to be used.
+         * Copyright header to be used.
          *
-         * @param licenseHeader license header
+         * @param copyright copyright header
          * @return updated builder instance
          */
-        public Builder licenseHeader(String licenseHeader) {
-            this.licenseHeader = licenseHeader;
+        public Builder copyright(String copyright) {
+            this.copyright = copyright;
             return this;
         }
 
