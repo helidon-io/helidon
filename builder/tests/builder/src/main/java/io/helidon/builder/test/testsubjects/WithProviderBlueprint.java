@@ -25,7 +25,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
 @Configured
-public interface WithProviderBlueprint {
+interface WithProviderBlueprint {
     @ConfiguredOption(provider = true, providerType = SomeProvider.class)
     SomeProvider.SomeService oneDiscover();
     @ConfiguredOption(provider = true, providerType = SomeProvider.class, providerDiscoverServices = false)
