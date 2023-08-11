@@ -1,10 +1,9 @@
-To generate a new certificate:
+To generate a server keystore and the client truststore:
 
 ```shell
-# Create the private key and csr request
-openssl req -newkey rsa:2048 -nodes -keyout key.pem -out certificate.csr -config ./cert-config.txt
-# Generate a self-signed certificate
-openssl x509 -req -in certificate.csr -signkey key.pem -out certificate.pem -days 99999 -sha256 -extfile cert-config.ext
-# Convert to pkcs12 keystore (set a password using a prompt)
-openssl pkcs12 -inkey key.pem -in certificate.pem -export -out server.p12
+# Create the keystore with a private key and a truststore to trust it
+# Typically the server will load the keystore generated under certs/keystore_server.p12 and
+# the client will load the truststore generated under truststore_client.p12
+# Default password is 'password', unless you specify other as an argument
+./certGen.sh
 ```
