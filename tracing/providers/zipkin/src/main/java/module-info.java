@@ -29,8 +29,8 @@ module io.helidon.tracing.providers.zipkin {
     requires static io.helidon.common.features.api;
 
     requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.tracing;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.tracing;
     requires io.helidon.tracing.providers.opentracing;
     requires static io.helidon.config.metadata;
 
@@ -42,7 +42,7 @@ module io.helidon.tracing.providers.zipkin {
     requires zipkin2;
     requires brave;
     requires io.opentracing.noop;
-    requires io.opentracing.api;
+    requires transitive io.opentracing.api;
 
     exports io.helidon.tracing.providers.zipkin;
 

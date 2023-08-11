@@ -27,19 +27,19 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
         path = {"Tracing", "Integration", "JerseyClient"}
 )
 module io.helidon.tracing.jersey.client {
-    requires static io.helidon.common.features.api;
 
-    requires java.logging;
+    requires io.helidon.common.context;
+    requires io.helidon.common;
+    requires io.helidon.tracing.config;
+    requires io.helidon.tracing;
     requires jakarta.annotation;
-
-    requires jakarta.ws.rs;
-    requires jersey.client;
+    requires java.logging;
     requires jersey.common;
 
-    requires io.helidon.tracing;
-    requires io.helidon.tracing.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
+    requires static io.helidon.common.features.api;
+    
+    requires transitive jakarta.ws.rs;
+    requires transitive jersey.client;
 
     exports io.helidon.tracing.jersey.client;
 

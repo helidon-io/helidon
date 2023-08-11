@@ -30,13 +30,13 @@ module io.helidon.tracing.jersey {
 
     requires jakarta.annotation;
 
-    requires jakarta.ws.rs;
+    requires transitive jakarta.ws.rs;
     requires jersey.server;
     requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.jersey.common;
     requires transitive io.helidon.tracing.jersey.client;
-    requires io.helidon.tracing;
+    requires transitive io.helidon.tracing;
     requires io.helidon.tracing.config;
 
     exports io.helidon.tracing.jersey;

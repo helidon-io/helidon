@@ -30,7 +30,10 @@ import io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
 public class JaegerDataPropagationProvider implements DataPropagationProvider<JaegerDataPropagationProvider.JaegerContext> {
     private static final System.Logger LOGGER = System.getLogger(JaegerDataPropagationProvider.class.getName());
 
-    static class JaegerContext {
+    /**
+     * Jaeger Context.
+     */
+    public static class JaegerContext {
         private final Span span;
         private final Tracer tracer;
         private Scope scope;
