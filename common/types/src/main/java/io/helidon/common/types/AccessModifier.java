@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.processor.model;
+package io.helidon.common.types;
 
 /**
  * Access modifier of the class model components.
@@ -48,7 +48,7 @@ public enum AccessModifier {
      *
      * @return modifier name
      */
-    String modifierName() {
+    public String modifierName() {
         return modifierName;
     }
 

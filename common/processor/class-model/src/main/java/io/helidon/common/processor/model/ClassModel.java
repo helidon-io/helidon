@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
 /**

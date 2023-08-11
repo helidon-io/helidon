@@ -18,6 +18,8 @@ package io.helidon.common.processor.model;
 import java.io.IOException;
 import java.util.Set;
 
+import io.helidon.common.types.AccessModifier;
+
 /**
  * Constructor model.
  */

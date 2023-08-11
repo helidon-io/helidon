@@ -18,6 +18,8 @@ package io.helidon.common.processor.model;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.types.AccessModifier;
+
 abstract class CommonComponent extends DescribableComponent {
 
     private final String name;

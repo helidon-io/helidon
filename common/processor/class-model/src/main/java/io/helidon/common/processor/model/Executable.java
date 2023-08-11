@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
 abstract class Executable extends AnnotatedComponent {
