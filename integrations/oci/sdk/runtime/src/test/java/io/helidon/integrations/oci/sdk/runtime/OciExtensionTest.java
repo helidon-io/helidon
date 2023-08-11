@@ -16,18 +16,44 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import io.helidon.config.Config;
+import io.helidon.inject.api.Bootstrap;
+import io.helidon.inject.api.InjectionServices;
+
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 class OciExtensionTest {
 
+    @BeforeAll
+    static void setUp() {
+        InjectionServices.globalBootstrap(Bootstrap.builder().config(Config.create()).build());
+    }
+
+    @AfterAll
+    static void tearDown() {
+        resetAll();
+    }
+
     @Test
     void ociConfig() {
         assertThat(OciExtension.ociConfig(), notNullValue());
         assertThat(OciExtension.ociConfig(), sameInstance(OciExtension.ociConfig()));
+    }
+
+    @Test
+    void defaultOciAuthenticationProvider() {
+        AbstractAuthenticationDetailsProvider auth = OciExtension.ociAuthenticationProvider().get();
+        assertThat(auth, instanceOf(ConfigFileAuthenticationDetailsProvider.class));
     }
 
 }

@@ -18,6 +18,7 @@ package io.helidon.integrations.oci.sdk.runtime;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -212,15 +213,18 @@ class OciConfigTest {
 
     @Test
     void ociYamlConfigFile() {
-        // setup
+        // setup (teardown happens after each run)
         OciExtension.ociConfigFileName("test-oci.yaml");
 
         OciConfig ociConfig = OciExtension.ociConfig();
         assertThat(ociConfig.authStrategy(),
                    optionalValue(equalTo("resource-principal")));
+    }
 
-        assertSame(ociConfig,
-                   OciExtension.ociConfig(),
+    @Test
+    void ociRawConfigShouldBeCached() {
+        assertSame(Objects.requireNonNull(OciExtension.configSupplier()),
+                   OciExtension.configSupplier(),
                    "The oci configuration from the config source should be cached");
     }
 

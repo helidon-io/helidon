@@ -18,13 +18,17 @@ package io.helidon.integrations.oci.sdk.runtime;
 
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.inject.api.Bootstrap;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.ServiceProvider;
+import io.helidon.inject.api.Services;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
@@ -120,13 +124,13 @@ public final class OciExtension {
                                     .toList())
             .build());
     private static String overrideOciConfigFile;
-    private static OciConfig ociConfig;
+    private static Supplier<io.helidon.common.config.Config> ociConfigSupplier;
 
     private OciExtension() {
     }
 
     /**
-     * Returns the global {@link OciConfig} that is currently defined in the bootstrap environment.
+     * Returns the global {@link OciConfig} bean that is currently defined in the bootstrap environment.
      * <p>
      * The implementation will first look for an {@code oci.yaml} file, and if found will use that file to establish the global
      * oci-specific bootstrap {@link io.helidon.config.spi.ConfigSource}.
@@ -141,16 +145,7 @@ public final class OciExtension {
      * @see OciConfigBlueprint
      */
     public static OciConfig ociConfig() {
-        if (ociConfig != null) {
-            return ociConfig;
-        }
-
-        // we do it this way to allow for the possibility of system and env vars to be used for the auth-strategy definition
-        // (not advertised in the javadoc)
-        String ociConfigFile = ociConfigFilename();
-        io.helidon.common.config.Config config = Config.create(
-                ConfigSources.classpath(ociConfigFile).optional(),
-                ConfigSources.file(Paths.get(ociConfigFile)).optional());
+        io.helidon.common.config.Config config = configSupplier().get();
         if (!config.exists()
                 || !config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()) {
             // fallback
@@ -173,14 +168,46 @@ public final class OciExtension {
             }
         }
 
-        LOGGER.log(System.Logger.Level.DEBUG, "Using specified oci config");
-        ociConfig = OciConfig.create(config);
-        return ociConfig;
+        return OciConfig.create(config);
+    }
+
+    /**
+     * The supplier for the raw config-backed by the OCI config source(s).
+     *
+     * @return the supplier for the raw config-backed by the OCI config source(s)
+     */
+    public static Supplier<io.helidon.common.config.Config> configSupplier() {
+        if (ociConfigSupplier == null) {
+            ociConfigSupplier = () -> {
+                // we do it this way to allow for the possibility of system and env vars to be used for the auth-strategy definition
+                // (not advertised in the javadoc)
+                String ociConfigFile = ociConfigFilename();
+                return Config.create(
+                        ConfigSources.classpath(ociConfigFile).optional(),
+                        ConfigSources.file(Paths.get(ociConfigFile)).optional());
+            };
+        }
+
+        return ociConfigSupplier;
+    }
+
+    /**
+     * The supplier for the globally configured authentication provider.
+     *
+     * @return the supplier for the globally configured authentication provider
+     */
+    public static Supplier<AbstractAuthenticationDetailsProvider> ociAuthenticationProvider() {
+        return () -> {
+            Services services = InjectionServices.realizedServices();
+            ServiceProvider<AbstractAuthenticationDetailsProvider> authProvider =
+                    services.lookupFirst(AbstractAuthenticationDetailsProvider.class);
+            return Objects.requireNonNull(authProvider.get());
+        };
     }
 
     static void ociConfigFileName(String fileName) {
         overrideOciConfigFile = fileName;
-        ociConfig = null;
+        ociConfigSupplier = null;
     }
 
     static String ociConfigFilename() {
