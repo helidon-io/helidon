@@ -651,7 +651,7 @@ final class GenerateAbstractBuilder {
             pw.println("private Config config;");
         }
         for (PrototypeProperty child : typeContext.propertyData().properties()) {
-            if (!isBuilder || !child.typeHandler().actualType().equals(CONFIG_TYPE)) {
+            if (!isBuilder || !(child.typeHandler().actualType().equals(CONFIG_TYPE) && child.name().equals("config"))) {
                 pw.print(spacing);
                 pw.print(child.fieldDeclaration(isBuilder));
                 pw.println(";");
