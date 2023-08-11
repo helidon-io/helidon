@@ -23,8 +23,6 @@ Helidon supports two programming models:
 
 In either case your application is just a Java SE program.
 
-Helidon white paper is available [here](https://www.oracle.com/a/ocom/docs/technical-brief--helidon-report.pdf).
-
 ## License
 
 Helidon is available under Apache License 2.0.
@@ -32,6 +30,9 @@ Helidon is available under Apache License 2.0.
 ## Documentation
 
 Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
+
+Helidon White Paper is available [here](https://www.oracle.com/a/ocom/docs/technical-brief--helidon-report.pdf).
+
 
 ## Get Started
 
