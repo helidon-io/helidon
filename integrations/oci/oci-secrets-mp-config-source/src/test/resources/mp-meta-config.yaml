@@ -19,3 +19,4 @@ sources:
   - type: 'oci-secrets'
     # vault-ocid: 123
     accept-pattern: '^FrancqueSecret$'
+    ordinal: 200

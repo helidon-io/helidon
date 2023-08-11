@@ -36,6 +36,8 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.SecretsSupplie
 import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memoizedSupplier;
 import static java.lang.System.Logger;
 import static java.lang.System.Logger.Level.DEBUG;
+import static org.eclipse.microprofile.config.spi.ConfigSource.CONFIG_ORDINAL;
+import static org.eclipse.microprofile.config.spi.ConfigSource.DEFAULT_ORDINAL;
 
 /**
  * An {@link MpMetaConfigProvider} implementation that {@linkplain #create(String, Config, String) creates} {@link
@@ -164,8 +166,8 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
 
     /**
      * Creates and returns a non-{@code null}, unmodifiable, unchanging {@link List} of {@link ConfigSource}
-     * implementations suitable for the supplied {@code type}, and as initially set up using the supplied {@link Config}
-     * and (possibly {@code null}) {@code profile}.
+     * implementations suitable for the supplied ({@linkplain #supportedTypes() supported}) {@code type}, and as
+     * initially set up using the supplied {@link Config} and (possibly {@code null}) {@code profile}.
      *
      * @param type a type drawn from the {@link Set} of {@linkplain #supportedTypes() supported types}; must not be
      * {@code null}
@@ -233,8 +235,16 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
         // communication the ConfigSource has with a Vault. If it is not specified, then ^.*$ will be used instead, and
         // therefore no restrictions on property resolution will occur.
         Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().orElse("^.*$"));
-
-        return List.of(new SecretBundleByNameConfigSource(acceptPattern, vaultOcid, memoizedSupplier(secrets(adpSupplier))));
+        int ordinal = metaConfig.get("ordinal")
+            .asInt()
+            .or(() -> metaConfig.get(CONFIG_ORDINAL) // MicroProfile Config-defined name; people might cut/paste it
+                .asInt().asOptional())
+            .orElse(DEFAULT_ORDINAL); // MicroProfile Config-defined default value of 100
+        return
+            List.of(new SecretBundleByNameConfigSource(ordinal,
+                                                       acceptPattern,
+                                                       vaultOcid,
+                                                       memoizedSupplier(secrets(adpSupplier))));
     }
 
     /**

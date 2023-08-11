@@ -55,6 +55,8 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      */
 
 
+    private final int ordinal;
+
     private final Function<? super String, ? extends String> base64Decoder;
 
     private final Function<? super String, ? extends SecretBundleContentDetails> f;
@@ -79,11 +81,57 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      * be invoked when the {@link #close()} method is invoked, and {@link AutoCloseable#close()} will be invoked on its
      * return value if the return value is non-{@code null}
      *
-     * @see #AbstractSecretBundleConfigSource(Function, Supplier, Function)
+     * @see #AbstractSecretBundleConfigSource(int, Function, Supplier, Function)
      */
     AbstractSecretBundleConfigSource(Function<? super String, ? extends SecretBundleContentDetails> f,
                                      Supplier<? extends AutoCloseable> closeableSupplier) {
-        this(f, closeableSupplier, null);
+        this(DEFAULT_ORDINAL, f, closeableSupplier, null);
+    }
+
+    /**
+     * Creates a new {@link AbstractSecretBundleConfigSource}.
+     *
+     * @param ordinal a value to be returned by the {@link #getOrdinal()} method
+     *
+     * @param f a {@link Function} that accepts a configuration property name (a {@link String}) and returns a {@link
+     * SecretBundleContentDetails} object representing the value; must not be {@code null}; must be safe for concurrent
+     * use by multiple threads
+     *
+     * @param closeableSupplier a {@link Supplier} of an {@link AutoCloseable} typically supplying the {@link Secrets}
+     * typically used by the supplied {@link Function}; must not be {@code null}; its {@link Supplier#get()} method will
+     * be invoked when the {@link #close()} method is invoked, and {@link AutoCloseable#close()} will be invoked on its
+     * return value if the return value is non-{@code null}
+     *
+     * @see #AbstractSecretBundleConfigSource(int, Function, Supplier, Function)
+     */
+    AbstractSecretBundleConfigSource(int ordinal,
+                                     Function<? super String, ? extends SecretBundleContentDetails> f,
+                                     Supplier<? extends AutoCloseable> closeableSupplier) {
+        this(ordinal, f, closeableSupplier, null);
+    }
+
+    /**
+     * Creates a new {@link AbstractSecretBundleConfigSource}.
+     *
+     * @param f a {@link Function} that accepts a configuration property name (a {@link String}) and returns a {@link
+     * SecretBundleContentDetails} object representing the value; must not be {@code null}; must be safe for concurrent
+     * use by multiple threads
+     *
+     * @param closeableSupplier a {@link Supplier} of an {@link AutoCloseable} typically supplying the {@link Secrets}
+     * typically used by the supplied {@link Function}; must not be {@code null}; its {@link Supplier#get()} method will
+     * be invoked when the {@link #close()} method is invoked, and {@link AutoCloseable#close()} will be invoked on its
+     * return value if the return value is non-{@code null}
+     *
+     * @param base64Decoder a {@link Function} that accepts a Base64-encoded {@link String} to decode and decodes it,
+     * returning the result; may be {@code null} in which case an implementation based on {@link Base64} will be used
+     * instead; if non-{@code null}, must be safe for concurrent use by multiple threads
+     *
+     * @see #AbstractSecretBundleConfigSource(int, Function, Supplier, Function)
+     */
+    AbstractSecretBundleConfigSource(Function<? super String, ? extends SecretBundleContentDetails> f,
+                                     Supplier<? extends AutoCloseable> closeableSupplier,
+                                     Function<? super String, ? extends String> base64Decoder) {
+        this(DEFAULT_ORDINAL, f, closeableSupplier, base64Decoder);
     }
 
     /**
@@ -102,10 +150,12 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      * returning the result; may be {@code null} in which case an implementation based on {@link Base64} will be used
      * instead; if non-{@code null}, must be safe for concurrent use by multiple threads
      */
-    AbstractSecretBundleConfigSource(Function<? super String, ? extends SecretBundleContentDetails> f,
+    AbstractSecretBundleConfigSource(int ordinal,
+                                     Function<? super String, ? extends SecretBundleContentDetails> f,
                                      Supplier<? extends AutoCloseable> closeableSupplier,
                                      Function<? super String, ? extends String> base64Decoder) {
         super();
+        this.ordinal = ordinal;
         this.f = Objects.requireNonNull(f, "f");
         this.closeableSupplier = Objects.requireNonNull(closeableSupplier, "closeableSupplier");
         if (base64Decoder == null) {
@@ -130,7 +180,7 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      *
      * <p>This method is, and overrides of this method must be, safe for concurrent use by multiple threads.</p>
      *
-     * @see #AbstractSecretBundleConfigSource(Function, Supplier, Function)
+     * @see #AbstractSecretBundleConfigSource(int, Function, Supplier, Function)
      *
      * @see AutoCloseable#close()
      */
@@ -152,7 +202,7 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
     }
 
     /**
-     * Returns a name for this {@link AbstractSecretBundleConfigSource}.
+     * Returns a determinate, non-{@code null} name for this {@link AbstractSecretBundleConfigSource}.
      *
      * <p>The default implementation of this method returns a valud as if computed by {@link Class#getName()
      * this.getClass().getName()}.</p>
@@ -161,13 +211,28 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      *
      * <p>This method is, and overrides of this method must be, safe for concurrent use by multiple threads.</p>
      *
-     * @return a non-{@code null} name
+     * <p>This method produces, and overrides of this method must produce, a determinate value.</p>
+     *
+     * @return a determinate, non-{@code null} name
      *
      * @see ConfigSource#getName()
      */
     @Override // ConfigSource
     public String getName() {
         return this.getClass().getName();
+    }
+
+    /**
+     * Returns the "{@linkplain ConfigSource#getOrdinal() ordinal priority value}" of this {@link
+     * AbstractSecretBundleConfigSource}, as {@linkplain #AbstractSecretBundleConfigSource(int, Function, Supplier,
+     * Function) supplied at construction time}.
+     *
+     * @return the "{@linkplain ConfigSource#getOrdinal() ordinal priority value}" of this {@link
+     * AbstractSecretBundleConfigSource} as {@linkplain #AbstractSecretBundleConfigSource(int, Function, Supplier,
+     * Function) supplied at construction time}
+     */
+    public final int getOrdinal() {
+        return this.ordinal;
     }
 
     /**
@@ -216,12 +281,28 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      *
      * <p>This method is safe for concurrent use by multiple threads.</p>
      *
-     * @param propertyName the name of the property; may be {@code null}
+     * @param propertyName the name of the property; may be {@code null} in which case {@code null} will be returned
      *
      * @return a suitable value, or {@code null} if there is no value suitable for the supplied {@code propertyName}
+     *
+     * @exception BmcException if the {@link Function} {@linkplain #AbstractSecretBundleConfigSource(int, Function,
+     * Supplier, Function) supplied at construction time} uses the OCI Java SDK and throws a {@link BmcException}
+     *
+     * @exception RuntimeException if any other underlying error occurs
      */
     @Override // ConfigSource
     public String getValue(String propertyName) {
+        if (propertyName == null || propertyName.isBlank()) {
+            // The MicroProfile Config specification for this method does not prohibit null property names (!), and does
+            // not provide for the ability for implementations to throw IllegalArgumentExceptions. Consequently, bizarre
+            // property names are here reported as absent, which MicroProfile Config represents as a null return value.
+            return null;
+        } else if (propertyName.equals(CONFIG_ORDINAL)) {
+            // Magic special pseudo-meta-configuration well-known property name that MicroProfile Config defines in the
+            // default implementation of ConfigSource#getOrdinal(), and that some callers expect to be available via the
+            // #getValue(String) method. It will never be sourced from a Vault.
+            return String.valueOf(this.getOrdinal());
+        }
         try {
             return
                 this.f.apply(propertyName) instanceof Base64SecretBundleContentDetails b64

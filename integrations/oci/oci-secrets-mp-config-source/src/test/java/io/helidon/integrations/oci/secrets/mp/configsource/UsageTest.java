@@ -20,9 +20,13 @@ import java.nio.file.Paths;
 
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.junit.jupiter.api.Test;
 
+import static org.eclipse.microprofile.config.spi.ConfigSource.CONFIG_ORDINAL;
+import static org.eclipse.microprofile.config.spi.ConfigSource.DEFAULT_ORDINAL;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -65,6 +69,26 @@ final class UsageTest {
         assumeFalse(System.getProperty("vault-ocid", "").isBlank()); // condition 2
         String expectedValue = System.getProperty("FrancqueSecret.expectedValue", "");
         assumeFalse(expectedValue.isBlank()); // condition 2
+
+        //
+        // (Code below this line executes only if the above JUnit assumptions passed. Otherwise control flow stops above.)
+        //
+
+        // Get the underlying MicroProfile Config ConfigSource created by the OciSecretsMpMetaConfigProvider and abuse
+        // it.
+        ConfigSource cs = null;
+        for (ConfigSource configSource : c.getConfigSources()) {
+            if (configSource.getName().equals(SecretBundleByNameConfigSource.class.getName())) {
+                cs = configSource;
+                break;
+            }
+        }
+        assertThat(String.valueOf(c.getConfigSources()), cs, is(not(nullValue())));
+        assertThat(cs.getValue(null), is(nullValue()));
+        assertThat(DEFAULT_ORDINAL, is(not(200)));
+        assertThat(cs.getOrdinal(), is(200));
+        assertThat(cs.getValue(CONFIG_ORDINAL), is("200"));
+        assertThat(cs.getValue("java.home"), is(nullValue()));
 
         // For this test to pass, all of the following must hold:
         //

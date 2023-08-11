@@ -26,11 +26,14 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.SecretBundleCo
 final class SecretBundleByNameConfigSource extends AbstractSecretBundleConfigSource {
 
     private SecretBundleByNameConfigSource() {
-        this(null, null, null);
+        this(DEFAULT_ORDINAL, null, null, null);
     }
 
-    SecretBundleByNameConfigSource(Pattern acceptPattern, String vaultOcid, Supplier<? extends Secrets> ss) {
-        super(guardWithAcceptPattern(secretBundleContentDetailsByName(vaultOcid, ss), acceptPattern), ss);
+    SecretBundleByNameConfigSource(int ordinal, Pattern acceptPattern, String vaultOcid, Supplier<? extends Secrets> ss) {
+        super(ordinal,
+              guardWithAcceptPattern(secretBundleContentDetailsByName(vaultOcid, ss),
+                                     acceptPattern),
+              ss);
     }
 
 }
