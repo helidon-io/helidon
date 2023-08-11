@@ -179,7 +179,7 @@ public final class OciExtension {
     public static Supplier<io.helidon.common.config.Config> configSupplier() {
         if (ociConfigSupplier == null) {
             ociConfigSupplier = () -> {
-                // we do it this way to allow for the possibility of system and env vars to be used for the auth-strategy definition
+                // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
                 // (not advertised in the javadoc)
                 String ociConfigFile = ociConfigFilename();
                 return Config.create(
