@@ -65,7 +65,7 @@ This class uses package local API to validate connection cache, and at the same 
 that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
-class ClientRequestImplTest {
+class Http1ClientTest {
     private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
             Http.HeaderNames.create("X-Req-Chunked"), "true");
     private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
