@@ -62,7 +62,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-class ClientRequestImplTest {
+class Http1ClientTest {
     public static final String VALID_HEADER_VALUE = "Valid-Header-Value";
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
     public static final String BAD_HEADER_PATH = "/badHeader";
@@ -240,7 +240,13 @@ class ClientRequestImplTest {
     @ParameterizedTest
     @MethodSource("headerValues")
     void testHeaderValues(List<String> headerValues, boolean expectsValid) {
-        Http1ClientRequest request = client.get("http://localhost:" + dummyPort + "/test");
+        Http1Client clientValidateRequestHeaders = Http1Client.builder()
+                .protocolConfig(it -> {
+                    it.validateRequestHeaders(true);
+                    it.validateResponseHeaders(false);
+                })
+                .build();
+        Http1ClientRequest request = clientValidateRequestHeaders.get("http://localhost:" + dummyPort + "/test");
         request.header(Http.Header.create(Http.Header.create("HeaderName"), headerValues));
         request.connection(new FakeHttp1ClientConnection());
         if (expectsValid) {
@@ -254,7 +260,13 @@ class ClientRequestImplTest {
     @ParameterizedTest
     @MethodSource("headers")
     void testHeaders(Http.HeaderValue header, boolean expectsValid) {
-        Http1ClientRequest request = client.get("http://localhost:" + dummyPort + "/test");
+        Http1Client clientValidateRequestHeaders = Http1Client.builder()
+                .protocolConfig(it -> {
+                    it.validateRequestHeaders(true);
+                    it.validateResponseHeaders(false);
+                })
+                .build();
+        Http1ClientRequest request = clientValidateRequestHeaders.get("http://localhost:" + dummyPort + "/test");
         request.connection(new FakeHttp1ClientConnection());
         request.header(header);
         if (expectsValid) {
@@ -268,10 +280,13 @@ class ClientRequestImplTest {
     @ParameterizedTest
     @MethodSource("headers")
     void testDisableHeaderValidation(Http.HeaderValue header, boolean expectsValid) {
-        Http1Client clientWithNoHeaderValidation = Http1Client.builder()
-                .protocolConfig(it -> it.validateHeaders(false))
+        Http1Client clientWithDisabledHeaderValidation = Http1Client.builder()
+                .protocolConfig(it -> {
+                    it.validateRequestHeaders(false);
+                    it.validateResponseHeaders(false);
+                })
                 .build();
-        Http1ClientRequest request = clientWithNoHeaderValidation.put("http://localhost:" + dummyPort + "/test");
+        Http1ClientRequest request = clientWithDisabledHeaderValidation.put("http://localhost:" + dummyPort + "/test");
         request.header(header);
         request.connection(new FakeHttp1ClientConnection());
         HttpClientResponse response = request.submit("Sending Something");
@@ -285,7 +300,13 @@ class ClientRequestImplTest {
     @ParameterizedTest
     @MethodSource("responseHeaders")
     void testHeadersFromResponse(String headerName, String headerValue, boolean expectsValid) {
-        Http1ClientRequest request = client.get("http://localhost:" + dummyPort + BAD_HEADER_PATH);
+        Http1Client clientValidateResponseHeaders = Http1Client.builder()
+                .protocolConfig(it -> {
+                    it.validateRequestHeaders(false);
+                    it.validateResponseHeaders(true);
+                })
+                .build();
+        Http1ClientRequest request = clientValidateResponseHeaders.get("http://localhost:" + dummyPort + BAD_HEADER_PATH);
         request.connection(new FakeHttp1ClientConnection());
         String headerNameAndValue = headerName + HEADER_NAME_VALUE_DELIMETER + headerValue;
         if (expectsValid) {
@@ -302,7 +323,10 @@ class ClientRequestImplTest {
     @MethodSource("responseHeadersForDisabledValidation")
     void testDisableValidationForHeadersFromResponse(String headerName, String headerValue) {
         Http1Client clientWithNoHeaderValidation = Http1Client.builder()
-                .protocolConfig(it -> it.validateHeaders(false))
+                .protocolConfig(it -> {
+                    it.validateRequestHeaders(false);
+                    it.validateResponseHeaders(false);
+                })
                 .build();
         Http1ClientRequest request = clientWithNoHeaderValidation.put("http://localhost:" + dummyPort + BAD_HEADER_PATH);
         request.connection(new FakeHttp1ClientConnection());

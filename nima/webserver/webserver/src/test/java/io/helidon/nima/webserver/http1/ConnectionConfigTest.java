@@ -48,13 +48,15 @@ public class ConnectionConfigTest {
         assertThat(http1Config.maxPrologueLength(), is(4096));
         assertThat(http1Config.maxHeadersSize(), is(8192));
         assertThat(http1Config.validatePath(), is(true));
-        assertThat(http1Config.validateHeaders(), is(true));
+        assertThat(http1Config.validateRequestHeaders(), is(true));
+        assertThat(http1Config.validateResponseHeaders(), is(false));
 
         http1Config = http1Configs.get("other");
         assertThat(http1Config.maxPrologueLength(), is(81));
         assertThat(http1Config.maxHeadersSize(), is(42));
         assertThat(http1Config.validatePath(), is(false));
-        assertThat(http1Config.validateHeaders(), is(false));
+        assertThat(http1Config.validateRequestHeaders(), is(false));
+        assertThat(http1Config.validateResponseHeaders(), is(true));
     }
 
 }

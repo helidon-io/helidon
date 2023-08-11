@@ -51,7 +51,7 @@ public class ContentEncodingDisabledNoValidationTest extends ContentEncodingDisa
         ServerConnectionSelector http1 = Http1ConnectionSelector.builder()
                 .config(http1Config -> http1Config
                         // Headers validation is disabled
-                        .validateHeaders(false))
+                        .validateRequestHeaders(false))
                 .build();
 
         server.addConnectionSelector(http1)

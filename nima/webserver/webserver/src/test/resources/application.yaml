@@ -31,7 +31,8 @@ server:
       protocols:
         providers:
           http_1_1:
-            validate-headers: false
+            validate-request-headers: false
+            validate-response-headers: true
             validate-path: false
             max-prologue-length: 81
             max-headers-size: 42
