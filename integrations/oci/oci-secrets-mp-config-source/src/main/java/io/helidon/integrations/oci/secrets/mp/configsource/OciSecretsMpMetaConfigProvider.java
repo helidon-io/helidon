@@ -54,8 +54,8 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memo
  *
  * <li>Ensure it has YAML analogous to the following:<blockquote><pre>sources:
  *  # (other sources may be present here)
- *  - type: {@value #OCI_SECRETS} # must be exactly {@value #OCI_SECRETS} (double- or single-quoted)
- *    accept-pattern: '^.+\.password$' # a {@linkplain java.util.regex.Matcher#matches() fully-matching} regular expression
+ *  - type: {@value #SUPPORTED_TYPE} # must be exactly {@value #SUPPORTED_TYPE} (double- or single-quoted)
+ *    accept-pattern: '^.+\.password$' # a {@linkplain java.util.regex.Matcher#matches() fully-matching} {@linkplain Pattern regular expression}
  *    vault-ocid: 'ocid...' # a valid OCI Vault <a href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/identifiers.htm">OCID</a>
  *  # (other sources may be present here)
  *</pre></blockquote></li>
@@ -86,13 +86,16 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
     public static final int PRIORITY = 300;
 
     /**
+     * The sole "supported type" of this {@link OciSecretsMpMetaConfigProvider} ({@value #OCI_SECRETS}).
+     */
+    private static final String SUPPORTED_TYPE = "oci-secrets";
+
+    /**
      * An unmodifiable, unchanging {@link Set} of types returned by the {@link #supportedTypes()} method.
      *
-     * <p>The {@link Set} consists of a single {@link String} whose value is "oci-secrets".</p>
+     * <p>The {@link Set} consists of a single {@link String} whose value is {@value SUPPORTED_TYPE}.</p>
      */
-    public static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
-
-    private static final String OCI_SECRETS = "oci-secrets";
+    public static final Set<String> SUPPORTED_TYPES = Set.of(SUPPORTED_TYPE);
 
     private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
 
@@ -151,17 +154,29 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
         if (!this.supportedTypes().contains(Objects.requireNonNull(type, "type"))) {
             throw new IllegalArgumentException("type: " + type);
         }
-        Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().get());
-        String vaultId = metaConfig.get(VAULT_OCID_PROPERTY_NAME)
+        // A Pattern to control which property values are sought from a Vault. Recall that MicroProfile Config
+        // ConfigSource implementations can conceivably be called by an end user or, if ordinals are not set up
+        // properly, accidentally in the wrong sequence in a configuration setup. This could result, for example, in a
+        // Vault-backed ConfigSource such as this one being asked to retrieve values for such property names as
+        // user.dir, java.home and so on. The accept pattern helps to restrict what communication the ConfigSource has
+        // with a Vault. If it is not specified, then no restrictions on property resolution will occur.
+        Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().orElse("^.*$"));
+        // The OCID of an OCI Vault within which secrets may be found.
+        String vaultOcid = metaConfig.get(VAULT_OCID_PROPERTY_NAME)
             .asString()
             .orElse(System.getProperty(VAULT_OCID_PROPERTY_NAME)); // useful for testing
         return
             List.of(new SecretBundleByNameConfigSource(acceptPattern,
-                                                       vaultId,
+                                                       vaultOcid,
                                                        memoizedSupplier(secrets(adpSupplier()))));
     }
 
-    private Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier() {
+    /**
+     * Returns a non-{@code null} {@link Supplier} of {@link BasicAuthenticationDetailsProvider} instances.
+     *
+     * @return a non-{@code null} {@link Supplier} of {@link BasicAuthenticationDetailsProvider} instances
+     */
+    private static Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier() {
         // Provisional? until the "real" mechanism is approved/decided on.
         // The approach below is behaviorally identical to that of io.helidon.integrations.oci.cdi.OciExtension.
         Config ociYaml = Config.just(classpath("oci.yaml").optional(), file(Paths.get("oci.yaml")).optional());

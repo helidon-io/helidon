@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.oracle.bmc.model.BmcException;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
@@ -39,6 +40,14 @@ import org.eclipse.microprofile.config.spi.ConfigSource;
  */
 @SuppressWarnings("try")
 class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
+
+
+    /*
+     * Static fields.
+     */
+
+
+    private static final int NOT_FOUND = 404;
 
 
     /*
@@ -213,10 +222,18 @@ class AbstractSecretBundleConfigSource implements AutoCloseable, ConfigSource {
      */
     @Override // ConfigSource
     public String getValue(String propertyName) {
-        return
-            this.f.apply(propertyName) instanceof Base64SecretBundleContentDetails b64
-            ? this.base64Decoder.apply(b64.getContent())
-            : null;
+        try {
+            return
+                this.f.apply(propertyName) instanceof Base64SecretBundleContentDetails b64
+                ? this.base64Decoder.apply(b64.getContent())
+                : null;
+        } catch (BmcException e) {
+            if (e.getStatusCode() == NOT_FOUND) {
+                // The MicroProfile Config specification dictates that we return null in this case.
+                return null;
+            }
+            throw e;
+        }
     }
 
 }
