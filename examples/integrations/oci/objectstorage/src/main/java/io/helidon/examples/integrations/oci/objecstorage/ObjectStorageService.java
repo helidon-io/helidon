@@ -109,9 +109,9 @@ public class ObjectStorageService implements HttpService {
             byte[] objectContent = fileStream.readAllBytes();
             response
                     .status(Http.Status.OK_200)
-                    .header(Http.Header.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
+                    .header(Http.HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
-                    .header(Http.Header.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
+                    .header(Http.HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
 
             response.send(objectContent);
         } catch (IOException e) {

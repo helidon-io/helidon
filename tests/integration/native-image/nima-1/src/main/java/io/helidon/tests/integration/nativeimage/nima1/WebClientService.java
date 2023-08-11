@@ -48,7 +48,7 @@ class WebClientService implements HttpService {
         this.context = "http://localhost:" + config.get("port").asInt().orElse(7076);
         client = WebClient.builder()
                 .baseUri(context)
-                .addHeader(Http.Header.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                .addHeader(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                 .config(config.get("client"))
                 .build();
     }
@@ -63,12 +63,12 @@ class WebClientService implements HttpService {
 
     private void redirect(ServerRequest request,
                           ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, context + "/wc/endpoint");
+        response.headers().add(Http.HeaderNames.LOCATION, context + "/wc/endpoint");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, context + "/wc/redirect/infinite");
+        response.headers().add(Http.HeaderNames.LOCATION, context + "/wc/redirect/infinite");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 

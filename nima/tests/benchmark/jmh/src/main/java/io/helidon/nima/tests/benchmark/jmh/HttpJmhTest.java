@@ -25,8 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.Handler;
@@ -43,10 +42,10 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
 public class HttpJmhTest {
-    private static final HeaderValue CONTENT_TYPE = Header.createCached(Header.CONTENT_TYPE,
-                                                                        "text/plain; charset=UTF-8");
-    private static final HeaderValue CONTENT_LENGTH = Header.createCached(Header.CONTENT_LENGTH, "13");
-    private static final HeaderValue SERVER = Header.createCached(Header.SERVER, "Nima");
+    private static final Http.Header CONTENT_TYPE = Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+                                                                              "text/plain; charset=UTF-8");
+    private static final Http.Header CONTENT_LENGTH = Http.Headers.createCached(HeaderNames.CONTENT_LENGTH, "13");
+    private static final Http.Header SERVER = Http.Headers.createCached(Http.HeaderNames.SERVER, "Nima");
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
     private WebServer server;
     private int serverPort;

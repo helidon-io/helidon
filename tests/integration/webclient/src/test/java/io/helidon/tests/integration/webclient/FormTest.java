@@ -26,7 +26,6 @@ import io.helidon.nima.webserver.WebServer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.HttpMediaType.TEXT_PLAIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -66,7 +65,7 @@ public class FormTest extends TestParent {
     @Test
     public void testSpecificContentType() {
         try (Http1ClientResponse res = client.post("/form")
-                .contentType(TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit(TEST_FORM)) {
             assertThat(res.as(String.class), is("Hi David Tester"));
         }

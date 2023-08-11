@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
 
 import org.hamcrest.Description;
@@ -77,7 +77,7 @@ public final class HttpHeaderMatcher {
      * @param header http header with values
      * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
      */
-    public static Matcher<Headers> hasHeader(Http.HeaderValue header) {
+    public static Matcher<Headers> hasHeader(Http.Header header) {
         return new HasValueMatcher(header);
     }
 
@@ -95,7 +95,7 @@ public final class HttpHeaderMatcher {
      * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
      */
     public static Matcher<Headers> hasHeader(Http.HeaderName name, String... value) {
-        return new HasValueMatcher(Header.create(name, value));
+        return new HasValueMatcher(Http.Headers.create(name, value));
     }
 
     /**
@@ -160,7 +160,7 @@ public final class HttpHeaderMatcher {
         private final HeaderName name;
         private final Matcher<Iterable<? extends String>> valuesMatcher;
 
-        HasValueMatcher(Http.HeaderValue header) {
+        HasValueMatcher(Http.Header header) {
             this.name = header.headerName();
             this.valuesMatcher = Matchers.containsInAnyOrder(header.allValues().toArray(new String[0]));
         }
@@ -214,7 +214,7 @@ public final class HttpHeaderMatcher {
         @Override
         protected boolean matchesSafely(Headers httpHeaders) {
             if (httpHeaders.contains(name)) {
-                Http.HeaderValue headerValue = httpHeaders.get(name);
+                Http.Header headerValue = httpHeaders.get(name);
                 if (headerValue.allValues().size() == 1) {
                     return valuesMatcher.matches(headerValue.value());
                 }

@@ -37,8 +37,8 @@ import io.helidon.integrations.vault.spi.VaultAuth;
 @Weight(Weighted.DEFAULT_WEIGHT)
 public class TokenVaultAuth implements VaultAuth {
     private static final System.Logger LOGGER = System.getLogger(TokenVaultAuth.class.getName());
-    private static final Http.HeaderName VAULT_TOKEN_HEADER_NAME =  Http.Header.create("X-Vault-Token");
-    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.Header.create("X-Vault-Namespace");
+    private static final Http.HeaderName VAULT_TOKEN_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Token");
+    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Namespace");
     private final String token;
     private final String baseNamespace;
 

@@ -41,7 +41,7 @@ public abstract class GoogleMainTest {
         try (Http1ClientResponse response = client.get("/rest/profile").request()) {
 
             assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
-            assertThat(response.headers().first(Http.Header.WWW_AUTHENTICATE),
+            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
         }
     }

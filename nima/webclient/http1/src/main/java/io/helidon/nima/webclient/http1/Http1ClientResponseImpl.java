@@ -28,8 +28,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.HeaderNames;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.ParserMode;
@@ -89,14 +89,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
 
-        if (responseHeaders.contains(Header.CONTENT_LENGTH)) {
-            this.entityLength = Long.parseLong(responseHeaders.get(Header.CONTENT_LENGTH).value());
-        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            this.entityLength = Long.parseLong(responseHeaders.get(HeaderNames.CONTENT_LENGTH).value());
+        } else if (responseHeaders.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = -1;
         }
-        if (responseHeaders.contains(Header.TRAILER)) {
+        if (responseHeaders.contains(Http.HeaderNames.TRAILER)) {
             this.hasTrailers = true;
-            this.trailerNames = responseHeaders.get(Header.TRAILER).allValues(true);
+            this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
         } else {
             this.hasTrailers = false;
             this.trailerNames = List.of();
@@ -122,7 +122,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().contains(HeaderValues.CONNECTION_CLOSE)) {
+                if (headers().contains(Http.Headers.CONNECTION_CLOSE)) {
                     connection.closeResource();
                 } else {
                     if (entityFullyRead || entityLength == 0) {

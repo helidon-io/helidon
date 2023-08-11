@@ -56,60 +56,6 @@ public final class Http {
     }
 
     /**
-     * Enumeration of supported HTTP protocol versions.
-     */
-    public enum Version {
-
-        /**
-         * HTTP version {@code HTTP/1.0}.
-         */
-        V1_0("HTTP/1.0"),
-
-        /**
-         * HTTP version {@code HTTP/1.1}.
-         */
-        V1_1("HTTP/1.1"),
-
-        /**
-         * HTTP version {@code HTTP/2.0}.
-         */
-        V2_0("HTTP/2.0");
-
-        private final String value;
-
-        Version(String value) {
-            this.value = value;
-        }
-
-        /**
-         * Returns HTTP version for provided parameter.
-         *
-         * @param version HTTP version.
-         * @return Version instance.
-         * @throws NullPointerException     if parameter {@code version} is null.
-         * @throws IllegalArgumentException if it is not provided version.
-         */
-        public static Version create(String version) {
-            Objects.requireNonNull(version, "Version value is null!");
-            for (Version v : Version.values()) {
-                if (version.equals(v.value)) {
-                    return v;
-                }
-            }
-            throw new IllegalArgumentException("Unknown HTTP version: " + version + "!");
-        }
-
-        /**
-         * Returns {@code String} representation of this {@link io.helidon.common.http.Http.Version}.
-         *
-         * @return a string representation.
-         */
-        public String value() {
-            return value;
-        }
-    }
-
-    /**
      * Interface representing an HTTP request method, all standard methods are in {@link io.helidon.common.http.Http.Method}
      * enumeration.
      * <p>
@@ -802,7 +748,7 @@ public final class Http {
     /**
      * HTTP header name.
      */
-    public sealed interface HeaderName permits HeaderImpl, HeaderEnum {
+    public sealed interface HeaderName permits HeaderNameImpl, HeaderNameEnum {
         /**
          * Lowercase value of this header, used by HTTP/2, may be used for lookup by HTTP/1.
          * There is no validation of this value, so if this contains an upper-case letter, behavior
@@ -842,9 +788,9 @@ public final class Http {
     /**
      * HTTP Header with {@link io.helidon.common.http.Http.HeaderName} and value.
      *
-     * @see io.helidon.common.http.Http.HeaderValues
+     * @see io.helidon.common.http.Http.Headers
      */
-    public interface HeaderValue {
+    public interface Header {
 
         /**
          * Name of the header as configured by user
@@ -1015,14 +961,14 @@ public final class Http {
     /**
      * Mutable header value.
      */
-    public interface HeaderValueWriteable extends HeaderValue {
+    public interface HeaderValueWriteable extends Header {
         /**
          * Create a new mutable header from an existing header.
          *
          * @param header header to copy
          * @return a new mutable header
          */
-        static HeaderValueWriteable create(HeaderValue header) {
+        static HeaderValueWriteable create(Header header) {
             return new HeaderValueCopy(header);
         }
 
@@ -1038,104 +984,103 @@ public final class Http {
     /**
      * Utility class with a list of names of standard HTTP headers and related tooling methods.
      */
-    @SuppressWarnings({"WeakerAccess", "unused"})
-    public static final class Header {
+    public static final class HeaderNames {
         /**
          * The {@code Accept} header name.
          * Content-Types that are acceptedTypes for the response.
          */
-        public static final HeaderName ACCEPT = HeaderEnum.ACCEPT;
+        public static final HeaderName ACCEPT = HeaderNameEnum.ACCEPT;
         /**
          * The {@code Accept-Charset} header name.
          * Character sets that are acceptedTypes.
          */
-        public static final HeaderName ACCEPT_CHARSET = HeaderEnum.ACCEPT_CHARSET;
+        public static final HeaderName ACCEPT_CHARSET = HeaderNameEnum.ACCEPT_CHARSET;
         /**
          * The {@code Accept-Encoding} header name.
          * List of acceptedTypes encodings.
          */
-        public static final HeaderName ACCEPT_ENCODING = HeaderEnum.ACCEPT_ENCODING;
+        public static final HeaderName ACCEPT_ENCODING = HeaderNameEnum.ACCEPT_ENCODING;
         /**
          * The {@code Accept-Language} header name.
          * List of acceptedTypes human languages for response.
          */
-        public static final HeaderName ACCEPT_LANGUAGE = HeaderEnum.ACCEPT_LANGUAGE;
+        public static final HeaderName ACCEPT_LANGUAGE = HeaderNameEnum.ACCEPT_LANGUAGE;
         /**
          * The {@code Accept-Datetime} header name.
          * Acceptable version in time.
          */
-        public static final HeaderName ACCEPT_DATETIME = HeaderEnum.ACCEPT_DATETIME;
+        public static final HeaderName ACCEPT_DATETIME = HeaderNameEnum.ACCEPT_DATETIME;
         /**
          * The {@code Access-Control-Allow-Credentials} header name.
          * CORS configuration.
          */
-        public static final HeaderName ACCESS_CONTROL_ALLOW_CREDENTIALS = HeaderEnum.ACCESS_CONTROL_ALLOW_CREDENTIALS;
+        public static final HeaderName ACCESS_CONTROL_ALLOW_CREDENTIALS = HeaderNameEnum.ACCESS_CONTROL_ALLOW_CREDENTIALS;
         /**
          * The {@code Access-Control-Allow-Headers} header name.
          * CORS configuration
          */
-        public static final HeaderName ACCESS_CONTROL_ALLOW_HEADERS = HeaderEnum.ACCESS_CONTROL_ALLOW_HEADERS;
+        public static final HeaderName ACCESS_CONTROL_ALLOW_HEADERS = HeaderNameEnum.ACCESS_CONTROL_ALLOW_HEADERS;
         /**
          * The {@code Access-Control-Allow-Methods} header name.
          * CORS configuration
          */
-        public static final HeaderName ACCESS_CONTROL_ALLOW_METHODS = HeaderEnum.ACCESS_CONTROL_ALLOW_METHODS;
+        public static final HeaderName ACCESS_CONTROL_ALLOW_METHODS = HeaderNameEnum.ACCESS_CONTROL_ALLOW_METHODS;
         /**
          * The {@code Access-Control-Allow-Origin} header name.
          * CORS configuration.
          */
-        public static final HeaderName ACCESS_CONTROL_ALLOW_ORIGIN = HeaderEnum.ACCESS_CONTROL_ALLOW_ORIGIN;
+        public static final HeaderName ACCESS_CONTROL_ALLOW_ORIGIN = HeaderNameEnum.ACCESS_CONTROL_ALLOW_ORIGIN;
         /**
          * The {@code Access-Control-Expose-Headers} header name.
          * CORS configuration.
          */
-        public static final HeaderName ACCESS_CONTROL_EXPOSE_HEADERS = HeaderEnum.ACCESS_CONTROL_EXPOSE_HEADERS;
+        public static final HeaderName ACCESS_CONTROL_EXPOSE_HEADERS = HeaderNameEnum.ACCESS_CONTROL_EXPOSE_HEADERS;
         /**
          * The {@code Access-Control-Max-Age} header name.
          * CORS configuration.
          */
-        public static final HeaderName ACCESS_CONTROL_MAX_AGE = HeaderEnum.ACCESS_CONTROL_MAX_AGE;
+        public static final HeaderName ACCESS_CONTROL_MAX_AGE = HeaderNameEnum.ACCESS_CONTROL_MAX_AGE;
         /**
          * The {@code Access-Control-Request-Headers} header name.
          * CORS configuration.
          */
-        public static final HeaderName ACCESS_CONTROL_REQUEST_HEADERS = HeaderEnum.ACCESS_CONTROL_REQUEST_HEADERS;
+        public static final HeaderName ACCESS_CONTROL_REQUEST_HEADERS = HeaderNameEnum.ACCESS_CONTROL_REQUEST_HEADERS;
         /**
          * The {@code Access-Control-Request-Method} header name.
          * CORS configuration.
          */
-        public static final HeaderName ACCESS_CONTROL_REQUEST_METHOD = HeaderEnum.ACCESS_CONTROL_REQUEST_METHOD;
+        public static final HeaderName ACCESS_CONTROL_REQUEST_METHOD = HeaderNameEnum.ACCESS_CONTROL_REQUEST_METHOD;
         /**
          * The {@code Authorization} header name.
          * Authentication credentials for HTTP authentication.
          */
-        public static final HeaderName AUTHORIZATION = HeaderEnum.AUTHORIZATION;
+        public static final HeaderName AUTHORIZATION = HeaderNameEnum.AUTHORIZATION;
         /**
          * The {@code Cookie} header name.
          * An HTTP cookie previously sent by the server with {@code Set-Cookie}.
          */
-        public static final HeaderName COOKIE = HeaderEnum.COOKIE;
+        public static final HeaderName COOKIE = HeaderNameEnum.COOKIE;
         /**
          * The {@code Expect} header name.
          * Indicates that particular server behaviors are required by the client.
          */
-        public static final HeaderName EXPECT = HeaderEnum.EXPECT;
+        public static final HeaderName EXPECT = HeaderNameEnum.EXPECT;
         /**
          * The {@code Forwarded} header name.
          * Disclose original information of a client connecting to a web server through an HTTP proxy.
          */
-        public static final HeaderName FORWARDED = HeaderEnum.FORWARDED;
+        public static final HeaderName FORWARDED = HeaderNameEnum.FORWARDED;
         /**
          * The {@code From} header name.
          * The email address of the user making the request.
          */
-        public static final HeaderName FROM = HeaderEnum.FROM;
+        public static final HeaderName FROM = HeaderNameEnum.FROM;
         /**
          * The {@code Host} header name.
          * The domain name of the server (for virtual hosting), and the TCP port number on which the server is listening.
          * The port number may be omitted if the port is the standard port for the service requested.
          */
-        public static final HeaderName HOST = HeaderEnum.HOST;
+        public static final HeaderName HOST = HeaderNameEnum.HOST;
         /**
          * The {@value} header.
          *
@@ -1147,53 +1092,53 @@ public final class Http {
          * Only perform the action if the client supplied entity matches the same entity on the server. This is mainly
          * for methods like PUT to only update a resource if it has not been modified since the user last updated it.
          */
-        public static final HeaderName IF_MATCH = HeaderEnum.IF_MATCH;
+        public static final HeaderName IF_MATCH = HeaderNameEnum.IF_MATCH;
         /**
          * The {@code If-Modified-Since} header name.
          * Allows a 304 Not Modified to be returned if content is unchanged.
          */
-        public static final HeaderName IF_MODIFIED_SINCE = HeaderEnum.IF_MODIFIED_SINCE;
+        public static final HeaderName IF_MODIFIED_SINCE = HeaderNameEnum.IF_MODIFIED_SINCE;
         /**
          * The {@code If-None-Match} header name.
          * Allows a 304 Not Modified to be returned if content is unchanged, based on {@link #ETAG}.
          */
-        public static final HeaderName IF_NONE_MATCH = HeaderEnum.IF_NONE_MATCH;
+        public static final HeaderName IF_NONE_MATCH = HeaderNameEnum.IF_NONE_MATCH;
         /**
          * The {@code If-Range} header name.
          * If the entity is unchanged, send me the part(s) that I am missing; otherwise, send me the entire new entity.
          */
-        public static final HeaderName IF_RANGE = HeaderEnum.IF_RANGE;
+        public static final HeaderName IF_RANGE = HeaderNameEnum.IF_RANGE;
         /**
          * The {@code If-Unmodified-Since} header name.
          * Only send The {@code response if The Entity} has not been modified since a specific time.
          */
-        public static final HeaderName IF_UNMODIFIED_SINCE = HeaderEnum.IF_UNMODIFIED_SINCE;
+        public static final HeaderName IF_UNMODIFIED_SINCE = HeaderNameEnum.IF_UNMODIFIED_SINCE;
         /**
          * The {@code Max-Forwards} header name.
          * Limit the number of times the message can be forwarded through proxies or gateways.
          */
-        public static final HeaderName MAX_FORWARDS = HeaderEnum.MAX_FORWARDS;
+        public static final HeaderName MAX_FORWARDS = HeaderNameEnum.MAX_FORWARDS;
         /**
          * The {@code <code>{@value}</code>} header name.
          * Initiates a request for cross-origin resource sharing (asks server for an {@code 'Access-Control-Allow-Origin'}
          * response field).
          */
-        public static final HeaderName ORIGIN = HeaderEnum.ORIGIN;
+        public static final HeaderName ORIGIN = HeaderNameEnum.ORIGIN;
         /**
          * The {@code Proxy-Authenticate} header name.
          * Proxy authentication information.
          */
-        public static final HeaderName PROXY_AUTHENTICATE = HeaderEnum.PROXY_AUTHENTICATE;
+        public static final HeaderName PROXY_AUTHENTICATE = HeaderNameEnum.PROXY_AUTHENTICATE;
         /**
          * The {@code Proxy-Authorization} header name.
          * Proxy authorization information.
          */
-        public static final HeaderName PROXY_AUTHORIZATION = HeaderEnum.PROXY_AUTHORIZATION;
+        public static final HeaderName PROXY_AUTHORIZATION = HeaderNameEnum.PROXY_AUTHORIZATION;
         /**
          * The {@code Range} header name.
          * Request only part of an entity. Bytes are numbered from 0.
          */
-        public static final HeaderName RANGE = HeaderEnum.RANGE;
+        public static final HeaderName RANGE = HeaderNameEnum.RANGE;
         /**
          * The {@code <code>{@value}</code>} header name.
          * This is the address of the previous web page from which a link to the currently requested page was followed.
@@ -1201,11 +1146,11 @@ public final class Http {
          * {@code RFC as well as in most implementations to the point that it} has
          * become standard usage and is considered correct terminology.)
          */
-        public static final HeaderName REFERER = HeaderEnum.REFERER;
+        public static final HeaderName REFERER = HeaderNameEnum.REFERER;
         /**
          * The {@code <code>{@value}</code>} header name.
          */
-        public static final HeaderName REFRESH = HeaderEnum.REFRESH;
+        public static final HeaderName REFRESH = HeaderNameEnum.REFRESH;
         /**
          * The {@code <code>{@value}</code>} header name.
          * The {@code transfer encodings the user agent is willing to acceptedTypes: the same values as for The Response} header
@@ -1213,216 +1158,216 @@ public final class Http {
          * {@code Transfer-Encoding} can be used, plus the <i>trailers</i> value (related to the <i>chunked</i> transfer method)
          * to notify the server it expects to receive additional fields in the trailer after the last, zero-sized, chunk.
          */
-        public static final HeaderName TE = HeaderEnum.TE;
+        public static final HeaderName TE = HeaderNameEnum.TE;
         /**
          * The {@code User-Agent} header name.
          * The user agent string of the user agent.
          */
-        public static final HeaderName USER_AGENT = HeaderEnum.USER_AGENT;
+        public static final HeaderName USER_AGENT = HeaderNameEnum.USER_AGENT;
         /**
          * The {@code Via} header name.
          * Informs the server of proxies through which the request was sent.
          */
-        public static final HeaderName VIA = HeaderEnum.VIA;
+        public static final HeaderName VIA = HeaderNameEnum.VIA;
         /**
          * The {@code Accept-Patch} header name.
          * Specifies which patch document formats this server supports.
          */
-        public static final HeaderName ACCEPT_PATCH = HeaderEnum.ACCEPT_PATCH;
+        public static final HeaderName ACCEPT_PATCH = HeaderNameEnum.ACCEPT_PATCH;
         /**
          * The {@code Accept-Ranges} header name.
          * What partial content range types this server supports via byte serving.
          */
-        public static final HeaderName ACCEPT_RANGES = HeaderEnum.ACCEPT_RANGES;
+        public static final HeaderName ACCEPT_RANGES = HeaderNameEnum.ACCEPT_RANGES;
         /**
          * The {@code Age} header name.
          * The {@code age The Object} has been in a proxy cache in seconds.
          */
-        public static final HeaderName AGE = HeaderEnum.AGE;
+        public static final HeaderName AGE = HeaderNameEnum.AGE;
         /**
          * The {@code Allow} header name.
          * Valid actions for a specified resource. To be used for a 405 Method not allowed.
          */
-        public static final HeaderName ALLOW = HeaderEnum.ALLOW;
+        public static final HeaderName ALLOW = HeaderNameEnum.ALLOW;
         /**
          * The {@code <code>{@value}</code>} header name.
          * A server uses <i>Alt-Svc</i> header (meaning Alternative Services) to indicate that its resources can also be
          * accessed at a different network location (host or port) or using a different protocol.
          */
-        public static final HeaderName ALT_SVC = HeaderEnum.ALT_SVC;
+        public static final HeaderName ALT_SVC = HeaderNameEnum.ALT_SVC;
         /**
          * The {@code Cache-Control} header name.
          * Tells all caching mechanisms from server to client whether they may cache this object. It is measured in seconds.
          */
-        public static final HeaderName CACHE_CONTROL = HeaderEnum.CACHE_CONTROL;
+        public static final HeaderName CACHE_CONTROL = HeaderNameEnum.CACHE_CONTROL;
         /**
          * The {@code Connection} header name.
          * Control options for The {@code current connection and list of} hop-by-hop response fields.
          */
-        public static final HeaderName CONNECTION = HeaderEnum.CONNECTION;
+        public static final HeaderName CONNECTION = HeaderNameEnum.CONNECTION;
         /**
          * The {@code <code>{@value}</code>} header name.
          * An opportunity to raise a <i>File Download</i> dialogue box for a known MIME type with binary format or suggest
          * a filename for dynamic content. Quotes are necessary with special characters.
          */
-        public static final HeaderName CONTENT_DISPOSITION = HeaderEnum.CONTENT_DISPOSITION;
+        public static final HeaderName CONTENT_DISPOSITION = HeaderNameEnum.CONTENT_DISPOSITION;
         /**
          * The {@code Content-Encoding} header name.
          * The type of encoding used on the data.
          */
-        public static final HeaderName CONTENT_ENCODING = HeaderEnum.CONTENT_ENCODING;
+        public static final HeaderName CONTENT_ENCODING = HeaderNameEnum.CONTENT_ENCODING;
         /**
          * The {@code Content-Language} header name.
          * The natural language or languages of the intended audience for the enclosed content.
          */
-        public static final HeaderName CONTENT_LANGUAGE = HeaderEnum.CONTENT_LANGUAGE;
+        public static final HeaderName CONTENT_LANGUAGE = HeaderNameEnum.CONTENT_LANGUAGE;
         /**
          * The {@code Content-Length} header name.
          * The length of the response body in octets.
          */
-        public static final HeaderName CONTENT_LENGTH = HeaderEnum.CONTENT_LENGTH;
+        public static final HeaderName CONTENT_LENGTH = HeaderNameEnum.CONTENT_LENGTH;
         /**
          * The {@code Content-Location} header name.
          * An alternate location for the returned data.
          */
-        public static final HeaderName CONTENT_LOCATION = HeaderEnum.CONTENT_LOCATION;
+        public static final HeaderName CONTENT_LOCATION = HeaderNameEnum.CONTENT_LOCATION;
         /**
          * The {@code Content-Range} header name.
          * Where in a full body message this partial message belongs.
          */
-        public static final HeaderName CONTENT_RANGE = HeaderEnum.CONTENT_RANGE;
+        public static final HeaderName CONTENT_RANGE = HeaderNameEnum.CONTENT_RANGE;
         /**
          * The {@code Content-Type} header name.
          * The MIME type of this content.
          */
-        public static final HeaderName CONTENT_TYPE = HeaderEnum.CONTENT_TYPE;
+        public static final HeaderName CONTENT_TYPE = HeaderNameEnum.CONTENT_TYPE;
         /**
          * The {@code Date} header name.
          * The date and time that the message was sent (in <i>HTTP-date</i> format as defined by RFC 7231).
          */
-        public static final HeaderName DATE = HeaderEnum.DATE;
+        public static final HeaderName DATE = HeaderNameEnum.DATE;
         /**
          * The {@code Etag} header name.
          * An identifier for a specific version of a resource, often a message digest.
          */
-        public static final HeaderName ETAG = HeaderEnum.ETAG;
+        public static final HeaderName ETAG = HeaderNameEnum.ETAG;
         /**
          * The {@code Expires} header name.
          * Gives the date/time after which the response is considered stale (in <i>HTTP-date</i> format as defined by RFC 7231)
          */
-        public static final HeaderName EXPIRES = HeaderEnum.EXPIRES;
+        public static final HeaderName EXPIRES = HeaderNameEnum.EXPIRES;
         /**
          * The {@code Last-Modified} header name.
          * The last modified date for the requested object (in <i>HTTP-date</i> format as defined by RFC 7231)
          */
-        public static final HeaderName LAST_MODIFIED = HeaderEnum.LAST_MODIFIED;
+        public static final HeaderName LAST_MODIFIED = HeaderNameEnum.LAST_MODIFIED;
         /**
          * The {@code Link} header name.
          * Used to express a typed relationship with another resource, where the relation type is defined by RFC 5988.
          */
-        public static final HeaderName LINK = HeaderEnum.LINK;
+        public static final HeaderName LINK = HeaderNameEnum.LINK;
         /**
          * The {@code Location} header name.
          * Used in redirection, or whenRequest a new resource has been created.
          */
-        public static final HeaderName LOCATION = HeaderEnum.LOCATION;
+        public static final HeaderName LOCATION = HeaderNameEnum.LOCATION;
         /**
          * The {@code Pragma} header name.
          * Implementation-specific fields that may have various effects anywhere along the request-response chain.
          */
-        public static final HeaderName PRAGMA = HeaderEnum.PRAGMA;
+        public static final HeaderName PRAGMA = HeaderNameEnum.PRAGMA;
         /**
          * The {@code Public-Key-Pins} header name.
          * HTTP Public Key Pinning, announces hash of website's authentic TLS certificate.
          */
-        public static final HeaderName PUBLIC_KEY_PINS = HeaderEnum.PUBLIC_KEY_PINS;
+        public static final HeaderName PUBLIC_KEY_PINS = HeaderNameEnum.PUBLIC_KEY_PINS;
         /**
          * The {@code <code>{@value}</code>} header name.
          * If an entity is temporarily unavailable, this instructs the client to try again later. Value could be a specified
          * period of time (in seconds) or an HTTP-date.
          */
-        public static final HeaderName RETRY_AFTER = HeaderEnum.RETRY_AFTER;
+        public static final HeaderName RETRY_AFTER = HeaderNameEnum.RETRY_AFTER;
         /**
          * The {@code Server} header name.
          * A name for the server.
          */
-        public static final HeaderName SERVER = HeaderEnum.SERVER;
+        public static final HeaderName SERVER = HeaderNameEnum.SERVER;
         /**
          * The {@code Set-Cookie} header name.
          * An HTTP cookie set directive.
          */
-        public static final HeaderName SET_COOKIE = HeaderEnum.SET_COOKIE;
+        public static final HeaderName SET_COOKIE = HeaderNameEnum.SET_COOKIE;
         /**
          * The {@code Set-Cookie2} header name.
          * An HTTP cookie set directive.
          */
-        public static final HeaderName SET_COOKIE2 = HeaderEnum.SET_COOKIE2;
+        public static final HeaderName SET_COOKIE2 = HeaderNameEnum.SET_COOKIE2;
         /**
          * The {@code Strict-Transport-Security} header name.
          * A HSTS Policy informing The {@code HTTP client} how long to cache the HTTPS only policy and whether this applies to
          * subdomains.
          */
-        public static final HeaderName STRICT_TRANSPORT_SECURITY = HeaderEnum.STRICT_TRANSPORT_SECURITY;
+        public static final HeaderName STRICT_TRANSPORT_SECURITY = HeaderNameEnum.STRICT_TRANSPORT_SECURITY;
         /**
          * The {@code Trailer} header name.
          * The Trailer general field value indicates that the given set of} header fields is present in the trailer of
          * a message encoded with chunked transfer coding.
          */
-        public static final HeaderName TRAILER = HeaderEnum.TRAILER;
+        public static final HeaderName TRAILER = HeaderNameEnum.TRAILER;
         /**
          * The {@code Transfer-Encoding} header name.
          * The form of encoding used to safely transfer the entity to the user. Currently defined methods are:
          * {@code chunked, compress, deflate, gzip, identity}.
          */
-        public static final HeaderName TRANSFER_ENCODING = HeaderEnum.TRANSFER_ENCODING;
+        public static final HeaderName TRANSFER_ENCODING = HeaderNameEnum.TRANSFER_ENCODING;
         /**
          * The {@code Tsv} header name.
          * Tracking Status Value, value suggested to be sent in response to a DNT(do-not-track).
          */
-        public static final HeaderName TSV = HeaderEnum.TSV;
+        public static final HeaderName TSV = HeaderNameEnum.TSV;
         /**
          * The {@code Upgrade} header name.
          * Ask to upgrade to another protocol.
          */
-        public static final HeaderName UPGRADE = HeaderEnum.UPGRADE;
+        public static final HeaderName UPGRADE = HeaderNameEnum.UPGRADE;
         /**
          * The {@code Vary} header name.
          * Tells downstream proxies how to match future request headers to decide whether the cached response can be used rather
          * than requesting a fresh one from the origin server.
          */
-        public static final HeaderName VARY = HeaderEnum.VARY;
+        public static final HeaderName VARY = HeaderNameEnum.VARY;
         /**
          * The {@code Warning} header name.
          * A general warning about possible problems with the entity body.
          */
-        public static final HeaderName WARNING = HeaderEnum.WARNING;
+        public static final HeaderName WARNING = HeaderNameEnum.WARNING;
         /**
          * The {@code WWW-Authenticate} header name.
          * Indicates the authentication scheme that should be used to access the requested entity.
          */
-        public static final HeaderName WWW_AUTHENTICATE = HeaderEnum.WWW_AUTHENTICATE;
+        public static final HeaderName WWW_AUTHENTICATE = HeaderNameEnum.WWW_AUTHENTICATE;
         /**
          * The {@code X_HELIDON_CN} header name.
          * Corresponds to the certificate CN subject value when client authentication enabled.
          * This header will be removed if it is part of the request.
          */
-        public static final HeaderName X_HELIDON_CN = HeaderEnum.X_HELIDON_CN;
+        public static final HeaderName X_HELIDON_CN = HeaderNameEnum.X_HELIDON_CN;
         /**
          * The {@code X-Forwarded-For} header name.
          * Represents the originating client and intervening proxies when the request has passed through one or more proxies.
          */
-        public static final HeaderName X_FORWARDED_FOR = HeaderEnum.X_FORWARDED_FOR;
+        public static final HeaderName X_FORWARDED_FOR = HeaderNameEnum.X_FORWARDED_FOR;
         /**
          * The {@code X_FORWARDED_HOST} header name.
          * Represents the host specified by the originating client when the request has passed through one or more proxies.
          */
-        public static final HeaderName X_FORWARDED_HOST = HeaderEnum.X_FORWARDED_HOST;
+        public static final HeaderName X_FORWARDED_HOST = HeaderNameEnum.X_FORWARDED_HOST;
 
         /**
          * The {@code X_FORWARDED_PORT} header name.
          * Represents the port specified by the originating client when the request has passed through one or more proxies.
          */
-        public static final HeaderName X_FORWARDED_PORT = HeaderEnum.X_FORWARDED_PORT;
+        public static final HeaderName X_FORWARDED_PORT = HeaderNameEnum.X_FORWARDED_PORT;
 
         /**
          * The {@code X_FORWARDED_PREFIX} header name.
@@ -1430,28 +1375,28 @@ public final class Http {
          * through one or more proxies.
          *
          */
-        public static final HeaderName X_FORWARDED_PREFIX = HeaderEnum.X_FORWARDED_PREFIX;
+        public static final HeaderName X_FORWARDED_PREFIX = HeaderNameEnum.X_FORWARDED_PREFIX;
         /**
          * The {@code X_FORWARDED_PROTO} header name.
          * Represents the protocol specified by the originating client when the request has passed through one or more proxies.
          */
-        public static final HeaderName X_FORWARDED_PROTO = HeaderEnum.X_FORWARDED_PROTO;
+        public static final HeaderName X_FORWARDED_PROTO = HeaderNameEnum.X_FORWARDED_PROTO;
 
-        private Header() {
+        private HeaderNames() {
         }
 
         /**
          * Find or create a header name.
-         * If a known indexed header exists for the lower case name, the instance is returned.
-         * Otherwise a new header name is created with the provided names.
+         * If a known indexed header exists for the name, the instance is returned.
+         * Otherwise a new header name is created with the provided name.
          *
          * @param name default case to use for custom header names (header names not known by Helidon)
          * @return header name instance
          */
         public static HeaderName create(String name) {
-            HeaderName headerName = HeaderEnum.byCapitalizedName(name);
+            HeaderName headerName = HeaderNameEnum.byCapitalizedName(name);
             if (headerName == null) {
-                return new HeaderImpl(Ascii.toLowerCase(name), name);
+                return new HeaderNameImpl(Ascii.toLowerCase(name), name);
             }
             return headerName;
         }
@@ -1465,10 +1410,10 @@ public final class Http {
          * @param defaultCase default case to use for custom header names (header names not known by Helidon)
          * @return header name instance
          */
-        public static HeaderName createName(String lowerCase, String defaultCase) {
-            HeaderName headerName = HeaderEnum.byName(lowerCase);
+        public static HeaderName create(String lowerCase, String defaultCase) {
+            HeaderName headerName = HeaderNameEnum.byName(lowerCase);
             if (headerName == null) {
-                return new HeaderImpl(lowerCase, defaultCase);
+                return new HeaderNameImpl(lowerCase, defaultCase);
             } else {
                 return headerName;
             }
@@ -1481,27 +1426,100 @@ public final class Http {
          * @return a new header name
          */
         public static HeaderName createFromLowercase(String lowerCase) {
-            if (!Ascii.toLowerCase(lowerCase).equals(lowerCase)) {
-                throw new IllegalArgumentException("Lower case string required: " + lowerCase);
-            }
-            HeaderName headerName = HeaderEnum.byName(lowerCase);
+            HeaderName headerName = HeaderNameEnum.byName(lowerCase);
             if (headerName == null) {
-                return new HeaderImpl(lowerCase, lowerCase);
+                return new HeaderNameImpl(lowerCase, lowerCase);
             } else {
                 return headerName;
             }
         }
 
+    }
+
+    /**
+     * Values of commonly used headers.
+     */
+    public static final class Headers {
         /**
-         * Create and cache byte value.
-         * Use this method if the header value is stored in a constant, or used repeatedly.
-         *
-         * @param name  header name
-         * @param value value of the header
-         * @return a new header
+         * Accept byte ranges for file download.
          */
-        public static HeaderValue createCached(String name, String value) {
-            return createCached(create(name), value);
+        public static final Header ACCEPT_RANGES_BYTES = createCached(HeaderNames.ACCEPT_RANGES, "bytes");
+        /**
+         * Not accepting byte ranges for file download.
+         */
+        public static final Header ACCEPT_RANGES_NONE = createCached(HeaderNames.ACCEPT_RANGES, "none");
+        /**
+         * Chunked transfer encoding.
+         * Used in {@code HTTP/1}.
+         */
+        public static final Header TRANSFER_ENCODING_CHUNKED = createCached(HeaderNames.TRANSFER_ENCODING, "chunked");
+        /**
+         * Connection keep-alive.
+         * Used in {@code HTTP/1}.
+         */
+        public static final Header CONNECTION_KEEP_ALIVE = createCached(HeaderNames.CONNECTION, "keep-alive");
+        /**
+         * Connection close.
+         * Used in {@code HTTP/1}.
+         */
+        public static final Header CONNECTION_CLOSE = createCached(HeaderNames.CONNECTION, "close");
+        /**
+         * Content type application/json with no charset.
+         */
+        public static final Header CONTENT_TYPE_JSON = createCached(HeaderNames.CONTENT_TYPE, "application/json");
+        /**
+         * Content type text plain with no charset.
+         */
+        public static final Header CONTENT_TYPE_TEXT_PLAIN = createCached(HeaderNames.CONTENT_TYPE, "text/plain");
+        /**
+         * Content type octet stream.
+         */
+        public static final Header CONTENT_TYPE_OCTET_STREAM = createCached(HeaderNames.CONTENT_TYPE,
+                                                                                        "application/octet-stream");
+        /**
+         * Content type SSE event stream.
+         */
+        public static final Header CONTENT_TYPE_EVENT_STREAM = createCached(HeaderNames.CONTENT_TYPE,
+                                                                                        "text/event-stream");
+
+        /**
+         * Accept application/json.
+         */
+        public static final Header ACCEPT_JSON = createCached(HeaderNames.ACCEPT, "application/json");
+        /**
+         * Accept text/plain with UTF-8.
+         */
+        public static final Header ACCEPT_TEXT = createCached(HeaderNames.ACCEPT, "text/plain;charset=UTF-8");
+        /**
+         * Accept text/event-stream.
+         */
+        public static final Header ACCEPT_EVENT_STREAM = createCached(HeaderNames.ACCEPT, "text/event-stream");
+        /**
+         * Expect 100 header.
+         */
+        public static final Header EXPECT_100 = createCached(HeaderNames.EXPECT, "100-continue");
+        /**
+         * Content length with 0 value.
+         */
+        public static final Header CONTENT_LENGTH_ZERO = createCached(HeaderNames.CONTENT_LENGTH, "0");
+        /**
+         * Cache control without any caching.
+         */
+        public static final Header CACHE_NO_CACHE = create(HeaderNames.CACHE_CONTROL, "no-cache",
+                                                                       "no-store",
+                                                                       "must-revalidate",
+                                                                       "no-transform");
+        /**
+         * Cache control that allows caching with no transform.
+         */
+        public static final Header CACHE_NORMAL = createCached(HeaderNames.CACHE_CONTROL, "no-transform");
+
+        /**
+         * TE header set to {@code trailers}, used to enable trailer headers.
+         */
+        public static final Header TE_TRAILERS = createCached(HeaderNames.TE, "trailers");
+
+        private Headers() {
         }
 
         /**
@@ -1512,7 +1530,43 @@ public final class Http {
          * @param value value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(HeaderName name, String value) {
+        public static Header createCached(String name, String value) {
+            return createCached(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static Header createCached(String name, int value) {
+            return createCached(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static Header createCached(String name, long value) {
+            return createCached(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static Header createCached(HeaderName name, String value) {
             return new HeaderValueCached(name, false,
                                          false,
                                          value.getBytes(StandardCharsets.US_ASCII),
@@ -1527,7 +1581,19 @@ public final class Http {
          * @param value value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(HeaderName name, int value) {
+        public static Header createCached(HeaderName name, int value) {
+            return createCached(name, String.valueOf(value));
+        }
+
+        /**
+         * Create and cache byte value.
+         * Use this method if the header value is stored in a constant, or used repeatedly.
+         *
+         * @param name  header name
+         * @param value value of the header
+         * @return a new header
+         */
+        public static Header createCached(HeaderName name, long value) {
             return createCached(name, String.valueOf(value));
         }
 
@@ -1539,7 +1605,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, LazyString value) {
+        public static Header create(HeaderName name, LazyString value) {
             Objects.requireNonNull(name);
             Objects.requireNonNull(value);
 
@@ -1554,7 +1620,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, int value) {
+        public static Header create(HeaderName name, int value) {
             Objects.requireNonNull(name);
 
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
@@ -1568,7 +1634,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, long value) {
+        public static Header create(HeaderName name, long value) {
             Objects.requireNonNull(name);
 
             return new HeaderValueSingle(name, false, false, String.valueOf(value));
@@ -1582,7 +1648,7 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, String value) {
+        public static Header create(HeaderName name, String value) {
             Objects.requireNonNull(name, "HeaderName must not be null");
             Objects.requireNonNull(value, "HeaderValue must not be null");
 
@@ -1593,14 +1659,59 @@ public final class Http {
         }
 
         /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, String value) {
+            Objects.requireNonNull(name, "Header name must not be null");
+
+            return create(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, int value) {
+            Objects.requireNonNull(name, "Header name must not be null");
+
+            return create(HeaderNames.create(name), value);
+        }
+
+        /**
+         * Create a new header with a single value. This header is considered unchanging and not sensitive.
+         *
+         * @param name  name of the header
+         * @param value value of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, long value) {
+            Objects.requireNonNull(name, "Header name must not be null");
+
+            return create(HeaderNames.create(name), value);
+        }
+
+        /**
          * Create a new header. This header is considered unchanging and not sensitive.
          *
-         * @param name   name of the header*
+         * @param name   name of the header
          * @param values values of the header
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, String... values) {
+        public static Header create(HeaderName name, String... values) {
+            if (values.length == 0) {
+                throw new IllegalArgumentException("Cannot create a header without a value. Header: " + name);
+            }
             return new HeaderValueArray(name, false, false, values);
         }
 
@@ -1612,8 +1723,32 @@ public final class Http {
          * @return a new header
          * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
          */
-        public static HeaderValue create(HeaderName name, List<String> values) {
+        public static Header create(String name, String... values) {
+            return create(HeaderNames.create(name), values);
+        }
+
+        /**
+         * Create a new header. This header is considered unchanging and not sensitive.
+         *
+         * @param name   name of the header
+         * @param values values of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(HeaderName name, Collection<String> values) {
             return new HeaderValueList(name, false, false, values);
+        }
+
+        /**
+         * Create a new header. This header is considered unchanging and not sensitive.
+         *
+         * @param name   name of the header
+         * @param values values of the header
+         * @return a new header
+         * @see #create(io.helidon.common.http.Http.HeaderName, boolean, boolean, String...)
+         */
+        public static Header create(String name, Collection<String> values) {
+            return create(HeaderNames.create(name), values);
         }
 
         /**
@@ -1626,7 +1761,7 @@ public final class Http {
          * @param value     value of the header
          * @return a new header
          */
-        public static HeaderValue createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
+        public static Header createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
             return new HeaderValueCached(name, changing, sensitive, value.getBytes(StandardCharsets.UTF_8), value);
         }
 
@@ -1639,95 +1774,34 @@ public final class Http {
          * @param values    value(s) of the header
          * @return a new header
          */
-        public static HeaderValue create(HeaderName name, boolean changing, boolean sensitive, String... values) {
+        public static Header create(HeaderName name, boolean changing, boolean sensitive, String... values) {
             return new HeaderValueArray(name, changing, sensitive, values);
         }
-    }
-
-    /**
-     * Values of commonly used headers.
-     */
-    public static final class HeaderValues {
-        /**
-         * Accept byte ranges for file download.
-         */
-        public static final HeaderValue ACCEPT_RANGES_BYTES = Header.createCached(Header.ACCEPT_RANGES, "bytes");
-        /**
-         * Not accepting byte ranges for file download.
-         */
-        public static final HeaderValue ACCEPT_RANGES_NONE = Header.createCached(Header.ACCEPT_RANGES, "none");
-        /**
-         * Chunked transfer encoding.
-         * Used in {@code HTTP/1}.
-         */
-        public static final HeaderValue TRANSFER_ENCODING_CHUNKED = Header.createCached(Header.TRANSFER_ENCODING, "chunked");
-        /**
-         * Connection keep-alive.
-         * Used in {@code HTTP/1}.
-         */
-        public static final HeaderValue CONNECTION_KEEP_ALIVE = Header.createCached(Header.CONNECTION, "keep-alive");
-        /**
-         * Connection close.
-         * Used in {@code HTTP/1}.
-         */
-        public static final HeaderValue CONNECTION_CLOSE = Header.createCached(Header.CONNECTION, "close");
-        /**
-         * Content type application/json with no charset.
-         */
-        public static final HeaderValue CONTENT_TYPE_JSON = Header.createCached(Header.CONTENT_TYPE, "application/json");
-        /**
-         * Content type text plain with no charset.
-         */
-        public static final HeaderValue CONTENT_TYPE_TEXT_PLAIN = Header.createCached(Header.CONTENT_TYPE, "text/plain");
-        /**
-         * Content type octet stream.
-         */
-        public static final HeaderValue CONTENT_TYPE_OCTET_STREAM = Header.createCached(Header.CONTENT_TYPE,
-                                                                                        "application/octet-stream");
-        /**
-         * Content type SSE event stream.
-         */
-        public static final HeaderValue CONTENT_TYPE_EVENT_STREAM = Header.createCached(Header.CONTENT_TYPE,
-                                                                                  "text/event-stream");
 
         /**
-         * Accept application/json.
+         * Create a new header.
+         *
+         * @param name      name of the header
+         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+         * @param value     value of the header
+         * @return a new header
          */
-        public static final HeaderValue ACCEPT_JSON = Header.createCached(Header.ACCEPT, "application/json");
-        /**
-         * Accept text/plain with UTF-8.
-         */
-        public static final HeaderValue ACCEPT_TEXT = Header.createCached(Header.ACCEPT, "text/plain;charset=UTF-8");
-        /**
-         * Accept text/event-stream.
-         */
-        public static final HeaderValue ACCEPT_EVENT_STREAM = Header.createCached(Header.ACCEPT, "text/event-stream");
-        /**
-         * Expect 100 header.
-         */
-        public static final HeaderValue EXPECT_100 = Header.createCached(Header.EXPECT, "100-continue");
-        /**
-         * Content length with 0 value.
-         */
-        public static final HeaderValue CONTENT_LENGTH_ZERO = Header.createCached(Header.CONTENT_LENGTH, "0");
-        /**
-         * Cache control without any caching.
-         */
-        public static final HeaderValue CACHE_NO_CACHE = Header.create(Header.CACHE_CONTROL, "no-cache",
-                                                                       "no-store",
-                                                                       "must-revalidate",
-                                                                       "no-transform");
-        /**
-         * Cache control that allows caching with no transform.
-         */
-        public static final HeaderValue CACHE_NORMAL = Header.createCached(Header.CACHE_CONTROL, "no-transform");
+        public static Header create(HeaderName name, boolean changing, boolean sensitive, int value) {
+            return create(name, changing, sensitive, String.valueOf(value));
+        }
 
         /**
-         * TE header set to {@code trailers}, used to enable trailer headers.
+         * Create a new header.
+         *
+         * @param name      name of the header
+         * @param changing  whether the value is changing often (to disable caching for HTTP/2)
+         * @param sensitive whether the value is sensitive (to disable caching for HTTP/2)
+         * @param value     value of the header
+         * @return a new header
          */
-        public static final HeaderValue TE_TRAILERS = Header.createCached(Header.TE, "trailers");
-
-        private HeaderValues() {
+        public static Header create(HeaderName name, boolean changing, boolean sensitive, long value) {
+            return create(name, changing, sensitive, String.valueOf(value));
         }
     }
 

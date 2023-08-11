@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,9 +30,7 @@ import java.util.OptionalLong;
 import java.util.Random;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webserver.http.Handler;
@@ -48,13 +46,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class PostTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
+    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final HeaderValue REQUEST_HEADER_VALUE = Header.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
-    private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
+    private static final Http.Header REQUEST_HEADER_VALUE = Http.Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderName RESPONSE_HEADER_NAME = Http.HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
-                                                                           RESPONSE_HEADER_VALUE_STRING);
+    private static final Http.Header RESPONSE_HEADER_VALUE = Http.Headers.create(RESPONSE_HEADER_NAME,
+                                                                                 RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();

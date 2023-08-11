@@ -128,7 +128,7 @@ public class SseEvent {
             WritableHeaders<?> headers;
             if (!mediaType.equals(MediaTypes.WILDCARD)) {
                 headers = WritableHeaders.create();
-                headers.set(Http.Header.CONTENT_TYPE, mediaType.text());
+                headers.set(Http.HeaderNames.CONTENT_TYPE, mediaType.text());
             } else {
                 headers = EMPTY_HEADERS;
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,10 @@ import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.Random;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -39,7 +37,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
+import static io.helidon.common.http.Http.HeaderNames.CONTENT_LENGTH;
 import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
@@ -48,14 +46,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class GetTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
+    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final HeaderValue REQUEST_HEADER_VALUE = Header.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
-    private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
+    private static final Header REQUEST_HEADER_VALUE = Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderName RESPONSE_HEADER_NAME = Http.HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
-                                                                           RESPONSE_HEADER_VALUE_STRING);
-    public static final HeaderValue CONTENT_LENGTH_5 = Header.create(CONTENT_LENGTH, "5");
+    private static final Http.Header RESPONSE_HEADER_VALUE = Headers.create(RESPONSE_HEADER_NAME,
+                                                                            RESPONSE_HEADER_VALUE_STRING);
+    public static final Header CONTENT_LENGTH_5 = Headers.create(CONTENT_LENGTH, "5");
 
     static {
         Random random = new Random();
@@ -86,9 +84,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -100,9 +98,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
-            Headers headers = response.headers();
-            assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            io.helidon.common.http.Headers headers = response.headers();
+            assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -115,9 +113,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
-            Headers headers = response.headers();
-            assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            io.helidon.common.http.Headers headers = response.headers();
+            assertThat(headers, hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
 
     }
@@ -131,12 +129,12 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
 
             assertThat("Should contain echoed request header", headers, hasHeader(REQUEST_HEADER_VALUE));
             assertThat("Should contain configured response header", headers, hasHeader(RESPONSE_HEADER_VALUE));
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -148,9 +146,9 @@ class GetTest {
             assertThat(response.status(), is(Http.Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
-            Headers headers = response.headers();
+            io.helidon.common.http.Headers headers = response.headers();
             assertThat(headers, hasHeader(CONTENT_LENGTH_5));
-            assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
+            assertThat(headers, hasHeader(Http.Headers.CONNECTION_CLOSE));
         }
     }
 
@@ -172,7 +170,7 @@ class GetTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
-            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
         }
     }
 
@@ -188,7 +186,7 @@ class GetTest {
         }
 
         private static void close(ServerRequest req, ServerResponse res) {
-            res.header(HeaderValues.CONNECTION_CLOSE);
+            res.header(Http.Headers.CONNECTION_CLOSE);
             res.send("Hello");
         }
 

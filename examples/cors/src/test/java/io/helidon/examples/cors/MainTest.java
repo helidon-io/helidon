@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -37,11 +37,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.common.http.Http.Header.HOST;
-import static io.helidon.common.http.Http.Header.ORIGIN;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.common.http.Http.HeaderNames.HOST;
+import static io.helidon.common.http.Http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -69,7 +69,7 @@ public class MainTest {
     @Test
     public void testHelloWorld() {
         try (Http1ClientResponse response = client.get("/greet")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -79,7 +79,7 @@ public class MainTest {
         }
 
         try (Http1ClientResponse response = client.get("/greet/Joe")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -89,14 +89,14 @@ public class MainTest {
         }
 
         try (Http1ClientResponse response = client.put("/greet/greeting")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .submit(new GreetingMessage("Hola").forRest())) {
 
             assertThat(response.status().code(), is(204));
         }
 
         try (Http1ClientResponse response = client.get("/greet/Jose")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -120,7 +120,7 @@ public class MainTest {
     void testAnonymousGreetWithCors() {
         try (Http1ClientResponse response = client.get()
                 .path("/greet")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .headers(it -> it
                         .set(ORIGIN, "http://foo.com")
                         .set(HOST, "here.com"))
@@ -165,7 +165,7 @@ public class MainTest {
         // Send the follow-up request.
         GreetingMessage payload = new GreetingMessage("Cheers");
         try (Http1ClientResponse response = client.put("/greet/greeting")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .headers(headers -> {
                     headers.set(ORIGIN, "http://foo.com");
                     headers.set(HOST, "here.com");

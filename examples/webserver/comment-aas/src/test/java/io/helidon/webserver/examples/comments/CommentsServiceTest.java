@@ -17,7 +17,7 @@
 package io.helidon.webserver.examples.comments;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
 import io.helidon.nima.testing.junit5.webserver.RoutingTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
@@ -73,7 +73,7 @@ public class CommentsServiceTest {
             assertThat(response.status(), is(Http.Status.OK_200));
         }
         try (Http1ClientResponse response = client.post("/comments/one")
-                                                  .contentType(HttpMediaType.TEXT_PLAIN)
+                                                  .contentType(MediaTypes.TEXT_PLAIN)
                                                   .submit("aaa")) {
 
             assertThat(response.status(), is(Http.Status.OK_200));

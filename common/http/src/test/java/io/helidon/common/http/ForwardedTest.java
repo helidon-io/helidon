@@ -73,7 +73,7 @@ class ForwardedTest {
     @Test
     void testMultiValuesCommaSeparated() {
         HeadersImpl<?> headers = new HeadersImpl<>();
-        headers.add(Http.Header.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10,by=\"192.0.2.60\"");
+        headers.add(Http.HeaderNames.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10,by=\"192.0.2.60\"");
         List<Forwarded> forwardedList = Forwarded.create(headers);
 
         assertThat(forwardedList, hasSize(2));
@@ -94,7 +94,7 @@ class ForwardedTest {
     @Test
     void testMultiValues() {
         HeadersImpl<?> headers = new HeadersImpl<>();
-        headers.add(Http.Header.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10",
+        headers.add(Http.HeaderNames.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10",
                     "by=\"192.0.2.60\"");
         List<Forwarded> forwardedList = Forwarded.create(headers);
 
@@ -116,7 +116,7 @@ class ForwardedTest {
     @Test
     void testMultiValuesAndCommaSeparated() {
         HeadersImpl<?> headers = new HeadersImpl<>();
-        headers.add(Http.Header.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10",
+        headers.add(Http.HeaderNames.FORWARDED, "for=192.0.2.60;proto=http;by=203.0.113.43;Host=10.10.10.10",
                     "by=\"192.0.2.60\",for=\"14.22.11.22\"");
         List<Forwarded> forwardedList = Forwarded.create(headers);
 

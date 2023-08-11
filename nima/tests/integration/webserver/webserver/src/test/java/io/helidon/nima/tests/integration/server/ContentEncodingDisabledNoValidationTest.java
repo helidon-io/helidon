@@ -62,7 +62,7 @@ public class ContentEncodingDisabledNoValidationTest extends ContentEncodingDisa
     @Test
     void testContentEncodingHeader() {
         try (Http1ClientResponse response = client().method(Http.Method.POST)
-                .header(Http.Header.CONTENT_ENCODING, "data")
+                .header(Http.HeaderNames.CONTENT_ENCODING, "data")
                 .submit("any")) {
             assertThat(response.status(), is(Http.Status.OK_200));
             assertThat(response.as(String.class), is("response"));

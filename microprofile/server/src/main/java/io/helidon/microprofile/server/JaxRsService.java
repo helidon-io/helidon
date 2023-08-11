@@ -36,7 +36,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.InternalServerException;
 import io.helidon.common.uri.UriPath;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
@@ -219,7 +219,7 @@ class JaxRsService implements HttpService {
                                                                new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);
 
-        for (HeaderValue header : req.headers()) {
+        for (Header header : req.headers()) {
             requestContext.headers(header.name(),
                                    header.allValues());
         }
@@ -333,16 +333,16 @@ class JaxRsService implements HttpService {
                 String name = entry.getKey();
                 List<String> values = entry.getValue();
                 if (values.size() == 1) {
-                    res.header(Header.create(Header.create(name), values.get(0)));
+                    res.header(Http.Headers.create(HeaderNames.create(name), values.get(0)));
                 } else {
-                    res.header(Header.create(Header.create(entry.getKey()), entry.getValue()));
+                    res.header(Http.Headers.create(entry.getKey(), entry.getValue()));
                 }
             }
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
             res.status(Http.Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
             if (contentLength > 0) {
-                res.header(Header.create(Header.CONTENT_LENGTH, String.valueOf(contentLength)));
+                res.header(Http.Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
             this.outputStream = new NoFlushOutputStream(res.outputStream());
             return outputStream;

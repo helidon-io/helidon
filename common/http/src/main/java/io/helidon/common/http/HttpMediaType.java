@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,8 @@ import io.helidon.common.media.type.ParserMode;
 /**
  * Media type used in HTTP headers, in addition to the media type definition, these may contain additional
  * parameters, such as {@link #QUALITY_FACTOR_PARAMETER} and {@link #CHARSET_PARAMETER}.
+ *
+ * @see io.helidon.common.http.HttpMediaTypes
  */
 public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
                                               Comparable<HttpMediaType>,
@@ -41,48 +43,6 @@ public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
      * The media type quality factor {@value} parameter name.
      */
     String QUALITY_FACTOR_PARAMETER = "q";
-    /**
-     * {@code application/json} media type without parameters.
-     */
-    HttpMediaType APPLICATION_JSON = HttpMediaType.create(MediaTypes.APPLICATION_JSON);
-    /**
-     * application/json media type with UTF-8 charset.
-     */
-    HttpMediaType JSON_UTF_8 = HttpMediaType.builder()
-            .mediaType(MediaTypes.APPLICATION_JSON)
-            .charset("UTF-8")
-            .build();
-    /**
-     * {@code text/plain} media type without parameters.
-     */
-    HttpMediaType TEXT_PLAIN = HttpMediaType.create(MediaTypes.TEXT_PLAIN);
-    /**
-     * text/plain media type with UTF-8 charset.
-     */
-    HttpMediaType PLAINTEXT_UTF_8 = HttpMediaType.builder()
-            .mediaType(MediaTypes.TEXT_PLAIN)
-            .charset("UTF-8")
-            .build();
-
-    /**
-     * {@code application/octet-stream} media type without parameters.
-     */
-    HttpMediaType APPLICATION_OCTET_STREAM = HttpMediaType.create(MediaTypes.APPLICATION_OCTET_STREAM);
-
-    /**
-     * Predicate to test if {@link MediaType} is {@code application/json} or has {@code json} suffix.
-     */
-    Predicate<HttpMediaType> JSON_PREDICATE = JSON_UTF_8
-            .or(mt -> mt.hasSuffix("json"));
-
-    /**
-     * Predicate to test if {@link MediaType} is {@code text/event-stream} without any parameter or with parameter "element-type".
-     * This "element-type" has to be equal to "application/json".
-     */
-    Predicate<HttpMediaType> JSON_EVENT_STREAM_PREDICATE = HttpMediaType.create(MediaTypes.TEXT_EVENT_STREAM)
-            .and(mt -> mt.hasSuffix("event-stream"))
-            .and(mt -> !mt.parameters().containsKey("element-type")
-                    || "application/json".equals(mt.parameters().get("element-type")));
 
     /**
      * A fluent API builder for creating customized Media type instances.

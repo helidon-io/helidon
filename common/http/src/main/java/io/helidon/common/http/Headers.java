@@ -35,32 +35,11 @@ import io.helidon.common.media.type.MediaType;
  * case.
  * When you configure headers to be sent using HTTP/2, all names will be lowercase.
  * When you configure headers to be sent using HTTP/1, names will be sent as configured.
- * When you receive headers, the stored values (as can be obtained by {@link io.helidon.common.http.Http.HeaderValue#name()})
+ * When you receive headers, the stored values (as can be obtained by {@link io.helidon.common.http.Http.Header#name()})
  * will be as sent on the transport. These value will be available using any cased names (though performance may be worse
  * if uppercase letters are used to obtain HTTP/2 headers).
  */
-public interface Headers extends Iterable<Http.HeaderValue> {
-
-    /**
-     * Returns an unmodifiable {@link java.util.List} of all header fields - each element represents a value of a single header
-     * field
-     * in the request. Consider to use {@link #value(io.helidon.common.http.Http.HeaderName)}
-     * or {@link #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)} method instead.
-     * <p>
-     * Always returns a List, which may be empty if the parameter is not present.
-     *
-     * @param headerName the header name
-     * @return a {@code List} of values with zero or greater size
-     * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #value(io.helidon.common.http.Http.HeaderName)
-     * @see #values(io.helidon.common.http.Http.HeaderName)
-     * @deprecated use {@link #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)} instead
-     */
-    @Deprecated(forRemoval = true)
-    default List<String> all(String headerName) {
-        return all(Http.Header.create(headerName), List::of);
-    }
-
+public interface Headers extends Iterable<Http.Header> {
     /**
      * Get all values of a header.
      *
@@ -84,7 +63,7 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * @param value value of the header
      * @return {@code true} if the header is defined
      */
-    boolean contains(Http.HeaderValue value);
+    boolean contains(Http.Header value);
 
     /**
      * Get a header value.
@@ -93,13 +72,13 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * @return value if present
      * @throws java.util.NoSuchElementException in case the header is not present
      */
-    Http.HeaderValue get(Http.HeaderName name);
+    Http.Header get(Http.HeaderName name);
 
     /**
      * Returns a header value as a single {@link String} potentially concatenated using comma character
-     * from {@link #all(String) all} header fields.
+     * from {@link #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)} header fields.
      * <p>
-     * Accordingly to <a href="https://tools.ietf.org/html/rfc2616#section-4.2">RFC2616, Message Headers</a>:
+     * According to <a href="https://tools.ietf.org/html/rfc2616#section-4.2">RFC2616, Message Headers</a>:
      * <blockquote>
      * Multiple message-header fields with the same field-name MAY be
      * present in a message if and only if the entire field-value for that
@@ -146,16 +125,17 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * Result is composed from all header fields with requested {@code headerName} where each header value is tokenized by
      * a comma character. Tokenization respects value quoting by <i>double-quote</i> character.
      * <p>
-     * Always returns a List, which may be empty if the parameter is not present.
+     * Always returns a List, which may be empty if the header is not present.
      *
      * @param headerName the header name
      * @return a {@code List} of values with zero or greater size, never {@code null}
      * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #all(String)
+     * @see #all(io.helidon.common.http.Http.HeaderName, java.util.function.Supplier)
      * @see #value(io.helidon.common.http.Http.HeaderName)
      */
     default List<String> values(Http.HeaderName headerName) {
-        return all(headerName, List::of).stream()
+        return all(headerName, List::of)
+                .stream()
                 .flatMap(val -> Utils.tokenize(',', "\"", true, val).stream())
                 .collect(Collectors.toList());
     }
@@ -164,11 +144,11 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * Content length if defined.
      *
      * @return content length or empty if not defined
-     * @see io.helidon.common.http.Http.Header#CONTENT_LENGTH
+     * @see io.helidon.common.http.Http.HeaderNames#CONTENT_LENGTH
      */
     default OptionalLong contentLength() {
-        if (contains(HeaderEnum.CONTENT_LENGTH)) {
-            return OptionalLong.of(get(HeaderEnum.CONTENT_LENGTH).value(long.class));
+        if (contains(HeaderNameEnum.CONTENT_LENGTH)) {
+            return OptionalLong.of(get(HeaderNameEnum.CONTENT_LENGTH).value(long.class));
         }
         return OptionalLong.empty();
     }
@@ -177,11 +157,11 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      * Content type (if defined).
      *
      * @return content type, empty if content type is not present
-     * @see io.helidon.common.http.Http.Header#CONTENT_TYPE
+     * @see io.helidon.common.http.Http.HeaderNames#CONTENT_TYPE
      */
     default Optional<HttpMediaType> contentType() {
-        if (contains(HeaderEnum.CONTENT_TYPE)) {
-            return Optional.of(HttpMediaType.create(get(HeaderEnum.CONTENT_TYPE)
+        if (contains(HeaderNameEnum.CONTENT_TYPE)) {
+            return Optional.of(HttpMediaType.create(get(HeaderNameEnum.CONTENT_TYPE)
                                                             .value()));
         }
         return Optional.empty();
@@ -195,7 +175,7 @@ public interface Headers extends Iterable<Http.HeaderValue> {
     int size();
 
     /**
-     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.Header#ACCEPT} header) content discoveryTypes in
+     * Returns a list of acceptedTypes ({@link io.helidon.common.http.Http.HeaderNames#ACCEPT} header) content discoveryTypes in
      * quality factor order. Never {@code null}.
      * Returns an empty list by default.
      *
@@ -235,7 +215,7 @@ public interface Headers extends Iterable<Http.HeaderValue> {
      *
      * @return stream of header values
      */
-    default Stream<Http.HeaderValue> stream() {
+    default Stream<Http.Header> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
 }

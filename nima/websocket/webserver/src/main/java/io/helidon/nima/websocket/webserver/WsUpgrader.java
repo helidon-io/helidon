@@ -28,8 +28,8 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.http.DirectHandler;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.NotFoundException;
 import io.helidon.common.http.RequestException;
@@ -49,22 +49,22 @@ public class WsUpgrader implements Http1Upgrader {
     /**
      * Websocket key header name.
      */
-    public static final HeaderName WS_KEY = Header.create("Sec-WebSocket-Key");
+    public static final HeaderName WS_KEY = HeaderNames.create("Sec-WebSocket-Key");
 
     /**
      * Websocket version header name.
      */
-    public static final HeaderName WS_VERSION = Header.create("Sec-WebSocket-Version");
+    public static final HeaderName WS_VERSION = HeaderNames.create("Sec-WebSocket-Version");
 
     /**
      * Websocket protocol header name.
      */
-    public static final HeaderName PROTOCOL = Header.create("Sec-WebSocket-Protocol");
+    public static final HeaderName PROTOCOL = HeaderNames.create("Sec-WebSocket-Protocol");
 
     /**
      * Websocket protocol header name.
      */
-    public static final HeaderName EXTENSIONS = Header.create("Sec-WebSocket-Extensions");
+    public static final HeaderName EXTENSIONS = HeaderNames.create("Sec-WebSocket-Extensions");
 
     /**
      * Switching response prefix.
@@ -87,7 +87,7 @@ public class WsUpgrader implements Http1Upgrader {
     /**
      * Supported version header.
      */
-    protected static final Http.HeaderValue SUPPORTED_VERSION_HEADER = Header.create(WS_VERSION, SUPPORTED_VERSION);
+    protected static final Http.Header SUPPORTED_VERSION_HEADER = Http.Headers.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
@@ -153,8 +153,8 @@ public class WsUpgrader implements Http1Upgrader {
         }
 
         if (!anyOrigin()) {
-            if (headers.contains(Header.ORIGIN)) {
-                String origin = headers.get(Header.ORIGIN).value();
+            if (headers.contains(Http.HeaderNames.ORIGIN)) {
+                String origin = headers.get(Http.HeaderNames.ORIGIN).value();
                 if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")

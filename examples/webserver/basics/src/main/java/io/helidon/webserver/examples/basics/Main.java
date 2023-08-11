@@ -27,7 +27,6 @@ import java.util.List;
 
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpException;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.EntityReader;
@@ -63,8 +62,8 @@ import jakarta.json.JsonBuilderFactory;
 public class Main {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final Http.HeaderName BAR_HEADER = Http.Header.create("bar");
-    private static final Http.HeaderName FOO_HEADER = Http.Header.create("foo");
+    private static final Http.HeaderName BAR_HEADER = Http.HeaderNames.create("bar");
+    private static final Http.HeaderName FOO_HEADER = Http.HeaderNames.create("foo");
 
     // ---------------- EXAMPLES
 
@@ -160,7 +159,7 @@ public class Main {
     public static void advancedRouting(HttpRouting.Builder routing) {
         routing.get("/advancedRouting/foo", (req, res) -> {
             ServerRequestHeaders headers = req.headers();
-            if (headers.isAccepted(HttpMediaType.TEXT_PLAIN)
+            if (headers.isAccepted(MediaTypes.TEXT_PLAIN)
                 && headers.contains(BAR_HEADER)) {
 
                 res.send();

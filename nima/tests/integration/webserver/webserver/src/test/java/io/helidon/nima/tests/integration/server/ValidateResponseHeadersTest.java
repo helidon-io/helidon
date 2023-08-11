@@ -91,7 +91,7 @@ class ValidateResponseHeadersTest {
         HttpClientResponse response = request.submit(headerNameAndValue);
         if (expectsValid) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.Header.create(headerName)).values();
+            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThat(response.status(), not(Http.Status.OK_200));
@@ -106,7 +106,7 @@ class ValidateResponseHeadersTest {
         HttpClientResponse response = request.submit(headerNameAndValue);
         if (expectsValid) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.Header.create(headerName)).values();
+            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThat(response.status(), not(Http.Status.OK_200));
@@ -130,7 +130,7 @@ class ValidateResponseHeadersTest {
     private static void setHeader(ServerRequest request, ServerResponse response) {
         ServerRequestHeaders headers = request.headers();
         String[] header = request.content().as(String.class).split(HEADER_NAME_VALUE_DELIMETER);
-        response.headers().add(Http.Header.create(Http.Header.create(header[0]), header[1]));
+        response.headers().add(Http.Headers.create(Http.HeaderNames.create(header[0]), header[1]));
     }
 
     private static Stream<Arguments> responseHeaders() {

@@ -31,7 +31,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
  */
 @Weight(1)
 public class NoVaultAuth implements VaultAuth {
-    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.Header.create("X-Vault-Namespace");
+    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Namespace");
     /**
      * Required for service loader.
      */

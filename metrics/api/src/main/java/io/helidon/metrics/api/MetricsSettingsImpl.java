@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.config.Config;
-import io.helidon.config.ConfigValue;
+import io.helidon.common.config.Config;
+import io.helidon.common.config.ConfigValue;
 
 class MetricsSettingsImpl implements MetricsSettings {
 
@@ -155,11 +155,11 @@ class MetricsSettingsImpl implements MetricsSettings {
                     .ifPresent(this::enabled);
 
             metricsSettingsConfig.get(REGISTRIES_CONFIG_KEY)
-                    .asList(ScopedRegistrySettingsImpl::create)
+                    .mapList(ScopedRegistrySettingsImpl::create)
                     .ifPresent(this::addAllTypedRegistrySettings);
 
             metricsSettingsConfig.get(GLOBAL_TAGS_CONFIG_KEY)
-                    .as(Builder::globalTagsExpressionToMap)
+                    .map(Builder::globalTagsExpressionToMap)
                     .ifPresent(this::globalTags);
 
             metricsSettingsConfig.get(APP_TAG_CONFIG_KEY)

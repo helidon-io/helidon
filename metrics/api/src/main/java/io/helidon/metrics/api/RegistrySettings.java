@@ -15,7 +15,7 @@
  */
 package io.helidon.metrics.api;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -27,7 +27,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *     {@link Builder#filterSettings(io.helidon.metrics.api.RegistryFilterSettings.Builder)}.
  * </p>
  * <p>
- *     Callers can also pass a {@link Config} object to builder or static factory methods as well.
+ *     Callers can also pass a {@link io.helidon.common.config.Config} object to builder or static factory methods as well.
  * </p>
  */
 public interface RegistrySettings {

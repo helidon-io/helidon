@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.dbclient.app.tools;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
@@ -44,7 +44,7 @@ public class ExitService implements HttpService {
     }
 
     private void exit(ServerRequest request, ServerResponse response) {
-        response.headers().contentType(HttpMediaType.TEXT_PLAIN);
+        response.headers().contentType(MediaTypes.TEXT_PLAIN);
         response.send("Testing web application shutting down.");
         server.stop();
     }

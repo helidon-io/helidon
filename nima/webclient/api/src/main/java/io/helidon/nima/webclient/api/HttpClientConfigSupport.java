@@ -73,22 +73,77 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, String value) {
-            builder.addHeader(Http.Header.create(name, value));
+            builder.addHeader(Http.Headers.create(name, value));
+        }
+
+        /**
+         * Add a default header value.
+         *
+         * @param builder builder to update
+         * @param name name of the header
+         * @param value value of the header
+         */
+        @Prototype.BuilderMethod
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, int value) {
+            builder.addHeader(Http.Headers.create(name, value));
+        }
+
+        /**
+         * Add a default header value.
+         *
+         * @param builder builder to update
+         * @param name name of the header
+         * @param value value of the header
+         */
+        @Prototype.BuilderMethod
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, long value) {
+            builder.addHeader(Http.Headers.create(name, value));
+        }
+
+
+        /**
+         * Add default header value. This method is not optimal and should only be used when the header name is really
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.common.http.Http.HeaderName}
+         * or {@link io.helidon.common.http.Http.Header}.
+         *
+         * @param builder builder to update
+         * @param name name of the header
+         * @param value value of the header
+         * @see #addHeader(io.helidon.common.http.Http.Header)
+         */
+        @Prototype.BuilderMethod
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
+            builder.addHeader(Http.Headers.create(name, value));
         }
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
          * obtained from a string, in other cases, use an alternative with {@link io.helidon.common.http.Http.HeaderName}
-         * or {@link io.helidon.common.http.Http.HeaderValue}.
+         * or {@link io.helidon.common.http.Http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(Http.HeaderValue)
+         * @see #addHeader(io.helidon.common.http.Http.Header)
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
-            builder.addHeader(Http.Header.create(Http.Header.create(name), value));
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, int value) {
+            builder.addHeader(Http.Headers.create(name, value));
+        }
+
+        /**
+         * Add default header value. This method is not optimal and should only be used when the header name is really
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.common.http.Http.HeaderName}
+         * or {@link io.helidon.common.http.Http.Header}.
+         *
+         * @param builder builder to update
+         * @param name name of the header
+         * @param value value of the header
+         * @see #addHeader(io.helidon.common.http.Http.Header)
+         */
+        @Prototype.BuilderMethod
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, long value) {
+            builder.addHeader(Http.Headers.create(name, value));
         }
     }
 
@@ -115,7 +170,7 @@ class HttpClientConfigSupport {
             }
 
             target.defaultHeadersMap()
-                    .forEach((key, value) -> target.addHeader(Http.Header.create(Http.Header.create(key), value)));
+                    .forEach(target::addHeader);
 
             if (!target.mediaSupports().isEmpty()) {
                 target.mediaContext(MediaContext.builder()

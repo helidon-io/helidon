@@ -19,7 +19,7 @@ package io.helidon.security.examples.google;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -77,7 +77,7 @@ public final class GoogleBuilderMain {
                 .get("/rest/profile", SecurityFeature.authenticate(),
                         (req, res) -> {
                             Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                             res.send("Response from builder based service, you are: \n" + securityContext
                                     .flatMap(SecurityContext::user)
                                     .map(Subject::toString)

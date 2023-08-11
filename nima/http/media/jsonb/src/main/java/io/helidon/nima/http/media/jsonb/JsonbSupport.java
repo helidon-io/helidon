@@ -33,7 +33,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 
-import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_JSON;
+import static io.helidon.common.http.Http.Headers.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
@@ -151,7 +151,7 @@ public class JsonbSupport implements MediaSupport {
         if (type.equals(JSON_OBJECT_TYPE)) {
             return WriterResponse.unsupported();
         }
-        if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
+        if (requestHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);
             }

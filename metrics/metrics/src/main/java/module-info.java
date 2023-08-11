@@ -31,6 +31,7 @@ module io.helidon.metrics {
     requires java.logging;
 
     requires io.helidon.common;
+    requires io.helidon.common.media.type;
     requires transitive io.helidon.metrics.api;
     requires transitive io.helidon.metrics.serviceapi;
 

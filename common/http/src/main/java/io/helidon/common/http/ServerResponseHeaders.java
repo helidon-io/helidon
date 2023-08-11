@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.media.type.MediaType;
 
-import static io.helidon.common.http.Http.Header.EXPIRES;
-import static io.helidon.common.http.Http.Header.LAST_MODIFIED;
-import static io.helidon.common.http.Http.Header.LOCATION;
+import static io.helidon.common.http.Http.HeaderNames.EXPIRES;
+import static io.helidon.common.http.Http.HeaderNames.LAST_MODIFIED;
+import static io.helidon.common.http.Http.HeaderNames.LOCATION;
 
 /**
  * Mutable headers of a server response.
@@ -56,24 +55,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
 
     /**
      * Adds one or more acceptedTypes path document formats
-     * (header {@link Header#ACCEPT_PATCH}).
-     *
-     * @param acceptableMediaTypes media types to add.
-     * @return this instance
-     */
-    default ServerResponseHeaders addAcceptPatches(HttpMediaType... acceptableMediaTypes) {
-        String[] values = new String[acceptableMediaTypes.length];
-        for (int i = 0; i < acceptableMediaTypes.length; i++) {
-            HttpMediaType acceptableMediaType = acceptableMediaTypes[i];
-            values[i] = acceptableMediaType.text();
-        }
-        return add(Header.create(Header.ACCEPT_PATCH,
-                                 values));
-    }
-
-    /**
-     * Adds one or more acceptedTypes path document formats
-     * (header {@link Header#ACCEPT_PATCH}).
+     * (header {@link io.helidon.common.http.Http.HeaderNames#ACCEPT_PATCH}).
      *
      * @param acceptableMediaTypes media types to add.
      * @return this instance
@@ -84,8 +66,8 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             MediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(Header.create(Header.ACCEPT_PATCH,
-                                 values));
+        return add(Http.Headers.create(Http.HeaderNames.ACCEPT_PATCH,
+                                       values));
     }
 
     /**
@@ -131,7 +113,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     ServerResponseHeaders clearCookie(String name);
 
     /**
-     * Sets the value of {@link Header#LAST_MODIFIED} header.
+     * Sets the value of {@link io.helidon.common.http.Http.HeaderNames#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object
      *
@@ -140,11 +122,11 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      */
     default ServerResponseHeaders lastModified(Instant modified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
-        return set(Header.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Http.Headers.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
-     * Sets the value of {@link Header#LAST_MODIFIED} header.
+     * Sets the value of {@link io.helidon.common.http.Http.HeaderNames#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object
      *
@@ -152,11 +134,11 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return this instance
      */
     default ServerResponseHeaders lastModified(ZonedDateTime modified) {
-        return set(Header.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Http.Headers.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
-     * Sets the value of {@link Header#LOCATION} header.
+     * Sets the value of {@link io.helidon.common.http.Http.HeaderNames#LOCATION} header.
      * <p>
      * Used in redirection, or when a new resource has been created.
      *
@@ -164,11 +146,11 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders location(URI location) {
-        return set(Header.create(LOCATION, true, false, location.toASCIIString()));
+        return set(Http.Headers.create(LOCATION, true, false, location.toASCIIString()));
     }
 
     /**
-     * Sets the value of {@link io.helidon.common.http.Http.Header#EXPIRES} header.
+     * Sets the value of {@link io.helidon.common.http.Http.HeaderNames#EXPIRES} header.
      * <p>
      * The date/time after which the response is considered stale.
      *
@@ -176,11 +158,11 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(ZonedDateTime dateTime) {
-        return set(Header.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(Http.Headers.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
-     * Sets the value of {@link io.helidon.common.http.Http.Header#EXPIRES} header.
+     * Sets the value of {@link io.helidon.common.http.Http.HeaderNames#EXPIRES} header.
      * <p>
      * The date/time after which the response is considered stale.
      *
@@ -188,7 +170,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(Instant dateTime) {
-        return set(Header.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
+        return set(Http.Headers.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
                 .format(Http.DateTime.RFC_1123_DATE_TIME)));
     }
 }

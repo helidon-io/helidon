@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
     }
 
     @Override
-    public boolean contains(Http.HeaderValue headerWithValue) {
+    public boolean contains(Http.Header headerWithValue) {
         return headers.contains(headerWithValue);
     }
 
     @Override
-    public Http.HeaderValue get(HeaderName name) {
+    public Http.Header get(HeaderName name) {
         return headers.get(name);
     }
 
@@ -77,7 +77,7 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
         }
         List<HttpMediaType> acceptedTypes;
 
-        List<String> acceptValues = all(Http.Header.ACCEPT, List::of);
+        List<String> acceptValues = all(Http.HeaderNames.ACCEPT, List::of);
         if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.value().equals(acceptValues.get(0))) {
             acceptedTypes = HUC_ACCEPT_DEFAULT_TYPES;
         } else {
@@ -97,7 +97,7 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
     }
 
     @Override
-    public Iterator<Http.HeaderValue> iterator() {
+    public Iterator<Http.Header> iterator() {
         return headers.iterator();
     }
 

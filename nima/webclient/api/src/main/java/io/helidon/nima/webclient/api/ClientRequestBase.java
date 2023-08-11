@@ -53,8 +53,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Helidon user agent request header.
      */
-    public static final Http.HeaderValue USER_AGENT_HEADER = Http.Header.create(Http.Header.USER_AGENT,
-                                                                                "Helidon " + Version.VERSION);
+    public static final Http.Header USER_AGENT_HEADER = Http.Headers.create(Http.HeaderNames.USER_AGENT,
+                                                                            "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
 
     private final Map<String, String> pathParams = new HashMap<>();
@@ -152,14 +152,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
-    public T header(Http.HeaderValue header) {
+    public T header(Http.Header header) {
         this.headers.set(header);
         return identity();
     }
 
     @Override
     public T headers(Headers headers) {
-        for (Http.HeaderValue header : headers) {
+        for (Http.Header header : headers) {
             this.headers.add(header);
         }
         return identity();

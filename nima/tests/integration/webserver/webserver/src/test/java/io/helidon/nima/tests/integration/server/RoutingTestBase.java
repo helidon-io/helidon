@@ -21,26 +21,25 @@ import java.util.stream.Stream;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
-
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 class RoutingTestBase {
-    private static final Http.HeaderValue MULTI_HANDLER = Http.Header.createCached(
-            Http.Header.create("X-Multi-Handler"), "true");
+    private static final Http.Header MULTI_HANDLER = Http.Headers.createCached(
+            Http.HeaderNames.create("X-Multi-Handler"), "true");
     static Http1Client client;
     // Functions that will be used to execute http webclient shortcut methods
     private static Function<String, Http1ClientRequest> get = x -> client.get(x);

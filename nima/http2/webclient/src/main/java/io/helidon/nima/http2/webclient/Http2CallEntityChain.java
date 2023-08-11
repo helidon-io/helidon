@@ -59,7 +59,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
             entityBytes = entityBytes(entity, headers);
         }
 
-        headers.set(Http.Header.create(Http.Header.CONTENT_LENGTH, entityBytes.length));
+        headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, entityBytes.length));
 
         ClientUri uri = serviceRequest.uri();
 

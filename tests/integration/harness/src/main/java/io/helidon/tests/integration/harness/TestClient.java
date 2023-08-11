@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.jsonp.JsonpSupport;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientRequest;
@@ -154,7 +154,7 @@ public class TestClient {
      */
     public JsonObject callServiceAndGetRawData(String service, String method, Map<String, String> params) {
         Http1ClientRequest rb = clientGetBuilderWithPath(service, method);
-        rb.headers().accept(HttpMediaType.APPLICATION_JSON);
+        rb.headers().accept(MediaTypes.APPLICATION_JSON);
         return callService(rb, params);
     }
 

@@ -56,7 +56,7 @@ public class UserFilterTest {
         }
 
         try (Http1ClientResponse response = client.get()
-                                                  .header(Http.Header.COOKIE, "Unauthenticated-User-Alias=Foo")
+                                                  .header(Http.HeaderNames.COOKIE, "Unauthenticated-User-Alias=Foo")
                                                   .request()) {
             assertThat(response.entity().as(String.class), is("Foo"));
         }

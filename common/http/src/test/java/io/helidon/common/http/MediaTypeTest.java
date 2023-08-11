@@ -97,9 +97,9 @@ class MediaTypeTest {
     @Test
     void asPredicate() {
         assertThat(HttpMediaType.create("application/json").test(MediaTypes.APPLICATION_JSON), is(true));
-        assertThat(HttpMediaType.JSON_UTF_8.test(MediaTypes.create("application/json")), is(true));
+        assertThat(HttpMediaTypes.JSON_UTF_8.test(MediaTypes.create("application/json")), is(true));
         assertThat(HttpMediaType.create("application/*").test(MediaTypes.APPLICATION_JSON), is(true));
-        assertThat(HttpMediaType.JSON_UTF_8.test(MediaTypes.create("application/*")), is(true));
+        assertThat(HttpMediaTypes.JSON_UTF_8.test(MediaTypes.create("application/*")), is(true));
 
         assertThat(HttpMediaType.create(MediaTypes.APPLICATION_JSON).withCharset("UTF-8")
                            .test(MediaTypes.create("application/json")), is(true));
@@ -107,12 +107,12 @@ class MediaTypeTest {
 
     @Test
     void jsonPredicate() {
-        assertThat(HttpMediaType.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/json"))), is(true));
-        assertThat(HttpMediaType.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/javascript"))),
+        assertThat(HttpMediaTypes.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/json"))), is(true));
+        assertThat(HttpMediaTypes.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/javascript"))),
                    is(false));
-        assertThat(HttpMediaType.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/manifest+json"))),
+        assertThat(HttpMediaTypes.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/manifest+json"))),
                    is(true));
-        assertThat(HttpMediaType.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/manifest"))), is(false));
+        assertThat(HttpMediaTypes.JSON_PREDICATE.test(HttpMediaType.create(MediaTypes.create("application/manifest"))), is(false));
     }
 
     @Test

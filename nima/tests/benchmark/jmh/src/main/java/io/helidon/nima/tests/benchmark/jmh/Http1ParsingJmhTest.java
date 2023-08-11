@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.nima.webserver.http1.Http1Headers;
@@ -96,8 +96,8 @@ public class Http1ParsingJmhTest {
 
         HttpPrologue httpPrologue = prologue.readPrologue();
         WritableHeaders<?> httpHeaders = headers.readHeaders(httpPrologue);
-        boolean hasContent = httpHeaders.contains(Header.CONTENT_LENGTH);
-        String authority = httpHeaders.get(Header.HOST).value();
+        boolean hasContent = httpHeaders.contains(Http.HeaderNames.CONTENT_LENGTH);
+        String authority = httpHeaders.get(Http.HeaderNames.HOST).value();
 
         bh.consume(hasContent);
         bh.consume(authority);

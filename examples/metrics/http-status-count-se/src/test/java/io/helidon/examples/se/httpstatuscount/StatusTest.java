@@ -16,7 +16,7 @@
 package io.helidon.examples.se.httpstatuscount;
 
 import io.helidon.common.http.Http.Status;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -85,7 +85,7 @@ public class StatusTest {
             before[i] = STATUS_COUNTERS[i].getCount();
         }
         try (Http1ClientResponse response = client.get("/greet")
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()) {
             assertThat("Status of /greet", response.status(), is(Status.OK_200));
             String entity = response.as(String.class);
@@ -100,7 +100,7 @@ public class StatusTest {
             before[i] = STATUS_COUNTERS[i].getCount();
         }
         try (Http1ClientResponse response = client.get("/status/" + status.code())
-                .accept(HttpMediaType.APPLICATION_JSON)
+                .accept(MediaTypes.APPLICATION_JSON)
                 .request()) {
             assertThat("Response status", response.status(), is(status));
             checkCounters(status, before);

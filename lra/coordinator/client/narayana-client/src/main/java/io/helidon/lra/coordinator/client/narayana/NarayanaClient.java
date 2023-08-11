@@ -47,8 +47,8 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
  * Narayana LRA coordinator client.
  */
 public class NarayanaClient implements CoordinatorClient {
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.Header.create(LRA.LRA_HTTP_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.Header.create(LRA.LRA_HTTP_RECOVERY_HEADER);
+    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final System.Logger LOGGER = System.getLogger(NarayanaClient.class.getName());
 
@@ -117,7 +117,7 @@ public class NarayanaClient implements CoordinatorClient {
                 }
                 //propagate supported headers from coordinator
                 headers.scan(res.headers().toMap());
-                URI lraId = res.headers().first(Http.Header.LOCATION)
+                URI lraId = res.headers().first(Http.HeaderNames.LOCATION)
                         // TMM doesn't send lraId as LOCATION
                         .or(() -> res.headers().first(LRA_HTTP_CONTEXT_HEADER))
                         .map(URI::create)
@@ -199,8 +199,10 @@ public class NarayanaClient implements CoordinatorClient {
                     .put()
                     .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
                     .headers(h -> {
-                        h.add(Http.Header.createCached(HEADER_LINK, links)); // links are expected either in header
-                        headers.toMap().forEach((name, value) -> h.set(Http.Header.create(name), value)); // header propagation
+                        // links are expected either in header
+                        h.add(Http.Headers.createCached(HEADER_LINK, links));
+                        // header propagation
+                        headers.toMap().forEach((name, value) -> h.set(Http.HeaderNames.create(name), value));
                     });
 
             try (var res = req.submit(links)) {
@@ -331,7 +333,7 @@ public class NarayanaClient implements CoordinatorClient {
 
     private Consumer<ClientRequestHeaders> copyHeaders(PropagatedHeaders headers) {
         return wcHeaders -> {
-            headers.toMap().forEach((key, value) -> wcHeaders.set(Http.Header.create(key), value));
+            headers.toMap().forEach((key, value) -> wcHeaders.set(Http.HeaderNames.create(key), value));
         };
     }
 

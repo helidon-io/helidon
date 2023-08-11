@@ -99,7 +99,7 @@ public final class OutboundOverrideJwtExample {
                                 .get("/hello", (req, res) -> {
 
                                     // This is the token. It should be bearer <signed JWT base64 encoded>
-                                    req.headers().first(Http.Header.AUTHORIZATION)
+                                    req.headers().first(Http.HeaderNames.AUTHORIZATION)
                                             .ifPresent(System.out::println);
 
                                     String username = req.context()

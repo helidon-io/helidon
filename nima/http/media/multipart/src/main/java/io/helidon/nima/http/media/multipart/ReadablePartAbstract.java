@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.nima.http.media.ReadableEntity;
 
 abstract class ReadablePartAbstract implements ReadablePart {
@@ -55,7 +56,7 @@ abstract class ReadablePartAbstract implements ReadablePart {
     @Override
     public HttpMediaType contentType() {
         if (mediaType == null) {
-            mediaType = headers.contentType().orElse(HttpMediaType.PLAINTEXT_UTF_8);
+            mediaType = headers.contentType().orElse(HttpMediaTypes.PLAINTEXT_UTF_8);
         }
         return mediaType;
     }
@@ -78,8 +79,8 @@ abstract class ReadablePartAbstract implements ReadablePart {
     protected abstract void finish();
 
     private void contentDisposition() {
-        if (headers.contains(Http.Header.CONTENT_DISPOSITION)) {
-            this.contentDisposition = ContentDisposition.parse(headers.get(Http.Header.CONTENT_DISPOSITION).value());
+        if (headers.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
+            this.contentDisposition = ContentDisposition.parse(headers.get(Http.HeaderNames.CONTENT_DISPOSITION).value());
         } else {
             this.contentDisposition = ContentDisposition.empty();
         }

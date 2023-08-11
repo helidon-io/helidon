@@ -62,7 +62,7 @@ class Http1HeadersParserTest {
         WritableHeaders<?> headers;
         if (expectsValid) {
             headers = getHeaders(headerName, headerValue, true);
-            String responseHeaderValue = headers.get(Http.Header.create(headerName)).values();
+            String responseHeaderValue = headers.get(Http.HeaderNames.create(headerName)).values();
             // returned header values WhiteSpaces are trimmed so need to be tested with trimmed values
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
@@ -76,7 +76,7 @@ class Http1HeadersParserTest {
     void testHeadersWithValidationDisabled(String headerValue) {
         // retrieve headers without validating
         WritableHeaders<?> headers = getHeaders(CUSTOM_HEADER_NAME, headerValue, false);
-        String responseHeaderValue = headers.get(Http.Header.create(CUSTOM_HEADER_NAME)).values();
+        String responseHeaderValue = headers.get(Http.HeaderNames.create(CUSTOM_HEADER_NAME)).values();
         // returned header values WhiteSpaces are trimmed so need to be tested with trimmed values
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
@@ -116,7 +116,7 @@ class Http1HeadersParserTest {
 
 
     private void testHeader(Headers headers, String header, String... values) {
-        Http.HeaderName headerName = Http.Header.create(header);
+        Http.HeaderName headerName = Http.HeaderNames.create(header);
         assertThat("Headers should contain header: " + headerName.lowerCase(),
                    headers.contains(headerName),
                    is(true));

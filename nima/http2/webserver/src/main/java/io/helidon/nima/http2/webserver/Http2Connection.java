@@ -28,10 +28,8 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.nima.http2.ConnectionFlowControl;
@@ -533,9 +531,9 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (upgradeHeaders != null) {
             // initial request from outside
-            Headers httpHeaders = upgradeHeaders.httpHeaders();
-            boolean hasEntity = httpHeaders.contains(Header.CONTENT_LENGTH)
-                    || httpHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            io.helidon.common.http.Headers httpHeaders = upgradeHeaders.httpHeaders();
+            boolean hasEntity = httpHeaders.contains(HeaderNames.CONTENT_LENGTH)
+                    || httpHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
             // we now have all information needed to execute
             Http2Stream stream = stream(1).stream();
             stream.prologue(upgradePrologue);

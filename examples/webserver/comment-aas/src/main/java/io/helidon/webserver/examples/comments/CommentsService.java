@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -43,7 +43,7 @@ public class CommentsService implements HttpService {
 
     private void handleListComments(ServerRequest req, ServerResponse resp) {
         String topic = req.path().pathParameters().value("topic");
-        resp.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+        resp.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
         resp.send(listComments(topic));
     }
 

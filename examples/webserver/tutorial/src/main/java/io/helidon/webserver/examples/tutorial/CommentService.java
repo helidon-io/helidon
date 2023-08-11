@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.nima.webserver.http.HttpRules;
 import io.helidon.nima.webserver.http.HttpService;
 import io.helidon.nima.webserver.http.ServerRequest;
@@ -42,7 +42,7 @@ class CommentService implements HttpService {
 
     private void getComments(ServerRequest req, ServerResponse resp) {
         String roomId = req.path().pathParameters().value("room-id");
-        resp.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+        resp.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
         resp.send(getComments(roomId));
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.HeaderName;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
@@ -66,13 +66,13 @@ public class ProducedRouteTest {
     static final String UNFILTERED_PATH = "/unfiltered";
 
     static final String COOL_HEADER = "Cool-Header";
-    static final HeaderName COOL_HEADER_NAME = Header.create(COOL_HEADER);
+    static final HeaderName COOL_HEADER_NAME = Http.HeaderNames.create(COOL_HEADER);
     static final String COOL_VALUE = "cool value";
     static final String COOLER_HEADER = "Cooler-Header";
-    static final HeaderName COOLER_HEADER_NAME = Header.create(COOLER_HEADER);
+    static final HeaderName COOLER_HEADER_NAME = Http.HeaderNames.create(COOLER_HEADER);
     static final String COOLER_VALUE = "cooler value";
     static final String COOLEST_HEADER = "Coolest-Header";
-    static final HeaderName COOLEST_HEADER_NAME = Header.create(COOLEST_HEADER);
+    static final HeaderName COOLEST_HEADER_NAME = Http.HeaderNames.create(COOLEST_HEADER);
     static final String COOLEST_VALUE = "coolest value";
 
     @Test

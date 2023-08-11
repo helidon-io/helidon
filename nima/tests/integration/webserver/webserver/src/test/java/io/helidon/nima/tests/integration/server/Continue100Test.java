@@ -15,16 +15,6 @@
  */
 package io.helidon.nima.tests.integration.server;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.PathMatchers;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRouting;
-import org.junit.jupiter.api.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,6 +25,17 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+
+import io.helidon.common.http.Http;
+import io.helidon.common.http.PathMatchers;
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.nima.testing.junit5.webserver.ServerTest;
+import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webserver.WebServer;
+import io.helidon.nima.webserver.http.Handler;
+import io.helidon.nima.webserver.http.HttpRouting;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,20 +50,20 @@ class Continue100Test {
 
     private static Handler anyHandler = (req, res) -> {
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.Header.create("test-fail-before-read"))
+                .first(Http.HeaderNames.create("test-fail-before-read"))
                 .orElse("false"))) {
             res.status(Http.Status.EXPECTATION_FAILED_417).send();
             return;
         }
 
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.Header.create("test-throw-before-read"))
+                .first(Http.HeaderNames.create("test-throw-before-read"))
                 .orElse("false"))) {
             throw new RuntimeException("BOOM!!!");
         }
 
         Optional<String> blockId = req.headers()
-                .first(Http.Header.create("test-block-id"));
+                .first(Http.HeaderNames.create("test-block-id"));
         // Block request content dump if blocker assigned
         blockId.map(BLOCKER_MAP::get)
                 .orElse(CompletableFuture.completedFuture(""))
@@ -72,7 +73,7 @@ class Continue100Test {
         String s = req.content().as(String.class);
 
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.Header.create("test-throw-after-read"))
+                .first(Http.HeaderNames.create("test-throw-after-read"))
                 .orElse("false"))) {
             throw new RuntimeException("BOOM!!!");
         }
@@ -86,10 +87,10 @@ class Continue100Test {
                         PathMatchers.exact("/redirect"), (req, res) ->
 
                                 res.status(Http.Status.MOVED_PERMANENTLY_301)
-                                        .header(Http.Header.LOCATION, "/")
+                                        .header(Http.HeaderNames.LOCATION, "/")
                                         // force 301 to not use chunked encoding
                                         // https://github.com/helidon-io/helidon/issues/5713
-                                        .header(Http.Header.CONTENT_LENGTH, "0")
+                                        .header(Http.HeaderNames.CONTENT_LENGTH, "0")
                                         .send()
                 )
                 .route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),

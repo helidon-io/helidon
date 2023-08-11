@@ -83,7 +83,7 @@ public class PrometheusSupportTest {
     public void simpleCall() {
         try (Http1ClientResponse response = client.get("/metrics").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
+            assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null),
                     StringStartsWith.startsWith("text/plain"));
             String body = response.as(String.class);
             assertThat(body, containsString("# HELP beta"));
@@ -99,7 +99,7 @@ public class PrometheusSupportTest {
     @Test
     public void doubleCall() {
         try (Http1ClientResponse response = client.get("/metrics").request()) {
-            assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null),
+            assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null),
                     StringStartsWith.startsWith("text/plain"));
             String body = response.as(String.class);
             assertThat(body, containsString("alpha_total{method=\"bar\",} 6.0"));

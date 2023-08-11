@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.nima.tests.integration.server;
 
 import java.util.HashMap;
@@ -20,8 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
@@ -62,7 +62,7 @@ class FormParamsSupportTest {
     void urlEncodedTest() {
         String result = client.method(Http.Method.PUT)
                 .path("/params")
-                .header(Header.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
+                .header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
                 .submit("key1=val+1&key2=val2_1&key2=val2_2")
                 .as(String.class);
 
@@ -74,7 +74,7 @@ class FormParamsSupportTest {
     void plainTextTest() {
         String result = client.method(Http.Method.PUT)
                 .path("/params")
-                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN)
                 .submit("key1=val 1\nkey2=val2_1\nkey2=val2_2")
                 .as(String.class);
         assertThat(result, containsString("key1=[val 1]"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,9 @@ public class Main {
 
         Config config = Config.create();
 
-        CoordinatorService coordinatorService = CoordinatorService.builder().build();
+        CoordinatorService coordinatorService = CoordinatorService.builder()
+                .config(config.get(CoordinatorService.CONFIG_PREFIX))
+                .build();
 
         WebServer server = WebServer.builder()
                 .routing(it -> updateRouting(it, config, coordinatorService))

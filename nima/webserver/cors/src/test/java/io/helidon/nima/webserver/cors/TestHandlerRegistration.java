@@ -23,12 +23,12 @@ import io.helidon.nima.webclient.http1.Http1Client;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.common.http.Http.Header.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.common.http.Http.Header.ORIGIN;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.common.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.common.http.Http.HeaderNames.ORIGIN;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;

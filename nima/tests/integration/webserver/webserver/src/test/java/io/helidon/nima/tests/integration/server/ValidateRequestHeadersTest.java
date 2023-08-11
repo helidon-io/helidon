@@ -82,7 +82,7 @@ class ValidateRequestHeadersTest {
     @MethodSource("requestHeaders")
     void testHeadersFromResponse(String headerName, String headerValue, boolean expectsValid) {
         Http1ClientRequest request = client.get("/test");
-        request.header(Http.Header.create(Http.Header.create(headerName), headerValue));
+        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
         HttpClientResponse response = request.submit("any");
         if (expectsValid) {
             assertThat(response.status(), is(Http.Status.OK_200));

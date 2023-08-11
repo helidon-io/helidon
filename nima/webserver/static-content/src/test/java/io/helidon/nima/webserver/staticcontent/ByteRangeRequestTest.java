@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ package io.helidon.nima.webserver.staticcontent;
 
 import java.util.List;
 
+import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.nima.webserver.http.ServerRequest;
 import io.helidon.nima.webserver.http.ServerResponse;
 
@@ -33,7 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ByteRangeRequestTest {
     @Test
     void testFromUntilEnd() {
-        HeaderValue header = Header.create(Header.RANGE, "bytes=49-");
+        Http.Header header = Http.Headers.create(HeaderNames.RANGE, "bytes=49-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -48,7 +49,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testFromUntil() {
-        HeaderValue header = Header.create(Header.RANGE, "bytes=49-49");
+        Http.Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=49-49");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -63,7 +64,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testLast() {
-        HeaderValue header = Header.create(Header.RANGE, "bytes=-1");
+        Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=-1");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -78,7 +79,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeMultiValue() {
-        HeaderValue header = Header.create(Header.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
+        Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -103,7 +104,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeSingleValue() {
-        HeaderValue header = Header.create(Header.RANGE, "bytes=-1, bytes=47-48, s bytes=0-");
+        Http.Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=-1, bytes=47-48, s bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 

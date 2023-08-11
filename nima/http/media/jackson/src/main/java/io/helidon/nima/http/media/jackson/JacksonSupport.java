@@ -34,7 +34,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
-import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_JSON;
+import static io.helidon.common.http.Http.Headers.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
@@ -179,7 +179,7 @@ public class JacksonSupport implements MediaSupport {
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (requestHeaders.contains(Http.Header.CONTENT_TYPE)) {
+        if (requestHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 if (objectMapper.canSerialize(type.rawType())) {
                     return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);

@@ -54,7 +54,7 @@ class GreetEndpoint {
     @FaultTolerance.Bulkhead(name = "bulkhead-it")
     String greetNamed(@Endpoint.PathParam("name") String name,
                       @Endpoint.QueryParam(value = "throw", defaultValue = "false") String shouldThrow,
-                      @Endpoint.HeaderParam(Http.Header.HOST_STRING) String hostHeader) {
+                      @Endpoint.HeaderParam(Http.HeaderNames.HOST_STRING) String hostHeader) {
         if ("true".equalsIgnoreCase(shouldThrow)) {
             throw new InjectionException("Failed on purpose");
         }

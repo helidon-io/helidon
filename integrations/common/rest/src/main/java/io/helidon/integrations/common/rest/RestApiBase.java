@@ -226,7 +226,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected void addHeaders(HttpClientRequest request, Map<String, List<String>> headers) {
         request.headers(clientHeaders -> {
-            headers.forEach((key, value) -> clientHeaders.set(Http.Header.create(key), value));
+            headers.forEach((key, value) -> clientHeaders.set(Http.HeaderNames.create(key), value));
         });
     }
 

@@ -52,7 +52,7 @@ class WebClientAuthenticationService implements WebClientService {
         if (username == null || password == null) {
             return response;
         }
-        String challenge = response.headers().first(Http.Header.WWW_AUTHENTICATE).orElse(null);
+        String challenge = response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE).orElse(null);
         if (challenge == null) {
             return response;
         }
@@ -62,7 +62,7 @@ class WebClientAuthenticationService implements WebClientService {
         if (atz == null) {
             return response;
         }
-        request.headers().add(Http.Header.AUTHORIZATION, atz);
+        request.headers().add(Http.HeaderNames.AUTHORIZATION, atz);
         return chain.proceed(request);
     }
 }

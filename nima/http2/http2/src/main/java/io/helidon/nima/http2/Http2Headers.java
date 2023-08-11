@@ -30,7 +30,7 @@ import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.ServerRequestHeaders;
 import io.helidon.common.http.WritableHeaders;
 
@@ -51,27 +51,27 @@ public class Http2Headers {
     /**
      * Header name of the authority pseudo header.
      */
-    public static final HeaderName AUTHORITY_NAME = Header.create(AUTHORITY);
+    public static final HeaderName AUTHORITY_NAME = HeaderNames.create(AUTHORITY);
     static final String METHOD = ":method";
     /**
      * Header name of the method pseudo header.
      */
-    public static final HeaderName METHOD_NAME = Header.create(METHOD);
+    public static final HeaderName METHOD_NAME = HeaderNames.create(METHOD);
     static final String PATH = ":path";
     /**
      * Header name of the path pseudo header.
      */
-    public static final HeaderName PATH_NAME = Header.create(PATH);
+    public static final HeaderName PATH_NAME = Http.HeaderNames.create(PATH);
     static final String SCHEME = ":scheme";
     /**
      * Header name of the scheme pseudo header.
      */
-    public static final HeaderName SCHEME_NAME = Header.create(SCHEME);
+    public static final HeaderName SCHEME_NAME = Http.HeaderNames.create(SCHEME);
     static final String STATUS = ":status";
     /**
      * Header name of the status pseudo header.
      */
-    public static final HeaderName STATUS_NAME = Header.create(STATUS);
+    public static final HeaderName STATUS_NAME = HeaderNames.create(STATUS);
     static final DynamicHeader EMPTY_HEADER_RECORD = new DynamicHeader(null, null, 0);
     private static final System.Logger LOGGER = System.getLogger(Http2Headers.class.getName());
     private static final String TRAILERS = "trailers";
@@ -294,7 +294,7 @@ public class Http2Headers {
         if (!pseudoHeaders.hasStatus()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :status pseudo header");
         }
-        if (headers.contains(Header.CONNECTION)) {
+        if (headers.contains(HeaderNames.CONNECTION)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Connection in response headers");
         }
         if (pseudoHeaders.hasScheme()) {
@@ -317,11 +317,11 @@ public class Http2Headers {
         if (pseudoHeaders.hasStatus()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":status in request headers");
         }
-        if (headers.contains(Header.CONNECTION)) {
+        if (headers.contains(Http.HeaderNames.CONNECTION)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Connection in request headers");
         }
-        if (headers.contains(Header.TE)) {
-            List<String> values = headers.all(Header.TE, List::of);
+        if (headers.contains(HeaderNames.TE)) {
+            List<String> values = headers.all(HeaderNames.TE, List::of);
             if (!values.equals(List.of(TRAILERS))) {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, "te in headers with other value than trailers: \n"
                         + BufferData.create(values.toString()).debugDataHex());
@@ -431,7 +431,7 @@ public class Http2Headers {
             writeHeader(huffman, table, growingBuffer, AUTHORITY_NAME, pseudoHeaders.authority, true, false);
         }
 
-        for (HeaderValue header : headers) {
+        for (Header header : headers) {
             String value = header.value();
             boolean shouldIndex = !header.changing();
             boolean neverIndex = header.sensitive();
@@ -508,7 +508,7 @@ public class Http2Headers {
                                              "Received invalid pseudo-header field (or explicit value instead of indexed)\n"
                                                      + BufferData.create(name).debugDataHex());
                 }
-                headerName = Header.create(name);
+                headerName = Http.HeaderNames.create(name);
             } else {
                 headerName = record.headerName();
             }
@@ -572,10 +572,10 @@ public class Http2Headers {
             }
 
             if (!isPseudoHeader) {
-                headers.add(Header.create(headerName,
-                                          !approach.addToIndex,
-                                          approach.neverIndex,
-                                          value));
+                headers.add(Http.Headers.create(headerName,
+                                                !approach.addToIndex,
+                                                approach.neverIndex,
+                                                value));
             }
             return isPseudoHeader;
         }
@@ -626,7 +626,7 @@ public class Http2Headers {
         removeFromHeadersAddToPseudo(headers, pseudoHeaders::scheme, SCHEME_NAME);
         removeFromHeadersAddToPseudo(headers, pseudoHeaders::method, METHOD_NAME);
 
-        headers.remove(Header.HOST, it -> {
+        headers.remove(HeaderNames.HOST, it -> {
             if (!pseudoHeaders.hasAuthority()) {
                 pseudoHeaders.authority(it.value());
             }
@@ -737,53 +737,53 @@ public class Http2Headers {
         STATUS_400(12, STATUS_NAME, "400"),
         STATUS_404(13, STATUS_NAME, "404"),
         STATUS_500(14, STATUS_NAME, "500"),
-        ACCEPT_CHARSET(15, Header.ACCEPT_CHARSET),
-        ACCEPT_ENCODING(16, Header.ACCEPT_ENCODING, "gzip, deflate", false),
-        ACCEPT_LANGUAGE(17, Header.ACCEPT_LANGUAGE),
-        ACCEPT_RANGES(18, Header.ACCEPT_RANGES),
-        ACCEPT(19, Header.ACCEPT),
-        ACCESS_CONTROL_ALLOW_ORIGIN(20, Header.ACCESS_CONTROL_ALLOW_ORIGIN),
-        AGE(21, Header.AGE),
-        ALLOW(22, Header.ALLOW),
-        AUTHORIZATION(23, Header.AUTHORIZATION),
-        CACHE_CONTROL(24, Header.CACHE_CONTROL),
-        CONTENT_DISPOSITION(25, Header.CONTENT_DISPOSITION),
-        CONTENT_ENCODING(26, Header.CONTENT_ENCODING),
-        CONTENT_LANGUAGE(27, Header.CONTENT_LANGUAGE),
-        CONTENT_LENGTH(28, Header.CONTENT_LENGTH),
-        CONTENT_LOCATION(29, Header.CONTENT_LOCATION),
-        CONTENT_RANGE(30, Header.CONTENT_RANGE),
-        CONTENT_TYPE(31, Header.CONTENT_TYPE),
-        COOKIE(32, Header.COOKIE),
-        DATE(33, Header.DATE),
-        ETAG(34, Header.ETAG),
-        EXPECT(35, Header.EXPECT),
-        EXPIRES(36, Header.EXPIRES),
-        FROM(37, Header.FROM),
-        HOST(38, Header.HOST),
-        IF_MATCH(39, Header.IF_MATCH),
-        IF_MODIFIED_SINCE(40, Header.IF_MODIFIED_SINCE),
-        IF_NONE_MATCH(41, Header.IF_NONE_MATCH),
-        IF_RANGE(42, Header.IF_RANGE),
-        IF_UNMODIFIED_SINCE(43, Header.IF_UNMODIFIED_SINCE),
-        LAST_MODIFIED(44, Header.LAST_MODIFIED),
-        LINK(45, Header.LINK),
-        LOCATION(46, Header.LOCATION),
-        MAX_FORWARDS(47, Header.MAX_FORWARDS),
-        PROXY_AUTHENTICATE(48, Header.PROXY_AUTHENTICATE),
-        PROXY_AUTHORIZATION(49, Header.PROXY_AUTHORIZATION),
-        RANGE(50, Header.CONTENT_LOCATION),
-        REFERER(51, Header.REFERER),
-        REFRESH(52, Header.REFRESH),
-        RETRY_AFTER(53, Header.RETRY_AFTER),
-        SERVER(54, Header.SERVER),
-        SET_COOKIE(55, Header.SET_COOKIE),
-        STRICT_TRANSPORT_SECURITY(56, Header.STRICT_TRANSPORT_SECURITY),
-        TRANSFER_ENCODING(57, Header.TRANSFER_ENCODING),
-        USER_AGENT(58, Header.USER_AGENT),
-        VARY(59, Header.VARY),
-        VIA(60, Header.VIA),
-        WWW_AUTHENTICATE(61, Header.WWW_AUTHENTICATE);
+        ACCEPT_CHARSET(15, HeaderNames.ACCEPT_CHARSET),
+        ACCEPT_ENCODING(16, Http.HeaderNames.ACCEPT_ENCODING, "gzip, deflate", false),
+        ACCEPT_LANGUAGE(17, HeaderNames.ACCEPT_LANGUAGE),
+        ACCEPT_RANGES(18, HeaderNames.ACCEPT_RANGES),
+        ACCEPT(19, HeaderNames.ACCEPT),
+        ACCESS_CONTROL_ALLOW_ORIGIN(20, HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN),
+        AGE(21, HeaderNames.AGE),
+        ALLOW(22, Http.HeaderNames.ALLOW),
+        AUTHORIZATION(23, Http.HeaderNames.AUTHORIZATION),
+        CACHE_CONTROL(24, HeaderNames.CACHE_CONTROL),
+        CONTENT_DISPOSITION(25, Http.HeaderNames.CONTENT_DISPOSITION),
+        CONTENT_ENCODING(26, Http.HeaderNames.CONTENT_ENCODING),
+        CONTENT_LANGUAGE(27, Http.HeaderNames.CONTENT_LANGUAGE),
+        CONTENT_LENGTH(28, HeaderNames.CONTENT_LENGTH),
+        CONTENT_LOCATION(29, HeaderNames.CONTENT_LOCATION),
+        CONTENT_RANGE(30, Http.HeaderNames.CONTENT_RANGE),
+        CONTENT_TYPE(31, Http.HeaderNames.CONTENT_TYPE),
+        COOKIE(32, Http.HeaderNames.COOKIE),
+        DATE(33, HeaderNames.DATE),
+        ETAG(34, HeaderNames.ETAG),
+        EXPECT(35, HeaderNames.EXPECT),
+        EXPIRES(36, HeaderNames.EXPIRES),
+        FROM(37, HeaderNames.FROM),
+        HOST(38, Http.HeaderNames.HOST),
+        IF_MATCH(39, Http.HeaderNames.IF_MATCH),
+        IF_MODIFIED_SINCE(40, HeaderNames.IF_MODIFIED_SINCE),
+        IF_NONE_MATCH(41, HeaderNames.IF_NONE_MATCH),
+        IF_RANGE(42, Http.HeaderNames.IF_RANGE),
+        IF_UNMODIFIED_SINCE(43, HeaderNames.IF_UNMODIFIED_SINCE),
+        LAST_MODIFIED(44, Http.HeaderNames.LAST_MODIFIED),
+        LINK(45, HeaderNames.LINK),
+        LOCATION(46, HeaderNames.LOCATION),
+        MAX_FORWARDS(47, Http.HeaderNames.MAX_FORWARDS),
+        PROXY_AUTHENTICATE(48, HeaderNames.PROXY_AUTHENTICATE),
+        PROXY_AUTHORIZATION(49, Http.HeaderNames.PROXY_AUTHORIZATION),
+        RANGE(50, Http.HeaderNames.CONTENT_LOCATION),
+        REFERER(51, Http.HeaderNames.REFERER),
+        REFRESH(52, Http.HeaderNames.REFRESH),
+        RETRY_AFTER(53, Http.HeaderNames.RETRY_AFTER),
+        SERVER(54, HeaderNames.SERVER),
+        SET_COOKIE(55, HeaderNames.SET_COOKIE),
+        STRICT_TRANSPORT_SECURITY(56, HeaderNames.STRICT_TRANSPORT_SECURITY),
+        TRANSFER_ENCODING(57, Http.HeaderNames.TRANSFER_ENCODING),
+        USER_AGENT(58, Http.HeaderNames.USER_AGENT),
+        VARY(59, HeaderNames.VARY),
+        VIA(60, HeaderNames.VIA),
+        WWW_AUTHENTICATE(61, Http.HeaderNames.WWW_AUTHENTICATE);
 
         /**
          * Maximal index of the static table of headers.

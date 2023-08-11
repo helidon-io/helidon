@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.cors;
 
 import java.util.AbstractMap;
@@ -29,7 +30,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.cors.CorsSupportHelper.RequestType;
 
 class LogHelper {
@@ -77,26 +78,26 @@ class LogHelper {
         List<String> factorsWhyCrossHost = new ArrayList<>();
 
         if (originOpt.isEmpty()) {
-            reasonsWhyNormal.add("header " + Header.ORIGIN + " is absent");
+            reasonsWhyNormal.add("header " + HeaderNames.ORIGIN + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", Header.ORIGIN, originOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.ORIGIN, originOpt.get()));
         }
 
         if (hostOpt.isEmpty()) {
-            reasonsWhyNormal.add("header " + Header.HOST + " is absent");
+            reasonsWhyNormal.add("header " + HeaderNames.HOST + " is absent");
         } else {
-            factorsWhyCrossHost.add(String.format("header %s is present (%s)", Header.HOST, hostOpt.get()));
+            factorsWhyCrossHost.add(String.format("header %s is present (%s)", HeaderNames.HOST, hostOpt.get()));
         }
 
         if (hostOpt.isPresent() && originOpt.isPresent()) {
             String partOfOriginMatchingHost = "://" + hostOpt.get();
             if (originOpt.get()
                     .contains(partOfOriginMatchingHost)) {
-                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", Header.ORIGIN,
-                                                   originOpt.get(), Header.HOST, hostOpt.get()));
+                reasonsWhyNormal.add(String.format("header %s '%s' matches header %s '%s'", HeaderNames.ORIGIN,
+                                                   originOpt.get(), HeaderNames.HOST, hostOpt.get()));
             } else {
-                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", Header.ORIGIN,
-                                                      originOpt.get(), Header.HOST, hostOpt.get()));
+                factorsWhyCrossHost.add(String.format("header %s '%s' does not match header %s '%s'", HeaderNames.ORIGIN,
+                                                      originOpt.get(), HeaderNames.HOST, hostOpt.get()));
             }
         }
 
@@ -128,17 +129,18 @@ class LogHelper {
         List<String> reasonsWhyCORS = new ArrayList<>(); // any reason is determinative
         List<String> factorsWhyPreflight = new ArrayList<>(); // factors contribute but, individually, do not determine
 
-        if (!methodName.equalsIgnoreCase(Http.Method.OPTIONS.name())) {
-            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Http.Method.OPTIONS.name()));
+        if (!methodName.equalsIgnoreCase(Http.Method.OPTIONS.text())) {
+            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Http.Method.OPTIONS.text()));
         } else {
             factorsWhyPreflight.add(String.format("method is %s", methodName));
         }
 
         if (!requestContainsAccessControlRequestMethodHeader) {
-            reasonsWhyCORS.add(String.format("header %s is absent", Header.ACCESS_CONTROL_REQUEST_METHOD.defaultCase()));
+            reasonsWhyCORS.add(String.format("header %s is absent", HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase()));
         } else {
-            factorsWhyPreflight.add(String.format("header %s is present(%s)", Header.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
-                                                  requestAdapter.firstHeader(Header.ACCESS_CONTROL_REQUEST_METHOD)));
+            factorsWhyPreflight.add(String.format("header %s is present(%s)",
+                                                  HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(),
+                                                  requestAdapter.firstHeader(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD)));
         }
 
         if (CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL)) {

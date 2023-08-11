@@ -100,7 +100,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param header header to set
      * @return updated request
      */
-    T header(Http.HeaderValue header);
+    T header(Http.Header header);
 
     /**
      * Set an HTTP header.
@@ -110,7 +110,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     default T header(Http.HeaderName name, String... values) {
-        return header(Http.Header.create(name, true, false, values));
+        return header(Http.Headers.create(name, true, false, values));
     }
 
     /**
@@ -121,7 +121,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     default T header(Http.HeaderName name, List<String> values) {
-        return header(Http.Header.create(name, values));
+        return header(Http.Headers.create(name, values));
     }
 
     /**
