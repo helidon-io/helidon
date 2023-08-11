@@ -241,7 +241,7 @@ release_build(){
 
     # Perform deployment
     mvn ${MAVEN_ARGS} clean deploy \
-       -Pdeploy,release,archetypes \
+       -Prelease,archetypes \
       -DskipTests \
       -DstagingRepositoryId="${STAGING_REPO_ID}" \
       -DretryFailedDeploymentCount="10"
