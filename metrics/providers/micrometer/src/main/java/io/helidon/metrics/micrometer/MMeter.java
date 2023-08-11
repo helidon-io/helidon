@@ -16,6 +16,7 @@
 package io.helidon.metrics.micrometer;
 
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.function.Function;
 
 import io.micrometer.core.instrument.Meter;
@@ -54,6 +55,23 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         return io.helidon.metrics.api.Meter.Type.valueOf(delegate.getId()
                                                                  .getType()
                                                                  .name());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MMeter<?> mMeter = (MMeter<?>) o;
+        return Objects.equals(delegate, mMeter.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate);
     }
 
     protected M delegate() {
@@ -124,7 +142,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         @Override
-        public Iterable<? extends io.helidon.metrics.api.Tag> tags() {
+        public Iterable<io.helidon.metrics.api.Tag> tags() {
             return new Iterable<>() {
 
                 private final Iterator<Tag> iter = delegate.getTags().iterator();
@@ -143,6 +161,23 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
                     };
                 }
             };
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Id id = (Id) o;
+            return Objects.equals(delegate, id.delegate);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(delegate);
         }
     }
 }

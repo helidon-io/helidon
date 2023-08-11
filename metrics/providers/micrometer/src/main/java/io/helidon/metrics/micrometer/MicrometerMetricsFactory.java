@@ -52,9 +52,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
         micrometerGlobalRegistry = Metrics.globalRegistry;
         this.metricsConfig = metricsConfig;
+
         globalMeterRegistry = LazyValue.create(() -> {
             ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
-            return MMeterRegistry.create(Metrics.globalRegistry);
+            return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig);
         });
     }
 
@@ -139,7 +140,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public Tag tagOf(String key, String value) {
+    public Tag tagCreate(String key, String value) {
         return MTag.of(key, value);
     }
 

@@ -151,7 +151,7 @@ public interface MetricsFactory {
      * @param value tag value
      * @return new {@code Tag} instance
      */
-    Tag tagOf(String key, String value);
+    Tag tagCreate(String key, String value);
 
     /**
      * Returns an empty histogram snapshot with the specified aggregate values.

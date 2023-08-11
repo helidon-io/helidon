@@ -56,7 +56,7 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public Tag tagOf(String key, String value) {
+    public Tag tagCreate(String key, String value) {
         return new NoOpTag(key, value);
     }
 

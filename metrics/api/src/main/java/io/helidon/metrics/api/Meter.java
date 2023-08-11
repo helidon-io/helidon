@@ -78,7 +78,7 @@ public interface Meter extends Wrapped {
          *
          * @return meter tags
          */
-        Iterable<? extends Tag> tags();
+        Iterable<Tag> tags();
 
         /**
          * Unwraps the ID as the specified type.

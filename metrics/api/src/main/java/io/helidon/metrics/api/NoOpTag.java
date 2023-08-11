@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 
 record NoOpTag(String key, String value) implements Tag {
 
-    static Tag of(String key, String value) {
+    static Tag create(String key, String value) {
         return new NoOpTag(key, value);
     }
 
@@ -42,7 +42,7 @@ record NoOpTag(String key, String value) implements Tag {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                Tag result = Tag.of(keysAndValues[2 * slot], keysAndValues[2 * slot + 1]);
+                Tag result = Tag.create(keysAndValues[2 * slot], keysAndValues[2 * slot + 1]);
                 slot++;
                 return result;
             }

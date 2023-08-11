@@ -41,7 +41,7 @@ public interface Tag extends Wrapped {
      * @param value the tag's value
      * @return new {@code Tag} representing the key and value
      */
-    static Tag of(String key, String value) {
-        return MetricsFactory.getInstance().tagOf(key, value);
+    static Tag create(String key, String value) {
+        return MetricsFactory.getInstance().tagCreate(key, value);
     }
 }

@@ -16,6 +16,8 @@
 package io.helidon.metrics.micrometer;
 
 import java.util.Iterator;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
@@ -95,5 +97,29 @@ class MTag implements io.helidon.metrics.api.Tag {
     @Override
     public String value() {
         return delegate.getValue();
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", MTag.class.getSimpleName() + "[", "]")
+                .add(key() + "=" + value())
+                .toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MTag mTag = (MTag) o;
+        return Objects.equals(delegate, mTag.delegate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate.hashCode());
     }
 }

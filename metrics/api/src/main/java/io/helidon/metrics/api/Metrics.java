@@ -168,7 +168,7 @@ public interface Metrics {
      * @return new tag
      */
     static Tag tag(String key, String value) {
-        return MetricsFactory.getInstance().tagOf(key, value);
+        return MetricsFactory.getInstance().tagCreate(key, value);
     }
 
     /**
@@ -193,8 +193,8 @@ public interface Metrics {
                     throw new NoSuchElementException();
                 }
                 Tag result = MetricsFactoryManager.getInstance()
-                        .tagOf(tags[slot].key(),
-                               tags[slot].value());
+                        .tagCreate(tags[slot].key(),
+                                   tags[slot].value());
                 slot++;
                 return result;
             }
@@ -226,7 +226,7 @@ public interface Metrics {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                Tag result = Tag.of(keyValuePairs[slot * 2], keyValuePairs[slot * 2 + 1]);
+                Tag result = Tag.create(keyValuePairs[slot * 2], keyValuePairs[slot * 2 + 1]);
                 slot++;
                 return result;
             }
