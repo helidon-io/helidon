@@ -5,9 +5,6 @@
 name: "Snapshot Release"
 
 on:
-  push:
-    branches:
-      - '3.x-snapshot-releases'
   workflow_dispatch:
 
 env:
