@@ -154,7 +154,7 @@ class NoOpMeter implements Meter {
         }
 
         public B tag(String key, String value) {
-            tags.put(key, Tag.of(key, value));
+            tags.put(key, Tag.create(key, value));
             return identity();
         }
 

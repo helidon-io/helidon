@@ -58,7 +58,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered counter; empty if not found
      */
-    default Optional<? extends Counter> getCounter(String name, Iterable<Tag> tags) {
+    default Optional<Counter> getCounter(String name, Iterable<Tag> tags) {
         return get(Counter.class, name, tags);
     }
 
@@ -69,7 +69,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered distribution summary; empty if not found
      */
-    default Optional<? extends DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
+    default Optional<DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
         return get(DistributionSummary.class, name, tags);
     }
 
@@ -80,7 +80,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered gauge; empty if not found
      */
-    default Optional<? extends Gauge> getGauge(String name, Iterable<Tag> tags) {
+    default Optional<Gauge> getGauge(String name, Iterable<Tag> tags) {
         return get(Gauge.class, name, tags);
     }
 
@@ -91,7 +91,7 @@ public interface MeterRegistry extends Wrapped {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered timer; empty if not found
      */
-    default Optional<? extends Timer> getTimer(String name, Iterable<Tag> tags) {
+    default Optional<Timer> getTimer(String name, Iterable<Tag> tags) {
         return get(Timer.class, name, tags);
     }
 

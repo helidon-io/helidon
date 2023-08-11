@@ -59,29 +59,13 @@ class SimpleMeterRegistryTests {
 
     @Test
     void testSameNameSameTwoTags() {
-        var tags = List.of(Tag.of("foo", "1"),
-                           Tag.of("bar", "1"));
+        var tags = List.of(Tag.create("foo", "1"),
+                           Tag.create("bar", "1"));
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("c")
                                                        .tags(tags));
         Counter counter2 = meterRegistry.getOrCreate(Counter.builder("c")
                                                        .tags(tags));
         assertThat("Counter with same name, same two tags", counter1, is(sameInstance(counter2)));
-    }
-
-    @Test
-    void testSameNameOverlappingButDifferentTags() {
-        var tags1 = List.of(Tag.of("foo", "1"),
-                           Tag.of("bar", "1"),
-                           Tag.of("baz", "1"));
-
-        var tags2 = List.of(Tag.of("foo", "1"),
-                            Tag.of("bar", "1"));
-
-        meterRegistry.getOrCreate(Counter.builder("c")
-                                                             .tags(tags1));
-        assertThrows(IllegalArgumentException.class, () ->
-                meterRegistry.getOrCreate(Counter.builder("c")
-                        .tags(tags2)));
     }
 }

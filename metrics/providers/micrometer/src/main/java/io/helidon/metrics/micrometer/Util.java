@@ -83,7 +83,7 @@ class Util {
             @Override
             public io.helidon.metrics.api.Tag next() {
                 Tag next = tagsIter.next();
-                return io.helidon.metrics.api.Tag.of(next.getKey(), next.getValue());
+                return io.helidon.metrics.api.Tag.create(next.getKey(), next.getValue());
             }
         };
     }

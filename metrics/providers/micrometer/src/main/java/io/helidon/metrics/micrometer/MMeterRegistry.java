@@ -30,36 +30,40 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.search.Search;
-import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
-    static MMeterRegistry create(MeterRegistry meterRegistry) {
-        return new MMeterRegistry(meterRegistry);
+    static MMeterRegistry create(MeterRegistry meterRegistry,
+                                 MetricsConfig metricsConfig) {
+        return new MMeterRegistry(meterRegistry, metricsConfig);
     }
 
     static MMeterRegistry create(MetricsConfig metricsConfig) {
-        return new MMeterRegistry(new PrometheusMeterRegistry(new PrometheusConfig() {
-            @Override
-            public String get(String key) {
-                return metricsConfig.lookupConfig(key).orElse(null);
-            }
-        }));
+        CompositeMeterRegistry delegate = new CompositeMeterRegistry();
+        delegate.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
+        return new MMeterRegistry(delegate, metricsConfig);
     }
 
     private final MeterRegistry delegate;
 
     private final ConcurrentHashMap<Meter, io.helidon.metrics.api.Meter> meters = new ConcurrentHashMap<>();
 
-    private MMeterRegistry(MeterRegistry delegate) {
+    private MMeterRegistry(MeterRegistry delegate,
+                           MetricsConfig metricsConfig) {
         this.delegate = delegate;
         delegate.config()
                 .onMeterAdded(this::recordAdd)
                 .onMeterRemoved(this::recordRemove);
+        List<io.helidon.metrics.api.Tag> globalTags = metricsConfig.globalTags();
+        if (!globalTags.isEmpty()) {
+            delegate.config().meterFilter(MeterFilter.commonTags(Util.tags(globalTags)));
+        }
     }
 
     @Override
@@ -79,15 +83,16 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     public <HM extends io.helidon.metrics.api.Meter,
             HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>> HM getOrCreate(HB builder) {
 
+
         // The Micrometer builders do not have a shared inherited declaration of the register method.
         // Each type of builder declares its own so we need to decide here which specific one to invoke.
         // That's so we can invoke the Micrometer builder's register method, which acts as
         // get-or-create.
+        // Micrometer's register methods will throw an IllegalArgumentException if the caller specifies a builder that finds
+        // a previously-registered meter of a different type from that implied by the builder.
+
         Meter meter;
-
-        // Micrometer itself will throw an IllegalArgumentException if the caller specifies a builder that finds an existing
-        // meter but it is of the wrong type.
-
+        // TODO Convert to switch instanceof expressions once checkstyle understand the syntax.
         if (builder instanceof MCounter.Builder cBuilder) {
             Counter counter = cBuilder.delegate().register(delegate);
             meter = counter;
@@ -118,20 +123,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         Search search = delegate().find(name)
                 .tags(Util.tags(tags));
-        Meter match;
+        Meter match = search.meter();
 
-        if (io.helidon.metrics.api.Counter.class.isAssignableFrom(mClass)) {
-            match = search.counter();
-        } else if (io.helidon.metrics.api.DistributionSummary.class.isAssignableFrom(mClass)) {
-            match = search.summary();
-        } else if (io.helidon.metrics.api.Gauge.class.isAssignableFrom(mClass)) {
-            match = search.gauge();
-        } else if (io.helidon.metrics.api.Timer.class.isAssignableFrom(mClass)) {
-            match = search.timer();
-        } else {
-            throw new IllegalArgumentException(
-                    String.format("Provided class %s  is not recognized", mClass.getName()));
-        }
         if (match == null) {
             return Optional.empty();
         }

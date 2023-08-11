@@ -15,8 +15,11 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
@@ -31,25 +34,8 @@ import io.helidon.inject.configdriven.api.ConfigBean;
 @ConfigBean()
 @Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)
 @Prototype.Blueprint(decorator = MetricsConfigBlueprint.BuilderDecorator.class)
-@Prototype.CustomMethods(MetricsConfigBlueprint.CustomMethods.class)
+@Prototype.CustomMethods(MetricsConfigSupport.class)
 interface MetricsConfigBlueprint {
-
-    class CustomMethods {
-
-        @Prototype.PrototypeMethod
-        static Optional<String> lookupConfig(MetricsConfig metricsConfig, String key) {
-            return Optional.empty();
-        }
-
-//        @Prototype.BuilderMethod
-//        static MetricsConfig.BuilderBase<?, ?> metricsConfig(MetricsConfig.BuilderBase<?, ?> metricsConfigBuilder, Config config) {
-//            metricsConfigBuilder.config(config);
-//            return metricsConfigBuilder;
-//        }
-
-        private CustomMethods() {
-        }
-    }
 
     /**
      * The config key containing settings for all of metrics.
@@ -104,10 +90,40 @@ interface MetricsConfigBlueprint {
     class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
         @Override
-        public void decorate(MetricsConfig.BuilderBase<?, ?> target) {
-            if (target.config().isEmpty()) {
-                target.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
+        public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
+            if (builder.config().isEmpty()) {
+                builder.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
+            }
+            builder.metricsConfig(builder.config().get());
+        }
+    }
+
+    @Prototype.FactoryMethod
+    static List<Tag> createGlobalTags(Config globalTagExpression) {
+        String pairs = globalTagExpression.asString().get();
+        // Use a TreeMap to order by tag name.
+        Map<String, Tag> result = new TreeMap<>();
+        List<String> errorPairs = new ArrayList<>();
+        String[] assignments = pairs.split(",");
+        for (String assignment : assignments) {
+            int equalsSlot = assignment.indexOf("=");
+            if (equalsSlot == -1) {
+                errorPairs.add("Missing '=': " + assignment);
+            } else if (equalsSlot == 0) {
+                errorPairs.add("Missing tag name: " + assignment);
+            } else if (equalsSlot == assignment.length() - 1) {
+                errorPairs.add("Missing tag value: " + assignment);
+            } else {
+                String key = assignment.substring(0, equalsSlot);
+                result.put(key,
+                           Tag.create(key, assignment.substring(equalsSlot + 1)));
             }
         }
+        if (!errorPairs.isEmpty()) {
+            throw new IllegalArgumentException("Error(s) in global tag expression: " + errorPairs);
+        }
+        return result.values()
+                .stream()
+                .toList();
     }
 }
