@@ -28,6 +28,7 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.spi.MpMetaConfigProvider;
 
 import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.secrets.Secrets;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 
 import static io.helidon.config.ConfigSources.classpath;
@@ -235,16 +236,24 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
         // communication the ConfigSource has with a Vault. If it is not specified, then ^.*$ will be used instead, and
         // therefore no restrictions on property resolution will occur.
         Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().orElse("^.*$"));
+
+        // The value to be returned by the MicroProfile Config-defined getOrdinal() method. This is actually
+        // meta-configuration which is why we supply it here.
         int ordinal = metaConfig.get("ordinal")
             .asInt()
             .or(() -> metaConfig.get(CONFIG_ORDINAL) // MicroProfile Config-defined name; people might cut/paste it
                 .asInt().asOptional())
             .orElse(DEFAULT_ORDINAL); // MicroProfile Config-defined default value of 100
+
+        // A Supplier of Secrets Retrieval API clients (which are also AutoCloseable implementations).
+        Supplier<? extends Secrets> secretsSupplier = memoizedSupplier(secrets(adpSupplier));
+
         return
             List.of(new SecretBundleByNameConfigSource(ordinal,
+                                                       Set::of,
                                                        acceptPattern,
                                                        vaultOcid,
-                                                       memoizedSupplier(secrets(adpSupplier))));
+                                                       secretsSupplier));
     }
 
     /**
