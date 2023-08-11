@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,14 @@
 package io.helidon.common.http;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 class HeaderValueList extends HeaderValueBase {
     private List<String> values;
 
-    HeaderValueList(Http.HeaderName name, boolean changing, boolean sensitive, List<String> values) {
-        super(name, changing, sensitive, values.get(0));
+    HeaderValueList(Http.HeaderName name, boolean changing, boolean sensitive, Collection<String> values) {
+        super(name, changing, sensitive, values.iterator().next());
 
         this.values = new ArrayList<>(values);
     }

@@ -31,7 +31,7 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.Http.Method;
 import io.helidon.common.http.Http1HeadersParser;
 import io.helidon.common.http.WritableHeaders;
@@ -83,7 +83,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     static void writeHeaders(Headers headers, BufferData bufferData, boolean validate) {
-        for (Http.HeaderValue header : headers) {
+        for (Http.Header header : headers) {
             if (validate) {
                 header.validate();
             }
@@ -106,7 +106,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         writeBuffer.clear();
         prologue(writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(Http.Header.create(Http.Header.HOST, uri.authority()));
+        headers.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
 
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }
@@ -123,7 +123,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // When CONNECT, the first line contains the remote host:port, in the same way as the HOST header.
             nonEntityData.writeAscii(request.method().text()
                     + " "
-                    + request.headers().get(Header.HOST).value()
+                    + request.headers().get(Http.HeaderNames.HOST).value()
                     + " HTTP/1.1\r\n");
         } else {
             String schemeHostPort = clientConfig.relativeUris() ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
@@ -202,8 +202,8 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         ContentDecoder decoder;
 
-        if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(Http.Header.CONTENT_ENCODING)) {
-            String contentEncoding = responseHeaders.get(Http.Header.CONTENT_ENCODING).value();
+        if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(Http.HeaderNames.CONTENT_ENCODING)) {
+            String contentEncoding = responseHeaders.get(HeaderNames.CONTENT_ENCODING).value();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 decoder = encodingSupport.decoder(contentEncoding);
             } else {
@@ -214,10 +214,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         } else {
             decoder = ContentDecoder.NO_OP;
         }
-        if (responseHeaders.contains(Http.Header.CONTENT_LENGTH)) {
+        if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             return decoder.apply(new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length));
-        } else if (responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
             return new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
@@ -226,15 +226,15 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private boolean mayHaveEntity(Http.Status responseStatus, ClientResponseHeaders responseHeaders) {
-        if (responseHeaders.contains(Http.HeaderValues.CONTENT_LENGTH_ZERO)) {
+        if (responseHeaders.contains(Http.Headers.CONTENT_LENGTH_ZERO)) {
             return false;
         }
         if (responseStatus == Http.Status.NO_CONTENT_204) {
             return false;
         }
         if ((
-                responseHeaders.contains(Http.Header.UPGRADE)
-                        && !responseHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
+                responseHeaders.contains(HeaderNames.UPGRADE)
+                        && !responseHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }

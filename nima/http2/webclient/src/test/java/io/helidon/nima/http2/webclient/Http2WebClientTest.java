@@ -47,7 +47,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.common.http.Http.Header.USER_AGENT;
+import static io.helidon.common.http.Http.HeaderNames.USER_AGENT;
 import static io.helidon.common.http.Http.Method.GET;
 import static io.helidon.common.http.Http.Method.POST;
 import static io.helidon.common.http.Http.Method.PUT;
@@ -57,10 +57,10 @@ import static org.hamcrest.Matchers.is;
 @ServerTest
 class Http2WebClientTest {
 
-    private static final Http.HeaderName CLIENT_CUSTOM_HEADER_NAME = Http.Header.create("client-custom-header");
-    private static final Http.HeaderName SERVER_CUSTOM_HEADER_NAME = Http.Header.create("server-custom-header");
-    private static final Http.HeaderName SERVER_HEADER_FROM_PARAM_NAME = Http.Header.create("header-from-param");
-    private static final Http.HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.Header.create("client-user-agent");
+    private static final Http.HeaderName CLIENT_CUSTOM_HEADER_NAME = Http.HeaderNames.create("client-custom-header");
+    private static final Http.HeaderName SERVER_CUSTOM_HEADER_NAME = Http.HeaderNames.create("server-custom-header");
+    private static final Http.HeaderName SERVER_HEADER_FROM_PARAM_NAME = Http.HeaderNames.create("header-from-param");
+    private static final Http.HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.HeaderNames.create("client-user-agent");
     private static ExecutorService executorService;
     private static int plainPort;
     private static final LazyValue<Http2Client> priorKnowledgeClient = LazyValue.create(() -> Http2Client.builder()

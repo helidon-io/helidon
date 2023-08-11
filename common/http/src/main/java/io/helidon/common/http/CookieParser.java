@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ final class CookieParser {
      * @param httpHeader cookie header
      * @return a cookie name and values parsed into a parameter format.
      */
-    static Parameters parse(Http.HeaderValue httpHeader) {
+    static Parameters parse(Http.Header httpHeader) {
         Map<String, List<String>> allCookies = new HashMap<>();
         for (String value : httpHeader.allValues()) {
             parse(allCookies, value);

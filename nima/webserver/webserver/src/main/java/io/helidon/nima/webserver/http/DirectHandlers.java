@@ -89,7 +89,7 @@ public class DirectHandlers {
         response.headers()
                 .forEach(res::header);
         if (!keepAlive) {
-            res.header(Http.HeaderValues.CONNECTION_CLOSE);
+            res.header(Http.Headers.CONNECTION_CLOSE);
         }
 
         if (res.isSent()) {

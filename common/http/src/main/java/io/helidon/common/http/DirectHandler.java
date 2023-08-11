@@ -337,7 +337,7 @@ public interface DirectHandler {
              * @param header header value
              * @return updated builder
              */
-            public Builder header(Http.HeaderValue header) {
+            public Builder header(Http.Header header) {
                 this.headers.add(header);
                 return this;
             }
@@ -365,7 +365,7 @@ public interface DirectHandler {
              * @return updated builder
              */
             public Builder entity(String entity) {
-                this.headers.setIfAbsent(Http.HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
+                this.headers.setIfAbsent(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
                 return entity(entity.getBytes(StandardCharsets.UTF_8));
             }
 
@@ -381,9 +381,9 @@ public interface DirectHandler {
             public Builder entity(byte[] entity) {
                 this.entity = Arrays.copyOf(entity, entity.length);
                 if (this.entity.length == 0) {
-                    this.headers.remove(Http.Header.CONTENT_LENGTH);
+                    this.headers.remove(Http.HeaderNames.CONTENT_LENGTH);
                 } else {
-                    header(Http.Header.CONTENT_LENGTH, String.valueOf(entity.length));
+                    header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length));
                 }
                 return this;
             }

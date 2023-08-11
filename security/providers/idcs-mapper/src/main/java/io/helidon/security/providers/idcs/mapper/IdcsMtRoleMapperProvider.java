@@ -257,7 +257,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
                 .post()
                 .uri(multitenantEndpoints.assertEndpoint(idcsTenantId))
                 .headers(it -> {
-                    it.add(Http.Header.AUTHORIZATION, "Bearer " + appToken);
+                    it.add(Http.HeaderNames.AUTHORIZATION, "Bearer " + appToken);
                 });
 
         return processRoleRequest(post, requestBuilder.build(), subjectName);

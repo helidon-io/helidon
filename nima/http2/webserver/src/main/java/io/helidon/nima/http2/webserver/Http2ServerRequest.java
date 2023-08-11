@@ -22,7 +22,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.RoutedPath;
 import io.helidon.common.http.ServerRequestHeaders;
@@ -153,7 +153,7 @@ class Http2ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public void header(HeaderValue header) {
+    public void header(Http.Header header) {
         if (writable == null) {
             writable = WritableHeaders.create(headers);
         }

@@ -135,7 +135,7 @@ class HttpClientTest {
         }
 
         @Override
-        public FakeHttpClientRequest header(Http.HeaderValue header) {
+        public FakeHttpClientRequest header(Http.Header header) {
             return this;
         }
 

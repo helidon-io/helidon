@@ -185,7 +185,7 @@ public class WebClientSecurity implements WebClientService {
                 }
 
                 //replace existing
-                Http.HeaderName headerName = Http.Header.create(entry.getKey());
+                Http.HeaderName headerName = Http.HeaderNames.create(entry.getKey());
                 clientHeaders.set(headerName, entry.getValue().toArray(new String[0]));
             }
             span.end();

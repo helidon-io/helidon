@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
 
 package io.helidon.common.http;
 
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.parameters.Parameters;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Header.COOKIE;
+import static io.helidon.common.http.Http.HeaderNames.COOKIE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,7 +30,7 @@ class CookieParserTest {
     @Test
     public void rfc2965() throws Exception {
         String header = "$version=1; foo=bar; $Domain=google.com, aaa=bbb, c=cool; $Domain=google.com; $Path=\"/foo\"";
-        Parameters p = CookieParser.parse(Header.create(COOKIE, header));
+        Parameters p = CookieParser.parse(Http.Headers.create(COOKIE, header));
         assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb"));
@@ -43,7 +42,7 @@ class CookieParserTest {
 
     @Test
     public void unquote() throws Exception {
-        Parameters p = CookieParser.parse(Header.create(COOKIE, "foo=\"bar\"; aaa=bbb; c=\"what_the_hell\"; aaa=\"ccc\""));
+        Parameters p = CookieParser.parse(Http.Headers.create(COOKIE, "foo=\"bar\"; aaa=bbb; c=\"what_the_hell\"; aaa=\"ccc\""));
         assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb", "ccc"));
@@ -57,7 +56,7 @@ class CookieParserTest {
 
     @Test
     void testMultiValueSingleHeader() {
-        Parameters cookies = CookieParser.parse(Header.create(COOKIE, "foo=bar; aaa=bbb; c=here; aaa=ccc"));
+        Parameters cookies = CookieParser.parse(Http.Headers.create(COOKIE, "foo=bar; aaa=bbb; c=here; aaa=ccc"));
         assertThat(cookies, notNullValue());
         assertThat(cookies.all("foo"), contains("bar"));
         assertThat(cookies.all("aaa"), contains("bbb", "ccc"));
@@ -66,7 +65,7 @@ class CookieParserTest {
 
     @Test
     void testMultiValueMultiHeader() {
-        Parameters cookies = CookieParser.parse(Header.create(COOKIE, "foo=bar; aaa=bbb; c=here", "aaa=ccc"));
+        Parameters cookies = CookieParser.parse(Http.Headers.create(COOKIE, "foo=bar; aaa=bbb; c=here", "aaa=ccc"));
         assertThat(cookies, notNullValue());
         assertThat(cookies.all("foo"), contains("bar"));
         assertThat(cookies.all("aaa"), contains("bbb", "ccc"));

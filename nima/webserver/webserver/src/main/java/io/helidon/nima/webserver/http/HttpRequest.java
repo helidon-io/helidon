@@ -72,7 +72,7 @@ public interface HttpRequest {
     PeerInfo localPeer();
 
     /**
-     * The content of the {@link io.helidon.common.http.Http.Header#HOST} header
+     * The content of the {@link io.helidon.common.http.Http.HeaderNames#HOST} header
      * or {@code authority} pseudo header (HTTP/2).
      *
      * @return authority of this request
@@ -85,7 +85,7 @@ public interface HttpRequest {
      *
      * @param header header to set
      */
-    void header(Http.HeaderValue header);
+    void header(Http.Header header);
 
     /**
      * Request ID on this connection.
@@ -100,8 +100,8 @@ public interface HttpRequest {
 
     /**
      * URI as requested by the originating client (to the best of our ability to compute it).
-     * By default, the URI is from the {@link Http.Header#HOST} header on the current request.
-     * If requested URI discovery is enabled by configuration, additional headers (such as {@link Http.Header#FORWARDED})
+     * By default, the URI is from the {@link io.helidon.common.http.Http.HeaderNames#HOST} header on the current request.
+     * If requested URI discovery is enabled by configuration, additional headers (such as {@link io.helidon.common.http.Http.HeaderNames#FORWARDED})
      * may be used to derive the originally-requested URI.
      *
      * @return uri info that can be used for redirects

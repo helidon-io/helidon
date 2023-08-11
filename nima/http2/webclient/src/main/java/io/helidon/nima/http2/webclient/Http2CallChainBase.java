@@ -43,7 +43,7 @@ import io.helidon.nima.webclient.http1.Http1ClientRequest;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
 
-import static io.helidon.common.http.Http.Header.CONTENT_ENCODING;
+import static io.helidon.common.http.Http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.nima.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -82,8 +82,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
-        requestHeaders.setIfAbsent(Http.Header.create(Http.Header.HOST, uri.authority()));
-        requestHeaders.remove(Http.Header.CONNECTION, LogHeaderConsumer.INSTANCE);
+        requestHeaders.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
+        requestHeaders.remove(Http.HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         Http2ConnectionAttemptResult result = Http2ConnectionCache.newStream(webClient,
@@ -232,12 +232,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                                  clientRequest.proxy());
     }
 
-    private static final class LogHeaderConsumer implements Consumer<Http.HeaderValue> {
+    private static final class LogHeaderConsumer implements Consumer<Http.Header> {
         private static final System.Logger LOGGER = System.getLogger(LogHeaderConsumer.class.getName());
         private static final LogHeaderConsumer INSTANCE = new LogHeaderConsumer();
 
         @Override
-        public void accept(Http.HeaderValue httpHeader) {
+        public void accept(Http.Header httpHeader) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,
                            "HTTP/2 request contains wrong header, removing {0}", httpHeader);

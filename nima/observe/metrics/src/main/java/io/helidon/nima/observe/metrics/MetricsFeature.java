@@ -194,7 +194,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                              Iterable<String> scopeSelection,
                              Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
-        res.header(Http.HeaderValues.CACHE_NO_CACHE);
+        res.header(Http.Headers.CACHE_NO_CACHE);
         if (mediaType == null) {
             res.status(Http.Status.NOT_ACCEPTABLE_406);
             res.send();
@@ -275,7 +275,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private void rejectOptions(ServerRequest req, ServerResponse res) {
         // Options used to return metadata but it's no longer supported unless we restore JSON support.
-        res.header(Http.Header.ALLOW, "GET");
+        res.header(Http.HeaderNames.ALLOW, "GET");
         res.status(Http.Status.METHOD_NOT_ALLOWED_405);
         res.send();
     }

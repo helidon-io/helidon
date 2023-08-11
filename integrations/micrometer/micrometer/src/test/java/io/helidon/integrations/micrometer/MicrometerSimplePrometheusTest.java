@@ -15,21 +15,16 @@
  */
 package io.helidon.integrations.micrometer;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.nima.webclient.api.ClientResponseTyped;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
 
 import io.micrometer.core.instrument.Counter;
@@ -40,6 +35,9 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
 
 public class MicrometerSimplePrometheusTest {
 
@@ -83,44 +81,43 @@ public class MicrometerSimplePrometheusTest {
     }
 
     @Test
-    public void checkViaMediaType() throws ExecutionException, InterruptedException {
+    public void checkViaMediaType() {
         timer1.record(2L, TimeUnit.SECONDS);
         counter1.increment(3);
         gauge1.set(4);
-        Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, HttpMediaType.TEXT_PLAIN.toString())
+        ClientResponseTyped<String> response = webClient.get()
+                .header(Http.HeaderNames.ACCEPT, MediaTypes.TEXT_PLAIN.text())
                 .path("/micrometer")
-                .request();
+                .request(String.class);
 
-        String promOutput = response.entity().as(String.class);
+        String promOutput = response.entity();
 
         assertThat("Unexpected HTTP status, response is: " + promOutput, response.status(), is(Http.Status.OK_200));
     }
 
     @Test
-    public void checkViaQueryParam() throws ExecutionException, InterruptedException {
+    public void checkViaQueryParam() {
         timer1.record(2L, TimeUnit.SECONDS);
         counter1.increment(3);
         gauge1.set(4);
-        Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+        ClientResponseTyped<String> response = webClient.get()
+                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .queryParam("type", "prometheus")
-                .request();
+                .request(String.class);
 
         assertThat("Unexpected HTTP status", response.status(), is(Http.Status.OK_200));
-
-        String promOutput = response.entity().as(String.class);
     }
 
     @Test
     public void checkNoMatch() throws ExecutionException, InterruptedException {
-        Http1ClientResponse response = webClient.get()
-                .header(Header.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+        try(HttpClientResponse response = webClient.get()
+                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
-                .request();
+                .request()) {
 
-        assertThat("Expected failed HTTP status", response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+            assertThat("Expected failed HTTP status", response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+        }
     }
 
     private void initSomeMetrics() {

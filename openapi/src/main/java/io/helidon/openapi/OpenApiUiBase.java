@@ -139,7 +139,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
     protected boolean sendStaticText(ServerRequest request, ServerResponse response, HttpMediaType mediaType) {
         try {
             response
-                    .header(Http.Header.CONTENT_TYPE, mediaType.toString())
+                    .header(Http.HeaderNames.CONTENT_TYPE, mediaType.toString())
                     .send(prepareDocument(request.query(), mediaType));
         } catch (IOException e) {
             LOGGER.log(System.Logger.Level.WARNING, "Error formatting OpenAPI output as " + mediaType, e);

@@ -28,7 +28,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.ClientResponseHeaders;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.nima.webclient.api.ClientConnection;
@@ -45,15 +44,15 @@ class WsClientImpl implements WsClient {
      * Supported WebSocket version.
      */
     static final String SUPPORTED_VERSION = "13";
-    static final Http.HeaderValue HEADER_UPGRADE_WS = Http.Header.createCached(Http.Header.UPGRADE, "websocket");
-    static final Http.HeaderName HEADER_WS_PROTOCOL = Http.Header.create("Sec-WebSocket-Protocol");
-    private static final Http.HeaderValue HEADER_WS_VERSION = Http.Header.createCached(Http.Header.create(
+    static final Http.Header HEADER_UPGRADE_WS = Http.Headers.createCached(Http.HeaderNames.UPGRADE, "websocket");
+    static final Http.HeaderName HEADER_WS_PROTOCOL = Http.HeaderNames.create("Sec-WebSocket-Protocol");
+    private static final Http.Header HEADER_WS_VERSION = Http.Headers.createCached(Http.HeaderNames.create(
             "Sec-WebSocket-Version"), SUPPORTED_VERSION);
 
     private static final System.Logger LOGGER = System.getLogger(WsClient.class.getName());
-    private static final Http.HeaderValue HEADER_CONN_UPGRADE = Header.create(Header.CONNECTION, "Upgrade");
-    private static final Http.HeaderName HEADER_WS_ACCEPT = Header.create("Sec-WebSocket-Accept");
-    private static final Http.HeaderName HEADER_WS_KEY = Header.create("Sec-WebSocket-Key");
+    private static final Http.Header HEADER_CONN_UPGRADE = Http.Headers.create(Http.HeaderNames.CONNECTION, "Upgrade");
+    private static final Http.HeaderName HEADER_WS_ACCEPT = Http.HeaderNames.create("Sec-WebSocket-Accept");
+    private static final Http.HeaderName HEADER_WS_KEY = Http.HeaderNames.create("Sec-WebSocket-Key");
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
@@ -72,7 +71,7 @@ class WsClientImpl implements WsClient {
         ClientRequestHeaders headers = http1Client.prototype().defaultRequestHeaders();
         headers.set(HEADER_UPGRADE_WS);
         headers.set(HEADER_WS_VERSION);
-        headers.set(Http.HeaderValues.CONTENT_LENGTH_ZERO);
+        headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
         if (clientConfig.protocolConfig().subProtocols().isEmpty()) {
             headers.remove(HEADER_WS_PROTOCOL);
         } else {
@@ -101,7 +100,7 @@ class WsClientImpl implements WsClient {
             upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("https"));
         }
 
-        upgradeRequest.headers(headers -> headers.setIfAbsent(Header.create(Header.HOST, resolvedUri
+        upgradeRequest.headers(headers -> headers.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, resolvedUri
                 .authority())));
 
         UpgradeResponse upgradeResponse = upgradeRequest.upgrade("websocket");

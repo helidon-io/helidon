@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.common.http.Http.HeaderValue;
+import io.helidon.common.http.Http.Header;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
@@ -36,8 +36,8 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
      */
-    HeaderValue HUC_ACCEPT_DEFAULT = Http.Header.create(Http.Header.ACCEPT,
-                                                        "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
+    Http.Header HUC_ACCEPT_DEFAULT = Http.Headers.create(Http.HeaderNames.ACCEPT,
+                                                         "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
 
     /**
      * Accepted types for {@link #HUC_ACCEPT_DEFAULT}.
@@ -70,16 +70,16 @@ public interface ServerRequestHeaders extends Headers {
     }
 
     /**
-     * Optionally returns a value of {@link Http.Header#IF_MODIFIED_SINCE} header.
+     * Optionally returns a value of {@link io.helidon.common.http.Http.HeaderNames#IF_MODIFIED_SINCE} header.
      * <p>
      * Allows a 304 Not Modified to be returned if content is unchanged.
      *
-     * @return Content of {@link Http.Header#IF_MODIFIED_SINCE} header.
+     * @return Content of {@link io.helidon.common.http.Http.HeaderNames#IF_MODIFIED_SINCE} header.
      */
     default Optional<ZonedDateTime> ifModifiedSince() {
-        if (contains(Http.Header.IF_MODIFIED_SINCE)) {
-            return Optional.of(get(Http.Header.IF_MODIFIED_SINCE))
-                    .map(HeaderValue::value)
+        if (contains(Http.HeaderNames.IF_MODIFIED_SINCE)) {
+            return Optional.of(get(Http.HeaderNames.IF_MODIFIED_SINCE))
+                    .map(Header::value)
                     .map(Http.DateTime::parse);
         }
 
@@ -87,16 +87,16 @@ public interface ServerRequestHeaders extends Headers {
     }
 
     /**
-     * Optionally returns a value of {@link Http.Header#IF_UNMODIFIED_SINCE} header.
+     * Optionally returns a value of {@link io.helidon.common.http.Http.HeaderNames#IF_UNMODIFIED_SINCE} header.
      * <p>
      * <i>Only send the response if the entity has not been modified since a specific time.</i>
      *
-     * @return Content of {@link Http.Header#IF_UNMODIFIED_SINCE} header.
+     * @return Content of {@link io.helidon.common.http.Http.HeaderNames#IF_UNMODIFIED_SINCE} header.
      */
     default Optional<ZonedDateTime> ifUnmodifiedSince() {
-        if (contains(Http.Header.IF_UNMODIFIED_SINCE)) {
-            return Optional.of(get(Http.Header.IF_UNMODIFIED_SINCE))
-                    .map(HeaderValue::value)
+        if (contains(Http.HeaderNames.IF_UNMODIFIED_SINCE)) {
+            return Optional.of(get(Http.HeaderNames.IF_UNMODIFIED_SINCE))
+                    .map(Http.Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
@@ -127,7 +127,7 @@ public interface ServerRequestHeaders extends Headers {
     /**
      * Optionally returns a single media type from the given media types that is the
      * best one accepted by the client.
-     * Method uses content negotiation {@link io.helidon.common.http.Http.Header#ACCEPT}
+     * Method uses content negotiation {@link io.helidon.common.http.Http.HeaderNames#ACCEPT}
      * header parameter and returns an empty value in case nothing matches.
      *
      * @param mediaTypes media type candidates, never null
@@ -172,43 +172,43 @@ public interface ServerRequestHeaders extends Headers {
      * values are cookie values.
      */
     default Parameters cookies() {
-        if (contains(Http.Header.COOKIE)) {
-            return CookieParser.parse(get(Http.Header.COOKIE));
+        if (contains(Http.HeaderNames.COOKIE)) {
+            return CookieParser.parse(get(Http.HeaderNames.COOKIE));
         } else {
             return CookieParser.empty();
         }
     }
 
     /**
-     * Optionally returns acceptedTypes version in time ({@link  io.helidon.common.http.Http.Header#ACCEPT_DATETIME} header).
+     * Optionally returns acceptedTypes version in time ({@link  io.helidon.common.http.Http.HeaderNames#ACCEPT_DATETIME} header).
      *
      * @return Acceptable version in time.
      */
     default Optional<ZonedDateTime> acceptDatetime() {
-        if (contains(Http.Header.ACCEPT_DATETIME)) {
-            return Optional.of(get(Http.Header.ACCEPT_DATETIME))
-                    .map(HeaderValue::value)
+        if (contains(Http.HeaderNames.ACCEPT_DATETIME)) {
+            return Optional.of(get(Http.HeaderNames.ACCEPT_DATETIME))
+                    .map(Http.Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
     }
 
     /**
-     * Optionally returns request date ({@link io.helidon.common.http.Http.Header#DATE} header).
+     * Optionally returns request date ({@link io.helidon.common.http.Http.HeaderNames#DATE} header).
      *
      * @return Request date.
      */
     default Optional<ZonedDateTime> date() {
-        if (contains(Http.Header.DATE)) {
-            return Optional.of(get(Http.Header.DATE))
-                    .map(HeaderValue::value)
+        if (contains(Http.HeaderNames.DATE)) {
+            return Optional.of(get(Http.HeaderNames.DATE))
+                    .map(Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
     }
 
     /**
-     * Optionally returns the address of the previous web page (header {@link io.helidon.common.http.Http.Header#REFERER}) from which a link
+     * Optionally returns the address of the previous web page (header {@link io.helidon.common.http.Http.HeaderNames#REFERER}) from which a link
      * to the currently requested page was followed.
      * <p>
      * <i>The word {@code referrer} has been misspelled in the RFC as well as in most implementations to the point that it
@@ -217,9 +217,9 @@ public interface ServerRequestHeaders extends Headers {
      * @return Referrers URI
      */
     default Optional<URI> referer() {
-        if (contains(Http.Header.REFERER)) {
-            return Optional.of(get(Http.Header.REFERER))
-                    .map(HeaderValue::value)
+        if (contains(Http.HeaderNames.REFERER)) {
+            return Optional.of(get(Http.HeaderNames.REFERER))
+                    .map(Header::value)
                     .map(URI::create);
         }
         return Optional.empty();

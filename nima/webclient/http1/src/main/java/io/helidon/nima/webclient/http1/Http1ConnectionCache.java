@@ -68,17 +68,17 @@ class Http1ConnectionCache {
     }
 
     private static boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
-        if (headers.contains(Http.HeaderValues.CONNECTION_CLOSE)) {
+        if (headers.contains(Http.Headers.CONNECTION_CLOSE)) {
             return false;
         }
         if (defaultKeepAlive) {
-            headers.setIfAbsent(Http.HeaderValues.CONNECTION_KEEP_ALIVE);
+            headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
             return true;
         }
-        if (headers.contains(Http.HeaderValues.CONNECTION_KEEP_ALIVE)) {
+        if (headers.contains(Http.Headers.CONNECTION_KEEP_ALIVE)) {
             return true;
         }
-        headers.set(Http.HeaderValues.CONNECTION_CLOSE);
+        headers.set(Http.Headers.CONNECTION_CLOSE);
         return false;
     }
 

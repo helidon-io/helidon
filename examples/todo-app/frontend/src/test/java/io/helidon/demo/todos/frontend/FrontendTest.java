@@ -39,7 +39,6 @@ import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigSources.classpath;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -89,7 +88,7 @@ public class FrontendTest {
     @Test
     public void testGetList() {
         try (Http1ClientResponse response = client.get("/api/todo")
-                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .header(Http.HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -100,7 +99,7 @@ public class FrontendTest {
     @Test
     public void testPostTodo() {
         try (Http1ClientResponse response = client.post("/api/todo")
-                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .header(Http.HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .submit(TODO)) {
 
             assertThat(response.status().code(), is(200));
@@ -111,7 +110,7 @@ public class FrontendTest {
     @Test
     public void testGetTodo() {
         try (Http1ClientResponse response = client.get("/api/todo/1")
-                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .header(Http.HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -122,7 +121,7 @@ public class FrontendTest {
     @Test
     public void testDeleteTodo() {
         try (Http1ClientResponse response = client.delete("/api/todo/1")
-                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .header(Http.HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -133,7 +132,7 @@ public class FrontendTest {
     @Test
     public void testUpdateTodo() {
         try (Http1ClientResponse response = client.put("/api/todo/1")
-                .header(Http.Header.AUTHORIZATION, "Basic " + ENCODED_ID)
+                .header(Http.HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID)
                 .submit(TODO)) {
 
             assertThat(response.status().code(), is(200));

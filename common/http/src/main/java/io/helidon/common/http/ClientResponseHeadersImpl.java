@@ -43,20 +43,20 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     }
 
     @Override
-    public boolean contains(Http.HeaderValue headerWithValue) {
+    public boolean contains(Http.Header headerWithValue) {
         return headers.contains(headerWithValue);
     }
 
     @Override
-    public Http.HeaderValue get(Http.HeaderName name) {
+    public Http.Header get(Http.HeaderName name) {
         return headers.get(name);
     }
 
     @Override
     public Optional<HttpMediaType> contentType() {
         if (parserMode == ParserMode.RELAXED) {
-            return contains(HeaderEnum.CONTENT_TYPE)
-                    ? Optional.of(HttpMediaType.create(get(HeaderEnum.CONTENT_TYPE).value(), parserMode))
+            return contains(HeaderNameEnum.CONTENT_TYPE)
+                    ? Optional.of(HttpMediaType.create(get(HeaderNameEnum.CONTENT_TYPE).value(), parserMode))
                     : Optional.empty();
         }
         return headers.contentType();
@@ -68,7 +68,7 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     }
 
     @Override
-    public Iterator<Http.HeaderValue> iterator() {
+    public Iterator<Http.Header> iterator() {
         return headers.iterator();
     }
 

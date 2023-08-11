@@ -48,10 +48,10 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 class Lra {
-    static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.Header.create(LRA_HTTP_CONTEXT_HEADER);
-    static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER_NAME = Http.Header.create(LRA_HTTP_ENDED_CONTEXT_HEADER);
-    static final Http.HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER_NAME = Http.Header.create(LRA_HTTP_PARENT_CONTEXT_HEADER);
-    static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER_NAME = Http.Header.create(LRA_HTTP_RECOVERY_HEADER);
+    static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
+    static final Http.HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_ENDED_CONTEXT_HEADER);
+    static final Http.HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_PARENT_CONTEXT_HEADER);
+    static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_RECOVERY_HEADER);
 
     private static final System.Logger LOGGER = System.getLogger(Lra.class.getName());
 

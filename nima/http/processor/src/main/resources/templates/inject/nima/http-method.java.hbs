@@ -37,7 +37,7 @@ import jakarta.inject.Singleton;
 @Weight({{weight}})
 {{{generatedSticker}}}
 class {{className}} implements GeneratedHandler {
-{{#each http.headers}}private static final Http.HeaderName {{this.field}} = Http.Header.create("{{this.name}}");
+{{#each http.headers}}private static final Http.HeaderName {{this.field}} = Http.HeaderNames.create("{{this.name}}");
 {{/each}}
     private static final Http.Method METHOD = Http.Method.create("{{http.method}}");
 

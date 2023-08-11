@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import java.util.Optional;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
@@ -69,7 +69,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
 
     protected void sendHeaders(OutputStream outputStream, Headers headers) throws IOException {
         BufferData bufferData = BufferData.growing(128);
-        for (Http.HeaderValue header : headers) {
+        for (Http.Header header : headers) {
             header.writeHttp1Header(bufferData);
         }
         bufferData.writeTo(outputStream);
@@ -78,7 +78,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
     }
 
     protected void send(OutputStream outputStream, WritableHeaders<?> headers, byte[] bytes) {
-        headers.set(Header.create(Header.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
+        headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
 
         try (outputStream) {
             sendHeaders(outputStream, headers);
@@ -93,18 +93,18 @@ abstract class WriteablePartAbstract implements WriteablePart {
     void contentType(WritableHeaders<?> headers) {
         // we support form-data and byte-ranges, falling back to form data if unknown
         if (contentType().test(MediaTypes.MULTIPART_BYTERANGES)) {
-            headers.remove(Header.CONTENT_DISPOSITION);
+            headers.remove(HeaderNames.CONTENT_DISPOSITION);
         } else {
-            if (!headers.contains(Header.CONTENT_DISPOSITION)) {
+            if (!headers.contains(HeaderNames.CONTENT_DISPOSITION)) {
                 List<String> disposition = new LinkedList<>();
                 disposition.add("form-data");
                 disposition.add("name=\"" + URLEncoder.encode(name(), UTF_8) + "\"");
                 fileName().ifPresent(it -> disposition.add("filename=\"" + URLEncoder.encode(it, UTF_8) + "\""));
-                headers.setIfAbsent(Header.create(Header.CONTENT_DISPOSITION, String.join("; ", disposition)));
+                headers.setIfAbsent(Http.Headers.create(HeaderNames.CONTENT_DISPOSITION, String.join("; ", disposition)));
             }
         }
-        if (!headers.contains(Header.CONTENT_TYPE)) {
-            headers.set(Header.CONTENT_TYPE, contentType().text());
+        if (!headers.contains(HeaderNames.CONTENT_TYPE)) {
+            headers.set(HeaderNames.CONTENT_TYPE, contentType().text());
         }
     }
 }

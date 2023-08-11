@@ -31,11 +31,11 @@ import io.helidon.nima.http.encoding.ContentEncoding;
  * Support for {@code deflate} content encoding.
  */
 public class DeflateEncoding implements ContentEncoding {
-    private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE =
-            Http.Header.createCached(Http.Header.CONTENT_ENCODING,
-                                     false,
-                                     false,
-                                     "deflate");
+    private static final Http.Header CONTENT_ENCODING_DEFLATE =
+            Http.Headers.createCached(Http.HeaderNames.CONTENT_ENCODING,
+                                      false,
+                                      false,
+                                      "deflate");
     private final String name;
 
     DeflateEncoding(String name) {
@@ -92,7 +92,7 @@ public class DeflateEncoding implements ContentEncoding {
             @Override
             public void headers(WritableHeaders<?> headers) {
                 headers.add(CONTENT_ENCODING_DEFLATE);
-                headers.remove(Http.Header.CONTENT_LENGTH);
+                headers.remove(Http.HeaderNames.CONTENT_LENGTH);
             }
         };
     }

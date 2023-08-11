@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 class HeaderValueCopy extends HeaderValueBase {
-    private final Http.HeaderValue original;
+    private final Http.Header original;
     private List<String> values;
 
-    HeaderValueCopy(Http.HeaderValue header) {
+    HeaderValueCopy(Http.Header header) {
         super(header.headerName(), header.changing(), header.sensitive(), header.value());
 
         this.original = header;

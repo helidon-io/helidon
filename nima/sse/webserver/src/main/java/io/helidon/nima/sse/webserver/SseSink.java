@@ -32,7 +32,7 @@ import io.helidon.nima.sse.SseEvent;
 import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.nima.webserver.http.spi.Sink;
 
-import static io.helidon.common.http.Http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
+import static io.helidon.common.http.Http.Headers.CONTENT_TYPE_EVENT_STREAM;
 
 /**
  * Implementation of an SSE sink. Emits {@link SseEvent}s.

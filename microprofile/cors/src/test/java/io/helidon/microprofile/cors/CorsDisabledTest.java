@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.microprofile.cors;
 
 import io.helidon.common.http.Http;
@@ -27,7 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Header.ORIGIN;
+import static io.helidon.common.http.Http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -60,6 +61,6 @@ class CorsDisabledTest {
         assertThat(res.getStatusInfo(), is(Response.Status.OK));
         assertThat("Headers from successful response",
                    res.getHeaders().keySet(),
-                   not(hasItem(Http.Header.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase())));
+                   not(hasItem(Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase())));
     }
 }

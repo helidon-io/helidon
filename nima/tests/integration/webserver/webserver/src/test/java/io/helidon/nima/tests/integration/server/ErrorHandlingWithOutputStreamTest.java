@@ -39,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class ErrorHandlingWithOutputStreamTest {
 
-    private static final Http.HeaderName MAIN_HEADER_NAME = Http.Header.create("main-handler");
-    private static final Http.HeaderName ERROR_HEADER_NAME = Http.Header.create("error-handler");
+    private static final Http.HeaderName MAIN_HEADER_NAME = Http.HeaderNames.create("main-handler");
+    private static final Http.HeaderName ERROR_HEADER_NAME = Http.HeaderNames.create("error-handler");
 
     private final Http1Client client;
 

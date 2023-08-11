@@ -218,7 +218,7 @@ public class RequestException extends RuntimeException {
          * @param header header to add
          * @return updated builder
          */
-        public Builder header(Http.HeaderValue header) {
+        public Builder header(Http.Header header) {
             this.responseHeaders.set(header);
             return this;
         }

@@ -24,7 +24,7 @@ import jakarta.ws.rs.core.Context;
 
 @RequestScoped
 public class TenantContext {
-    private static final Http.HeaderName TENANT_ID = Http.Header.create("x-tenant-id");
+    private static final Http.HeaderName TENANT_ID = Http.HeaderNames.create("x-tenant-id");
 
     @Context
     private ServerRequest request;

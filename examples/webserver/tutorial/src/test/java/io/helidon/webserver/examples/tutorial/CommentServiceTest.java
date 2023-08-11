@@ -17,8 +17,7 @@
 package io.helidon.webserver.examples.tutorial;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.nima.testing.junit5.webserver.DirectClient;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -73,7 +72,7 @@ class CommentServiceTest {
 
         // Add first comment
         try (Http1ClientResponse response = client.post("/article/one")
-                                                  .contentType(HttpMediaType.TEXT_PLAIN)
+                                                  .contentType(MediaTypes.TEXT_PLAIN)
                                                   .submit("aaa")) {
             assertThat(response.status(), is(Http.Status.OK_200));
         }
@@ -86,7 +85,7 @@ class CommentServiceTest {
 
         // Add second comment
         try (Http1ClientResponse response = client.post("/article/one")
-                                                  .contentType(HttpMediaType.TEXT_PLAIN)
+                                                  .contentType(MediaTypes.TEXT_PLAIN)
                                                   .submit("bbb")) {
             assertThat(response.status(), is(Http.Status.OK_200));
         }

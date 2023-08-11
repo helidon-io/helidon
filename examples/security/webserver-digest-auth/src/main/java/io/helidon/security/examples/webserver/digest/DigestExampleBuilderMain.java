@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
@@ -113,7 +113,7 @@ public final class DigestExampleBuilderMain {
                         .audit())
                 .get("/{*}", (req, res) -> {
                     Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                    res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                    res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                     res.send("Hello, you are: \n" + securityContext
                             .map(ctx -> ctx.user().orElse(SecurityContext.ANONYMOUS).toString())
                             .orElse("Security context is null"));

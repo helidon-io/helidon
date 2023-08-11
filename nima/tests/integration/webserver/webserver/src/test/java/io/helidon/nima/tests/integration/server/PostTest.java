@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,11 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Random;
 
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
-import io.helidon.common.http.Http.HeaderValues;
+import io.helidon.common.http.Http.HeaderNames;
+import io.helidon.common.http.Http.Headers;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -40,7 +39,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.Header.CONTENT_LENGTH;
+import static io.helidon.common.http.Http.HeaderNames.CONTENT_LENGTH;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,13 +48,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class PostTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Header.create("X-REquEst-HEADeR");
+    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final HeaderValue REQUEST_HEADER_VALUE = Header.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
-    private static final HeaderName RESPONSE_HEADER_NAME = Header.create("X-REsponSE-HeADER");
+    private static final Header REQUEST_HEADER_VALUE = Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderValue RESPONSE_HEADER_VALUE = Header.create(RESPONSE_HEADER_NAME,
-                                                                           RESPONSE_HEADER_VALUE_STRING);
+    private static final Http.Header RESPONSE_HEADER_VALUE = Headers.create(RESPONSE_HEADER_NAME,
+                                                                            RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -79,7 +78,7 @@ class PostTest {
 
     @Test
     void testStringRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/string")
                 .submit("Hello")) {
@@ -89,13 +88,13 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testByteRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/bytes")
                 .submit(BYTES)) {
@@ -105,14 +104,14 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     @Disabled("Optimization kicks in")
     void testChunkedRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/chunked")
                 .outputStream(outputStream -> {
@@ -125,13 +124,13 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
     void testHeadersRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/headers")
                 .header(REQUEST_HEADER_VALUE)
@@ -142,15 +141,15 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Header.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));
     }
 
     @Test
     void testCloseRoute() {
-        Headers headers;
+        io.helidon.common.http.Headers headers;
         try (Http1ClientResponse response = client.method(Http.Method.POST)
                 .uri("/close")
                 .submit("Hello")) {
@@ -159,12 +158,12 @@ class PostTest {
             assertThrows(IllegalStateException.class, () -> response.entity().as(String.class));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
+        assertThat(headers, hasHeader(Headers.CONNECTION_CLOSE));
     }
 
     private static class Routes {
         public static void close(ServerRequest req, ServerResponse res) {
-            res.header(HeaderValues.CONNECTION_CLOSE);
+            res.header(Headers.CONNECTION_CLOSE);
             res.status(Http.Status.NO_CONTENT_204);
             res.send();
         }

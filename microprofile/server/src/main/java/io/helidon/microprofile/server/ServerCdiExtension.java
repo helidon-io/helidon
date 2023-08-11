@@ -482,7 +482,7 @@ public class ServerCdiExtension implements Extension {
                 .or(() -> config.get("server.base-path").asString().asOptional())
                 .ifPresent(basePath -> routingBuilder.any("/", (req, res) -> {
                     res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.headers().set(Http.Header.LOCATION, basePath);
+                    res.headers().set(Http.HeaderNames.LOCATION, basePath);
                     res.send();
                 }));
         STARTUP_LOGGER.log(Level.TRACE, "Builders ready");

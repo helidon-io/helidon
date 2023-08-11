@@ -109,7 +109,7 @@ public class FileServiceTest {
     public void testDownload() {
         try (Http1ClientResponse response = client.get("/api").path("foo.txt").request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers().first(Http.Header.CONTENT_DISPOSITION).orElse(null),
+            assertThat(response.headers().first(Http.HeaderNames.CONTENT_DISPOSITION).orElse(null),
                     containsString("filename=\"foo.txt\""));
             byte[] bytes = response.as(byte[].class);
             assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));

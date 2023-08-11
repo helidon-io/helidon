@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.nima.http.media.MediaContext;
@@ -94,7 +95,7 @@ public interface WriteablePart {
 
         private final String partName;
         private String fileName;
-        private HttpMediaType mediaType = HttpMediaType.PLAINTEXT_UTF_8;
+        private HttpMediaType mediaType = HttpMediaTypes.PLAINTEXT_UTF_8;
         private Supplier<Object> objectContent;
         private Supplier<InputStream> inputStreamSupplier;
         private byte[] byteContent;

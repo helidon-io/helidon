@@ -35,7 +35,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
 public class AppRoleVaultAuth implements VaultAuth {
     private static final System.Logger LOGGER = System.getLogger(AppRoleVaultAuth.class.getName());
-    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME = Http.Header.create("X-Vault-Namespace");
+    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME = Http.HeaderNames.create("X-Vault-Namespace");
     private final String appRoleId;
     private final String secretId;
     private final String methodPath;

@@ -450,7 +450,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
             HttpClientRequest request = webClient.post()
                     .uri(tokenEndpointUri)
-                    .header(Http.HeaderValues.ACCEPT_JSON);
+                    .header(Http.Headers.ACCEPT_JSON);
 
             try (HttpClientResponse response = request.submit(params)) {
                 if (response.status().family() == Http.Status.Family.SUCCESSFUL) {

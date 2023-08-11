@@ -44,7 +44,7 @@ import io.helidon.nima.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
+import static io.helidon.common.http.Http.Headers.ACCEPT_EVENT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

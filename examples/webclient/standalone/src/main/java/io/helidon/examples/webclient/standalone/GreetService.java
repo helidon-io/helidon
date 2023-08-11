@@ -92,7 +92,7 @@ public class GreetService implements HttpService {
     private void redirect(ServerRequest request,
                           ServerResponse response) {
         int port = request.context().get(WebServer.class).orElseThrow().port();
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + port + "/greet/");
+        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + port + "/greet/");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 

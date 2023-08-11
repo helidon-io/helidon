@@ -112,7 +112,7 @@ class ContentEncodingContextTest {
 
         @Override
         public ContentEncoder encoder(Headers headers) {
-            if (headers.contains(Http.Header.ACCEPT_ENCODING)) {
+            if (headers.contains(Http.HeaderNames.ACCEPT_ENCODING)) {
                 ACCEPT_ENCODING_COUNT++;
             } else {
                 NO_ACCEPT_ENCODING_COUNT++;

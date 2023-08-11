@@ -18,7 +18,7 @@ package io.helidon.security.examples.signatures;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.WebServer;
@@ -52,7 +52,7 @@ class Service1 implements HttpService {
     }
 
     private void handle(ServerRequest req, ServerResponse res, String path) {
-        res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+        res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
         req.context()
                 .get(SecurityContext.class)
                 .ifPresentOrElse(context -> {

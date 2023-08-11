@@ -61,7 +61,7 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
     @Test
     void testContentEncodingHeader() {
         try (Http1ClientResponse response = client().method(Http.Method.POST)
-                .header(Http.Header.CONTENT_ENCODING, "data")
+                .header(Http.HeaderNames.CONTENT_ENCODING, "data")
                 .submit("any")) {
             assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
             assertThat(response.as(String.class), is("Content-Encoding header present when content encoding is disabled"));

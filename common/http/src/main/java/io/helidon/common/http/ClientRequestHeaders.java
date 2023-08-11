@@ -56,7 +56,7 @@ public interface ClientRequestHeaders extends ServerRequestHeaders,
             MediaType mediaType = accepted[i];
             values[i] = mediaType.text();
         }
-        set(Http.Header.create(Http.Header.ACCEPT, values));
+        set(Http.Headers.create(Http.HeaderNames.ACCEPT, values));
         return this;
     }
 }

@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import static io.helidon.common.http.Http.Header.FORWARDED;
+import static io.helidon.common.http.Http.HeaderNames.FORWARDED;
 
 /**
- * A representation of the {@link Http.Header#FORWARDED} HTTP header.
+ * A representation of the {@link io.helidon.common.http.Http.HeaderNames#FORWARDED} HTTP header.
  */
 public class Forwarded {
     private static final System.Logger LOGGER = System.getLogger(Forwarded.class.getName());

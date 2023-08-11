@@ -104,8 +104,8 @@ public class GreetService implements HttpService {
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
         serverRequest.headers().contentLength()
-                .ifPresentOrElse(value -> serverResponse.send(Http.Header.CONTENT_LENGTH + " is " + value),
-                        () -> serverResponse.send("No " + Http.Header.CONTENT_LENGTH + " has been set"));
+                .ifPresentOrElse(value -> serverResponse.send(Http.HeaderNames.CONTENT_LENGTH + " is " + value),
+                        () -> serverResponse.send("No " + Http.HeaderNames.CONTENT_LENGTH + " has been set"));
     }
 
     private void basicAuthOutbound(ServerRequest request, ServerResponse response) {
@@ -167,17 +167,17 @@ public class GreetService implements HttpService {
      * @param response the server response
      */
     private void redirect(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
+        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectPath(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "/greet");
+        response.headers().add(Http.HeaderNames.LOCATION, "/greet");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectInfinite(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.Header.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
+        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
         response.status(Http.Status.MOVED_PERMANENTLY_301).send();
     }
 

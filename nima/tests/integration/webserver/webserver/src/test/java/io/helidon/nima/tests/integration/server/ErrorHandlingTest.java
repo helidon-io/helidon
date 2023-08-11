@@ -39,11 +39,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
 class ErrorHandlingTest {
-    private static final Http.HeaderName CONTROL_HEADER = Http.Header.create("X-HELIDON-JUNIT");
-    private static final Http.HeaderValue FIRST = Http.Header.create(CONTROL_HEADER, "first");
-    private static final Http.HeaderValue SECOND = Http.Header.create(CONTROL_HEADER, "second");
-    private static final Http.HeaderValue ROUTING = Http.Header.create(CONTROL_HEADER, "routing");
-    private static final Http.HeaderValue CUSTOM = Http.Header.create(CONTROL_HEADER, "custom");
+    private static final Http.HeaderName CONTROL_HEADER = Http.HeaderNames.create("X-HELIDON-JUNIT");
+    private static final Http.Header FIRST = Http.Headers.create(CONTROL_HEADER, "first");
+    private static final Http.Header SECOND = Http.Headers.create(CONTROL_HEADER, "second");
+    private static final Http.Header ROUTING = Http.Headers.create(CONTROL_HEADER, "routing");
+    private static final Http.Header CUSTOM = Http.Headers.create(CONTROL_HEADER, "custom");
 
     private final Http1Client client;
 
@@ -98,7 +98,7 @@ class ErrorHandlingTest {
                 .header(ROUTING)
                 .request()) {
             assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
-            assertThat(response.headers(), hasHeader(Http.HeaderValues.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
         }
     }
 

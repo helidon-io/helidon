@@ -17,7 +17,6 @@
 package io.helidon.webserver.examples.basics;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.MediaContext;
 import io.helidon.nima.http.media.MediaContextConfig;
@@ -41,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 public class MainTest {
 
-    private static final Http.HeaderName FOO_HEADER = Http.Header.create("foo");
+    private static final Http.HeaderName FOO_HEADER = Http.HeaderNames.create("foo");
 
     private final Http1Client client;
 
@@ -147,7 +146,7 @@ public class MainTest {
 
         // Unsupported Content-Type
         try (Http1ClientResponse response = client.post("/mediaReader/create-record")
-                .contentType(HttpMediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("John Smith")) {
             assertThat(response.status(), is(INTERNAL_SERVER_ERROR_500));
         }
@@ -158,7 +157,7 @@ public class MainTest {
         // Static content
         try (Http1ClientResponse response = client.get("/supports/index.html").request()) {
             assertThat(response.status(), is(OK_200));
-            assertThat(response.headers().first(Http.Header.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
+            assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
         }
 
         // JSON
@@ -172,7 +171,7 @@ public class MainTest {
     public void errorHandling() {
         // Valid
         try (Http1ClientResponse response = client.post("/errorHandling/compute")
-                .contentType(HttpMediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("2")) {
             assertThat(response.status(), is(OK_200));
             assertThat(response.entity().as(String.class), is("100 / 2 = 50"));
@@ -180,14 +179,14 @@ public class MainTest {
 
         // Zero
         try (Http1ClientResponse response = client.post("/errorHandling/compute")
-                .contentType(HttpMediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("0")) {
             assertThat(response.status(), is(PRECONDITION_FAILED_412));
         }
 
         // NaN
         try (Http1ClientResponse response = client.post("/errorHandling/compute")
-                .contentType(HttpMediaType.TEXT_PLAIN)
+                .contentType(MediaTypes.TEXT_PLAIN)
                 .submit("aaa")) {
             assertThat(response.status(), is(BAD_REQUEST_400));
         }

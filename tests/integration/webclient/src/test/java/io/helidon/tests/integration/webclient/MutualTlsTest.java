@@ -188,7 +188,7 @@ public class MutualTlsTest {
                     .orElse("Unknown CN");
 
             // close to avoid re-using cached connections on the client side
-            res.header(Http.HeaderValues.CONNECTION_CLOSE);
+            res.header(Http.Headers.CONNECTION_CLOSE);
             res.send("Hello " + cn + "!");
         });
     }

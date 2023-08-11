@@ -66,11 +66,11 @@ that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
 class ClientRequestImplTest {
-    private static final Http.HeaderValue REQ_CHUNKED_HEADER = Http.Header.createCached(
-            Http.Header.create("X-Req-Chunked"), "true");
-    private static final Http.HeaderValue REQ_EXPECT_100_HEADER_NAME = Http.Header.createCached(
-            Http.Header.create("X-Req-Expect100"), "true");
-    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.Header.create("X-Req-ContentLength");
+    private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
+            Http.HeaderNames.create("X-Req-Chunked"), "true");
+    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
+            Http.HeaderNames.create("X-Req-Expect100"), "true");
+    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final long NO_CONTENT_LENGTH = -1L;
 
@@ -150,7 +150,7 @@ class ClientRequestImplTest {
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-        assertThat(response.headers(), hasHeader(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED));
+        assertThat(response.headers(), hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
     }
 
     @Test
@@ -159,7 +159,7 @@ class ClientRequestImplTest {
         long contentLength = requestEntityParts[0].length();
 
         HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.Header.CONTENT_LENGTH, String.valueOf(contentLength));
+                .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, false, contentLength, requestEntityParts[0]);
@@ -180,7 +180,7 @@ class ClientRequestImplTest {
         String[] requestEntityParts = {"First"};
 
         HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
-                .header(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED);
+                .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
@@ -387,13 +387,13 @@ class ClientRequestImplTest {
 
     private static void redirect(ServerRequest req, ServerResponse res) {
         res.status(Http.Status.FOUND_302)
-                .header(Http.Header.LOCATION, "/afterRedirect")
+                .header(Http.HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void redirectKeepMethod(ServerRequest req, ServerResponse res) {
         res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                .header(Http.Header.LOCATION, "/afterRedirect")
+                .header(Http.HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
@@ -432,13 +432,13 @@ class ClientRequestImplTest {
 
     private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
         Headers reqHeaders = req.headers();
-        if (reqHeaders.contains(Http.HeaderValues.EXPECT_100)) {
+        if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
-        if (reqHeaders.contains(Http.Header.CONTENT_LENGTH)) {
-            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.Header.CONTENT_LENGTH).value());
+        if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
         }
-        if (reqHeaders.contains(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+        if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
             res.headers().set(REQ_CHUNKED_HEADER);
         }
 

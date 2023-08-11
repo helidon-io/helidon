@@ -50,11 +50,11 @@ import static java.lang.System.Logger.Level.TRACE;
 // this may use one or more connections (depending on parallel streams)
 class Http2ClientConnectionHandler {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnectionHandler.class.getName());
-    private static final Http.HeaderValue CONNECTION_UPGRADE_HEADER = Http.Header.createCached(Http.Header.CONNECTION,
-                                                                                               "Upgrade, HTTP2-Settings");
+    private static final Http.Header CONNECTION_UPGRADE_HEADER = Http.Headers.createCached(Http.HeaderNames.CONNECTION,
+                                                                                           "Upgrade, HTTP2-Settings");
     // h2c stands for HTTP/2 plaintext protocol (only used without TLS)
-    private static final Http.HeaderValue UPGRADE_HEADER = Http.Header.createCached(Http.Header.UPGRADE, "h2c");
-    private static final Http.HeaderName HTTP2_SETTINGS_HEADER = Http.Header.create("HTTP2-Settings");
+    private static final Http.Header UPGRADE_HEADER = Http.Headers.createCached(Http.HeaderNames.UPGRADE, "h2c");
+    private static final Http.HeaderName HTTP2_SETTINGS_HEADER = Http.HeaderNames.create("HTTP2-Settings");
 
     // todo requires handling of timeouts and removal from this queue
     private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =

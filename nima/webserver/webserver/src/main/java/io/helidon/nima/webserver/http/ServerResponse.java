@@ -58,21 +58,21 @@ public interface ServerResponse {
 
     /**
      * Set a header. If the values are constant, please use
-     * {@link io.helidon.common.http.Http.Header#create(io.helidon.common.http.Http.HeaderName, String...)} and store the header
-     * in a constant field and call {@link #header(Http.HeaderValue)}.
+     * {@link io.helidon.common.http.Http.Headers#create(io.helidon.common.http.Http.HeaderName, String...)} and store the header
+     * in a constant field and call {@link #header(io.helidon.common.http.Http.Header)}.
      *
      * @param name   header name
      * @param values value(s) of the header
      * @return this instance
      */
     default ServerResponse header(HeaderName name, String... values) {
-        return header(Http.Header.create(name, values));
+        return header(Http.Headers.create(name, values));
     }
 
     /**
      * Not optimized method for setting a header.
      * Use for unknown headers, where {@link HeaderName} cannot be cached.
-     * Use {@link #header(Http.HeaderValue)} or {@link #header(HeaderName, String...)}
+     * Use {@link #header(io.helidon.common.http.Http.Header)} or {@link #header(HeaderName, String...)}
      * otherwise.
      *
      * @param name   name of the header
@@ -80,7 +80,7 @@ public interface ServerResponse {
      * @return this instance
      */
     default ServerResponse header(String name, String... values) {
-        return header(Http.Header.create(Http.Header.create(name), values));
+        return header(Http.Headers.create(name, values));
     }
 
     /**
@@ -90,7 +90,7 @@ public interface ServerResponse {
      * @return this instance
      * @see HeaderName
      */
-    ServerResponse header(Http.HeaderValue header);
+    ServerResponse header(Http.Header header);
 
     /**
      * Send a response with no entity.
@@ -202,7 +202,7 @@ public interface ServerResponse {
      * @param length content length
      */
     default void contentLength(long length) {
-        header(Http.Header.create(Http.Header.CONTENT_LENGTH, true, false, String.valueOf(length)));
+        header(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
     }
 
     /**

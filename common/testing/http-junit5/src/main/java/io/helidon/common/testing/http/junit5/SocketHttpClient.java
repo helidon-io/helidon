@@ -136,7 +136,7 @@ public class SocketHttpClient implements AutoCloseable {
             if (i < 0) {
                 throw new AssertionError("Header without semicolon - " + line);
             }
-            headers.add(Http.Header.create(line.substring(0, i).trim()), line.substring(i + 1).trim());
+            headers.add(Http.HeaderNames.create(line.substring(0, i).trim()), line.substring(i + 1).trim());
         }
         return ClientResponseHeaders.create(headers);
     }

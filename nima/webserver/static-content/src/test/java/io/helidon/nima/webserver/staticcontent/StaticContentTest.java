@@ -20,7 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.nima.testing.junit5.webserver.DirectClient;
 import io.helidon.nima.testing.junit5.webserver.RoutingTest;
@@ -69,7 +69,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "image/x-icon"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/x-icon"));
         }
     }
 
@@ -79,7 +79,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Nested content"));
         }
     }
@@ -90,7 +90,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
         }
     }
@@ -101,7 +101,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "image/x-icon"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "image/x-icon"));
         }
     }
 
@@ -111,7 +111,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Nested content"));
         }
     }
@@ -122,7 +122,7 @@ class StaticContentTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(Header.CONTENT_TYPE, "text/plain"));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
         }
     }

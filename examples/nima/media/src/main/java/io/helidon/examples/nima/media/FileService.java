@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.examples.nima.media;
 
 import java.io.IOException;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.http.ContentDisposition;
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.nima.http.media.multipart.MultiPart;
@@ -48,7 +49,7 @@ import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
  * File service.
  */
 final class FileService implements HttpService {
-    private static final Http.HeaderValue UI_LOCATION = Header.createCached(Header.LOCATION, "/ui");
+    private static final Http.Header UI_LOCATION = Http.Headers.createCached(HeaderNames.LOCATION, "/ui");
     private final JsonBuilderFactory jsonFactory;
     private final Path storage;
 

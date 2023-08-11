@@ -17,7 +17,7 @@
 package io.helidon.integration.webserver.upgrade.test;
 
 import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
+import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
@@ -36,8 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 public class CompressionTest {
-    private static final Http.HeaderValue CONTENT_ENCODING_GZIP = Header.create(Header.CONTENT_ENCODING, "gzip");
-    private static final Http.HeaderValue CONTENT_ENCODING_DEFLATE = Header.create(Header.CONTENT_ENCODING, "deflate");
+    private static final Http.Header CONTENT_ENCODING_GZIP = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
+    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
 
     private final Http1Client webClient;
 
@@ -56,7 +56,7 @@ public class CompressionTest {
     @Test
     public void testGzip() {
         Http1ClientRequest request = webClient.get();
-        request.header(Header.create(Header.ACCEPT_ENCODING, "gzip"));
+        request.header(Http.Headers.create(Http.HeaderNames.ACCEPT_ENCODING, "gzip"));
         try (Http1ClientResponse response = request.path("/compressed").request()) {
             assertThat(response.entity().as(String.class), equalTo("It works!"));
             assertThat(response.headers(), hasHeader(CONTENT_ENCODING_GZIP));
@@ -69,7 +69,7 @@ public class CompressionTest {
     @Test
     public void testDeflateContent() {
         Http1ClientRequest builder = webClient.get();
-        builder.header(Header.create(Header.ACCEPT_ENCODING, "deflate"));
+        builder.header(Http.Headers.create(HeaderNames.ACCEPT_ENCODING, "deflate"));
         try (Http1ClientResponse response = builder.path("/compressed").request()) {
             assertThat(response.entity().as(String.class), equalTo("It works!"));
             assertThat(response.headers(), hasHeader(CONTENT_ENCODING_DEFLATE));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.common.http.Http.Header;
 import io.helidon.common.http.Http.HeaderName;
-import io.helidon.common.http.Http.HeaderValue;
 
 /**
  * Client request headers.
@@ -50,12 +48,12 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public boolean contains(HeaderValue headerWithValue) {
+    public boolean contains(Http.Header headerWithValue) {
         return delegate.contains(headerWithValue);
     }
 
     @Override
-    public HeaderValue get(HeaderName name) {
+    public Http.Header get(HeaderName name) {
         return delegate.get(name);
     }
 
@@ -67,8 +65,8 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     @Override
     public List<HttpMediaType> acceptedTypes() {
         if (mediaTypes == null) {
-            if (delegate.contains(Header.ACCEPT)) {
-                List<String> accepts = delegate.get(Header.ACCEPT).allValues(true);
+            if (delegate.contains(Http.HeaderNames.ACCEPT)) {
+                List<String> accepts = delegate.get(Http.HeaderNames.ACCEPT).allValues(true);
 
                 List<HttpMediaType> mediaTypes = new ArrayList<>(accepts.size());
                 for (String accept : accepts) {
@@ -85,13 +83,13 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public ClientRequestHeaders setIfAbsent(HeaderValue header) {
+    public ClientRequestHeaders setIfAbsent(Http.Header header) {
         delegate.setIfAbsent(header);
         return this;
     }
 
     @Override
-    public ClientRequestHeaders add(HeaderValue header) {
+    public ClientRequestHeaders add(Http.Header header) {
         delegate.add(header);
         return this;
     }
@@ -103,19 +101,19 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public ClientRequestHeaders remove(HeaderName name, Consumer<HeaderValue> removedConsumer) {
+    public ClientRequestHeaders remove(HeaderName name, Consumer<Http.Header> removedConsumer) {
         delegate.remove(name, removedConsumer);
         return this;
     }
 
     @Override
-    public ClientRequestHeaders set(HeaderValue header) {
+    public ClientRequestHeaders set(Http.Header header) {
         delegate.set(header);
         return this;
     }
 
     @Override
-    public Iterator<HeaderValue> iterator() {
+    public Iterator<Http.Header> iterator() {
         return delegate.iterator();
     }
 
@@ -127,6 +125,12 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     @Override
     public ClientRequestHeaders clear() {
         delegate.clear();
+        return this;
+    }
+
+    @Override
+    public ClientRequestHeaders from(Headers headers) {
+        headers.forEach(this::set);
         return this;
     }
 }

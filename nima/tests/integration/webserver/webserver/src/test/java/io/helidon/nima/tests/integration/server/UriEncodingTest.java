@@ -51,7 +51,7 @@ class UriEncodingTest {
         String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/f%6F%6F", null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("It works!"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
     }
 
     /**
@@ -62,6 +62,6 @@ class UriEncodingTest {
         String s = socketHttpClient.sendAndReceive(Http.Method.GET, "/f%6F%6F/b%61%72", null);
         assertThat(SocketHttpClient.entityFromResponse(s, true), is("bar"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Http.HeaderValues.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
     }
 }

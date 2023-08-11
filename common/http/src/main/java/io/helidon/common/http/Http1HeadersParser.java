@@ -27,13 +27,13 @@ import io.helidon.common.buffers.LazyString;
  */
 public final class Http1HeadersParser {
     // TODO expand set of fastpath headers
-    private static final byte[] HD_HOST = (HeaderEnum.HOST.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
-    private static final byte[] HD_ACCEPT = (HeaderEnum.ACCEPT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] HD_HOST = (HeaderNameEnum.HOST.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] HD_ACCEPT = (HeaderNameEnum.ACCEPT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
     private static final byte[] HD_CONNECTION =
-            (HeaderEnum.CONNECTION.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+            (HeaderNameEnum.CONNECTION.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
 
     private static final byte[] HD_USER_AGENT =
-            (HeaderEnum.USER_AGENT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
+            (HeaderNameEnum.USER_AGENT.defaultCase() + ":").getBytes(StandardCharsets.UTF_8);
 
     private Http1HeadersParser() {
     }
@@ -67,7 +67,7 @@ public final class Http1HeadersParser {
             reader.skip(2);
             maxLength -= eol + 1;
 
-            Http.HeaderValue headerValue = Http.Header.create(header, value);
+            Http.Header headerValue = Http.Headers.create(header, value);
             headers.add(headerValue);
             if (validate) {
                 headerValue.validate();
@@ -85,25 +85,25 @@ public final class Http1HeadersParser {
         case (byte) 'H' -> {
             if (reader.startsWith(HD_HOST)) {
                 reader.skip(HD_HOST.length);
-                return HeaderEnum.HOST;
+                return HeaderNameEnum.HOST;
             }
         }
         case (byte) 'A' -> {
             if (reader.startsWith(HD_ACCEPT)) {
                 reader.skip(HD_ACCEPT.length);
-                return HeaderEnum.ACCEPT;
+                return HeaderNameEnum.ACCEPT;
             }
         }
         case (byte) 'C' -> {
             if (reader.startsWith(HD_CONNECTION)) {
                 reader.skip(HD_CONNECTION.length);
-                return HeaderEnum.CONNECTION;
+                return HeaderNameEnum.CONNECTION;
             }
         }
         case (byte) 'U' -> {
             if (reader.startsWith(HD_USER_AGENT)) {
                 reader.skip(HD_USER_AGENT.length);
-                return HeaderEnum.USER_AGENT;
+                return HeaderNameEnum.USER_AGENT;
             }
         }
         default -> {
@@ -117,7 +117,7 @@ public final class Http1HeadersParser {
         }
 
         String headerName = reader.readAsciiString(col);
-        Http.HeaderName header = Http.Header.create(headerName);
+        Http.HeaderName header = Http.HeaderNames.create(headerName);
         reader.skip(1); // skip the colon character
 
         return header;

@@ -22,10 +22,11 @@ import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRules;
+
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.HeaderValues.ACCEPT_EVENT_STREAM;
-import static io.helidon.common.http.Http.HeaderValues.ACCEPT_JSON;
+import static io.helidon.common.http.Http.Headers.ACCEPT_EVENT_STREAM;
+import static io.helidon.common.http.Http.Headers.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

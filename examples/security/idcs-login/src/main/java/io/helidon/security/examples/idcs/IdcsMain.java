@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.common.http.HttpMediaTypes;
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.nima.webserver.WebServer;
@@ -83,7 +83,7 @@ public final class IdcsMain {
                         // web server does not (yet) have possibility to configure routes in config files, so explicit...
                         .get("/rest/profile", (req, res) -> {
                             Optional<SecurityContext> securityContext = req.context().get(SecurityContext.class);
-                            res.headers().contentType(HttpMediaType.PLAINTEXT_UTF_8);
+                            res.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
                             res.send("Response from config based service, you are: \n" + securityContext
                                     .flatMap(SecurityContext::user)
                                     .map(Subject::toString)
