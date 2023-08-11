@@ -21,6 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
@@ -111,6 +112,29 @@ public final class Prototype {
                          Class<S> configType,
                          boolean allFromServiceLoader) {
             return ProvidedUtil.discoverServices(config, serviceLoader, providerType, configType, allFromServiceLoader);
+        }
+
+        /**
+         * Discover service from configuration.
+         *
+         * @param config               configuration located at the node of the service providers
+         *                             (either a list node, or object, where each child is one service)
+         * @param serviceLoader        helidon service loader for the expected type
+         * @param providerType         type of the service provider interface
+         * @param configType           type of the configured service
+         * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
+         *                             node
+         * @param <S>                  type of the expected service
+         * @param <T>                  type of the configured service provider that creates instances of S
+         * @return list of discovered services
+         */
+        default <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
+        discoverService(Config config,
+                         HelidonServiceLoader<T> serviceLoader,
+                         Class<T> providerType,
+                         Class<S> configType,
+                         boolean allFromServiceLoader) {
+            return ProvidedUtil.discoverService(config, serviceLoader, providerType, configType, allFromServiceLoader);
         }
     }
 

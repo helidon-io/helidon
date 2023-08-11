@@ -337,7 +337,7 @@ final class GenerateAbstractBuilder {
                     if (!child.configuredOption().notConfigured()) {
                         Optional<String> fromConfig = child.typeHandler().generateFromConfig(child.configuredOption(),
                                                                                              child.factoryMethods());
-                        if (fromConfig.isPresent()) {
+                        if (!child.configuredOption().provider() && fromConfig.isPresent()) {
                             pw.print(SOURCE_SPACING);
                             pw.print(SOURCE_SPACING);
                             pw.print(SOURCE_SPACING);
@@ -706,25 +706,36 @@ final class GenerateAbstractBuilder {
                         pw.print(SOURCE_SPACING);
                         pw.print(SOURCE_SPACING);
                         pw.print(SOURCE_SPACING);
-                        pw.print("java.util.List<");
-                        pw.print(property.typeHandler().actualType().fqName());
-                        pw.print("> services = discoverServices(config.get(\"");
-                        pw.print(configuredOption.configKey());
-                        pw.print("\"), serviceLoader, ");
-                        pw.print(providerOption.serviceProviderInterface().fqName());
-                        pw.print(".class, ");
-                        pw.print(property.typeHandler().actualType().fqName());
-                        pw.print(".class, ");
-                        pw.print(property.name());
-                        pw.print("DiscoverServices");
-                        pw.println(");");
-                        pw.print(SOURCE_SPACING);
-                        pw.print(SOURCE_SPACING);
-                        pw.print(SOURCE_SPACING);
-                        pw.print(SOURCE_SPACING);
-                        pw.print("this.add");
-                        pw.print(capitalize(property.name()));
-                        pw.println("(services);");
+
+                        TypeName typeName = property.typeHandler().declaredType();
+                        if (typeName.isList() || typeName.isSet()) {
+                            pw.print("this.add");
+                            pw.print(capitalize(property.name()));
+                            pw.print("(");
+                            pw.print("discoverServices(config.get(\"");
+                            pw.print(configuredOption.configKey());
+                            pw.print("\"), serviceLoader, ");
+                            pw.print(providerOption.serviceProviderInterface().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.typeHandler().actualType().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.name());
+                            pw.print("DiscoverServices");
+                            pw.println("));");
+                        } else {
+                            pw.print("discoverService(config.get(\"");
+                            pw.print(configuredOption.configKey());
+                            pw.print("\"), serviceLoader, ");
+                            pw.print(providerOption.serviceProviderInterface().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.typeHandler().actualType().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.name());
+                            pw.print("DiscoverServices");
+                            pw.print(").ifPresent(this::");
+                            pw.print(property.setterName());
+                            pw.println(");");
+                        }
                     } else {
                         if (defaultDiscoverServices) {
                             pw.print(SOURCE_SPACING);

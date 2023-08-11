@@ -124,6 +124,11 @@ public @interface ConfiguredOption {
      * The provider must then be configured to {@link Configured#provides()} this type.
      * In addition, the {@link #providerType()} must be set to the correct service provider interface,
      * so code can be correctly generated.
+     * <p>
+     * If the method returns a list, the provider configuration must be under config key {@code providers} under
+     * the configured option. On the same level as {@code providers}, there can be {@code discover-services} boolean
+     * defining whether to look for services from service loader even if not configured in the configuration (this would
+     * override {@link #providerDiscoverServices()} defined on this annotation.
      *
      * @return whether this requires a provider with configuration, defaults to {@code false}
      */

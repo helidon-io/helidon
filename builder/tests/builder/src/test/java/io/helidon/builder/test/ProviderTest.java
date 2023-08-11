@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2023 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.builder.test;
+
+import java.util.List;
+
+import io.helidon.builder.test.testsubjects.SomeProvider;
+import io.helidon.builder.test.testsubjects.WithProvider;
+import io.helidon.common.Errors;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class ProviderTest {
+    private static Config config;
+
+    @BeforeAll
+    static void beforeAll() {
+        config = Config.just(ConfigSources.classpath("provider-test.yaml"));
+    }
+
+    @Test
+    void testMinimalDefined() {
+        /*
+        Only the property that does not discover services and does not return optional is defined in config
+         */
+        WithProvider value = WithProvider.create(config.get("min-defined"));
+
+        assertThat(value.oneDiscover().prop(), is("some-1"));
+        assertThat(value.oneNotDiscover().prop(), is("config"));
+
+        assertThat(value.optionalDiscover().map(SomeProvider.SomeService::prop), optionalValue(is("some-1")));
+        assertThat(value.optionalNotDiscover().map(SomeProvider.SomeService::prop), optionalEmpty());
+
+        assertThat(value.listDiscover(), hasSize(2));
+        assertThat(value.listNotDiscover(), hasSize(0));
+    }
+
+    @Test
+    void testAllDefined() {
+        /*
+        Everything is customized
+         */
+        WithProvider value = WithProvider.create(config.get("all-defined"));
+
+        assertThat(value.oneDiscover().prop(), is("config"));
+        assertThat(value.oneNotDiscover().prop(), is("config"));
+
+        assertThat(value.optionalDiscover().map(SomeProvider.SomeService::prop), optionalValue(is("config")));
+        assertThat(value.optionalNotDiscover().map(SomeProvider.SomeService::prop), optionalValue(is("config")));
+
+        List<SomeProvider.SomeService> services = value.listDiscover();
+        assertThat(services, hasSize(2));
+        assertThat(services.get(0).prop(), is("config"));
+        assertThat(services.get(1).prop(), is("config2"));
+
+        services = value.listNotDiscover();
+        assertThat(value.listNotDiscover(), hasSize(2));
+        assertThat(services.get(0).prop(), is("config"));
+        assertThat(services.get(1).prop(), is("config2"));
+    }
+
+    @Test
+    void testFail() {
+        /*
+        Missing the one mandatory option in config
+         */
+        Errors.ErrorMessagesException fail = assertThrows(Errors.ErrorMessagesException.class,
+                                                          () -> WithProvider.create(config.get("fail")));
+
+        assertThat(fail.getMessages(), hasSize(1));
+        assertThat(fail.getMessage(), containsString("\"one-not-discover\" must not be null"));
+    }
+
+    @Test
+    void testSingleList() {
+        /*
+        Single value list (when not using discovery). When discovery is used, all in service loader are discovered, even
+        if not configured
+         */
+        WithProvider value = WithProvider.create(config.get("single-list"));
+
+        assertThat(value.oneNotDiscover().prop(), is("config2"));
+
+        List<SomeProvider.SomeService> services = value.listDiscover();
+        assertThat(services, hasSize(2));
+        assertThat(services.get(0).prop(), is("config"));
+        assertThat(services.get(1).prop(), is("some-2"));
+
+        services = value.listNotDiscover();
+        assertThat(value.listNotDiscover(), hasSize(1));
+        assertThat(services.get(0).prop(), is("config2"));
+    }
+}
