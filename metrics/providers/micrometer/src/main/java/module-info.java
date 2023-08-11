@@ -24,6 +24,7 @@ module io.helidon.metrics.micrometer {
     requires io.helidon.metrics.api;
     requires micrometer.core;
     requires static micrometer.registry.prometheus;
+    requires io.helidon.common;
     requires io.helidon.common.config;
 
     provides io.helidon.metrics.spi.MetricsFactoryProvider with MicrometerMetricsFactoryProvider;
