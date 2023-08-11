@@ -28,21 +28,21 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE
 )
 module io.helidon.security {
-    requires java.logging;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.security;
-    requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.config;
+    requires io.helidon.common.context;
+    requires io.helidon.common.uri;
+    requires java.logging;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common.reactive;
+    requires transitive io.helidon.common.security;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.security.util;
     requires transitive io.helidon.tracing;
-
-    requires io.helidon.security.util;
-    requires io.helidon.common.context;
-    requires io.helidon.common.uri;
 
     exports io.helidon.security;
     exports io.helidon.security.spi;
