@@ -23,9 +23,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.MetricsSettings;
 import io.helidon.metrics.api.spi.MetricFactory;

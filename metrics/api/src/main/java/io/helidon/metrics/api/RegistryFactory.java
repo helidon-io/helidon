@@ -19,8 +19,8 @@ package io.helidon.metrics.api;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.config.Config;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -101,7 +101,7 @@ public interface RegistryFactory {
      */
     @Deprecated
     static RegistryFactory getInstance(Config config) {
-        return RegistryFactoryManager.getInstance(config);
+        return RegistryFactoryManager.getInstance(MetricsSettings.create(config));
     }
 
     /**

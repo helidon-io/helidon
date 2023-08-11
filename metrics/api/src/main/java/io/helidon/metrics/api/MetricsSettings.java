@@ -17,7 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Map;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -31,12 +31,12 @@ import io.helidon.config.metadata.ConfiguredOption;
 public interface MetricsSettings {
 
     /**
-     * Returns default metrics settings based on the {@code metrics} section of the default config.
+     * Returns default metrics settings.
      *
      * @return new settings reflecting the default config
      */
     static MetricsSettings create() {
-        return create(Config.create().get(Builder.METRICS_CONFIG_KEY));
+        return create(Config.empty());
     }
 
     /**

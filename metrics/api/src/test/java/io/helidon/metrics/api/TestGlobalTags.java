@@ -17,6 +17,8 @@ package io.helidon.metrics.api;
 
 import java.util.AbstractMap;
 
+import io.helidon.config.Config;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -30,7 +32,7 @@ class TestGlobalTags {
     @Test
     @DisabledIfSystemProperty(named = "testSelection", matches = "topLevelAndMetricsLevel")
     void testTopLevelTagsIgnoredForMetrics() {
-        MetricsSettings metricsSettings = MetricsSettings.create();
+        MetricsSettings metricsSettings = MetricsSettings.create(Config.create().get(MetricsSettings.Builder.METRICS_CONFIG_KEY));
         assertThat("Global tags with top-level 'tags' assigned", metricsSettings.globalTags().entrySet(), emptyIterable());
     }
 
@@ -40,7 +42,7 @@ class TestGlobalTags {
         String tag = "myTag";
         String value = "myValue";
         String globalTags = tag + "=" + value;
-        MetricsSettings metricsSettings = MetricsSettings.create();
+        MetricsSettings metricsSettings = MetricsSettings.create(Config.create().get(MetricsSettings.Builder.METRICS_CONFIG_KEY));
         assertThat("Global tags with top-level and metrics 'tags' assigned",
                    metricsSettings.globalTags().entrySet(),
                    hasItem(new AbstractMap.SimpleEntry<>(tag, value)));

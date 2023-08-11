@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import javax.sql.DataSource;
 
 import io.helidon.common.Builder;
+import io.helidon.common.config.Config;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.messaging.connectors.jms.JmsConnector;
@@ -187,7 +188,7 @@ public interface AqConnector extends ConnectorFactory {
         private final Map<String, DataSource> dataSourceMap = new HashMap<>();
         private ScheduledExecutorService scheduler;
         private ExecutorService executor;
-        private io.helidon.config.Config config;
+        private Config config;
 
         /**
          * Add custom {@link jakarta.jms.ConnectionFactory ConnectionFactory} referencable by supplied name with
@@ -208,7 +209,7 @@ public interface AqConnector extends ConnectorFactory {
          * @param config custom config
          * @return this builder
          */
-        public AqConnectorBuilder config(io.helidon.config.Config config) {
+        public AqConnectorBuilder config(Config config) {
             this.config = config;
             return this;
         }
@@ -260,7 +261,7 @@ public interface AqConnector extends ConnectorFactory {
         @Override
         public AqConnectorImpl build() {
             if (config == null) {
-                config = io.helidon.config.Config.empty();
+                config = Config.empty();
             }
 
             if (executor == null) {

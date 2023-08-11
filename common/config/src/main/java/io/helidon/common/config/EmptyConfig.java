@@ -216,6 +216,11 @@ final class EmptyConfig {
         }
 
         @Override
+        public <T> ConfigValue<List<T>> mapList(Function<Config, T> mapper) throws ConfigException {
+            return new EmptyValue<>(this.key);
+        }
+
+        @Override
         public <C extends Config> ConfigValue<List<C>> asNodeList() throws ConfigException {
             return new EmptyValue<>(this.key);
         }

@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.config.ConfigException;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
@@ -813,6 +814,12 @@ public interface Config extends io.helidon.common.config.Config {
      * @throws ConfigMappingException in case the mapper fails to map the values
      */
     <T> ConfigValue<List<T>> asList(Function<Config, T> mapper) throws ConfigMappingException;
+
+    @Override
+    default <T> io.helidon.common.config.ConfigValue<List<T>> mapList(Function<io.helidon.common.config.Config, T> mapper)
+            throws ConfigException {
+        return asList(mapper::apply);
+    }
 
     /**
      * Returns existing current config node as a {@link Optional} instance

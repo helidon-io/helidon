@@ -15,7 +15,7 @@
  */
 package io.helidon.metrics.api;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 class RegistrySettingsImpl implements RegistrySettings {
 
@@ -81,7 +81,7 @@ class RegistrySettingsImpl implements RegistrySettings {
                     .ifPresent(this::enabled);
 
             config.get(Builder.FILTER_CONFIG_KEY)
-                    .as(RegistryFilterSettings.Builder::create)
+                    .map(RegistryFilterSettings.Builder::create)
                     .ifPresent(this::filterSettings);
             return this;
         }

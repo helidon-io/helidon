@@ -17,7 +17,7 @@ package io.helidon.dbclient.metrics;
 
 import java.util.function.BiFunction;
 
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbStatementType;
 
