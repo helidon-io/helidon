@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
 
@@ -28,6 +29,12 @@ class MetricsConfigSupport {
                 .asString()
                 .asOptional();
     }
+
+    // Pattern:
+    //   - capture reluctant match of anything
+    //   - non-capturing match of an unescaped =
+    //   - capture the rest.
+    static final Pattern TAG_ASSIGNMENT_PATTERN = Pattern.compile("(.*?)(?:(?<!\\\\)=)(.*)");
 
     private MetricsConfigSupport() {
     }

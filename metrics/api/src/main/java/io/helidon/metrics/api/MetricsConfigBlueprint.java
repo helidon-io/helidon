@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
@@ -100,27 +101,55 @@ interface MetricsConfigBlueprint {
 
     @Prototype.FactoryMethod
     static List<Tag> createGlobalTags(Config globalTagExpression) {
-        String pairs = globalTagExpression.asString().get();
+        return createGlobalTags(globalTagExpression.asString().get());
+    }
+
+    static List<Tag> createGlobalTags(String pairs) {
         // Use a TreeMap to order by tag name.
         Map<String, Tag> result = new TreeMap<>();
-        List<String> errorPairs = new ArrayList<>();
-        String[] assignments = pairs.split(",");
+        List<String> allErrors = new ArrayList<>();
+        String[] assignments = pairs.split("(?<!\\\\),"); // split using non-escaped equals sign
+        int position = 0;
         for (String assignment : assignments) {
-            int equalsSlot = assignment.indexOf("=");
-            if (equalsSlot == -1) {
-                errorPairs.add("Missing '=': " + assignment);
-            } else if (equalsSlot == 0) {
-                errorPairs.add("Missing tag name: " + assignment);
-            } else if (equalsSlot == assignment.length() - 1) {
-                errorPairs.add("Missing tag value: " + assignment);
+            List<String> errorsForThisAssignment = new ArrayList<>();
+            if (assignment.isBlank()) {
+                errorsForThisAssignment.add("empty assignment at position " + position + ": " + assignment);
             } else {
-                String key = assignment.substring(0, equalsSlot);
-                result.put(key,
-                           Tag.create(key, assignment.substring(equalsSlot + 1)));
+                // Pattern should yield group 1 = tag name and group 2 = tag value.
+                Matcher matcher = MetricsConfigSupport.TAG_ASSIGNMENT_PATTERN.matcher(assignment);
+                if (!matcher.matches()) {
+                    errorsForThisAssignment.add("expected tag=value but found '" + assignment + "'");
+                } else {
+                    String name = matcher.group(1);
+                    String value = matcher.group(2);
+                    if (name.isBlank()) {
+                        errorsForThisAssignment.add("missing tag name");
+                    }
+                    if (value.isBlank()) {
+                        errorsForThisAssignment.add("missing tag value");
+                    }
+                    if (!name.matches("[A-Za-z_][A-Za-z_0-9]*")) {
+                        errorsForThisAssignment.add(
+                                "tag name must start with a letter and include only letters, digits, and underscores");
+                    }
+                    if (errorsForThisAssignment.isEmpty()) {
+                        result.put(name,
+                                   Tag.create(name,
+                                              value.replace("\\,", ",")
+                                                   .replace("\\=", "=")));
+                    }
+                }
             }
+            if (!errorsForThisAssignment.isEmpty()) {
+                allErrors.add(String.format("Position %d with expression %s: %s",
+                                            position,
+                                            assignment,
+                                            errorsForThisAssignment));
+            }
+            position++;
         }
-        if (!errorPairs.isEmpty()) {
-            throw new IllegalArgumentException("Error(s) in global tag expression: " + errorPairs);
+        if (!allErrors.isEmpty()) {
+            throw new IllegalArgumentException("Error(s) in global tag expression: " + allErrors);
         }
         return result.values()
                 .stream()
