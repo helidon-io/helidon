@@ -15,6 +15,8 @@
  */
 package io.helidon.integrations.oci.secrets.mp.configsource;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -44,7 +46,9 @@ final class SecretBundleByNameConfigSource extends AbstractSecretBundleConfigSou
      *
      * @param propertyNamesSupplier a {@link Supplier} of a {@link Set} of {@link String}s where the supplied {@link
      * Set} adheres to the requirements of the return value of the {@link #getPropertyNames()} method; must not be
-     * {@code null}. Note that among other things this means a {@link Supplier} of an empty {@link Set} is permissible.
+     * {@code null}. Note that among other things this means a {@link Supplier} of an empty {@link Set} is
+     * permissible. The {@link Set} returned by this {@link Supplier} is also filtered against the supplied {@code
+     * acceptPattern}.
      *
      * @param acceptPattern a {@linkplain Pattern regular expression} against which prospective property names will be
      * {@linkplain java.util.regex.Matcher#matches() matched}; {@code null} will be returned from the {@link
@@ -65,7 +69,19 @@ final class SecretBundleByNameConfigSource extends AbstractSecretBundleConfigSou
                                    String vaultOcid,
                                    Supplier<? extends Secrets> secretsSupplier) {
         super(ordinal,
-              propertyNamesSupplier,
+              () -> {
+                  Set<String> pns = propertyNamesSupplier.get();
+                  if (pns == null || pns.isEmpty()) {
+                      return Set.of();
+                  }
+                  Set<String> set = new HashSet<>();
+                  for (String pn : pns) {
+                      if (acceptPattern.matcher(pn).matches()) {
+                          set.add(pn);
+                      }
+                  }
+                  return Collections.unmodifiableSet(set);
+              },
               guardWithAcceptPattern(secretBundleContentDetailsByName(vaultOcid, secretsSupplier),
                                      acceptPattern),
               secretsSupplier,
