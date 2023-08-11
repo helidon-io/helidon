@@ -17,14 +17,14 @@
 
 set -e
 
-FOLDER=./certs
+FOLDER=./
 ALIAS='1'
 PASSWORD=${1:-'password'}
 
 function clean(){
-    echo "=============================> Cleaning"
-    rm -rf ${FOLDER}
-    mkdir -p ${FOLDER}
+    FILE=$1
+    echo "=============================> Cleaning $FILE"
+    rm -f ${FILE}
 }
 
 function printKeystore(){
@@ -47,7 +47,8 @@ function createTruststore(){
     echo "=============================> ${FOLDER}/${TRUSTSTORE} created"
 }
 
-clean
+clean server.p12
+clean client.p12
 
 createKeystore 'server.p12' 'CN=helidon-test-certificate, OU=Helidon, O=Oracle, L=Santa Clara, ST=California, C=US, emailAddress=info@helidon.io'
 createTruststore 'client.p12'

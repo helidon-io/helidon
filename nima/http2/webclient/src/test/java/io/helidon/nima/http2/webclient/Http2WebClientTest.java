@@ -89,15 +89,16 @@ class Http2WebClientTest {
             .shareConnectionCache(false)
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
             .build();
-    private static final Supplier<Http2Client> tlsClient = () -> Http2Client.builder()
-            .shareConnectionCache(false)
+    private static final LazyValue<Http2Client> tlsClient = LazyValue.create(() -> Http2Client.builder()
             .baseUri("https://localhost:" + tlsPort + "/versionspecific")
             .tls(Tls.builder()
-                         .enabled(true)
-                         .trustAll(true)
-                         .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-                         .build())
-            .build();
+                    .trust(trust -> trust
+                            .keystore(store -> store
+                                    .passphrase("password")
+                                    .trustStore(true)
+                                    .keystore(Resource.create("client.p12"))))
+                    .build())
+            .build());
 
     Http2WebClientTest(WebServer server) {
         plainPort = server.port();
@@ -108,15 +109,15 @@ class Http2WebClientTest {
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         executorService = Executors.newFixedThreadPool(10);
 
-        Keys privateKeyConfig =
-                Keys.builder()
-                        .keystore(keystore -> keystore.keystore(Resource.create("certificate.p12"))
-                                .passphrase("helidon"))
-                        .build();
+        Keys privateKeyConfig = Keys.builder()
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
+                .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
 
         serverBuilder

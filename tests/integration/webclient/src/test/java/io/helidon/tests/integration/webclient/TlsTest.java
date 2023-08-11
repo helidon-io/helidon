@@ -43,9 +43,16 @@ public class TlsTest {
 
     public TlsTest(WebServer server, Http1Client client) {
         this.client = client;
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust
+                        .keystore(store -> store
+                                .passphrase("password")
+                                .trustStore(true)
+                                .keystore(Resource.create("client.p12"))))
+                .build();
         this.secureClient = Http1Client.builder()
                 .baseUri("https://localhost:" + server.port())
-                .tls(Tls.builder().trustAll(true).build())
+                .tls(clientTls)
                 .build();
     }
 
