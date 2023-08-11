@@ -16,12 +16,12 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Helidon Níma Testing
-:h1Prefix: Níma
-:pagename: Helidon Níma Testing
-:description: Testing in Helidon Níma
-:keywords: helidon, nima, test, testing, junit
-:feature-name: Helidon Níma Testing Framework
+= Helidon Testing
+:h1Prefix: SE
+:pagename: Helidon Testing
+:description: Testing in Helidon 
+:keywords: helidon, test, testing, junit
+:feature-name: Helidon Testing Framework
 :rootdir: {docdir}/..
 
 == Contents
@@ -35,25 +35,25 @@
 
 == Overview
 
-Helidon provides built-in test support for Helidon Níma testing with JUnit 5.
+Helidon provides built-in test support for Helidon testing with JUnit 5.
 
 include::{rootdir}/includes/dependencies.adoc[]
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.nima.testing.junit5</groupId>
-    <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+    <groupId>io.helidon.testing.junit5</groupId>
+    <artifactId>helidon-testing-junit5-webserver</artifactId>
     <scope>test</scope>
 </dependency>
 ----
 
 == Usage
 
-Helidon provides a rich set of extensions based on JUnit 5 for Helidon Níma testing. Testing can be done with automatic server start-up, configuration, and shutdown. Testing can also be done without full server start-up with `DirectClient` when no real sockets are created.
+Helidon provides a rich set of extensions based on JUnit 5 for Helidon WebServer testing. Testing can be done with automatic server start-up, configuration, and shutdown. Testing can also be done without full server start-up with `DirectClient` when no real sockets are created.
 
 == API
 
-There are two main annotations that you can use to test the Níma server.
+There are two main annotations that you can use to test Helidon WebServer.
 
 * `@ServerTest` is an integration test annotation that starts the server (opens ports) and provides client injection pre-configured for the server port(s).
 * `@RoutingTest` is a unit test annotation that does not start the server and does not open ports but provides a direct client (with the same API as the usual network client) to test routing.
@@ -65,7 +65,7 @@ and may have any name. The `@SetUpRoute` annotation has `value` with socket name
 
 - Parameter type - supported class of a parameter
 - Annotation - which annotations support this parameter
-- Modules - which Níma extension modules support this signature
+- Modules - which webserver extension modules support this signature
 
 .Parameters for the `@SetUpRoute` annotated methods.
 |===
@@ -105,7 +105,7 @@ The following table lists the injectable types (through constructor or method in
 - Type - type that can be injected
 - Socket - if checked, you can use the `@Socket` annotation to obtain a value specific to that named socket
 - Annotation - which annotations support this injection
-- Modules - which Níma extension modules support this injection
+- Modules - which WebServer extension modules support this injection
 - Notes - additional details
 
 .Injectable types.
@@ -156,14 +156,14 @@ The following table lists the injectable types (through constructor or method in
 |===
 
 
-Extensions can enhance the features for the module `helidon-nima-testing-junit5-webserver` to support additional protocols.
+Extensions can enhance the features for the module `helidon-testing-junit5-webserver` to support additional protocols.
 
 
 == Examples
 
 You can create the following test to validate that the server returns the correct response:
 
-.Basic Helidon Níma test framework usage.
+.Basic Helidon test framework usage.
 [source, java]
 ----
 @ServerTest     <1>
@@ -197,13 +197,13 @@ class IntegrationTest {
 <5> Call the `client` to obtain server response
 <6> Perform the necessary assertions.
 
-To trigger the framework to start and configure the Níma server, annotate the testing class with the `@ServerTest` annotation.
+To trigger the framework to start and configure the server, annotate the testing class with the `@ServerTest` annotation.
 
 In this test, the `Http1Client` client is used, which means that the framework will create, configure, and inject this object as a parameter to the constructor.
 
 To set up routing, a static method annotated with `@SetUpRoute` is present. The framework uses this method to inject the configured routing to the subject of testing – in the current case, the `Quickstart` application.
 
-As everything above is performed by the testing framework, regular unit tests can be done. After completing all tests, the testing framework will shut down the Níma server.
+As everything above is performed by the testing framework, regular unit tests can be done. After completing all tests, the testing framework will shut down the server.
 
 === Routing Tests
 
@@ -244,7 +244,7 @@ class RoutingTest {
 <5> Call the `client` to obtain server response.
 <6> Perform  the necessary assertions.
 
-If only routing tests are required, this is a "lighter" way of testing because the framework will not configure and run the full Níma server. This way, no real ports will be opened. All the communication will be done through `DirectClient`, which makes the tests very effective.
+If only routing tests are required, this is a "lighter" way of testing because the framework will not configure and run the full Helidon server. This way, no real ports will be opened. All the communication will be done through `DirectClient`, which makes the tests very effective.
 
 It is required to annotate the test class with the `@RoutingTest` annotation to trigger the server to do the configuration. Thus, it will inject the DirectClient client, which can then be used in unit tests.
 
@@ -259,8 +259,8 @@ If WebSocket testing is required, there is an additional module for it. It is ne
 [source,xml]
 ----
 <dependency>
-    <groupId>io.helidon.nima.testing.junit5</groupId>
-    <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
+    <groupId>io.helidon.testing.junit5</groupId>
+    <artifactId>helidon-testing-junit5-websocket</artifactId>
     <scope>test</scope>
 </dependency>
 ----
@@ -268,7 +268,7 @@ If WebSocket testing is required, there is an additional module for it. It is ne
 
 === WebSocket Testing Example
 
-The WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as WebSockets and DirectWsClient in Helidon Níma unit tests.
+The WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as WebSockets and DirectWsClient in Helidon unit tests.
 
 .WebSocket sample test.
 [source,java]
@@ -308,7 +308,7 @@ class WsSocketTest {
 
 [NOTE]
 ====
-The WebSocket `ClientSideListener` is a helper class that implements `WsListener`. `ClientSideListener` is very simple and looks as follows:
+The WebSocket `ClientSideListener` is a helper class that implements `WsListener`. `ClientSideListener` is very simple and as shown below:
 
 .`ClientSideListener` helper class.
 [source,java]

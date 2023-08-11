@@ -19,7 +19,8 @@
 = Helidon Injection
 :description: about Helidon Injection
 :keywords: helidon, inject, injection, java, microservices, reactive, virtual threads
-
+:feature-name: Helidon Injection
+:rootdir: {docdir}/..
 
 
 
@@ -36,11 +37,20 @@
 
 == Overview
 
-Helidon Injection //explain what it is and what it can do.
+Helidon Injection is an optional feature in Helidon that provides service registry, a lifecycle engine and extensibility for customized code generation. 
+
+NOTE: Helidon Injection provides a way to develop non Helidon-specific declarative code using standard Javax/Jakarta annotation types. 
+
+The Helidon Injection Framework provides a mix of declarative and programmatic ways to build your application. 
+Helidon Injection's minimalist, compile-time generated dependency injection (DI) framework and compile-time source code generation has a number of advantages, including:
+
+* enables declarative, Inversion of Control-style programming
+* offers visibility into your application by providing "less magic" - understandability and debug-ability of your application
+* provides deterministic behavior (instead of depending on reflection and classpath ordering, etc.)
+* optimizes performance improvements since binding the model at compile-time is more efficient than computing it at runtime.
 
 == Maven Coordinates
 
-To enable Injection add the following dependencies to your project's `pom.xml` (see Managing Dependencies).
 
 .Injection dependencies
 [source,java]
@@ -66,7 +76,7 @@ Once you have planned how each of your resources should support Injection, you s
 
 == API
 
-Adding Ijection behavior to your Helidon Níma application involves just a few simple steps.
+Adding Injection behavior to your Helidon WebServer application involves just a few simple steps.
 
 === Maven Coordinates
 

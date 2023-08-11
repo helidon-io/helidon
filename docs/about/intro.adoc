@@ -24,3 +24,16 @@
 
 == What's New in This Release
 
+* We have removed the Netty-based Helidon __reactive__ WebServer and WebClient and replaced them with implementations based on virtual threads that have a _blocking_ style API.
+
+NOTE: Virtual threads are lightweight threads that dramatically reduce the effort of writing, maintaining, and observing high-throughput concurrent applications. Learn more about using virtual threads https://openjdk.org/jeps/444[here]. 
+
+
+* Helidon 4 now supports MicroProfile 5.0-based applications working on virtual threads. This is the first MicroProfile framework that supports virtual threads and uses JDK features on the new Helidon WebServer.
+
+
+* item
+
+* Helidon 4 requires Java 20.
+
+

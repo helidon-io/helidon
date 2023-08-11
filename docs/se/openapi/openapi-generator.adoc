@@ -23,7 +23,8 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-:helidon-client-xref: {webclient-page}
+//:helidon-client-xref: {webclient-page}
+
 include::{gen-inc}[tag=preamble]
 
 include::{gen-inc}[tags=intro;coords;config;usage;using-generated-code-intro;using-generated-code-server-intro]
@@ -300,4 +301,5 @@ Some of this complexity enters because there are several ways this processing ca
 Your code should handle each of them in whatever ways make sense for your application, and that might mean dealing with each different error scenario in a different way.
 
 include::{gen-inc}[tag=common-references]
-* xref:{helidon-client-xref}[Helidon WebClient documentation]
+
+//* xref:{helidon-client-xref}[Helidon WebClient documentation]

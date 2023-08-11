@@ -16,9 +16,10 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 
-= Server-Sent Events in N&iacute;ma
-:description: Helidon Nima SSE Support
-:keywords: helidon, nima, sse
+= Server-Sent Events in Helidon
+:h1Prefix: SE
+:description: Helidon SSE Support
+:keywords: helidon, sse
 :feature-name: SSE
 :rootdir: {docdir}/../..
 
@@ -49,21 +50,21 @@ connection in which messages are sent to the client over a longer period of time
 normal request-response connection. It is useful for updating _live data_ such as stock tickers,
 results of live events, etc.
 
-N&iacute;ma provides support for server and client APIs, although Web browsers are popular client alternatives.
+Helidon provides support for server and client APIs, although Web browsers are popular client alternatives.
 The following sections describe these APIs in more detail.
 
 == Server API
 
-The Server API is available as a loadable service in the N&iacute;ma Webserver. The following additional
-dependency is required to find and load the SSE service in the Webserver.
+The Server API is available as a loadable service in the Helidon WebServer. The following additional
+dependency is required to find and load the SSE service in the WebServer.
 
 === Maven Coordinates
 
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-    <groupId>io.helidon.nima.sse</groupId>
-    <artifactId>helidon-nima-sse-webserver</artifactId>
+    <groupId>io.helidon.sse</groupId>
+    <artifactId>helidon-sse-webserver</artifactId>
 </dependency>
 ----
 
@@ -89,13 +90,13 @@ Note that an `SseSink` is auto closeable, so it can be part of a try-with-resour
 Events can be created using any of the static `create` methods in `SseEvent` as well as via a builder obtained by
 calling `SseEvent.builder()`. For more information see the Javadocs for those classes. In the example
 above, a simple create method with a string param is used to showcase a very common use case. The
-API supports integration with Nima's media type providers, so the event data may actually be of any
+API supports integration with Helidon's media type providers, so the event data may actually be of any
 type as long as it is possible to convert it to a string value.
 
 === Integration with Media Types
 
-It is possible to serialize event data using the media support in N&iacute;ma. For example, if JSON-P is available
-in your class path, you can create an SSE event from a `JsonObject` and N&iacute;ma will find the appropriate media
+It is possible to serialize event data using the media support. For example, if JSON-P is available
+in your class path, you can create an SSE event from a `JsonObject` and Helidon will find the appropriate media
 converter and serialize the event data on your behalf.
 
 [source,java]
@@ -144,16 +145,16 @@ by using `application/xml` as the event's media type.
 
 == Client API
 
-The Client API is available as a loadable service in the Nima Webclient. The following additional
-dependency is required to find and load the service in the Webclient.
+The Client API is available as a loadable service in the Helidon WebClient. The following additional
+dependency is required to find and load the service in the WebClient.
 
 === Maven Coordinates
 
 [source,xml,subs="attributes+"]
 ----
 <dependency>
-    <groupId>io.helidon.nima.sse</groupId>
-    <artifactId>helidon-N&iacute;ma-sse-webclient</artifactId>
+    <groupId>io.helidon.sse</groupId>
+    <artifactId>helidon-sse-webclient</artifactId>
 </dependency>
 ----
 
@@ -204,7 +205,7 @@ try (Http1ClientResponse r = client.get("/sseString")
 
 === Integration with Media Types
 
-The Client API is also integrated with N&iacute;ma's media type support. The data received as part of an
+The Client API is also integrated with Helidon's media type support. The data received as part of an
 event can be deserialized using any of the media converters available in your class path. There are
 special methods in `SseEvent` for this purpose. Without a parameter, the method `data()` in `SseEvent` will
 always return a string. Other types can be requested using `data(Class<T>)`
