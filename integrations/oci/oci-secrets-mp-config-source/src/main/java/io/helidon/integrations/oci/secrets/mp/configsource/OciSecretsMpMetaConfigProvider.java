@@ -17,6 +17,7 @@ package io.helidon.integrations.oci.secrets.mp.configsource;
 
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -33,6 +34,8 @@ import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.integrations.oci.secrets.mp.configsource.SecretsSuppliers.secrets;
 import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memoizedSupplier;
+import static java.lang.System.Logger;
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * An {@link MpMetaConfigProvider} implementation that {@linkplain #create(String, Config, String) creates} {@link
@@ -42,7 +45,9 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memo
  *
  * <p>Instances of this class are designed to be created by a {@link java.util.ServiceLoader} or the equivalent.</p>
  *
- * <p>Instances of this class are participants in Helidon's <a href="https://helidon.io/docs/v3/#/mp/config/advanced-configuration">meta-configuration facility for MicroProfile Config</a>. Following this facility's rules, here is one way to use the features of this class:</p>
+ * <p>Instances of this class are participants in Helidon's <a
+ * href="https://helidon.io/docs/v3/#/mp/config/advanced-configuration">meta-configuration facility for MicroProfile
+ * Config</a>. Following this facility's rules, here is one way to use the features of this class:</p>
  *
  * <ol>
  *
@@ -80,13 +85,29 @@ import static io.helidon.integrations.oci.secrets.mp.configsource.Suppliers.memo
  */
 public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvider, Prioritized {
 
+
+    /*
+     * Static fields.
+     */
+
+
+    /**
+     * A {@link Logger} for the {@link OciSecretsMpMetaConfigProvider} class.
+     */
+    private static final Logger LOGGER = System.getLogger(OciSecretsMpMetaConfigProvider.class.getName());
+
     /**
      * An {@code int}, {@value #PRIORITY}, returned by the {@link #priority()} method.
      */
     public static final int PRIORITY = 300;
 
     /**
-     * The sole "supported type" of this {@link OciSecretsMpMetaConfigProvider} ({@value #OCI_SECRETS}).
+     * The sole {@linkplain #supportedTypes() supported type} of this {@link OciSecretsMpMetaConfigProvider} ({@value
+     * #OCI_SECRETS}).
+     *
+     * @see #supportedTypes()
+     *
+     * @see #SUPPORTED_TYPES
      */
     private static final String SUPPORTED_TYPE = "oci-secrets";
 
@@ -94,10 +115,22 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
      * An unmodifiable, unchanging {@link Set} of types returned by the {@link #supportedTypes()} method.
      *
      * <p>The {@link Set} consists of a single {@link String} whose value is {@value SUPPORTED_TYPE}.</p>
+     *
+     * @see #supportedTypes()
      */
     public static final Set<String> SUPPORTED_TYPES = Set.of(SUPPORTED_TYPE);
 
+    /**
+     * The name of a configuration property ({@value #VAULT_OCID_PROPERTY_NAME}) whose value should be a valid OCI Vault
+     * <a href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/identifiers.htm">OCID</a>.
+     */
     private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
+
+
+    /*
+     * Constructors.
+     */
+
 
     /**
      * Creates a new {@link OciSecretsMpMetaConfigProvider}.
@@ -108,6 +141,12 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
     public OciSecretsMpMetaConfigProvider() {
         super();
     }
+
+
+    /*
+     * Instance methods.
+     */
+
 
     /**
      * Returns a non-{@code null}, unmodifiable, unchanging, determinate {@link Set} of identifiers under which this
@@ -154,22 +193,68 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
         if (!this.supportedTypes().contains(Objects.requireNonNull(type, "type"))) {
             throw new IllegalArgumentException("type: " + type);
         }
-        // A Pattern to control which property values are sought from a Vault. Recall that MicroProfile Config
-        // ConfigSource implementations can conceivably be called by an end user or, if ordinals are not set up
-        // properly, accidentally in the wrong sequence in a configuration setup. This could result, for example, in a
-        // Vault-backed ConfigSource such as this one being asked to retrieve values for such property names as
-        // user.dir, java.home and so on. The accept pattern helps to restrict what communication the ConfigSource has
-        // with a Vault. If it is not specified, then no restrictions on property resolution will occur.
-        Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().orElse("^.*$"));
-        // The OCID of an OCI Vault within which secrets may be found.
+
+        // The OCID of an OCI Vault within which named secrets may be found; necessary to talk to the OCI Secrets
+        // Retrieval API.
         String vaultOcid = metaConfig.get(VAULT_OCID_PROPERTY_NAME)
             .asString()
             .orElse(System.getProperty(VAULT_OCID_PROPERTY_NAME)); // useful for testing
-        return
-            List.of(new SecretBundleByNameConfigSource(acceptPattern,
-                                                       vaultOcid,
-                                                       memoizedSupplier(secrets(adpSupplier()))));
+        if (vaultOcid == null) {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG,
+                           "No meta-configuration value supplied for "
+                           + metaConfig.key().toString() + "." + VAULT_OCID_PROPERTY_NAME
+                           + " (and no fallback System property value supplied for "
+                           + VAULT_OCID_PROPERTY_NAME
+                           + "); skipping ConfigSource creation");
+            }
+            // (There's no point in trying to create a ConfigSource that cannot talk to the OCI Secrets Retrieval API.)
+            return List.of();
+        }
+
+        // A Supplier of BasicAuthenticationDetailsProviders; necessary to talk to the OCI Secrets Retrieval API.
+        Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier;
+        try {
+            adpSupplier = adpSupplier();
+        } catch (NoSuchElementException e) {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG,
+                           "No BasicAuthenticationDetailsProvider implementation available; skipping ConfigSource creation");
+            }
+            // (There's no point in trying to create a ConfigSource that cannot talk to the OCI Secrets Retrieval API.)
+            return List.of();
+        }
+
+        // A Pattern to control which property values are sought from a Vault. Recall that MicroProfile Config
+        // ConfigSource implementations can conceivably be called directly by an end user for any reason, and, if
+        // ordinals are not set up properly, accidentally in the wrong sequence in a configuration setup. This could
+        // result, for example, in a Vault-backed ConfigSource such as this one being asked to retrieve values for such
+        // configuration property names as user.dir, java.home, and so on. The accept pattern helps to restrict what
+        // communication the ConfigSource has with a Vault. If it is not specified, then ^.*$ will be used instead, and
+        // therefore no restrictions on property resolution will occur.
+        Pattern acceptPattern = Pattern.compile(metaConfig.get("accept-pattern").asString().orElse("^.*$"));
+
+        return List.of(new SecretBundleByNameConfigSource(acceptPattern, vaultOcid, memoizedSupplier(secrets(adpSupplier))));
     }
+
+    /**
+     * Returns a (determinate) priority {{@value #PRIORITY}) for this {@link OciSecretsMpMetaConfigProvider} when
+     * invoked.
+     *
+     * @return a determinate priority ({@value #PRIORITY}) wen invoked
+     *
+     * @see #PRIORITY
+     */
+    @Override
+    public int priority() {
+        return PRIORITY;
+    }
+
+
+    /*
+     * Static methods.
+     */
+
 
     /**
      * Returns a non-{@code null} {@link Supplier} of {@link BasicAuthenticationDetailsProvider} instances.
@@ -177,22 +262,10 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
      * @return a non-{@code null} {@link Supplier} of {@link BasicAuthenticationDetailsProvider} instances
      */
     private static Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier() {
-        // Provisional? until the "real" mechanism is approved/decided on.
+        // Provisional? until the "real" mechanism is approved/decided on/implemented.
         // The approach below is behaviorally identical to that of io.helidon.integrations.oci.cdi.OciExtension.
         Config ociYaml = Config.just(classpath("oci.yaml").optional(), file(Paths.get("oci.yaml")).optional());
         return memoizedSupplier(AdpSuppliers.adpSupplier(s -> ociYaml.get(s).asString().asOptional()));
-    }
-
-    /**
-     * Returns a (determinate) priority for this {@link OciSecretsMpMetaConfigProvider} when invoked.
-     *
-     * @return a determinate priority
-     *
-     * @see #PRIORITY
-     */
-    @Override
-    public int priority() {
-        return PRIORITY;
     }
 
 }

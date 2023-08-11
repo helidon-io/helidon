@@ -22,8 +22,9 @@ import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -35,13 +36,20 @@ final class UsageTest {
 
     @Test
     final void testUsage() {
+        // Get a MicroProfile Config Config object. Because src/test/resources/mp-meta-config.yaml exists, and because
+        // the MicroProfile Config implementation in effect is Helidon, it will be processed according to the Helidon
+        // MicroProfile Config-flavored meta-configuration rules. An
+        // io.helidon.integrations.oci.secrets.mp.configsource.OciSecretsMpMetaConfigProvider will be created and any
+        // MicroProfile Config ConfigSources it creates will become part of the assembled Config object.
         Config c = ConfigProvider.getConfig();
 
-        // Make sure non-existent, and therefore non-secret, properties are rejected idiomatically.
-        assertNull(c.getOptionalValue("bogus", String.class).orElse(null));
+        // Make sure non-existent properties are rejected, following the MicroProfile Config specification rules.
+        assertThat(c.getOptionalValue("bogus", String.class).orElse(null), nullValue());
 
-        // Make sure non-secret properties are handled by, e.g., System properties etc.
-        assertEquals(System.getProperty("java.home"), c.getValue("java.home", String.class));
+        // Make sure properties that have nothing to do with the OCI Secrets Retrieval API are handled by some other
+        // (default) MicroProfile Config ConfigSource, e.g., System properties, etc. (The OCI Secrets Retrieval API
+        // should never be consulted for java.home, in other words.)
+        assertThat(c.getValue("java.home", String.class), is(System.getProperty("java.home")));
 
         // Do the rest of this test only if the following assumptions hold. To avoid skipping the rest of this test:
         //
@@ -53,14 +61,17 @@ final class UsageTest {
         //    -Dvault-ocid=ocid1.vault.oci1.iad.123xyz (a valid OCI Vault OCID)
         //    -DFrancqueSecret.expectedValue='Some Value' (some value for a secret named FrancqueSecret in that vault)
         //
-        assumeTrue(Files.exists(Paths.get(System.getProperty("user.home"), ".oci", "config")));
-        assumeFalse(System.getProperty("vault-ocid", "").isBlank());
+        assumeTrue(Files.exists(Paths.get(System.getProperty("user.home"), ".oci", "config"))); // condition 1
+        assumeFalse(System.getProperty("vault-ocid", "").isBlank()); // condition 2
         String expectedValue = System.getProperty("FrancqueSecret.expectedValue", "");
-        assumeFalse(expectedValue.isBlank());
+        assumeFalse(expectedValue.isBlank()); // condition 2
 
-        // The vault designated by the vault OCID must hold a secret named FrancqueSecret, and its value must be equal
-        // to the expected value.
-        assertEquals(expectedValue, c.getValue("FrancqueSecret", String.class));
+        // For this test to pass, all of the following must hold:
+        //
+        // 1. The vault designated by the vault OCID must hold a secret named FrancqueSecret
+        //
+        // 2. The secret named FrancqueSecret must have a value equal to the expected value
+        assertThat(c.getValue("FrancqueSecret", String.class), is(expectedValue));
     }
 
 }
