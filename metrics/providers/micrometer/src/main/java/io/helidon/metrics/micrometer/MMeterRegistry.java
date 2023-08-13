@@ -161,6 +161,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return internalRemove(name, Util.tags(tags));
     }
 
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
+    }
+
     MeterRegistry delegate() {
         return delegate;
     }

@@ -42,4 +42,9 @@ class MClock implements io.helidon.metrics.api.Clock {
     io.micrometer.core.instrument.Clock delegate() {
         return delegate;
     }
+
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
+    }
 }

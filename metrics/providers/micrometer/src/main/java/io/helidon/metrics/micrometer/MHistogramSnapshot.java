@@ -83,7 +83,7 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return MValueAtPercentile.of(values[slot++]);
+                return MValueAtPercentile.create(values[slot++]);
             }
         };
     }
@@ -114,5 +114,10 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
     public void outputSummary(PrintStream out, double scale) {
         delegate.outputSummary(out, scale);
 
+    }
+
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
     }
 }

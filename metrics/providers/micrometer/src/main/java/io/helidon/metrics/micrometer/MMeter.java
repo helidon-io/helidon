@@ -74,6 +74,11 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         return Objects.hash(delegate);
     }
 
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
+    }
+
     protected M delegate() {
         return delegate;
     }

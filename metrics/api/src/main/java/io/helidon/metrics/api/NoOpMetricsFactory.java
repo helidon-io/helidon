@@ -26,6 +26,11 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     private static final Clock SYSTEM_CLOCK = new Clock() {
         @Override
+        public <R> R unwrap(Class<? extends R> c) {
+            return c.cast(this);
+        }
+
+        @Override
         public long wallTime() {
             return System.currentTimeMillis();
         }

@@ -122,4 +122,9 @@ class MTag implements io.helidon.metrics.api.Tag {
     public int hashCode() {
         return Objects.hash(delegate.hashCode());
     }
+
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
+    }
 }

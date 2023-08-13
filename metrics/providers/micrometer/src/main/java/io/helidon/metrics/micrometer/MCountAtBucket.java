@@ -45,4 +45,9 @@ class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
     public double count() {
         return delegate.count();
     }
+
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
+    }
 }

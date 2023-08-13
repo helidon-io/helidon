@@ -131,6 +131,15 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         return Optional.ofNullable(Util.iterable(delegate.getServiceLevelObjectiveBoundaries()));
     }
 
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
+    }
+
+    io.micrometer.core.instrument.distribution.DistributionStatisticConfig delegate() {
+        return delegate;
+    }
+
     static class Builder implements io.helidon.metrics.api.DistributionStatisticsConfig.Builder {
 
         private final DistributionStatisticConfig.Builder delegate;
@@ -202,6 +211,11 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         public Builder serviceLevelObjectives(Iterable<Double> slos) {
             delegate.serviceLevelObjectives(Util.doubleArray(slos));
             return this;
+        }
+
+        @Override
+        public <R> R unwrap(Class<? extends R> c) {
+            return c.cast(delegate);
         }
 
         DistributionStatisticConfig.Builder delegate() {

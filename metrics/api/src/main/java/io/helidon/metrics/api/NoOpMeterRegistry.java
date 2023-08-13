@@ -31,7 +31,7 @@ import java.util.function.Predicate;
  *     store meters or their IDs, in line with the documented behavior of disabled metrics.
  * </p>
  */
-class NoOpMeterRegistry implements MeterRegistry {
+class NoOpMeterRegistry implements MeterRegistry, NoOpWrapped {
 
     private final Map<Meter.Id, Meter> meters = new ConcurrentHashMap<>();
 
