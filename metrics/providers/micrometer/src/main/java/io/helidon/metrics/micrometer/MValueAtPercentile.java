@@ -21,7 +21,7 @@ import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 
 class MValueAtPercentile implements io.helidon.metrics.api.ValueAtPercentile {
 
-    static MValueAtPercentile of(ValueAtPercentile delegate) {
+    static MValueAtPercentile create(ValueAtPercentile delegate) {
         return new MValueAtPercentile(delegate);
     }
 
@@ -44,5 +44,10 @@ class MValueAtPercentile implements io.helidon.metrics.api.ValueAtPercentile {
     @Override
     public double value(TimeUnit unit) {
         return delegate.value(unit);
+    }
+
+    @Override
+    public <R> R unwrap(Class<? extends R> c) {
+        return c.cast(delegate);
     }
 }

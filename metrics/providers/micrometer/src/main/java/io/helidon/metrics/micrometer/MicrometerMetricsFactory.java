@@ -95,6 +95,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
             public long monotonicTime() {
                 return delegate.monotonicTime();
             }
+
+            @Override
+            public <R> R unwrap(Class<? extends R> c) {
+                return c.cast(delegate);
+            }
         };
     }
 

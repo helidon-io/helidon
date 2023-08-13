@@ -70,6 +70,13 @@ public interface DistributionSummary extends Meter {
     double max();
 
     /**
+     * Returns a {@link io.helidon.metrics.api.HistogramSnapshot} of the current state of the distribution summary.
+     *
+     * @return snapshot
+     */
+    HistogramSnapshot snapshot();
+
+    /**
      * Builder for a {@link io.helidon.metrics.api.DistributionSummary}.
      */
     interface Builder extends Meter.Builder<Builder, DistributionSummary> {

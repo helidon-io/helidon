@@ -15,12 +15,17 @@
  */
 package io.helidon.metrics.micrometer;
 
+import io.helidon.metrics.api.DistributionStatisticsConfig;
+import io.helidon.metrics.api.HistogramSnapshot;
+
 import io.micrometer.core.instrument.DistributionSummary;
+
+import static io.micrometer.core.instrument.distribution.DistributionStatisticConfig.DEFAULT;
 
 class MDistributionSummary extends MMeter<DistributionSummary> implements io.helidon.metrics.api.DistributionSummary {
 
     static Builder builder(String name,
-                           io.helidon.metrics.api.DistributionStatisticsConfig.Builder configBuilder) {
+                           DistributionStatisticsConfig.Builder configBuilder) {
         return new Builder(name, configBuilder);
     }
 
@@ -57,11 +62,29 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         return delegate().max();
     }
 
+    @Override
+    public HistogramSnapshot snapshot() {
+        return MHistogramSnapshot.create(delegate().takeSnapshot());
+    }
+
     static class Builder extends MMeter.Builder<DistributionSummary.Builder, Builder, MDistributionSummary>
                          implements io.helidon.metrics.api.DistributionSummary.Builder {
 
-        private Builder(String name, io.helidon.metrics.api.DistributionStatisticsConfig.Builder configBuilder) {
-            super(DistributionSummary.builder(name));
+        private Builder(String name, DistributionStatisticsConfig.Builder configBuilder) {
+            this(name, configBuilder.build());
+        }
+        private Builder(String name, DistributionStatisticsConfig config) {
+            super(DistributionSummary.builder(name)
+                          .percentilePrecision(config.percentilePrecision()
+                                                       .orElse(DEFAULT.getPercentilePrecision()))
+                          .minimumExpectedValue(config.minimumExpectedValue()
+                                                        .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
+                          .maximumExpectedValue(config.maximumExpectedValue()
+                                                        .orElse(DEFAULT.getMaximumExpectedValueAsDouble()))
+                          .distributionStatisticExpiry(config.expiry()
+                                          .orElse(DEFAULT.getExpiry()))
+                          .distributionStatisticBufferLength(config.bufferLength()
+                                                                     .orElse(DEFAULT.getBufferLength())));
         }
 
         @Override

@@ -34,7 +34,7 @@ import java.util.function.ToDoubleFunction;
 /**
  * No-op implementation of the Helidon {@link io.helidon.metrics.api.Meter} interface.
  */
-class NoOpMeter implements Meter {
+class NoOpMeter implements Meter, NoOpWrapped {
 
     private final Id id;
     private final String unit;
@@ -323,9 +323,14 @@ class NoOpMeter implements Meter {
         public double max() {
             return 0;
         }
+
+        @Override
+        public io.helidon.metrics.api.HistogramSnapshot snapshot() {
+            return new NoOpMeter.HistogramSnapshot(0L, 0D, 0D);
+        }
     }
 
-    static class HistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
+    static class HistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot, NoOpWrapped {
 
         private final long count;
         private final double total;
@@ -575,13 +580,13 @@ class NoOpMeter implements Meter {
         }
     }
 
-    static class DistributionStatisticsConfig implements io.helidon.metrics.api.DistributionStatisticsConfig {
+    static class DistributionStatisticsConfig implements io.helidon.metrics.api.DistributionStatisticsConfig, NoOpWrapped {
 
         static Builder builder() {
             return new Builder();
         }
 
-        static class Builder implements io.helidon.metrics.api.DistributionStatisticsConfig.Builder {
+        static class Builder implements io.helidon.metrics.api.DistributionStatisticsConfig.Builder, NoOpWrapped {
 
             @Override
             public io.helidon.metrics.api.DistributionStatisticsConfig build() {
