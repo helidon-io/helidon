@@ -264,7 +264,8 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
         return http1Client.connectionCache()
-                .connection(tls,
+                .connection(http1Client,
+                            tls,
                             proxy,
                             request.uri(),
                             request.headers(),

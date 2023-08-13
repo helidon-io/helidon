@@ -29,12 +29,17 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final WebClient webClient;
     private final Http2ClientConfig clientConfig;
     private final Http2ClientProtocolConfig protocolConfig;
-    private final Http2ConnectionCache connectionCache = new Http2ConnectionCache(this);
+    private final Http2ConnectionCache connectionCache;
 
     Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
+        if (clientConfig.shareConnectionCache()) {
+            this.connectionCache = Http2ConnectionCache.shared();
+        } else {
+            this.connectionCache = Http2ConnectionCache.create();
+        }
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
@@ -44,18 +43,21 @@ class Http1ConnectionCache {
     private static final System.Logger LOGGER = System.getLogger(Http1ConnectionCache.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
-    private static final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> GLOBAL_CHANNEL_CACHE =
-            new ConcurrentHashMap<>();
+    private static final Http1ConnectionCache SHARED = create();
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
-    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> localConnectionCache = new HashMap<>();
-    private final Http1ClientImpl http1Client;
+    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new HashMap<>();
 
-    Http1ConnectionCache(Http1ClientImpl http1Client) {
-        this.http1Client = http1Client;
+    static Http1ConnectionCache shared() {
+        return SHARED;
     }
 
-    ClientConnection connection(Tls tls,
+    static Http1ConnectionCache create() {
+        return new Http1ConnectionCache();
+    }
+
+    ClientConnection connection(Http1ClientImpl http1Client,
+                                Tls tls,
                                 Proxy proxy,
                                 ClientUri uri,
                                 ClientRequestHeaders headers,
@@ -63,9 +65,9 @@ class Http1ConnectionCache {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
         if (keepAlive) {
-            return keepAliveConnection(effectiveTls, uri, proxy);
+            return keepAliveConnection(http1Client, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(effectiveTls, uri, proxy);
+            return oneOffConnection(http1Client, effectiveTls, uri, proxy);
         }
     }
 
@@ -84,7 +86,8 @@ class Http1ConnectionCache {
         return false;
     }
 
-    private ClientConnection keepAliveConnection(Tls tls,
+    private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
+                                                 Tls tls,
                                                  ClientUri uri,
                                                  Proxy proxy) {
         Http1ClientConfig clientConfig = http1Client.clientConfig();
@@ -98,9 +101,8 @@ class Http1ConnectionCache {
                                                         proxy);
 
         LinkedBlockingDeque<TcpClientConnection> connectionQueue =
-                (clientConfig.shareConnectionCache() ? GLOBAL_CHANNEL_CACHE : localConnectionCache)
-                        .computeIfAbsent(connectionKey,
-                                         it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
+                cache.computeIfAbsent(connectionKey,
+                                      it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
 
         TcpClientConnection connection;
         while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
@@ -124,7 +126,8 @@ class Http1ConnectionCache {
         return connection;
     }
 
-    private ClientConnection oneOffConnection(Tls tls,
+    private ClientConnection oneOffConnection(Http1ClientImpl http1Client,
+                                              Tls tls,
                                               ClientUri uri,
                                               Proxy proxy) {
 

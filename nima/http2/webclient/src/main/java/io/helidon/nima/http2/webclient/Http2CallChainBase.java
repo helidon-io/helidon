@@ -84,7 +84,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ConnectionKey connectionKey = connectionKey(serviceRequest);
 
         Http2ConnectionAttemptResult result = http2Client.connectionCache()
-                .newStream(connectionKey, clientRequest, uri, http1EntityHandler);
+                .newStream(http2Client, connectionKey, clientRequest, uri, http1EntityHandler);
 
         this.result = result.result();
 

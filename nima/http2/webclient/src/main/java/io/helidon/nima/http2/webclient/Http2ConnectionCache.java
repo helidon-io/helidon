@@ -28,58 +28,46 @@ import io.helidon.nima.webclient.http1.Http1ClientResponse;
 
 final class Http2ConnectionCache {
     //todo Gracefully close connections in channel cache
-    private static final LruCache<ConnectionKey, Boolean> HTTP2_SUPPORTED = LruCache.<ConnectionKey, Boolean>builder()
-            .capacity(1000)
-            .build();
+    private static final Http2ConnectionCache SHARED = create();
     private final LruCache<ConnectionKey, Boolean> http2Supported = LruCache.<ConnectionKey, Boolean>builder()
             .capacity(1000)
             .build();
-    private static final Map<ConnectionKey, Http2ClientConnectionHandler> GLOBAL_CACHE = new ConcurrentHashMap<>();
-    private final Map<ConnectionKey, Http2ClientConnectionHandler> localCache = new ConcurrentHashMap<>();
-    private final Http2ClientImpl http2Client;
+    private final Map<ConnectionKey, Http2ClientConnectionHandler> cache = new ConcurrentHashMap<>();
 
-    Http2ConnectionCache(Http2ClientImpl http2Client) {
-        this.http2Client = http2Client;
+    static Http2ConnectionCache shared() {
+        return SHARED;
+    }
+
+    static Http2ConnectionCache create() {
+        return new Http2ConnectionCache();
     }
 
     boolean supports(ConnectionKey ck) {
-        return selectH2SupportCache().get(ck).isPresent();
-    }
-
-    static void clear() {
-        HTTP2_SUPPORTED.clear();
-        GLOBAL_CACHE.forEach((c, c2) -> c2.close());
+        return http2Supported.get(ck).isPresent();
     }
 
     void remove(ConnectionKey connectionKey) {
-        selectCache().remove(connectionKey);
-        selectH2SupportCache().remove(connectionKey);
+        cache.remove(connectionKey);
+        http2Supported.remove(connectionKey);
     }
 
-    Http2ConnectionAttemptResult newStream(ConnectionKey connectionKey,
-                                                  Http2ClientRequestImpl request,
-                                                  ClientUri initialUri,
-                                                  Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+    Http2ConnectionAttemptResult newStream(Http2ClientImpl http2Client,
+                                           ConnectionKey connectionKey,
+                                           Http2ClientRequestImpl request,
+                                           ClientUri initialUri,
+                                           Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
 
         // this statement locks all threads - must not do anything complicated (just create a new instance)
         Http2ConnectionAttemptResult result =
-                selectCache().computeIfAbsent(connectionKey, Http2ClientConnectionHandler::new)
+                cache.computeIfAbsent(connectionKey, Http2ClientConnectionHandler::new)
                 // this statement may block a single connection key
                 .newStream(http2Client,
                            request,
                            initialUri,
                            http1EntityHandler);
         if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
-            selectH2SupportCache().put(connectionKey, true);
+            http2Supported.put(connectionKey, true);
         }
         return result;
-    }
-
-    private Map<ConnectionKey, Http2ClientConnectionHandler> selectCache(){
-        return http2Client.clientConfig().shareConnectionCache() ? GLOBAL_CACHE : localCache;
-    }
-
-    private LruCache<ConnectionKey, Boolean> selectH2SupportCache(){
-        return http2Client.clientConfig().shareConnectionCache() ? HTTP2_SUPPORTED : http2Supported;
     }
 }
