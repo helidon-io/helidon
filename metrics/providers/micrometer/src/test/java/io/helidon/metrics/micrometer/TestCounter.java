@@ -37,37 +37,6 @@ class TestCounter {
     }
 
     @Test
-    void testIncr() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
-        assertThat("Initial counter value", c.count(), is(0D));
-        c.increment();
-        assertThat("After increment", c.count(), is(1D));
-    };
-
-    @Test
-    void incrWithValue() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
-        assertThat("Initial counter value", c.count(), is(0D));
-        c.increment(3D);
-        assertThat("After increment", c.count(), is(3D));
-    }
-
-    @Test
-    void incrBoth() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c3"));
-        assertThat("Initial counter value", c.count(), is(0D));
-        c.increment(2D);
-        assertThat("After increment", c.count(), is(2D));
-
-        Counter cAgain = meterRegistry.getOrCreate(Counter.builder("c3"));
-        assertThat("Looked up instance", cAgain, is(sameInstance(c)));
-        assertThat("Value after one update", cAgain.count(), is(2D));
-
-        cAgain.increment(3D);
-        assertThat("Value after second update", cAgain.count(), is(5D));
-    }
-
-    @Test
     void testUnwrap() {
         Counter c = meterRegistry.getOrCreate(Counter.builder("c4"));
         io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);

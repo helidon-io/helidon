@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics.testing;
 
 
 import java.util.List;
@@ -44,7 +44,7 @@ class SimpleMeterRegistryTests {
 
     @Test
     void testConflictingMetadata() {
-        Counter c1 = meterRegistry.getOrCreate(Counter.builder("b"));
+        meterRegistry.getOrCreate(Counter.builder("b"));
 
         assertThrows(IllegalArgumentException.class, () ->
                 meterRegistry.getOrCreate(Timer.builder("b")));

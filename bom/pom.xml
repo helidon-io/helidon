@@ -376,12 +376,27 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-testing</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
+                <artifactId>helidon-metrics-micrometer</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics-service-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.helidon.metrics</groupId>
                 <artifactId>helidon-metrics-trace-exemplar</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.tests.integration.metrics</groupId>
+                <artifactId>helidon-tests-integration-metrics-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 
