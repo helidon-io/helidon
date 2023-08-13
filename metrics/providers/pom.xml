@@ -34,8 +34,8 @@
     </modules>
 
     <!--
-        Each provider runs the common unit tests. Declare that dependency and
-        configure its operation here for all providers.
+        Each provider should run the common unit tests. Declare that dependency and
+        configure the surefire plug-in here to run those tests for all providers.
     -->
     <dependencies>
         <dependency>
@@ -50,19 +50,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>common-metrics-tests</id>-->
-<!--                        <goals>-->
-<!--                            <goal>test</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <dependenciesToScan>-->
-<!--                                <dependency>io.helidon.metrics:helidon-metrics-testing</dependency>-->
-<!--                            </dependenciesToScan>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-<!--                </executions>-->
                 <configuration>
                     <dependenciesToScan>
                         <dependency>io.helidon.metrics:helidon-metrics-testing</dependency>
@@ -71,4 +58,5 @@
             </plugin>
         </plugins>
     </build>
+
 </project>
