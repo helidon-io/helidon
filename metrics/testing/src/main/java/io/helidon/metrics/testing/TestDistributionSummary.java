@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics.testing;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.metrics.api.CountAtBucket;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.ValueAtPercentile;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -62,19 +60,6 @@ class TestDistributionSummary {
     }
 
     @Test
-    void testUnwrap() {
-        DistributionSummary summary = commonPrep("b");
-        io.micrometer.core.instrument.DistributionSummary s = summary.unwrap(io.micrometer.core.instrument.DistributionSummary.class);
-        assertThat("Initial count", s.count(), is(4L));
-        s.record(9D);
-        assertThat("Count after native update", summary.count(), is(5L));
-        assertThat("Total after native update", summary.totalAmount(), is(25D));
-
-        io.micrometer.core.instrument.distribution.HistogramSnapshot h = s.takeSnapshot();
-        assertThat("Native snapshot mean", h.mean(), is(5D));
-    }
-
-    @Test
     void testSnapshot() {
         DistributionSummary summary = commonPrep("c");
         HistogramSnapshot snapshot = summary.snapshot();
@@ -85,10 +70,10 @@ class TestDistributionSummary {
 
     @Test
     void testPercentiles() {
-        DistributionSummary summary = commonPrep("d");
-        HistogramSnapshot snapshot = summary.snapshot();
+//        DistributionSummary summary = commonPrep("d");
+//        HistogramSnapshot snapshot = summary.snapshot();
 
-        List<ValueAtPercentile> vaps = Util.list(snapshot.percentileValues());
-        List<CountAtBucket> cabs = Util.list(snapshot.histogramCounts());
+//        List<ValueAtPercentile> vaps = Util.list(snapshot.percentileValues());
+//        List<CountAtBucket> cabs = Util.list(snapshot.histogramCounts());
     }
 }
