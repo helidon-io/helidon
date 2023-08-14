@@ -233,8 +233,10 @@ public final class OciExtension {
 
     // in support for testing a variant of oci.yaml
     static void ociConfigFileName(String fileName) {
-        overrideOciConfigFile = fileName;
-        ociConfigSupplier = null;
+        synchronized (DEFAULT_OCI_GLOBAL_CONFIG_FILE) {
+            overrideOciConfigFile = fileName;
+            ociConfigSupplier = null;
+        }
     }
 
     // in support for testing a variant of oci.yaml
