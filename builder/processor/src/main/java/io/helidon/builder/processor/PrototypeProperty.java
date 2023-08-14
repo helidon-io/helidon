@@ -324,7 +324,7 @@ record PrototypeProperty(MethodSignature signature,
                             .map(typeHandler::toDefaultValue)
                             .orElse(null),
                     configuredAnnotation.getValue("builderMethod").map(Boolean::parseBoolean).orElse(true),
-                    !configuredAnnotation.getValue("configured").map(Boolean::parseBoolean).orElse(true),
+                    configuredAnnotation.getValue("notConfigured").map(Boolean::parseBoolean).orElse(false),
                     provider,
                     provider ? ProviderOption.create(configuredAnnotation) : null);
         }
