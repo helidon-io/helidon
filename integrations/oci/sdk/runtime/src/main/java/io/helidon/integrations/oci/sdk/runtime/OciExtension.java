@@ -126,7 +126,7 @@ public final class OciExtension {
                                     .toList())
             .build());
     private static String overrideOciConfigFile;
-    private volatile static Supplier<io.helidon.common.config.Config> ociConfigSupplier;
+    private static volatile Supplier<io.helidon.common.config.Config> ociConfigSupplier;
 
     private OciExtension() {
     }
