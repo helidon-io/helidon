@@ -431,7 +431,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 writer = connection.writer();
 
                 if (redirectStatus(response.status(), sendEntity)) {
-                    try (Http1ClientResponseImpl ignored = response) {
+                    try (response) {
                         checkRedirectHeaders(response.headers());
                         if (response.status() != Http.Status.TEMPORARY_REDIRECT_307
                                 && response.status() != Http.Status.PERMANENT_REDIRECT_308) {
