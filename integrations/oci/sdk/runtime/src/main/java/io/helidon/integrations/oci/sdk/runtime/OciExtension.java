@@ -18,7 +18,6 @@ package io.helidon.integrations.oci.sdk.runtime;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -172,24 +171,14 @@ public final class OciExtension {
         }
 
         // fallback
-        Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
-        if (bootstrap.isEmpty()) {
+        config = InjectionServices.globalBootstrap()
+                .flatMap(Bootstrap::config)
+                .map(it -> it.get(OciConfig.CONFIG_KEY))
+                .orElse(null);
+        if (config == null) {
             LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
-
-        config = bootstrap.get().config().orElse(null);
-        if (config == null) {
-            LOGGER.log(System.Logger.Level.DEBUG, "No config in bootstrap - using default oci config");
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
-
-        config = config.get(OciConfig.CONFIG_KEY);
-        if (!config.exists()) {
-            LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
-            return DEFAULT_OCI_CONFIG_BEAN.get();
-        }
-
         return OciConfig.create(config);
     }
 

@@ -43,7 +43,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -68,7 +67,7 @@ class OciExtensionTest {
         assertThat(OciExtension.ociConfig(),
                    notNullValue());
         assertThat(OciExtension.ociConfig(),
-                   sameInstance(OciExtension.ociConfig()));
+                   equalTo(OciExtension.ociConfig()));
     }
 
     @Test
