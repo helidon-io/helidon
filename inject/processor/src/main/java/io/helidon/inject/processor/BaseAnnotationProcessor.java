@@ -67,7 +67,7 @@ abstract class BaseAnnotationProcessor extends AbstractProcessor {
     }
 
     Optional<TypeElement> toTypeElement(TypeName typeName) {
-        return Optional.ofNullable(processingEnv.getElementUtils().getTypeElement(typeName.resolved()));
+        return Optional.ofNullable(processingEnv.getElementUtils().getTypeElement(typeName.resolvedName()));
     }
 
 }

@@ -44,7 +44,7 @@ import io.helidon.common.Errors;
  * </ul>
  * Finally, this class offers a number of methods that are helpful for code generation:
  * <ul>
- * <li>{@link #declaredName()} and {@link #resolved()}.</li>
+ * <li>{@link #declaredName()} and {@link #resolvedName()}.</li>
  * </ul>
  *
  * @see #builder()
@@ -126,12 +126,12 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
 
         private final List<String> enclosingNames = new ArrayList<>();
         private final List<TypeName> typeArguments = new ArrayList<>();
-        private String className;
-        private String packageName = "";
         private boolean array = false;
         private boolean generic = false;
         private boolean primitive = false;
         private boolean wildcard = false;
+        private String className;
+        private String packageName = "";
 
         /**
          * Protected to support extensibility.
@@ -457,14 +457,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          */
         protected static class TypeNameImpl implements TypeName {
 
-            private final List<String> enclosingNames;
-            private final List<TypeName> typeArguments;
-            private final String className;
-            private final String packageName;
             private final boolean array;
             private final boolean generic;
             private final boolean primitive;
             private final boolean wildcard;
+            private final List<String> enclosingNames;
+            private final List<TypeName> typeArguments;
+            private final String className;
+            private final String packageName;
 
             /**
              * Create an instance providing a builder.
@@ -513,8 +513,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
-            public String resolved() {
-                return TypeNameSupport.resolved(this);
+            public String resolvedName() {
+                return TypeNameSupport.resolvedName(this);
             }
 
             @Override

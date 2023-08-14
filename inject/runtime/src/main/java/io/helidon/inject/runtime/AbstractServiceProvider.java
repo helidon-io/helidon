@@ -316,7 +316,7 @@ public abstract class AbstractServiceProvider<T>
      */
     public String name(boolean simple) {
         TypeName name = serviceInfo().serviceTypeName();
-        return (simple) ? name.classNameWithEnclosingNames().replace('.', '$') : name.resolved();
+        return (simple) ? name.classNameWithEnclosingNames().replace('.', '$') : name.resolvedName();
     }
 
     @Override

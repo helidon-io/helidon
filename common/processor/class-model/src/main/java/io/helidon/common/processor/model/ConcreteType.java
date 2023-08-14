@@ -91,6 +91,11 @@ class ConcreteType extends Type {
     }
 
     @Override
+    String resolvedTypeName() {
+        return typeName.resolvedName();
+    }
+
+    @Override
     String simpleTypeName() {
         return typeName.className();
     }
@@ -127,9 +132,9 @@ class ConcreteType extends Type {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Type that = (Type) o;
+        ConcreteType that = (ConcreteType) o;
         return isArray() == that.isArray()
-                && Objects.equals(fqTypeName(), that.fqTypeName());
+                && Objects.equals(typeName.resolvedName(), that.typeName.resolvedName());
     }
 
     @Override
@@ -139,7 +144,7 @@ class ConcreteType extends Type {
 
     @Override
     public int hashCode() {
-        return Objects.hash(isArray(), fqTypeName());
+        return Objects.hash(isArray(), typeName.resolvedName());
     }
 
     static final class Builder extends ModelComponent.Builder<Builder, ConcreteType> {

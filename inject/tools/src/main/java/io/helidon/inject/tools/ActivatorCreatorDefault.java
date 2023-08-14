@@ -245,7 +245,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
 
     static ClassInfo toClassInfo(TypeName serviceTypeName,
                                  LazyValue<ScanResult> scan) {
-        ClassInfo classInfo = scan.get().getClassInfo(serviceTypeName.resolved());
+        ClassInfo classInfo = scan.get().getClassInfo(serviceTypeName.resolvedName());
         if (classInfo == null) {
             throw new ToolsException("Unable to introspect: " + serviceTypeName);
         }
@@ -581,7 +581,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
             return AbstractServiceProvider.class.getName() + "<" + activatorTypeName.classNameWithEnclosingNames() + ">";
         }
 
-        return parentTypeName.resolved();
+        return parentTypeName.resolvedName();
     }
 
     List<String> toCodegenDependencies(DependenciesInfo dependencies) {
@@ -620,7 +620,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                 .append(ipInfo.ipName())
                 .append("\")");
         builder.append(".ipType(io.helidon.common.types.TypeName.create(")
-                .append(ipInfo.ipType().genericTypeName().resolved())
+                .append(ipInfo.ipType().genericTypeName().resolvedName())
                 .append(".class))");
         if (!qualifiers.isEmpty()) {
             builder.append(toCodegenQualifiers(qualifiers));
@@ -736,7 +736,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                         assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 constructor can be injectable";
                     }
                     // fully qualified type of the injection point, as we are assigning to it
-                    String cn = dep2.ipType().resolved();
+                    String cn = dep2.ipType().resolvedName();
                     String argName = dep2.ipName();
                     String id = dep2.id();
                     String argBuilder = cn + " "
@@ -1265,12 +1265,12 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
             ServiceInfo serviceInfo = ((ServiceInfo) args.serviceInfo());
             Set<TypeName> extContracts = serviceInfo.externalContractsImplemented();
             subst.put("externalcontracts", extContracts.stream()
-                    .map(TypeName::resolved)
+                    .map(TypeName::resolvedName)
                     .toList());
             // there is no need to list these twice, since external contracts will implicitly back-full into contracts
             subst.put("contracts", args.serviceInfo().contractsImplemented().stream()
                     .filter(it -> !extContracts.contains(it))
-                    .map(TypeName::resolved)
+                    .map(TypeName::resolvedName)
                     .collect(Collectors.toList()));
         }
         subst.put("qualifiers", toCodegenQualifiers(args.serviceInfo().qualifiers()));

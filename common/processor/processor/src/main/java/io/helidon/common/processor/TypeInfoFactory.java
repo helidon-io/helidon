@@ -190,7 +190,7 @@ public final class TypeInfoFactory {
         Objects.requireNonNull(elementPredicate);
         Objects.requireNonNull(typeName);
 
-        if (typeName.resolved().equals(Object.class.getName())) {
+        if (typeName.resolvedName().equals(Object.class.getName())) {
             // Object is not to be analyzed
             return Optional.empty();
         }
@@ -207,7 +207,7 @@ public final class TypeInfoFactory {
         Elements elementUtils = processingEnv.getElementUtils();
         try {
             List<Annotation> annotations =
-                    List.copyOf(createAnnotations(elementUtils.getTypeElement(genericTypeName.resolved()), elementUtils));
+                    List.copyOf(createAnnotations(elementUtils.getTypeElement(genericTypeName.resolvedName()), elementUtils));
             Map<TypeName, List<Annotation>> referencedAnnotations =
                     new LinkedHashMap<>(toMetaAnnotations(annotations, processingEnv));
             List<TypedElementInfo> elementsWeCareAbout = new ArrayList<>();
@@ -286,7 +286,7 @@ public final class TypeInfoFactory {
                             .filter(it -> !it.generic())
                             .forEach(allInterestingTypeNames::add);
                     TypeElement interfaceTypeElement = elementUtils.getTypeElement(fqInterfaceTypeName.genericTypeName()
-                                                                                           .resolved());
+                                                                                           .resolvedName());
                     if (interfaceTypeElement != null) {
                         Optional<TypeInfo> superTypeInfo =
                                 create(processingEnv, interfaceTypeElement, elementPredicate, fqInterfaceTypeName);

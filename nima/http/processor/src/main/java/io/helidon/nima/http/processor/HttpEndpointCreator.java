@@ -79,7 +79,7 @@ public class HttpEndpointCreator extends HttpCreatorBase implements CustomAnnota
         var annots = request.enclosingTypeInfo().annotations();
         Map<String, Object> httpMap = new HashMap<>();
         for (var annot : annots) {
-            String annotationName = annot.typeName().resolved();
+            String annotationName = annot.typeName().resolvedName();
             switch (annotationName) {
             case PATH_ANNOTATION -> httpMap.put("path", annot.value().orElse("/"));
             case LISTENER_ANNOTATION -> {

@@ -112,6 +112,11 @@ public final class TypeArgument extends Type implements TypeName {
     }
 
     @Override
+    String resolvedTypeName() {
+        return token.resolvedName();
+    }
+
+    @Override
     String simpleTypeName() {
         return token.className();
     }

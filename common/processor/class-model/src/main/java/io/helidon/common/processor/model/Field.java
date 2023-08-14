@@ -120,10 +120,18 @@ public final class Field extends AnnotatedComponent implements Comparable<Field>
         //This is here for ordering purposes.
         if (accessModifier() == other.accessModifier()) {
             if (isFinal == other.isFinal) {
-                if (type().fqTypeName().compareTo(other.type().fqTypeName()) == 0) {
-                    return name().compareTo(other.name());
+                if (type().simpleTypeName().equals(other.type().simpleTypeName())) {
+                    if (type().resolvedTypeName().equals(other.type().resolvedTypeName())) {
+                        return name().compareTo(other.name());
+                    }
+                    return type().resolvedTypeName().compareTo(other.type().resolvedTypeName());
+                } else if (type().simpleTypeName().equalsIgnoreCase(other.type().simpleTypeName())) {
+                    //To ensure that types with the types with the same name,
+                    //but with the different capital letters, will not be mixed
+                    return type().simpleTypeName().compareTo(other.type().simpleTypeName());
                 }
-                return type().fqTypeName().compareTo(other.type().fqTypeName());
+                //ignoring case sensitivity to ensure primitive types are properly sorted
+                return type().simpleTypeName().compareToIgnoreCase(other.type().simpleTypeName());
             }
             //final fields should be before non-final
             return Boolean.compare(other.isFinal, isFinal);

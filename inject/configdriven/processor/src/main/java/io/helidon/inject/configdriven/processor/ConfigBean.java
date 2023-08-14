@@ -57,7 +57,7 @@ record ConfigBean(TypeName typeName,
                     .anyMatch(it -> it.parameterArguments().get(0).typeName().equals(CONFIG));
             if (!hasConfigFactoryMethod) {
                 throw new IllegalArgumentException("ConfigBean type must have a \"static "
-                                                           + configBeanTypeInfo.typeName().resolved()
+                                                           + configBeanTypeInfo.typeName().resolvedName()
                                                            + " create(io.helidon.common.config.Config config)\" method");
             }
         }

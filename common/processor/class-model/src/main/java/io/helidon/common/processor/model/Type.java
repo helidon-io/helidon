@@ -68,7 +68,7 @@ abstract class Type extends ModelComponent {
                 if (i > 0) {
                     nameBuilder.append(", ");
                 }
-                nameBuilder.append(param.resolved());
+                nameBuilder.append(param.resolvedName());
                 i++;
             }
             nameBuilder.append(">");
@@ -94,6 +94,7 @@ abstract class Type extends ModelComponent {
     }
 
     abstract String fqTypeName();
+    abstract String resolvedTypeName();
 
     abstract String packageName();
 

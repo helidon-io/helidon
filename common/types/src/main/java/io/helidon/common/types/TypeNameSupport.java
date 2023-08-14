@@ -61,7 +61,7 @@ final class TypeNameSupport {
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override")
     static String toString(TypeName instance) {
-        return instance.resolved();
+        return instance.resolvedName();
     }
 
     @Prototype.PrototypeMethod
@@ -95,7 +95,7 @@ final class TypeNameSupport {
 
     @Prototype.PrototypeMethod
     @Prototype.Annotated("java.lang.Override") // defined on blueprint
-    static String resolved(TypeName instance) {
+    static String resolvedName(TypeName instance) {
         String name = calcName(instance, ".");
         boolean isObject = Object.class.getName().equals(name) || "?".equals(name);
         StringBuilder nameBuilder = (isObject)
@@ -109,7 +109,7 @@ final class TypeNameSupport {
                 if (i > 0) {
                     nameBuilder.append(", ");
                 }
-                nameBuilder.append(param.resolved());
+                nameBuilder.append(param.resolvedName());
                 i++;
             }
             nameBuilder.append(">");

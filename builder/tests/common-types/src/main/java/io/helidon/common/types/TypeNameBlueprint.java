@@ -41,7 +41,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * </ul>
  * Finally, this class offers a number of methods that are helpful for code generation:
  * <ul>
- * <li>{@link #declaredName()} and {@link #resolved()}.</li>
+ * <li>{@link #declaredName()} and {@link #resolvedName()}.</li>
  * </ul>
  */
 @Prototype.Blueprint
