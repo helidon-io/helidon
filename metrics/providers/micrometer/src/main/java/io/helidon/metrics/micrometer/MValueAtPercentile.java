@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
@@ -49,5 +50,29 @@ class MValueAtPercentile implements io.helidon.metrics.api.ValueAtPercentile {
     @Override
     public <R> R unwrap(Class<? extends R> c) {
         return c.cast(delegate);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        // Simplifies the use of test implementations in unit tests if equals does not insist that the other object
+        // also be a MValueAtPercentile but merely implements ValueAtPercentile.
+        if (!(o instanceof io.helidon.metrics.api.ValueAtPercentile that)) {
+            return false;
+        }
+        return Objects.equals(delegate.percentile(), that.percentile())
+                && Objects.equals(delegate.value(), that.value());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate.percentile(), delegate.value());
+    }
+
+    @Override
+    public String toString() {
+        return String.format("MValueAtPercentile[percentile=%f,value=%f]", percentile(), value());
     }
 }

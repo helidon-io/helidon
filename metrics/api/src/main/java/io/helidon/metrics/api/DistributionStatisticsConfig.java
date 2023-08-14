@@ -199,23 +199,19 @@ public interface DistributionStatisticsConfig extends Wrapped {
         Builder percentilePrecision(Integer digitsOfPrecision);
 
         /**
-         * Sets the service level objective (SLO) boundaries which, when used with
-         * {@link #percentilesHistogram(Boolean)}, adds the boundaries defined here
-         * to other buckets used to generate aggregable percentile approximations.
+         * Sets the bucket boundaries.
          *
-         * @param slos SLO boundaries
+         * @param buckets bucket boundaries
          * @return updated builder
          */
-        Builder serviceLevelObjectives(double... slos);
+        Builder buckets(double... buckets);
 
         /**
-         * Sets the service level objective (SLO) boundaries which, when used with
-         * {@link #percentilesHistogram(Boolean)}, adds the boundaries defined here
-         * to other buckets used to generate aggregable percentile approximations.
+         * Sets the bucket boundaries.
          *
-         * @param slos SLO boundaries
+         * @param buckets bucket boundaries
          * @return updated builder
          */
-        Builder serviceLevelObjectives(Iterable<Double> slos);
+        Builder buckets(Iterable<Double> buckets);
     }
 }

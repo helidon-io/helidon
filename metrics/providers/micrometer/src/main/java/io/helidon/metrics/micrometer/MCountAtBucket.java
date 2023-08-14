@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.distribution.CountAtBucket;
@@ -49,5 +50,29 @@ class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
     @Override
     public <R> R unwrap(Class<? extends R> c) {
         return c.cast(delegate);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        // Simplifies the use of test implementations in unit tests if equals does not insist that the other object
+        // also be a MCountAtBucket but merely implements CountAtBucket.
+        if (!(o instanceof io.helidon.metrics.api.CountAtBucket that)) {
+            return false;
+        }
+        return Objects.equals(delegate.bucket(), that.bucket())
+                && Objects.equals(delegate.count(), that.count());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(delegate.bucket(), delegate.count());
+    }
+
+    @Override
+    public String toString() {
+        return String.format("MCountAtBucket[bucket=%f,count=%f]", bucket(), count());
     }
 }
