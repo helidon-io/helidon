@@ -62,13 +62,24 @@ interface Http1ClientProtocolConfigBlueprint extends ProtocolConfig {
     int maxStatusLineLength();
 
     /**
-     * Sets whether the header format is validated or not.
+     * Sets whether the request header format is validated or not.
+     * <p>
+     *     Defaults to {@code false} as user has control on the header creation.
+     * </p>
+     *
+     * @return whether request header validation should be enabled
+     */
+    @ConfiguredOption("false")
+    boolean validateRequestHeaders();
+
+    /**
+     * Sets whether the response header format is validated or not.
      * <p>
      *     Defaults to {@code true}.
      * </p>
      *
-     * @return whether header validation should be enabled
+     * @return whether response header validation should be enabled
      */
     @ConfiguredOption("true")
-    boolean validateHeaders();
+    boolean validateResponseHeaders();
 }

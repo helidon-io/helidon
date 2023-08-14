@@ -60,11 +60,29 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      * are validated by format
      * (content length is always validated as it is part of protocol processing (other headers may be validated if
      * features use them)).
+     * <p>
+     *     Defaults to {@code true}.
+     * </p>
      *
      * @return whether to validate headers
      */
     @ConfiguredOption("true")
-    boolean validateHeaders();
+    boolean validateRequestHeaders();
+
+    /**
+     * Whether to validate headers.
+     * If set to false, any value is accepted, otherwise validates headers + known headers
+     * are validated by format
+     * (content length is always validated as it is part of protocol processing (other headers may be validated if
+     * features use them)).
+     * <p>
+     *     Defaults to {@code false} as user has control on the header creation.
+     * </p>
+     *
+     * @return whether to validate headers
+     */
+    @ConfiguredOption("false")
+    boolean validateResponseHeaders();
 
     /**
      * If set to false, any path is accepted (even containing illegal characters).

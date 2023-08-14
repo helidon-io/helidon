@@ -242,7 +242,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             writer.writeNow(prologue);
 
             BufferData headerBuffer = BufferData.growing(128);
-            writeHeaders(headers, headerBuffer, protocolConfig.validateHeaders());
+            writeHeaders(headers, headerBuffer, protocolConfig.validateRequestHeaders());
             writer.writeNow(headerBuffer);
 
             whenSent.complete(request);

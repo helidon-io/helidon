@@ -71,7 +71,7 @@ class Http1CallEntityChain extends Http1CallChainBase {
 
         headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, entityBytes.length));
 
-        writeHeaders(headers, writeBuffer, protocolConfig().validateHeaders());
+        writeHeaders(headers, writeBuffer, protocolConfig().validateRequestHeaders());
         // we have completed writing the headers
         whenSent.complete(serviceRequest);
 

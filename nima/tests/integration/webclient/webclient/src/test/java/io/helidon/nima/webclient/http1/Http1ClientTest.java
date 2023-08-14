@@ -65,7 +65,7 @@ This class uses package local API to validate connection cache, and at the same 
 that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
-class ClientRequestImplTest {
+class Http1ClientTest {
     private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
             Http.HeaderNames.create("X-Req-Chunked"), "true");
     private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
@@ -77,20 +77,20 @@ class ClientRequestImplTest {
     private final String baseURI;
     private final WebClient injectedHttp1client;
 
-    ClientRequestImplTest(WebServer webServer, WebClient client) {
+    Http1ClientTest(WebServer webServer, WebClient client) {
         baseURI = "http://localhost:" + webServer.port();
         injectedHttp1client = client;
     }
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.put("/test", ClientRequestImplTest::responseHandler);
-        rules.put("/redirectKeepMethod", ClientRequestImplTest::redirectKeepMethod);
-        rules.put("/redirect", ClientRequestImplTest::redirect);
-        rules.get("/afterRedirect", ClientRequestImplTest::afterRedirectGet);
-        rules.put("/afterRedirect", ClientRequestImplTest::afterRedirectPut);
-        rules.put("/chunkresponse", ClientRequestImplTest::chunkResponseHandler);
-        rules.put("/delayedEndpoint", ClientRequestImplTest::delayedHandler);
+        rules.put("/test", Http1ClientTest::responseHandler);
+        rules.put("/redirectKeepMethod", Http1ClientTest::redirectKeepMethod);
+        rules.put("/redirect", Http1ClientTest::redirect);
+        rules.get("/afterRedirect", Http1ClientTest::afterRedirectGet);
+        rules.put("/afterRedirect", Http1ClientTest::afterRedirectPut);
+        rules.put("/chunkresponse", Http1ClientTest::chunkResponseHandler);
+        rules.put("/delayedEndpoint", Http1ClientTest::delayedHandler);
     }
 
     @Test

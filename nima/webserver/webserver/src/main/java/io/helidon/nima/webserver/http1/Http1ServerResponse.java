@@ -76,12 +76,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private ClosingBufferedOutputStream outputStream;
     private long entitySize;
     private String streamResult = "";
+    private final boolean validateHeaders;
 
     Http1ServerResponse(ConnectionContext ctx,
                         Http1ConnectionListener sendListener,
                         DataWriter dataWriter,
                         Http1ServerRequest request,
-                        boolean keepAlive) {
+                        boolean keepAlive,
+                        boolean validateHeaders) {
         super(ctx, request);
 
         this.ctx = ctx;
@@ -90,12 +92,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         this.request = request;
         this.headers = ServerResponseHeaders.create();
         this.keepAlive = keepAlive;
+        this.validateHeaders = validateHeaders;
     }
 
     static void nonEntityBytes(ServerResponseHeaders headers,
                                Http.Status status,
                                BufferData buffer,
-                               boolean keepAlive) {
+                               boolean keepAlive,
+                               boolean validateHeaders) {
 
         // first write status
         if (status == null || status == Http.Status.OK_200) {
@@ -124,7 +128,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         // write headers followed by empty line
-        writeHeaders(headers, buffer);
+        writeHeaders(headers, buffer, validateHeaders);
 
         buffer.write('\r');        // "\r\n" - empty line after headers
         buffer.write('\n');
@@ -175,7 +179,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                                      ctx,
                                                      sendListener,
                                                      request,
-                                                     keepAlive);
+                                                     keepAlive,
+                                                     validateHeaders);
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
@@ -267,7 +272,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
     }
 
-    private static void writeHeaders(io.helidon.common.http.Headers headers, BufferData buffer) {
+    private static void writeHeaders(io.helidon.common.http.Headers headers, BufferData buffer, boolean validate) {
+        if (validate) {
+            headers.forEach(Header::validate);
+        }
         for (Header header : headers) {
             header.writeHttp1Header(buffer);
         }
@@ -293,7 +301,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         // give some space for code and headers + entity
         BufferData responseBuffer = BufferData.growing(256 + bytes.length);
 
-        nonEntityBytes(headers, status(), responseBuffer, keepAlive);
+        nonEntityBytes(headers, status(), responseBuffer, keepAlive, validateHeaders);
         if (bytes.length > 0) {
             responseBuffer.write(bytes);
         }
@@ -324,6 +332,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private boolean firstByte = true;
         private long responseBytesTotal;
         private boolean closing = false;
+        private boolean validateHeaders = false;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      WritableHeaders<?> trailers,
@@ -334,7 +343,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                                      ConnectionContext ctx,
                                      Http1ConnectionListener sendListener,
                                      Http1ServerRequest request,
-                                     boolean keepAlive) {
+                                     boolean keepAlive,
+                                     boolean validateHeaders) {
             this.headers = headers;
             this.trailers = trailers;
             this.status = status;
@@ -348,6 +358,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.request = request;
             this.keepAlive = keepAlive;
             this.forcedChunked = headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+            this.validateHeaders = validateHeaders;
         }
 
         @Override
@@ -422,7 +433,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
                     trailers.set(STREAM_RESULT_NAME, streamResult.get());
                     BufferData buffer = BufferData.growing(128);
-                    writeHeaders(trailers, buffer);
+                    writeHeaders(trailers, buffer, this.validateHeaders);
                     buffer.write('\r');        // "\r\n" - empty line after headers
                     buffer.write('\n');
                     dataWriter.write(buffer);
@@ -458,7 +469,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                     sendListener.headers(ctx, headers);
                     // write headers and payload part in one buffer to avoid TCP/ACK delay problems
                     BufferData growing = BufferData.growing(256 + buffer.available());
-                    nonEntityBytes(headers, status.get(), growing, keepAlive);
+                    nonEntityBytes(headers, status.get(), growing, keepAlive, validateHeaders);
                     // check not exceeding content-length
                     bytesWritten += buffer.available();
                     checkContentLength(buffer);
@@ -511,7 +522,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             // at this moment, we must send headers
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
-            nonEntityBytes(headers, status.get(), bufferData, keepAlive);
+            nonEntityBytes(headers, status.get(), bufferData, keepAlive, validateHeaders);
 
             if (firstBuffer != null) {
                 bufferData.write(firstBuffer);
@@ -542,7 +553,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             // at this moment, we must send headers
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);
-            nonEntityBytes(headers, status.get(), bufferData, keepAlive);
+            nonEntityBytes(headers, status.get(), bufferData, keepAlive, validateHeaders);
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
             dataWriter.write(bufferData);

@@ -104,7 +104,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.recvListener = http1Config.compositeReceiveListener();
         this.sendListener = http1Config.compositeSendListener();
         this.reader.listener(recvListener, ctx);
-        this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateHeaders());
+        this.http1headers = new Http1Headers(reader, http1Config.maxHeadersSize(), http1Config.validateRequestHeaders());
         this.http1prologue = new Http1Prologue(reader, http1Config.maxPrologueLength(), http1Config.validatePath());
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
@@ -319,7 +319,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    writer,
                                                                    request,
                                                                    !request.headers()
-                                                                           .contains(Headers.CONNECTION_CLOSE));
+                                                                           .contains(Headers.CONNECTION_CLOSE),
+                                                                   http1Config.validateResponseHeaders());
 
             routing.route(ctx, request, response);
             // we have handled a request without request entity
@@ -355,7 +356,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             }
         } else {
             // Check whether Content-Encoding header is present when headers validation is enabled
-            if (http1Config.validateHeaders() && headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
+            if (http1Config.validateRequestHeaders() && headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
                         .request(DirectTransportRequest.create(prologue, headers))
@@ -382,7 +383,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                writer,
                                                                request,
                                                                !request.headers()
-                                                                       .contains(Headers.CONNECTION_CLOSE));
+                                                                       .contains(Headers.CONNECTION_CLOSE),
+                                                               http1Config.validateResponseHeaders());
 
         routing.route(ctx, request, response);
 
@@ -436,7 +438,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
         headers.set(Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 
-        Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive());
+        Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
+                                           http1Config.validateResponseHeaders());
         if (message.length != 0) {
             buffer.write(message);
         }
