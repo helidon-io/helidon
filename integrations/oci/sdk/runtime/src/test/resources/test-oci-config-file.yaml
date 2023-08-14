@@ -14,7 +14,5 @@
 # limitations under the License.
 #
 
-auth-strategy: "resource-principal"
-
-inject:
-  permits-dynamic: true
+# should resolve to "config-file" as the configured (by probably not available) auth strategy
+auth-strategies: "config-file, resource-principal, config, instance-principals"

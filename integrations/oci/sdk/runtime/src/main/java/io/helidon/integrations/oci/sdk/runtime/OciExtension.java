@@ -16,7 +16,6 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -130,6 +129,21 @@ public final class OciExtension {
     }
 
     /**
+     * The configured authentication provider strategy type name. Note, however, that the authentication strategy returned may not
+     * necessarily be available. The configured authentication provider merely returns what is configured via
+     * {@value OciAuthenticationDetailsProvider#KEY_AUTH_STRATEGY} and/or
+     * {@value OciAuthenticationDetailsProvider#KEY_AUTH_STRATEGIES}. In order to additionally check if the provider is available,
+     * the {@code verifyIsAvailable} argument should be {@code true}.
+     *
+     * @param verifyIsAvailable flag to indicate whether the provider should be checked for availability
+     * @return the configured authentication type name
+     */
+    public static Class<? extends AbstractAuthenticationDetailsProvider>
+    configuredAuthenticationDetailsProvider(boolean verifyIsAvailable) {
+        return OciAuthenticationDetailsProvider.select(ociConfig(), verifyIsAvailable).authStrategy().type();
+    }
+
+    /**
      * Returns the global {@link OciConfig} bean that is currently defined in the bootstrap environment.
      * <p>
      * The implementation will first look for an {@code oci.yaml} file, and if found will use that file to establish the global
@@ -143,11 +157,13 @@ public final class OciExtension {
      *
      * @return the bootstrap oci config bean
      * @see OciConfigBlueprint
+     * @see #ociConfigSupplier
      */
     public static OciConfig ociConfig() {
         io.helidon.common.config.Config config = configSupplier().get();
         if (!config.exists()
-                || !config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()) {
+                || !(config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()
+                  || config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGIES).exists())) {
             // fallback
             Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
             if (bootstrap.isEmpty()) {
@@ -175,6 +191,7 @@ public final class OciExtension {
      * The supplier for the raw config-backed by the OCI config source(s).
      *
      * @return the supplier for the raw config-backed by the OCI config source(s)
+     * @see #ociAuthenticationProvider()
      */
     public static Supplier<io.helidon.common.config.Config> configSupplier() {
         if (ociConfigSupplier == null) {
@@ -184,7 +201,7 @@ public final class OciExtension {
                 String ociConfigFile = ociConfigFilename();
                 return Config.create(
                         ConfigSources.classpath(ociConfigFile).optional(),
-                        ConfigSources.file(Paths.get(ociConfigFile)).optional());
+                        ConfigSources.file(ociConfigFile).optional());
             };
         }
 
@@ -192,11 +209,12 @@ public final class OciExtension {
     }
 
     /**
-     * The supplier for the globally configured authentication provider.
+     * The supplier for the globally configured OCI authentication provider.
      *
      * @return the supplier for the globally configured authentication provider
+     * @see #configSupplier()
      */
-    public static Supplier<AbstractAuthenticationDetailsProvider> ociAuthenticationProvider() {
+    public static Supplier<? extends AbstractAuthenticationDetailsProvider> ociAuthenticationProvider() {
         return () -> {
             Services services = InjectionServices.realizedServices();
             ServiceProvider<AbstractAuthenticationDetailsProvider> authProvider =
@@ -205,11 +223,13 @@ public final class OciExtension {
         };
     }
 
+    // in support for testing a variant of oci.yaml
     static void ociConfigFileName(String fileName) {
         overrideOciConfigFile = fileName;
         ociConfigSupplier = null;
     }
 
+    // in support for testing a variant of oci.yaml
     static String ociConfigFilename() {
         return (overrideOciConfigFile == null) ? DEFAULT_OCI_GLOBAL_CONFIG_FILE : overrideOciConfigFile;
     }

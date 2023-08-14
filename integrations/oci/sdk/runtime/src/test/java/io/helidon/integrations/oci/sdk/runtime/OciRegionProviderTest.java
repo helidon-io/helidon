@@ -57,10 +57,10 @@ class OciRegionProviderTest {
 
     @Test
     void regionProviderService() {
-        Config config = OciConfigTest.createTestConfig(
-                OciConfigTest.basicTestingConfigSource(),
-                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
-                OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
+        Config config = OciExtensionTest.createTestConfig(
+                OciExtensionTest.basicTestingConfigSource(),
+                OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
+                OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"));
         resetWith(config);
 
         ServiceProvider<Region> regionProvider = InjectionServices.realizedServices()

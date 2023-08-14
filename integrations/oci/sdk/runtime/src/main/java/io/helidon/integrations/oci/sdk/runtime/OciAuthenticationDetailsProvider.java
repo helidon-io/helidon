@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
@@ -60,6 +61,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 
     static final String KEY_AUTH_STRATEGY = "auth-strategy";
+    static final String KEY_AUTH_STRATEGIES = "auth-strategies";
     static final String TAG_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
     static final String VAL_AUTO = "auto";
     static final String VAL_CONFIG = "config";
@@ -83,20 +85,36 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         OciConfig ociConfig = OciExtension.ociConfig();
 
         String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
+
+        // if the injection point names a profile for auth strategy then use it
         if (requestedNamedProfile != null && !requestedNamedProfile.isBlank()) {
             ociConfig = OciConfig.builder(ociConfig).configProfile(requestedNamedProfile).build();
         }
 
-        return Optional.of(select(ociConfig));
+        return Optional.of(select(ociConfig, true).authStrategy().select(ociConfig));
     }
 
-    private static AbstractAuthenticationDetailsProvider select(OciConfig ociConfig) {
+    /**
+     * Supply the selected strategy given the global OCI configuration. If one is named outright then use it, otherwise hunt for
+     * the appropriate authentication strategy from the list of {@code auth-strategies} explicitly or implicitly defined.
+     *
+     * @param ociConfig the oci configuration
+     * @param verifyIsAvailable flag to indicate whether the provider should be checked for availability
+     * @return the configured, or else most applicable OCI auth strategy
+     */
+    static Supply select(OciConfig ociConfig,
+                         boolean verifyIsAvailable) {
+        Optional<String> authStrategy = ociConfig.authStrategy();
+        if (authStrategy.isPresent() && !authStrategy.get().equalsIgnoreCase(AuthStrategy.AUTO.id)) {
+            return new Supply(AuthStrategy.fromNameOrId(authStrategy.get()).orElseThrow(), ociConfig);
+        }
+
         List<AuthStrategy> strategies = AuthStrategy.convert(ociConfig.potentialAuthStrategies());
         for (AuthStrategy s : strategies) {
-            if (s.isAvailable(ociConfig)) {
+            if (!verifyIsAvailable || s.isAvailable(ociConfig)) {
                 LOGGER.log(System.Logger.Level.DEBUG, "Using authentication strategy " + s
                         + "; selected AbstractAuthenticationDetailsProvider " + s.type().getTypeName());
-                return s.select(ociConfig);
+                return new Supply(s, ociConfig);
             } else {
                 LOGGER.log(System.Logger.Level.TRACE, "Skipping authentication strategy " + s + " because it is not available");
             }
@@ -155,7 +173,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         AUTO(VAL_AUTO,
              AbstractAuthenticationDetailsProvider.class,
              (ociConfig) -> true,
-             OciAuthenticationDetailsProvider::select),
+             (ociConfig) -> OciAuthenticationDetailsProvider.select(ociConfig, true).get()),
 
         /**
          * Corresponds to {@link SimpleAuthenticationDetailsProvider}.
@@ -273,6 +291,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
             return authStrategies.stream()
                     .map(AuthStrategy::fromNameOrId)
                     .map(Optional::orElseThrow)
+                    .filter(s -> s != AuthStrategy.AUTO)
                     .toList();
         }
     }
@@ -287,6 +306,26 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     @FunctionalInterface
     interface Selector {
         AbstractAuthenticationDetailsProvider select(OciConfig ociConfig);
+    }
+
+    static class Supply implements Supplier<AbstractAuthenticationDetailsProvider> {
+        private final AuthStrategy authStrategy;
+        private final OciConfig ociConfig;
+
+        private Supply(AuthStrategy authStrategy,
+                       OciConfig ociConfig) {
+            this.authStrategy = authStrategy;
+            this.ociConfig = ociConfig;
+        }
+
+        @Override
+        public AbstractAuthenticationDetailsProvider get() {
+            return authStrategy.select(ociConfig);
+        }
+
+        public AuthStrategy authStrategy() {
+            return authStrategy;
+        }
     }
 
 }

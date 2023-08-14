@@ -124,9 +124,9 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void authStrategiesAvailability() {
-        Config config = OciConfigTest.createTestConfig(
-                        OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
-                        OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
+        Config config = OciExtensionTest.createTestConfig(
+                        OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
+                        OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", null, null, "region"))
                 .get(OciConfig.CONFIG_KEY);
         OciConfig cfg = OciConfig.create(config);
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
@@ -141,10 +141,10 @@ class OciAuthenticationDetailsProviderTest {
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.RESOURCE_PRINCIPAL.isAvailable(cfg),
                    is(false));
 
-        config = OciConfigTest.createTestConfig(
-                        OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
-                        OciConfigTest.ociAuthConfigFile("./target", null),
-                        OciConfigTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
+        config = OciExtensionTest.createTestConfig(
+                        OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
+                        OciExtensionTest.ociAuthConfigFile("./target", null),
+                        OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "phrase", "fp", "pk", "pkp", null))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(OciAuthenticationDetailsProvider.AuthStrategy.AUTO.isAvailable(cfg),
@@ -161,12 +161,13 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenNoConfigIsSet() {
-        Config config = OciConfigTest.createTestConfig(
-                OciConfigTest.basicTestingConfigSource());
+        Config config = OciExtensionTest.createTestConfig(
+                OciExtensionTest.basicTestingConfigSource());
         resetWith(config);
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
                 services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
+        Objects.requireNonNull(authServiceProvider);
 
         // this code is dependent upon whether and OCI config-file is present - so leaving this commented out intentionally
 //        InjectionServiceProviderException e = assertThrows(InjectionServiceProviderException.class, authServiceProvider::get);
@@ -177,10 +178,10 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenFileConfigIsSetWithAuto() {
-        Config config = OciConfigTest.createTestConfig(
-                OciConfigTest.basicTestingConfigSource(),
-                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
-                OciConfigTest.ociAuthConfigFile("./target", "profile"));
+        Config config = OciExtensionTest.createTestConfig(
+                OciExtensionTest.basicTestingConfigSource(),
+                OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
+                OciExtensionTest.ociAuthConfigFile("./target", "profile"));
         resetWith(config);
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
@@ -193,10 +194,10 @@ class OciAuthenticationDetailsProviderTest {
 
     @Test
     void selectionWhenSimpleConfigIsSetWithAuto() {
-        Config config = OciConfigTest.createTestConfig(
-                OciConfigTest.basicTestingConfigSource(),
-                OciConfigTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
-                OciConfigTest.ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
+        Config config = OciExtensionTest.createTestConfig(
+                OciExtensionTest.basicTestingConfigSource(),
+                OciExtensionTest.ociAuthConfigStrategies(OciAuthenticationDetailsProvider.VAL_AUTO),
+                OciExtensionTest.ociAuthSimpleConfig("tenant", "user", "passphrase", "fp", "privKey", null, "us-phoenix-1"));
         resetWith(config);
 
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =

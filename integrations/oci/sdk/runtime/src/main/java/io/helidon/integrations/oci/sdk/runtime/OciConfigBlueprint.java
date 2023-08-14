@@ -41,6 +41,24 @@ import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsPr
  * Configuration used by {@link OciAuthenticationDetailsProvider}.
  * <p>
  * Access the global {@link OciConfig} using the {@link OciExtension#ociConfig()} method.
+ * The configuration for this is delivered via a special {@value OciExtension#DEFAULT_OCI_GLOBAL_CONFIG_FILE} file. Minimally,
+ * this configuration file should have a key named {@value OciAuthenticationDetailsProvider#KEY_AUTH_STRATEGY} or else a
+ * list of auth strategies having a key named {@value OciAuthenticationDetailsProvider#KEY_AUTH_STRATEGIES}. In the later, all
+ * of the named auth strategies will be checked in the order they were specified for availability in the runtime environment (see
+ * details below). Here is an example for what the configuration would look like when a single auth strategy is explicitly
+ * configured :
+ * <pre>
+ *     # oci.yaml
+ *     auth-strategy : "config"
+ * </pre>
+ * And here is another example when the runtime should search true multi auth strategies in order to select the first one
+ * available in the runtime environment:
+ * <pre>
+ *     # oci.yaml
+ *     # if instance-principals are available then use it, going down the chain checking for availability, etc.
+ *     auth-strategies: "instance-principals, config-file, resource-principal, config"
+ * </pre>
+ *
  * <p>
  * Each configured {@link OciAuthenticationDetailsProvider#KEY_AUTH_STRATEGY} has varying constraints:
  * <ul>
@@ -132,7 +150,7 @@ interface OciConfigBlueprint {
             @ConfiguredValue(value = VAL_CONFIG, description = "simple authentication provider"),
             @ConfiguredValue(value = VAL_CONFIG_FILE, description = "config file authentication provider"),
             @ConfiguredValue(value = VAL_INSTANCE_PRINCIPALS, description = "instance principals authentication provider"),
-            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principals authentication provider"),
+            @ConfiguredValue(value = VAL_RESOURCE_PRINCIPAL, description = "resource principal authentication provider"),
     })
     List<String> authStrategies();
 
@@ -379,8 +397,7 @@ interface OciConfigBlueprint {
                 && authFingerprint().isPresent()
                 // don't test region since it can alternatively come from the region provider
                 //                && authRegion().isPresent()
-                && (
-                authPrivateKey().isPresent()
+                && (authPrivateKey().isPresent()
                         || authPrivateKeyPath().isPresent());
     }
 
