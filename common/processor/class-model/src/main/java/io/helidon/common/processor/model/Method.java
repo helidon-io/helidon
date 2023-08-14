@@ -32,7 +32,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Model of the method which should be created in the specific type.
  */
-public final class Method extends Executable implements Comparable<Method> {
+public final class Method extends Executable {
 
     private final Map<String, TypeArgument> declaredTokens;
     private final boolean isDefault;
@@ -213,15 +213,6 @@ public final class Method extends Executable implements Comparable<Method> {
     @Override
     public int hashCode() {
         return Objects.hash(type(), name(), parameters());
-    }
-
-    @Override
-    public int compareTo(Method other) {
-        if (accessModifier() == other.accessModifier()) {
-            return 0;
-        } else {
-            return accessModifier().compareTo(other.accessModifier());
-        }
     }
 
     @Override

@@ -26,7 +26,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Field model representation.
  */
-public final class Field extends AnnotatedComponent implements Comparable<Field> {
+public final class Field extends AnnotatedComponent {
 
     private final Content defaultValue;
     private final boolean isFinal;
@@ -116,36 +116,15 @@ public final class Field extends AnnotatedComponent implements Comparable<Field>
     }
 
     @Override
-    public int compareTo(Field other) {
-        //This is here for ordering purposes.
-        if (accessModifier() == other.accessModifier()) {
-            if (isFinal == other.isFinal) {
-                if (type().simpleTypeName().equals(other.type().simpleTypeName())) {
-                    if (type().resolvedTypeName().equals(other.type().resolvedTypeName())) {
-                        return name().compareTo(other.name());
-                    }
-                    return type().resolvedTypeName().compareTo(other.type().resolvedTypeName());
-                } else if (type().simpleTypeName().equalsIgnoreCase(other.type().simpleTypeName())) {
-                    //To ensure that types with the types with the same name,
-                    //but with the different capital letters, will not be mixed
-                    return type().simpleTypeName().compareTo(other.type().simpleTypeName());
-                }
-                //ignoring case sensitivity to ensure primitive types are properly sorted
-                return type().simpleTypeName().compareToIgnoreCase(other.type().simpleTypeName());
-            }
-            //final fields should be before non-final
-            return Boolean.compare(other.isFinal, isFinal);
-        } else {
-            return accessModifier().compareTo(other.accessModifier());
-        }
-    }
-
-    @Override
     public String toString() {
         if (defaultValue.hasBody()) {
             return accessModifier().modifierName() + " " + type().fqTypeName() + " " + name() + " = " + defaultValue;
         }
         return accessModifier().modifierName() + " " + type().fqTypeName() + " " + name();
+    }
+
+    boolean isFinal() {
+        return isFinal;
     }
 
     /**

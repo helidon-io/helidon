@@ -58,10 +58,10 @@ public abstract class ClassBase extends AnnotatedComponent {
         this.isFinal = builder.isFinal;
         this.isAbstract = builder.isAbstract;
         this.isStatic = builder.isStatic;
-        this.fields = builder.fields.values().stream().sorted().toList();
-        this.staticFields = builder.staticFields.values().stream().sorted().toList();
-        this.methods = builder.methods.stream().sorted().toList();
-        this.staticMethods = builder.staticMethods.stream().sorted().toList();
+        this.fields = builder.fields.values().stream().sorted(ClassBase::fieldComparator).toList();
+        this.staticFields = builder.staticFields.values().stream().sorted(ClassBase::fieldComparator).toList();
+        this.methods = builder.methods.stream().sorted(ClassBase::methodCompare).toList();
+        this.staticMethods = builder.staticMethods.stream().sorted(ClassBase::methodCompare).toList();
         this.constructors = List.copyOf(builder.constructors);
         this.interfaces = Collections.unmodifiableSet(new LinkedHashSet<>(builder.interfaces));
         this.innerClasses = List.copyOf(builder.innerClasses.values());
@@ -71,6 +71,38 @@ public abstract class ClassBase extends AnnotatedComponent {
                 .collect(Collectors.toSet());
         this.classType = builder.classType;
         this.superType = builder.superType;
+    }
+
+    private static int methodCompare(Method method1, Method method2) {
+        if (method1.accessModifier() == method2.accessModifier()) {
+            return 0;
+        } else {
+            return method1.accessModifier().compareTo(method2.accessModifier());
+        }
+    }
+
+    private static int fieldComparator(Field field1, Field field2) {
+        //This is here for ordering purposes.
+        if (field1.accessModifier() == field2.accessModifier()) {
+            if (field1.isFinal() == field2.isFinal()) {
+                if (field1.type().simpleTypeName().equals(field2.type().simpleTypeName())) {
+                    if (field1.type().resolvedTypeName().equals(field2.type().resolvedTypeName())) {
+                        return field1.name().compareTo(field2.name());
+                    }
+                    return field1.type().resolvedTypeName().compareTo(field2.type().resolvedTypeName());
+                } else if (field1.type().simpleTypeName().equalsIgnoreCase(field2.type().simpleTypeName())) {
+                    //To ensure that types with the types with the same name,
+                    //but with the different capital letters, will not be mixed
+                    return field1.type().simpleTypeName().compareTo(field2.type().simpleTypeName());
+                }
+                //ignoring case sensitivity to ensure primitive types are properly sorted
+                return field1.type().simpleTypeName().compareToIgnoreCase(field2.type().simpleTypeName());
+            }
+            //final fields should be before non-final
+            return Boolean.compare(field2.isFinal(), field1.isFinal());
+        } else {
+            return field1.accessModifier().compareTo(field2.accessModifier());
+        }
     }
 
     @Override
