@@ -32,11 +32,9 @@ import java.util.Map;
 import io.helidon.metrics.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
-import org.eclipse.microprofile.metrics.MetricRegistry.Type;
-
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 
-public class OciMetricsDataTest {
+class OciMetricsDataTest {
     private final OciMetricsSupport.NameFormatter nameFormatter = new OciMetricsSupport.NameFormatter() { };
     private final String[] types = {Registry.BASE_SCOPE, Registry.VENDOR_SCOPE, Registry.APPLICATION_SCOPE};
     private final String dimensionScopeName = "scope";
@@ -47,21 +45,15 @@ public class OciMetricsDataTest {
     private final MetricRegistry appMetricRegistry = rf.getRegistry(Registry.APPLICATION_SCOPE);
 
     @BeforeEach
-    private void beforeEach() {
-        // clear all registry
+    void clearAllRegistry() {
         for (String type: types) {
             MetricRegistry metricRegistry = rf.getRegistry(type);
-            metricRegistry.removeMatching(new MetricFilter() {
-                @Override
-                public boolean matches(MetricID metricID, Metric metric) {
-                    return true;
-                }
-            });
+            metricRegistry.removeMatching(MetricFilter.ALL);
         }
     }
 
     @Test
-    public void testMetricRegistries() {
+    void testMetricRegistries() {
         String counterName = "DummyCounter";
         String timerName = "DummyTimer";
 
@@ -91,7 +83,7 @@ public class OciMetricsDataTest {
     }
 
     @Test
-    public void testOciMonitoringParameters() {
+    void testOciMonitoringParameters() {
         String compartmentId = "dummy.compartmentId";
         String namespace = "dummy-namespace";
         String resourceGroup = "dummy_resourceGroup";
@@ -109,7 +101,7 @@ public class OciMetricsDataTest {
     }
 
     @Test
-    public void testDimensions() {
+    void testDimensions() {
         String dummyTagName = "DummyTag";
         String dummyTagValue = "DummyValue";
 
