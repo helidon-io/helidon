@@ -38,4 +38,15 @@ interface WithProviderBlueprint {
     List<SomeProvider.SomeService> listDiscover();
     @ConfiguredOption(provider = true, providerType = SomeProvider.class, providerDiscoverServices = false)
     List<SomeProvider.SomeService> listNotDiscover();
+    /*
+    The following should always be empty, as there are no implementations
+     */
+    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class)
+    Optional<ProviderNoImpls.SomeService> optionalNoImplDiscover();
+    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class, providerDiscoverServices = false)
+    Optional<ProviderNoImpls.SomeService> optionalNoImplNotDiscover();
+    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class)
+    List<ProviderNoImpls.SomeService> listNoImplDiscover();
+    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class, providerDiscoverServices = false)
+    List<ProviderNoImpls.SomeService> listNoImplNotDiscover();
 }

@@ -129,8 +129,32 @@ public @interface ConfiguredOption {
      * the configured option. On the same level as {@code providers}, there can be {@code discover-services} boolean
      * defining whether to look for services from service loader even if not configured in the configuration (this would
      * override {@link #providerDiscoverServices()} defined on this annotation.
+     * <p>
+     * Option called {@code myProvider} that returns a single provider, or an {@link java.util.Optional} provider example
+     * in configuration:
+     * <pre>
+     * my-type:
+     *   my-provider:
+     *     provider-id:
+     *       provider-key1: "providerValue"
+     *       provider-key2: "providerValue"
+     * </pre>
+     * <p>
+     * Option called {@code myProviders} that returns a list of providers in configuration:
+     * <pre>
+     * my-type:
+     *   my-providers:
+     *     discover-services: true # default of this value is controlled by annotation
+     *     providers:
+     *       provider-id:
+     *         provider-key1: "providerValue"
+     *         provider-key2: "providerValue"
+     *       provider2-id:
+     *         provider2-key1: "provider2Value"
+     * </pre>
      *
      * @return whether this requires a provider with configuration, defaults to {@code false}
+     * @see #providerDiscoverServices()
      */
     boolean provider() default false;
 

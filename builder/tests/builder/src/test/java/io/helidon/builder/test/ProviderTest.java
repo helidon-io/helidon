@@ -58,6 +58,14 @@ class ProviderTest {
 
         assertThat(value.listDiscover(), hasSize(2));
         assertThat(value.listNotDiscover(), hasSize(0));
+
+        /*
+        Test all the methods for a provider with no implementations
+         */
+        assertThat(value.optionalNoImplDiscover(), optionalEmpty());
+        assertThat(value.optionalNoImplNotDiscover(), optionalEmpty());
+        assertThat(value.listNoImplDiscover(), hasSize(0));
+        assertThat(value.listNoImplNotDiscover(), hasSize(0));
     }
 
     @Test

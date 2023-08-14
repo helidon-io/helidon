@@ -63,15 +63,15 @@ final class ProvidedUtil {
      * Discover service from configuration.
      * This method looks for a single provider only.
      *
-     * @param config               configuration located at the node of the service providers
-     *                             (either a list node, or object, where each child is one service)
-     * @param serviceLoader        helidon service loader for the expected type
-     * @param providerType         service provider interface type
-     * @param configType           configured service type
+     * @param config           configuration located at the node of the service providers
+     *                         (either a list node, or object, where each child is one service)
+     * @param serviceLoader    helidon service loader for the expected type
+     * @param providerType     service provider interface type
+     * @param configType       configured service type
      * @param discoverServices whether all services from service loader should be used, or only the ones with configured
-     *                             node
-     * @param <T>                  type of the expected service
-     * @return list of discovered services
+     *                         node
+     * @param <T>              type of the expected service
+     * @return first service by {@link io.helidon.common.Weight}, or empty optional
      */
     static <T extends NamedService> Optional<T>
     discoverService(Config config,
@@ -124,7 +124,7 @@ final class ProvidedUtil {
      * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
      *                             node
      * @param <T>                  type of the expected service
-     * @return list of discovered services
+     * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight first)
      */
     static <T extends NamedService> List<T> discoverServices(Config config,
                                                              HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,

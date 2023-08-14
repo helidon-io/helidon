@@ -103,7 +103,7 @@ public final class Prototype {
          *                             node
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
-         * @return list of discovered services
+         * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight is first in the list)
          */
         default <S extends NamedService, T extends ConfiguredProvider<S>> List<S>
         discoverServices(Config config,
@@ -118,7 +118,8 @@ public final class Prototype {
          * Discover service from configuration.
          *
          * @param config               configuration located at the node of the service providers
-         *                             (either a list node, or object, where each child is one service)
+         *                             (either a list node, or object, where each child is one service - this method requires
+         *                             zero to one configured services)
          * @param serviceLoader        helidon service loader for the expected type
          * @param providerType         type of the service provider interface
          * @param configType           type of the configured service
@@ -126,7 +127,8 @@ public final class Prototype {
          *                             node
          * @param <S>                  type of the expected service
          * @param <T>                  type of the configured service provider that creates instances of S
-         * @return list of discovered services
+         * @return the first service (ordered by {@link io.helidon.common.Weight} that is discovered, or empty optional if none
+         *                             is found
          */
         default <S extends NamedService, T extends ConfiguredProvider<S>> Optional<S>
         discoverService(Config config,

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import io.helidon.builder.test.testsubjects.ProviderNoImpls;
 import io.helidon.builder.test.testsubjects.SomeProvider;
 import io.helidon.builder.test.testsubjects.SomeServiceProvider1;
 import io.helidon.builder.test.testsubjects.SomeServiceProvider2;
@@ -33,6 +34,7 @@ module io.helidon.builder.test.builder {
     exports io.helidon.builder.test.testsubjects;
 
     uses SomeProvider;
+    uses ProviderNoImpls;
 
     provides SomeProvider with SomeServiceProvider1, SomeServiceProvider2;
 }
