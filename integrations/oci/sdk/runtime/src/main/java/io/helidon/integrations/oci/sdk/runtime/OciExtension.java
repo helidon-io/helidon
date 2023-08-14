@@ -174,11 +174,12 @@ public final class OciExtension {
                 .flatMap(Bootstrap::config)
                 .map(it -> it.get(OciConfig.CONFIG_KEY))
                 .orElse(null);
-        if (!isSufficientlyConfigured(config)) {
-            LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
-            return DEFAULT_OCI_CONFIG_BEAN.get();
+        if (isSufficientlyConfigured(config)) {
+            return OciConfig.create(config);
         }
-        return OciConfig.create(config);
+
+        LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
+        return DEFAULT_OCI_CONFIG_BEAN.get();
     }
 
     /**
