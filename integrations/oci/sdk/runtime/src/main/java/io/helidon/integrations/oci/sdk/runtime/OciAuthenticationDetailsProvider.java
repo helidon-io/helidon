@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.common.types.Annotation;
@@ -51,6 +52,7 @@ import static io.helidon.common.types.Annotations.findFirst;
  * This (overridable) provider will provide the default implementation for {@link AbstractAuthenticationDetailsProvider}.
  *
  * @see OciExtension
+ * @see OciConfigBlueprint
  * @see OciConfig
  */
 @Singleton
@@ -58,16 +60,22 @@ import static io.helidon.common.types.Annotations.findFirst;
 class OciAuthenticationDetailsProvider implements InjectionPointProvider<AbstractAuthenticationDetailsProvider> {
     static final System.Logger LOGGER = System.getLogger(OciAuthenticationDetailsProvider.class.getName());
 
-    static final String TAG_AUTO = "auto";
-    static final String TAG_CONFIG = "config";
-    static final String TAG_CONFIG_FILE = "config-file";
-    static final String TAG_INSTANCE_PRINCIPALS = "instance-principals";
-    static final String TAG_RESOURCE_PRINCIPALS = "resource-principals";
+    static final String KEY_AUTH_STRATEGY = "auth-strategy";
+    static final String KEY_AUTH_STRATEGIES = "auth-strategies";
+    static final String TAG_RESOURCE_PRINCIPAL_VERSION = "OCI_RESOURCE_PRINCIPAL_VERSION";
+    static final String VAL_AUTO = "auto";
+    static final String VAL_CONFIG = "config";
+    static final String VAL_CONFIG_FILE = "config-file";
+    // com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider
+    static final String VAL_INSTANCE_PRINCIPALS = "instance-principals";
+    // com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider
+    static final String VAL_RESOURCE_PRINCIPAL = "resource-principal";
 
-    static final List<String> ALL_STRATEGIES = List.of(TAG_CONFIG,
-                                                       TAG_CONFIG_FILE,
-                                                       TAG_INSTANCE_PRINCIPALS,
-                                                       TAG_RESOURCE_PRINCIPALS);
+    // order is important here - see the tests and the docs
+    static final List<String> ALL_STRATEGIES = List.of(VAL_INSTANCE_PRINCIPALS,
+                                                       VAL_RESOURCE_PRINCIPAL,
+                                                       VAL_CONFIG,
+                                                       VAL_CONFIG_FILE);
 
     OciAuthenticationDetailsProvider() {
     }
@@ -77,20 +85,36 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         OciConfig ociConfig = OciExtension.ociConfig();
 
         String requestedNamedProfile = toNamedProfile(query.injectionPointInfo().orElse(null));
+
+        // if the injection point names a profile for auth strategy then use it
         if (requestedNamedProfile != null && !requestedNamedProfile.isBlank()) {
             ociConfig = OciConfig.builder(ociConfig).configProfile(requestedNamedProfile).build();
         }
 
-        return Optional.of(select(ociConfig));
+        return Optional.of(select(ociConfig, true).authStrategy().select(ociConfig));
     }
 
-    private static AbstractAuthenticationDetailsProvider select(OciConfig ociConfig) {
+    /**
+     * Supply the selected strategy given the global OCI configuration. If one is named outright then use it, otherwise hunt for
+     * the appropriate authentication strategy from the list of {@code auth-strategies} explicitly or implicitly defined.
+     *
+     * @param ociConfig the oci configuration
+     * @param verifyIsAvailable flag to indicate whether the provider should be checked for availability
+     * @return the configured, or else most applicable OCI auth strategy
+     */
+    static Supply select(OciConfig ociConfig,
+                         boolean verifyIsAvailable) {
+        Optional<String> authStrategy = ociConfig.authStrategy();
+        if (authStrategy.isPresent() && !authStrategy.get().equalsIgnoreCase(AuthStrategy.AUTO.id)) {
+            return new Supply(AuthStrategy.fromNameOrId(authStrategy.get()).orElseThrow(), ociConfig);
+        }
+
         List<AuthStrategy> strategies = AuthStrategy.convert(ociConfig.potentialAuthStrategies());
         for (AuthStrategy s : strategies) {
-            if (s.isAvailable(ociConfig)) {
+            if (!verifyIsAvailable || s.isAvailable(ociConfig)) {
                 LOGGER.log(System.Logger.Level.DEBUG, "Using authentication strategy " + s
                         + "; selected AbstractAuthenticationDetailsProvider " + s.type().getTypeName());
-                return s.select(ociConfig);
+                return new Supply(s, ociConfig);
             } else {
                 LOGGER.log(System.Logger.Level.TRACE, "Skipping authentication strategy " + s + " because it is not available");
             }
@@ -146,17 +170,17 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
         /**
          * Auto selection of the auth strategy.
          */
-        AUTO(TAG_AUTO,
+        AUTO(VAL_AUTO,
              AbstractAuthenticationDetailsProvider.class,
              (ociConfig) -> true,
-             OciAuthenticationDetailsProvider::select),
+             (ociConfig) -> OciAuthenticationDetailsProvider.select(ociConfig, true).get()),
 
         /**
          * Corresponds to {@link SimpleAuthenticationDetailsProvider}.
          *
          * @see OciConfig#simpleConfigIsPresent()
          */
-        CONFIG(TAG_CONFIG,
+        CONFIG(VAL_CONFIG,
                SimpleAuthenticationDetailsProvider.class,
                OciConfig::simpleConfigIsPresent,
                (ociConfig) -> {
@@ -175,14 +199,14 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
                }),
 
         /**
-         * Corresponds to {@link ConfigFileAuthenticationDetailsProvider}.
+         * Corresponds to {@link ConfigFileAuthenticationDetailsProvider}, i.e., "$HOME/.oci/config/.
          *
-         * @see OciConfig
+         * @see OciConfig#fileConfigIsPresent()
          */
-        CONFIG_FILE(TAG_CONFIG_FILE,
+        CONFIG_FILE(VAL_CONFIG_FILE,
                     ConfigFileAuthenticationDetailsProvider.class,
                     (configBean) -> configBean.fileConfigIsPresent()
-                            && canReadPath(configBean.configPath().orElse(null)),
+                            && (configBean.configPath().isEmpty() || canReadPath(configBean.configPath().orElse(null))),
                     (configBean) -> {
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-common/src/main/java/com/oracle/bmc/auth/ConfigFileAuthenticationDetailsProvider.java
                         // https://github.com/oracle/oci-java-sdk/blob/master/bmc-examples/src/main/java/ObjectStorageSyncExample.java
@@ -200,20 +224,24 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
 
         /**
          * Corresponds to {@link InstancePrincipalsAuthenticationDetailsProvider}.
+         *
+         * @see OciConfig
          */
-        INSTANCE_PRINCIPALS(TAG_INSTANCE_PRINCIPALS,
+        INSTANCE_PRINCIPALS(VAL_INSTANCE_PRINCIPALS,
                             InstancePrincipalsAuthenticationDetailsProvider.class,
                             OciAvailabilityDefault::runningOnOci,
                             (configBean) -> InstancePrincipalsAuthenticationDetailsProvider.builder().build()),
 
         /**
          * Corresponds to {@link ResourcePrincipalAuthenticationDetailsProvider}.
+         *
+         * @see OciConfig
          */
-        RESOURCE_PRINCIPAL(TAG_RESOURCE_PRINCIPALS,
+        RESOURCE_PRINCIPAL(VAL_RESOURCE_PRINCIPAL,
                            ResourcePrincipalAuthenticationDetailsProvider.class,
                            (configBean) -> {
                                // https://github.com/oracle/oci-java-sdk/blob/v2.19.0/bmc-common/src/main/java/com/oracle/bmc/auth/ResourcePrincipalAuthenticationDetailsProvider.java#L246-L251
-                               return (System.getenv("OCI_RESOURCE_PRINCIPAL_VERSION") != null);
+                               return (System.getenv(TAG_RESOURCE_PRINCIPAL_VERSION) != null);
                            },
                            (configBean) -> ResourcePrincipalAuthenticationDetailsProvider.builder().build());
 
@@ -263,6 +291,7 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
             return authStrategies.stream()
                     .map(AuthStrategy::fromNameOrId)
                     .map(Optional::orElseThrow)
+                    .filter(s -> s != AuthStrategy.AUTO)
                     .toList();
         }
     }
@@ -277,6 +306,26 @@ class OciAuthenticationDetailsProvider implements InjectionPointProvider<Abstrac
     @FunctionalInterface
     interface Selector {
         AbstractAuthenticationDetailsProvider select(OciConfig ociConfig);
+    }
+
+    static class Supply implements Supplier<AbstractAuthenticationDetailsProvider> {
+        private final AuthStrategy authStrategy;
+        private final OciConfig ociConfig;
+
+        private Supply(AuthStrategy authStrategy,
+                       OciConfig ociConfig) {
+            this.authStrategy = authStrategy;
+            this.ociConfig = ociConfig;
+        }
+
+        @Override
+        public AbstractAuthenticationDetailsProvider get() {
+            return authStrategy.select(ociConfig);
+        }
+
+        public AuthStrategy authStrategy() {
+            return authStrategy;
+        }
     }
 
 }
