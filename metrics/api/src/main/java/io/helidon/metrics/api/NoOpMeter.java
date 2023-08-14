@@ -634,12 +634,12 @@ class NoOpMeter implements Meter, NoOpWrapped {
             }
 
             @Override
-            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder serviceLevelObjectives(double... slos) {
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder buckets(double... buckets) {
                 return identity();
             }
 
             @Override
-            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder serviceLevelObjectives(Iterable<Double> slos) {
+            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder buckets(Iterable<Double> buckets) {
                 return identity();
             }
         }

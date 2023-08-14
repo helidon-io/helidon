@@ -202,14 +202,14 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         }
 
         @Override
-        public Builder serviceLevelObjectives(double... slos) {
-            delegate.serviceLevelObjectives(slos);
+        public Builder buckets(double... buckets) {
+            delegate.serviceLevelObjectives(buckets);
             return this;
         }
 
         @Override
-        public Builder serviceLevelObjectives(Iterable<Double> slos) {
-            delegate.serviceLevelObjectives(Util.doubleArray(slos));
+        public Builder buckets(Iterable<Double> buckets) {
+            delegate.serviceLevelObjectives(Util.doubleArray(buckets));
             return this;
         }
 

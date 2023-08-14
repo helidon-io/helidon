@@ -75,8 +75,16 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         }
         private Builder(String name, DistributionStatisticsConfig config) {
             super(DistributionSummary.builder(name)
+                          .publishPercentiles(config.percentiles()
+                                                      .map(Util::doubleArray)
+                                                      .orElse(DEFAULT.getPercentiles()))
                           .percentilePrecision(config.percentilePrecision()
                                                        .orElse(DEFAULT.getPercentilePrecision()))
+                          .publishPercentileHistogram(config.isPercentileHistogram()
+                                                              .orElse(DEFAULT.isPercentileHistogram()))
+                          .serviceLevelObjectives(config.serviceLevelObjectiveBoundaries()
+                                                          .map(Util::doubleArray)
+                                                          .orElse(DEFAULT.getServiceLevelObjectiveBoundaries()))
                           .minimumExpectedValue(config.minimumExpectedValue()
                                                         .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
                           .maximumExpectedValue(config.maximumExpectedValue()
