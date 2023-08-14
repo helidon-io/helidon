@@ -164,8 +164,7 @@ public final class OciExtension {
      */
     public static OciConfig ociConfig() {
         io.helidon.common.config.Config config = configSupplier().get();
-        if (config.get(KEY_AUTH_STRATEGY).exists()
-                  || config.get(KEY_AUTH_STRATEGIES).exists()) {
+        if (isSufficientlyConfigured(config)) {
             // we are good as-is
             return OciConfig.create(config);
         }
@@ -175,7 +174,7 @@ public final class OciExtension {
                 .flatMap(Bootstrap::config)
                 .map(it -> it.get(OciConfig.CONFIG_KEY))
                 .orElse(null);
-        if (config == null) {
+        if (!isSufficientlyConfigured(config)) {
             LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
             return DEFAULT_OCI_CONFIG_BEAN.get();
         }
@@ -216,6 +215,12 @@ public final class OciExtension {
         }
 
         return ociConfigSupplier;
+    }
+
+    static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
+        return (config != null &&
+                        (config.get(KEY_AUTH_STRATEGY).exists()
+                                 || config.get(KEY_AUTH_STRATEGIES).exists()));
     }
 
     // in support for testing a variant of oci.yaml
