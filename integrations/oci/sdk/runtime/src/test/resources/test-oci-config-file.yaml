@@ -15,4 +15,4 @@
 #
 
 # should resolve to "config-file" as the configured (by probably not available) auth strategy
-auth-strategies: "config-file, resource-principal, config, instance-principals"
+auth-strategies: ["config-file", "resource-principal", "config", "instance-principals"]

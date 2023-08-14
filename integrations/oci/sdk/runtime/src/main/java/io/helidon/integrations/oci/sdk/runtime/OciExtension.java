@@ -161,27 +161,29 @@ public final class OciExtension {
      */
     public static OciConfig ociConfig() {
         io.helidon.common.config.Config config = configSupplier().get();
-        if (!config.exists()
-                || !(config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()
-                  || config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGIES).exists())) {
-            // fallback
-            Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
-            if (bootstrap.isEmpty()) {
-                LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
-                return DEFAULT_OCI_CONFIG_BEAN.get();
-            }
+        if (config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()
+                  || config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGIES).exists()) {
+            // we are good as-is
+            return OciConfig.create(config);
+        }
 
-            config = bootstrap.get().config().orElse(null);
-            if (config == null) {
-                LOGGER.log(System.Logger.Level.DEBUG, "No config in bootstrap - using default oci config");
-                return DEFAULT_OCI_CONFIG_BEAN.get();
-            }
+        // fallback
+        Optional<Bootstrap> bootstrap = InjectionServices.globalBootstrap();
+        if (bootstrap.isEmpty()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No bootstrap - using default oci config");
+            return DEFAULT_OCI_CONFIG_BEAN.get();
+        }
 
-            config = config.get(OciConfig.CONFIG_KEY);
-            if (!config.exists()) {
-                LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
-                return DEFAULT_OCI_CONFIG_BEAN.get();
-            }
+        config = bootstrap.get().config().orElse(null);
+        if (config == null) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No config in bootstrap - using default oci config");
+            return DEFAULT_OCI_CONFIG_BEAN.get();
+        }
+
+        config = config.get(OciConfig.CONFIG_KEY);
+        if (!config.exists()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "No oci config in bootstrap - using default oci config");
+            return DEFAULT_OCI_CONFIG_BEAN.get();
         }
 
         return OciConfig.create(config);
@@ -194,18 +196,20 @@ public final class OciExtension {
      * @see #ociAuthenticationProvider()
      */
     public static Supplier<io.helidon.common.config.Config> configSupplier() {
-        if (ociConfigSupplier == null) {
-            ociConfigSupplier = () -> {
-                // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
-                // (not advertised in the javadoc)
-                String ociConfigFile = ociConfigFilename();
-                return Config.create(
-                        ConfigSources.classpath(ociConfigFile).optional(),
-                        ConfigSources.file(ociConfigFile).optional());
-            };
-        }
+        synchronized (DEFAULT_OCI_GLOBAL_CONFIG_FILE) {
+            if (ociConfigSupplier == null) {
+                ociConfigSupplier = () -> {
+                    // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
+                    // (not advertised in the javadoc)
+                    String ociConfigFile = ociConfigFilename();
+                    return Config.create(
+                            ConfigSources.classpath(ociConfigFile).optional(),
+                            ConfigSources.file(ociConfigFile).optional());
+                };
+            }
 
-        return ociConfigSupplier;
+            return ociConfigSupplier;
+        }
     }
 
     /**
