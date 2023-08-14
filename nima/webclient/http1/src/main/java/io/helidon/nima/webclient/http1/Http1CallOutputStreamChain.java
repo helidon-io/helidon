@@ -71,8 +71,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
     }
 
     private static void checkRedirectHeaders(Headers headerValues) {
-        if (!headerValues.contains(Http.Header.LOCATION)) {
-            throw new IllegalStateException("There is no " + Http.Header.LOCATION + " header present in the"
+        if (!headerValues.contains(Http.HeaderNames.LOCATION)) {
+            throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the"
                                                     + " response! "
                                                     + "It is not clear where to redirect.");
         }
@@ -144,7 +144,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
             checkRedirectHeaders(responseHeaders);
-            URI newUri = URI.create(responseHeaders.get(Http.Header.LOCATION).value());
+            URI newUri = URI.create(responseHeaders.get(Http.HeaderNames.LOCATION).value());
             ClientUri redirectUri = ClientUri.create(newUri);
             if (newUri.getHost() == null) {
                 UriInfo resolvedUri = cos.lastRequest.resolvedUri();
@@ -388,7 +388,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         }
 
         private void redirect(Http.Status lastStatus, WritableHeaders<?> headerValues) {
-            String redirectedUri = headerValues.get(Http.Header.LOCATION).value();
+            String redirectedUri = headerValues.get(Http.HeaderNames.LOCATION).value();
             ClientUri lastUri = originalRequest.uri();
             Http.Method method;
             boolean sendEntity;
@@ -417,8 +417,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 Http1ClientResponseImpl response;
                 if (sendEntity) {
                     response = (Http1ClientResponseImpl) clientRequest
-                            .header(Http.HeaderValues.EXPECT_100)
-                            .header(Http.HeaderValues.TRANSFER_ENCODING_CHUNKED)
+                            .header(Http.Headers.EXPECT_100)
+                            .header(Http.Headers.TRANSFER_ENCODING_CHUNKED)
                             .readTimeout(TIMEOUT_100_CONTINUE)
                             .request();
                 } else {
@@ -438,7 +438,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                             method = Http.Method.GET;
                             sendEntity = false;
                         }
-                        redirectedUri = response.headers().get(Http.Header.LOCATION).value();
+                        redirectedUri = response.headers().get(Http.HeaderNames.LOCATION).value();
                     }
                 } else {
                     if (!sendEntity) {

@@ -35,6 +35,7 @@ class RedirectionProcessor {
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, Object entity) {
         return invokeWithFollowRedirects(request, 0, entity);
     }
+
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, int initial, Object entity) {
         //Request object which should be used for invoking the next request. This will change in case of any redirection.
         Http1ClientRequestImpl clientRequest = request;
@@ -47,7 +48,8 @@ class RedirectionProcessor {
             }
             try (Http1ClientResponseImpl response = clientResponse) {
                 if (!response.headers().contains(Http.HeaderNames.LOCATION)) {
-                    throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the response! "
+                    throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION
+                                                            + " header present in the response! "
                                                             + "It is not clear where to redirect.");
                 }
                 String redirectedUri = response.headers().get(Http.HeaderNames.LOCATION).value();
@@ -75,7 +77,10 @@ class RedirectionProcessor {
                 } else {
                     //It is possible to change to GET and send no entity with all other redirect codes
                     entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                    clientRequest = new Http1ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, request.properties());
+                    clientRequest = new Http1ClientRequestImpl(clientRequest,
+                                                               Http.Method.GET,
+                                                               redirectUri,
+                                                               request.properties());
                 }
             }
         }

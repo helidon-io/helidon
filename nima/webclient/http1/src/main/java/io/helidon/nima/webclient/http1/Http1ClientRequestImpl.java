@@ -16,7 +16,6 @@
 
 package io.helidon.nima.webclient.http1;
 
-import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
