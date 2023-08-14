@@ -37,13 +37,13 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
     }
 
     @Override
-    public void increment(double amount) {
+    public void increment(long amount) {
         delegate().increment(amount);
     }
 
     @Override
-    public double count() {
-        return delegate().count();
+    public long count() {
+        return (long) delegate().count();
     }
 
     static class Builder extends MMeter.Builder<Counter.Builder, Builder, MCounter>
@@ -55,12 +55,5 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
                   delegate()::description,
                   delegate()::baseUnit);
         }
-
-        // TODO remove if truly not used
-//        @Override
-//        MCounter register(MMeterRegistry mMeterRegistry) {
-//
-//            return MCounter.create(delegate().register(mMeterRegistry));
-//        }
     }
 }

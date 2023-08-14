@@ -40,8 +40,8 @@ class TestCounter {
     void testUnwrap() {
         Counter c = meterRegistry.getOrCreate(Counter.builder("c4"));
         io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);
-        assertThat("Initial value", c.count(), is(0D));
+        assertThat("Initial value", c.count(), is(0L));
         mCounter.increment();
-        assertThat("Updated value", c.count(), is(1D));
+        assertThat("Updated value", c.count(), is(1L));
     }
 }

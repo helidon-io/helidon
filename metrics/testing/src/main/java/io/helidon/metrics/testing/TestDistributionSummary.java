@@ -103,9 +103,9 @@ class TestDistributionSummary {
         assertThat("Counts at buckets",
                    cabs,
                    contains(
-                           equalTo(Cab.create(5.0D, 3.0D)),
-                           equalTo(Cab.create(10.0D, 4.0D)),
-                           equalTo(Cab.create(15.0D, 4.0D))));
+                           equalTo(Cab.create(5.0D, 3)),
+                           equalTo(Cab.create(10.0D, 4)),
+                           equalTo(Cab.create(15.0D, 4))));
 
     }
 
@@ -131,9 +131,9 @@ class TestDistributionSummary {
         }
     }
 
-    private record Cab(double bucket, double count) implements CountAtBucket {
+    private record Cab(double bucket, long count) implements CountAtBucket {
 
-        private static Cab create(double bucket, double count) {
+        private static Cab create(double bucket, long count) {
             return new Cab(bucket, count);
         }
 
@@ -149,7 +149,7 @@ class TestDistributionSummary {
 
         @Override
         public String toString() {
-            return String.format("Vap[percentile=%f,value=%f]", bucket, count);
+            return String.format("Vap[bucket=%f,count=%d]", bucket, count);
         }
     }
 }

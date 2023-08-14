@@ -41,14 +41,14 @@ public interface Counter extends Meter {
      *
      * @param amount amount to add to the counter.
      */
-    void increment(double amount);
+    void increment(long amount);
 
     /**
      * Returns the cumulative count since this counter was registered.
      *
      * @return cumulative count since this counter was registered
      */
-    double count();
+    long count();
 
     /**
      * Builder for a new counter.

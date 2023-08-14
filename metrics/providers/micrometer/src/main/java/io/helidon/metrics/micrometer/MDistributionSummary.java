@@ -78,21 +78,13 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
                           .publishPercentiles(config.percentiles()
                                                       .map(Util::doubleArray)
                                                       .orElse(DEFAULT.getPercentiles()))
-                          .percentilePrecision(config.percentilePrecision()
-                                                       .orElse(DEFAULT.getPercentilePrecision()))
-                          .publishPercentileHistogram(config.isPercentileHistogram()
-                                                              .orElse(DEFAULT.isPercentileHistogram()))
-                          .serviceLevelObjectives(config.serviceLevelObjectiveBoundaries()
+                          .serviceLevelObjectives(config.buckets()
                                                           .map(Util::doubleArray)
                                                           .orElse(DEFAULT.getServiceLevelObjectiveBoundaries()))
                           .minimumExpectedValue(config.minimumExpectedValue()
                                                         .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
                           .maximumExpectedValue(config.maximumExpectedValue()
-                                                        .orElse(DEFAULT.getMaximumExpectedValueAsDouble()))
-                          .distributionStatisticExpiry(config.expiry()
-                                          .orElse(DEFAULT.getExpiry()))
-                          .distributionStatisticBufferLength(config.bufferLength()
-                                                                     .orElse(DEFAULT.getBufferLength())));
+                                                        .orElse(DEFAULT.getMaximumExpectedValueAsDouble())));
         }
 
         @Override
@@ -108,21 +100,11 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
             DistributionSummary.Builder delegate = delegate();
 
             config.percentiles().ifPresent(p -> delegate.publishPercentiles(Util.doubleArray(p)));
-            config.percentilePrecision().ifPresent(delegate::percentilePrecision);
-            config.isPercentileHistogram().ifPresent(delegate::publishPercentileHistogram);
-            config.serviceLevelObjectiveBoundaries().ifPresent(slos -> delegate.serviceLevelObjectives(Util.doubleArray(slos)));
+            config.buckets().ifPresent(slos -> delegate.serviceLevelObjectives(Util.doubleArray(slos)));
             config.minimumExpectedValue().ifPresent(delegate::minimumExpectedValue);
             config.maximumExpectedValue().ifPresent(delegate::maximumExpectedValue);
-            config.expiry().ifPresent(delegate::distributionStatisticExpiry);
-            config.bufferLength().ifPresent(delegate::distributionStatisticBufferLength);
 
             return identity();
         }
-
-        // TODO remove if not used
-//        @Override
-//        MDistributionSummary register(MeterRegistry meterRegistry) {
-//            return MDistributionSummary.create(delegate().register(meterRegistry));
-//        }
     }
 }
