@@ -30,21 +30,22 @@ import io.helidon.common.features.api.Preview;
         path = "Messaging"
 )
 module io.helidon.microprofile.messaging {
+
+    requires io.helidon.common.reactive;
+    requires io.helidon.config.mp;
+    requires io.helidon.config;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.reactive;
+    requires io.helidon.microprofile.server;
+    requires jakarta.inject;
+    requires java.logging;
+    requires microprofile.reactive.messaging.api;
+    requires microprofile.reactive.streams.operators.api;
+
     requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
-    requires jakarta.cdi;
-    requires jakarta.inject;
-    requires io.helidon.config;
-    requires io.helidon.config.mp;
-    requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.reactive;
+    requires transitive jakarta.cdi;
     requires transitive org.reactivestreams;
-    requires transitive microprofile.reactive.messaging.api;
-    requires transitive microprofile.reactive.streams.operators.api;
-    requires io.helidon.common.reactive;
 
     exports io.helidon.microprofile.messaging;
 

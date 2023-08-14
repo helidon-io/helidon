@@ -28,30 +28,28 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "CDI"
 )
 module io.helidon.microprofile.cdi {
-    // needed for Unsafe used from Weld
-    requires jdk.unsupported;
-    requires java.logging;
-    // weld requires java.sql.Date and we fail if not on classpath
-    requires java.sql;
-    requires jakarta.cdi;
-    // weld requires jakarta.el.ELResolver on module path
-    requires jakarta.el;
 
-    requires io.helidon;
-    requires io.helidon.common;
-    requires io.helidon.logging.common;
+    requires io.helidon.common.context;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
-    requires io.helidon.config;
+    requires io.helidon.common;
     requires io.helidon.config.mp;
+    requires io.helidon.config;
+    requires io.helidon.logging.common;
+    requires jakarta.el; // weld requires jakarta.el.ELResolver on module path
+    requires java.logging;
+    requires java.sql; // weld requires java.sql.Date and we fail if not on classpath
+    requires jdk.unsupported; // needed for Unsafe used from Weld
+    requires microprofile.config.api;
+
+    requires transitive io.helidon;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
+    requires transitive weld.spi;
 
     requires weld.core.impl;
-    requires weld.spi;
     requires weld.environment.common;
     requires weld.se.core;
-    requires io.helidon.common.context;
-    requires jakarta.inject;
-    requires microprofile.config.api;
 
     exports io.helidon.microprofile.cdi;
 

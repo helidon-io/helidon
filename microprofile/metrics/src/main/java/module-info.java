@@ -29,26 +29,23 @@ import io.helidon.microprofile.metrics.MpMetricsProgrammaticSettings;
         path = "Metrics"
 )
 module io.helidon.microprofile.metrics {
+
+    requires io.helidon.config.mp;
+    requires io.helidon.metrics.api;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.server;
+    requires jakarta.annotation;
+    requires jakarta.inject;
+    requires micrometer.registry.prometheus;
+    requires microprofile.metrics.api;
+    requires simpleclient.common;
+
     requires static io.helidon.common.features.api;
 
-    requires jakarta.cdi;
-    requires jakarta.inject;
-    requires jakarta.annotation;
-
     requires transitive io.helidon.microprofile.servicecommon;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.config;
-
-    requires transitive io.helidon.metrics.api;
-
-    requires io.helidon.webserver.observe.metrics;
-
+    requires transitive io.helidon.webserver.observe.metrics;
+    requires transitive jakarta.cdi;
     requires transitive microprofile.config.api;
-    requires microprofile.metrics.api;
-    requires io.helidon.config.mp;
-
-    requires micrometer.registry.prometheus;
-    requires simpleclient.common;
 
     exports io.helidon.microprofile.metrics;
     exports io.helidon.microprofile.metrics.spi;

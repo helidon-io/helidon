@@ -29,16 +29,17 @@ import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
         path = "Scheduling"
 )
 module io.helidon.microprofile.scheduling {
-    requires static io.helidon.common.features.api;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
     requires io.helidon.common.configurable;
-    requires io.helidon.config;
     requires io.helidon.config.mp;
+    requires io.helidon.config;
     requires io.helidon.microprofile.cdi;
     requires io.helidon.microprofile.config;
     requires io.helidon.scheduling;
+
+    requires static io.helidon.common.features.api;
+    requires static jakarta.cdi;
+    requires static jakarta.inject;
 
     exports io.helidon.microprofile.scheduling;
     opens io.helidon.microprofile.scheduling;

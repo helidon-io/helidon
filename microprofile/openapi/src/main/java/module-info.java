@@ -29,26 +29,21 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
         path = "Open API"
 )
 module io.helidon.microprofile.openapi {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.microprofile.server;
+    requires java.desktop; // for java.beans package
+    requires java.logging; // logging required for SnakeYAML logging workaround
+    requires microprofile.config.api;
+    requires org.jboss.jandex;
     requires smallrye.open.api.core;
 
-    requires java.desktop; // for java.beans package
-
-    requires microprofile.config.api;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.openapi;
-    requires org.jboss.jandex;
-
-    requires org.yaml.snakeyaml;
-
-    requires transitive microprofile.openapi.api;
-
-    // logging required for SnakeYAML logging workaround
-    requires java.logging;
-
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
-    requires io.helidon.microprofile.servicecommon;
+
+    requires transitive io.helidon.microprofile.servicecommon;
+    requires transitive io.helidon.openapi;
+    requires transitive microprofile.openapi.api;
+    requires transitive org.yaml.snakeyaml;
 
     exports io.helidon.microprofile.openapi;
 

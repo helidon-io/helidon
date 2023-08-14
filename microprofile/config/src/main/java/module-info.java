@@ -28,15 +28,17 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "Config"
 )
 module io.helidon.microprofile.config {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.common;
+    requires io.helidon.config.mp;
+    requires io.helidon.config;
+    requires jakarta.annotation;
     requires jakarta.cdi;
     requires jakarta.inject;
-    requires io.helidon.common;
-    requires io.helidon.config;
+
+    requires static io.helidon.common.features.api;
+
     requires transitive microprofile.config.api;
-    requires io.helidon.config.mp;
-    requires jakarta.annotation;
 
     exports io.helidon.microprofile.config;
 

@@ -28,24 +28,23 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "Health"
 )
 module io.helidon.microprofile.health {
-    requires static io.helidon.common.features.api;
-
-    requires java.management;
 
     requires io.helidon.common;
-
-    requires io.helidon.health;
-    requires io.helidon.webserver.observe.health;
-    requires io.helidon.microprofile.servicecommon;
+    requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;
-
     requires jakarta.cdi;
     requires jakarta.inject;
-    requires jakarta.ws.rs;
     requires jakarta.json;
+    requires jakarta.ws.rs;
+    requires java.management;
     requires microprofile.config.api;
-    requires transitive microprofile.health.api;
-    requires io.helidon.config.mp;
+    requires microprofile.health.api;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.health;
+    requires transitive io.helidon.microprofile.servicecommon;
+    requires transitive io.helidon.webserver.observe.health;
 
     exports io.helidon.microprofile.health;
 

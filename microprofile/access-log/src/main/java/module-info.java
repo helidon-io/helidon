@@ -26,12 +26,14 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Server", "AccessLog"}
 )
 module io.helidon.microprofile.accesslog {
-    requires static io.helidon.common.features.api;
-
-    requires jakarta.annotation;
 
     requires io.helidon.microprofile.server;
     requires io.helidon.webserver.accesslog;
+    requires jakarta.annotation;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.inject;
 
     exports io.helidon.microprofile.accesslog;
 

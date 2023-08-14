@@ -26,17 +26,23 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "Security"
 )
 module io.helidon.microprofile.security {
+
+    requires io.helidon.jersey.common;
+    requires io.helidon.microprofile.cdi;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.security.annotations;
+    requires io.helidon.security.integration.common;
+    requires io.helidon.security.providers.abac;
+    requires io.helidon.security.providers.common;
+
     requires static io.helidon.common.features.api;
 
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.webserver.security.;
     requires transitive io.helidon.security;
-    requires transitive io.helidon.webserver.security;
-    requires io.helidon.security.providers.abac;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.jersey.common;
-    requires io.helidon.security.integration.common;
-    requires io.helidon.security.providers.common;
-    requires io.helidon.security.annotations;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.ws.rs;
+    requires transitive jersey.common;
 
     exports io.helidon.microprofile.security;
     exports io.helidon.microprofile.security.spi;

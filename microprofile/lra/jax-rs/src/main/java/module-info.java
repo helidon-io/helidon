@@ -30,21 +30,23 @@ import io.helidon.common.features.api.Preview;
         path = "LRA"
 )
 module io.helidon.microprofile.lra {
+
+    requires io.helidon.common.reactive;
+    requires io.helidon.config;
+    requires io.helidon.lra.coordinator.client;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.server;
+    requires jakarta.annotation;
+    requires jakarta.inject;
+    requires jakarta.ws.rs;
+    requires microprofile.config.api;
+    requires microprofile.lra.api;
+    requires org.jboss.jandex;
+
     requires static io.helidon.common.features.api;
 
     requires jakarta.cdi;
-    requires jakarta.inject;
-    requires jakarta.ws.rs;
-    requires microprofile.lra.api;
-    requires org.jboss.jandex;
-    requires jakarta.annotation;
-    requires io.helidon.config;
-    requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.server;
-    requires microprofile.config.api;
-    requires jersey.common;
-    requires io.helidon.lra.coordinator.client;
-    requires io.helidon.common.reactive;
+    requires transitive jersey.common;
 
     uses io.helidon.lra.coordinator.client.CoordinatorClient;
 

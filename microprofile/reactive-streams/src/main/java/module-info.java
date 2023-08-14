@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,15 +30,16 @@ import io.helidon.common.features.api.Preview;
         path = "Reactive"
 )
 module io.helidon.microprofile.reactive {
-    requires static io.helidon.common.features.api;
-
-    requires java.logging;
 
     requires io.helidon.common.mapper;
     requires io.helidon.common.reactive;
-    requires transitive org.reactivestreams;
-    requires transitive microprofile.reactive.streams.operators.core;
+    requires java.logging;
+
+    requires static io.helidon.common.features.api;
+
     requires transitive microprofile.reactive.streams.operators.api;
+    requires transitive microprofile.reactive.streams.operators.core;
+    requires transitive org.reactivestreams;
 
     exports io.helidon.microprofile.reactive;
 

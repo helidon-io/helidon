@@ -21,12 +21,14 @@
  */
 module io.helidon.microprofile.servicecommon {
 
-    requires jakarta.cdi;
-    requires io.helidon.servicecommon;
-    requires microprofile.config.api;
-    requires jakarta.inject;
     requires io.helidon.config.mp;
     requires io.helidon.microprofile.server;
+    requires io.helidon.servicecommon;
+    requires jakarta.inject;
+    requires microprofile.config.api;
+
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.interceptor;
 
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.servicecommon to weld.core.impl, io.helidon.microprofile.cdi;

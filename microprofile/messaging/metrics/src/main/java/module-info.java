@@ -18,10 +18,12 @@
  * MicroProfile Reactive Messaging Metrics.
  */
 module io.helidon.microprofile.messaging.metrics {
-    requires java.logging;
 
     requires jakarta.cdi;
     requires jakarta.inject;
+    requires java.logging;
+
     requires transitive io.helidon.microprofile.messaging;
     requires transitive io.helidon.microprofile.metrics;
+    requires transitive microprofile.reactive.messaging.api;
 }

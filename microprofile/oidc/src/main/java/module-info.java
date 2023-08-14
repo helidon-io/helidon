@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@
  * Microprofile OIDC integration.
  */
 module io.helidon.microprofile.oidc {
+
+    requires io.helidon.microprofile.security;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.security.providers.oidc;
     requires java.logging;
 
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.security;
-    requires io.helidon.security.providers.oidc;
+    requires transitive jakarta.cdi;
 
     exports io.helidon.microprofile.oidc;
 

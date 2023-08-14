@@ -28,28 +28,26 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "FT"
 )
 module io.helidon.microprofile.faulttolerance {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.common.configurable;
+    requires io.helidon.common.context;
+    requires io.helidon.config.mp;
+    requires io.helidon.microprofile.config;
+    requires io.helidon.microprofile.metrics;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.faulttolerance;
     requires jakarta.annotation;
     requires jakarta.inject;
-
-    requires io.helidon.common.context;
-    requires io.helidon.common.configurable;
-    requires io.helidon.faulttolerance;
-    requires io.helidon.microprofile.config;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.metrics;
-    requires io.helidon.config.mp;
-
-    requires jakarta.cdi;
-
-    requires microprofile.config.api;
-    requires microprofile.metrics.api;
-    requires transitive microprofile.fault.tolerance.api;
-
     requires jersey.weld2.se;
+    requires microprofile.config.api;
+    requires microprofile.fault.tolerance.api;
+    requires microprofile.metrics.api;
     requires weld.api;
     requires weld.spi;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.cdi;
 
     exports io.helidon.microprofile.faulttolerance;
 

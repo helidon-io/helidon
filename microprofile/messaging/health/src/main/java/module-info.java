@@ -18,13 +18,15 @@
  * MicroProfile Reactive Messaging Health check.
  */
 module io.helidon.microprofile.messaging.health {
-    requires java.logging;
 
-    requires jakarta.cdi;
     requires jakarta.inject;
-    requires io.helidon.microprofile.messaging;
-    requires io.helidon.microprofile.health;
+    requires java.logging;
     requires microprofile.health.api;
+
+    requires transitive io.helidon.microprofile.health;
+    requires transitive io.helidon.microprofile.messaging;
+    requires transitive jakarta.cdi;
+    requires transitive org.reactivestreams;
 
     exports io.helidon.microprofile.messaging.health;
 }

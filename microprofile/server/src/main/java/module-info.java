@@ -28,29 +28,26 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
         path = "Server"
 )
 module io.helidon.microprofile.server {
-    requires static io.helidon.common.features.api;
-
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.jersey.server;
-    requires transitive io.helidon.common.configurable;
-
-    requires transitive io.helidon.microprofile.cdi;
 
     requires io.helidon.config.mp;
-    requires io.helidon.microprofile.config;
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
-    requires transitive jakarta.json;
     requires io.helidon.jersey.media.jsonp;
-
+    requires io.helidon.microprofile.config;
     requires io.helidon.webserver.staticcontent;
-    requires transitive io.helidon.webserver.context;
-
-    // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
-    requires java.management;
+    requires java.management; // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires microprofile.config.api;
+
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.jersey.server;
+    requires transitive io.helidon.microprofile.cdi;
+    requires transitive io.helidon.webserver.context;
+    requires transitive io.helidon.webserver;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.json;
+    requires transitive jakarta.ws.rs;
 
     exports io.helidon.microprofile.server;
 

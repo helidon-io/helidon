@@ -30,13 +30,15 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @Aot(description = "Does not support execution of default methods on interfaces.")
 module io.helidon.microprofile.restclient {
+
+    requires io.helidon.common.context;
+    requires jersey.mp.rest.client;
+
     requires static io.helidon.common.features.api;
 
-    requires microprofile.rest.client.api;
-    requires io.helidon.common.context;
-    requires jersey.common;
-    requires jersey.mp.rest.client;
-    requires jakarta.ws.rs;
+    requires transitive jakarta.ws.rs;
+    requires transitive jersey.common;
+    requires transitive microprofile.rest.client.api;
 
     exports io.helidon.microprofile.restclient;
     // needed for jersey injection
