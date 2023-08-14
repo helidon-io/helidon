@@ -240,23 +240,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
             flowControl.resetMaxFrameSize(maxFrameSize.intValue());
         }
-
-        // Set server MAX_CONCURRENT_STREAMS limit when client sends number lower than hard limit
-        // from configuration. Refuse settings if client sends larger number than is configured.
-        this.clientSettings.presentValue(Http2Setting.MAX_CONCURRENT_STREAMS)
-                .ifPresent(it -> {
-                    if (http2Config.maxConcurrentStreams() >= it) {
-                        maxClientConcurrentStreams = it;
-                    } else {
-                        Http2GoAway frame =
-                                new Http2GoAway(0,
-                                                Http2ErrorCode.PROTOCOL,
-                                                "Value of maximum concurrent streams limit " + it
-                                                        + " exceeded hard limit value "
-                                                        + http2Config.maxConcurrentStreams());
-                        connectionWriter.write(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-                    }
-                });
     }
 
     /**
