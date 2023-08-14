@@ -31,6 +31,10 @@ import io.helidon.inject.api.Services;
 
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 
+import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.AuthStrategy;
+import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGIES;
+import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY;
+import static io.helidon.integrations.oci.sdk.runtime.OciAuthenticationDetailsProvider.select;
 import static java.util.function.Predicate.not;
 
 /**
@@ -117,9 +121,9 @@ public final class OciExtension {
     static final String DEFAULT_OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
-            .authStrategies(Arrays.stream(OciAuthenticationDetailsProvider.AuthStrategy.values())
-                                    .filter(not(it -> it == OciAuthenticationDetailsProvider.AuthStrategy.AUTO))
-                                    .map(OciAuthenticationDetailsProvider.AuthStrategy::id)
+            .authStrategies(Arrays.stream(AuthStrategy.values())
+                                    .filter(not(it -> it == AuthStrategy.AUTO))
+                                    .map(AuthStrategy::id)
                                     .toList())
             .build());
     private static String overrideOciConfigFile;
@@ -140,7 +144,7 @@ public final class OciExtension {
      */
     public static Class<? extends AbstractAuthenticationDetailsProvider>
     configuredAuthenticationDetailsProvider(boolean verifyIsAvailable) {
-        return OciAuthenticationDetailsProvider.select(ociConfig(), verifyIsAvailable).authStrategy().type();
+        return select(ociConfig(), verifyIsAvailable).authStrategy().type();
     }
 
     /**
@@ -161,8 +165,8 @@ public final class OciExtension {
      */
     public static OciConfig ociConfig() {
         io.helidon.common.config.Config config = configSupplier().get();
-        if (config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGY).exists()
-                  || config.get(OciAuthenticationDetailsProvider.KEY_AUTH_STRATEGIES).exists()) {
+        if (config.get(KEY_AUTH_STRATEGY).exists()
+                  || config.get(KEY_AUTH_STRATEGIES).exists()) {
             // we are good as-is
             return OciConfig.create(config);
         }
