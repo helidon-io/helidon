@@ -22,15 +22,22 @@ import io.helidon.builder.api.Prototype;
 
 class MetricsConfigSupport {
 
+    /**
+     * Looks up a single config value within the metrics configuration by config key.
+     *
+     * @param metricsConfig the {@link io.helidon.common.config.Config} node containing the metrics configuration
+     * @param key config key to fetch
+     * @return config value
+     */
     @Prototype.PrototypeMethod
     static Optional<String> lookupConfig(MetricsConfig metricsConfig, String key) {
-        return metricsConfig.metricsConfig()
+        return metricsConfig.config()
                 .get(key)
                 .asString()
                 .asOptional();
     }
 
-    // Pattern:
+    // Pattern of a single tag assignment (tag=value):
     //   - capture reluctant match of anything
     //   - non-capturing match of an unescaped =
     //   - capture the rest.

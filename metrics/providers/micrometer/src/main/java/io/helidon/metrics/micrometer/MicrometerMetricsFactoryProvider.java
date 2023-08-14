@@ -56,6 +56,12 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
         return MicrometerMetricsFactory.create(metricsConfig);
     }
 
+    /**
+     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} based on Micrometer.
+     */
+    public MicrometerMetricsFactoryProvider() {
+    }
+
     private MeterRegistry getRegistry() {
         return Metrics.globalRegistry;
     }

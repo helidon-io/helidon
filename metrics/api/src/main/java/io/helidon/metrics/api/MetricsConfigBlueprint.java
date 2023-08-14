@@ -85,8 +85,12 @@ interface MetricsConfigBlueprint {
     @ConfiguredOption(key = APP_TAG_CONFIG_KEY)
     Optional<String> appTagValue();
 
-    @ConfiguredOption(builderMethod = false, configured = false)
-    Config metricsConfig();
+    /**
+     * Metrics configuration node.
+     *
+     * @return metrics configuration
+     */
+    Config config();
 
     class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
@@ -95,7 +99,6 @@ interface MetricsConfigBlueprint {
             if (builder.config().isEmpty()) {
                 builder.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
             }
-            builder.metricsConfig(builder.config().get());
         }
     }
 
