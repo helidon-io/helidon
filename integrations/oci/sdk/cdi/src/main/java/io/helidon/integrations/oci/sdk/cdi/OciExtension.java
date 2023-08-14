@@ -27,10 +27,8 @@ import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -40,6 +38,13 @@ import java.util.regex.Pattern;
 
 import com.oracle.bmc.Service;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.InstancePrincipalsAuthenticationDetailsProvider.InstancePrincipalsAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider.ResourcePrincipalAuthenticationDetailsProviderBuilder;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider.SimpleAuthenticationDetailsProviderBuilder;
 import com.oracle.bmc.common.ClientBuilderBase;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
@@ -58,6 +63,7 @@ import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static io.helidon.integrations.oci.sdk.runtime.OciExtension.ociAuthenticationProvider;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -559,6 +565,11 @@ public final class OciExtension implements Extension {
 
     private static final Lookup PUBLIC_LOOKUP = MethodHandles.publicLookup();
 
+    private static final Set<Class<?>> ADP_BUILDER_CLASSES =
+        Set.of(InstancePrincipalsAuthenticationDetailsProviderBuilder.class,
+               ResourcePrincipalAuthenticationDetailsProviderBuilder.class,
+               SimpleAuthenticationDetailsProviderBuilder.class);
+
     private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
 
 
@@ -634,7 +645,7 @@ public final class OciExtension implements Extension {
         }
         Set<Annotation> qualifiers = ip.getQualifiers();
         if (AbstractAuthenticationDetailsProvider.class.isAssignableFrom(baseClass)
-            || AdpSelectionStrategy.builderClasses().contains(baseClass)) {
+            || ADP_BUILDER_CLASSES.contains(baseClass)) {
             // Use an "empty" ServiceTaqs as an indicator of demand
             // for some kind of AbstractAuthenticationDetailsProvider
             // (or a relevant builder).
@@ -823,43 +834,113 @@ public final class OciExtension implements Extension {
 
     private static void installAdps(AfterBeanDiscovery event, BeanManager bm, Annotation[] qualifiersArray) {
         Set<Annotation> qualifiers = Set.of(qualifiersArray);
-        for (AdpSelectionStrategy s : EnumSet.allOf(AdpSelectionStrategy.class)) {
-            Type builderType = s.builderType();
-            if (builderType != null) {
-                TypeAndQualifiers builderTaq = new TypeAndQualifiers(builderType, qualifiersArray);
-                if (isUnsatisfied(bm, builderTaq)) {
-                    event.addBean()
-                        .types(builderType)
-                        .qualifiers(qualifiers)
-                        .scope(Singleton.class)
-                        .produceWith(i -> produceAdpBuilder(s, i, qualifiersArray));
-                }
-            }
-            Type type = s.type();
-            TypeAndQualifiers taq = new TypeAndQualifiers(type, qualifiersArray);
-            if (isUnsatisfied(bm, taq)) {
-                event.addBean()
-                    .types(type)
-                    .qualifiers(qualifiers)
-                    .scope(Singleton.class)
-                    .produceWith(i -> produceAdp(s, i, qualifiersArray));
-            }
+
+        // AbstractAuthenticationDetailsProvider
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray))) {
+            Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
+            event.addBean()
+                .types(AbstractAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             s.get());
+        }
+
+        // BasicAuthenticationDetailsProvider
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(BasicAuthenticationDetailsProvider.class, qualifiersArray))) {
+            Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
+            event.addBean()
+                .types(BasicAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             (BasicAuthenticationDetailsProvider) s.get());
+        }
+
+        // InstancePrincipalsAuthenticationDetailsProvider
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+            event.addBean()
+                .types(InstancePrincipalsAuthenticationDetailsProviderBuilder.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             produceAdpBuilder(InstancePrincipalsAuthenticationDetailsProvider::builder,
+                                               i,
+                                               qualifiersArray));
+        }
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray))) {
+            event.addBean()
+                .types(InstancePrincipalsAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             i.select(InstancePrincipalsAuthenticationDetailsProviderBuilder.class,
+                                      qualifiersArray)
+                             .get()
+                             .build());
+        }
+
+        // ResourcePrincipalAuthenticationDetailsProvider
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+            event.addBean()
+                .types(ResourcePrincipalAuthenticationDetailsProviderBuilder.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             produceAdpBuilder(ResourcePrincipalAuthenticationDetailsProvider::builder,
+                                               i,
+                                               qualifiersArray));
+        }
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray))) {
+            event.addBean()
+                .types(ResourcePrincipalAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             i.select(ResourcePrincipalAuthenticationDetailsProviderBuilder.class,
+                                      qualifiersArray)
+                             .get()
+                             .build());
+        }
+
+        // SimpleAuthenticationDetailsProvider
+        if (isUnsatisfied(bm,
+                          new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+            event.addBean()
+                .types(SimpleAuthenticationDetailsProviderBuilder.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             produceAdpBuilder(SimpleAuthenticationDetailsProvider::builder,
+                                               i,
+                                               qualifiersArray));
+        }
+        if (isUnsatisfied(bm, new TypeAndQualifiers(SimpleAuthenticationDetailsProvider.class, qualifiersArray))) {
+            event.addBean()
+                .types(SimpleAuthenticationDetailsProvider.class)
+                .qualifiers(qualifiers)
+                .scope(Singleton.class)
+                .produceWith(i ->
+                             i.select(SimpleAuthenticationDetailsProviderBuilder.class,
+                                      qualifiersArray)
+                             .get()
+                             .build());
         }
     }
 
-    private static Object produceAdpBuilder(AdpSelectionStrategy s,
-                                            Instance<? super Object> instance,
-                                            Annotation[] qualifiersArray) {
-        Object builder = s.produceBuilder(SelectorShim.of(instance), ConfigShim.of(instance), qualifiersArray);
+    private static <T> T produceAdpBuilder(Supplier<T> s,
+                                           Instance<? super Object> instance,
+                                           Annotation[] qualifiersArray) {
+        T builder = s.get();
         // Permit arbitrary customization.
         fire(instance, builder, qualifiersArray);
         return builder;
-    }
-
-    private static AbstractAuthenticationDetailsProvider produceAdp(AdpSelectionStrategy s,
-                                     Instance<? super Object> instance,
-                                     Annotation[] qualifiersArray) {
-        return s.produce(SelectorShim.of(instance), ConfigShim.of(instance), qualifiersArray);
     }
 
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
@@ -1297,98 +1378,6 @@ public final class OciExtension implements Extension {
             } else {
                 return false;
             }
-        }
-
-    }
-
-    private static class SelectorShim implements AdpSelectionStrategy.Selector {
-
-
-        /*
-         * Instance fields.
-         */
-
-
-        private final Instance<? super Object> instance;
-
-
-        /*
-         * Constructors.
-         */
-
-
-        private SelectorShim(Instance<? super Object> instance) {
-            super();
-            this.instance = Objects.requireNonNull(instance, "instance");
-        }
-
-
-        /*
-         * Instance methods.
-         */
-
-
-        @Override // AdpSelectionStrategy.Selector
-        public final <T> Supplier<T> select(Class<T> type, Annotation... qualifiers) {
-            return this.instance.select(type, qualifiers)::get;
-        }
-
-
-        /*
-         * Static methods.
-         */
-
-
-        private static SelectorShim of(Instance<? super Object> instance) {
-            return new SelectorShim(instance);
-        }
-
-    }
-
-    private static class ConfigShim implements AdpSelectionStrategy.Config {
-
-
-        /*
-         * Instance fields.
-         */
-
-
-        private final Config config;
-
-
-        /*
-         * Constructors.
-         */
-
-
-        private ConfigShim(Config config) {
-            super();
-            this.config = Objects.requireNonNull(config, "config");
-        }
-
-
-        /*
-         * Instance methods.
-         */
-
-
-        @Override // AdpSelectionStrategy.Config
-        public final <T> Optional<T> get(String propertyName, Class<T> propertyType) {
-            return config.getOptionalValue(propertyName, propertyType);
-        }
-
-
-        /*
-         * Static methods.
-         */
-
-
-        private static ConfigShim of(Config config) {
-            return new ConfigShim(config);
-        }
-
-        private static ConfigShim of(Instance<? super Object> instance) {
-            return of(instance.select(Config.class).get());
         }
 
     }
