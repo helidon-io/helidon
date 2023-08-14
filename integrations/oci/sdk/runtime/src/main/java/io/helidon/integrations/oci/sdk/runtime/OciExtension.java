@@ -219,9 +219,9 @@ public final class OciExtension {
     }
 
     static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
-        return (config != null &&
-                        (config.get(KEY_AUTH_STRATEGY).exists()
-                                 || config.get(KEY_AUTH_STRATEGIES).exists()));
+        return (config != null
+                        && (config.get(KEY_AUTH_STRATEGY).exists()
+                                    || config.get(KEY_AUTH_STRATEGIES).exists()));
     }
 
     // in support for testing a variant of oci.yaml
