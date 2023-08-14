@@ -39,40 +39,36 @@ class TestCounter {
     @Test
     void testIncr() {
         Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
-        assertThat("Initial counter value", c.count(), is(0D));
+        assertThat("Initial counter value", c.count(), is(0L));
         c.increment();
-        assertThat("After increment", c.count(), is(1D));
+        assertThat("After increment", c.count(), is(1L));
     }
 
     @Test
     void incrWithValue() {
         Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
-        assertThat("Initial counter value", c.count(), is(0D));
-        c.increment(3D);
-        assertThat("After increment", c.count(), is(3D));
+        assertThat("Initial counter value", c.count(), is(0L));
+        c.increment(3L);
+        assertThat("After increment", c.count(), is(3L));
     }
 
     @Test
     void incrBoth() {
+        long initialValue = 0;
+        long incr = 2L;
         Counter c = meterRegistry.getOrCreate(Counter.builder("c3"));
-        assertThat("Initial counter value", c.count(), is(0D));
-        c.increment(2D);
-        assertThat("After increment", c.count(), is(2D));
+        assertThat("Initial counter value", c.count(), is(initialValue));
+        c.increment(incr);
+        assertThat("After increment", c.count(), is(initialValue + incr));
+
+        initialValue += incr;
+        incr = 3L;
 
         Counter cAgain = meterRegistry.getOrCreate(Counter.builder("c3"));
         assertThat("Looked up instance", cAgain, is(sameInstance(c)));
-        assertThat("Value after one update", cAgain.count(), is(2D));
+        assertThat("Value after one update", cAgain.count(), is(initialValue));
 
-        cAgain.increment(3D);
-        assertThat("Value after second update", cAgain.count(), is(5D));
+        cAgain.increment(incr);
+        assertThat("Value after second update", cAgain.count(), is(initialValue + incr));
     }
-
-//    @Test
-//    void testUnwrap() {
-//        Counter c = meterRegistry.getOrCreate(Counter.builder("c4"));
-//        io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);
-//        assertThat("Initial value", c.count(), is(0D));
-//        mCounter.increment();
-//        assertThat("Updated value", c.count(), is(1D));
-//    }
 }

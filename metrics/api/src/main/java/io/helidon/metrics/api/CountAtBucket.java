@@ -47,5 +47,5 @@ public interface CountAtBucket extends Wrapped {
      *
      * @return observation count for the bucket
      */
-    double count();
+    long count();
 }

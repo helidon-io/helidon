@@ -146,18 +146,20 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         return delegate().max(unit);
     }
 
+    @Override
+    public String toString() {
+        TimeUnit baseTimeUnit = delegate().baseTimeUnit();
+        return String.format("MTimer[count=%d,totalTime=%s]", delegate().count(),
+                             Duration.of((long) delegate().totalTime(baseTimeUnit),
+                                         baseTimeUnit.toChronoUnit()));
+    }
+
     static class Builder extends MMeter.Builder<Timer.Builder, MTimer.Builder, MTimer>
     implements io.helidon.metrics.api.Timer.Builder {
 
         private Builder(String name) {
             super(Timer.builder(name));
         }
-
-        // TODO remove if not used
-//        @Override
-//        MTimer register(MeterRegistry meterRegistry) {
-//            return MTimer.create(delegate().register(meterRegistry));
-//        }
 
         @Override
         public Builder publishPercentiles(double... percentiles) {

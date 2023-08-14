@@ -228,12 +228,12 @@ class NoOpMeter implements Meter, NoOpWrapped {
         }
 
         @Override
-        public void increment(double amount) {
+        public void increment(long amount) {
         }
 
         @Override
-        public double count() {
-            return 0;
+        public long count() {
+            return 0L;
         }
     }
 
@@ -261,7 +261,7 @@ class NoOpMeter implements Meter, NoOpWrapped {
         }
 
         @Override
-        public void increment(double amount) {
+        public void increment(long amount) {
             throw new UnsupportedOperationException();
         }
     }
@@ -594,21 +594,6 @@ class NoOpMeter implements Meter, NoOpWrapped {
             }
 
             @Override
-            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder expiry(Duration expiry) {
-                return identity();
-            }
-
-            @Override
-            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder bufferLength(Integer bufferLength) {
-                return identity();
-            }
-
-            @Override
-            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder percentilesHistogram(Boolean enabled) {
-                return identity();
-            }
-
-            @Override
             public io.helidon.metrics.api.DistributionStatisticsConfig.Builder minimumExpectedValue(Double min) {
                 return identity();
             }
@@ -629,11 +614,6 @@ class NoOpMeter implements Meter, NoOpWrapped {
             }
 
             @Override
-            public io.helidon.metrics.api.DistributionStatisticsConfig.Builder percentilePrecision(Integer digitsOfPrecision) {
-                return identity();
-            }
-
-            @Override
             public io.helidon.metrics.api.DistributionStatisticsConfig.Builder buckets(double... buckets) {
                 return identity();
             }
@@ -648,33 +628,7 @@ class NoOpMeter implements Meter, NoOpWrapped {
         }
 
         @Override
-        public io.helidon.metrics.api.DistributionStatisticsConfig merge(
-                io.helidon.metrics.api.DistributionStatisticsConfig parent) {
-            return builder().build();
-        }
-
-        @Override
-        public Optional<Boolean> isPercentileHistogram() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Boolean> isPublishingPercentiles() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Boolean> isPublishingHistogram() {
-            return Optional.empty();
-        }
-
-        @Override
         public Optional<Iterable<Double>> percentiles() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Integer> percentilePrecision() {
             return Optional.empty();
         }
 
@@ -689,17 +643,7 @@ class NoOpMeter implements Meter, NoOpWrapped {
         }
 
         @Override
-        public Optional<Duration> expiry() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Integer> bufferLength() {
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Iterable<Double>> serviceLevelObjectiveBoundaries() {
+        public Optional<Iterable<Double>> buckets() {
             return Optional.empty();
         }
     }

@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.micrometer;
 
-import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -49,61 +48,8 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
     }
 
     @Override
-    public MDistributionStatisticsConfig merge(io.helidon.metrics.api.DistributionStatisticsConfig parent) {
-        DistributionStatisticConfig newDelegate = DistributionStatisticConfig.builder()
-                .percentilesHistogram(
-                        chooseOpt(delegate.isPercentileHistogram(),
-                                  parent::isPercentileHistogram))
-                .percentiles(
-                        choose(delegate.getPercentiles(),
-                               () -> Util.doubleArray(parent.percentiles())))
-                .serviceLevelObjectives(
-                        choose(delegate.getServiceLevelObjectiveBoundaries(),
-                               () -> Util.doubleArray(parent.serviceLevelObjectiveBoundaries())))
-                .percentilePrecision(
-                        chooseOpt(delegate.getPercentilePrecision(),
-                                  parent::percentilePrecision))
-                .minimumExpectedValue(
-                        chooseOpt(delegate.getMinimumExpectedValueAsDouble(),
-                                  parent::minimumExpectedValue))
-                .maximumExpectedValue(
-                        chooseOpt(delegate.getMaximumExpectedValueAsDouble(),
-                                  parent::maximumExpectedValue))
-                .expiry(
-                        chooseOpt(delegate.getExpiry(),
-                                  parent::expiry))
-                .bufferLength(
-                        chooseOpt(delegate.getBufferLength(),
-                                  parent::bufferLength))
-                .build();
-        return new MDistributionStatisticsConfig(newDelegate);
-    }
-
-
-
-        @Override
-    public Optional<Boolean> isPercentileHistogram() {
-        return Optional.ofNullable(delegate.isPercentileHistogram());
-    }
-
-    @Override
-    public Optional<Boolean> isPublishingPercentiles() {
-        return Optional.of(delegate.isPublishingPercentiles());
-    }
-
-    @Override
-    public Optional<Boolean>  isPublishingHistogram() {
-        return Optional.of(delegate.isPublishingHistogram());
-    }
-
-    @Override
     public Optional<Iterable<Double>> percentiles() {
         return Optional.ofNullable(Util.iterable(delegate.getPercentiles()));
-    }
-
-    @Override
-    public Optional<Integer> percentilePrecision() {
-        return Optional.ofNullable(delegate.getPercentilePrecision());
     }
 
     @Override
@@ -117,17 +63,7 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
     }
 
     @Override
-    public Optional<Duration> expiry() {
-        return Optional.ofNullable(delegate.getExpiry());
-    }
-
-    @Override
-    public Optional<Integer> bufferLength() {
-        return Optional.ofNullable(delegate.getBufferLength());
-    }
-
-    @Override
-    public Optional<Iterable<Double>> serviceLevelObjectiveBoundaries() {
+    public Optional<Iterable<Double>> buckets() {
         return Optional.ofNullable(Util.iterable(delegate.getServiceLevelObjectiveBoundaries()));
     }
 
@@ -154,24 +90,6 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         }
 
         @Override
-        public Builder expiry(Duration expiry) {
-            delegate.expiry(expiry);
-            return this;
-        }
-
-        @Override
-        public Builder bufferLength(Integer bufferLength) {
-            delegate.bufferLength(bufferLength);
-            return this;
-        }
-
-        @Override
-        public Builder percentilesHistogram(Boolean enabled) {
-            delegate.percentilesHistogram(enabled);
-            return this;
-        }
-
-        @Override
         public Builder minimumExpectedValue(Double min) {
             delegate.minimumExpectedValue(min);
             return this;
@@ -192,12 +110,6 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         @Override
         public Builder percentiles(Iterable<Double> percentiles) {
             delegate.percentiles(Util.doubleArray(percentiles));
-            return this;
-        }
-
-        @Override
-        public Builder percentilePrecision(Integer digitsOfPrecision) {
-            delegate.percentilePrecision(digitsOfPrecision);
             return this;
         }
 
@@ -227,10 +139,4 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         return Objects.requireNonNullElseGet(fromChild,
                                              () -> fromParent.get().orElse(null));
     }
-
-    static <T> T choose(T fromChild, Supplier<T> fromParent) {
-        return Objects.requireNonNullElseGet(fromChild, fromParent);
-    }
-
-
 }

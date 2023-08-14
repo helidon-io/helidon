@@ -43,8 +43,8 @@ class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
     }
 
     @Override
-    public double count() {
-        return delegate.count();
+    public long count() {
+        return (long) delegate.count();
     }
 
     @Override
@@ -63,16 +63,16 @@ class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
             return false;
         }
         return Objects.equals(delegate.bucket(), that.bucket())
-                && Objects.equals(delegate.count(), that.count());
+                && Objects.equals((long) delegate.count(), that.count());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(delegate.bucket(), delegate.count());
+        return Objects.hash((long) delegate.bucket(), delegate.count());
     }
 
     @Override
     public String toString() {
-        return String.format("MCountAtBucket[bucket=%f,count=%f]", bucket(), count());
+        return String.format("MCountAtBucket[bucket=%f,count=%d]", bucket(), count());
     }
 }
