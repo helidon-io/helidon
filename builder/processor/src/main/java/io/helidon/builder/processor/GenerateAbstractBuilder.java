@@ -314,8 +314,7 @@ final class GenerateAbstractBuilder {
             pw.println("@Override");
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
-            pw.print("public BUILDER");
-            pw.println(" config(Config config) {");
+            pw.println("public BUILDER config(Config config) {");
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
             pw.print(SOURCE_SPACING);
@@ -337,7 +336,7 @@ final class GenerateAbstractBuilder {
                     if (!child.configuredOption().notConfigured()) {
                         Optional<String> fromConfig = child.typeHandler().generateFromConfig(child.configuredOption(),
                                                                                              child.factoryMethods());
-                        if (fromConfig.isPresent()) {
+                        if (!child.configuredOption().provider() && fromConfig.isPresent()) {
                             pw.print(SOURCE_SPACING);
                             pw.print(SOURCE_SPACING);
                             pw.print(SOURCE_SPACING);
@@ -358,6 +357,10 @@ final class GenerateAbstractBuilder {
         TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
         // first setters
         for (PrototypeProperty child : properties) {
+            if (child.typeHandler().actualType().equals(CONFIG_TYPE)) {
+                // this is never done here, config must be defined as a standalone method
+                continue;
+            }
             for (GeneratedMethod setter : child.setters(returnType, child.configuredOption().description())) {
                 // this is builder setters
                 Javadoc javadoc = setter.javadoc();
@@ -416,6 +419,15 @@ final class GenerateAbstractBuilder {
          */
         for (PrototypeProperty child : properties) {
             String getterName = child.getterName();
+            if ("config".equals(getterName) && configured.configured()) {
+                if (child.typeHandler().actualType().equals(CONFIG_TYPE)) {
+                    // this will always exist
+                    continue;
+                }
+                // now we have a method called config with wrong return type - this is not supported
+                throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
+                                                           + CONFIG_TYPE.fqName() + ", but is: " + child.typeName().fqName());
+            }
             /*
             String host() {
               return host;
@@ -532,10 +544,21 @@ final class GenerateAbstractBuilder {
                 pw.print(property.typeHandler().getterName());
                 pw.println("());");
             } else {
-                pw.print(property.typeHandler().setterName());
-                pw.print("(prototype.");
-                pw.print(property.typeHandler().getterName());
-                pw.println("());");
+                /*
+                Special handling from config - we have to assign it to field, we cannot go through (config(Config))
+                */
+                if ("config".equals(property.name()) && property.typeHandler().actualType().equals(CONFIG_TYPE)) {
+                    pw.print("this.config = prototype.config()");
+                    if (declaredType.isOptional()) {
+                        pw.print(".orElse(null)");
+                    }
+                    pw.println(";");
+                } else {
+                    pw.print(property.typeHandler().setterName());
+                    pw.print("(prototype.");
+                    pw.print(property.typeHandler().getterName());
+                    pw.println("());");
+                }
             }
         }
         pw.print(SOURCE_SPACING);
@@ -706,25 +729,36 @@ final class GenerateAbstractBuilder {
                         pw.print(SOURCE_SPACING);
                         pw.print(SOURCE_SPACING);
                         pw.print(SOURCE_SPACING);
-                        pw.print("java.util.List<");
-                        pw.print(property.typeHandler().actualType().fqName());
-                        pw.print("> services = discoverServices(config.get(\"");
-                        pw.print(configuredOption.configKey());
-                        pw.print("\"), serviceLoader, ");
-                        pw.print(providerOption.serviceProviderInterface().fqName());
-                        pw.print(".class, ");
-                        pw.print(property.typeHandler().actualType().fqName());
-                        pw.print(".class, ");
-                        pw.print(property.name());
-                        pw.print("DiscoverServices");
-                        pw.println(");");
-                        pw.print(SOURCE_SPACING);
-                        pw.print(SOURCE_SPACING);
-                        pw.print(SOURCE_SPACING);
-                        pw.print(SOURCE_SPACING);
-                        pw.print("this.add");
-                        pw.print(capitalize(property.name()));
-                        pw.println("(services);");
+
+                        TypeName typeName = property.typeHandler().declaredType();
+                        if (typeName.isList() || typeName.isSet()) {
+                            pw.print("this.add");
+                            pw.print(capitalize(property.name()));
+                            pw.print("(");
+                            pw.print("discoverServices(config.get(\"");
+                            pw.print(configuredOption.configKey());
+                            pw.print("\"), serviceLoader, ");
+                            pw.print(providerOption.serviceProviderInterface().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.typeHandler().actualType().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.name());
+                            pw.print("DiscoverServices");
+                            pw.println("));");
+                        } else {
+                            pw.print("discoverService(config.get(\"");
+                            pw.print(configuredOption.configKey());
+                            pw.print("\"), serviceLoader, ");
+                            pw.print(providerOption.serviceProviderInterface().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.typeHandler().actualType().fqName());
+                            pw.print(".class, ");
+                            pw.print(property.name());
+                            pw.print("DiscoverServices");
+                            pw.print(").ifPresent(this::");
+                            pw.print(property.setterName());
+                            pw.println(");");
+                        }
                     } else {
                         if (defaultDiscoverServices) {
                             pw.print(SOURCE_SPACING);

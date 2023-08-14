@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import io.helidon.common.HelidonServiceLoader;
@@ -59,6 +60,60 @@ final class ProvidedUtil {
     }
 
     /**
+     * Discover service from configuration.
+     * This method looks for a single provider only.
+     *
+     * @param config           configuration located at the node of the service providers
+     *                         (either a list node, or object, where each child is one service)
+     * @param serviceLoader    helidon service loader for the expected type
+     * @param providerType     service provider interface type
+     * @param configType       configured service type
+     * @param discoverServices whether all services from service loader should be used, or only the ones with configured
+     *                         node
+     * @param <T>              type of the expected service
+     * @return first service by {@link io.helidon.common.Weight}, or empty optional
+     */
+    static <T extends NamedService> Optional<T>
+    discoverService(Config config,
+                    HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
+                    Class<? extends ConfiguredProvider<T>> providerType,
+                    Class<T> configType,
+                    boolean discoverServices) {
+        /*
+        - if we find more than one using service loader, we will use one with higher weight, unless a provider is configured
+        in config
+        - if we find more than one in config, it is an error
+         */
+        List<ConfiguredService> configuredServices = new ArrayList<>();
+
+        // all child nodes of the current node
+        List<Config> serviceConfigList = config.asNodeList()
+                .orElseGet(List::of);
+
+        if (serviceConfigList.size() > 1) {
+            throw new ConfigException("There can only be one provider configured for " + config.key());
+        }
+
+        boolean isList = config.isList();
+
+        for (Config serviceConfig : serviceConfigList) {
+            configuredServices.add(configuredService(serviceConfig, isList));
+        }
+
+        List<T> result;
+        // now we have all service configurations, we can start building up instances
+        if (config.isList()) {
+            // driven by order of declaration in config
+            result = servicesFromList(serviceLoader, providerType, configType, configuredServices, discoverServices);
+        } else {
+            // driven by service loader order
+            result = servicesFromObject(serviceLoader, providerType, configType, configuredServices, discoverServices);
+        }
+
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
+    }
+
+    /**
      * Discover services from configuration.
      *
      * @param config               configuration located at the node of the service providers
@@ -69,7 +124,7 @@ final class ProvidedUtil {
      * @param allFromServiceLoader whether all services from service loader should be used, or only the ones with configured
      *                             node
      * @param <T>                  type of the expected service
-     * @return list of discovered services
+     * @return list of discovered services, ordered by {@link io.helidon.common.Weight} (highest weight first)
      */
     static <T extends NamedService> List<T> discoverServices(Config config,
                                                              HelidonServiceLoader<? extends ConfiguredProvider<T>> serviceLoader,
