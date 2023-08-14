@@ -127,7 +127,7 @@ public final class OciExtension {
                                     .toList())
             .build());
     private static String overrideOciConfigFile;
-    private static Supplier<io.helidon.common.config.Config> ociConfigSupplier;
+    private volatile static Supplier<io.helidon.common.config.Config> ociConfigSupplier;
 
     private OciExtension() {
     }
@@ -194,29 +194,6 @@ public final class OciExtension {
     }
 
     /**
-     * The supplier for the raw config-backed by the OCI config source(s).
-     *
-     * @return the supplier for the raw config-backed by the OCI config source(s)
-     * @see #ociAuthenticationProvider()
-     */
-    public static Supplier<io.helidon.common.config.Config> configSupplier() {
-        synchronized (DEFAULT_OCI_GLOBAL_CONFIG_FILE) {
-            if (ociConfigSupplier == null) {
-                ociConfigSupplier = () -> {
-                    // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
-                    // (not advertised in the javadoc)
-                    String ociConfigFile = ociConfigFilename();
-                    return Config.create(
-                            ConfigSources.classpath(ociConfigFile).optional(),
-                            ConfigSources.file(ociConfigFile).optional());
-                };
-            }
-
-            return ociConfigSupplier;
-        }
-    }
-
-    /**
      * The supplier for the globally configured OCI authentication provider.
      *
      * @return the supplier for the globally configured authentication provider
@@ -231,12 +208,31 @@ public final class OciExtension {
         };
     }
 
+    /**
+     * The supplier for the raw config-backed by the OCI config source(s).
+     *
+     * @return the supplier for the raw config-backed by the OCI config source(s)
+     * @see #ociAuthenticationProvider()
+     */
+    public static Supplier<io.helidon.common.config.Config> configSupplier() {
+        if (ociConfigSupplier == null) {
+            ociConfigSupplier = () -> {
+                // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
+                // (not advertised in the javadoc)
+                String ociConfigFile = ociConfigFilename();
+                return Config.create(
+                        ConfigSources.classpath(ociConfigFile).optional(),
+                        ConfigSources.file(ociConfigFile).optional());
+            };
+        }
+
+        return ociConfigSupplier;
+    }
+
     // in support for testing a variant of oci.yaml
     static void ociConfigFileName(String fileName) {
-        synchronized (DEFAULT_OCI_GLOBAL_CONFIG_FILE) {
-            overrideOciConfigFile = fileName;
-            ociConfigSupplier = null;
-        }
+        overrideOciConfigFile = fileName;
+        ociConfigSupplier = null;
     }
 
     // in support for testing a variant of oci.yaml
