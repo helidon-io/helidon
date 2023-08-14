@@ -25,10 +25,6 @@ public enum ClassType {
      */
     INTERFACE("interface"),
     /**
-     * Class type is an enum.
-     */
-    ENUM("enum"),
-    /**
      * Class type is a class.
      */
     CLASS("class");

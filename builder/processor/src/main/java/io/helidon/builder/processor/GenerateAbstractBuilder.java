@@ -128,33 +128,6 @@ final class GenerateAbstractBuilder {
         });
     }
 
-    private static void addCustomPrototypeMethods(TypeContext typeContext, InnerClass.Builder builder) {
-        for (CustomMethods.CustomMethod customMethod : typeContext.customMethods().prototypeMethods()) {
-            // TODO these sections should be moved to CustomMethod implementation once we have class model
-            // builder - custom implementation methods for new prototype interface methods
-            CustomMethods.Method generated = customMethod.generatedMethod().method();
-            // public TypeName boxed() - with implementation
-            Method.Builder method = Method.builder()
-                    .name(generated.name())
-                    .returnType(generated.returnType())
-                    .addLine(customMethod.generatedMethod().callCode() + ";");
-            for (String annotation : customMethod.generatedMethod().annotations()) {
-                method.addAnnotation(Annotation.parse(annotation));
-            }
-            if (!customMethod.generatedMethod().annotations().contains(OVERRIDE)) {
-                method.addAnnotation(Annotation.create(Override.class));
-            }
-            for (CustomMethods.Argument argument : generated.arguments()) {
-                method.addParameter(param -> param.name(argument.name())
-                        .type(argument.typeName()));
-            }
-            if (!generated.javadoc().isEmpty()) {
-                method.javadoc(Javadoc.parse(generated.javadoc()));
-            }
-            builder.addMethod(method);
-        }
-    }
-
     private static void addCustomBuilderMethods(TypeContext typeContext, InnerClass.Builder builder) {
         for (CustomMethods.CustomMethod customMethod : typeContext.customMethods().builderMethods()) {
             // builder specific custom methods (not part of interface)

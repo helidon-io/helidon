@@ -212,7 +212,7 @@ interface TypeNameBlueprint {
      *
      * @return the fully qualified name which includes the use of generics/parameterized types, arrays, etc.
      */
-    default String resolved() {
+    default String resolvedName() {
         // implemented by a custom method
         return className();
     }
