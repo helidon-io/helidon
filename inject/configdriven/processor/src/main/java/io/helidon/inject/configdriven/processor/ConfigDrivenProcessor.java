@@ -123,7 +123,8 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
                 // config bean field
                 "\n\tprivate final " + configBeanName + " configBean;\n",
                 // constructor with NamedInstance
-                "\n\tprivate " + activatorImplType.className() + "(" + namedInstanceWithGeneric.resolvedName() + " configBean) {\n"
+                "\n\tprivate " + activatorImplType.className() + "(" + namedInstanceWithGeneric.resolvedName()
+                        + " configBean) {\n"
                         + "\t\tsuper(configBean.name());\n"
                         + "\t\tassertIsRootProvider(false, true);\n"
                         + "\t\tserviceInfo(serviceInfo);\n"
@@ -138,7 +139,8 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
                         + "\t}\n",
                 // createInstance(NamedInstance)
                 "\n\t@Override\n"
-                        + "\tprotected " + superType.resolvedName() + " createInstance(" + namedInstanceWithGeneric.resolvedName() + " "
+                        + "\tprotected " + superType.resolvedName() + " createInstance("
+                        + namedInstanceWithGeneric.resolvedName() + " "
                         + "configBean) {\n"
                         + "\t\treturn new " + activatorImplType.className() + "(configBean);\n"
                         + "\t}\n",
