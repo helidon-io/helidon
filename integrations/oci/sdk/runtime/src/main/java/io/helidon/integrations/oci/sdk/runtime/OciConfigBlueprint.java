@@ -379,6 +379,8 @@ interface OciConfigBlueprint {
             Objects.requireNonNull(ignoredCfgFile);
             return true;
         } catch (Exception e) {
+            OciAuthenticationDetailsProvider.LOGGER.log(System.Logger.Level.DEBUG,
+                                                        "file config is not available: " + e.getMessage(), e);
             return false;
         }
     }
