@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Percentile and value at that percentile within a distribution.
  */
-public interface ValueAtPercentile extends Wrapped {
+public interface ValueAtPercentile extends Wrapper {
 
     /**
      * Returns the percentile.

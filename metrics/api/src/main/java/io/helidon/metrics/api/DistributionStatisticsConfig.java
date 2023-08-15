@@ -22,7 +22,7 @@ import java.util.Optional;
  * (for example, timers and distribution summaries).
  *
  */
-public interface DistributionStatisticsConfig extends Wrapped {
+public interface DistributionStatisticsConfig extends Wrapper {
 
     /**
      * Creates a builder for a new {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance.
@@ -64,7 +64,7 @@ public interface DistributionStatisticsConfig extends Wrapped {
     /**
      * Builder for a new {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance.
      */
-    interface Builder extends Wrapped, io.helidon.common.Builder<Builder, DistributionStatisticsConfig> {
+    interface Builder extends Wrapper, io.helidon.common.Builder<Builder, DistributionStatisticsConfig> {
 
         /**
          * Sets the minimum value that the meter is expected to observe.

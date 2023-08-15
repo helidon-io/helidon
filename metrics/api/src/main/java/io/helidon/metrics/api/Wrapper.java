@@ -15,10 +15,17 @@
  */
 package io.helidon.metrics.api;
 
-interface NoOpWrapped extends Wrapped {
+/**
+ * Behavior of a type that wraps a related type, typically through delegation.
+ */
+public interface Wrapper {
 
-    @Override
-    default <R> R unwrap(Class<? extends R> c) {
-        return c.cast(this);
-    }
+    /**
+     * Unwraps the delegate as the specified type.
+     *
+     * @param c {@link Class} to which to cast the delegate
+     * @return the delegate cast as the requested type
+     * @param <R> type to cast to
+     */
+    <R> R unwrap(Class<? extends R> c);
 }

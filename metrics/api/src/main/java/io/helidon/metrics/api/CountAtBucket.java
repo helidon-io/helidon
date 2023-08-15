@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  *     That is, an observation occupies a bucket if its value is less than or equal to the bucket's boundary value.
  * </p>
  */
-public interface CountAtBucket extends Wrapped {
+public interface CountAtBucket extends Wrapper {
 
     /**
      * Returns the bucket boundary.
