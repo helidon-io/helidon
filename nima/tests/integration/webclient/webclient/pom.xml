@@ -67,20 +67,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${version.plugin.surefire}</version>
-                <configuration>
-                    <useModulePath>false</useModulePath>
-                    <systemPropertyVariables>
-                        <java.util.logging.config.file>${project.build.outputDirectory}/logging-test.properties</java.util.logging.config.file>
-                        <javax.net.debug>all</javax.net.debug>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

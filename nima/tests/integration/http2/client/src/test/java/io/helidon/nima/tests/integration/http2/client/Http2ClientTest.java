@@ -62,7 +62,7 @@ class Http2ClientTest {
                                 .trustStore(true)
                                 .keystore(Resource.create("client.p12"))))
                 .build();
-        this.tlsClient = Http2Client.builder()
+        this.tlsClient = () -> Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
                 .tls(clientTls)
                 .build();
