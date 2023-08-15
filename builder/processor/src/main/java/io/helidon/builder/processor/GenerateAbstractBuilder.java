@@ -218,6 +218,10 @@ final class GenerateAbstractBuilder {
         TypeName returnType = TypeName.createFromGenericDeclaration("BUILDER");
         // first setters
         for (PrototypeProperty child : properties) {
+            if (child.typeHandler().actualType().equals(CONFIG_TYPE)) {
+                // this is never done here, config must be defined as a standalone method
+                continue;
+            }
             child.setters(classBuilder, returnType, child.configuredOption().description());
         }
         // then getters
@@ -229,6 +233,15 @@ final class GenerateAbstractBuilder {
          */
         for (PrototypeProperty child : properties) {
             String getterName = child.getterName();
+            if ("config".equals(getterName) && configured.configured()) {
+                if (child.typeHandler().actualType().equals(CONFIG_TYPE)) {
+                    // this will always exist
+                    continue;
+                }
+                // now we have a method called config with wrong return type - this is not supported
+                throw new IllegalArgumentException("Configured property named \"config\" can only be of type "
+                                                           + CONFIG_TYPE.fqName() + ", but is: " + child.typeName().fqName());
+            }
             /*
             String host() {
               return host;
@@ -300,7 +313,7 @@ final class GenerateAbstractBuilder {
 
         if (configured.configured()) {
             for (PrototypeProperty child : properties) {
-                if (!child.configuredOption().notConfigured()) {
+                if (!child.configuredOption().notConfigured() && !child.configuredOption().provider()) {
                     child.typeHandler().generateFromConfig(builder,
                                                            child.configuredOption(),
                                                            child.factoryMethods());
@@ -329,12 +342,26 @@ final class GenerateAbstractBuilder {
             if (declaredType.isSet() || declaredType.isList() || declaredType.isMap()) {
                 methodBuilder.add("add");
                 methodBuilder.add(capitalize(property.name()));
+                methodBuilder.add("(prototype.");
+                methodBuilder.add(property.typeHandler().getterName());
+                methodBuilder.addLine("());");
             } else {
-                methodBuilder.add(property.typeHandler().setterName());
+                /*
+                Special handling from config - we have to assign it to field, we cannot go through (config(Config))
+                */
+                if ("config".equals(property.name()) && property.typeHandler().actualType().equals(CONFIG_TYPE)) {
+                    methodBuilder.add("this.config = prototype.config()");
+                    if (declaredType.isOptional()) {
+                        methodBuilder.add(".orElse(null)");
+                    }
+                    methodBuilder.addLine(";");
+                } else {
+                    methodBuilder.add(property.typeHandler().setterName());
+                    methodBuilder.add("(prototype.");
+                    methodBuilder.add(property.typeHandler().getterName());
+                    methodBuilder.addLine("());");
+                }
             }
-            methodBuilder.add("(prototype.");
-            methodBuilder.add(property.typeHandler().getterName());
-            methodBuilder.addLine("());");
         }
         methodBuilder.addLine("return self();");
         builder.addMethod(methodBuilder);
@@ -435,17 +462,33 @@ final class GenerateAbstractBuilder {
                             .typeName(providerOption.serviceProviderInterface().fqName())
                             .addLine(".class));");
                     if (configured) {
-                        preBuildBuilder.typeName("java.util.List")
-                                .add("<")
-                                .typeName(property.typeHandler().actualType().fqName())
-                                .add("> services = discoverServices(config.get(\"")
-                                .add(configuredOption.configKey())
-                                .add("\"), serviceLoader, ")
-                                .typeName(providerOption.serviceProviderInterface().fqName())
-                                .add(".class, ")
-                                .typeName(property.typeHandler().actualType().fqName())
-                                .addLine(".class, " + property.name() + "DiscoverServices);")
-                                .addLine("this.add" + capitalize(property.name()) + "(services);");
+                        TypeName typeName = property.typeHandler().declaredType();
+                        if (typeName.isList() || typeName.isSet()) {
+                            preBuildBuilder.add("this.add")
+                                    .add(capitalize(property.name()))
+                                    .add("(discoverServices(config.get(\"")
+                                    .add(configuredOption.configKey())
+                                    .add("\"), serviceLoader, ")
+                                    .typeName(providerOption.serviceProviderInterface())
+                                    .add(".class, ")
+                                    .typeName(property.typeHandler().actualType())
+                                    .add(".class, ")
+                                    .add(property.name())
+                                    .add("DiscoverServices")
+                                    .addLine("));");
+                        } else {
+                            preBuildBuilder.add("discoverService(config.get(\"")
+                                    .add(configuredOption.configKey())
+                                    .add("\"), serviceLoader, ")
+                                    .typeName(providerOption.serviceProviderInterface())
+                                    .add(".class, ")
+                                    .typeName(property.typeHandler().actualType())
+                                    .add(".class, ")
+                                    .add(property.name())
+                                    .add("DiscoverServices).ifPresent(this::")
+                                    .add(property.setterName())
+                                    .addLine(");");
+                        }
                     } else {
                         if (defaultDiscoverServices) {
                             preBuildBuilder.addLine("this." + property.name() + "(serviceLoader.asList());");
