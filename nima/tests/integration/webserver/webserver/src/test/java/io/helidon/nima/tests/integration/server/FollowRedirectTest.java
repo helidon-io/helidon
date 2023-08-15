@@ -19,11 +19,15 @@ package io.helidon.nima.tests.integration.server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.http.Http;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpRoute;
+import io.helidon.nima.webclient.api.HttpClientResponse;
 import io.helidon.nima.webclient.http1.Http1Client;
 import io.helidon.nima.webclient.http1.Http1ClientResponse;
 import io.helidon.nima.webserver.http.HttpRouting;
@@ -99,6 +103,18 @@ class FollowRedirectTest {
                 in.read(buffer);
                 throw new RuntimeException("BOOM!");
             } catch (IOException e) {
+                res.status(INTERNAL_SERVER_ERROR_500)
+                        .send(e.getMessage());
+            }
+        }).route(Http.Method.PUT, "/wait", (req, res) -> {
+            TimeUnit.MILLISECONDS.sleep(500);
+            try (InputStream in = req.content().inputStream()) {
+                byte[] buffer = new byte[128];
+                while (in.read(buffer) > 0) {
+                    //Do nothing and just drain the entity
+                }
+                res.send("Request did not timeout");
+            } catch (Exception e) {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
@@ -201,6 +217,29 @@ class FollowRedirectTest {
                     it.close();
                 }));
         assertThat(exception.getMessage(), is("Maximum number of request redirections (10) reached."));
+    }
+
+    @Test
+    void test100ContinueTimeout() {
+        UncheckedIOException exception = assertThrows(UncheckedIOException.class, () -> webClient.put()
+                .path("/wait")
+                .readContinueTimeout(Duration.ofMillis(200))
+                .outputStream(it -> {
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                }));
+        assertThat(exception.getMessage(), is("java.net.SocketTimeoutException: Read timed out"));
+
+        HttpClientResponse response = webClient
+                .put()
+                .path("/wait")
+                .outputStream(it -> {
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
+                    it.close();
+                });
+        assertThat(response.as(String.class), is("Request did not timeout"));
     }
 
 }

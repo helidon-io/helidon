@@ -16,6 +16,7 @@
 
 package io.helidon.nima.webclient.api;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -216,4 +217,13 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @ConfiguredOption
     Optional<WebClientCookieManager> cookieManager();
+
+    /**
+     * Socket 100-Continue read timeout. Default is 1 second.
+     * This read timeout is used when 100-Continue is sent by the client, before it sends an entity.
+     *
+     * @return read 100-Continue timeout duration
+     */
+    @ConfiguredOption("PT1S")
+    Duration readContinueTimeout();
 }

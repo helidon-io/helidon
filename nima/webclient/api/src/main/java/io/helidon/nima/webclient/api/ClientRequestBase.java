@@ -73,6 +73,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private boolean followRedirects;
     private int maxRedirects;
     private Duration readTimeout;
+    private Duration readContinueTimeout;
     private Tls tls;
     private Proxy proxy;
     private boolean keepAlive;
@@ -93,6 +94,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
         this.headers = clientConfig.defaultRequestHeaders();
         this.readTimeout = clientConfig.socketOptions().readTimeout();
+        this.readContinueTimeout = clientConfig.readContinueTimeout();
         this.mediaContext = clientConfig.mediaContext();
         this.followRedirects = clientConfig.followRedirects();
         this.maxRedirects = clientConfig.maxRedirects();
@@ -226,14 +228,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return identity();
     }
 
-    /**
-     * Read timeout for this request.
-     *
-     * @param readTimeout response read timeout
-     * @return updated client request
-     */
+    @Override
     public T readTimeout(Duration readTimeout) {
         this.readTimeout = readTimeout;
+        return identity();
+    }
+
+    @Override
+    public T readContinueTimeout(Duration readContinueTimeout) {
+        this.readContinueTimeout = readContinueTimeout;
         return identity();
     }
 
@@ -328,6 +331,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public Duration readTimeout() {
         return readTimeout;
+    }
+
+    @Override
+    public Duration readContinueTimeout() {
+        return readContinueTimeout;
     }
 
     @Override

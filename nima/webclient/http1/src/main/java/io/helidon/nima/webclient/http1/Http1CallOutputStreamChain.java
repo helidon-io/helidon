@@ -171,7 +171,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
     private static class ClientConnectionOutputStream extends OutputStream {
         private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-        private static final Duration TIMEOUT_100_CONTINUE = Duration.ofSeconds(2);
 
         private final WebClientServiceRequest request;
         private final Http1ClientRequestImpl originalRequest;
@@ -351,27 +350,28 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             whenSent.complete(request);
 
             if (expects100Continue) {
+                Http.Status responseStatus;
                 try {
-                    connection.readTimeout(TIMEOUT_100_CONTINUE);
-                    Http.Status responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-                    if (redirectStatus(responseStatus, true)) {
-                        if (!originalRequest.followRedirects()) {
-                            throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
-                                                                    + responseStatus + "' instead");
-                        }
-                        WritableHeaders<?> headerValues = Http1HeadersParser.readHeaders(reader,
-                                                                                         protocolConfig.maxHeaderSize(),
-                                                                                         protocolConfig.validateHeaders());
-                        // Discard any remaining data from the response
-                        reader.skip(reader.available());
-                        checkRedirectHeaders(headerValues);
-                        redirect(responseStatus, headerValues);
-                    } else {
-                        // Discard any remaining data from the response
-                        reader.skip(reader.available());
-                    }
+                    connection.readTimeout(originalRequest.readContinueTimeout());
+                    responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
                 } finally {
                     connection.readTimeout(originalRequest.readTimeout());
+                }
+                if (redirectStatus(responseStatus, true)) {
+                    if (!originalRequest.followRedirects()) {
+                        throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
+                                                                + responseStatus + "' instead");
+                    }
+                    WritableHeaders<?> headerValues = Http1HeadersParser.readHeaders(reader,
+                                                                                     protocolConfig.maxHeaderSize(),
+                                                                                     protocolConfig.validateHeaders());
+                    // Discard any remaining data from the response
+                    reader.skip(reader.available());
+                    checkRedirectHeaders(headerValues);
+                    redirect(responseStatus, headerValues);
+                } else {
+                    // Discard any remaining data from the response
+                    reader.skip(reader.available());
                 }
             }
         }
@@ -419,8 +419,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     response = (Http1ClientResponseImpl) clientRequest
                             .header(Http.Headers.EXPECT_100)
                             .header(Http.Headers.TRANSFER_ENCODING_CHUNKED)
-                            .readTimeout(TIMEOUT_100_CONTINUE)
+                            .readTimeout(originalRequest.readContinueTimeout())
                             .request();
+                    response.connection().readTimeout(originalRequest.readTimeout());
                 } else {
                     response = (Http1ClientResponseImpl) clientRequest.request();
                 }

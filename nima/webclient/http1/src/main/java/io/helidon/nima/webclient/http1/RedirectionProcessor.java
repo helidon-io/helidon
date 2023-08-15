@@ -46,13 +46,13 @@ class RedirectionProcessor {
             if (!redirectionStatusCode(clientResponse.status())) {
                 return clientResponse;
             }
-            try (Http1ClientResponseImpl response = clientResponse) {
-                if (!response.headers().contains(Http.HeaderNames.LOCATION)) {
+            try (clientResponse) {
+                if (!clientResponse.headers().contains(Http.HeaderNames.LOCATION)) {
                     throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION
                                                             + " header present in the response! "
                                                             + "It is not clear where to redirect.");
                 }
-                String redirectedUri = response.headers().get(Http.HeaderNames.LOCATION).value();
+                String redirectedUri = clientResponse.headers().get(Http.HeaderNames.LOCATION).value();
                 URI newUri = URI.create(redirectedUri);
                 ClientUri redirectUri = ClientUri.create(newUri);
 
@@ -68,8 +68,8 @@ class RedirectionProcessor {
                     redirectUri.port(resolvedUri.port());
                 }
                 //Method and entity is required to be the same as with original request with 307 and 308 requests
-                if (response.status() == Http.Status.TEMPORARY_REDIRECT_307
-                        || response.status() == Http.Status.PERMANENT_REDIRECT_308) {
+                if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
+                        || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,
@@ -86,9 +86,6 @@ class RedirectionProcessor {
         }
         throw new IllegalStateException("Maximum number of request redirections ("
                                                 + request.maxRedirects() + ") reached.");
-    }
-
-    record RedirectionResponse(Http1ClientResponseImpl response, boolean entitySending) {
     }
 
 }
