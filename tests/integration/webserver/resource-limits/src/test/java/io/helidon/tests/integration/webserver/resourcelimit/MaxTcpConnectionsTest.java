@@ -30,7 +30,7 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRules;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.RepeatedTest;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -57,7 +57,7 @@ class MaxTcpConnectionsTest {
         rules.get("/greet", (req, res) -> res.send("hello"));
     }
 
-    @Test
+    @RepeatedTest(100)
     void testConcurrentRequests() throws Exception {
         String response = client.sendAndReceive(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
         assertThat(response, containsString("200 OK"));
@@ -65,19 +65,15 @@ class MaxTcpConnectionsTest {
         // we have a connection established with keep alive, we should not create a new one
         // this should timeout on read timeout (because network connect will be done, as the server socket is open,
         // the socket is just never accepted
-        System.out.println("**** Attempt request that should timeout");
         assertThrows(UncheckedIOException.class,
                      () -> webClient.get("/greet")
                              .readTimeout(Duration.ofMillis(200))
                              .request(String.class));
-        System.out.println("**** Closing SocketClient");
         client.close();
         Thread.sleep(100); // give it some time for server to release the semaphore
-        System.out.println("**** Attempt request that should succeed");
         ClientResponseTyped<String> typedResponse = webClient.get("/greet")
                 .readTimeout(Duration.ofMillis(200))
                 .request(String.class);
-        System.out.println("**** Validate response entity");
         assertThat(typedResponse.status().text(), typedResponse.entity(), is("hello"));
     }
 }
