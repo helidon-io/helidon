@@ -20,6 +20,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.metrics.api.Bucket;
+
 import io.micrometer.core.instrument.distribution.CountAtBucket;
 import io.micrometer.core.instrument.distribution.HistogramSnapshot;
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
@@ -89,7 +91,7 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
     }
 
     @Override
-    public Iterable<io.helidon.metrics.api.CountAtBucket> histogramCounts() {
+    public Iterable<Bucket> histogramCounts() {
         return () -> new Iterator<>() {
 
             private final CountAtBucket[] counts = delegate.histogramCounts();
@@ -101,11 +103,11 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
             }
 
             @Override
-            public io.helidon.metrics.api.CountAtBucket next() {
+            public Bucket next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                return MCountAtBucket.create(counts[slot++]);
+                return MBucket.create(counts[slot++]);
             }
         };
     }

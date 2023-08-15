@@ -43,16 +43,9 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return new MicrometerMetricsFactory(metricsConfig);
     }
 
-    private final io.micrometer.core.instrument.MeterRegistry micrometerGlobalRegistry;
-
-    private LazyValue<MeterRegistry> globalMeterRegistry;
-
-    private final MetricsConfig metricsConfig;
+    private final LazyValue<MeterRegistry> globalMeterRegistry;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
-        micrometerGlobalRegistry = Metrics.globalRegistry;
-        this.metricsConfig = metricsConfig;
-
         globalMeterRegistry = LazyValue.create(() -> {
             ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
             return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig);
@@ -76,11 +69,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private static void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
                                                  MetricsConfig metricsConfig) {
-        boolean prometheusRegistryPresent = compositeMeterRegistry
+        if (compositeMeterRegistry
                 .getRegistries()
                 .stream()
-                .anyMatch(mr -> mr instanceof PrometheusMeterRegistry);
-        if (!prometheusRegistryPresent) {
+                .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
             compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
         }
     }

@@ -26,6 +26,7 @@ public interface Wrapper {
      * @param c {@link Class} to which to cast the delegate
      * @return the delegate cast as the requested type
      * @param <R> type to cast to
+     * @throws java.lang.ClassCastException if the delegate is not compatible with the requested type
      */
     <R> R unwrap(Class<? extends R> c);
 }

@@ -55,9 +55,9 @@ public interface DistributionStatisticsConfig extends Wrapper {
     Optional<Double> maximumExpectedValue();
 
     /**
-     * Returns the configured bucket boundaries.
+     * Returns the configured boundary boundaries.
      *
-     * @return the bucket boundaries
+     * @return the boundary boundaries
      */
     Optional<Iterable<Double>> buckets();
 
@@ -111,17 +111,17 @@ public interface DistributionStatisticsConfig extends Wrapper {
         Builder percentiles(Iterable<Double> percentiles);
 
         /**
-         * Sets the bucket boundaries.
+         * Sets the boundary boundaries.
          *
-         * @param buckets bucket boundaries
+         * @param buckets boundary boundaries
          * @return updated builder
          */
         Builder buckets(double... buckets);
 
         /**
-         * Sets the bucket boundaries.
+         * Sets the boundary boundaries.
          *
-         * @param buckets bucket boundaries
+         * @param buckets boundary boundaries
          * @return updated builder
          */
         Builder buckets(Iterable<Double> buckets);

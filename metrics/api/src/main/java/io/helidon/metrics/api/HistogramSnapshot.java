@@ -91,9 +91,9 @@ public interface HistogramSnapshot extends Wrapper {
     /**
      * Returns information about each of the configured buckets for the histogram.
      *
-     * @return pairs of bucket value and count of observations in that bucket
+     * @return pairs of boundary value and count of observations in that boundary
      */
-    Iterable<CountAtBucket> histogramCounts();
+    Iterable<Bucket> histogramCounts();
 
     /**
      * Dumps a summary of the snapshot to the specified {@link java.io.PrintStream} using the indicated scaling factor for
