@@ -836,8 +836,7 @@ public final class OciExtension implements Extension {
         Set<Annotation> qualifiers = Set.of(qualifiersArray);
 
         // AbstractAuthenticationDetailsProvider
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray))) {
             Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
@@ -866,10 +865,7 @@ public final class OciExtension implements Extension {
                 .types(InstancePrincipalsAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
-                .produceWith(i ->
-                             produceAdpBuilder(InstancePrincipalsAuthenticationDetailsProvider::builder,
-                                               i,
-                                               qualifiersArray));
+                .produceWith(i -> fire(i, InstancePrincipalsAuthenticationDetailsProvider.builder(), qualifiersArray));
         }
         if (isUnsatisfied(bm,
                           new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray))) {
@@ -891,10 +887,7 @@ public final class OciExtension implements Extension {
                 .types(ResourcePrincipalAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
-                .produceWith(i ->
-                             produceAdpBuilder(ResourcePrincipalAuthenticationDetailsProvider::builder,
-                                               i,
-                                               qualifiersArray));
+                .produceWith(i -> fire(i, ResourcePrincipalAuthenticationDetailsProvider.builder(), qualifiersArray));
         }
         if (isUnsatisfied(bm,
                           new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray))) {
@@ -910,16 +903,12 @@ public final class OciExtension implements Extension {
         }
 
         // SimpleAuthenticationDetailsProvider
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
             event.addBean()
                 .types(SimpleAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
-                .produceWith(i ->
-                             produceAdpBuilder(SimpleAuthenticationDetailsProvider::builder,
-                                               i,
-                                               qualifiersArray));
+                .produceWith(i -> fire(i, SimpleAuthenticationDetailsProvider.builder(), qualifiersArray));
         }
         if (isUnsatisfied(bm, new TypeAndQualifiers(SimpleAuthenticationDetailsProvider.class, qualifiersArray))) {
             event.addBean()
@@ -932,15 +921,6 @@ public final class OciExtension implements Extension {
                              .get()
                              .build());
         }
-    }
-
-    private static <T> T produceAdpBuilder(Supplier<T> s,
-                                           Instance<? super Object> instance,
-                                           Annotation[] qualifiersArray) {
-        T builder = s.get();
-        // Permit arbitrary customization.
-        fire(instance, builder, qualifiersArray);
-        return builder;
     }
 
     private static boolean installServiceClientBuilder(AfterBeanDiscovery event,
@@ -1044,8 +1024,7 @@ public final class OciExtension implements Extension {
             throw new AssertionError(impossible.getMessage(), impossible);
         }
         // Permit arbitrary customization.
-        fire(instance, builderInstance, qualifiers);
-        return builderInstance;
+        return fire(instance, builderInstance, qualifiers);
     }
 
     private static Object produceClient(Instance<? super Object> instance, Class<?> builderClass, Annotation[] qualifiersArray) {
@@ -1076,8 +1055,9 @@ public final class OciExtension implements Extension {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void fire(Instance<? super Object> instance, T payload, Annotation[] qualifiers) {
+    private static <T> T fire(Instance<? super Object> instance, T payload, Annotation[] qualifiers) {
         instance.select(EVENT_OBJECT_TYPE_LITERAL).get().select((Class<T>) payload.getClass(), qualifiers).fire(payload);
+        return payload;
     }
 
     private static boolean isUnsatisfied(BeanManager bm, TypeAndQualifiers taq) {
