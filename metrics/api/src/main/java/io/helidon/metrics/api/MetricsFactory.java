@@ -27,14 +27,17 @@ import java.util.function.ToDoubleFunction;
  *     {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
  * </p>
  * <p>
- *     Also, various static methods create or return previously-created instances.
+ *     Also, various static methods create new instances or return previously-created ones.
  * </p>
  * <p>
  *     Note that this is not intended to be the interface which developers use to work with Helidon metrics.
- *     Instead they should use the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods
- *     or use {@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
- *     {@link io.helidon.metrics.api.MeterRegistry} directly.
- * </p>
+ *     Instead use
+ *     <ul>
+ *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
+ *         <li>the static methods on the various interfaces in the API, or</li>
+ *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
+ *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
+ *     </ul>
  * <p>
  *     Rather, implementations of Helidon metrics implement this interface and various internal parts of Helidon metrics,
  *     notably the static methods on {@link io.helidon.metrics.api.Metrics}, delegate to the highest-weight
@@ -44,7 +47,7 @@ import java.util.function.ToDoubleFunction;
 public interface MetricsFactory {
 
     /**
-     * Returns the highest-weight implementation of the factory available at runtime.
+     * Returns an implementation which has the highest weight of the factories available at runtime.
      *
      * @return highest-weight metrics factory
      */

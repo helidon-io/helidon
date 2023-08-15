@@ -30,7 +30,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
- * Config bean for {@link io.helidon.metrics.api.MetricsConfig}.
+ * Blueprint for {@link io.helidon.metrics.api.MetricsConfig}.
  */
 @ConfigBean()
 @Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)

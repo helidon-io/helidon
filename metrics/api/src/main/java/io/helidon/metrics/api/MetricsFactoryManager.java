@@ -23,7 +23,7 @@ import io.helidon.common.config.GlobalConfig;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 /**
- * Locates and makes available the highest-weight implementation of {@link io.helidon.metrics.spi.MetricsProvider},
+ * Locates and makes available a highest-weight implementation of {@link io.helidon.metrics.spi.MetricsFactoryProvider},
  * using a default no-op implementation if no other is available.
  */
 class MetricsFactoryManager {
