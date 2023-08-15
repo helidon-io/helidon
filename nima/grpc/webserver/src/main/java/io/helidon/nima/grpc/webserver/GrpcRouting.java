@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,14 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.grpc.BindableService;
-import io.grpc.ServerMethodDefinition;
-import io.grpc.ServerServiceDefinition;
-
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Routing;
 
 import com.google.protobuf.Descriptors;
+import io.grpc.BindableService;
+import io.grpc.ServerMethodDefinition;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 /**

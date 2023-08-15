@@ -16,7 +16,6 @@
 
 package io.helidon.nima.grpc.webserver;
 
-import io.grpc.ServerMethodDefinition;
 import io.helidon.common.http.HttpPrologue;
 import io.helidon.common.http.PathMatcher;
 import io.helidon.common.http.PathMatchers;
@@ -25,6 +24,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCallHandler;
+import io.grpc.ServerMethodDefinition;
 import io.grpc.stub.ServerCalls;
 
 class Grpc<ReqT, ResT> extends GrpcRoute {
