@@ -65,6 +65,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
+        return MMeterRegistry.create(clock, metricsConfig);
+    }
+
+    @Override
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry.get();
     }

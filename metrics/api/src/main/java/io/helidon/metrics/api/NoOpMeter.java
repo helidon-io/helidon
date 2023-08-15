@@ -461,27 +461,12 @@ class NoOpMeter implements Meter, NoOpWrapped {
             }
 
             @Override
-            public Builder publishPercentiles(double... percentiles) {
+            public Builder percentiles(double... percentiles) {
                 return identity();
             }
 
             @Override
-            public Builder percentilePrecision(Integer digitsOfPrecision) {
-                return identity();
-            }
-
-            @Override
-            public Builder publishPercentileHistogram() {
-                return identity();
-            }
-
-            @Override
-            public Builder publishPercentileHistogram(Boolean enabled) {
-                return identity();
-            }
-
-            @Override
-            public Builder serviceLevelObjectives(Duration... slos) {
+            public Builder buckets(Duration... buckets) {
                 return identity();
             }
 
@@ -492,16 +477,6 @@ class NoOpMeter implements Meter, NoOpWrapped {
 
             @Override
             public Builder maximumExpectedValue(Duration max) {
-                return identity();
-            }
-
-            @Override
-            public Builder distributionStatisticExpiry(Duration expiry) {
-                return identity();
-            }
-
-            @Override
-            public Builder distributionStatisticBufferLength(Integer bufferLength) {
                 return identity();
             }
         }

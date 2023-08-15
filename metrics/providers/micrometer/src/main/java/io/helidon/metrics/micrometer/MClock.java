@@ -15,18 +15,21 @@
  */
 package io.helidon.metrics.micrometer;
 
+import io.micrometer.core.instrument.Clock;
+
 /**
- *
+ * Wrapper for a {@link io.micrometer.core.instrument.Clock} when one is returned from
+ * Micrometer.
  */
 class MClock implements io.helidon.metrics.api.Clock {
 
-    static MClock create(io.micrometer.core.instrument.Clock delegate) {
+    static MClock create(Clock delegate) {
         return new MClock(delegate);
     }
 
-    private final io.micrometer.core.instrument.Clock delegate;
+    private final Clock delegate;
 
-    private MClock(io.micrometer.core.instrument.Clock delegate) {
+    private MClock(Clock delegate) {
         this.delegate = delegate;
     }
     @Override
@@ -39,7 +42,7 @@ class MClock implements io.helidon.metrics.api.Clock {
         return delegate.monotonicTime();
     }
 
-    io.micrometer.core.instrument.Clock delegate() {
+    Clock delegate() {
         return delegate;
     }
 

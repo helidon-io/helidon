@@ -17,34 +17,32 @@ package io.helidon.metrics.api;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 /**
  * No-op implementation of {@link io.helidon.metrics.api.MeterRegistry}.
  * <p>
- *     Note that the no-op meter registry implement <em>does not</em> actually
+ *     Note that the no-op meter registry implementation <em>does not</em> actually
  *     store meters or their IDs, in line with the documented behavior of disabled metrics.
  * </p>
  */
 class NoOpMeterRegistry implements MeterRegistry, NoOpWrapped {
 
-    private final Map<Meter.Id, Meter> meters = new ConcurrentHashMap<>();
-
-    private final ReentrantLock metersAccess = new ReentrantLock();
-
     @Override
     public List<Meter> meters() {
-        return List.of(meters.values().toArray(new Meter[0]));
+        return List.of();
     }
 
     @Override
     public Collection<Meter> meters(Predicate<Meter> filter) {
         return Set.of();
+    }
+
+    @Override
+    public Clock clock() {
+        return Clock.system();
     }
 
     @Override
