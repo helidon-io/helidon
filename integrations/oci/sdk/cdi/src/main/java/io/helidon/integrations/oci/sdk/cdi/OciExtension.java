@@ -836,7 +836,7 @@ public final class OciExtension implements Extension {
         Set<Annotation> qualifiers = Set.of(qualifiersArray);
 
         // AbstractAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, new TypeAndQualifiers(AbstractAuthenticationDetailsProvider.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, AbstractAuthenticationDetailsProvider.class, qualifiersArray)) {
             Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
             event.addBean()
                 .types(AbstractAuthenticationDetailsProvider.class)
@@ -847,8 +847,7 @@ public final class OciExtension implements Extension {
         }
 
         // BasicAuthenticationDetailsProvider
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(BasicAuthenticationDetailsProvider.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, BasicAuthenticationDetailsProvider.class, qualifiersArray)) {
             Supplier<? extends AbstractAuthenticationDetailsProvider> s = ociAuthenticationProvider();
             event.addBean()
                 .types(BasicAuthenticationDetailsProvider.class)
@@ -859,16 +858,14 @@ public final class OciExtension implements Extension {
         }
 
         // InstancePrincipalsAuthenticationDetailsProvider
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProviderBuilder.class, qualifiersArray)) {
             event.addBean()
                 .types(InstancePrincipalsAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> fire(i, InstancePrincipalsAuthenticationDetailsProvider.builder(), qualifiersArray));
         }
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, InstancePrincipalsAuthenticationDetailsProvider.class, qualifiersArray)) {
             event.addBean()
                 .types(InstancePrincipalsAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
@@ -881,16 +878,14 @@ public final class OciExtension implements Extension {
         }
 
         // ResourcePrincipalAuthenticationDetailsProvider
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProviderBuilder.class, qualifiersArray)) {
             event.addBean()
                 .types(ResourcePrincipalAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> fire(i, ResourcePrincipalAuthenticationDetailsProvider.builder(), qualifiersArray));
         }
-        if (isUnsatisfied(bm,
-                          new TypeAndQualifiers(ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, ResourcePrincipalAuthenticationDetailsProvider.class, qualifiersArray)) {
             event.addBean()
                 .types(ResourcePrincipalAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
@@ -903,14 +898,14 @@ public final class OciExtension implements Extension {
         }
 
         // SimpleAuthenticationDetailsProvider
-        if (isUnsatisfied(bm, new TypeAndQualifiers(SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, SimpleAuthenticationDetailsProviderBuilder.class, qualifiersArray)) {
             event.addBean()
                 .types(SimpleAuthenticationDetailsProviderBuilder.class)
                 .qualifiers(qualifiers)
                 .scope(Singleton.class)
                 .produceWith(i -> fire(i, SimpleAuthenticationDetailsProvider.builder(), qualifiersArray));
         }
-        if (isUnsatisfied(bm, new TypeAndQualifiers(SimpleAuthenticationDetailsProvider.class, qualifiersArray))) {
+        if (isUnsatisfied(bm, SimpleAuthenticationDetailsProvider.class, qualifiersArray)) {
             event.addBean()
                 .types(SimpleAuthenticationDetailsProvider.class)
                 .qualifiers(qualifiers)
