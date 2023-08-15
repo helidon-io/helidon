@@ -18,27 +18,29 @@ package io.helidon.metrics.micrometer;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.metrics.api.Bucket;
+
 import io.micrometer.core.instrument.distribution.CountAtBucket;
 
-class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
+class MBucket implements Bucket {
 
-    static MCountAtBucket create(CountAtBucket delegate) {
-        return new MCountAtBucket(delegate);
+    static MBucket create(CountAtBucket delegate) {
+        return new MBucket(delegate);
     }
 
     private final CountAtBucket delegate;
 
-    private MCountAtBucket(CountAtBucket delegate) {
+    private MBucket(CountAtBucket delegate) {
         this.delegate = delegate;
     }
 
     @Override
-    public double bucket() {
+    public double boundary() {
         return delegate.bucket();
     }
 
     @Override
-    public double bucket(TimeUnit unit) {
+    public double boundary(TimeUnit unit) {
         return delegate.bucket(unit);
     }
 
@@ -58,11 +60,11 @@ class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
             return true;
         }
         // Simplifies the use of test implementations in unit tests if equals does not insist that the other object
-        // also be a MCountAtBucket but merely implements CountAtBucket.
-        if (!(o instanceof io.helidon.metrics.api.CountAtBucket that)) {
+        // also be a MBucket but merely implements Bucket.
+        if (!(o instanceof Bucket that)) {
             return false;
         }
-        return Objects.equals(delegate.bucket(), that.bucket())
+        return Objects.equals(delegate.bucket(), that.boundary())
                 && Objects.equals((long) delegate.count(), that.count());
     }
 
@@ -73,6 +75,6 @@ class MCountAtBucket implements io.helidon.metrics.api.CountAtBucket {
 
     @Override
     public String toString() {
-        return String.format("MCountAtBucket[bucket=%f,count=%d]", bucket(), count());
+        return String.format("MBucket[boundary=%f,count=%d]", boundary(), count());
     }
 }

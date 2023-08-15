@@ -18,29 +18,29 @@ package io.helidon.metrics.api;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Representation of a histogram bucket, including the bucket boundary value and the count of observations in that bucket.
+ * Representation of a histogram bucket, including the boundary value and the count of observations in that bucket.
  * <p>
- *     The bucket boundary value is an upper bound on the observation values that can occupy the bucket.
+ *     The boundary value is an upper bound on the observation values that can occupy the bucket.
  *     That is, an observation occupies a bucket if its value is less than or equal to the bucket's boundary value.
  * </p>
  */
-public interface CountAtBucket extends Wrapper {
+public interface Bucket extends Wrapper {
 
     /**
      * Returns the bucket boundary.
      *
      * @return bucket boundary value
      */
-    double bucket();
+    double boundary();
 
     /**
-     * Returns the bucket boundary interpreted as a time in nanoseconds andexpressed in the specified
+     * Returns the bucket boundary interpreted as a time in nanoseconds and expressed in the specified
      * {@link java.util.concurrent.TimeUnit}.
      *
      * @param unit time unit in which to express the bucket boundary
      * @return bucket boundary value
      */
-    double bucket(TimeUnit unit);
+    double boundary(TimeUnit unit);
 
     /**
      * Returns the number of observations in the bucket.

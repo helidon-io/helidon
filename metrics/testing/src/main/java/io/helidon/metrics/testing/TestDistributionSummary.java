@@ -18,7 +18,7 @@ package io.helidon.metrics.testing;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.metrics.api.CountAtBucket;
+import io.helidon.metrics.api.Bucket;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
@@ -98,7 +98,7 @@ class TestDistributionSummary {
 
         HistogramSnapshot snapshot = summary.snapshot();
 
-        List<CountAtBucket> cabs = Util.list(snapshot.histogramCounts());
+        List<Bucket> cabs = Util.list(snapshot.histogramCounts());
 
         assertThat("Counts at buckets",
                    cabs,
@@ -131,15 +131,15 @@ class TestDistributionSummary {
         }
     }
 
-    private record Cab(double bucket, long count) implements CountAtBucket {
+    private record Cab(double boundary, long count) implements Bucket {
 
         private static Cab create(double bucket, long count) {
             return new Cab(bucket, count);
         }
 
         @Override
-        public double bucket(TimeUnit unit) {
-            return unit.convert((long) bucket, TimeUnit.NANOSECONDS);
+        public double boundary(TimeUnit unit) {
+            return unit.convert((long) boundary, TimeUnit.NANOSECONDS);
         }
 
         @Override
@@ -149,7 +149,7 @@ class TestDistributionSummary {
 
         @Override
         public String toString() {
-            return String.format("Vap[bucket=%f,count=%d]", bucket, count);
+            return String.format("Vap[boundary=%f,count=%d]", boundary, count);
         }
     }
 }

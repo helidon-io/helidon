@@ -373,7 +373,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
 
         @Override
-        public Iterable<CountAtBucket> histogramCounts() {
+        public Iterable<Bucket> histogramCounts() {
             return Set.of();
         }
 

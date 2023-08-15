@@ -200,9 +200,9 @@ public interface Timer extends Meter, HistogramSupport {
         Builder percentiles(double... percentiles);
 
         /**
-         * Sets the bucket boundaries.
+         * Sets the boundary boundaries.
          *
-         * @param buckets bucket boundaries
+         * @param buckets boundary boundaries
          * @return updated builder
          */
         Builder buckets(Duration... buckets);
