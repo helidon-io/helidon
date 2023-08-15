@@ -394,11 +394,6 @@
                 <artifactId>helidon-metrics-trace-exemplar</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.helidon.tests.integration.metrics</groupId>
-                <artifactId>helidon-tests-integration-metrics-common</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
 
             <!-- health checks -->
             <dependency>
