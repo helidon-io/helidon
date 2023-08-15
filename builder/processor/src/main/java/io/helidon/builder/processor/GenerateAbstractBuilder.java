@@ -26,13 +26,13 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
-import io.helidon.common.processor.model.Annotation;
-import io.helidon.common.processor.model.ClassModel;
-import io.helidon.common.processor.model.Constructor;
-import io.helidon.common.processor.model.InnerClass;
-import io.helidon.common.processor.model.Javadoc;
-import io.helidon.common.processor.model.Method;
-import io.helidon.common.processor.model.TypeArgument;
+import io.helidon.common.processor.classmodel.Annotation;
+import io.helidon.common.processor.classmodel.ClassModel;
+import io.helidon.common.processor.classmodel.Constructor;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
+import io.helidon.common.processor.classmodel.Method;
+import io.helidon.common.processor.classmodel.TypeArgument;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 

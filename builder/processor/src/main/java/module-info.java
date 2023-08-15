@@ -23,7 +23,7 @@ module io.helidon.builder.processor {
 
     requires io.helidon.common.types;
     requires io.helidon.common.processor;
-    requires io.helidon.common.processor.model;
+    requires io.helidon.common.processor.classmodel;
 
     exports io.helidon.builder.processor;
 

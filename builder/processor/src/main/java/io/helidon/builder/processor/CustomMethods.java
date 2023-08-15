@@ -32,7 +32,7 @@ import static io.helidon.builder.processor.Types.CUSTOM_METHODS_TYPE;
 import static io.helidon.builder.processor.Types.FACTORY_METHOD_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_CUSTOM_METHOD_TYPE;
 import static io.helidon.builder.processor.Types.VOID_TYPE;
-import static io.helidon.common.processor.model.ClassModel.TYPE_TOKEN;
+import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 record CustomMethods(List<CustomMethod> factoryMethods,
                      List<CustomMethod> builderMethods,

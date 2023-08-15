@@ -20,10 +20,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import io.helidon.common.processor.model.ClassModel;
-import io.helidon.common.processor.model.Field;
-import io.helidon.common.processor.model.InnerClass;
-import io.helidon.common.processor.model.Javadoc;
+import io.helidon.common.processor.classmodel.Field;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;

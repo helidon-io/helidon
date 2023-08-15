@@ -21,7 +21,7 @@ module io.helidon.common.processor {
     requires transitive java.compiler;
     requires transitive io.helidon.common.types;
     requires jdk.compiler;
-    requires io.helidon.common.processor.model;
+    requires io.helidon.common.processor.classmodel;
 
     exports io.helidon.common.processor;
     exports io.helidon.common.processor.spi;

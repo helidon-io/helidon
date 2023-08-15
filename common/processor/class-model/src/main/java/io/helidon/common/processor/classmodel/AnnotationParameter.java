@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.processor.model;
+package io.helidon.common.processor.classmodel;
 
 import java.io.IOException;
 import java.util.Objects;

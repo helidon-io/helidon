@@ -23,12 +23,12 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.common.processor.GeneratorTools;
-import io.helidon.common.processor.model.ClassModel;
-import io.helidon.common.processor.model.Field;
-import io.helidon.common.processor.model.InnerClass;
-import io.helidon.common.processor.model.Javadoc;
-import io.helidon.common.processor.model.Method;
-import io.helidon.common.processor.model.TypeArgument;
+import io.helidon.common.processor.classmodel.ClassModel;
+import io.helidon.common.processor.classmodel.Field;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
+import io.helidon.common.processor.classmodel.Method;
+import io.helidon.common.processor.classmodel.TypeArgument;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.STRING_TYPE;

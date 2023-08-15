@@ -19,10 +19,10 @@ package io.helidon.builder.processor;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import io.helidon.common.processor.model.Field;
-import io.helidon.common.processor.model.InnerClass;
-import io.helidon.common.processor.model.Javadoc;
-import io.helidon.common.processor.model.Method;
+import io.helidon.common.processor.classmodel.Field;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
+import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 

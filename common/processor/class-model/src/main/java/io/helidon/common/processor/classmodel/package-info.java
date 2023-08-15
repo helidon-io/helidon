@@ -17,4 +17,4 @@
 /**
  * Class model generator for annotation processors.
  */
-package io.helidon.common.processor.model;
+package io.helidon.common.processor.classmodel;

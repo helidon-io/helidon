@@ -23,14 +23,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.common.processor.GeneratorTools;
-import io.helidon.common.processor.model.Field;
-import io.helidon.common.processor.model.InnerClass;
-import io.helidon.common.processor.model.Javadoc;
-import io.helidon.common.processor.model.Method;
+import io.helidon.common.processor.classmodel.Field;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
+import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.STRING_TYPE;
-import static io.helidon.common.processor.model.ClassModel.TYPE_TOKEN;
+import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     private final TypeName collectionType;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.common.processor.model;
+package io.helidon.common.processor.classmodel;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,8 +27,8 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.common.processor.model.ClassModel.PADDING_TOKEN;
-import static io.helidon.common.processor.model.ClassModel.TYPE_TOKEN;
+import static io.helidon.common.processor.classmodel.ClassModel.PADDING_TOKEN;
+import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 class Content {
 
