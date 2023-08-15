@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ public class BytesReuseV2ApiTest {
      *             the port is dynamically selected
      * @throws Exception in case of an error
      */
+    @SuppressWarnings({"deprecation", "removal"})
     private static void startServer(int port) throws Exception {
         webServer = WebServer.builder()
                 .host("localhost")

@@ -427,7 +427,7 @@ public class Proxy {
         @Override
         public Proxy build() {
             if ((host == null || host.isEmpty()) && systemSelector == null) {
-                return NO_PROXY;
+                useSystemSelector(true);
             }
             return new Proxy(this);
         }
