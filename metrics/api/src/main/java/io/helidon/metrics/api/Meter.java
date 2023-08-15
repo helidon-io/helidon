@@ -26,7 +26,7 @@ public interface Meter extends Wrapped {
      * @param <B> type of the builder
      * @param <M> type of the meter the builder creates
      */
-    interface Builder<B extends Builder<B, M>, M extends Meter> /* extends BuilderAdapter */ {
+    interface Builder<B extends Builder<B, M>, M extends Meter> {
 
         /**
          * Returns the type-correct "this".
@@ -47,6 +47,7 @@ public interface Meter extends Wrapped {
 
         /**
          * Sets the description.
+         *
          * @param description meter description
          * @return updated builder
          */

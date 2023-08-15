@@ -41,7 +41,7 @@ class MetricsConfigSupport {
     //   - capture reluctant match of anything
     //   - non-capturing match of an unescaped =
     //   - capture the rest.
-    static final Pattern TAG_ASSIGNMENT_PATTERN = Pattern.compile("(.*?)(?:(?<!\\\\)=)(.*)");
+    static final Pattern TAG_ASSIGNMENT_PATTERN = Pattern.compile("(.*?)(?<!\\\\)=(.*)");
 
     private MetricsConfigSupport() {
     }

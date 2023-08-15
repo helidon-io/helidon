@@ -18,7 +18,6 @@ package io.helidon.metrics.api;
 import java.io.PrintStream;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -46,10 +45,6 @@ class NoOpMeter implements Meter, NoOpWrapped {
             return new Id(name, tags);
         }
 
-        static Id create(String name, Tag... tags) {
-            return new Id(name, Arrays.asList(tags));
-        }
-
         private final String name;
         private final List<Tag> tags = new ArrayList<>(); // must be ordered by tag name for consistency
 
@@ -67,10 +62,6 @@ class NoOpMeter implements Meter, NoOpWrapped {
         @Override
         public  List<Tag> tags() {
             return tags.stream().toList();
-        }
-
-        Iterable<Tag> tagsAsIterable() {
-            return tags;
         }
 
         String tag(String key) {
