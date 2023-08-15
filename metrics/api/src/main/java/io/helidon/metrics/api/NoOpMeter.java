@@ -546,7 +546,8 @@ class NoOpMeter implements Meter, NoOpWrapped {
         }
     }
 
-    static class DistributionStatisticsConfig implements io.helidon.metrics.api.DistributionStatisticsConfig, NoOpWrapped {
+    static class DistributionStatisticsConfig
+            implements io.helidon.metrics.api.DistributionStatisticsConfig, NoOpWrapped {
 
         static Builder builder() {
             return new Builder();
@@ -556,7 +557,7 @@ class NoOpMeter implements Meter, NoOpWrapped {
 
             @Override
             public io.helidon.metrics.api.DistributionStatisticsConfig build() {
-                return new NoOpMeter.DistributionStatisticsConfig(this);
+                return new DistributionStatisticsConfig(this);
             }
 
             @Override
