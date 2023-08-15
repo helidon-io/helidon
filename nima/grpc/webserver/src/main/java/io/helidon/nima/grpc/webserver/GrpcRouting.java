@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import io.helidon.common.http.PathMatchers;
 import io.helidon.nima.webserver.Routing;
 
 import com.google.protobuf.Descriptors;
+import io.grpc.BindableService;
+import io.grpc.ServerMethodDefinition;
+import io.grpc.ServerServiceDefinition;
 import io.grpc.stub.ServerCalls;
 
 /**
@@ -179,6 +182,35 @@ public class GrpcRouting implements Routing {
                                                  ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
 
             return route(Grpc.clientStream(proto, serviceName, methodName, method));
+        }
+
+        /**
+         * Add all the routes for a {@link BindableService} service.
+         *
+         * @param proto    the proto descriptor
+         * @param service  the {@link BindableService} to add routes for
+         *
+         * @return updated builder
+         */
+        public Builder service(Descriptors.FileDescriptor proto, BindableService service) {
+            for (ServerMethodDefinition<?, ?> method : service.bindService().getMethods()) {
+                route(Grpc.methodDefinition(method, proto));
+            }
+            return this;
+        }
+
+        /**
+         * Add all the routes for the {@link ServerServiceDefinition} service.
+         *
+         * @param service  the {@link ServerServiceDefinition} to add routes for
+         *
+         * @return updated builder
+         */
+        public Builder service(ServerServiceDefinition service) {
+            for (ServerMethodDefinition<?, ?> method : service.getMethods()) {
+                route(Grpc.methodDefinition(method, null));
+            }
+            return this;
         }
 
         private Builder route(GrpcRoute route) {

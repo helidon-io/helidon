@@ -24,6 +24,7 @@ import com.google.protobuf.DescriptorProtos;
 import com.google.protobuf.Descriptors;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCallHandler;
+import io.grpc.ServerMethodDefinition;
 import io.grpc.stub.ServerCalls;
 
 class Grpc<ReqT, ResT> extends GrpcRoute {
@@ -75,6 +76,23 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                                                       ServerCalls.ClientStreamingMethod<ReqT, ResT> method) {
 
         return grpc(proto, serviceName, methodName, ServerCalls.asyncClientStreamingCall(method));
+    }
+
+    /**
+     * Create a {@link io.helidon.nima.grpc.webserver.Grpc gRPC route} from a {@link io.grpc.ServerMethodDefinition}.
+     *
+     * @param definition the {@link io.grpc.ServerMethodDefinition} representing the method to execute
+     * @param proto      an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor}
+     *                   containing the service definition
+     * @param <ReqT>     the request type
+     * @param <ResT>     the response type
+     *
+     * @return a {@link io.helidon.nima.grpc.webserver.Grpc gRPC route} created
+     *         from the {@link io.grpc.ServerMethodDefinition}
+     */
+    static <ReqT, ResT> Grpc<ReqT, ResT> methodDefinition(ServerMethodDefinition<ReqT, ResT> definition,
+                                                          Descriptors.FileDescriptor proto) {
+        return grpc(definition.getMethodDescriptor(), definition.getServerCallHandler(), proto);
     }
 
     @Override
@@ -129,6 +147,42 @@ class Grpc<ReqT, ResT> extends GrpcRoute {
                 .setResponseMarshaller(resMarshaller).setSampledToLocalTracing(true);
 
         return new Grpc<>(grpcDesc.build(), PathMatchers.exact(path), requestType, responsetype, callHandler);
+    }
+
+
+    /**
+     * Create a {@link io.helidon.nima.grpc.webserver.Grpc gRPC route} from a {@link io.grpc.MethodDescriptor}.
+     *
+     * @param grpcDesc    the {@link io.grpc.MethodDescriptor} describing the method to execute
+     * @param callHandler the {@link io.grpc.ServerCallHandler} that will execute the method
+     * @param proto       an optional protocol buffer {@link com.google.protobuf.Descriptors.FileDescriptor} containing
+     *                    the service definition
+     * @param <ReqT>      the request type
+     * @param <ResT>      the response type
+     *
+     * @return a {@link io.helidon.nima.grpc.webserver.Grpc gRPC route} created
+     *         from the {@link io.grpc.ServerMethodDefinition}
+     */
+    private static <ResT, ReqT> Grpc<ReqT, ResT> grpc(MethodDescriptor<ReqT, ResT> grpcDesc,
+                                                      ServerCallHandler<ReqT, ResT> callHandler,
+                                                      Descriptors.FileDescriptor proto) {
+
+        Class<ReqT> requestType = null;
+        Class<ResT> responsetype = null;
+        String serviceName = grpcDesc.getServiceName();
+
+        if (proto != null && serviceName != null) {
+            Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
+            Descriptors.MethodDescriptor mtd = svc.findMethodByName(grpcDesc.getBareMethodName());
+            /*
+            We have to use reflection here
+             - to load the class
+             - to invoke a static method on it
+             */
+            requestType = load(getClassName(mtd.getInputType()));
+            responsetype = load(getClassName(mtd.getOutputType()));
+        }
+        return new Grpc<>(grpcDesc, PathMatchers.exact(grpcDesc.getFullMethodName()), requestType, responsetype, callHandler);
     }
 
     private static String getClassName(Descriptors.Descriptor descriptor) {
