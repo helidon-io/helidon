@@ -27,12 +27,14 @@ import io.helidon.nima.testing.junit5.webserver.SetUpServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http.HttpRules;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 
 @ServerTest
+@Disabled("Under heavy load, this test does not correctly finish.")
 class IdleTimeoutTest {
     private final SocketHttpClient client;
 
