@@ -376,6 +376,16 @@ public interface ClientRequest<T extends ClientRequest<T>> {
     T readTimeout(Duration readTimeout);
 
     /**
+     * Read 100-Continue timeout for this request.
+     * This read timeout is used when 100-Continue is sent by the client, before it sends an entity.
+     *
+     * @param readContinueTimeout read 100-Continue timeout duration
+     * @return updated client request
+     * @see HttpClientConfig#readContinueTimeout()
+     */
+    T readContinueTimeout(Duration readContinueTimeout);
+
+    /**
      * Handle output stream.
      */
     interface OutputStreamHandler {

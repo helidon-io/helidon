@@ -59,6 +59,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
+    private final Http1ClientRequestImpl originalRequest;
     private final Tls tls;
     private final Proxy proxy;
     private final boolean keepAlive;
@@ -74,6 +75,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
+        this.originalRequest = clientRequest;
         this.timeout = clientRequest.readTimeout();
         this.connection = clientRequest.connection().orElse(null);
         this.tls = clientRequest.tls();
@@ -154,6 +156,18 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return effectiveConnection;
     }
 
+    WebClient webClient() {
+        return webClient;
+    }
+
+    Http1ClientRequestImpl originalRequest() {
+        return originalRequest;
+    }
+
+    CompletableFuture<WebClientServiceResponse> whenComplete() {
+        return whenComplete;
+    }
+
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                                     ClientConnection connection,
                                                     DataReader reader) {
@@ -174,6 +188,14 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         ClientResponseHeaders responseHeaders = readHeaders(reader);
         connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
 
+        return createServiceResponse(serviceRequest, connection, reader, responseStatus, responseHeaders);
+    }
+
+    WebClientServiceResponse createServiceResponse(WebClientServiceRequest serviceRequest,
+                                                   ClientConnection connection,
+                                                   DataReader reader,
+                                                   Http.Status responseStatus,
+                                                   ClientResponseHeaders responseHeaders) {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
 

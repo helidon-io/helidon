@@ -109,6 +109,11 @@ class HttpClientTest {
         }
 
         @Override
+        public FakeHttpClientRequest readContinueTimeout(Duration readContinueTimeout) {
+            return this;
+        }
+
+        @Override
         public FakeHttpClientRequest tls(Tls tls) {
             return this;
         }

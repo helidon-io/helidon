@@ -79,6 +79,13 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
     Duration readTimeout();
 
     /**
+     * Read 100-Continue timeout.
+     *
+     * @return read 100-Continue timeout of this request
+     */
+    Duration readContinueTimeout();
+
+    /**
      * TLS configuration (may be disabled - e.g. use plaintext).
      *
      * @return TLS configuration
