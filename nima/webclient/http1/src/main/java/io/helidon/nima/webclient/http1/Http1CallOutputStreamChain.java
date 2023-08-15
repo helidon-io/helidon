@@ -116,7 +116,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         Http.Status responseStatus;
         try {
-            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+            responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
         } catch (UncheckedIOException e) {
             // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
             // data of this request on the next use of this connection

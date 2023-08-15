@@ -153,10 +153,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return effectiveConnection;
     }
 
-    WebClient webClient() {
-        return webClient;
-    }
-
     Http1ClientRequestImpl originalRequest() {
         return originalRequest;
     }
