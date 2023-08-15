@@ -17,9 +17,9 @@
 package io.helidon.nima.webclient.http1;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
@@ -30,7 +30,6 @@ import io.helidon.nima.common.tls.Tls;
 import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.ConnectionKey;
-import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.Proxy;
 import io.helidon.nima.webclient.api.TcpClientConnection;
 import io.helidon.nima.webclient.api.WebClient;
@@ -44,30 +43,35 @@ class Http1ConnectionCache {
     private static final System.Logger LOGGER = System.getLogger(Http1ConnectionCache.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final String HTTPS = "https";
-    private static final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> CHANNEL_CACHE = new ConcurrentHashMap<>();
+    private static final Http1ConnectionCache SHARED = create();
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
+    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new HashMap<>();
 
-    private Http1ConnectionCache() {
+    static Http1ConnectionCache shared() {
+        return SHARED;
     }
 
-    static ClientConnection connection(WebClient webClient,
-                                       HttpClientConfig clientConfig,
-                                       Tls tls,
-                                       Proxy proxy,
-                                       ClientUri uri,
-                                       ClientRequestHeaders headers,
-                                       boolean defaultKeepAlive) {
+    static Http1ConnectionCache create() {
+        return new Http1ConnectionCache();
+    }
+
+    ClientConnection connection(Http1ClientImpl http1Client,
+                                Tls tls,
+                                Proxy proxy,
+                                ClientUri uri,
+                                ClientRequestHeaders headers,
+                                boolean defaultKeepAlive) {
         boolean keepAlive = handleKeepAlive(defaultKeepAlive, headers);
         Tls effectiveTls = HTTPS.equals(uri.scheme()) ? tls : NO_TLS;
         if (keepAlive) {
-            return keepAliveConnection(webClient, clientConfig, effectiveTls, uri, proxy);
+            return keepAliveConnection(http1Client, effectiveTls, uri, proxy);
         } else {
-            return oneOffConnection(webClient, clientConfig, effectiveTls, uri, proxy);
+            return oneOffConnection(http1Client, effectiveTls, uri, proxy);
         }
     }
 
-    private static boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
+    private boolean handleKeepAlive(boolean defaultKeepAlive, WritableHeaders<?> headers) {
         if (headers.contains(Http.Headers.CONNECTION_CLOSE)) {
             return false;
         }
@@ -82,11 +86,12 @@ class Http1ConnectionCache {
         return false;
     }
 
-    private static ClientConnection keepAliveConnection(WebClient webClient,
-                                                        HttpClientConfig clientConfig,
-                                                        Tls tls,
-                                                        ClientUri uri,
-                                                        Proxy proxy) {
+    private ClientConnection keepAliveConnection(Http1ClientImpl http1Client,
+                                                 Tls tls,
+                                                 ClientUri uri,
+                                                 Proxy proxy) {
+        Http1ClientConfig clientConfig = http1Client.clientConfig();
+
         ConnectionKey connectionKey = new ConnectionKey(uri.scheme(),
                                                         uri.host(),
                                                         uri.port(),
@@ -95,15 +100,16 @@ class Http1ConnectionCache {
                                                         clientConfig.dnsAddressLookup(),
                                                         proxy);
 
-        var connectionQueue = CHANNEL_CACHE.computeIfAbsent(connectionKey,
-                                                            it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
+        LinkedBlockingDeque<TcpClientConnection> connectionQueue =
+                cache.computeIfAbsent(connectionKey,
+                                      it -> new LinkedBlockingDeque<>(clientConfig.connectionCacheSize()));
 
         TcpClientConnection connection;
         while ((connection = connectionQueue.poll()) != null && !connection.isConnected()) {
         }
 
         if (connection == null) {
-            connection = TcpClientConnection.create(webClient,
+            connection = TcpClientConnection.create(http1Client.webClient(),
                                                     connectionKey,
                                                     ALPN_ID,
                                                     conn -> finishRequest(connectionQueue, conn),
@@ -120,10 +126,14 @@ class Http1ConnectionCache {
         return connection;
     }
 
-    private static ClientConnection oneOffConnection(WebClient webClient, HttpClientConfig clientConfig,
-                                                     Tls tls,
-                                                     ClientUri uri,
-                                                     Proxy proxy) {
+    private ClientConnection oneOffConnection(Http1ClientImpl http1Client,
+                                              Tls tls,
+                                              ClientUri uri,
+                                              Proxy proxy) {
+
+        WebClient webClient = http1Client.webClient();
+        Http1ClientConfig clientConfig = http1Client.clientConfig();
+
         return TcpClientConnection.create(webClient,
                                           new ConnectionKey(uri.scheme(),
                                                             uri.host(),
@@ -140,7 +150,7 @@ class Http1ConnectionCache {
                 .connect();
     }
 
-    private static boolean finishRequest(LinkedBlockingDeque<TcpClientConnection> connectionQueue, TcpClientConnection conn) {
+    private boolean finishRequest(LinkedBlockingDeque<TcpClientConnection> connectionQueue, TcpClientConnection conn) {
         if (conn.isConnected()) {
             try {
                 if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {

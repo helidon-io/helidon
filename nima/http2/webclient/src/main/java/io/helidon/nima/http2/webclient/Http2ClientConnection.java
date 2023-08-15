@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -49,11 +48,11 @@ import io.helidon.nima.http2.Http2Ping;
 import io.helidon.nima.http2.Http2RstStream;
 import io.helidon.nima.http2.Http2Setting;
 import io.helidon.nima.http2.Http2Settings;
+import io.helidon.nima.http2.Http2StreamState;
 import io.helidon.nima.http2.Http2Util;
 import io.helidon.nima.http2.Http2WindowUpdate;
 import io.helidon.nima.http2.WindowSize;
 import io.helidon.nima.webclient.api.ClientConnection;
-import io.helidon.nima.webclient.api.WebClient;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -61,12 +60,7 @@ import static java.lang.System.Logger.Level.WARNING;
 
 class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
-    private static final ExecutorService TMP_EXECUTOR = Executors.newFixedThreadPool(10,
-                                                                                     Thread.ofPlatform()
-                                                                                             .name("helidon-tmp-client-", 0)
-                                                                                             .factory());
     private static final int FRAME_HEADER_LENGTH = 9;
-
     private final Http2FrameListener sendListener = new Http2LoggingFrameListener("cl-send");
     private final Http2FrameListener recvListener = new Http2LoggingFrameListener("cl-recv");
     private final LockingStreamIdSequence streamIdSeq = new LockingStreamIdSequence();
@@ -81,10 +75,17 @@ class Http2ClientConnection {
     private final Http2ConnectionWriter writer;
     private final DataReader reader;
     private final DataWriter dataWriter;
+    private volatile int lastStreamId;
 
     private Http2Settings serverSettings = Http2Settings.builder()
             .build();
     private Future<?> handleTask;
+
+    private volatile boolean closed = false;
+
+    public boolean closed(){
+        return closed;
+    }
 
     Http2ClientConnection(Http2ClientProtocolConfig protocolConfig, ClientConnection connection) {
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
@@ -99,13 +100,12 @@ class Http2ClientConnection {
         this.writer = new Http2ConnectionWriter(connection.helidonSocket(), connection.writer(), List.of());
     }
 
-    static Http2ClientConnection create(WebClient webClient,
-                                        Http2ClientProtocolConfig protocolConfig,
+    static Http2ClientConnection create(Http2ClientImpl http2Client,
                                         ClientConnection connection,
                                         boolean sendSettings) {
 
-        Http2ClientConnection h2conn = new Http2ClientConnection(protocolConfig, connection);
-        h2conn.start(protocolConfig, webClient.executor(), sendSettings);
+        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client.protocolConfig(), connection);
+        h2conn.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
 
         return h2conn;
     }
@@ -135,11 +135,12 @@ class Http2ClientConnection {
 
     Http2ClientStream createStream(Http2StreamConfig config) {
         //FIXME: priority
-        return new Http2ClientStream(this,
-                                     serverSettings,
-                                     ctx,
-                                     config.timeout(),
-                                     streamIdSeq);
+        Http2ClientStream stream = new Http2ClientStream(this,
+                serverSettings,
+                ctx,
+                config.timeout(),
+                streamIdSeq);
+        return stream;
     }
 
     void addStream(int streamId, Http2ClientStream stream) {
@@ -171,7 +172,12 @@ class Http2ClientConnection {
         }
     }
 
+    void updateLastStreamId(int lastStreamId){
+        this.lastStreamId = lastStreamId;
+    }
+
     void close() {
+        closed = true;
         try {
             handleTask.cancel(true);
             ctx.log(LOGGER, TRACE, "Closing connection");
@@ -193,7 +199,9 @@ class Http2ClientConnection {
     }
 
     private void sendPreface(Http2ClientProtocolConfig config, boolean sendSettings) {
-        dataWriter.writeNow(Http2Util.prefaceData());
+        BufferData prefaceData = Http2Util.prefaceData();
+        sendListener.frame(ctx, 0, prefaceData);
+        dataWriter.writeNow(prefaceData);
         if (sendSettings) {
             // §3.5 Preface bytes must be followed by setting frame
             Http2Settings http2Settings = settings(config);
@@ -217,8 +225,7 @@ class Http2ClientConnection {
                        boolean sendSettings) {
         CountDownLatch cdl = new CountDownLatch(1);
 
-        //        handleTask = executor.submit(() -> {
-        handleTask = TMP_EXECUTOR.submit(() -> {
+        handleTask = executor.submit(() -> {
             ctx.log(LOGGER, TRACE, "Starting HTTP/2 connection, thread: %s", Thread.currentThread().getName());
             try {
                 sendPreface(protocolConfig, sendSettings);
@@ -233,6 +240,7 @@ class Http2ClientConnection {
             try {
                 while (!Thread.interrupted()) {
                     if (!handle()) {
+                        closed = true;
                         ctx.log(LOGGER, TRACE, "Connection closed");
                         return;
                     }
@@ -253,7 +261,23 @@ class Http2ClientConnection {
     }
 
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
-        writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+        if (streamId == 0){
+            writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+            return;
+        }
+        if (streamId < lastStreamId) {
+            for (var s : streams.values()) {
+                if (s.streamId() > streamId && s.streamState() != Http2StreamState.IDLE) {
+                    // RC against parallel newer streams, data already buffered at client being read
+                    // There is no need to do request for more data as stream is no more usable
+                    return;
+                }
+            }
+        }
+        Http2ClientStream stream = stream(streamId);
+        if (stream != null && !stream.streamState().equals(Http2StreamState.CLOSED)) {
+            writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
+        }
     }
 
     private boolean handle() {

@@ -24,14 +24,20 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
 class Http1ClientImpl implements Http1Client, HttpClientSpi {
-    private final WebClient client;
+    private final WebClient webClient;
     private final Http1ClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
+    private final Http1ConnectionCache connectionCache;
 
-    Http1ClientImpl(WebClient client, Http1ClientConfig clientConfig) {
-        this.client = client;
+    Http1ClientImpl(WebClient webClient, Http1ClientConfig clientConfig) {
+        this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
+        if (clientConfig.shareConnectionCache()) {
+            this.connectionCache = Http1ConnectionCache.shared();
+        } else {
+            this.connectionCache = Http1ConnectionCache.create();
+        }
     }
 
     @Override
@@ -43,7 +49,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         clientConfig.baseFragment().ifPresent(clientUri::fragment);
         clientConfig.baseQuery().ifPresent(clientUri.writeableQuery()::from);
 
-        return new Http1ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
+        return new Http1ClientRequestImpl(this, method, clientUri, clientConfig.properties());
     }
 
     @Override
@@ -62,9 +68,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         // this is HTTP/1.1 - it should support any and all HTTP requests
         // this method is called from the "generic" HTTP client, that can support any version (that is on classpath).
         // usually HTTP/1.1 is either the only available, or a fallback if other versions cannot be used
-        Http1ClientRequest request = new Http1ClientRequestImpl(client,
-                                                                clientConfig,
-                                                                protocolConfig,
+        Http1ClientRequest request = new Http1ClientRequestImpl(this,
                                                                 clientRequest.method(),
                                                                 clientUri,
                                                                 clientRequest.properties());
@@ -80,5 +84,21 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
+    }
+
+    WebClient webClient() {
+        return webClient;
+    }
+
+    Http1ClientConfig clientConfig() {
+        return clientConfig;
+    }
+
+    Http1ClientProtocolConfig protocolConfig() {
+        return protocolConfig;
+    }
+
+    Http1ConnectionCache connectionCache() {
+        return connectionCache;
     }
 }

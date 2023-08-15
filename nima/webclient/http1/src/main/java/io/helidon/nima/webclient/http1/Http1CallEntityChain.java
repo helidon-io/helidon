@@ -27,8 +27,6 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.common.http.Http;
 import io.helidon.nima.http.media.EntityWriter;
 import io.helidon.nima.webclient.api.ClientConnection;
-import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
@@ -38,18 +36,12 @@ class Http1CallEntityChain extends Http1CallChainBase {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final Object entity;
 
-    Http1CallEntityChain(WebClient webClient,
+    Http1CallEntityChain(Http1ClientImpl http1Client,
                          Http1ClientRequestImpl request,
-                         HttpClientConfig clientConfig,
-                         Http1ClientProtocolConfig protocolConfig,
                          CompletableFuture<WebClientServiceRequest> whenSent,
                          CompletableFuture<WebClientServiceResponse> whenComplete,
                          Object entity) {
-        super(webClient,
-              clientConfig,
-              protocolConfig,
-              request, whenComplete);
-
+        super(http1Client, request, whenComplete);
         this.request = request;
         this.whenSent = whenSent;
         this.entity = entity;

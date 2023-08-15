@@ -18,6 +18,7 @@ package io.helidon.nima.http2.webclient;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -25,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
@@ -37,12 +39,15 @@ import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
+import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -63,22 +68,36 @@ class Http2WebClientTest {
     private static final Http.HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.HeaderNames.create("client-user-agent");
     private static ExecutorService executorService;
     private static int plainPort;
-    private static final LazyValue<Http2Client> priorKnowledgeClient = LazyValue.create(() -> Http2Client.builder()
+    private static int tlsPort;
+    private static Supplier<Http2Client> localCacheClient = () -> Http2Client.builder()
+            .shareConnectionCache(false)
+            .connectTimeout(Duration.ofMinutes(10))
+            .baseUri("http://localhost:" + plainPort + "/versionspecific")
+            .build();
+    private static final Supplier<Http2Client> globalCacheClient = () -> Http2Client.builder()
+            .shareConnectionCache(true)
+            .connectTimeout(Duration.ofMinutes(10))
+            .baseUri("http://localhost:" + plainPort + "/versionspecific")
+            .build();
+    private static final Supplier<Http2Client> priorKnowledgeClient = () -> Http2Client.builder()
+            .shareConnectionCache(false)
+            .connectTimeout(Duration.ofMinutes(10))
             .protocolConfig(pc -> pc.priorKnowledge(true))
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
-            .build());
-    private static final LazyValue<Http2Client> upgradeClient = LazyValue.create(() -> Http2Client.builder()
+            .build();
+    private static final Supplier<Http2Client> upgradeClient = () -> Http2Client.builder()
+            .shareConnectionCache(false)
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
-            .build());
-    private static int tlsPort;
-    private static final LazyValue<Http2Client> tlsClient = LazyValue.create(() -> Http2Client.builder()
+            .build();
+    private static final Supplier<Http2Client> tlsClient = () -> Http2Client.builder()
+            .shareConnectionCache(false)
             .baseUri("https://localhost:" + tlsPort + "/versionspecific")
             .tls(Tls.builder()
                          .enabled(true)
                          .trustAll(true)
                          .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
                          .build())
-            .build());
+            .build();
 
     Http2WebClientTest(WebServer server) {
         plainPort = server.port();
@@ -87,7 +106,7 @@ class Http2WebClientTest {
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
-        executorService = Executors.newFixedThreadPool(5);
+        executorService = Executors.newFixedThreadPool(10);
 
         Keys privateKeyConfig =
                 Keys.builder()
@@ -151,6 +170,8 @@ class Http2WebClientTest {
 
     static Stream<Arguments> clientTypes() {
         return Stream.of(
+                Arguments.of("localConnectionCache", LazyValue.create(() -> localCacheClient.get())),
+                Arguments.of("globalConnectionCache", globalCacheClient),
                 Arguments.of("priorKnowledge", priorKnowledgeClient),
                 Arguments.of("upgrade", upgradeClient),
                 Arguments.of("tls", tlsClient)
@@ -167,9 +188,7 @@ class Http2WebClientTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
-    void clientGet(String name, LazyValue<Http2Client> client) {
-        // reset everything, so we need to create a new connection
-        Http2ConnectionCache.clear();
+    void clientGet(String name, Supplier<Http2Client> client) {
         try (Http2ClientResponse response = client.get()
                 .get()
                 .queryParam("custQueryParam", "test-get")
@@ -186,9 +205,7 @@ class Http2WebClientTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
-    void clientPut(String clientType, LazyValue<Http2Client> client) {
-        Http2ConnectionCache.clear();
-
+    void clientPut(String clientType, Supplier<Http2Client> client) {
         String payload = clientType + " payload";
         String custHeaderValue = clientType + " header value";
 
@@ -211,9 +228,7 @@ class Http2WebClientTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
-    void clientPost(String clientType, LazyValue<Http2Client> client) {
-        Http2ConnectionCache.clear();
-
+    void clientPost(String clientType, Supplier<Http2Client> client) {
         String payload = clientType + " payload";
         String custHeaderValue = clientType + " header value";
 
@@ -234,15 +249,15 @@ class Http2WebClientTest {
         }
     }
 
-    @Disabled("Failing intermittently, to be investigated")
+//    @Disabled("Failing intermittently, to be investigated")
     @ParameterizedTest(name = "{0}")
     @MethodSource("clientTypes")
-    void multiplexParallelStreamsGet(String clientType, LazyValue<Http2Client> client)
+    void multiplexParallelStreamsGet(String clientType, Supplier<Http2Client> client)
             throws ExecutionException, InterruptedException, TimeoutException {
 
-        Http2ConnectionCache.clear();
+        Http2Client http2Client = client.get();
         Consumer<Integer> callable = id -> {
-            try (Http2ClientResponse response = client.get()
+            try (Http2ClientResponse response = http2Client
                     .get("/h2streaming")
                     .queryParam("execId", id.toString())
                     .request()

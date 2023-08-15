@@ -24,8 +24,6 @@ import io.helidon.common.http.ClientRequestHeaders;
 import io.helidon.nima.http2.Http2Headers;
 import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientUri;
-import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
@@ -33,16 +31,12 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final ClientRequest.OutputStreamHandler streamHandler;
 
-    Http2CallOutputStreamChain(WebClient webClient,
+    Http2CallOutputStreamChain(Http2ClientImpl http2Client,
                                Http2ClientRequestImpl http2ClientRequest,
-                               HttpClientConfig clientConfig,
-                               Http2ClientProtocolConfig protocolConfig,
                                CompletableFuture<WebClientServiceRequest> whenSent,
                                CompletableFuture<WebClientServiceResponse> whenComplete,
                                ClientRequest.OutputStreamHandler streamHandler) {
-        super(webClient,
-              clientConfig,
-              protocolConfig,
+        super(http2Client,
               http2ClientRequest,
               whenComplete,
               req -> req.outputStream(streamHandler));

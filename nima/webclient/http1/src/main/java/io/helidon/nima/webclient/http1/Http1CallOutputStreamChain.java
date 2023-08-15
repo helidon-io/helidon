@@ -38,7 +38,6 @@ import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientRequest;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientConfig;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 
@@ -46,25 +45,17 @@ import static java.lang.System.Logger.Level.TRACE;
 
 class Http1CallOutputStreamChain extends Http1CallChainBase {
     private static final System.Logger LOGGER = System.getLogger(Http1CallOutputStreamChain.class.getName());
-    private final HttpClientConfig clientConfig;
-    private final Http1ClientProtocolConfig protocolConfig;
+    private final Http1ClientImpl http1Client;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final ClientRequest.OutputStreamHandler osHandler;
 
-    Http1CallOutputStreamChain(WebClient webClient,
+    Http1CallOutputStreamChain(Http1ClientImpl http1Client,
                                Http1ClientRequestImpl clientRequest,
-                               HttpClientConfig clientConfig,
-                               Http1ClientProtocolConfig protocolConfig,
                                CompletableFuture<WebClientServiceRequest> whenSent,
                                CompletableFuture<WebClientServiceResponse> whenComplete,
                                ClientRequest.OutputStreamHandler osHandler) {
-        super(webClient,
-              clientConfig,
-              protocolConfig,
-              clientRequest,
-              whenComplete);
-        this.clientConfig = clientConfig;
-        this.protocolConfig = protocolConfig;
+        super(http1Client, clientRequest, whenComplete);
+        this.http1Client = http1Client;
         this.whenSent = whenSent;
         this.osHandler = osHandler;
     }
@@ -90,8 +81,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                             reader,
                                                                             writeBuffer,
                                                                             headers,
-                                                                            clientConfig,
-                                                                            protocolConfig,
+                                                                            http1Client.clientConfig(),
+                                                                            http1Client.protocolConfig(),
                                                                             serviceRequest,
                                                                             originalRequest(),
                                                                             whenSent);
@@ -125,7 +116,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         Http.Status responseStatus;
         try {
-            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+            responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
         } catch (UncheckedIOException e) {
             // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
             // data of this request on the next use of this connection

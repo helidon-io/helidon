@@ -43,7 +43,6 @@ import io.helidon.nima.webclient.api.ClientConnection;
 import io.helidon.nima.webclient.api.ClientUri;
 import io.helidon.nima.webclient.api.HttpClientConfig;
 import io.helidon.nima.webclient.api.Proxy;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.api.WebClientServiceRequest;
 import io.helidon.nima.webclient.api.WebClientServiceResponse;
 import io.helidon.nima.webclient.spi.WebClientService;
@@ -55,7 +54,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private static final System.Logger LOGGER = System.getLogger(Http1CallChainBase.class.getName());
 
     private final BufferData writeBuffer = BufferData.growing(128);
-    private final WebClient webClient;
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
@@ -65,22 +63,21 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     private final boolean keepAlive;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private final Duration timeout;
+    private final Http1ClientImpl http1Client;
     private ClientConnection effectiveConnection;
 
-    Http1CallChainBase(WebClient webClient,
-                       HttpClientConfig clientConfig,
-                       Http1ClientProtocolConfig protocolConfig,
+    Http1CallChainBase(Http1ClientImpl http1Client,
                        Http1ClientRequestImpl clientRequest,
                        CompletableFuture<WebClientServiceResponse> whenComplete) {
-        this.webClient = webClient;
-        this.clientConfig = clientConfig;
-        this.protocolConfig = protocolConfig;
+        this.clientConfig = http1Client.clientConfig();
+        this.protocolConfig = http1Client.protocolConfig();
         this.originalRequest = clientRequest;
         this.timeout = clientRequest.readTimeout();
         this.connection = clientRequest.connection().orElse(null);
         this.tls = clientRequest.tls();
         this.proxy = clientRequest.proxy();
         this.keepAlive = clientRequest.keepAlive();
+        this.http1Client = clientRequest.http1Client();
         this.whenComplete = whenComplete;
     }
 
@@ -154,10 +151,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
     ClientConnection connection() {
         return effectiveConnection;
-    }
-
-    WebClient webClient() {
-        return webClient;
     }
 
     Http1ClientRequestImpl originalRequest() {
@@ -266,13 +259,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
-        return Http1ConnectionCache.connection(webClient,
-                                               clientConfig,
-                                               tls,
-                                               proxy,
-                                               request.uri(),
-                                               request.headers(),
-                                               keepAlive);
+        return http1Client.connectionCache()
+                .connection(http1Client,
+                            tls,
+                            proxy,
+                            request.uri(),
+                            request.headers(),
+                            keepAlive);
     }
 
     static class ContentLengthInputStream extends InputStream {

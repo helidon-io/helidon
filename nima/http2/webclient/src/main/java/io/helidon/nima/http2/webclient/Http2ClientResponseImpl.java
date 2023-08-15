@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.http.ClientRequestHeaders;
@@ -39,6 +40,8 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     private final InputStream inputStream;
     private final MediaContext mediaContext;
     private final ClientUri lastEndpointUri;
+
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     Http2ClientResponseImpl(Http.Status status,
                             ClientRequestHeaders requestHeaders,
@@ -105,7 +108,9 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     @Override
     public void close() {
-        complete.complete(null);
-        closeResponseRunnable.run();
+        if (!closed.getAndSet(true)) {
+            complete.complete(null);
+            closeResponseRunnable.run();
+        }
     }
 }

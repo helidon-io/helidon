@@ -26,14 +26,20 @@ import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webclient.spi.HttpClientSpi;
 
 class Http2ClientImpl implements Http2Client, HttpClientSpi {
-    private final WebClient client;
+    private final WebClient webClient;
     private final Http2ClientConfig clientConfig;
     private final Http2ClientProtocolConfig protocolConfig;
+    private final Http2ConnectionCache connectionCache;
 
-    Http2ClientImpl(WebClient client, Http2ClientConfig clientConfig) {
-        this.client = client;
+    Http2ClientImpl(WebClient webClient, Http2ClientConfig clientConfig) {
+        this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
+        if (clientConfig.shareConnectionCache()) {
+            this.connectionCache = Http2ConnectionCache.shared();
+        } else {
+            this.connectionCache = Http2ConnectionCache.create();
+        }
     }
 
     @Override
@@ -45,7 +51,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
         UriQueryWriteable query = UriQueryWriteable.create();
         clientConfig.baseQuery().ifPresent(query::from);
 
-        return new Http2ClientRequestImpl(client, clientConfig, protocolConfig, method, clientUri, clientConfig.properties());
+        return new Http2ClientRequestImpl(this, method, clientUri, clientConfig.properties());
     }
 
     @Override
@@ -62,7 +68,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
                                              clientConfig.dnsResolver(),
                                              clientConfig.dnsAddressLookup(),
                                              clientRequest.proxy());
-        if (Http2ConnectionCache.supports(ck)) {
+        if (connectionCache.supports(ck)) {
             return SupportLevel.SUPPORTED;
         }
 
@@ -71,9 +77,7 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public ClientRequest<?> clientRequest(FullClientRequest<?> clientRequest, ClientUri clientUri) {
-        Http2ClientRequest request = new Http2ClientRequestImpl(client,
-                                                                clientConfig,
-                                                                protocolConfig,
+        Http2ClientRequest request = new Http2ClientRequestImpl(this,
                                                                 clientRequest.method(),
                                                                 clientUri,
                                                                 clientRequest.properties());
@@ -88,5 +92,21 @@ class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 .tls(clientRequest.tls())
                 .headers(clientRequest.headers())
                 .fragment(clientUri.fragment());
+    }
+
+    WebClient webClient() {
+        return webClient;
+    }
+
+    Http2ClientConfig clientConfig() {
+        return clientConfig;
+    }
+
+    Http2ClientProtocolConfig protocolConfig() {
+        return protocolConfig;
+    }
+
+    Http2ConnectionCache connectionCache(){
+        return connectionCache;
     }
 }
