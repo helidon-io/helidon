@@ -31,6 +31,9 @@ Helidon is available under Apache License 2.0.
 
 Latest documentation and javadocs are available at <https://helidon.io/docs/latest>.
 
+Helidon White Paper is available [here](https://www.oracle.com/a/ocom/docs/technical-brief--helidon-report.pdf).
+
+
 ## Get Started
 
 See Getting Started at <https://helidon.io>.
