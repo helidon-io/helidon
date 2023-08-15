@@ -381,6 +381,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      *
      * @param readContinueTimeout read 100-Continue timeout duration
      * @return updated client request
+     * @see HttpClientConfig#readContinueTimeout()
      */
     T readContinueTimeout(Duration readContinueTimeout);
 
