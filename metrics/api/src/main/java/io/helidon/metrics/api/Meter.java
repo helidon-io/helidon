@@ -18,7 +18,7 @@ package io.helidon.metrics.api;
 /**
  * Common behavior of all meters.
  */
-public interface Meter extends Wrapped {
+public interface Meter extends Wrapper {
 
     /**
      * Common behavior of specific meter builders.

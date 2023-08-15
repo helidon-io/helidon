@@ -28,7 +28,7 @@ import java.util.function.Predicate;
  *     store meters or their IDs, in line with the documented behavior of disabled metrics.
  * </p>
  */
-class NoOpMeterRegistry implements MeterRegistry, NoOpWrapped {
+class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public List<Meter> meters() {

@@ -23,7 +23,7 @@ import java.util.function.Predicate;
 /**
  * Manages the look-up and registration of meters.
  */
-public interface MeterRegistry extends Wrapped {
+public interface MeterRegistry extends Wrapper {
 
     /**
      * Returns all previously-registered meters.

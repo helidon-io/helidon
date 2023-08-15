@@ -18,7 +18,7 @@ package io.helidon.metrics.api;
 /**
  * Reports absolute time (and, therefore, is also useful in computing elapsed times).
  */
-public interface Clock extends Wrapped {
+public interface Clock extends Wrapper {
 
     /**
      * Returns the system clock for the Helidon metrics implementation.

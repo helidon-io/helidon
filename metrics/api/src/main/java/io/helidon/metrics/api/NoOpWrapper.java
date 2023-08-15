@@ -15,17 +15,10 @@
  */
 package io.helidon.metrics.api;
 
-/**
- * Behavior of a type that wraps a related type.
- */
-public interface Wrapped {
+interface NoOpWrapper extends Wrapper {
 
-    /**
-     * Unwraps the wrapped item as the specified type.
-     *
-     * @param c {@link Class} to which to cast this object
-     * @return this object cast as the requested type
-     * @param <R> type to cast to
-     */
-    <R> R unwrap(Class<? extends R> c);
+    @Override
+    default <R> R unwrap(Class<? extends R> c) {
+        return c.cast(this);
+    }
 }

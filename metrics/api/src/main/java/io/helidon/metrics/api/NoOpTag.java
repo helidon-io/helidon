@@ -18,7 +18,7 @@ package io.helidon.metrics.api;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-record NoOpTag(String key, String value) implements Tag, NoOpWrapped {
+record NoOpTag(String key, String value) implements Tag, NoOpWrapper {
 
     static Tag create(String key, String value) {
         return new NoOpTag(key, value);

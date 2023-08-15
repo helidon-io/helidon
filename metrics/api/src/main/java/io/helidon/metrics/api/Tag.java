@@ -18,7 +18,7 @@ package io.helidon.metrics.api;
 /**
  * Behavior of a tag for further identifying meters.
  */
-public interface Tag extends Wrapped {
+public interface Tag extends Wrapper {
 
     /**
      * Returns the tag's key.

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Snapshot in time of a histogram.
  */
-public interface HistogramSnapshot extends Wrapped {
+public interface HistogramSnapshot extends Wrapper {
 
     /**
      * Returns an "empty" snapshot which has summary values but no data points.
