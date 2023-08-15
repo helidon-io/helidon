@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.jdbc.spi;
+package io.helidon.dbclient.hikari.spi;
 
 import java.util.ServiceLoader;
 
 import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.JdbcCpExtension;
+import io.helidon.dbclient.hikari.HikariMetricsRegistry;
 
 /**
- * Java {@link ServiceLoader} interface that provides implementations of {@link io.helidon.dbclient.jdbc.JdbcCpExtension}.
+ * Java {@link ServiceLoader} interface that provides implementations of {@link HikariMetricsRegistry}.
  */
-public interface JdbcCpExtensionProvider {
+public interface HikariMetricsProvider {
 
     /**
      * Configuration key of the extension provider.
@@ -33,11 +33,11 @@ public interface JdbcCpExtensionProvider {
     String configKey();
 
     /**
-     * Get instance of {@link io.helidon.dbclient.jdbc.JdbcCpExtension} from config.
+     * Get instance of {@link HikariMetricsRegistry} from config.
      *
      * @param config provider configuration
      * @return interceptor to handle connection pool configuration.
      */
-    JdbcCpExtension extension(Config config);
+    HikariMetricsRegistry extension(Config config);
 
 }

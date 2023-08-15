@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,26 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
-
-import org.eclipse.microprofile.metrics.Gauge;
-
 /**
- * {@link Gauge} metric wrapper for Hikari CP metric.
- *
- * @param <T> metric value type
+ * Service provider interface for Hikari JDBC connection pool support.
  */
-public class JdbcMetricsGauge<T extends Number> implements Gauge<T> {
-
-    private final com.codahale.metrics.Gauge<T> gauge;
-
-    JdbcMetricsGauge(com.codahale.metrics.Gauge<T> counter) {
-        this.gauge = counter;
-    }
-
-    @Override
-    public T getValue() {
-        return gauge.getValue();
-    }
-
-}
+package io.helidon.dbclient.hikari.spi;

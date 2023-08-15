@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;
@@ -24,12 +24,12 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * {@link Timer} metric wrapper for Hikari CP metric.
  */
-public class JdbcMetricsTimer implements Timer {
+public class HikariMetricsTimer implements Timer {
 
     private final com.codahale.metrics.Timer meter;
     private long elapsedTimeNanos;
 
-    JdbcMetricsTimer(com.codahale.metrics.Timer meter) {
+    HikariMetricsTimer(com.codahale.metrics.Timer meter) {
         this.meter = meter;
     }
 
@@ -55,7 +55,7 @@ public class JdbcMetricsTimer implements Timer {
 
     @Override
     public Context time() {
-        return new JdbcMetricsTimerContext(meter.time(), this::updateElapsed);
+        return new HikariMetricsTimerContext(meter.time(), this::updateElapsed);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class JdbcMetricsTimer implements Timer {
 
     @Override
     public Snapshot getSnapshot() {
-        return new JdbcMetricsSnapshot(meter.getSnapshot());
+        return new HikariMetricsSnapshot(meter.getSnapshot());
     }
 
     @Override

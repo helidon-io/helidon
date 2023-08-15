@@ -13,22 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.jdbc;
-
-import java.util.function.Consumer;
-
 /**
- * Interceptor to handle connection pool configuration.
- * Interceptor does not have access to connection pool implementation so connection pool must provide
- * consumers for provided configuration values.
+ * Metrics support for Hikari Connection Pool.
  */
-public interface JdbcCpExtension {
-
-    /**
-     * Process registry of metric instances on registered connection pool.
-     *
-     * @param processRegistry pool configuration
-     */
-    void metricRegistry(Consumer<Object> processRegistry);
-
-}
+package io.helidon.dbclient.metrics.hikari;

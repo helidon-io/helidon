@@ -13,25 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
-import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.JdbcCpExtension;
-import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
+import org.eclipse.microprofile.metrics.Counter;
 
 /**
- * {@link io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider} implementation for {@link JdbcMetricsExtension}.
+ * {@link Counter} metric wrapper for Hikari CP metric.
  */
-public class JdbcMetricsExtensionProvider implements JdbcCpExtensionProvider {
+public class HikariMetricsCounter implements Counter {
 
-    @Override
-    public String configKey() {
-        return "pool-metrics";
+    private final com.codahale.metrics.Counter counter;
+
+    HikariMetricsCounter(com.codahale.metrics.Counter counter) {
+        this.counter = counter;
     }
 
     @Override
-    public JdbcCpExtension extension(Config config) {
-        return JdbcMetricsExtension.create(config);
+    public void inc() {
+        counter.inc();
+    }
+
+    @Override
+    public void inc(long n) {
+        counter.inc(n);
+    }
+
+    @Override
+    public long getCount() {
+        return counter.getCount();
     }
 
 }

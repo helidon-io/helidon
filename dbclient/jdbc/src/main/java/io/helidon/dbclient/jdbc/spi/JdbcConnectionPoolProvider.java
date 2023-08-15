@@ -15,39 +15,12 @@
  */
 package io.helidon.dbclient.jdbc.spi;
 
-import java.util.Collections;
-import java.util.List;
-
-import io.helidon.common.config.Config;
 import io.helidon.common.config.ConfiguredProvider;
 import io.helidon.dbclient.jdbc.JdbcConnectionPool;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for JDBC connection pool.
  * This interface serves as
- *
- * @param <P> JDBC connection pool implementation type
  */
-public interface JdbcConnectionPoolProvider<P extends JdbcConnectionPool>
-        extends ConfiguredProvider<P> {
-
-    /**
-     * Create a new instance from the configuration located on the provided node.
-     * List of connection pool configuration interceptor providers from service loader
-     * is passed to the new instance.
-     *
-     * @param config located at {@link #configKey()} node
-     * @param name name of the configured implementation
-     * @param extensions connection pool configuration interceptor providers
-     *
-     * @return a new instance created from this config node
-     */
-    P create(Config config, String name, List<JdbcCpExtensionProvider> extensions);
-
-    @Override
-    @SuppressWarnings("unchecked")
-    default P create(Config config, String name) {
-        return (P) create(config, name, Collections.EMPTY_LIST);
-    }
-
+public interface JdbcConnectionPoolProvider extends ConfiguredProvider<JdbcConnectionPool> {
 }

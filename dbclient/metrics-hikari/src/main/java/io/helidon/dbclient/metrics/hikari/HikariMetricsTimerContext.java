@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
 import java.util.function.Function;
 
@@ -22,12 +22,12 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Metric {@link Timer.Context} wrapper for Hikari CP metric.
  */
-public class JdbcMetricsTimerContext implements Timer.Context {
+public class HikariMetricsTimerContext implements Timer.Context {
 
     private final com.codahale.metrics.Timer.Context context;
     private final Function<Long, Long> elapsedTimeUpdater;
 
-    JdbcMetricsTimerContext(com.codahale.metrics.Timer.Context context, Function<Long, Long> elapsedTimeUpdater) {
+    HikariMetricsTimerContext(com.codahale.metrics.Timer.Context context, Function<Long, Long> elapsedTimeUpdater) {
         this.context = context;
         this.elapsedTimeUpdater = elapsedTimeUpdater;
     }

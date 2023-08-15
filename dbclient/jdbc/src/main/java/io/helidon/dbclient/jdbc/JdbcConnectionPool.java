@@ -20,20 +20,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.NamedService;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
-import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
 
 /**
  * JDBC connection pool.
  */
 @FunctionalInterface
 public interface JdbcConnectionPool extends NamedService {
+
+    /** Default JDBC connection pool {@link #dbType()} value. */
+    String DEFAULT_DB_TYPE = "jdbc";
 
     /**
      * Create a JDBC connection pool from provided configuration.
@@ -65,20 +66,14 @@ public interface JdbcConnectionPool extends NamedService {
      * @param config configuration of connection pool
      * @return a new instance configured from the provided config
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     static JdbcConnectionPool create(Config config) {
         List<JdbcConnectionPoolProvider> poolProviders = HelidonServiceLoader
-                .builder(ServiceLoader.load(JdbcConnectionPoolProvider.class))
-                .build()
+                .create(ServiceLoader.load(JdbcConnectionPoolProvider.class))
                 .asList();
         if (poolProviders.isEmpty()) {
             throw new DbClientException("No JDBC connection pool provider is available");
         }
-        List<JdbcCpExtensionProvider> poolExtensions = HelidonServiceLoader
-                .builder(ServiceLoader.load(JdbcCpExtensionProvider.class))
-                .build()
-                .asList();
-        return poolProviders.getFirst().create(config, config.name(), poolExtensions);
+        return poolProviders.getFirst().create(config, config.name());
     }
 
     /**
@@ -91,29 +86,28 @@ public interface JdbcConnectionPool extends NamedService {
     Connection connection();
 
     /**
-     * The type of this database - if better details than {@value JdbcClientProvider#JDBC_DB_NAME} is
-     * available, return it. This could be "jdbc:mysql" etc.
+     * The type of this database. This could be {@code "jdbc:mysql"}, etc.
+     * Default value is just {@code "jdbc"} but implementing class should set something more specific.
      *
      * @return type of this database
      */
     default String dbType() {
-        return JdbcClientProvider.JDBC_DB_NAME;
+        return DEFAULT_DB_TYPE;
     }
 
     @Override
     default String name() {
-        throw new UnsupportedOperationException("Name of the JdbcConnectionPool service is not defined");
+        return "inlined";
     }
 
     @Override
     default String type() {
-        throw new UnsupportedOperationException("Type of the JdbcConnectionPool service is not defined");
+        return "inlined";
     }
 
     /**
      * Base fluent API builder for {@link JdbcConnectionPool}.
-     * The builder will produce a connection pool based on connection pool provider available on the classpath
-     * and will support {@link io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider} to enhance the pool configuration.
+     * The builder will produce a connection pool based on connection pool provider available on the classpath.
      *
      * @param <B> Type of the builder
      * @param <T> Type of the built instance
@@ -132,6 +126,7 @@ public interface JdbcConnectionPool extends NamedService {
          * Database connection user password configuration key.
          */
         protected static final String PASSWORD = "password";
+
         /**
          * Database connection configuration key for Helidon specific
          * properties.
@@ -143,11 +138,8 @@ public interface JdbcConnectionPool extends NamedService {
         private String url;
         private String username;
         private String password;
-        private Config extensionsConfig;
-        private final List<JdbcCpExtensionProvider> extensions;
 
-        protected BuilderBase(List<JdbcCpExtensionProvider> extensions) {
-            this.extensions = extensions;
+        protected BuilderBase() {
         }
 
         /**
@@ -160,18 +152,17 @@ public interface JdbcConnectionPool extends NamedService {
             Map<String, String> poolConfig = config.detach().asMap().get();
             poolConfig.forEach((key, value) -> {
                 switch (key) {
-                case URL -> url(value);
-                case USERNAME -> username(value);
-                case PASSWORD -> password(value);
-                default -> {
-                    if (!key.startsWith(HELIDON_RESERVED_CONFIG_KEY + ".")) {
-                        // all other properties are sent to the pool
-                        properties().setProperty(key, value);
+                    case URL -> url(value);
+                    case USERNAME -> username(value);
+                    case PASSWORD -> password(value);
+                    default -> {
+                        if (!key.startsWith(HELIDON_RESERVED_CONFIG_KEY + ".")) {
+                            // all other properties are sent to the pool
+                            properties().setProperty(key, value);
+                        }
                     }
                 }
-                }
             });
-            extensionsConfig = config.get(HELIDON_RESERVED_CONFIG_KEY);
             return identity();
         }
 
@@ -274,18 +265,6 @@ public interface JdbcConnectionPool extends NamedService {
          */
         public Properties properties() {
             return properties;
-        }
-
-        /**
-         * Loaded connection pool extensions providers.
-         */
-        public List<JdbcCpExtension> extensions() {
-            if (null == extensionsConfig) {
-                extensionsConfig = Config.empty();
-            }
-            return extensions.stream()
-                    .map(provider -> provider.extension(extensionsConfig.get(provider.configKey())))
-                    .collect(Collectors.toList());
         }
 
     }

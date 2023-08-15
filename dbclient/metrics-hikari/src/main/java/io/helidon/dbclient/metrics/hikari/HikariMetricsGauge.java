@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.dbclient.metrics.hikari;
 
-import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
-import io.helidon.dbclient.metrics.jdbc.JdbcMetricsExtensionProvider;
+import org.eclipse.microprofile.metrics.Gauge;
 
 /**
- * Metrics support for Helidon Database Client JDBC.
+ * {@link Gauge} metric wrapper for Hikari CP metric.
+ *
+ * @param <T> metric value type
  */
-module io.helidon.dbclient.metrics.jdbc {
+public class HikariMetricsGauge<T extends Number> implements Gauge<T> {
 
-    requires transitive io.helidon.dbclient;
-    requires transitive io.helidon.dbclient.jdbc;
-    requires transitive io.helidon.dbclient.metrics;
-    requires transitive io.helidon.metrics;
+    private final com.codahale.metrics.Gauge<T> gauge;
 
-    requires com.codahale.metrics;
+    HikariMetricsGauge(com.codahale.metrics.Gauge<T> counter) {
+        this.gauge = counter;
+    }
 
-    exports io.helidon.dbclient.metrics.jdbc;
-
-    provides JdbcCpExtensionProvider
-            with JdbcMetricsExtensionProvider;
+    @Override
+    public T getValue() {
+        return gauge.getValue();
+    }
 
 }

@@ -37,7 +37,7 @@
         <module>mongodb</module>
         <module>tracing</module>
         <module>metrics</module>
-        <module>metrics-jdbc</module>
+        <module>metrics-hikari</module>
         <module>health</module>
         <module>jsonp</module>
     </modules>

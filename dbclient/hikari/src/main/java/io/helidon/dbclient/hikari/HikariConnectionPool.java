@@ -18,20 +18,21 @@ package io.helidon.dbclient.hikari;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
 import io.helidon.dbclient.jdbc.JdbcConnectionPool;
-import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 class HikariConnectionPool implements JdbcConnectionPool {
-
-    // JDBC database URL prefix.
-    private static final String JDBC_URL_PREFIX = "jdbc";
 
     private final HikariDataSource dataSource;
     private final String dbType;
@@ -45,7 +46,7 @@ class HikariConnectionPool implements JdbcConnectionPool {
         config.setPassword(builder.password());
         // Apply configuration update from extensions
         builder.extensions()
-                .forEach(interceptor -> interceptor.metricRegistry(config::setMetricRegistry));
+                .forEach(registry -> registry.register(config::setMetricRegistry));
         this.dataSource = new HikariDataSource(config);
         this.serviceName = builder.serviceName();
     }
@@ -75,22 +76,42 @@ class HikariConnectionPool implements JdbcConnectionPool {
         return dbType;
     }
 
-    static Builder builder(List<JdbcCpExtensionProvider> extensions) {
-        return new Builder(extensions);
+    static Builder builder() {
+        return new Builder();
     }
+
 
     /**
      * Fluent API builder for {@link JdbcConnectionPool}.
      * The builder will produce a connection pool based on Hikari connection pool and will support
-     * {@link io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider} to enhance the Hikari pool.
+     * {@link io.helidon.dbclient.hikari.spi.HikariMetricsProvider} to enhance the Hikari pool.
      */
     static final class Builder extends JdbcConnectionPool.BuilderBase<Builder, HikariConnectionPool> {
+
+        /**
+         * Database connection configuration key for Hikari specific properties.
+         */
+        private static final String HIKARI_RESERVED_CONFIG_KEY = "hikari";
 
         //jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
         private static final Pattern URL_PATTERN = Pattern.compile("(\\w+:\\w+):.*");
 
-        private Builder(List<JdbcCpExtensionProvider> extensions) {
-            super(extensions);
+        private final List<HikariMetricsProvider> extensions;
+        private Config extensionsConfig;
+
+
+        private Builder() {
+            super();
+            this.extensions = HelidonServiceLoader
+                    .create(ServiceLoader.load(HikariMetricsProvider.class))
+                    .asList();
+        }
+
+        @Override
+        public Builder config(Config config) {
+            super.config(config);
+            extensionsConfig = config.get(HIKARI_RESERVED_CONFIG_KEY);
+            return this;
         }
 
         @Override
@@ -98,9 +119,21 @@ class HikariConnectionPool implements JdbcConnectionPool {
             final Matcher matcher = URL_PATTERN.matcher(url());
             String dbType = matcher.matches()
                     ? matcher.group(1)
-                    : JDBC_URL_PREFIX;
+                    : DEFAULT_DB_TYPE;
 
             return new HikariConnectionPool(this, dbType);
+        }
+
+        /**
+         * Loaded connection pool extensions providers.
+         */
+        public List<HikariMetricsRegistry> extensions() {
+            if (null == extensionsConfig) {
+                extensionsConfig = Config.empty();
+            }
+            return extensions.stream()
+                    .map(provider -> provider.extension(extensionsConfig.get(provider.configKey())))
+                    .collect(Collectors.toList());
         }
 
     }

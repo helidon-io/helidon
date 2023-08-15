@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -21,11 +21,11 @@ import org.eclipse.microprofile.metrics.Snapshot;
 /**
  * {@link Histogram} metric wrapper for Hikari CP metric.
  */
-public class JdbcMetricsHistogram implements Histogram {
+public class HikariMetricsHistogram implements Histogram {
 
     private final com.codahale.metrics.Histogram histogram;
 
-    JdbcMetricsHistogram(com.codahale.metrics.Histogram histogram) {
+    HikariMetricsHistogram(com.codahale.metrics.Histogram histogram) {
         this.histogram = histogram;
     }
 
@@ -46,7 +46,7 @@ public class JdbcMetricsHistogram implements Histogram {
 
     @Override
     public Snapshot getSnapshot() {
-        return new JdbcMetricsSnapshot(histogram.getSnapshot());
+        return new HikariMetricsSnapshot(histogram.getSnapshot());
     }
 
     @Override

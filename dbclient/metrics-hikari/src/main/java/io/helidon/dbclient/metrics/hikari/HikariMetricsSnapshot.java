@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
 import java.io.OutputStream;
 
@@ -22,11 +22,11 @@ import org.eclipse.microprofile.metrics.Snapshot;
 /**
  * Metric {@link Snapshot} wrapper for Hikari CP metric.
  */
-public class JdbcMetricsSnapshot extends Snapshot {
+public class HikariMetricsSnapshot extends Snapshot {
 
     private final com.codahale.metrics.Snapshot snapshot;
 
-    JdbcMetricsSnapshot(com.codahale.metrics.Snapshot snapshot) {
+    HikariMetricsSnapshot(com.codahale.metrics.Snapshot snapshot) {
         this.snapshot = snapshot;
     }
 

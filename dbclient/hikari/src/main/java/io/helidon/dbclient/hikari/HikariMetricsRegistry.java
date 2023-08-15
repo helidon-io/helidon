@@ -13,34 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.hikari;
 
-import org.eclipse.microprofile.metrics.Counter;
+import java.util.function.Consumer;
 
 /**
- * {@link Counter} metric wrapper for Hikari CP metric.
+ * Hikari connection pool metric extension registry.
  */
-public class JdbcMetricsCounter implements Counter {
+@FunctionalInterface
+public interface HikariMetricsRegistry {
 
-    private final com.codahale.metrics.Counter counter;
-
-    JdbcMetricsCounter(com.codahale.metrics.Counter counter) {
-        this.counter = counter;
-    }
-
-    @Override
-    public void inc() {
-        counter.inc();
-    }
-
-    @Override
-    public void inc(long n) {
-        counter.inc(n);
-    }
-
-    @Override
-    public long getCount() {
-        return counter.getCount();
-    }
+    /**
+     * Process registry of metric instances on Hikari connection pool.
+     *
+     * @param registry pool configuration
+     */
+    void register(Consumer<Object> registry);
 
 }

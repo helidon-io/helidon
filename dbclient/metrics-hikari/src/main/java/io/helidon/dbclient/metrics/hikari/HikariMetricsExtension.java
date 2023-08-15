@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
 import java.util.function.Consumer;
 
 import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.JdbcCpExtension;
+import io.helidon.dbclient.hikari.HikariMetricsRegistry;
 
 import com.codahale.metrics.MetricRegistry;
 
 /**
  * Registers JDBC connection pool metrics to {@code HikariConnectionPool}.
  */
-final class JdbcMetricsExtension implements JdbcCpExtension {
+final class HikariMetricsExtension implements HikariMetricsRegistry {
+
     private final Config config;
     private final boolean enabled;
 
-    private JdbcMetricsExtension(Config config, boolean enabled) {
+    private HikariMetricsExtension(Config config, boolean enabled) {
         this.config = config;
         this.enabled = enabled;
     }
@@ -40,8 +41,8 @@ final class JdbcMetricsExtension implements JdbcCpExtension {
      * @param config config
      * @return HikariCpExtension
      */
-    static JdbcMetricsExtension create(Config config) {
-        return new JdbcMetricsExtension(config, config.get("enabled").asBoolean().orElse(true));
+    static HikariMetricsRegistry create(Config config) {
+        return new HikariMetricsExtension(config, config.get("enabled").asBoolean().orElse(true));
     }
 
     /**
@@ -49,14 +50,14 @@ final class JdbcMetricsExtension implements JdbcCpExtension {
      * Provided {@link MetricRegistry} instance consumer is responsible for setting this instance
      * to connection pool configuration.
      *
-     * @param processRegistry {@link MetricRegistry} instance consumer
+     * @param registry {@link MetricRegistry} instance consumer
      */
     @Override
-    public void metricRegistry(Consumer<Object> processRegistry) {
+    public void register(Consumer<Object> registry) {
         if (enabled) {
             MetricRegistry metricRegistry = new MetricRegistry();
             metricRegistry.addListener(DropwizardMetricsListener.create(config));
-            processRegistry.accept(metricRegistry);
+            registry.accept(metricRegistry);
         }
     }
 

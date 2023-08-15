@@ -23,7 +23,7 @@ import io.helidon.dbclient.spi.DbClientProvider;
 public class JdbcClientProvider implements DbClientProvider {
 
     // Name of this JDBC DB client provider and also JDBC database URL prefix.
-    static final String JDBC_DB_NAME = "jdbc";
+    private static final String JDBC_DB_NAME = "jdbc";
 
     @Override
     public String name() {

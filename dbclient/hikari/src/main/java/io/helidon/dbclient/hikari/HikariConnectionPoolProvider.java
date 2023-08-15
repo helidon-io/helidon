@@ -15,19 +15,22 @@
  */
 package io.helidon.dbclient.hikari;
 
-import java.util.List;
-
 import io.helidon.common.config.Config;
+import io.helidon.dbclient.jdbc.JdbcConnectionPool;
 import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
-import io.helidon.dbclient.jdbc.spi.JdbcCpExtensionProvider;
 
 /**
  * Hikari connection pool {@link java.util.ServiceLoader} provider.
  */
-public class HikariConnectionPoolProvider
-        implements JdbcConnectionPoolProvider<HikariConnectionPool> {
+public class HikariConnectionPoolProvider implements JdbcConnectionPoolProvider {
 
     private static final String  CONFIG_NAME = "hikari";
+
+    /**
+     * Creates an instance of Hikari connection pool {@link java.util.ServiceLoader} provider.
+     */
+    public HikariConnectionPoolProvider() {
+    }
 
     @Override
     public String configKey() {
@@ -35,8 +38,8 @@ public class HikariConnectionPoolProvider
     }
 
     @Override
-    public HikariConnectionPool create(Config config, String name, List<JdbcCpExtensionProvider> extensions) {
-        return HikariConnectionPool.builder(extensions)
+    public JdbcConnectionPool create(Config config, String name) {
+        return HikariConnectionPool.builder()
                 .config(config)
                 .serviceName(name)
                 .build();

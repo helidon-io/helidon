@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.metrics.jdbc;
+package io.helidon.dbclient.metrics.hikari;
 
 import java.lang.System.Logger.Level;
 
@@ -58,7 +58,8 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
         Object value = gauge.getValue();
         if (value instanceof Number) {
             LOGGER.log(Level.TRACE, () -> String.format("Gauge added: %s", name));
-            org.eclipse.microprofile.metrics.Gauge<?> mpGauge = new JdbcMetricsGauge<>((Gauge<? extends Number>) gauge);
+            @SuppressWarnings("unchecked")
+            org.eclipse.microprofile.metrics.Gauge<?> mpGauge = new HikariMetricsGauge<>((Gauge<? extends Number>) gauge);
             registry.get().gauge(prefix + name, mpGauge::getValue);
         } else {
             LOGGER.log(Level.WARNING, () -> String.format("Cannot add gauge returning type "

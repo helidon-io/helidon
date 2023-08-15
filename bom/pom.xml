@@ -569,7 +569,7 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.dbclient</groupId>
-                <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
+                <artifactId>helidon-dbclient-metrics-hikari</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

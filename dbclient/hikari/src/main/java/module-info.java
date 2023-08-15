@@ -16,8 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.dbclient.hikari.HikariConnectionPoolProvider;
-import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
+import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
 
 /**
  * Helidon Database Client JDBC.
@@ -25,7 +24,7 @@ import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 @Feature(value = "Hikari Connection Pool support for Helidon JDBC Database Client",
          description = "Hikari connection pool for JDBC DB client",
          in = HelidonFlavor.SE,
-         path = {"DbClient", "hikari"}
+         path = {"DbClient", "Hikari"}
 )
 module io.helidon.dbclient.hikari {
 
@@ -40,6 +39,12 @@ module io.helidon.dbclient.hikari {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config.metadata;
 
-    provides JdbcConnectionPoolProvider with HikariConnectionPoolProvider;
+    exports io.helidon.dbclient.hikari;
+    exports io.helidon.dbclient.hikari.spi;
+
+    uses HikariMetricsProvider;
+
+    provides io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider
+            with io.helidon.dbclient.hikari.HikariConnectionPoolProvider;
 
 }

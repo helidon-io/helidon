@@ -25,26 +25,27 @@
         <version>4.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>helidon-dbclient-metrics-jdbc</artifactId>
-    <name>Helidon Database Client JDBC Metrics</name>
-    <description>Helidon Database Client JDBC Metrics Support</description>
+    <artifactId>helidon-dbclient-metrics-hikari</artifactId>
+    <name>Helidon Database Client Hikari Pool Metrics</name>
+    <description>Helidon Database Client Hikari Pool Metrics Support</description>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.dbclient</groupId>
+            <artifactId>helidon-dbclient-metrics</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.dbclient</groupId>
-            <artifactId>helidon-dbclient-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
+            <artifactId>helidon-dbclient-hikari</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-core</artifactId>
         </dependency>
     </dependencies>
+
 </project>

@@ -13,7 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.dbclient.metrics.hikari;
+
+import io.helidon.common.config.Config;
+import io.helidon.dbclient.hikari.HikariMetricsRegistry;
+import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
+
 /**
- * Metrics support for Helidon Database Client JDBC.
+ * {@link HikariMetricsProvider} implementation for {@link HikariMetricsExtension}.
  */
-package io.helidon.dbclient.metrics.jdbc;
+public final class HikariMetricsExtensionProvider implements HikariMetricsProvider {
+
+    @Override
+    public String configKey() {
+        return "pool-metrics";
+    }
+
+    @Override
+    public HikariMetricsRegistry extension(Config config) {
+        return HikariMetricsExtension.create(config);
+    }
+
+}
