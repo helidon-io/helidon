@@ -42,20 +42,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 @ServerTest
-class GrpcServerTest {
+abstract class BaseStringServiceTest {
     private final int port;
 
-    private ManagedChannel channel;
-    private StringServiceGrpc.StringServiceBlockingStub blockingStub;
-    private StringServiceGrpc.StringServiceStub stub;
+    protected ManagedChannel channel;
+    protected StringServiceGrpc.StringServiceBlockingStub blockingStub;
+    protected StringServiceGrpc.StringServiceStub stub;
 
-    GrpcServerTest(WebServer server) {
+    BaseStringServiceTest(WebServer server) {
         this.port = server.port();
-    }
-
-    @SetUpRoute
-    static void routing(Router.RouterBuilder<?> router) {
-        router.addRouting(GrpcRouting.builder().service(new StringService()));
     }
 
     @BeforeEach
@@ -81,12 +76,21 @@ class GrpcServerTest {
     }
 
     @RepeatedTest(20)
-    void testUnary() {
+    void testUnaryUpper() {
         String text = "lower case original";
         StringMessage request = StringMessage.newBuilder().setText(text).build();
         StringMessage response = blockingStub.upper(request);
 
         assertThat(response.getText(), is(text.toUpperCase(Locale.ROOT)));
+    }
+
+    @RepeatedTest(20)
+    void testUnaryLower() {
+        String text = "UPPER CASE ORIGINAL";
+        StringMessage request = StringMessage.newBuilder().setText(text).build();
+        StringMessage response = blockingStub.lower(request);
+
+        assertThat(response.getText(), is(text.toLowerCase(Locale.ROOT)));
     }
 
     @RepeatedTest(20)

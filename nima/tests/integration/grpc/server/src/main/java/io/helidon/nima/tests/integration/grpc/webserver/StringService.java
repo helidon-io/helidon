@@ -39,7 +39,8 @@ class StringService implements GrpcService {
 
     @Override
     public void update(Routing router) {
-        router.unary("Upper", this::grpcUnary)
+        router.unary("Upper", this::grpcUnaryUpper)
+                .unary("Lower", this::grpcUnaryLower)
                 .bidi("Echo", this::grpcBidi)
                 .serverStream("Split", this::grpcServerStream)
                 .clientStream("Join", this::grpcClientStream);
@@ -74,10 +75,17 @@ class StringService implements GrpcService {
         };
     }
 
-    private void grpcUnary(StringMessage request, StreamObserver<StringMessage> observer) {
+    private void grpcUnaryUpper(StringMessage request, StreamObserver<StringMessage> observer) {
         String requestText = request.getText();
         complete(observer, StringMessage.newBuilder()
                 .setText(requestText.toUpperCase(Locale.ROOT))
+                .build());
+    }
+
+    private void grpcUnaryLower(StringMessage request, StreamObserver<StringMessage> observer) {
+        String requestText = request.getText();
+        complete(observer, StringMessage.newBuilder()
+                .setText(requestText.toLowerCase(Locale.ROOT))
                 .build());
     }
 

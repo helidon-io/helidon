@@ -36,6 +36,10 @@ public final class GrpcStatus {
      */
     public static final HeaderName STATUS_NAME = HeaderNames.createFromLowercase("grpc-status");
     /**
+     * grpc status message header name.
+     */
+    public static final HeaderName MESSAGE_NAME = HeaderNames.createFromLowercase("grpc-message");
+    /**
      * The operation completed successfully.
      */
     public static final Header OK = Http.Headers.createCached(STATUS_NAME, Status.Code.OK.value());
