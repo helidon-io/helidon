@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -493,10 +493,12 @@ public class MimeParserTest {
     @Test
     public void testPreambleWithNoStartingBoundary() {
         String boundary = "boundary";
-        final byte[] chunk1 = ("       \t   \t\t      \t \r\n"
-                + "Content-Id: part1\n"
-                + "\n"
-                + "part1\n").getBytes();
+        final byte[] chunk1 = ("""
+                       \t   \t\t      \t \r
+                Content-Id: part1
+
+                part1
+                """).getBytes();
 
         MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
                 () -> parse(boundary, chunk1));
@@ -546,10 +548,12 @@ public class MimeParserTest {
     public void testPreambleAcrossChunksWithNoStartingBoundary() {
         String boundary = "boundary";
         final byte[] chunk1 = "      \t    \t    ".getBytes();
-        final byte[] chunk2 = ("\t      \t     \r\n"
-                + "Content-Id: part1\n"
-                + "\n"
-                + "part1\n").getBytes();
+        final byte[] chunk2 = ("""
+                \t      \t     \r
+                Content-Id: part1
+
+                part1
+                """).getBytes();
         MimeParser.ParsingException ex = assertThrows(MimeParser.ParsingException.class,
                 () -> parse(boundary, List.of(chunk1, chunk2)));
         assertThat(ex.getMessage(), is(equalTo("Missing start boundary")));

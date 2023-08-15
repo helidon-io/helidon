@@ -132,9 +132,11 @@ class MetricImplTest {
 
     @Test
     void testPrometheus() {
-        String expected = "# TYPE base_theName counter\n"
-                + "# HELP base_theName theDescription\n"
-                + "base_theName 45\n";
+        String expected = """
+                # TYPE base_theName counter
+                # HELP base_theName theDescription
+                base_theName 45
+                """;
         final StringBuilder sb = new StringBuilder();
         impl.prometheusData(sb, implID, true, false);
         assertThat(sb.toString(), is(expected));
@@ -142,9 +144,11 @@ class MetricImplTest {
 
     @Test
     void testPrometheusWithoutDescription() {
-        String expected = "# TYPE base_counterWithoutDescription counter\n"
-                + "# HELP base_counterWithoutDescription \n"
-                + "base_counterWithoutDescription 45\n";
+        String expected = """
+                # TYPE base_counterWithoutDescription counter
+                # HELP base_counterWithoutDescription\s
+                base_counterWithoutDescription 45
+                """;
         final StringBuilder sb = new StringBuilder();
         implWithoutDescription.prometheusData(sb, implWithoutDescriptionID, true, false);
         assertThat(sb.toString(), is(expected));

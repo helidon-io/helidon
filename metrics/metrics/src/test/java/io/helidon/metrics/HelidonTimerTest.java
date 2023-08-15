@@ -216,24 +216,25 @@ class HelidonTimerTest {
         final StringBuilder sb = new StringBuilder();
         dataSetTimer.prometheusData(sb, dataSetTimerID, true, false);
         final String prometheusData = sb.toString();
-        assertThat(prometheusData, startsWith("# TYPE application_response_time_rate_per_second gauge\n"
-                                                      + "application_response_time_rate_per_second 200.0\n"
-                                                      + "# TYPE application_response_time_one_min_rate_per_second gauge\n"
-                                                      + "application_response_time_one_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application_response_time_five_min_rate_per_second gauge\n"
-                                                      + "application_response_time_five_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application_response_time_fifteen_min_rate_per_second gauge\n"
-                                                      + "application_response_time_fifteen_min_rate_per_second 0.0\n"
-                                                      + "# TYPE application_response_time_mean_seconds gauge\n"
-                                                      + "application_response_time_mean_seconds "));
+        assertThat(prometheusData, startsWith("""
+                # TYPE application_response_time_rate_per_second gauge
+                application_response_time_rate_per_second 200.0
+                # TYPE application_response_time_one_min_rate_per_second gauge
+                application_response_time_one_min_rate_per_second 0.0
+                # TYPE application_response_time_five_min_rate_per_second gauge
+                application_response_time_five_min_rate_per_second 0.0
+                # TYPE application_response_time_fifteen_min_rate_per_second gauge
+                application_response_time_fifteen_min_rate_per_second 0.0
+                # TYPE application_response_time_mean_seconds gauge
+                application_response_time_mean_seconds\s"""));
         assertThat(prometheusData, containsString("# TYPE application_response_time_max_seconds gauge\n"
                                                           + "application_response_time_max_seconds "));
 
-        assertThat(prometheusData, containsString("# TYPE application_response_time_seconds summary\n"
-                                                          + "# HELP application_response_time_seconds Server response time for "
-                                                          + "/index.html\n"
-                                                          + "application_response_time_seconds_count 200\n"
-                                                          + "application_response_time_seconds_sum 0"));
+        assertThat(prometheusData, containsString("""
+                # TYPE application_response_time_seconds summary
+                # HELP application_response_time_seconds Server response time for /index.html
+                application_response_time_seconds_count 200
+                application_response_time_seconds_sum 0"""));
     }
 
     @Test

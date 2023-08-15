@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,10 @@ public class JdbcStatementParserTest {
     @Test
     void testStatementWithNoParameter() {
         String stmtIn =
-                "SELECT *, 2 FROM table\r\n" +
-                "  WHERE name LIKE 'a?e%'\n";
+                """
+                        SELECT *, 2 FROM table\r
+                          WHERE name LIKE 'a?e%'
+                        """;
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
@@ -55,13 +57,15 @@ public class JdbcStatementParserTest {
     @Test
     void testStatementWithParameters() {
         String stmtIn =
-                "SELECT t.*, 'first' FROM table t\r\n" +
-                "  WHERE name = :my_n4m3\n" +
-                "   AND age > :ag3";
+                """
+                        SELECT t.*, 'first' FROM table t\r
+                          WHERE name = :my_n4m3
+                           AND age > :ag3""";
         String stmtExp =
-                "SELECT t.*, 'first' FROM table t\r\n" +
-                "  WHERE name = ?\n" +
-                "   AND age > ?";
+                """
+                        SELECT t.*, 'first' FROM table t\r
+                          WHERE name = ?
+                           AND age > ?""";
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
@@ -76,17 +80,19 @@ public class JdbcStatementParserTest {
     @Test
     void testStatementWithParametersInMultiLineCommnet() {
         String stmtIn =
-                "SELECT t.*, 'first' FROM table t /* Parameter for name is :n4me\r\n" +
-                " and for age is :ag3 */\n" +
-                "  WHERE address IS NULL\r\n" +
-                " AND name = :n4m3\n" +
-                "   AND age > :ag3";
+                """
+                        SELECT t.*, 'first' FROM table t /* Parameter for name is :n4me\r
+                         and for age is :ag3 */
+                          WHERE address IS NULL\r
+                         AND name = :n4m3
+                           AND age > :ag3""";
         String stmtExp =
-                "SELECT t.*, 'first' FROM table t /* Parameter for name is :n4me\r\n" +
-                " and for age is :ag3 */\n" +
-                "  WHERE address IS NULL\r\n" +
-                " AND name = ?\n" +
-                "   AND age > ?";
+                """
+                        SELECT t.*, 'first' FROM table t /* Parameter for name is :n4me\r
+                         and for age is :ag3 */
+                          WHERE address IS NULL\r
+                         AND name = ?
+                           AND age > ?""";
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
@@ -101,15 +107,17 @@ public class JdbcStatementParserTest {
     @Test
     void testStatementWithParametersInSingleLineCommnet() {
         String stmtIn =
-                "SELECT t.*, 'first' FROM table t -- Parameter for name is :n4me\r\r\n" +
-                "  WHERE address IS NULL\r\n" +
-                " AND name = :myN4m3\n" +
-                "   AND age > :ag3";
+                """
+                        SELECT t.*, 'first' FROM table t -- Parameter for name is :n4me\r\r
+                          WHERE address IS NULL\r
+                         AND name = :myN4m3
+                           AND age > :ag3""";
         String stmtExp =
-                "SELECT t.*, 'first' FROM table t -- Parameter for name is :n4me\r\r\n" +
-                "  WHERE address IS NULL\r\n" +
-                " AND name = ?\n" +
-                "   AND age > ?";
+                """
+                        SELECT t.*, 'first' FROM table t -- Parameter for name is :n4me\r\r
+                          WHERE address IS NULL\r
+                         AND name = ?
+                           AND age > ?""";
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();
@@ -144,12 +152,14 @@ public class JdbcStatementParserTest {
 
     @Test
     void testStatementWithUnderscores() {
-        String stmtIn = "INSERT INTO example (created_at)\n" +
-                "      VALUES (:created_at)\n" +
-                "      RETURNING example_id, created_at;";
-        String stmtExp = "INSERT INTO example (created_at)\n" +
-                "      VALUES (?)\n" +
-                "      RETURNING example_id, created_at;";
+        String stmtIn = """
+                INSERT INTO example (created_at)
+                      VALUES (:created_at)
+                      RETURNING example_id, created_at;""";
+        String stmtExp = """
+                INSERT INTO example (created_at)
+                      VALUES (?)
+                      RETURNING example_id, created_at;""";
         Parser parser = new Parser(stmtIn);
         String stmtOut = parser.convert();
         List<String> names = parser.namesOrder();

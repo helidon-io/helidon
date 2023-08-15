@@ -106,16 +106,20 @@ class HelidonCounterTest {
         counter.inc(17);
         wrappingCounter.inc(17);
 
-        String expected = "# TYPE base_theName_total counter\n"
-                + "# HELP base_theName_total theDescription\n"
-                + "base_theName_total{a=\"b\",c=\"d\"} 17\n";
+        String expected = """
+                # TYPE base_theName_total counter
+                # HELP base_theName_total theDescription
+                base_theName_total{a="b",c="d"} 17
+                """;
 
         counter.prometheusData(sb, counterID, true, false);
         assertThat(sb.toString(), is(expected));
 
-        expected = "# TYPE base_theName_total counter\n"
-                + "# HELP base_theName_total theDescription\n"
-                + "base_theName_total 49\n";
+        expected = """
+                # TYPE base_theName_total counter
+                # HELP base_theName_total theDescription
+                base_theName_total 49
+                """;
         sb = new StringBuilder();
         wrappingCounter.prometheusData(sb, wrappingCounterID, true, false);
         assertThat(sb.toString(), is(expected));

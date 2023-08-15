@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,9 +71,10 @@ public class JerseySupportTest {
     public void injection() {
         Response response = get("jersey/first/injection");
         doAssert(response,
-                 "request=io.helidon.webserver.RequestRouting$RoutedRequest\n"
-                         + "response=io.helidon.webserver.RequestRouting$RoutedResponse\n"
-                         + "spanContext=null");
+                """
+                        request=io.helidon.webserver.RequestRouting$RoutedRequest
+                        response=io.helidon.webserver.RequestRouting$RoutedResponse
+                        spanContext=null""");
     }
 
     @Test

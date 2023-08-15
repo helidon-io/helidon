@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,11 +58,11 @@ public class HoconConfigParserTest {
     @Test
     public void testResolveEnabled() {
         ConfigParser parser = createResolvingParser();
-        ObjectNode node = parser.parse((StringContent) () -> ""
-                                               + "aaa = 1 \n"
-                                               + "bbb = ${aaa} \n"
-                                               + "ccc = \"${aaa}\" \n"
-                                               + "ddd = ${?zzz}",
+        ObjectNode node = parser.parse((StringContent) () -> """
+                        aaa = 1\s
+                        bbb = ${aaa}\s
+                        ccc = "${aaa}"\s
+                        ddd = ${?zzz}""",
                                        it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(3));
@@ -114,12 +114,11 @@ public class HoconConfigParserTest {
     @Test
     public void testComplexValue() {
         ConfigParser parser = createResolvingParser();
-        ObjectNode node = parser.parse((StringContent) () -> ""
-                                               + "aaa =  \"bbb\"\n"
-                                               + "arr = [ bbb, 13, true, 3.14159 ] \n"
-                                               + "obj1 = { aaa = bbb, ccc = false } \n"
-                                               + "arr2 = [ aaa, false, { bbb = 3.14159, c = true }, { ooo { ppp { xxx = yyy }}}"
-                                               + " ]",
+        ObjectNode node = parser.parse((StringContent) () -> """
+                        aaa =  "bbb"
+                        arr = [ bbb, 13, true, 3.14159 ]\s
+                        obj1 = { aaa = bbb, ccc = false }\s
+                        arr2 = [ aaa, false, { bbb = 3.14159, c = true }, { ooo { ppp { xxx = yyy }}} ]""",
                                        it -> Optional.empty());
 
         assertThat(node.entrySet(), hasSize(4));
@@ -154,17 +153,18 @@ public class HoconConfigParserTest {
      */
     @Test
     public void testConfigKeyEscapedNameComplex() {
-        String JSON = ""
-                + "{\n"
-                + "    \"oracle.com\": {\n"
-                + "        \"prop1\": \"val1\",\n"
-                + "        \"prop2\": \"val2\"\n"
-                + "    },\n"
-                + "    \"oracle\": {\n"
-                + "        \"com\": \"1\",\n"
-                + "        \"cz\": \"2\"\n"
-                + "    }\n"
-                + "}\n";
+        String JSON = """
+                {
+                    "oracle.com": {
+                        "prop1": "val1",
+                        "prop2": "val2"
+                    },
+                    "oracle": {
+                        "com": "1",
+                        "cz": "2"
+                    }
+                }
+                """;
 
         Config config = Config
                 .builder(ConfigSources.create(JSON, HoconConfigParser.MEDIA_TYPE_APPLICATION_JSON))
