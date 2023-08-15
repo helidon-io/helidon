@@ -37,22 +37,22 @@ import io.helidon.common.Errors;
 public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.Api {
 
     /**
+     * Create a new fluent API builder to customize configuration.
+     *
+     * @return a new builder
+     */
+    static TypedElementInfo.Builder builder() {
+        return new TypedElementInfo.Builder();
+    }
+
+    /**
      * Create a new fluent API builder from an existing instance.
      *
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(TypedElementInfo instance) {
+    static TypedElementInfo.Builder builder(TypedElementInfo instance) {
         return TypedElementInfo.builder().from(instance);
-    }
-
-    /**
-     * Create a new fluent API builder to customize configuration.
-     *
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -68,11 +68,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends TypedElementInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> annotations = new ArrayList<>();
-        private final List<TypeName> componentTypes = new ArrayList<>();
         private final List<Annotation> elementTypeAnnotations = new ArrayList<>();
+        private final List<TypeName> componentTypes = new ArrayList<>();
         private final List<TypedElementInfo> parameterArguments = new ArrayList<>();
         private final Set<String> modifiers = new LinkedHashSet<>();
         private String defaultValue;
@@ -115,7 +115,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(TypedElementInfo.BuilderBase<?, ?> builder) {
             builder.description().ifPresent(this::description);
             builder.typeName().ifPresent(this::typeName);
             builder.elementName().ifPresent(this::elementName);
@@ -357,9 +357,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
          * @param enclosingType the enclosing type element
          * @return updated builder instance
@@ -373,9 +373,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
          * @param consumer the enclosing type element
          * @return updated builder instance
@@ -390,9 +390,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param parameterArguments the list of parameters belonging to this method if applicable
          * @return updated builder instance
@@ -406,9 +406,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param parameterArguments the list of parameters belonging to this method if applicable
          * @return updated builder instance
@@ -421,9 +421,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param parameterArgument the list of parameters belonging to this method if applicable
          * @return updated builder instance
@@ -436,15 +436,15 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param consumer the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
          */
-        public BUILDER addParameterArgument(Consumer<Builder> consumer) {
+        public BUILDER addParameterArgument(Consumer<TypedElementInfo.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypedElementInfo.builder();
             consumer.accept(builder);
@@ -586,9 +586,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
          * @return the enclosing type
          */
@@ -597,9 +597,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @return the parameter arguments
          */
@@ -668,9 +668,9 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
 
         /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
          * @param enclosingType the enclosing type element
          * @return updated builder instance
@@ -688,12 +688,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         protected static class TypedElementInfoImpl implements TypedElementInfo {
 
             private final List<Annotation> annotations;
-            private final List<TypeName> componentTypes;
             private final List<Annotation> elementTypeAnnotations;
+            private final List<TypeName> componentTypes;
             private final List<TypedElementInfo> parameterArguments;
+            private final Optional<TypeName> enclosingType;
             private final Optional<String> defaultValue;
             private final Optional<String> description;
-            private final Optional<TypeName> enclosingType;
             private final Set<String> modifiers;
             private final String elementName;
             private final String elementTypeKind;
@@ -704,7 +704,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
              *
              * @param builder extending builder base of this prototype
              */
-            protected TypedElementInfoImpl(BuilderBase<?, ?> builder) {
+            protected TypedElementInfoImpl(TypedElementInfo.BuilderBase<?, ?> builder) {
                 this.description = builder.description();
                 this.typeName = builder.typeName().get();
                 this.elementName = builder.elementName().get();
@@ -811,7 +811,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
     /**
      * Fluent API builder for {@link TypedElementInfo}.
      */
-    class Builder extends BuilderBase<Builder, TypedElementInfo> implements io.helidon.common.Builder<Builder, TypedElementInfo> {
+    class Builder extends TypedElementInfo.BuilderBase<TypedElementInfo.Builder, TypedElementInfo> implements io.helidon.common.Builder<TypedElementInfo.Builder, TypedElementInfo> {
 
         private Builder() {
         }

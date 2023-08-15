@@ -27,7 +27,7 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 
 /**
- * TypeName is similar to {@link Type} in its most basic use case. The {@link #name()} returns the package +
+ * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
  * class name tuple for the given type (i.e., the canonical type name).
  * <p>
  * This class also provides a number of methods that are typically found in {@link Class} that can be used to avoid
@@ -52,13 +52,12 @@ import io.helidon.common.Errors;
 public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
 
     /**
-     * Creates a type name from a generic alias type name.
+     * Create a new fluent API builder to customize configuration.
      *
-     * @param genericAliasTypeName the generic alias type name
-     * @return the TypeName for the provided type name
+     * @return a new builder
      */
-    static TypeName createFromGenericDeclaration(String genericAliasTypeName) {
-        return TypeNameSupport.createFromGenericDeclaration(genericAliasTypeName);
+    static TypeName.Builder builder() {
+        return new TypeName.Builder();
     }
 
     /**
@@ -67,17 +66,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(TypeName instance) {
+    static TypeName.Builder builder(TypeName instance) {
         return TypeName.builder().from(instance);
-    }
-
-    /**
-     * Create a new fluent API builder to customize configuration.
-     *
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -98,6 +88,16 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      */
     static TypeName create(String typeName) {
         return TypeNameSupport.create(typeName);
+    }
+
+    /**
+     * Creates a type name from a generic alias type name.
+     *
+     * @param genericAliasTypeName the generic alias type name
+     * @return the TypeName for the provided type name
+     */
+    static TypeName createFromGenericDeclaration(String genericAliasTypeName) {
+        return TypeNameSupport.createFromGenericDeclaration(genericAliasTypeName);
     }
 
     /**
@@ -122,10 +122,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends TypeName.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
-        private final List<String> enclosingNames = new ArrayList<>();
         private final List<TypeName> typeArguments = new ArrayList<>();
+        private final List<String> enclosingNames = new ArrayList<>();
         private boolean array = false;
         private boolean generic = false;
         private boolean primitive = false;
@@ -163,7 +164,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(TypeName.BuilderBase<?, ?> builder) {
             packageName(builder.packageName());
             builder.className().ifPresent(this::className);
             addEnclosingNames(builder.enclosingNames());
@@ -353,7 +354,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeArguments()
          */
-        public BUILDER addTypeArgument(Consumer<Builder> consumer) {
+        public BUILDER addTypeArgument(Consumer<TypeName.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
@@ -461,8 +462,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean generic;
             private final boolean primitive;
             private final boolean wildcard;
-            private final List<String> enclosingNames;
             private final List<TypeName> typeArguments;
+            private final List<String> enclosingNames;
             private final String className;
             private final String packageName;
 
@@ -471,7 +472,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
              *
              * @param builder extending builder base of this prototype
              */
-            protected TypeNameImpl(BuilderBase<?, ?> builder) {
+            protected TypeNameImpl(TypeName.BuilderBase<?, ?> builder) {
                 this.packageName = builder.packageName();
                 this.className = builder.className().get();
                 this.enclosingNames = List.copyOf(builder.enclosingNames());
@@ -584,7 +585,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     /**
      * Fluent API builder for {@link TypeName}.
      */
-    class Builder extends BuilderBase<Builder, TypeName> implements io.helidon.common.Builder<Builder, TypeName> {
+    class Builder extends TypeName.BuilderBase<TypeName.Builder, TypeName>
+            implements io.helidon.common.Builder<TypeName.Builder, TypeName> {
 
         private Builder() {
         }

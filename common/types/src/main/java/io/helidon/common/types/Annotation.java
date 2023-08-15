@@ -40,8 +40,8 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      *
      * @return a new builder
      */
-    static Builder builder() {
-        return new Builder();
+    static Annotation.Builder builder() {
+        return new Annotation.Builder();
     }
 
     /**
@@ -50,8 +50,28 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(Annotation instance) {
+    static Annotation.Builder builder(Annotation instance) {
         return Annotation.builder().from(instance);
+    }
+
+    /**
+     * Creates an instance for an annotation with no value.
+     *
+     * @param annoType the annotation type
+     * @return the new instance
+     */
+    static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType) {
+        return AnnotationSupport.create(annoType);
+    }
+
+    /**
+     * Creates an instance for an annotation with no value.
+     *
+     * @param annoType the annotation type
+     * @return the new instance
+     */
+    static Annotation create(TypeName annoType) {
+        return AnnotationSupport.create(annoType);
     }
 
     /**
@@ -99,32 +119,12 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     }
 
     /**
-     * Creates an instance for an annotation with no value.
-     *
-     * @param annoType the annotation type
-     * @return the new instance
-     */
-    static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType) {
-        return AnnotationSupport.create(annoType);
-    }
-
-    /**
-     * Creates an instance for an annotation with no value.
-     *
-     * @param annoType the annotation type
-     * @return the new instance
-     */
-    static Annotation create(TypeName annoType) {
-        return AnnotationSupport.create(annoType);
-    }
-
-    /**
      * Fluent API builder base for {@link Annotation}.
      *
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends Annotation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends Annotation.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends Annotation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final Map<String, String> values = new LinkedHashMap<>();
         private TypeName typeName;
@@ -153,7 +153,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(Annotation.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
             addValues(builder.values());
             return self();
@@ -182,7 +182,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
-         * The type name, e.g., {@link Objects} -> "java.util.Objects".
+         * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
          * @param typeName the annotation type name
          * @return updated builder instance
@@ -195,7 +195,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
-         * The type name, e.g., {@link Objects} -> "java.util.Objects".
+         * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
          * @param consumer consumer of builder for
          *                 the annotation type name
@@ -211,7 +211,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
-         * The type name, e.g., {@link Objects} -> "java.util.Objects".
+         * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
          * @param supplier supplier of
          *                 the annotation type name
@@ -267,7 +267,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         }
 
         /**
-         * The type name, e.g., {@link Objects} -> "java.util.Objects".
+         * The type name, e.g., {@link java.util.Objects} -> "java.util.Objects".
          *
          * @return the type name
          */
@@ -322,7 +322,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
              *
              * @param builder extending builder base of this prototype
              */
-            protected AnnotationImpl(BuilderBase<?, ?> builder) {
+            protected AnnotationImpl(Annotation.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
                 this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
             }
@@ -374,7 +374,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     /**
      * Fluent API builder for {@link Annotation}.
      */
-    class Builder extends BuilderBase<Builder, Annotation> implements io.helidon.common.Builder<Builder, Annotation> {
+    class Builder extends Annotation.BuilderBase<Annotation.Builder, Annotation> implements io.helidon.common.Builder<Annotation.Builder, Annotation> {
 
         private Builder() {
         }

@@ -39,22 +39,22 @@ import io.helidon.common.Errors;
 public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
 
     /**
+     * Create a new fluent API builder to customize configuration.
+     *
+     * @return a new builder
+     */
+    static TypeInfo.Builder builder() {
+        return new TypeInfo.Builder();
+    }
+
+    /**
      * Create a new fluent API builder from an existing instance.
      *
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(TypeInfo instance) {
+    static TypeInfo.Builder builder(TypeInfo instance) {
         return TypeInfo.builder().from(instance);
-    }
-
-    /**
-     * Create a new fluent API builder to customize configuration.
-     *
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
     }
 
     /**
@@ -63,11 +63,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
      * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+    abstract class BuilderBase<BUILDER extends TypeInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
         private final List<Annotation> annotations = new ArrayList<>();
-        private final List<TypedElementInfo> elementInfo = new ArrayList<>();
         private final List<TypeInfo> interfaceTypeInfo = new ArrayList<>();
+        private final List<TypedElementInfo> elementInfo = new ArrayList<>();
         private final List<TypedElementInfo> otherElementInfo = new ArrayList<>();
         private final Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
         private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
@@ -108,7 +108,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(TypeInfo.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
             builder.typeKind().ifPresent(this::typeKind);
             addElementInfo(builder.elementInfo());
@@ -170,9 +170,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * <p>
          * Such as
          * <ul>
-         *     <li>{@value TypeValues#KIND_INTERFACE}</li>
-         *     <li>{@value TypeValues#KIND_ANNOTATION_TYPE}</li>
-         *     <li>and other constants on {@link TypeValues}</li>
+         *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
+         *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
+         *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
          * </ul>
          *
          * @param typeKind the type element kind.
@@ -454,7 +454,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #superTypeInfo()
          */
-        public BUILDER superTypeInfo(Consumer<Builder> consumer) {
+        public BUILDER superTypeInfo(Consumer<TypeInfo.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeInfo.builder();
             consumer.accept(builder);
@@ -509,7 +509,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * @return updated builder instance
          * @see #interfaceTypeInfo()
          */
-        public BUILDER addInterfaceTypeInfo(Consumer<Builder> consumer) {
+        public BUILDER addInterfaceTypeInfo(Consumer<TypeInfo.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeInfo.builder();
             consumer.accept(builder);
@@ -630,9 +630,9 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
          * <p>
          * Such as
          * <ul>
-         *     <li>{@value TypeValues#KIND_INTERFACE}</li>
-         *     <li>{@value TypeValues#KIND_ANNOTATION_TYPE}</li>
-         *     <li>and other constants on {@link TypeValues}</li>
+         *     <li>{@value io.helidon.common.types.TypeValues#KIND_INTERFACE}</li>
+         *     <li>{@value io.helidon.common.types.TypeValues#KIND_ANNOTATION_TYPE}</li>
+         *     <li>and other constants on {@link io.helidon.common.types.TypeValues}</li>
          * </ul>
          *
          * @return the type kind
@@ -661,7 +661,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
-         * Any Map, List, Set, or method that has {@link TypeName#typeArguments()} will be analyzed and any
+         * Any Map, List, Set, or method that has {@link io.helidon.common.types.TypeName#typeArguments()} will be analyzed and any
          * type arguments will have
          * its annotations added here. Note that this only applies to non-built-in types.
          *
@@ -768,8 +768,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         protected static class TypeInfoImpl implements TypeInfo {
 
             private final List<Annotation> annotations;
-            private final List<TypedElementInfo> elementInfo;
             private final List<TypeInfo> interfaceTypeInfo;
+            private final List<TypedElementInfo> elementInfo;
             private final List<TypedElementInfo> otherElementInfo;
             private final Map<TypeName, String> referencedModuleNames;
             private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations;
@@ -783,7 +783,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
              *
              * @param builder extending builder base of this prototype
              */
-            protected TypeInfoImpl(BuilderBase<?, ?> builder) {
+            protected TypeInfoImpl(TypeInfo.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
                 this.typeKind = builder.typeKind().get();
                 this.elementInfo = List.copyOf(builder.elementInfo());
@@ -887,7 +887,8 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
     /**
      * Fluent API builder for {@link TypeInfo}.
      */
-    class Builder extends BuilderBase<Builder, TypeInfo> implements io.helidon.common.Builder<Builder, TypeInfo> {
+    class Builder extends TypeInfo.BuilderBase<TypeInfo.Builder, TypeInfo>
+            implements io.helidon.common.Builder<TypeInfo.Builder, TypeInfo> {
 
         private Builder() {
         }

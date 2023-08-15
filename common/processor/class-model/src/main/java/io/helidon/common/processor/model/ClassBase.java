@@ -286,7 +286,7 @@ public abstract class ClassBase extends AnnotatedComponent {
             extends AnnotatedComponent.Builder<B, T> {
 
         private final Set<Method> methods = new LinkedHashSet<>();
-        private final Set<Method> staticMethods = new HashSet<>();
+        private final Set<Method> staticMethods = new LinkedHashSet<>();
         private final Set<Type> interfaces = new LinkedHashSet<>();
         private final Map<String, Field> fields = new LinkedHashMap<>();
         private final Map<String, Field> staticFields = new LinkedHashMap<>();

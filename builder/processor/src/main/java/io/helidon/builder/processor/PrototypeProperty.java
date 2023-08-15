@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import io.helidon.common.processor.model.ClassModel;
 import io.helidon.common.processor.model.Field;
 import io.helidon.common.processor.model.InnerClass;
 import io.helidon.common.processor.model.Javadoc;
