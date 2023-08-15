@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.HistogramSnapshot;
 
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Timer;
 
 class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
@@ -40,19 +40,27 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
     }
 
     static Sample start(io.helidon.metrics.api.MeterRegistry meterRegistry) {
-        if (meterRegistry instanceof MeterRegistry mMeterRegistry) {
-            return Sample.create(Timer.start(mMeterRegistry));
+        if (meterRegistry instanceof MMeterRegistry mMeterRegistry) {
+            return Sample.create(Timer.start(mMeterRegistry.delegate()));
         }
         throw new IllegalArgumentException("Expected meter registry type " + MMeterRegistry.class.getName()
         + " but was " + meterRegistry.getClass().getName());
     }
 
     static Sample start(io.helidon.metrics.api.Clock clock) {
-        if (clock instanceof MClock mClock) {
-            return Sample.create(Timer.start(mClock.delegate()));
-        }
-        throw new IllegalArgumentException("Expected clock type " + MClock.class.getName()
-        + " but was " + clock.getClass().getName());
+        // This is a relatively infrequently-used method, so it is not overly costly
+        // to create a new instance of Micrometer's Clock each invocation.
+        return Sample.create(Timer.start(new Clock() {
+            @Override
+            public long wallTime() {
+                return clock.wallTime();
+            }
+
+            @Override
+            public long monotonicTime() {
+                return clock.monotonicTime();
+            }
+        }));
     }
 
     static class Sample implements io.helidon.metrics.api.Timer.Sample {
@@ -162,32 +170,14 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         }
 
         @Override
-        public Builder publishPercentiles(double... percentiles) {
+        public Builder percentiles(double... percentiles) {
             delegate().publishPercentiles(percentiles);
             return identity();
         }
 
         @Override
-        public Builder percentilePrecision(Integer digitsOfPrecision) {
-            delegate().percentilePrecision(digitsOfPrecision);
-            return identity();
-        }
-
-        @Override
-        public Builder publishPercentileHistogram() {
-            delegate().publishPercentileHistogram();
-            return identity();
-        }
-
-        @Override
-        public Builder publishPercentileHistogram(Boolean enabled) {
-            delegate().publishPercentileHistogram(enabled);
-            return identity();
-        }
-
-        @Override
-        public Builder serviceLevelObjectives(Duration... slos) {
-            delegate().serviceLevelObjectives(slos);
+        public Builder buckets(Duration... buckets) {
+            delegate().serviceLevelObjectives(buckets);
             return identity();
         }
 
@@ -200,18 +190,6 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         @Override
         public Builder maximumExpectedValue(Duration max) {
             delegate().maximumExpectedValue(max);
-            return identity();
-        }
-
-        @Override
-        public Builder distributionStatisticExpiry(Duration expiry) {
-            delegate().distributionStatisticExpiry(expiry);
-            return identity();
-        }
-
-        @Override
-        public Builder distributionStatisticBufferLength(Integer bufferLength) {
-            delegate().distributionStatisticBufferLength(bufferLength);
             return identity();
         }
     }

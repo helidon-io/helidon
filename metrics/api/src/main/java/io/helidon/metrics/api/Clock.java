@@ -57,4 +57,16 @@ public interface Clock extends Wrapped {
      * @return monotonic time in nanoseconds
      */
     long monotonicTime();
+
+    /**
+     * Unwraps the clock to the specified type (typically not needed for custom clocks).
+     *
+     * @param c {@link Class} to which to cast this object
+     * @return unwrapped clock
+     * @param <R> the type of the unwrapped clock
+     */
+    @Override
+    default <R> R unwrap(Class<? extends R> c) {
+        throw new UnsupportedOperationException();
+    }
 }

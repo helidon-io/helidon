@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
+import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MetricsConfig;
 
 import io.micrometer.core.instrument.Counter;
@@ -39,24 +40,94 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
+    /**
+     * Creates a new meter registry which wraps the specified Micrometer meter registry, ensuring that if
+     * the meter registry is a composite registry it has a Prometheus meter registry attached (adding a new one if needed).
+     * <p>
+     *     The {@link io.helidon.metrics.api.MetricsConfig} does not override the settings of the pre-existing Micrometer
+     *     meter registry but augments the behavior of this wrapper around it, for example specifying
+     *     global tags.
+     * </p>
+     *
+     * @param meterRegistry existing Micrometer meter registry to wrap
+     * @param metricsConfig metrics config
+     * @return new wrapper around the specified Micrometer meter registry
+     */
     static MMeterRegistry create(MeterRegistry meterRegistry,
                                  MetricsConfig metricsConfig) {
-        return new MMeterRegistry(meterRegistry, metricsConfig);
+        // The caller passed a pre-existing meter registry, with its own clock, so wrap that clock
+        // with a Helidon clock adapter (MClock).
+        return new MMeterRegistry(ensurePrometheusRegistryIsPresent(meterRegistry, metricsConfig),
+                                  MClock.create(meterRegistry.config().clock()),
+                                  metricsConfig);
     }
 
+    /**
+     * Creates a new meter registry which wraps an automatically-created new Micrometer
+     * {@link io.micrometer.core.instrument.composite.CompositeMeterRegistry} with a Prometheus meter registry
+     * automatically added.
+     *
+     * @param metricsConfig metrics config
+     * @return new wrapper around a new Micrometer composite meter registry
+     */
     static MMeterRegistry create(MetricsConfig metricsConfig) {
         CompositeMeterRegistry delegate = new CompositeMeterRegistry();
-        delegate.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
-        return new MMeterRegistry(delegate, metricsConfig);
+        return create(ensurePrometheusRegistryIsPresent(delegate, metricsConfig),
+                      MClock.create(delegate.config().clock()),
+                      metricsConfig);
+    }
+
+    /**
+     * Creates a new meter registry which wraps an automatically-created new Micrometer
+     * {@link io.micrometer.core.instrument.composite.CompositeMeterRegistry} with a Prometheus meter registry
+     * automatically added, using the specified clock.
+     *
+     * @param clock default clock to associate with the new meter registry
+     * @param metricsConfig metrics config
+     * @return new wrapper around a new Micrometer composite meter registry
+     */
+    static MMeterRegistry create(Clock clock,
+                                 MetricsConfig metricsConfig) {
+        CompositeMeterRegistry delegate = new CompositeMeterRegistry(ClockWrapper.create(clock));
+        // The specified clock is already a Helidon one so pass it directly; no need to wrap it.
+        return create(ensurePrometheusRegistryIsPresent(delegate, metricsConfig),
+                      clock,
+                      metricsConfig);
+    }
+
+    private static MMeterRegistry create(MeterRegistry delegate,
+                                         Clock neutralClock,
+                                         MetricsConfig metricsConfig) {
+        return new MMeterRegistry(delegate, neutralClock, metricsConfig);
+    }
+
+    private static MeterRegistry ensurePrometheusRegistryIsPresent(MeterRegistry meterRegistry,
+                                                                   MetricsConfig metricsConfig) {
+        if (meterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
+            if (compositeMeterRegistry.getRegistries()
+                    .stream()
+                    .noneMatch(r -> r instanceof PrometheusMeterRegistry)) {
+                compositeMeterRegistry.add(
+                        new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
+            }
+        }
+        return meterRegistry;
     }
 
     private final MeterRegistry delegate;
 
+    /**
+     * Helidon API clock to be returned by the {@link #clock} method.
+     */
+    private final Clock clock;
+
     private final ConcurrentHashMap<Meter, io.helidon.metrics.api.Meter> meters = new ConcurrentHashMap<>();
 
     private MMeterRegistry(MeterRegistry delegate,
+                           Clock clock,
                            MetricsConfig metricsConfig) {
         this.delegate = delegate;
+        this.clock = clock;
         delegate.config()
                 .onMeterAdded(this::recordAdd)
                 .onMeterRemoved(this::recordRemove);
@@ -77,6 +148,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 .stream()
                 .filter(filter)
                 .toList();
+    }
+
+    @Override
+    public Clock clock() {
+        return clock;
     }
 
     @Override
@@ -202,6 +278,32 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         io.helidon.metrics.api.Meter removedNeutralMeter = meters.remove(removedMeter);
         if (removedNeutralMeter == null) {
             LOGGER.log(System.Logger.Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
+        }
+    }
+
+    /**
+     * Micrometer-friendly wrapper around a Helidon clock.
+     */
+    private static class ClockWrapper implements io.micrometer.core.instrument.Clock {
+
+        static ClockWrapper create(Clock clock) {
+            return new ClockWrapper(clock);
+        }
+
+        private final Clock neutralClock;
+
+        private ClockWrapper(Clock neutralClock) {
+            this.neutralClock = neutralClock;
+        }
+
+        @Override
+        public long wallTime() {
+            return neutralClock.wallTime();
+        }
+
+        @Override
+        public long monotonicTime() {
+            return neutralClock.monotonicTime();
         }
     }
 }

@@ -56,6 +56,11 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
+        return createMeterRegistry(metricsConfig);
+    }
+
+    @Override
     public Clock clockSystem() {
         return SYSTEM_CLOCK;
     }

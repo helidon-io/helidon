@@ -60,12 +60,22 @@ public interface MetricsFactory {
     MeterRegistry globalRegistry();
 
     /**
-     * Creates a new {@link MeterRegistry} using the provided metrics config.
+     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config.
      *
      * @param metricsConfig metrics configuration which influences the new registry
      * @return new meter registry
      */
     MeterRegistry createMeterRegistry(MetricsConfig metricsConfig);
+
+    /**
+     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided {@link io.helidon.metrics.api.Clock} and
+     * metrics config.
+     *
+     * @param clock default clock to associate with the meter registry
+     * @param metricsConfig metrics configuration which influences the new registry
+     * @return new meter registry
+     */
+    MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig);
 
     /**
      * Returns the system {@link io.helidon.metrics.api.Clock} from the

@@ -197,44 +197,19 @@ public interface Timer extends Meter, HistogramSupport {
          * @param percentiles percentiles to compute and publish
          * @return updated builder
          */
-        Builder publishPercentiles(double... percentiles);
+        Builder percentiles(double... percentiles);
 
         /**
-         * Sets the precision for computing histogram percentile approximations.
+         * Sets the bucket boundaries.
          *
-         * @param digitsOfPrecision number of digits of precision
+         * @param buckets bucket boundaries
          * @return updated builder
          */
-        Builder percentilePrecision(Integer digitsOfPrecision);
-
-        /**
-         * Sets to add histogram buckets.
-         * <p>
-         *     Equivalent to {@code publishPercentilHistogram(true)}).
-         * </p>
-         *
-         * @return updated builder
-         */
-        Builder publishPercentileHistogram();
-
-        /**
-         * Sets whether to add histogram buckets.
-         *
-         * @param enabled true/false
-         * @return updated builder
-         */
-        Builder publishPercentileHistogram(Boolean enabled);
-
-        /**
-         * Sets the service level objectives, guaranteeing at least those buckets in the histogram.
-         *
-         * @param slos service-level objective bucket boundaries
-         * @return updated builder
-         */
-        Builder serviceLevelObjectives(Duration... slos);
+        Builder buckets(Duration... buckets);
 
         /**
          * Sets the minimum expected value the timer is expected to record.
+         *
          * @param min minimum expected value
          * @return updated builder
          */
@@ -247,21 +222,5 @@ public interface Timer extends Meter, HistogramSupport {
          * @return updated builder
          */
         Builder maximumExpectedValue(Duration max);
-
-        /**
-         * Sets how long age-decayed samples are retained in ring buffers for use in the timer histograms.
-         *
-         * @param expiry amount of time to keep samples
-         * @return updated builder
-         */
-        Builder distributionStatisticExpiry(Duration expiry);
-
-        /**
-         * Sets the size of the ring buffer for retaining samples for histograms.
-         *
-         * @param bufferLength size of the ring buffer to use
-         * @return updated builder
-         */
-        Builder distributionStatisticBufferLength(Integer bufferLength);
     }
 }

@@ -21,7 +21,7 @@ package io.helidon.metrics.api;
 public interface DistributionSummary extends Meter {
 
     /**
-     * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary}.
+     * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary} using the specified statistics builder.
      *
      * @param name name for the summary
      * @param configBuilder distribution stats config for the summary
@@ -31,6 +31,18 @@ public interface DistributionSummary extends Meter {
                            DistributionStatisticsConfig.Builder configBuilder) {
         return MetricsFactory.getInstance()
                 .distributionSummaryBuilder(name, configBuilder);
+    }
+
+    /**
+     * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary} using default distribution statistics.
+     *
+     * @param name name for the summary
+     * @return new builder
+     */
+    static Builder builder(String name) {
+        return MetricsFactory.getInstance()
+                .distributionSummaryBuilder(name,
+                                            DistributionStatisticsConfig.builder());
     }
 
     /**

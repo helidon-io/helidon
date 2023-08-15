@@ -41,6 +41,13 @@ public interface MeterRegistry extends Wrapped {
     Collection<? extends Meter> meters(Predicate<Meter> filter);
 
     /**
+     * Returns the default {@link io.helidon.metrics.api.Clock} in use by the registry.
+     *
+     * @return default clock
+     */
+    Clock clock();
+
+    /**
      * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new
      * one using the provided builder.
      *
