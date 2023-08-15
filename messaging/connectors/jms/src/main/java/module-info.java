@@ -34,7 +34,7 @@ module io.helidon.messaging.connectors.jms {
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires jakarta.jms.api;
+    requires jakarta.messaging;
     requires org.reactivestreams;
     requires transitive io.helidon.config;
     requires transitive microprofile.reactive.messaging.api;
