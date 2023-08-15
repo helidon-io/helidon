@@ -363,7 +363,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     }
                     WritableHeaders<?> headerValues = Http1HeadersParser.readHeaders(reader,
                                                                                      protocolConfig.maxHeaderSize(),
-                                                                                     protocolConfig.validateHeaders());
+                                                                                     protocolConfig.validateResponseHeaders());
                     // Discard any remaining data from the response
                     reader.skip(reader.available());
                     checkRedirectHeaders(headerValues);
