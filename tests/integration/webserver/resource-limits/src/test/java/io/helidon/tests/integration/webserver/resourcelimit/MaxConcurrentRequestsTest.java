@@ -39,7 +39,8 @@ import static org.hamcrest.Matchers.containsString;
 
 @ServerTest
 class MaxConcurrentRequestsTest {
-    private static volatile CountDownLatch cdl;
+    private static volatile CountDownLatch clientCountDown;
+    private static volatile CountDownLatch serverCountDown;
     private final SocketHttpClient client;
     private final WebClient webClient;
     private final Http2Client http2Client;
@@ -58,19 +59,22 @@ class MaxConcurrentRequestsTest {
     @SetUpRoute
     static void routeSetup(HttpRules rules) {
         rules.get("/greet", (req, res) -> {
-            cdl.await();
+            serverCountDown.countDown();
+            clientCountDown.await();
             res.send("hello");
         });
     }
 
     @BeforeEach
     void beforeEach() {
-        cdl = new CountDownLatch(1);
+        serverCountDown = new CountDownLatch(1);
+        clientCountDown = new CountDownLatch(1);
     }
 
     @Test
-    void testConcurrentRequests() {
+    void testConcurrentRequests() throws InterruptedException {
         client.request(Http.Method.GET, "/greet", null, List.of("Connection: keep-alive"));
+        serverCountDown.await(); // need to make sure we are in the server request
         // now that we have request in progress, any other should fail
         ClientResponseTyped<String> response = webClient.get("/greet")
                 .request(String.class);
@@ -78,7 +82,7 @@ class MaxConcurrentRequestsTest {
         response = http2Client.get("/greet")
                 .request(String.class);
         assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
-        cdl.countDown();
+        clientCountDown.countDown();
         assertThat(client.receive(), containsString("200 OK"));
     }
 }

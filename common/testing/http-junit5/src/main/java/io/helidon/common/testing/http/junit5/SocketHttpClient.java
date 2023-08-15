@@ -513,7 +513,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param formatString text to send
      * @param args format arguments
      * @return this http client
-     * @throws IOException
+     * @throws IOException when we fail to write or read
      */
     public SocketHttpClient manualRequest(String formatString, Object... args) throws IOException {
         if (socket == null) {
