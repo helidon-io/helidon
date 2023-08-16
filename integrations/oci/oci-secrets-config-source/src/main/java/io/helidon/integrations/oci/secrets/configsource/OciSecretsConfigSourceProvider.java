@@ -264,13 +264,13 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     List<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
                     Instant mostDistantExpirationInstant = SecretBundleConfigSource.this.mostDistantExpirationInstant;
                     Base64.Decoder decoder = Base64.getDecoder();
+                    Secrets secrets = secretsSupplier.get();
                     for (SecretSummary ss : secretSummaries) {
                         tasks.add(() -> {
                                 valueNodes.put(ss.getSecretName(),
-                                               ValueNode.create(new String(decoder.decode(((Base64SecretBundleContentDetails) (secretsSupplier.get()
-                                                                                                                                   .getSecretBundle(GetSecretBundleRequest.builder()
-                                                                                                                                                        .secretId(ss.getId())
-                                                                                                                                                        .build())
+                                               ValueNode.create(new String(decoder.decode(((Base64SecretBundleContentDetails) (secrets.getSecretBundle(GetSecretBundleRequest.builder()
+                                                                                                                                                       .secretId(ss.getId())
+                                                                                                                                                       .build())
                                                                                                                                    .getSecretBundle()
                                                                                                                                    .getSecretBundleContent()))
                                                                                           .getContent()),
@@ -285,19 +285,40 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     }
                     SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant;
                     List<Future<Void>> futures = null;
+                    RuntimeException re = null;
                     try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
                         futures = es.invokeAll(tasks);
                     } catch (RuntimeException e) {
-                        throw e;
+                        re = e;
                     } catch (Exception e) {
                         if (e instanceof InterruptedException) {
                             Thread.currentThread().interrupt();
                         }
-                        throw new IllegalStateException(e.getMessage(), e);
+                        re = new IllegalStateException(e.getMessage(), e);
+                    } finally {
+                        try {
+                            secrets.close();
+                        } catch (RuntimeException e) {
+                            if (re == null) {
+                                throw e;
+                            } else {
+                                re.addSuppressed(e);
+                            }
+                        } catch (Exception e) {
+                            if (e instanceof InterruptedException) {
+                                Thread.currentThread().interrupt();
+                            }
+                            if (re == null) {
+                                throw new IllegalStateException(e.getMessage(), e);
+                            } else {
+                                re.addSuppressed(e);
+                            }
+                        }
+                        if (re != null) {
+                            throw re;
+                        }
                     }
-                    RuntimeException re = null;
                     for (Future<?> future : futures) {
-                        assert future.isDone();
                         try {
                             future.get();
                         } catch (RuntimeException e) {
@@ -381,8 +402,10 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                 super();
                 Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier =
                     LazyValue.create(() -> (BasicAuthenticationDetailsProvider) ociAuthenticationProvider().get());
-                this.secretsSupplier = LazyValue.create(() -> SecretsClient.builder().build(adpSupplier.get()));
-                this.vaultsSupplier = LazyValue.create(() -> VaultsClient.builder().build(adpSupplier.get()));
+                SecretsClient.Builder scb = SecretsClient.builder();
+                this.secretsSupplier = () -> scb.build(adpSupplier.get());
+                VaultsClient.Builder vcb = VaultsClient.builder();
+                this.vaultsSupplier = () -> vcb.build(adpSupplier.get());
             }
 
             private SecretBundleConfigSource build() {
