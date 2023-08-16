@@ -42,6 +42,7 @@ import io.prometheus.client.exporter.common.TextFormat;
  *     "m_" if the actual meter name starts with a digit or underscore and underscores replace special characters.
  * </p>
  */
+// TODO remove this class once we've converted to use the one in helidon-metrics-micrometer.
 public class MicrometerPrometheusFormatter {
     /**
      * Mapping from supported media types to the corresponding Prometheus registry content types.

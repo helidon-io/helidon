@@ -24,6 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
          description = "Metrics support",
          in = HelidonFlavor.SE)
 module io.helidon.nima.observe.metrics {
+    uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
     requires transitive io.helidon.nima.observe;
     requires io.helidon.nima.webserver;
     requires io.helidon.nima.http.media.jsonp;
@@ -41,4 +42,6 @@ module io.helidon.nima.observe.metrics {
     exports io.helidon.nima.observe.metrics;
 
     provides io.helidon.nima.observe.spi.ObserveProvider with io.helidon.nima.observe.metrics.MetricsObserveProvider;
+    provides io.helidon.metrics.spi.MeterRegistryFormatterProvider
+            with io.helidon.nima.observe.metrics.JsonMeterRegistryFormatterProvider;
 }

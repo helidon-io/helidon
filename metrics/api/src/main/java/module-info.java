@@ -28,6 +28,8 @@ module io.helidon.metrics.api {
 
     requires io.helidon.builder.api;
     requires static io.helidon.config.metadata;
+
+    // TODO remove next once we no longer need MP metrics APIs
     requires transitive microprofile.metrics.api;
     requires io.helidon.inject.configdriven.api;
 
@@ -39,5 +41,7 @@ module io.helidon.metrics.api {
     uses ExemplarService;
     uses io.helidon.metrics.api.MetricsProgrammaticSettings;
     uses io.helidon.metrics.spi.MetricsFactoryProvider;
+    uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
+
     uses MetricsFactory;
 }

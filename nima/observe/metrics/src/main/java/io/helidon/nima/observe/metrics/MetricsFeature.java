@@ -20,12 +20,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.Headers;
 import io.helidon.common.http.Http;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -33,10 +34,12 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.nima.servicecommon.HelidonFeatureSupport;
 import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.nima.webserver.http.Handler;
@@ -187,11 +190,31 @@ public class MetricsFeature extends HelidonFeatureSupport {
     Optional<?> output(MediaType mediaType,
                        Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
-        return PrometheusMeterRegistryAccess.scrape(meterRegistry,
-                                                    mediaType,
-                                                    metricsConfig.scopeTagName(),
+        Optional<MeterRegistryFormatter> formatter = chooseFormatter(meterRegistry,
+                                                           mediaType,
+                                                           metricsConfig.scopeTagName(),
+                                                           scopeSelection,
+                                                           nameSelection);
+
+        return formatter.flatMap(MeterRegistryFormatter::format);
+    }
+
+    private Optional<MeterRegistryFormatter> chooseFormatter(MeterRegistry meterRegistry,
+                                                             MediaType mediaType,
+                                                             String scopeTagName,
+                                                             Iterable<String> scopeSelection,
+                                                             Iterable<String> nameSelection) {
+        return HelidonServiceLoader.builder(ServiceLoader.load(MeterRegistryFormatterProvider.class))
+                .build()
+                .stream()
+                .map(provider -> provider.formatter(mediaType,
+                                                    meterRegistry,
+                                                    scopeTagName,
                                                     scopeSelection,
-                                                    nameSelection);
+                                                    nameSelection))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
     }
 
     private void getAll(ServerRequest req, ServerResponse res) {
@@ -209,10 +232,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
             res.send();
         }
 
-        // TODO used to be on RegistryFactory
-        getOrOptionsMatching(mediaType, res, () -> MetricsFactory.getInstance().scrape(mediaType,
-                                                                                       scopeSelection,
-                                                                                       nameSelection));
+        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
+                                                          scopeSelection,
+                                                          nameSelection));
     }
 
     private void getOrOptionsMatching(MediaType mediaType,
@@ -221,9 +243,6 @@ public class MetricsFeature extends HelidonFeatureSupport {
         try {
             Optional<?> output = dataSupplier.get();
 
-//            Optional<?> output = output(mediaType,
-//                                        scopeSelection,
-//                                        nameSelection);
             if (output.isPresent()) {
                 res.status(OK_200)
                         .headers().contentType(mediaType);
@@ -279,13 +298,12 @@ public class MetricsFeature extends HelidonFeatureSupport {
         Stream.of(Registry.APPLICATION_SCOPE,
                   Registry.BASE_SCOPE,
                   Registry.VENDOR_SCOPE)
-                .forEach(scope -> {
-                    rules.get("/" + scope, (req, res) -> getMatching(req, res, Set.of(scope), Set.of()))
-                            .get("/" + scope + "/{metric}",
-                                 (req, res) -> getByName(req, res, Set.of(scope))) // should use ?scope=
-                            .options("/" + scope, (req, res) -> optionsMatching(req, res, Set.of(scope), Set.of()))
-                            .options("/" + scope + "/{metric}", (req, res) -> optionsByName(req, res, Set.of(scope)));
-                });
+                .forEach(scope -> rules
+                        .get("/" + scope, (req, res) -> getMatching(req, res, Set.of(scope), Set.of()))
+                        .get("/" + scope + "/{metric}",
+                             (req, res) -> getByName(req, res, Set.of(scope))) // should use ?scope=
+                        .options("/" + scope, (req, res) -> optionsMatching(req, res, Set.of(scope), Set.of()))
+                        .options("/" + scope + "/{metric}", (req, res) -> optionsByName(req, res, Set.of(scope))));
     }
 
     private void getByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
@@ -322,17 +340,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
             res.send();
         }
 
-        getOrOptionsMatching(mediaType, res, () -> MetricsFactory.getInstance().scrapeMetadata(mediaType,
-                                                                                               scopeSelection,
-                                                                                               nameSelection));
-    }
-
-
-        private void rejectOptions(ServerRequest req, ServerResponse res) {
-        // Options used to return metadata but it's no longer supported unless we restore JSON support.
-        res.header(ALLOW, "GET");
-        res.status(METHOD_NOT_ALLOWED_405);
-        res.send();
+        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
+                                                          scopeSelection,
+                                                          nameSelection));
     }
 
     private void setUpDisabledEndpoints(HttpRules rules) {

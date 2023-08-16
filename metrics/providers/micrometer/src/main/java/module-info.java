@@ -15,6 +15,7 @@
  */
 
 import io.helidon.metrics.micrometer.MicrometerMetricsFactoryProvider;
+import io.helidon.metrics.micrometer.MicrometerPrometheusFormatterProvider;
 
 /**
  * Micrometer adapter for Helidon metrics API.
@@ -27,6 +28,8 @@ module io.helidon.metrics.micrometer {
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
+    requires simpleclient.common;
 
     provides io.helidon.metrics.spi.MetricsFactoryProvider with MicrometerMetricsFactoryProvider;
+    provides io.helidon.metrics.spi.MeterRegistryFormatterProvider with MicrometerPrometheusFormatterProvider;
 }

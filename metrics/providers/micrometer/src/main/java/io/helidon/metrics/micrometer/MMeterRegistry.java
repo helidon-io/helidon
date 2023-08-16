@@ -141,7 +141,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         if (!globalTags.isEmpty()) {
             delegate.config().meterFilter(MeterFilter.commonTags(Util.tags(globalTags)));
         }
+
         scopeTagName = metricsConfig.scopeTagName();
+        MeterFilter scopeTagAdder = new MeterFilter() {
+            @Override
+            public Meter.Id map(Meter.Id id) {
+                return id.getTag(scopeTagName) == null
+                        ? id.withTag(Tag.of(scopeTagName, "application"))
+                        : id;
+            }
+        };
+
+        delegate.config().meterFilter(scopeTagAdder);
     }
 
     @Override

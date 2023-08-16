@@ -20,6 +20,7 @@ import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -29,6 +30,7 @@ import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -152,16 +154,41 @@ class MicrometerMetricsFactory implements MetricsFactory {
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
     }
+// TODO remove commented code below when it's been transplanted
 
-    // TODO return something better
-    @Override
-    public Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
-        return Optional.empty();
-    }
-
-    // TODO return something better
-    @Override
-    public Optional<?> scrapeMetadata(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
-        return Optional.empty();
-    }
+//    @Override
+//    public Optional<?> scrape(MeterRegistry meterRegistry,
+//                              MediaType mediaType,
+//                              Iterable<String> scopeSelection,
+//                              Iterable<String> meterNameSelection) {
+//        if (mediaType.equals(MediaTypes.TEXT_PLAIN) || mediaType.equals(MediaTypes.APPLICATION_OPENMETRICS_TEXT)) {
+//            var formatter =
+//                    MicrometerPrometheusFormatter
+//                            .builder(meterRegistry)
+//                            .resultMediaType(mediaType)
+//                            .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+//                            .scopeSelection(scopeSelection)
+//                            .meterNameSelection(meterNameSelection)
+//                            .build();
+//
+//            return formatter.filteredOutput();
+//        } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
+//            var formatter = JsonFormatter.builder(meterRegistry)
+//                    .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
+//                    .scopeSelection(scopeSelection)
+//                    .meterNameSelection(meterNameSelection)
+//                    .build();
+//            return formatter.data(true);
+//        }
+//        throw new UnsupportedOperationException();
+//    }
+//
+//    // TODO return something better
+//    @Override
+//    public Optional<?> scrapeMetadata(MeterRegistry meterRegistry,
+//                                      MediaType mediaType,
+//                                      Iterable<String> scopeSelection,
+//                                      Iterable<String> meterNameSelection) {
+//        return Optional.empty();
+//    }
 }

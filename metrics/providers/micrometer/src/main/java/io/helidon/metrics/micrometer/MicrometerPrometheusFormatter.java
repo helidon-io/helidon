@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.nima.observe.metrics;
+package io.helidon.metrics.micrometer;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MeterRegistryFormatter;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -41,7 +42,7 @@ import io.prometheus.client.exporter.common.TextFormat;
  *     "m_" if the actual meter name starts with a digit or underscore and underscores replace special characters.
  * </p>
  */
-class MicrometerPrometheusFormatter {
+class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     /**
      * Mapping from supported media types to the corresponding Prometheus registry content types.
      */
@@ -80,7 +81,8 @@ class MicrometerPrometheusFormatter {
      *
      * @return filtered Prometheus output
      */
-    public Optional<String> filteredOutput() {
+    @Override
+    public Optional<String> format() {
 
         Optional<PrometheusMeterRegistry> prometheusMeterRegistry = prometheusMeterRegistry(meterRegistry);
         if (prometheusMeterRegistry.isPresent()) {
@@ -100,6 +102,11 @@ class MicrometerPrometheusFormatter {
 
             return prometheusOutput.isBlank() ? Optional.empty() : Optional.of(prometheusOutput);
         }
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<?> formatMetadata() {
         return Optional.empty();
     }
 
@@ -254,9 +261,9 @@ class MicrometerPrometheusFormatter {
      */
     public static class Builder implements io.helidon.common.Builder<Builder, MicrometerPrometheusFormatter> {
 
-        private Iterable<String> meterNameSelection;
+        private Iterable<String> meterNameSelection = Set.of();
         private String scopeTagName;
-        private Iterable<String> scopeSelection;
+        private Iterable<String> scopeSelection = Set.of();
         private MediaType resultMediaType = MediaTypes.TEXT_PLAIN;
         private MeterRegistry meterRegistry;
 
@@ -319,5 +326,4 @@ class MicrometerPrometheusFormatter {
             return identity();
         }
     }
-
 }

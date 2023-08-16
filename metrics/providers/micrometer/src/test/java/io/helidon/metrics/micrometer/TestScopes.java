@@ -49,8 +49,7 @@ class TestScopes {
 
     @Test
     void testScopeManagement() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c1")
-                                                      .tags(Set.of(Tag.create(SCOPE_TAG_NAME, "app"))));
+        Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
         Timer t = meterRegistry.getOrCreate(Timer.builder("t1")
                                                     .tags(Set.of(Tag.create("color", "red"))));
         io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);
@@ -58,7 +57,8 @@ class TestScopes {
         mCounter.increment();
         assertThat("Updated value", c.count(), is(1L));
 
-        assertThat("Scopes in meter registry", meterRegistry.scopes(), allOf(contains("app"),
+        // If scope is not explicitly set, "application" should be automatically added.
+        assertThat("Scopes in meter registry", meterRegistry.scopes(), allOf(contains("application"),
                                                                              not(contains("color"))));
     }
 }

@@ -15,10 +15,9 @@
  */
 package io.helidon.nima.observe.metrics;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -27,12 +26,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.DoubleAccumulator;
-import java.util.concurrent.atomic.DoubleAdder;
-import java.util.concurrent.atomic.LongAccumulator;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -41,10 +35,9 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricInstance;
+import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 
 import jakarta.json.Json;
@@ -52,13 +45,11 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.MetricID;
 
 /**
  * JSON formatter for a meter registry (independent of the underlying registry implementation).
  */
-class JsonFormatter {
+class JsonFormatter implements MeterRegistryFormatter {
 
     /**
      * Returns a new builder for a formatter.
@@ -98,9 +89,10 @@ class JsonFormatter {
      *
      * @return meter data
      */
-    public Optional<JsonObject> data(boolean isByScopeRequested) {
+    @Override
+    public Optional<JsonObject> format() {
 
-        boolean organizeByScope = shouldOrganizeByScope(isByScopeRequested);
+        boolean organizeByScope = shouldOrganizeByScope();
 
         Map<String, Map<String, MetricOutputBuilder>> meterOutputBuildersByScope = organizeByScope ? new HashMap<>() : null;
         Map<String, MetricOutputBuilder> meterOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
@@ -135,12 +127,22 @@ class JsonFormatter {
         }
      */
 
+
+        var scopes = new HashSet<>();
+        scopeSelection.forEach(scopes::add);
+
+        var names = new HashSet<>();
+        meterNameSelection.forEach(names::add);
+
+        Predicate<String> namePredicate = names.isEmpty() ? n -> true : names::contains;
+
         AtomicBoolean isAnyOutput = new AtomicBoolean(false);
+
         meterRegistry.scopes().forEach(scope -> {
             String matchingScope = matchingScope(scope);
             if (matchingScope != null) {
                 meterRegistry.meters().forEach(meter -> {
-                    if (meterRegistry.isMeterEnabled(meter.id())) {
+                    if (meterRegistry.isMeterEnabled(meter.id()) && namePredicate.test(meter.id().name())) {
                         if (matchesName(meter.id().name())) {
 
                             Map<String, MetricOutputBuilder> meterOutputBuildersWithinParent =
@@ -177,9 +179,10 @@ class JsonFormatter {
         return isAnyOutput.get() ? Optional.of(top.build()) : Optional.empty();
     }
 
-    public Optional<JsonObject> metadata(boolean isByScopeRequested) {
+    @Override
+    public Optional<JsonObject> formatMetadata() {
 
-        boolean organizeByScope = shouldOrganizeByScope(isByScopeRequested);
+        boolean organizeByScope = shouldOrganizeByScope();
 
         Map<String, Map<String, JsonObjectBuilder>> metadataOutputBuildersByScope = organizeByScope ? new HashMap<>() : null;
         Map<String, JsonObjectBuilder> metadataOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
@@ -277,36 +280,20 @@ class JsonFormatter {
         }
     }
 
-    private boolean shouldOrganizeByScope(boolean isByScope) {
-        if (isByScope) {
-            var it = scopeSelection.iterator();
-            if (it.hasNext()) {
-                it.next();
-                // return false if exactly one selection; true if at least two.
-                return it.hasNext();
-            }
+    private boolean shouldOrganizeByScope() {
+        var it = scopeSelection.iterator();
+        if (it.hasNext()) {
+            it.next();
+            // return false if exactly one selection; true if at least two.
+            return it.hasNext();
         }
-        return isByScope;
-    }
-
-    private static String metricOutputKey(MetricInstance metric) {
-        return metric.metric() instanceof org.eclipse.microprofile.metrics.Counter
-                || metric.metric() instanceof org.eclipse.microprofile.metrics.Gauge<?>
-                ? flatNameAndTags(metric.id())
-                : structureName(metric.id());
+        return true;
     }
 
     private static String metricOutputKey(Meter meter) {
         return meter instanceof Counter || meter instanceof io.helidon.metrics.api.Gauge
                 ? flatNameAndTags(meter.id())
                 : structureName(meter.id());
-    }
-
-    private static String flatNameAndTags(MetricID metricID) {
-        StringJoiner sj = new StringJoiner(";");
-        sj.add(metricID.getName());
-        metricID.getTags().forEach((k, v) -> sj.add(k + "=" + v));
-        return sj.toString();
     }
 
     private static String flatNameAndTags(Meter.Id meterId) {
@@ -318,10 +305,6 @@ class JsonFormatter {
 
     private static String structureName(Meter.Id meterId) {
         return meterId.name();
-    }
-
-    private static String structureName(MetricID metricID) {
-        return metricID.getName();
     }
 
     private String matchingScope(String scope) {
@@ -339,10 +322,6 @@ class JsonFormatter {
             }
         }
         return null;
-    }
-
-    private String scope(MetricID metricId) {
-        return metricId.getTags().get(scopeTagName);
     }
 
     private boolean matchesName(String metricName) {

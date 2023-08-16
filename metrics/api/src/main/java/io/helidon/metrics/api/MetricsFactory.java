@@ -191,31 +191,4 @@ public interface MetricsFactory {
      * @return histogram snapshot
      */
     HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max);
-
-    /**
-     * Exposes the contents of the implementation registry according to the requested media type,
-     * using the specified tag name used to add each metric's scope to its identity, and limiting by the provided scope
-     * selection and meter name selection.
-     *
-     * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
-     * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
-     * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
-     * @return {@link String} meter exposition as governed by the parameters; {@code empty} if no metrics matched the selections
-     * @throws java.lang.IllegalArgumentException if the implementation cannot handle the requested media type
-     * @throws java.lang.UnsupportedOperationException if the implementation cannot expose its metrics
-     */
-    Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
-
-    /**
-     * Exposes the metadata contained in the implementation registry according to the requested media type,
-     * limited by the specified scope and meter name selections.
-     *
-     * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
-     * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
-     * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
-     * @return {@link String} metadata exposition as governed by the parameters; {@code empty} if no metrics matched the
-     * selections
-     */
-    Optional<?> scrapeMetadata(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
-
 }

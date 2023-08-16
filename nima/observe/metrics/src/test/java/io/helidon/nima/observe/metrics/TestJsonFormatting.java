@@ -19,32 +19,37 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
+import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 
 class TestJsonFormatting {
+    private static final String SCOPE_TAG_NAME = "the-scope";
     private static MeterRegistry meterRegistry;
     private static MetricsFeature feature;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder()
+                .scopeTagName(SCOPE_TAG_NAME);
+
+        meterRegistry = Metrics.createMeterRegistry(metricsConfigBuilder.build());
         feature = MetricsFeature.builder()
                 .meterRegistry(meterRegistry)
+                .metricsConfig(metricsConfigBuilder)
                 .build();
     }
 
@@ -55,21 +60,33 @@ class TestJsonFormatting {
         c.increment();
         assertThat("After increment", c.count(), is(1L));
 
+        Counter c1WithTag = meterRegistry.getOrCreate(Counter.builder("c1")
+                                                              .tags(Set.of(Tag.create("t1", "v1"))));
+        c1WithTag.increment(4L);
+
         Timer d = meterRegistry.getOrCreate(Timer.builder("t1"));
         d.record(3, TimeUnit.SECONDS);
 
 
-        Optional<String> output = (Optional<String>) feature.output(MediaTypes.TEXT_PLAIN,
-                                                                    Set.of(),
-                                                                    Set.of());
+        JsonFormatter formatter = JsonFormatter.builder(meterRegistry)
+                .scopeTagName(SCOPE_TAG_NAME)
+                .build();
 
-        assertThat("Formatted output",
-                   output,
-                   OptionalMatcher.optionalValue(
-                           allOf(containsString("c1_total 1.0"),
-                                 containsString("t1_seconds_count 1.0"),
-                                 containsString("t1_seconds_sum 3.0"))));
+        Optional<JsonObject> result = formatter.format();
+
+        assertThat("Result", result, OptionalMatcher.optionalPresent());
+        JsonObject app = result.get().getJsonObject("application");
+        assertThat("Counter 1",
+                   app.getJsonNumber("c1;t1=v1;the-scope=application").intValue(),
+                   is(4));
+        assertThat("Counter 2",
+                   app.getJsonNumber("c1;the-scope=application").intValue(),
+                   is(1));
+        JsonObject timerJson = app.getJsonObject("t1");
+        assertThat("Timer", timerJson, notNullValue());
+        assertThat("Timer count", timerJson.getJsonNumber("count;the-scope=application").intValue(), is(1));
     }
+
 
     @Test
     void testRetrievingByName() {
@@ -81,16 +98,17 @@ class TestJsonFormatting {
         Timer d = meterRegistry.getOrCreate(Timer.builder("t2"));
         d.record(7, TimeUnit.SECONDS);
 
-        Optional<String> output = (Optional<String>) feature.output(MediaTypes.TEXT_PLAIN,
-                                                                    Set.of(),
-                                                                    Set.of("c2"));
+        JsonFormatter formatter = JsonFormatter.builder(meterRegistry)
+                .meterNameSelection(Set.of("c2"))
+                .build();
 
-        assertThat("Formatted output",
-                   output,
-                   OptionalMatcher.optionalValue(
-                           allOf(containsString("c2_total 1.0"),
-                                 not(containsString("t2_seconds_count 1.0")),
-                                 not(containsString("t2_seconds_sum 7.0")))));
+        Optional<JsonObject> result = formatter.format();
+        assertThat("Result", result, OptionalMatcher.optionalPresent());
+
+        JsonObject app = result.get().getJsonObject("application");
+        assertThat("Counter 2", app.getJsonNumber("c2;the-scope=application").intValue(), is(1));
+
+        assertThat("Timer", app.getJsonObject("t2"), nullValue());
 
     }
 }

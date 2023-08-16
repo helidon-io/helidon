@@ -65,16 +65,6 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<?> scrapeMetadata(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
-        return Optional.empty();
-    }
-
-    @Override
     public Clock clockSystem() {
         return SYSTEM_CLOCK;
     }
