@@ -230,7 +230,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private volatile Instant mostDistantExpirationInstant;
 
-        @SuppressWarnings({"checkstyle:linelength", "try"})
+        @SuppressWarnings("try")
         private SecretBundleConfigSource(Builder b) {
             super(b);
             String compartmentOcid = b.compartmentOcid;
@@ -238,6 +238,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             String vaultOcid = b.vaultOcid;
             Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
             if (compartmentOcid == null || vaultOcid == null) {
+                // (It is not immediately clear why the OCI Java SDK requires a Compartment OCID, since a Vault OCID is
+                // sufficient to uniquely identify any Vault.)
                 this.loader = () -> ABSENT_NODE_CONTENT;
             } else {
                 ListSecretsRequest listSecretsRequest = ListSecretsRequest.builder()
@@ -261,20 +263,14 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                         return ABSENT_NODE_CONTENT;
                     }
                     Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
-                    List<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
-                    Instant mostDistantExpirationInstant = SecretBundleConfigSource.this.mostDistantExpirationInstant;
+                    Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
+                    Instant mostDistantExpirationInstant =
+                        SecretBundleConfigSource.this.mostDistantExpirationInstant; // volatile read
                     Base64.Decoder decoder = Base64.getDecoder();
                     Secrets secrets = secretsSupplier.get();
                     for (SecretSummary ss : secretSummaries) {
                         tasks.add(() -> {
-                                valueNodes.put(ss.getSecretName(),
-                                               ValueNode.create(new String(decoder.decode(((Base64SecretBundleContentDetails) (secrets.getSecretBundle(GetSecretBundleRequest.builder()
-                                                                                                                                                       .secretId(ss.getId())
-                                                                                                                                                       .build())
-                                                                                                                                   .getSecretBundle()
-                                                                                                                                   .getSecretBundleContent()))
-                                                                                          .getContent()),
-                                                                           UTF_8)));
+                                valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
                                 return null;
                             });
                         java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
@@ -283,64 +279,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                             mostDistantExpirationInstant = i;
                         }
                     }
-                    SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant;
-                    List<Future<Void>> futures = null;
-                    RuntimeException re = null;
-                    try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
-                        futures = es.invokeAll(tasks);
-                    } catch (RuntimeException e) {
-                        re = e;
-                    } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        }
-                        re = new IllegalStateException(e.getMessage(), e);
-                    } finally {
-                        try {
-                            secrets.close();
-                        } catch (RuntimeException e) {
-                            if (re == null) {
-                                throw e;
-                            } else {
-                                re.addSuppressed(e);
-                            }
-                        } catch (Exception e) {
-                            if (e instanceof InterruptedException) {
-                                Thread.currentThread().interrupt();
-                            }
-                            if (re == null) {
-                                throw new IllegalStateException(e.getMessage(), e);
-                            } else {
-                                re.addSuppressed(e);
-                            }
-                        }
-                        if (re != null) {
-                            throw re;
-                        }
-                    }
-                    for (Future<?> future : futures) {
-                        try {
-                            future.get();
-                        } catch (RuntimeException e) {
-                            if (re == null) {
-                                re = e;
-                            } else {
-                                re.addSuppressed(e);
-                            }
-                        } catch (Exception e) {
-                            if (e instanceof InterruptedException) {
-                                Thread.currentThread().interrupt();
-                            }
-                            if (re == null) {
-                                re = new IllegalStateException(e.getMessage(), e);
-                            } else {
-                                re.addSuppressed(e);
-                            }
-                        }
-                    }
-                    if (re != null) {
-                        throw re;
-                    }
+                    SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
+                    invokeAll(tasks, secrets);
                     ObjectNode.Builder onb = ObjectNode.builder();
                     for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
                         onb.addValue(e.getKey(), e.getValue());
@@ -372,7 +312,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
         }
 
 
-
         /*
          * Static methods.
          */
@@ -380,6 +319,80 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private static Builder builder() {
             return new Builder();
+        }
+
+        private static void invokeAll(Collection<? extends Callable<Void>> tasks, AutoCloseable secrets) {
+            RuntimeException re = null;
+            List<Future<Void>> futures = null;
+            try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
+                futures = es.invokeAll(tasks);
+            } catch (RuntimeException e) {
+                re = e;
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                re = new IllegalStateException(e.getMessage(), e);
+            } finally {
+                try {
+                    secrets.close();
+                } catch (RuntimeException e) {
+                    if (re == null) {
+                        throw e;
+                    } else {
+                        re.addSuppressed(e);
+                    }
+                } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                    if (re == null) {
+                        throw new IllegalStateException(e.getMessage(), e);
+                    } else {
+                        re.addSuppressed(e);
+                    }
+                }
+                if (re != null) {
+                    throw re;
+                }
+            }
+            assert futures != null;
+            for (Future<?> future : futures) {
+                try {
+                    future.get();
+                } catch (RuntimeException e) {
+                    if (re == null) {
+                        re = e;
+                    } else {
+                        re.addSuppressed(e);
+                    }
+                } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                    if (re == null) {
+                        re = new IllegalStateException(e.getMessage(), e);
+                    } else {
+                        re.addSuppressed(e);
+                    }
+                }
+            }
+            if (re != null) {
+                throw re;
+            }
+        }
+
+        @SuppressWarnings("checkstyle:linelength")
+        private static ValueNode valueNode(Secrets s, SecretSummary ss, Base64.Decoder d) {
+            return
+                ValueNode.create(new String(d.decode(((Base64SecretBundleContentDetails) (s.getSecretBundle(GetSecretBundleRequest.builder()
+                                                                                                                .secretId(ss.getId())
+                                                                                                                .build())
+                                                                                              .getSecretBundle()
+                                                                                              .getSecretBundleContent()))
+                                                     .getContent()),
+                                            UTF_8)
+                                     .intern());
         }
 
 
