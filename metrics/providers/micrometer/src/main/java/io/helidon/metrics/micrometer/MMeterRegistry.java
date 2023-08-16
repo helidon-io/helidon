@@ -17,8 +17,11 @@ package io.helidon.metrics.micrometer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
 import io.helidon.metrics.api.Clock;
@@ -122,6 +125,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Clock clock;
 
     private final ConcurrentHashMap<Meter, io.helidon.metrics.api.Meter> meters = new ConcurrentHashMap<>();
+    private final Map<String, AtomicInteger> scopes = new ConcurrentHashMap<>();
+    private final ReentrantLock lock = new ReentrantLock();
+    private final String scopeTagName;
 
     private MMeterRegistry(MeterRegistry delegate,
                            Clock clock,
@@ -135,19 +141,31 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         if (!globalTags.isEmpty()) {
             delegate.config().meterFilter(MeterFilter.commonTags(Util.tags(globalTags)));
         }
+        scopeTagName = metricsConfig.scopeTagName();
     }
 
     @Override
-    public List<? extends io.helidon.metrics.api.Meter> meters() {
+    public List<io.helidon.metrics.api.Meter> meters() {
         return meters.values().stream().toList();
     }
 
     @Override
-    public Collection<? extends io.helidon.metrics.api.Meter> meters(Predicate<io.helidon.metrics.api.Meter> filter) {
+    public Collection<io.helidon.metrics.api.Meter> meters(Predicate<io.helidon.metrics.api.Meter> filter) {
         return meters.values()
                 .stream()
                 .filter(filter)
                 .toList();
+    }
+
+    @Override
+    public Iterable<String> scopes() {
+        return scopes.keySet();
+    }
+
+    // TODO enhance after adding back the filtering config
+    @Override
+    public boolean isMeterEnabled(io.helidon.metrics.api.Meter.Id meterId) {
+        return true;
     }
 
     @Override
@@ -164,8 +182,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // Each type of builder declares its own so we need to decide here which specific one to invoke.
         // That's so we can invoke the Micrometer builder's register method, which acts as
         // get-or-create.
+
         // Micrometer's register methods will throw an IllegalArgumentException if the caller specifies a builder that finds
         // a previously-registered meter of a different type from that implied by the builder.
+
+        // Also, the register methods actually are get-or-register.
 
         Meter meter;
         // TODO Convert to switch instanceof expressions once checkstyle understand the syntax.
@@ -260,24 +281,54 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     private void recordAdd(Meter addedMeter) {
-        if (addedMeter instanceof Counter counter) {
-            meters.put(addedMeter, MCounter.create(counter));
-        } else if (addedMeter instanceof DistributionSummary summary) {
-            meters.put(addedMeter, MDistributionSummary.create(summary));
-        } else if (addedMeter instanceof Gauge gauge) {
-            meters.put(addedMeter, MGauge.create(gauge));
-        } else if (addedMeter instanceof Timer timer) {
-            meters.put(addedMeter, MTimer.create(timer));
-        } else {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       "Attempt to record addition of unrecognized meter type " + addedMeter.getClass().getName());
+        lock.lock();
+        try {
+            Meter meter = null;
+            if (addedMeter instanceof Counter counter) {
+                meter = addedMeter;
+                meters.put(addedMeter, MCounter.create(counter));
+            } else if (addedMeter instanceof DistributionSummary summary) {
+                meter = addedMeter;
+                meters.put(addedMeter, MDistributionSummary.create(summary));
+            } else if (addedMeter instanceof Gauge gauge) {
+                meter = addedMeter;
+                meters.put(addedMeter, MGauge.create(gauge));
+            } else if (addedMeter instanceof Timer timer) {
+                meter = addedMeter;
+                meters.put(addedMeter, MTimer.create(timer));
+            } else {
+                LOGGER.log(System.Logger.Level.WARNING,
+                           "Attempt to record addition of unrecognized meter type " + addedMeter.getClass().getName());
+            }
+            if (meter != null) {
+                String scope = meter.getId().getTag(scopeTagName);
+                if (scope != null && !scope.isBlank()) {
+                    AtomicInteger metersInScope = scopes.computeIfAbsent(scope, v -> new AtomicInteger());
+                    metersInScope.incrementAndGet();
+                }
+            }
+        } finally {
+            lock.unlock();
         }
     }
 
     private void recordRemove(Meter removedMeter) {
-        io.helidon.metrics.api.Meter removedNeutralMeter = meters.remove(removedMeter);
-        if (removedNeutralMeter == null) {
-            LOGGER.log(System.Logger.Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
+        lock.lock();
+        try {
+            io.helidon.metrics.api.Meter removedNeutralMeter = meters.remove(removedMeter);
+            if (removedNeutralMeter == null) {
+                LOGGER.log(System.Logger.Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
+            } else {
+                String scope = removedMeter.getId().getTag(scopeTagName);
+                if (scope != null && !scope.isBlank()) {
+                    AtomicInteger metersInScope = scopes.get(scope);
+                    if (metersInScope != null) {
+                        metersInScope.decrementAndGet();
+                    }
+                }
+            }
+        } finally {
+            lock.unlock();
         }
     }
 

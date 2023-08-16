@@ -37,7 +37,7 @@ public interface Metrics {
 
     /**
      * Creates a meter registry, not added to the global registry, based on
-     * the provide metrics config.
+     * the provided metrics config.
      *
      * @param metricsConfig metrics config
      * @return new meter registry

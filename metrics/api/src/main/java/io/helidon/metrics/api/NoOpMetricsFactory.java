@@ -15,7 +15,11 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.ToDoubleFunction;
+
+import io.helidon.common.media.type.MediaType;
 
 /**
  * No-op implementation of the {@link io.helidon.metrics.api.spi.MetricFactory} interface.
@@ -58,6 +62,16 @@ class NoOpMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
         return createMeterRegistry(metricsConfig);
+    }
+
+    @Override
+    public Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<?> scrapeMetadata(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
+        return Optional.empty();
     }
 
     @Override

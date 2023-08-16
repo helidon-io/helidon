@@ -41,6 +41,16 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
+    public Iterable<String> scopes() {
+        return Set.of();
+    }
+
+    @Override
+    public boolean isMeterEnabled(io.helidon.metrics.api.Meter.Id meterId) {
+        return true;
+    }
+
+    @Override
     public Clock clock() {
         return Clock.system();
     }

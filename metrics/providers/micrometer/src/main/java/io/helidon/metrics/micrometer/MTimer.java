@@ -167,6 +167,9 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
 
         private Builder(String name) {
             super(Timer.builder(name));
+            prep(delegate()::tags,
+                 delegate()::description,
+                 baseUnit -> null);
         }
 
         @Override

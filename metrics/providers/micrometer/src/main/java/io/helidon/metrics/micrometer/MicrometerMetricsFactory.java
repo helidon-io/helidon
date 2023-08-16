@@ -15,9 +15,11 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -149,5 +151,17 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
+    }
+
+    // TODO return something better
+    @Override
+    public Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
+        return Optional.empty();
+    }
+
+    // TODO return something better
+    @Override
+    public Optional<?> scrapeMetadata(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection) {
+        return Optional.empty();
     }
 }

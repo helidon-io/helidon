@@ -56,6 +56,24 @@
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-context</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
 <!--        <dependency>-->
 <!--            <groupId>org.eclipse.microprofile.metrics</groupId>-->
 <!--            <artifactId>microprofile-metrics-api</artifactId>-->
@@ -81,6 +99,16 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-micrometer</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.testing</groupId>
+            <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

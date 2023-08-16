@@ -34,6 +34,10 @@ module io.helidon.nima.observe.metrics {
     requires io.helidon.common.context;
     requires io.helidon.common.features.api;
 
+    requires static micrometer.core;
+    requires static micrometer.registry.prometheus;
+    requires static simpleclient.common;
+
     exports io.helidon.nima.observe.metrics;
 
     provides io.helidon.nima.observe.spi.ObserveProvider with io.helidon.nima.observe.metrics.MetricsObserveProvider;

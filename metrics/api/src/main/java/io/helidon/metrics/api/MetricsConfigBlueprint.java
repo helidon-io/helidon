@@ -53,6 +53,12 @@ interface MetricsConfigBlueprint {
      */
     String APP_TAG_CONFIG_KEY = "app-name";
 
+    // TODO - rely on programmatic metrics config so SE can set one default, MP another
+    /**
+     * Default name for scope tags.
+     */
+    String DEFAULT_SCOPE_TAG_NAME = "m-scope";
+
     /**
      * Whether metrics functionality is enabled.
      *
@@ -92,12 +98,22 @@ interface MetricsConfigBlueprint {
      */
     Config config();
 
+    /**
+     * Tag name used for recording the scope of meters (defaults according to the active runtime).
+     *
+     * @return tag name for scope
+     */
+    String scopeTagName();
+
     class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
         @Override
         public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
             if (builder.config().isEmpty()) {
                 builder.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
+            }
+            if (builder.scopeTagName().isEmpty()) {
+                builder.scopeTagName(DEFAULT_SCOPE_TAG_NAME);
             }
         }
     }

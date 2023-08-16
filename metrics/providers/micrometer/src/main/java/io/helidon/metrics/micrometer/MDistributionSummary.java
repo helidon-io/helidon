@@ -85,6 +85,9 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
                                                         .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
                           .maximumExpectedValue(config.maximumExpectedValue()
                                                         .orElse(DEFAULT.getMaximumExpectedValueAsDouble())));
+            prep(delegate()::tags,
+                 delegate()::description,
+                 delegate()::baseUnit);
         }
 
         @Override

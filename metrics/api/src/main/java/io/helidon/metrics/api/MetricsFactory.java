@@ -15,7 +15,10 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
 import java.util.function.ToDoubleFunction;
+
+import io.helidon.common.media.type.MediaType;
 
 /**
  * Behavior of implementations of the Helidon metrics API.
@@ -47,12 +50,25 @@ import java.util.function.ToDoubleFunction;
 public interface MetricsFactory {
 
     /**
-     * Returns an implementation which has the highest weight of the factories available at runtime.
+     * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
+     * runtime and using the {@value MetricsConfig.Builder#METRICS_CONFIG_KEY} section from the
+     * {@link io.helidon.common.config.GlobalConfig}.
      *
-     * @return highest-weight metrics factory
+     * @return current or new metrics factory
      */
     static MetricsFactory getInstance() {
         return MetricsFactoryManager.getInstance();
+    }
+
+    /**
+     * Returns a new instance from a highest-weight provider available at runtime using the provided
+     * {@link io.helidon.metrics.api.MetricsConfig}.
+     *
+     * @param metricsConfig metrics config
+     * @return new metrics factory
+     */
+    static MetricsFactory getInstance(MetricsConfig metricsConfig) {
+        return MetricsFactoryManager.getInstance(metricsConfig);
     }
 
     /**
@@ -175,4 +191,31 @@ public interface MetricsFactory {
      * @return histogram snapshot
      */
     HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max);
+
+    /**
+     * Exposes the contents of the implementation registry according to the requested media type,
+     * using the specified tag name used to add each metric's scope to its identity, and limiting by the provided scope
+     * selection and meter name selection.
+     *
+     * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
+     * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
+     * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
+     * @return {@link String} meter exposition as governed by the parameters; {@code empty} if no metrics matched the selections
+     * @throws java.lang.IllegalArgumentException if the implementation cannot handle the requested media type
+     * @throws java.lang.UnsupportedOperationException if the implementation cannot expose its metrics
+     */
+    Optional<?> scrape(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
+
+    /**
+     * Exposes the metadata contained in the implementation registry according to the requested media type,
+     * limited by the specified scope and meter name selections.
+     *
+     * @param mediaType {@link io.helidon.common.media.type.MediaType} to control the output format
+     * @param scopeSelection {@link java.lang.Iterable} of individual scope names to include in the output
+     * @param meterNameSelection {@link java.lang.Iterable} of individual meter names to include in the output
+     * @return {@link String} metadata exposition as governed by the parameters; {@code empty} if no metrics matched the
+     * selections
+     */
+    Optional<?> scrapeMetadata(MediaType mediaType, Iterable<String> scopeSelection, Iterable<String> meterNameSelection);
+
 }

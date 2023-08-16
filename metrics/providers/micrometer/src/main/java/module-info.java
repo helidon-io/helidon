@@ -26,6 +26,7 @@ module io.helidon.metrics.micrometer {
     requires static micrometer.registry.prometheus;
     requires io.helidon.common;
     requires io.helidon.common.config;
+    requires io.helidon.common.media.type;
 
     provides io.helidon.metrics.spi.MetricsFactoryProvider with MicrometerMetricsFactoryProvider;
 }
