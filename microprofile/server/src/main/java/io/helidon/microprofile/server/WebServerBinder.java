@@ -16,8 +16,8 @@
 
 package io.helidon.microprofile.server;
 
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;

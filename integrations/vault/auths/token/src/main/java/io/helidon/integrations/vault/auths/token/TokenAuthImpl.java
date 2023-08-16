@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.auths.token;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 
 class TokenAuthImpl implements TokenAuth {

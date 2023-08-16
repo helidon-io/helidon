@@ -36,8 +36,8 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 
 import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
@@ -55,11 +55,7 @@ import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * OCI Metrics Support
- * <p>
- * When used in a NIMA app, ensure that this HttpService implementation is registered on the default routing created via
- * {@link io.helidon.nima.webserver.http.HttpRouting#builder()}.
- * </p>
+ * OCI Metrics Support.
  */
 public class OciMetricsSupport implements HttpService {
     private static final Logger LOGGER = Logger.getLogger(OciMetricsSupport.class.getName());

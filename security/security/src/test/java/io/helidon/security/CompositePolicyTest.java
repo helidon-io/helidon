@@ -18,7 +18,6 @@ package io.helidon.security;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
@@ -114,7 +113,7 @@ public abstract class CompositePolicyTest {
     }
 
     @Test
-    public void testAtnAllSuccess() throws ExecutionException, InterruptedException {
+    public void testAtnAllSuccess() {
         AuthenticationResponse response = getAuthentication().authenticate(context("/jack", "service"));
         assertThat(response, notNullValue());
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
@@ -126,7 +125,7 @@ public abstract class CompositePolicyTest {
     }
 
     @Test
-    public void testAtnAllSuccessServiceFirst() throws ExecutionException, InterruptedException {
+    public void testAtnAllSuccessServiceFirst() {
         AuthenticationResponse response = getAuthentication().authenticate(context("/service", "jack"));
         assertThat(response, notNullValue());
         assertThat(response.status(), is(SecurityResponse.SecurityStatus.SUCCESS));
@@ -137,7 +136,7 @@ public abstract class CompositePolicyTest {
     }
 
     @Test
-    public void testOutboundSuccess() throws ExecutionException, InterruptedException {
+    public void testOutboundSuccess() {
         ProviderRequest context = context("/jack", "service");
 
         assertThat(getOutbound().isOutboundSupported(context, context.env(), context.endpointConfig()), is(true));

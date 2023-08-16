@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.examples.graphql</groupId>
     <artifactId>helidon-examples-graphql-basics</artifactId>
-    <name>Helidon GraphQL Examples Basics</name>
+    <name>Helidon Examples GraphQL Basics</name>
 
     <description>
         Basic usage of GraphQL in helidon SE
@@ -39,12 +39,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.graphql</groupId>
-            <artifactId>helidon-nima-graphql-server</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-graphql</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>

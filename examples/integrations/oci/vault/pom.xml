@@ -31,7 +31,7 @@
     <groupId>io.helidon.examples.integrations.oci</groupId>
     <artifactId>helidon-examples-integrations-oci-vault</artifactId>
     <name>Helidon Examples Integration OCI Vault</name>
-    <description>Nima integration with OCI Vault.</description>
+    <description>Integration with OCI Vault.</description>
 
     <properties>
         <mainClass>io.helidon.examples.integrations.oci.vault.OciVaultMain</mainClass>
@@ -39,8 +39,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

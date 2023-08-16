@@ -43,6 +43,9 @@ import io.helidon.inject.api.Qualifier;
 import io.helidon.inject.api.Resettable;
 import io.helidon.inject.runtime.Dependencies;
 
+import static io.helidon.inject.tools.ModuleUtils.APPLICATION_MODULE_INFO;
+import static io.helidon.inject.tools.ModuleUtils.MODULE_COMPONENT_MODULE_INFO;
+
 /**
  * Tracks the services to process, and ingests them to build the codegen model.
  * <p>
@@ -944,7 +947,7 @@ public class ServicesToProcess implements Resettable {
         String message = ". Use -A" + Options.TAG_IGNORE_MODULE_USAGE + "=true to ignore.";
 
         if (wasModuleDefined) {
-            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(ModuleComponent.class.getName());
+            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(MODULE_COMPONENT_MODULE_INFO);
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
                 IllegalStateException te = new IllegalStateException("Expected to have a 'provides "
                                                                              + ModuleComponent.class.getName()
@@ -959,7 +962,7 @@ public class ServicesToProcess implements Resettable {
         }
 
         if (wasApplicationDefined) {
-            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(Application.class.getName());
+            Optional<ModuleInfoItem> moduleInfoItem = lastKnownModuleInfoDescriptor.first(APPLICATION_MODULE_INFO);
             if (moduleInfoItem.isEmpty() || !moduleInfoItem.get().provides()) {
                 ToolsException te = new ToolsException("Expected to have a 'provides " + Application.class.getName()
                                                                + " with ... ' entry in " + lastKnownModuleInfoFilePath + message);

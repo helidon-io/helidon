@@ -29,7 +29,7 @@
     <groupId>io.helidon.examples.messaging.se</groupId>
     <artifactId>kafka-websocket-se</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>kafka-websocket-se</name>
+    <name>Helidon Examples Messaging Kafka WebSocket MP</name>
 
     <properties>
         <mainClass>io.helidon.examples.messaging.se.Main</mainClass>
@@ -37,16 +37,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-static-content</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.messaging</groupId>

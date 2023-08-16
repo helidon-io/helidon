@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.server;
 
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpRouting;
 
 /**
  * Package-private implementation of the {@code RoutingBuilders} interface.

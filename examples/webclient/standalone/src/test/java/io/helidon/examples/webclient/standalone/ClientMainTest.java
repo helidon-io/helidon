@@ -24,12 +24,12 @@ import java.util.stream.Stream;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.api.WebClient;
-import io.helidon.nima.webclient.spi.WebClientService;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.spi.WebClientService;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;

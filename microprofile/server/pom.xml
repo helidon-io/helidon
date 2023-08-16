@@ -47,12 +47,12 @@
             <artifactId>helidon-microprofile-cdi</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-static-content</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.interceptor</groupId>
@@ -81,13 +81,13 @@
         </dependency>
         <dependency>
             <!-- this is to include JSON-P native image configuration -->
-            <groupId>io.helidon.nima.http.media</groupId>
-            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonp</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-context</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-context</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

@@ -27,7 +27,7 @@
 
     <groupId>io.helidon.tests.integration.kafka</groupId>
     <artifactId>helidon-tests-integration-kafka</artifactId>
-    <name>Helidon Tests Integrations Kafka</name>
+    <name>Helidon Tests Integration Kafka</name>
 
     <build>
         <plugins>

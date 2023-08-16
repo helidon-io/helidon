@@ -26,8 +26,8 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.jms.JmsConnector;
 import io.helidon.messaging.connectors.jms.Type;
-import io.helidon.nima.websocket.WsListener;
-import io.helidon.nima.websocket.WsSession;
+import io.helidon.websocket.WsListener;
+import io.helidon.websocket.WsSession;
 
 import org.apache.activemq.jndi.ActiveMQInitialContextFactory;
 

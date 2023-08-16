@@ -23,7 +23,7 @@
     <groupId>io.helidon.examples.quickstarts</groupId>
     <artifactId>helidon-standalone-quickstart-mp</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <name>Helidon Standalone Quickstart MP Example</name>
+    <name>Helidon Examples Standalone Quickstart MP</name>
 
     <properties>
         <helidon.version>4.0.0-SNAPSHOT</helidon.version>

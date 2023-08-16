@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-multipart</artifactId>
-    <name>Helidon Microprofile Examples Multipart</name>
+    <name>Helidon Examples Microprofile Multipart</name>
 
     <description>
         Example of a form based file upload with Helidon MP.

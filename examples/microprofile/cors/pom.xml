@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-cors</artifactId>
-    <name>Helidon Microprofile Example CORS</name>
+    <name>Helidon Examples Microprofile CORS</name>
 
     <description>
         Microprofile example showing CORS support
@@ -66,8 +66,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

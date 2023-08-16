@@ -29,7 +29,7 @@
     <groupId>io.helidon.examples.integrations.micronaut</groupId>
     <artifactId>helidon-examples-integrations-micronaut-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Micronaut Integration Examples</name>
+    <name>Helidon Examples Integration Micronaut</name>
 
     <modules>
         <module>data</module>

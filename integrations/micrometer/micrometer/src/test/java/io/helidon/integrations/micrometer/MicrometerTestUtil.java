@@ -20,7 +20,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
 
 public class MicrometerTestUtil {
 

@@ -27,7 +27,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-common</artifactId>
-    <name>Integration Tests: Database Client Common</name>
+    <name>Helidon Tests Integration Database Client Common</name>
 
     <dependencies>
         <dependency>
@@ -68,16 +68,16 @@
             <artifactId>hamcrest-all</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe-metrics</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-metrics</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe-health</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>

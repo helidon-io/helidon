@@ -31,7 +31,7 @@
 
     <groupId>io.helidon.tests.integration.jpa</groupId>
     <artifactId>helidon-tests-integration-jpa-project</artifactId>
-    <name>Integration Tests: JPA</name>
+    <name>Helidon Tests Integration JPA</name>
 
     <description>
         A set of tests that validate JPA API implementation

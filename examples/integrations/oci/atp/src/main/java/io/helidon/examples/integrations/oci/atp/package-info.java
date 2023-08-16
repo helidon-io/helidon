@@ -15,6 +15,6 @@
  */
 
 /**
- * Example of integration with OCI ATP in Nima application.
+ * Example of integration with OCI ATP in a Helidon SE application.
  */
 package io.helidon.examples.integrations.oci.atp;

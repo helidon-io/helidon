@@ -18,10 +18,10 @@ package io.helidon.tests.integration.dbclient.app;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.tests.integration.dbclient.app.tests.AbstractService;
 import io.helidon.tests.integration.dbclient.app.tools.QueryParams;
 

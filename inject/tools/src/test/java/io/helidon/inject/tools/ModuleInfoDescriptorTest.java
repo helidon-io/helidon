@@ -108,7 +108,8 @@ class ModuleInfoDescriptorTest {
 
         assertThat(descriptor.firstUnqualifiedPackageExport().orElseThrow(),
                    equalTo("export2"));
-        assertThat(descriptor.first("cn1").orElseThrow().provides(),
+        ModuleInfoItem moduleInfoItem = ModuleInfoItem.builder().provides(true).target("cn1").build();
+        assertThat(descriptor.first(moduleInfoItem).orElseThrow().provides(),
                    is(true));
     }
 
@@ -175,7 +176,7 @@ class ModuleInfoDescriptorTest {
                 + " */\n"
                 + "@Feature(value = \"Config\",\n"
                 + "        description = \"Configuration module\",\n"
-                + "        in = {HelidonFlavor.NIMA, HelidonFlavor.SE}\n"
+                + "        in = {HelidonFlavor.SE}\n"
                 + ")\n"
                 + "module io.helidon.config {\n}\n";
         ToolsException te = assertThrows(ToolsException.class,
@@ -183,17 +184,16 @@ class ModuleInfoDescriptorTest {
                                                  .create(moduleInfo, ModuleInfoOrdering.NATURAL_PRESERVE_COMMENTS, true));
         assertThat(te.getCause().getMessage(),
                    equalTo("Failed to parse line: @Feature(value = \"Config\", description = \"Configuration module\", "
-                                   + "in = {HelidonFlavor.NIMA, HelidonFlavor.SE}"));
+                                   + "in = {HelidonFlavor.SE}"));
 
         ModuleInfoDescriptor descriptor = ModuleInfoDescriptor.create(moduleInfo);
         assertThat(descriptor.handled(),
                    is(false));
         assertThat(descriptor.unhandledLines(),
-                   contains("@Feature(value = \"Config\", description = \"Configuration module\", in = {HelidonFlavor"
-                                   + ".NIMA, HelidonFlavor.SE}"));
+                   contains("@Feature(value = \"Config\", description = \"Configuration module\", in = {HelidonFlavor.SE}"));
         assertThat(descriptor.error().orElseThrow().getCause().getMessage(),
                    equalTo("Failed to parse line: @Feature(value = \"Config\", description = \"Configuration module\", "
-                                   + "in = {HelidonFlavor.NIMA, HelidonFlavor.SE}"));
+                                   + "in = {HelidonFlavor.SE}"));
     }
 
     @Test
@@ -253,7 +253,8 @@ class ModuleInfoDescriptorTest {
                                    + "\n"
                                    + "    exports io.helidon.inject.spi.impl;\n"
                                    + "\n"
-                                   + "    provides io.helidon.inject.api.InjectionServices with io.helidon.inject.spi.impl.DefaultInjectionServices;\n"
+                                   + "    provides io.helidon.inject.api.InjectionServices with io.helidon.inject.spi.impl"
+                                   + ".DefaultInjectionServices;\n"
                                    + "\n"
                                    + "    uses io.helidon.inject.api.ModuleComponent;\n"
                                    + "    uses io.helidon.inject.api.Application;\n"

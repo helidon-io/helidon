@@ -18,7 +18,7 @@ package io.helidon.microprofile.openapi;
 import java.net.HttpURLConnection;
 import java.util.Map;
 
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.ClasspathConfigSource;
 import io.helidon.config.Config;

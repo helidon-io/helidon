@@ -19,14 +19,14 @@ package io.helidon.examples.integrations.vault.hcp;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secret;
 import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
 import io.helidon.integrations.vault.sys.Sys;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 class Kv2Service implements HttpService {
     private final Sys sys;

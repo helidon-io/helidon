@@ -18,8 +18,8 @@ package io.helidon.examples.dbclient.jdbc;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.examples.dbclient.common.AbstractPokemonService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Example service using a database.

@@ -41,8 +41,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing.providers</groupId>

@@ -42,8 +42,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -54,8 +54,8 @@
             <artifactId>helidon-tracing-providers-zipkin</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-tracing</artifactId>
         </dependency>
     </dependencies>
 

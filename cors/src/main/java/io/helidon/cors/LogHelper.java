@@ -29,9 +29,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.cors.CorsSupportHelper.RequestType;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderNames;
 
 class LogHelper {
 

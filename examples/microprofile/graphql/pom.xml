@@ -26,7 +26,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-graphql</artifactId>
-    <name>Helidon Microprofile Examples GraphQL</name>
+    <name>Helidon Examples Microprofile GraphQL</name>
 
     <description>
         Usage of GraphQL in Helidon MP

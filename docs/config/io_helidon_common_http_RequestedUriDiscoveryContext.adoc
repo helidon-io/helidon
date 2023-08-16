@@ -17,9 +17,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.common.http.RequestedUriDiscoveryContext
-:keywords: helidon, config, io.helidon.common.http.RequestedUriDiscoveryContext
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.common.http.RequestedUriDiscoveryContext
+:description: Configuration of io.helidon.http.RequestedUriDiscoveryContext
+:keywords: helidon, config, io.helidon.http.RequestedUriDiscoveryContext
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.http.RequestedUriDiscoveryContext
 include::{rootdir}/includes/attributes.adoc[]
 
 = RequestedUriDiscoveryContext (common.http) Configuration
@@ -27,7 +27,7 @@ include::{rootdir}/includes/attributes.adoc[]
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.common.http/io/helidon/common/http/RequestedUriDiscoveryContext.html[io.helidon.common.http.RequestedUriDiscoveryContext]
+Type: link:{javadoc-base-url}/io.helidon.http/io/helidon/http/RequestedUriDiscoveryContext.html[io.helidon.http.RequestedUriDiscoveryContext]
 
 
 

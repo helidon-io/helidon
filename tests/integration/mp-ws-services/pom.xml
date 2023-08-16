@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>helidon-tests-integration-mp-ws-services</artifactId>
-    <name>Helidon Integration Test MP WebServer services</name>
+    <name>Helidon Tests Integration MP WebServer services</name>
 
     <dependencies>
         <dependency>

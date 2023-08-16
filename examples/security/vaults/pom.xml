@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.security</groupId>
     <artifactId>helidon-examples-security-vaults</artifactId>
-    <name>Helidon Security Examples Vaults</name>
+    <name>Helidon Examples Security Vaults</name>
 
     <description>
         This example demonstrates usage of vault implementations - OCI, Hashicorp Vault, and Config based vault
@@ -61,8 +61,8 @@
             <artifactId>helidon-security-providers-config-vault</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.integrations.vault.secrets</groupId>

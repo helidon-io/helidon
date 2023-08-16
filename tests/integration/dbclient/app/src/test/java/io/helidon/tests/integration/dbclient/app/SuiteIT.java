@@ -21,9 +21,9 @@ import java.sql.SQLException;
 import java.util.Map;
 
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServer;
 import io.helidon.tests.integration.harness.AfterSuite;
 import io.helidon.tests.integration.harness.BeforeSuite;
 import io.helidon.tests.integration.harness.HelidonProcessRunner;

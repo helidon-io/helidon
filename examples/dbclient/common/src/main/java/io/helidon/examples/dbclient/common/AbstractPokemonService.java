@@ -15,15 +15,15 @@
  */
 package io.helidon.examples.dbclient.common;
 
-import io.helidon.common.http.NotFoundException;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbTransaction;
-import io.helidon.nima.webserver.http.Handler;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.NotFoundException;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.JsonObject;
 

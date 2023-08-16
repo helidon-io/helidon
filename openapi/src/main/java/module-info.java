@@ -25,7 +25,7 @@ module io.helidon.openapi {
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.media.type;
-    requires io.helidon.nima.servicecommon;
+    requires io.helidon.servicecommon;
 
 
     requires jakarta.json;

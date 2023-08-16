@@ -20,10 +20,10 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;

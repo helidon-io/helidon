@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.auths.k8s;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 
 class K8sAuthImpl implements K8sAuth {

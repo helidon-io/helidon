@@ -30,7 +30,7 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
 module io.helidon.microprofile.server {
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.nima.webserver;
+    requires transitive io.helidon.webserver;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.jersey.server;
     requires transitive io.helidon.common.configurable;
@@ -44,8 +44,8 @@ module io.helidon.microprofile.server {
     requires transitive jakarta.json;
     requires io.helidon.jersey.media.jsonp;
 
-    requires io.helidon.nima.webserver.staticcontent;
-    requires transitive io.helidon.nima.webserver.context;
+    requires io.helidon.webserver.staticcontent;
+    requires transitive io.helidon.webserver.context;
 
     // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires java.management;

@@ -29,6 +29,7 @@
     <name>Helidon Jersey Media JSON-P</name>
 
     <properties>
+        <spotbugs.skip>true</spotbugs.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
 

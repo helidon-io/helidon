@@ -31,16 +31,16 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
-import io.helidon.common.http.DirectHandler;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpPrologue;
-import io.helidon.common.http.RequestException;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.nima.webserver.ConnectionContext;
-import io.helidon.nima.webserver.spi.ServerConnection;
-import io.helidon.nima.websocket.webserver.WsConfig;
-import io.helidon.nima.websocket.webserver.WsUpgrader;
+import io.helidon.http.DirectHandler;
+import io.helidon.http.Http;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.RequestException;
+import io.helidon.http.WritableHeaders;
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.webserver.websocket.WsConfig;
+import io.helidon.webserver.websocket.WsUpgrader;
 
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.websocket.DeploymentException;
@@ -226,7 +226,7 @@ public class TyrusUpgrader extends WsUpgrader {
         final TyrusUpgradeResponse upgradeResponse = new TyrusUpgradeResponse();
         final WebSocketEngine.UpgradeInfo upgradeInfo = engine.upgrade(requestContext, upgradeResponse);
 
-        // Map Tyrus response headers back to Nima
+        // Map Tyrus response headers back to Helidon
         upgradeResponse.getHeaders()
                 .forEach((key, value) -> headers.add(
                         Http.Headers.create(

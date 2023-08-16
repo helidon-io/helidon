@@ -33,19 +33,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.common.http.ServerRequestHeaders;
-import io.helidon.common.http.WritableHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.nima.servicecommon.HelidonFeatureSupport;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.Http;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.WritableHeaders;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
 /**
  * Behavior shared between the SE and MP OpenAPI feature implementations.

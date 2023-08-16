@@ -24,10 +24,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.nima.http.media.EntityReader;
-import io.helidon.nima.http.media.MediaSupport;
+import io.helidon.http.Headers;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.MediaSupport;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 

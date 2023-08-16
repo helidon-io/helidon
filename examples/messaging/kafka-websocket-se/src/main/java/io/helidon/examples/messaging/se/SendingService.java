@@ -21,8 +21,8 @@ import io.helidon.messaging.Channel;
 import io.helidon.messaging.Emitter;
 import io.helidon.messaging.Messaging;
 import io.helidon.messaging.connectors.kafka.KafkaConnector;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
 
 import org.apache.kafka.common.serialization.StringSerializer;
 

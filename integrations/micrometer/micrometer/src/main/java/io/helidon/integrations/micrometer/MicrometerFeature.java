@@ -21,10 +21,10 @@ import java.util.function.Supplier;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.metadata.Configured;
-import io.helidon.nima.servicecommon.HelidonFeatureSupport;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
 import io.micrometer.core.instrument.MeterRegistry;
 

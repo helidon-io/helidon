@@ -28,7 +28,7 @@
     <groupId>io.helidon.examples.inject</groupId>
     <artifactId>helidon-examples-inject-project</artifactId>
     <packaging>pom</packaging>
-    <name>Helidon Injection Examples</name>
+    <name>Helidon Examples Injection</name>
 
     <modules>
         <module>basics</module>

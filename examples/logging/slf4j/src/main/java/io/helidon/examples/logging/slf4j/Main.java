@@ -24,8 +24,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -5,7 +5,7 @@ configuration.
 
 ## Change notification
 
-[`OnChangeExample.java`](./src/main/java/io/helidon/config/examples/changes/OnChangeExample.java):
+[`OnChangeExample.java`](src/main/java/io/helidon/examples/config/changes/OnChangeExample.java):
 uses `Config.onChange`, passing either a method reference (a lambda expression
 would also work) which the config system invokes when the config source changes
 )
@@ -14,7 +14,7 @@ would also work) which the config system invokes when the config source changes
 
 Recall that once your application obtains a `Config` instance, its config values 
 do not change. The 
-[`AsSupplierExample.java`](./src/main/java/io/helidon/config/examples/changes/AsSupplierExample.java)
+[`AsSupplierExample.java`](src/main/java/io/helidon/examples/config/changes/AsSupplierExample.java)
 example shows how your application can get a config _supplier_ that always reports 
 the latest config value for a key, including any changes made after your
 application obtained the `Config` object. Although this approach does not notify

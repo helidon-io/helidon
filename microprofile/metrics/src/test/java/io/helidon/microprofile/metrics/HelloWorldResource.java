@@ -23,7 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -40,7 +40,6 @@ import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.annotation.Counted;
-import org.eclipse.microprofile.metrics.annotation.RegistryScope;
 import org.eclipse.microprofile.metrics.annotation.RegistryType;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 

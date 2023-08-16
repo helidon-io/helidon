@@ -19,7 +19,7 @@ package io.helidon.tests.integration.gh3246;
 import java.time.Instant;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.security.jwt.Jwt;

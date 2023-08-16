@@ -31,15 +31,15 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.Http;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
 import io.helidon.scheduling.Task;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -50,11 +50,11 @@ import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
-import static io.helidon.common.http.Http.Status.CREATED_201;
-import static io.helidon.common.http.Http.Status.GONE_410;
-import static io.helidon.common.http.Http.Status.NOT_FOUND_404;
-import static io.helidon.common.http.Http.Status.OK_200;
-import static io.helidon.common.http.Http.Status.PRECONDITION_FAILED_412;
+import static io.helidon.http.Http.Status.CREATED_201;
+import static io.helidon.http.Http.Status.GONE_410;
+import static io.helidon.http.Http.Status.NOT_FOUND_404;
+import static io.helidon.http.Http.Status.OK_200;
+import static io.helidon.http.Http.Status.PRECONDITION_FAILED_412;
 
 /**
  * LRA coordinator with Narayana like rest api.

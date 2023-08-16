@@ -34,8 +34,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.service-common</groupId>
-            <artifactId>helidon-nima-service-common</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
@@ -61,8 +61,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

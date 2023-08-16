@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-streaming</artifactId>
-    <name>Helidon WebServer Examples Streaming</name>
+    <name>Helidon Examples WebServer Streaming</name>
 
     <description>
         Application that demonstrates how to write a service that uploads and downloads
@@ -37,13 +37,13 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.streaming.Main</mainClass>
+        <mainClass>io.helidon.examples.webserver.streaming.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

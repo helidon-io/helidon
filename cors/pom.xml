@@ -39,8 +39,8 @@
             <artifactId>helidon-common-configurable</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-http</artifactId>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

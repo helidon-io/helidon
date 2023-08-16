@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import io.helidon.nima.faulttolerance.RetryTimeoutException;
+import io.helidon.faulttolerance.RetryTimeoutException;
 
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
@@ -45,16 +45,16 @@ class ThrowableMapper {
         if (t instanceof ExecutionException) {
             t = t.getCause();
         }
-        if (t instanceof io.helidon.nima.faulttolerance.CircuitBreakerOpenException) {
+        if (t instanceof io.helidon.faulttolerance.CircuitBreakerOpenException) {
             return new CircuitBreakerOpenException(t.getMessage(), t.getCause());
         }
-        if (t instanceof io.helidon.nima.faulttolerance.BulkheadException) {
+        if (t instanceof io.helidon.faulttolerance.BulkheadException) {
             return new BulkheadException(t.getMessage(), t.getCause());
         }
         if (t instanceof RetryTimeoutException) {
             return t;       // the cause is handled elsewhere
         }
-        if (t instanceof io.helidon.nima.faulttolerance.TimeoutException
+        if (t instanceof io.helidon.faulttolerance.TimeoutException
                 || t instanceof java.lang.InterruptedException) {
             return new TimeoutException(t.getMessage(), t.getCause());
         }
@@ -76,11 +76,11 @@ class ThrowableMapper {
         for (int i = 0; i < types.length; i++) {
             Class<? extends Throwable> t = types[i];
             if (t == BulkheadException.class) {
-                result[i] = io.helidon.nima.faulttolerance.BulkheadException.class;
+                result[i] = io.helidon.faulttolerance.BulkheadException.class;
             } else if (t == CircuitBreakerOpenException.class) {
-                result[i] = io.helidon.nima.faulttolerance.CircuitBreakerOpenException.class;
+                result[i] = io.helidon.faulttolerance.CircuitBreakerOpenException.class;
             } else if (t == TimeoutException.class) {
-                result[i] = io.helidon.nima.faulttolerance.TimeoutException.class;
+                result[i] = io.helidon.faulttolerance.TimeoutException.class;
             } else {
                 result[i] = t;
             }

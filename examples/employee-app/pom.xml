@@ -33,7 +33,7 @@
     <name>Helidon Examples Employee App</name>
 
     <properties>
-        <mainClass>io.helidon.service.employee.Main</mainClass>
+        <mainClass>io.helidon.examples.employee.Main</mainClass>
     </properties>
 
     <dependencies>
@@ -43,20 +43,20 @@
             <type>pom</type>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-static-content</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.http.media</groupId>
-            <artifactId>helidon-nima-http-media-jsonb</artifactId>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonb</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -79,8 +79,8 @@
             <artifactId>helidon-dbclient-jdbc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

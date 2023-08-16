@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.integration.yamlparsing;
 
-import io.helidon.common.http.Http;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.http.Http;
+import io.helidon.webclient.api.WebClient;
 
 /**
  * Executable class that invokes HTTP/1 requests against the server.
@@ -40,7 +40,7 @@ public class GreetClientHttp {
 
         System.out.println(response);
 
-        response = client.get("Nima")
+        response = client.get("Frank")
                 .requestEntity(String.class);
 
         System.out.println(response);

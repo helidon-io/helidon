@@ -38,7 +38,7 @@
     </Match>
     <Match>
         <!-- False positive similar to https://github.com/spotbugs/spotbugs/issues/1877 -->
-        <Class name="io.helidon.common.http.RequestedUriDiscoveryContext$UnsafeRequestedUriSettingsException"/>
+        <Class name="io.helidon.http.RequestedUriDiscoveryContext$UnsafeRequestedUriSettingsException"/>
         <Method name="&lt;init&gt;"/>
         <Bug pattern = "VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>

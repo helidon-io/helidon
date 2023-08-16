@@ -35,9 +35,9 @@ module io.helidon.integrations.micrometer {
     requires static jakarta.annotation;
 
     requires io.helidon.config;
-    requires io.helidon.common.http;
-    requires io.helidon.nima.servicecommon;
-    requires io.helidon.nima.webserver.cors;
+    requires io.helidon.http;
+    requires io.helidon.servicecommon;
+    requires io.helidon.webserver.cors;
 
     requires static io.helidon.config.metadata;
 

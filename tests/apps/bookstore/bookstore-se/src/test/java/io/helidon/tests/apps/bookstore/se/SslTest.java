@@ -16,11 +16,11 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.WebServer;
 
-import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.webserver.WebServerConfig;
 import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;

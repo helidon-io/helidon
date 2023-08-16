@@ -17,8 +17,8 @@ package io.helidon.microprofile.servicecommon;
 
 import java.util.Optional;
 
-import io.helidon.nima.servicecommon.HelidonFeatureSupport;
-import io.helidon.nima.webserver.http.HttpService;
+import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
+import io.helidon.webserver.http.HttpService;
 
 /**
  * Test SE service which does not really expose its own endpoint but does use config to set an "importance" value.

@@ -25,7 +25,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <name>Helidon Integration Test OIDC</name>
+    <name>Helidon Tests Integration OIDC</name>
     <artifactId>helidon-tests-integration-oidc</artifactId>
 
     <dependencies>

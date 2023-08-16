@@ -45,8 +45,8 @@
             <artifactId>microprofile-health-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe-health</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe-health</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.health</groupId>

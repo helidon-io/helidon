@@ -15,10 +15,10 @@
  */
 package io.helidon.openapi;
 
-import io.helidon.common.http.HttpMediaType;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.HttpMediaType;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Implementation of {@link io.helidon.openapi.OpenApiUi} which provides no UI support but simply honors the interface.

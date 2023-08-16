@@ -21,11 +21,11 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.cors.CorsSupport;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.cors.CorsSupport;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * Simple Hello World rest application.

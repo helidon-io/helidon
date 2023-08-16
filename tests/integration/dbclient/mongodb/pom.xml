@@ -26,7 +26,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>helidon-tests-integration-dbclient-mongodb</artifactId>
-    <name>Integration Tests: Database Client MongoDB</name>
+    <name>Helidon Tests Integration Database Client MongoDB</name>
 
     <properties>
         <mongo.port>27017</mongo.port>

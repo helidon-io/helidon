@@ -35,7 +35,7 @@ module io.helidon.integrations.micrometer.cdi {
     requires static jakarta.cdi;
     requires static jakarta.inject;
 
-    requires io.helidon.common.http;
+    requires io.helidon.http;
     requires io.helidon.microprofile.servicecommon;
     requires io.helidon.config;
     requires io.helidon.config.mp;

@@ -15,15 +15,15 @@
  */
 package io.helidon.security.examples.outbound;
 
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.security.WebClientSecurity;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.security.WebClientSecurity;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 class OverrideService implements HttpService {
 

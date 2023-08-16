@@ -79,8 +79,8 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.graphql</groupId>
-                <artifactId>helidon-nima-graphql-server</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-graphql</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -234,11 +234,6 @@
             <dependency>
                 <groupId>io.helidon.security.integration</groupId>
                 <artifactId>helidon-security-integration-webserver</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.security.integration</groupId>
-                <artifactId>helidon-security-integration-nima</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -422,11 +417,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.common</groupId>
-                <artifactId>helidon-common-http</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-reactive</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
@@ -493,6 +483,11 @@
             <dependency>
                 <groupId>io.helidon.common</groupId>
                 <artifactId>helidon-common-types</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.common</groupId>
+                <artifactId>helidon-common-tls</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
@@ -1023,235 +1018,234 @@
             	<version>${helidon.version}</version>
             </dependency>
 
-            <!-- Níma -->
             <dependency>
-                <groupId>io.helidon.nima.common</groupId>
-                <artifactId>helidon-nima-common-tls</artifactId>
+                <groupId>io.helidon.http</groupId>
+                <artifactId>helidon-http</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.encoding</groupId>
-                <artifactId>helidon-nima-http-encoding</artifactId>
+                <groupId>io.helidon.http</groupId>
+                <artifactId>helidon-http-http2</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.encoding</groupId>
-                <artifactId>helidon-nima-http-encoding-gzip</artifactId>
+                <groupId>io.helidon.http</groupId>
+                <artifactId>helidon-http-sse</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.encoding</groupId>
-                <artifactId>helidon-nima-http-encoding-deflate</artifactId>
+                <groupId>io.helidon.http.encoding</groupId>
+                <artifactId>helidon-http-encoding</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.media</groupId>
-                <artifactId>helidon-nima-http-media</artifactId>
+                <groupId>io.helidon.http.encoding</groupId>
+                <artifactId>helidon-http-encoding-gzip</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.media</groupId>
-                <artifactId>helidon-nima-http-media-jsonb</artifactId>
+                <groupId>io.helidon.http.encoding</groupId>
+                <artifactId>helidon-http-encoding-deflate</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.media</groupId>
-                <artifactId>helidon-nima-http-media-jackson</artifactId>
+                <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.media</groupId>
-                <artifactId>helidon-nima-http-media-jsonp</artifactId>
+                <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-jsonb</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http.media</groupId>
-                <artifactId>helidon-nima-http-media-multipart</artifactId>
+                <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-jackson</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webserver</groupId>
-                <artifactId>helidon-nima-webserver</artifactId>
+                <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-jsonp</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webserver</groupId>
-                <artifactId>helidon-nima-webserver-cors</artifactId>
+                <groupId>io.helidon.http.media</groupId>
+                <artifactId>helidon-http-media-multipart</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webserver</groupId>
-                <artifactId>helidon-nima-webserver-access-log</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webserver</groupId>
-                <artifactId>helidon-nima-webserver-context</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-http2</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webserver</groupId>
-                <artifactId>helidon-nima-webserver-static-content</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient</groupId>
-                <artifactId>helidon-nima-webclient-api</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-grpc</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient</groupId>
-                <artifactId>helidon-nima-webclient-http1</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-sse</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient</groupId>
-                <artifactId>helidon-nima-webclient</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient.dns.resolver</groupId>
-                <artifactId>helidon-nima-webclient-dns-resolver-first</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-cors</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient.dns.resolver</groupId>
-                <artifactId>helidon-nima-webclient-dns-resolver-round-robin</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-access-log</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient</groupId>
-                <artifactId>helidon-nima-webclient-security</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-context</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient</groupId>
-                <artifactId>helidon-nima-webclient-tracing</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-static-content</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webclient</groupId>
-                <artifactId>helidon-nima-webclient-metrics</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http2</groupId>
-                <artifactId>helidon-nima-http2</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-config</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http2</groupId>
-                <artifactId>helidon-nima-http2-webclient</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-health</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.http2</groupId>
-                <artifactId>helidon-nima-http2-webserver</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.websocket</groupId>
-                <artifactId>helidon-nima-websocket</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-info</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.websocket</groupId>
-                <artifactId>helidon-nima-websocket-webserver</artifactId>
+                <groupId>io.helidon.webserver.observe</groupId>
+                <artifactId>helidon-webserver-observe-log</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.websocket</groupId>
-                <artifactId>helidon-nima-websocket-client</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.sse</groupId>
-                <artifactId>helidon-nima-sse</artifactId>
+                <groupId>io.helidon.webserver</groupId>
+                <artifactId>helidon-webserver-service-common</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.sse</groupId>
-                <artifactId>helidon-nima-sse-webclient</artifactId>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.sse</groupId>
-                <artifactId>helidon-nima-sse-webserver</artifactId>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5-http2</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.testing.junit5</groupId>
-                <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+                <groupId>io.helidon.webserver.testing.junit5</groupId>
+                <artifactId>helidon-webserver-testing-junit5-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.testing.junit5</groupId>
-                <artifactId>helidon-nima-testing-junit5-http2</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-api</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.testing.junit5</groupId>
-                <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.grpc</groupId>
-                <artifactId>helidon-nima-grpc-webserver</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-http1</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.observe</groupId>
-                <artifactId>helidon-nima-observe</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-http2</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.observe</groupId>
-                <artifactId>helidon-nima-observe-config</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.observe</groupId>
-                <artifactId>helidon-nima-observe-health</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-sse</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.observe</groupId>
-                <artifactId>helidon-nima-observe-metrics</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-security</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.observe</groupId>
-                <artifactId>helidon-nima-observe-info</artifactId>
+                <groupId>io.helidon.webclient.dns.resolver</groupId>
+                <artifactId>helidon-webclient-dns-resolver-first</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.observe</groupId>
-                <artifactId>helidon-nima-observe-log</artifactId>
+                <groupId>io.helidon.webclient.dns.resolver</groupId>
+                <artifactId>helidon-webclient-dns-resolver-round-robin</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.webserver</groupId>
-                <artifactId>helidon-nima-webserver-tracing</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-tracing</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.service-common</groupId>
-                <artifactId>helidon-nima-service-common</artifactId>
+                <groupId>io.helidon.webclient</groupId>
+                <artifactId>helidon-webclient-metrics</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.fault-tolerance</groupId>
-                <artifactId>helidon-nima-fault-tolerance</artifactId>
+                <groupId>io.helidon.websocket</groupId>
+                <artifactId>helidon-websocket</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.fault-tolerance</groupId>
-                <artifactId>helidon-nima-fault-tolerance-processor</artifactId>
+                <groupId>io.helidon.fault-tolerance</groupId>
+                <artifactId>helidon-fault-tolerance</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.helidon.nima.openapi</groupId>
-                <artifactId>helidon-nima-openapi</artifactId>
+                <groupId>io.helidon.fault-tolerance</groupId>
+                <artifactId>helidon-fault-tolerance-processor</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
 

@@ -18,8 +18,8 @@ package io.helidon.examples.security.vaults;
 
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.WebServer;
 import io.helidon.security.Security;
+import io.helidon.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;

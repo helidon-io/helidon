@@ -181,35 +181,38 @@
     </properties>
 
     <modules>
-        <module>parent</module>
-        <module>dependencies</module>
-        <module>bom</module>
-        <module>helidon</module>
+        <module>inject</module>
         <module>applications</module>
-        <module>licensing</module>
+        <module>bom</module>
+        <module>builder</module>
+        <module>bundles</module>
         <module>common</module>
         <module>config</module>
-        <module>security</module>
-        <module>lra</module>
-        <module>microprofile</module>
-        <module>tracing</module>
-        <module>bundles</module>
-        <module>metrics</module>
-        <module>health</module>
-        <module>openapi</module>
-        <module>jersey</module>
-        <module>dbclient</module>
-        <module>integrations</module>
-        <module>messaging</module>
-        <module>graphql</module>
-        <module>logging</module>
-        <module>scheduling</module>
-        <module>nima</module>
         <module>cors</module>
-        <module>inject</module>
-        <module>builder</module>
+        <module>dbclient</module>
+        <module>dependencies</module>
+        <module>fault-tolerance</module>
+        <module>graphql</module>
+        <module>health</module>
+        <module>helidon</module>
+        <module>http</module>
+        <module>integrations</module>
+        <module>jersey</module>
+        <module>licensing</module>
+        <module>logging</module>
+        <module>lra</module>
+        <module>messaging</module>
+        <module>metrics</module>
+        <module>microprofile</module>
+        <module>openapi</module>
+        <module>parent</module>
+        <module>scheduling</module>
+        <module>security</module>
+        <module>tracing</module>
+        <module>webclient</module>
+        <module>webserver</module>
+        <module>websocket</module>
     </modules>
-
 
     <build>
         <extensions>

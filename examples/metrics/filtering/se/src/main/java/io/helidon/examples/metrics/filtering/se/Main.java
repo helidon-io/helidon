@@ -23,12 +23,12 @@ import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.RegistryFilterSettings;
 import io.helidon.metrics.api.RegistrySettings;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.observe.metrics.MetricsFeature;
-import io.helidon.nima.observe.metrics.MetricsObserveProvider;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.metrics.MetricsFeature;
+import io.helidon.webserver.observe.metrics.MetricsObserveProvider;
 
 import org.eclipse.microprofile.metrics.MetricRegistry;
 

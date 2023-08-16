@@ -17,16 +17,16 @@ package io.helidon.security.examples.outbound;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.context.ContextFeature;
+import io.helidon.http.Http;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
-import io.helidon.security.integration.nima.SecurityFeature;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.security.SecurityFeature;
 
 /**
  * Creates two services.

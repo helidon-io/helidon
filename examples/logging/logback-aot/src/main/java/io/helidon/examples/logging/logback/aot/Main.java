@@ -23,8 +23,8 @@ import java.util.concurrent.Future;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.logging.common.HelidonMdc;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;

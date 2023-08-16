@@ -16,10 +16,10 @@
 package io.helidon.examples.webclient.standalone;
 
 import io.helidon.config.Config;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * The application main class.

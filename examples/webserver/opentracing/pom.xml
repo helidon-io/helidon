@@ -29,25 +29,25 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-opentracing</artifactId>
-    <name>Helidon WebServer Examples OpenTracing</name>
+    <name>Helidon Examples WebServer OpenTracing</name>
 
     <description>
         An example app with Open Tracing support.
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.opentracing.Main</mainClass>
+        <mainClass>io.helidon.examples.webserver.opentracing.Main</mainClass>
         <version.lib.mockito>2.23.4</version.lib.mockito>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.logging</groupId>

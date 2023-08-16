@@ -17,7 +17,7 @@ package io.helidon.microprofile.openapi;
 
 import java.util.Map;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.openapi.OpenApiFeature;

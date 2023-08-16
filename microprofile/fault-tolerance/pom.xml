@@ -47,8 +47,8 @@
             <artifactId>microprofile-fault-tolerance-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.fault-tolerance</groupId>
-            <artifactId>helidon-nima-fault-tolerance</artifactId>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
         <dependency>
             <groupId>org.eclipse.microprofile.metrics</groupId>

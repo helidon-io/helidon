@@ -15,10 +15,10 @@
  */
 package io.helidon.examples.media.multipart;
 
-import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.staticcontent.StaticContentService;
+import io.helidon.http.Http;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.staticcontent.StaticContentService;
 
 /**
  * This application provides a simple file upload service with a UI to exercise multipart.

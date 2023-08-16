@@ -31,7 +31,7 @@ module io.helidon.microprofile.accesslog {
     requires jakarta.annotation;
 
     requires io.helidon.microprofile.server;
-    requires io.helidon.nima.webserver.accesslog;
+    requires io.helidon.webserver.accesslog;
 
     exports io.helidon.microprofile.accesslog;
 

@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-hello-world-implicit</artifactId>
-    <name>Helidon Microprofile Examples Implicit Hello World</name>
+    <name>Helidon Examples Microprofile Implicit Hello World</name>
 
     <description>
         Microprofile example with implicit bootstrapping (cdi.Main(new String[0])

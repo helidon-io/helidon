@@ -18,12 +18,12 @@ package io.helidon.examples.translator.backend;
 import java.util.HashMap;
 import java.util.Map;
 
-import io.helidon.common.http.BadRequestException;
-import io.helidon.common.http.NotFoundException;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.http.BadRequestException;
+import io.helidon.http.NotFoundException;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Translator backend service.

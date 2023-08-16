@@ -28,7 +28,7 @@
 
     <groupId>io.helidon.examples.integrations.microstream</groupId>
     <artifactId>helidon-examples-integrations-microstream-project</artifactId>
-    <name>Helidon Microstream Integration Examples</name>
+    <name>Helidon Examples Integration Microstreams</name>
     <packaging>pom</packaging>
 
     <modules>

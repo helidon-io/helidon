@@ -17,10 +17,10 @@
 package io.helidon.examples.quickstart.se;
 
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
 import io.helidon.openapi.OpenApiFeature;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
 
 /**
  * The application main class.

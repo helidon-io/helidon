@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples</groupId>
     <artifactId>helidon-quickstart-mp</artifactId>
-    <name>Helidon Quickstart MP Example</name>
+    <name>Helidon Examples Quickstart MP</name>
 
     <dependencies>
         <dependency>

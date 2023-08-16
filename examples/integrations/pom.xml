@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.examples.integrations</groupId>
     <artifactId>helidon-examples-integrations-project</artifactId>
-    <name>Helidon Integrations Examples</name>
+    <name>Helidon Examples Integrations</name>
     <packaging>pom</packaging>
 
     <modules>

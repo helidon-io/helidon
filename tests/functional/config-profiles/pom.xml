@@ -27,6 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.functional.configprofile</groupId>
     <artifactId>helidon-tests-functional-configprofile</artifactId>
+    <name>Helidon Tests Functional Config Profile</name>
 
     <properties>
         <mainClass>io.helidon.tests.configprofile.Main</mainClass>
@@ -34,12 +35,12 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.http.media</groupId>
-            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
@@ -50,18 +51,18 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

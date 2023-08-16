@@ -27,7 +27,7 @@
     <groupId>io.helidon.tests.functional.bookstore</groupId>
     <artifactId>helidon-tests-functional-bookstore</artifactId>
 
-    <name>Helidon Functional Test: Bookstore</name>
+    <name>Helidon Tests Functional Bookstore</name>
 
     <properties>
         <appJarPathSE>${project.basedir}/../../apps/bookstore/bookstore-se/target/bookstore-se.jar</appJarPathSE>
@@ -65,8 +65,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

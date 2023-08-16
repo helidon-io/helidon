@@ -29,42 +29,42 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-websocket</artifactId>
-    <name>Helidon WebServer Examples WebSocket</name>
+    <name>Helidon Examples WebServer WebSocket</name>
 
     <description>
         Application demonstrates the use of websockets and REST.
     </description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.websocket.Main</mainClass>
+        <mainClass>io.helidon.examples.webserver.websocket.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-static-content</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-static-content</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-websocket</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5-websocket</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-client</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-websocket</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

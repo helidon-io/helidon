@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.Base64Value;
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.ApiResponse;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.Vault;

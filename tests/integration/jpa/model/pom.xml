@@ -29,7 +29,7 @@
 
     <groupId>io.helidon.tests.integration.jpa</groupId>
     <artifactId>helidon-tests-integration-jpa-model</artifactId>
-    <name>Integration Tests: JPA Model</name>
+    <name>Helidon Tests Integration JPA Model</name>
 
     <dependencies>
         <dependency>

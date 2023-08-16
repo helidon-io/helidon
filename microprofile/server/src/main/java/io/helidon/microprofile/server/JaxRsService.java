@@ -34,17 +34,17 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Header;
-import io.helidon.common.http.Http.HeaderNames;
-import io.helidon.common.http.InternalServerException;
 import io.helidon.common.uri.UriPath;
+import io.helidon.http.Http;
+import io.helidon.http.Http.Header;
+import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.InternalServerException;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
-import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Application;
@@ -250,7 +250,7 @@ class JaxRsService implements HttpService {
             writer.await();
         } catch (UncheckedIOException e) {
             throw e;
-        } catch (io.helidon.common.http.NotFoundException | NotFoundException e) {
+        } catch (io.helidon.http.NotFoundException | NotFoundException e) {
             // continue execution, maybe there is a non-JAX-RS route (such as static content)
             res.next();
         } catch (Exception e) {

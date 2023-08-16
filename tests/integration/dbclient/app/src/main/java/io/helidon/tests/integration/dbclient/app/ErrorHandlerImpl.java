@@ -15,9 +15,9 @@
  */
 package io.helidon.tests.integration.dbclient.app;
 
-import io.helidon.nima.webserver.http.ErrorHandler;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.ErrorHandler;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 import static io.helidon.tests.integration.harness.AppResponse.exceptionStatus;
 

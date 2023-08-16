@@ -24,8 +24,8 @@ import io.helidon.integrations.common.rest.ApiOptionalResponse;
 
 /**
  * Response for Vault operations that may contain entity.
- * The entity is present for successful requests (returning {@link io.helidon.common.http.Http.Status#OK_200};
- * entity is not present if the response was {@link io.helidon.common.http.Http.Status#NOT_FOUND_404}).
+ * The entity is present for successful requests (returning {@link io.helidon.http.Http.Status#OK_200};
+ * entity is not present if the response was {@link io.helidon.http.Http.Status#NOT_FOUND_404}).
  *
  * @param <R> type of the response - a subclass of this class
  */
@@ -57,7 +57,7 @@ public final class VaultOptionalResponse<R> extends ApiOptionalResponse<R> {
 
     /**
      * List of errors (if any) as returned by Vault.
-     * This list may contain errors when we get a {@link io.helidon.common.http.Http.Status#NOT_FOUND_404}.
+     * This list may contain errors when we get a {@link io.helidon.http.Http.Status#NOT_FOUND_404}.
      *
      * @return list of errors from Vault
      */

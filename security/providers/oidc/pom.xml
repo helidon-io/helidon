@@ -63,18 +63,18 @@
             <artifactId>helidon-config</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-nima</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-security</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-cors</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-cors</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>

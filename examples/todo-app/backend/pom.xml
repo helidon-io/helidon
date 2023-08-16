@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.demo.todos.backend.Main</mainClass>
+        <mainClass>io.helidon.examples.todos.backend.Main</mainClass>
         <version.lib.cassandra>3.10.2</version.lib.cassandra>
         <version.cassandra.unit>4.3.1.0</version.cassandra.unit>
         <version.datastax.driver.core>4.9.0</version.datastax.driver.core>

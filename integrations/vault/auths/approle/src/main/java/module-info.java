@@ -31,8 +31,8 @@ module io.helidon.integrations.vault.auths.approle {
     requires transitive io.helidon.integrations.vault;
     requires io.helidon.integrations.vault.auths.common;
     requires io.helidon.integrations.common.rest;
-    requires io.helidon.common.http;
-    requires io.helidon.nima.webclient;
+    requires io.helidon.http;
+    requires io.helidon.webclient;
 
     exports io.helidon.integrations.vault.auths.approle;
 

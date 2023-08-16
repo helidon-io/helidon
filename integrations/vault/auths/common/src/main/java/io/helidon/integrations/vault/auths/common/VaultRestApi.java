@@ -20,7 +20,7 @@ import java.lang.System.Logger.Level;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.common.rest.ApiRestException;
 import io.helidon.integrations.common.rest.ResponseBuilder;
@@ -29,7 +29,7 @@ import io.helidon.integrations.common.rest.RestApiBase;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 import io.helidon.integrations.vault.VaultRestException;
 import io.helidon.integrations.vault.VaultUtil;
-import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.HttpClientResponse;
 
 import jakarta.json.JsonObject;
 

@@ -27,7 +27,7 @@
     </parent>
     <groupId>io.helidon.tests.apps.bookstore.bookstore-mp</groupId>
     <artifactId>bookstore-mp</artifactId>
-    <name>Helidon Test Applications Bookstore MP</name>
+    <name>Helidon Tests Applications Bookstore MP</name>
 
     <properties>
         <mainClass>io.helidon.tests.apps.bookstore.mp.Main</mainClass>

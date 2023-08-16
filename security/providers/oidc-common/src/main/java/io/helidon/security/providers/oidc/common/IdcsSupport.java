@@ -19,12 +19,12 @@ package io.helidon.security.providers.oidc.common;
 import java.net.URI;
 import java.time.Duration;
 
-import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.http.Http;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 
 import jakarta.json.JsonObject;
 

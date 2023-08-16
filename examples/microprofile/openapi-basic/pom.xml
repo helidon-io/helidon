@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-openapi-basic</artifactId>
-    <name>Helidon Microprofile Example Basic OpenAPI</name>
+    <name>Helidon Examples Microprofile Basic OpenAPI</name>
 
     <description>
         Microprofile example showing basic OpenAPI support

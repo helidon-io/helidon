@@ -16,10 +16,10 @@
 
 package io.helidon.security.providers.oidc.common;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 

@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>
     <artifactId>helidon-integrations-examples-jpa</artifactId>
-    <name>Helidon CDI Extensions Examples JPA</name>
+    <name>Helidon Examples CDI Extensions JPA</name>
 
     <dependencies>
 

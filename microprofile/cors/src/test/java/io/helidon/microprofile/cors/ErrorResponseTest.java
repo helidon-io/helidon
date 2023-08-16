@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.cors;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -26,7 +26,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.HeaderNames.ORIGIN;
+import static io.helidon.http.Http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

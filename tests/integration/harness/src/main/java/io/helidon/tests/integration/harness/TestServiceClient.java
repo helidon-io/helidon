@@ -17,8 +17,8 @@ package io.helidon.tests.integration.harness;
 
 import java.util.Map;
 
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientRequest;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientRequest;
 
 import jakarta.json.JsonValue;
 

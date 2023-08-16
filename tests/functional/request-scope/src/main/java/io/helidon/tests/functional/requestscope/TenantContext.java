@@ -15,8 +15,8 @@
  */
 package io.helidon.tests.functional.requestscope;
 
-import io.helidon.common.http.Http;
-import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.http.Http;
+import io.helidon.webserver.http.ServerRequest;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.RequestScoped;

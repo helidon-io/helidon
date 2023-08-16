@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.nima.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerRequest;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

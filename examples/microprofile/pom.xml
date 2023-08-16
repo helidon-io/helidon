@@ -29,7 +29,7 @@
     <packaging>pom</packaging>
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-project</artifactId>
-    <name>Helidon Microprofile Examples</name>
+    <name>Helidon Examples Microprofile</name>
 
     <modules>
         <module>graphql</module>

@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>helidon-examples-integrations-microstream-greetings-mp</artifactId>
-    <name>Helidon Microstream Integration Example Greetings mp</name>
+    <name>Helidon Examples Integration Microstream Greetings mp</name>
 
     <dependencies>
         <dependency>

@@ -27,10 +27,10 @@ import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Security;
-import io.helidon.security.integration.nima.SecurityFeature;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
+import io.helidon.webserver.security.SecurityFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;

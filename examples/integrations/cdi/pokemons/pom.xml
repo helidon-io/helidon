@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.examples.integrations.cdi</groupId>
     <artifactId>helidon-integrations-examples-pokemons</artifactId>
-    <name>Helidon CDI Extensions Examples Pokemons JPA</name>
+    <name>Helidon Examples CDI Extensions Pokemons JPA</name>
 
     <dependencies>
         <!-- Compile-scoped dependencies. -->

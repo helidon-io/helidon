@@ -31,22 +31,24 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.nima.faulttolerance.Async;
-import io.helidon.nima.faulttolerance.Bulkhead;
-import io.helidon.nima.faulttolerance.CircuitBreaker;
-import io.helidon.nima.faulttolerance.CircuitBreaker.State;
-import io.helidon.nima.faulttolerance.Fallback;
-import io.helidon.nima.faulttolerance.FaultTolerance;
-import io.helidon.nima.faulttolerance.FtHandlerTyped;
-import io.helidon.nima.faulttolerance.Retry;
-import io.helidon.nima.faulttolerance.RetryTimeoutException;
-import io.helidon.nima.faulttolerance.Timeout;
+import io.helidon.faulttolerance.Async;
+import io.helidon.faulttolerance.Bulkhead;
+import io.helidon.faulttolerance.CircuitBreaker;
+import io.helidon.faulttolerance.CircuitBreaker.State;
+import io.helidon.faulttolerance.Fallback;
+import io.helidon.faulttolerance.FaultTolerance;
+import io.helidon.faulttolerance.FtHandlerTyped;
+import io.helidon.faulttolerance.Retry;
+import io.helidon.faulttolerance.RetryTimeoutException;
+import io.helidon.faulttolerance.Timeout;
 
 import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Counter;
 
+import static io.helidon.faulttolerance.SupplierHelper.toRuntimeException;
+import static io.helidon.faulttolerance.SupplierHelper.unwrapThrowable;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceExtension.isFaultToleranceMetricsEnabled;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadCallsTotal;
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.BulkheadExecutionsRunning;
@@ -71,8 +73,6 @@ import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.Timeo
 import static io.helidon.microprofile.faulttolerance.FaultToleranceMetrics.TimeoutTimedOut;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.map;
 import static io.helidon.microprofile.faulttolerance.ThrowableMapper.mapTypes;
-import static io.helidon.nima.faulttolerance.SupplierHelper.toRuntimeException;
-import static io.helidon.nima.faulttolerance.SupplierHelper.unwrapThrowable;
 
 /**
  * Invokes a FT method applying semantics based on method annotations. An instance

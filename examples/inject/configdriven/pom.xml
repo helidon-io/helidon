@@ -22,13 +22,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-nima</artifactId>
+        <artifactId>helidon-se</artifactId>
         <version>4.0.0-SNAPSHOT</version>
-        <relativePath>../../../applications/nima/pom.xml</relativePath>
+        <relativePath>../../../applications/se/pom.xml</relativePath>
     </parent>
     <groupId>io.helidon.examples.inject</groupId>
     <artifactId>helidon-examples-inject-configdriven</artifactId>
-    <name>Helidon Injection Examples Config-Driven</name>
+    <name>Helidon Examples Injection Config-Driven</name>
 
     <description>
         Examples of Config-driven services in Injection.

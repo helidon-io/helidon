@@ -149,7 +149,7 @@ interface ModuleInfoDescriptorBlueprint {
 
         ModuleInfoDescriptor.Builder newOne = ModuleInfoDescriptor.builder((ModuleInfoDescriptor) this);
         for (ModuleInfoItem itemThere : another.items()) {
-            Optional<ModuleInfoItem> itemHere = first(itemThere.target());
+            Optional<ModuleInfoItem> itemHere = first(itemThere);
             if (itemHere.isPresent()) {
                 int index = newOne.items().indexOf(itemHere.get());
                 newOne.items().remove(index);
@@ -180,12 +180,17 @@ interface ModuleInfoDescriptorBlueprint {
     /**
      * Retrieves the first item matching the target requested.
      *
-     * @param target the target name to find
+     * @param item the item to find
      * @return the item or empty if not found
      */
-    default Optional<ModuleInfoItem> first(String target) {
+    default Optional<ModuleInfoItem> first(ModuleInfoItem item) {
         return items().stream()
-                .filter(it -> it.target().equals(target))
+                .filter(it -> (item.uses() && it.uses())
+                        || (item.opens() && it.opens())
+                        || (item.exports() && it.exports())
+                        || (item.provides() && it.provides())
+                        || (item.requires() && it.requires()))
+                .filter(it -> it.target().equals(item.target()))
                 .findFirst();
     }
 

@@ -1,4 +1,4 @@
-# Helidon Nima MultiPart Example
+# Helidon SE MultiPart Example
 
 This example demonstrates how to use `MultiPartSupport` with both the `WebServer`
  and `WebClient` APIs.

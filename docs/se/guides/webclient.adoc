@@ -290,7 +290,7 @@ that can be used with any metric.
 [source,java]
 .Example of metric creation:
 ----
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.metrics.RegistryFactory;
 import io.helidon.reactive.webclient.metrics.WebClientMetrics;
 import io.helidon.reactive.webclient.spi.WebClientService;

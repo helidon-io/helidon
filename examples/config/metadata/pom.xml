@@ -28,7 +28,7 @@
     </parent>
     <groupId>io.helidon.examples.config</groupId>
     <artifactId>helidon-examples-config-metadata</artifactId>
-    <name>Helidon Config Examples Metadata</name>
+    <name>Helidon Examples Config Metadata</name>
 
     <description>
         This example shows possibilities with configuration metadata. To test this, add a configurable library on the classpath
@@ -36,7 +36,7 @@
     </description>
 
     <properties>
-        <mainClass>io.helidon.config.examples.metadata.ConfigMetadataMain</mainClass>
+        <mainClass>io.helidon.examples.config.metadata.ConfigMetadataMain</mainClass>
     </properties>
 
     <dependencies>

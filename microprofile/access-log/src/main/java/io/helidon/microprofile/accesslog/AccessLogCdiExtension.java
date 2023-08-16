@@ -18,7 +18,7 @@ package io.helidon.microprofile.accesslog;
 import io.helidon.config.Config;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.webserver.accesslog.AccessLogFeature;
+import io.helidon.webserver.accesslog.AccessLogFeature;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.event.Observes;

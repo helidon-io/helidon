@@ -13,8 +13,8 @@ Expected output should be similar to the following (for both hotspot and native)
 15:40:44.240 INFO  [main] i.h.examples.logging.slf4j.Main - Starting up startup
 15:40:44.241 INFO  [main] i.h.examples.logging.slf4j.Main - Using System logger startup
 15:40:44.245 INFO  [pool-1-thread-1] i.h.examples.logging.slf4j.Main - Running on another thread propagated
-15:40:44.395 INFO  [features-thread] i.h.common.features.HelidonFeatures - Helidon NIMA 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer]
-15:40:44.538 INFO  [main] i.helidon.nima.webserver.LoomServer - Started all channels in 15 milliseconds. 561 milliseconds since JVM startup. Java 20.0.1+9-29 propagated
+15:40:44.395 INFO  [features-thread] i.h.common.features.HelidonFeatures - Helidon 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer]
+15:40:44.538 INFO  [main] i.helidon.webserver.LoomServer - Started all channels in 15 milliseconds. 561 milliseconds since JVM startup. Java 20.0.1+9-29 propagated
 ```
 
 # Running as jar

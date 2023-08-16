@@ -26,7 +26,7 @@ import io.helidon.integrations.vault.secrets.kv2.Kv2Secrets;
 import io.helidon.integrations.vault.secrets.transit.TransitSecrets;
 import io.helidon.integrations.vault.sys.Sys;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
 
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.file;

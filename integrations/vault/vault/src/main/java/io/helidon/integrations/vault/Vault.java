@@ -22,13 +22,13 @@ import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.FaultTolerance;
+import io.helidon.faulttolerance.FtHandler;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.spi.VaultAuth;
-import io.helidon.nima.faulttolerance.FaultTolerance;
-import io.helidon.nima.faulttolerance.FtHandler;
-import io.helidon.nima.webclient.api.WebClientConfig;
+import io.helidon.webclient.api.WebClientConfig;
 
 /**
  * Main entry point to Vault operations.
@@ -205,7 +205,7 @@ public interface Vault {
         }
 
         /**
-         * A consumer that updates {@link io.helidon.nima.webclient.api.WebClientConfig.Builder}.
+         * A consumer that updates {@link io.helidon.webclient.api.WebClientConfig.Builder}.
          * The consumer may be invoked multiple times, for example when a Vault authentication
          * must use an un-authenticated Vault to authenticate.
          *

@@ -19,8 +19,8 @@ package io.helidon.integrations.common.rest;
 import java.util.Formatter;
 import java.util.Optional;
 
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
+import io.helidon.http.Headers;
+import io.helidon.http.Http;
 
 /**
  * Exception when invoking remote REST API caused by wrong response from the API call.

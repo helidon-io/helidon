@@ -19,11 +19,11 @@ package io.helidon.examples.translator.frontend;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.tracing.TracingFeature;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.tracing.TracingFeature;
 
 /**
  * Translator application frontend main class.

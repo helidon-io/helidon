@@ -45,12 +45,12 @@
             <artifactId>helidon-microprofile-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.websocket</groupId>
-            <artifactId>helidon-nima-websocket-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-websocket</artifactId>
         </dependency>
         <dependency>
             <groupId>org.glassfish.tyrus</groupId>

@@ -33,8 +33,8 @@ module io.helidon.integrations.vault {
 
     requires io.helidon.common;
     requires transitive io.helidon.integrations.common.rest;
-    requires transitive io.helidon.nima.webclient;
-    requires transitive io.helidon.nima.faulttolerance;
+    requires transitive io.helidon.webclient;
+    requires transitive io.helidon.faulttolerance;
 
     exports io.helidon.integrations.vault;
     exports io.helidon.integrations.vault.spi;

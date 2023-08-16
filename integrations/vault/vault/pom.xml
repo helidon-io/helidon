@@ -40,16 +40,16 @@
             <artifactId>helidon-integrations-common-rest</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.fault-tolerance</groupId>
-            <artifactId>helidon-nima-fault-tolerance</artifactId>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.http.media</groupId>
-            <artifactId>helidon-nima-http-media-jsonp</artifactId>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonp</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

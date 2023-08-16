@@ -28,7 +28,7 @@
     <groupId>io.helidon.examples.messaging.wls</groupId>
     <artifactId>weblogic-jms-mp</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>weblogic-jms-mp</name>
+    <name>Helidon Examples Messaging JMS WebLogic MP</name>
 
     <dependencies>
         <dependency>

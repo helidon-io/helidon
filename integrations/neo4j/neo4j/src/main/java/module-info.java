@@ -24,8 +24,7 @@ import io.helidon.common.features.api.Preview;
 @Preview
 @Feature(value = "Neo4j integration",
          description = "Integration with Neo4j driver",
-         in = {HelidonFlavor.MP, HelidonFlavor.SE},
-         invalidIn = HelidonFlavor.SE,
+         in = HelidonFlavor.SE,
          path = "Neo4j"
 )
 module io.helidon.integrations.neo4j {

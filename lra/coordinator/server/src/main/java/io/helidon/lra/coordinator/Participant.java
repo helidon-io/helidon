@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.Config;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;

@@ -17,10 +17,10 @@
 package io.helidon.examples.integrations.neo4j;
 
 import io.helidon.examples.integrations.neo4j.domain.MovieRepository;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * The Movie service.

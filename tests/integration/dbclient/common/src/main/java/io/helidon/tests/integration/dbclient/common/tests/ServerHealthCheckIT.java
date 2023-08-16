@@ -27,10 +27,10 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.health.HealthCheck;
 import io.helidon.dbclient.health.DbClientHealthCheck;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.observe.health.HealthObserveProvider;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthFeature;
+import io.helidon.webserver.observe.health.HealthObserveProvider;
+import io.helidon.webserver.WebServer;
 
 import io.helidon.tests.integration.harness.SetUp;
 import jakarta.json.Json;

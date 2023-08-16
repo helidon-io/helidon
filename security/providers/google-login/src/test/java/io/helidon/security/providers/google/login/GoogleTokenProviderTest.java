@@ -23,8 +23,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiFunction;
 
 import io.helidon.security.AuthenticationResponse;
@@ -118,7 +116,7 @@ public class GoogleTokenProviderTest {
     }
 
     @Test
-    public void testInboundIncorrectToken() throws ExecutionException, InterruptedException {
+    public void testInboundIncorrectToken() {
         ProviderRequest inboundRequest = createInboundRequest("Authorization", "tearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.authenticate(inboundRequest);
 
@@ -128,7 +126,7 @@ public class GoogleTokenProviderTest {
     }
 
     @Test
-    public void testInboundMissingToken() throws ExecutionException, InterruptedException {
+    public void testInboundMissingToken() {
         ProviderRequest inboundRequest = createInboundRequest("OtherHeader", "tearer " + TOKEN_VALUE);
         AuthenticationResponse response = provider.authenticate(inboundRequest);
 
@@ -138,7 +136,7 @@ public class GoogleTokenProviderTest {
     }
 
     @Test
-    public void testInboundInvalidToken() throws ExecutionException, InterruptedException, GeneralSecurityException, IOException {
+    public void testInboundInvalidToken() throws GeneralSecurityException, IOException {
         GoogleIdTokenVerifier verifier = mock(GoogleIdTokenVerifier.class);
         when(verifier.verify(TOKEN_VALUE)).thenReturn(null);
         GoogleTokenProvider provider = GoogleTokenProvider.builder().clientId("clientId").verifier(verifier).build();
@@ -152,8 +150,7 @@ public class GoogleTokenProviderTest {
     }
 
     @Test
-    public void testInboundVerificationException()
-            throws ExecutionException, InterruptedException, GeneralSecurityException, IOException {
+    public void testInboundVerificationException() throws GeneralSecurityException, IOException {
         GoogleIdTokenVerifier verifier = mock(GoogleIdTokenVerifier.class);
         when(verifier.verify(TOKEN_VALUE)).thenThrow(new IOException("Failed to verify token"));
         GoogleTokenProvider provider = GoogleTokenProvider.builder().clientId("clientId").verifier(verifier).build();

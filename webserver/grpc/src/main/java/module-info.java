@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.HelidonFlavor;
+import io.helidon.common.features.api.Preview;
+import io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
+import io.helidon.webserver.grpc.GrpcProtocolConfigProvider;
+import io.helidon.webserver.grpc.GrpcProtocolProvider;
+import io.helidon.webserver.spi.ProtocolConfigProvider;
+
+/**
+ * Helidon WebServer gRPC Support.
+ */
+@Preview
+@Feature(value = "GRPC",
+         description = "WebServer gRPC Support",
+         in = HelidonFlavor.SE,
+         path = {"WebServer", "GRPC"}
+)
+module io.helidon.webserver.grpc {
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
+
+    requires java.logging;
+
+    requires io.helidon.builder.api;
+    requires io.helidon.webserver.http2;
+
+    requires transitive grpc.stub;
+    requires transitive com.google.protobuf;
+    requires transitive grpc.api;
+    requires grpc.protobuf.lite;
+
+    exports io.helidon.webserver.grpc;
+
+    provides Http2SubProtocolProvider
+            with GrpcProtocolProvider;
+    provides ProtocolConfigProvider
+            with GrpcProtocolConfigProvider;
+}

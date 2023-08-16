@@ -27,7 +27,7 @@ public final class HelidonProperties {
     }
 
     /**
-     * A Helidon {@link Config} instance used to create the corresponding {@link io.helidon.nima.webclient.api.WebClient}.
+     * A Helidon {@link Config} instance used to create the corresponding {@link io.helidon.webclient.api.WebClient}.
      * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
      */
     public static final String CONFIG = "jersey.connector.helidon.config";

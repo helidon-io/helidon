@@ -28,7 +28,7 @@
     </parent>
     <groupId>io.helidon.examples.jbatch</groupId>
     <artifactId>helidon-examples-jbatch</artifactId>
-    <name>jbatch-example</name>
+    <name>Helidon Examples JBatch</name>
 
     <properties>
         <version.lib.jbatch-api>2.1.0</version.lib.jbatch-api>

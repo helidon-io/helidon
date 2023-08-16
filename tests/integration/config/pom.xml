@@ -28,7 +28,7 @@
 
     <packaging>pom</packaging>
     <artifactId>helidon-tests-integration-config</artifactId>
-    <name>Helidon Integration Tests Config</name>
+    <name>Helidon Tests Integration Config</name>
 
     <description>
         Config integration tests

@@ -89,16 +89,16 @@
             <artifactId>slf4j-jdk14</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.http.media</groupId>
-            <artifactId>helidon-nima-http-media-jsonb</artifactId>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-jsonb</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.observe</groupId>
-            <artifactId>helidon-nima-observe</artifactId>
+            <groupId>io.helidon.webserver.observe</groupId>
+            <artifactId>helidon-webserver-observe</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver-tracing</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

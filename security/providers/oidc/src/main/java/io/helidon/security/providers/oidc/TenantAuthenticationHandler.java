@@ -33,11 +33,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderNames;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.nima.webclient.api.HttpClientRequest;
-import io.helidon.nima.webclient.api.HttpClientResponse;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderNames;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -61,6 +59,8 @@ import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.Tenant;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.util.TokenHandler;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
 
 import jakarta.json.JsonObject;
 

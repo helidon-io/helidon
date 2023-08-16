@@ -381,7 +381,7 @@ Helidon makes the requested URI information available as a property in the reque
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.common.http.UriInfo;
+import io.helidon.http.UriInfo;
 
 public class MyFilter implements ContainerRequestFilter {
 
@@ -392,7 +392,7 @@ public class MyFilter implements ContainerRequestFilter {
     }
 }
 ----
-See the link:{common-http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
+See the link:{http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
 
 NOTE: The `requestContext.getUriInfo()` method returns the Jakarta RESTful web services `UriInfo` object, _not_ the Helidon-provided requested URI information `UriInfo` record.
 

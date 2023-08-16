@@ -29,7 +29,7 @@
     </parent>
     <groupId>io.helidon.tests.integration</groupId>
     <artifactId>io-helidon-tests-integration-bean-validation</artifactId>
-    <name>Helidon Bean Validation Integration Tests</name>
+    <name>Helidon Tests Integration Bean Validation</name>
 
     <dependencies>
         <dependency>

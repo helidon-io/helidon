@@ -29,22 +29,22 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-comment-aas</artifactId>
-    <name>Helidon WebServer Examples CommentsAAS</name>
+    <name>Helidon Examples WebServer CommentsAAS</name>
 
     <description>Comments As A Service example application</description>
 
     <properties>
-        <mainClass>io.helidon.webserver.examples.comments.Main</mainClass>
+        <mainClass>io.helidon.examples.webserver.comments.Main</mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-http</artifactId>
+            <groupId>io.helidon.http</groupId>
+            <artifactId>helidon-http</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -59,8 +59,8 @@
             <artifactId>helidon-config-yaml</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.testing.junit5</groupId>
-            <artifactId>helidon-nima-testing-junit5-webserver</artifactId>
+            <groupId>io.helidon.webserver.testing.junit5</groupId>
+            <artifactId>helidon-webserver-testing-junit5</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

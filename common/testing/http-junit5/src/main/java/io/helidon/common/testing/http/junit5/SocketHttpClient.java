@@ -33,9 +33,9 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.common.http.ClientResponseHeaders;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.WritableHeaders;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Http;
+import io.helidon.http.WritableHeaders;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;

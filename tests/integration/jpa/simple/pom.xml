@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>helidon-tests-integration-jpa-simple</artifactId>
-    <name>Integration Tests: JPA Simple Tests</name>
+    <name>Helidon Tests Integration JPA Simple Tests</name>
 
     <dependencies>
         <dependency>

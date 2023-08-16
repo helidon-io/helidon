@@ -29,7 +29,7 @@
     <groupId>io.helidon.examples.messaging.mp</groupId>
     <artifactId>kafka-websocket-mp</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <name>kafka-websocket-mp</name>
+    <name>Helidon Examples Messaging Kafka WebSocket MP</name>
 
     <dependencies>
         <dependency>

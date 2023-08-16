@@ -35,22 +35,22 @@ import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
+import io.helidon.http.Http;
 import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.nima.webserver.KeyPerformanceIndicatorSupport;
-import io.helidon.nima.webserver.ListenerConfig;
-import io.helidon.nima.webserver.Router;
-import io.helidon.nima.webserver.Routing;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.WebServerConfig;
-import io.helidon.nima.webserver.context.ContextFeature;
-import io.helidon.nima.webserver.http.HttpRouting;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
-import io.helidon.nima.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.KeyPerformanceIndicatorSupport;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.Router;
+import io.helidon.webserver.Routing;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.context.ContextFeature;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.staticcontent.StaticContentService;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -421,7 +421,7 @@ public class ServerCdiExtension implements Extension {
     }
 
     /**
-     * Make Nima's {@code ServerRequest} and {@code ServerResponse} available for injection
+     * Make WebServer's {@code ServerRequest} and {@code ServerResponse} available for injection
      * via CDI by registering them as beans.
      *
      * @param event after bean discovery event

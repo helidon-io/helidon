@@ -52,8 +52,8 @@
             <artifactId>helidon-bundles-security</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.security.integration</groupId>
-            <artifactId>helidon-security-integration-nima</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.jersey</groupId>

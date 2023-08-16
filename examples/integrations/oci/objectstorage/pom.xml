@@ -31,7 +31,7 @@
     <groupId>io.helidon.examples.integrations.oci</groupId>
     <artifactId>helidon-examples-integrations-oci-objectstorage</artifactId>
     <name>Helidon Examples Integration OCI Object Storage</name>
-    <description>Nima integration with OCI Object Storage.</description>
+    <description>Integration with OCI Object Storage.</description>
 
     <properties>
         <mainClass>io.helidon.examples.integrations.oci.objecstorage.OciObjectStorageMain</mainClass>
@@ -39,8 +39,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

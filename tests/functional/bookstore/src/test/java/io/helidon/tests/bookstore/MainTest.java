@@ -31,10 +31,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 
 import com.oracle.bedrock.runtime.Application;
 import com.oracle.bedrock.runtime.LocalPlatform;

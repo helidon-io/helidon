@@ -17,7 +17,6 @@ package io.helidon.openapi;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.CharBuffer;
@@ -29,14 +28,14 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.common.http.Http;
-import io.helidon.common.http.HttpMediaType;
+import io.helidon.http.Http;
+import io.helidon.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
 
 import jakarta.json.Json;
 import jakarta.json.JsonReader;

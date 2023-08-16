@@ -16,11 +16,11 @@
 package io.helidon.tests.integration.dbclient.app.tools;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRules;
-import io.helidon.nima.webserver.http.HttpService;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * Service to terminate web server.

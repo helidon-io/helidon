@@ -18,9 +18,9 @@ package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
 
-import io.helidon.common.http.Headers;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.HeaderName;
+import io.helidon.http.Headers;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderName;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -28,14 +28,14 @@ import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 
 /**
- * Matchers for {@link io.helidon.common.http.Headers}.
+ * Matchers for {@link io.helidon.http.Headers}.
  */
 public final class HttpHeaderMatcher {
     private HttpHeaderMatcher() {
     }
 
     /**
-     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is not present.
+     * A matcher for an {@link io.helidon.http.Headers} that checks that the header is not present.
      * <p>
      * Usage example:
      * <pre>
@@ -43,14 +43,14 @@ public final class HttpHeaderMatcher {
      * </pre>
      *
      * @param name header name
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does not contain the provided header
+     * @return matcher validating the {@link io.helidon.http.Headers} does not contain the provided header
      */
     public static Matcher<Headers> noHeader(HeaderName name) {
         return new NoHeaderMatcher(name);
     }
 
     /**
-     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is present, ignoring its value.
+     * A matcher for an {@link io.helidon.http.Headers} that checks that the header is present, ignoring its value.
      * <p>
      * Usage example:
      * <pre>
@@ -58,7 +58,7 @@ public final class HttpHeaderMatcher {
      * </pre>
      *
      * @param name header name
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header regardless of its
+     * @return matcher validating the {@link io.helidon.http.Headers} does contain the provided header regardless of its
      *         value(s)
      */
     public static Matcher<Headers> hasHeader(HeaderName name) {
@@ -66,7 +66,7 @@ public final class HttpHeaderMatcher {
     }
 
     /**
-     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is present and has the defined
+     * A matcher for an {@link io.helidon.http.Headers} that checks that the header is present and has the defined
      * value.
      * <p>
      * Usage example:
@@ -75,14 +75,14 @@ public final class HttpHeaderMatcher {
      * </pre>
      *
      * @param header http header with values
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
+     * @return matcher validating the {@link io.helidon.http.Headers} does contain the provided header
      */
     public static Matcher<Headers> hasHeader(Http.Header header) {
         return new HasValueMatcher(header);
     }
 
     /**
-     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is present and has the defined
+     * A matcher for an {@link io.helidon.http.Headers} that checks that the header is present and has the defined
      * value(s).
      * <p>
      * Usage example:
@@ -92,14 +92,14 @@ public final class HttpHeaderMatcher {
      *
      * @param name  http header name
      * @param value value(s) of the header
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the provided header
+     * @return matcher validating the {@link io.helidon.http.Headers} does contain the provided header
      */
     public static Matcher<Headers> hasHeader(Http.HeaderName name, String... value) {
         return new HasValueMatcher(Http.Headers.create(name, value));
     }
 
     /**
-     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is present and values
+     * A matcher for an {@link io.helidon.http.Headers} that checks that the header is present and values
      * match the provided matcher.
      * <p>
      * Usage example:
@@ -109,14 +109,14 @@ public final class HttpHeaderMatcher {
      *
      * @param name          header name
      * @param valuesMatcher matcher to validate the values are OK
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the expected values
+     * @return matcher validating the {@link io.helidon.http.Headers} does contain the expected values
      */
     public static Matcher<Headers> hasHeader(HeaderName name, Matcher<Iterable<? extends String>> valuesMatcher) {
         return new HasValueMatcher(name, valuesMatcher);
     }
 
     /**
-     * A matcher for an {@link io.helidon.common.http.Headers} that checks that the header is present and its single value
+     * A matcher for an {@link io.helidon.http.Headers} that checks that the header is present and its single value
      * matches the provided matcher.
      * <p>
      * Usage example:
@@ -126,7 +126,7 @@ public final class HttpHeaderMatcher {
      *
      * @param name         header name
      * @param valueMatcher matcher to validate the value is OK
-     * @return matcher validating the {@link io.helidon.common.http.Headers} does contain the expected value
+     * @return matcher validating the {@link io.helidon.http.Headers} does contain the expected value
      */
     public static Matcher<Headers> hasHeaderValue(HeaderName name, Matcher<String> valueMatcher) {
         return new HasSingleValueMatcher(name, valueMatcher);

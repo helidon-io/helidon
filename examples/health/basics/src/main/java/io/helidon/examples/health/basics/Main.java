@@ -20,11 +20,11 @@ import java.time.Duration;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.nima.observe.ObserveFeature;
-import io.helidon.nima.observe.health.HealthFeature;
-import io.helidon.nima.observe.health.HealthObserveProvider;
-import io.helidon.nima.webserver.WebServer;
-import io.helidon.nima.webserver.http.HttpRouting;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.health.HealthFeature;
+import io.helidon.webserver.observe.health.HealthObserveProvider;
 
 /**
  * Main class of health check integration example.

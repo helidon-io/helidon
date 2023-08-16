@@ -20,12 +20,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.nima.webclient.api.ClientResponseTyped;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.WebServer;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;

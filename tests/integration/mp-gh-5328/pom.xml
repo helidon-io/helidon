@@ -44,12 +44,17 @@
             <artifactId>helidon-tracing-providers-jaeger</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webclient</groupId>
-            <artifactId>helidon-nima-webclient-tracing</artifactId>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-tracing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -64,11 +69,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.tests</groupId>
-            <artifactId>helidon-microprofile-tests-junit5</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

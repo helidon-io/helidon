@@ -28,15 +28,15 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http;
-import io.helidon.common.http.Http.Method;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.faulttolerance.FtHandler;
+import io.helidon.http.Http;
+import io.helidon.http.Http.Method;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
-import io.helidon.nima.faulttolerance.FtHandler;
-import io.helidon.nima.webclient.api.HttpClientRequest;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 
 import io.opentracing.SpanContext;
 import jakarta.json.JsonBuilderFactory;

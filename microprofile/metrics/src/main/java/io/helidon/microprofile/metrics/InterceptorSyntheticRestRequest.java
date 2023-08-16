@@ -21,9 +21,9 @@ import java.lang.reflect.Executable;
 import java.time.Duration;
 
 import io.helidon.microprofile.servicecommon.HelidonInterceptor;
-import io.helidon.nima.observe.metrics.PostRequestMetricsSupport;
-import io.helidon.nima.webserver.http.ServerRequest;
-import io.helidon.nima.webserver.http.ServerResponse;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.observe.metrics.PostRequestMetricsSupport;
 
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;

@@ -28,20 +28,26 @@
     </parent>
     <groupId>io.helidon.examples.webserver</groupId>
     <artifactId>helidon-examples-webserver-project</artifactId>
-    <name>Helidon WebServer Examples</name>
+    <name>Helidon Examples WebServer</name>
     <packaging>pom</packaging>
 
     <modules>
+        <module>basic</module>
         <module>basics</module>
-        <module>tutorial</module>
         <module>comment-aas</module>
-        <module>static-content</module>
-        <module>opentracing</module>
-        <module>streaming</module>
-        <module>websocket</module>
-        <module>tls</module>
-        <module>mutual-tls</module>
+        <module>echo</module>
         <module>fault-tolerance</module>
+        <module>imperative</module>
         <module>multiport</module>
+        <module>mutual-tls</module>
+        <module>observe</module>
+        <module>opentracing</module>
+        <module>protocols</module>
+        <module>static-content</module>
+        <module>streaming</module>
+        <module>tls</module>
+        <module>tracing</module>
+        <module>tutorial</module>
+        <module>websocket</module>
     </modules>
 </project>

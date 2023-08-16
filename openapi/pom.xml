@@ -26,7 +26,6 @@
 
     <groupId>io.helidon.openapi</groupId>
     <artifactId>helidon-openapi</artifactId>
-
     <name>Helidon OpenAPI</name>
 
     <description>
@@ -39,8 +38,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.nima.service-common</groupId>
-            <artifactId>helidon-nima-service-common</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-service-common</artifactId>
         </dependency>
         <dependency>
             <groupId>jakarta.json</groupId>
@@ -64,8 +63,8 @@
             <artifactId>helidon-common-media-type</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.webserver</groupId>
-            <artifactId>helidon-nima-webserver</artifactId>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>

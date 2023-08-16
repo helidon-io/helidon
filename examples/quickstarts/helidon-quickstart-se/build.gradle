@@ -47,15 +47,15 @@ repositories {
 dependencies {
     // import Helidon BOM
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
-    implementation 'io.helidon.nima.webserver:helidon-nima-webserver'
-    implementation 'io.helidon.nima.http.media:helidon-nima-http-media-jsonp'
-    implementation 'io.helidon.nima.observe:helidon-nima-observe-health'
+    implementation 'io.helidon.webserver:helidon-webserver'
+    implementation 'io.helidon.http.media:helidon-http-media-jsonp'
+    implementation 'io.helidon.webserver.observe:helidon-observe-health'
     implementation 'io.helidon.config:helidon-config-yaml'
     implementation 'io.helidon.health:helidon-health-checks'
 
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testImplementation 'io.helidon.nima.testing.junit5:helidon-nima-testing-junit5-webserver'
-    testImplementation 'io.helidon.nima.webclient:helidon-nima-webclient'
+    testImplementation 'io.helidon.webserver.testing.junit5:helidon-webserver-testing-junit5'
+    testImplementation 'io.helidon.webclient:helidon-webclient'
     testImplementation 'org.hamcrest:hamcrest-all'
 }
 

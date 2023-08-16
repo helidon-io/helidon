@@ -23,11 +23,10 @@ import java.util.Optional;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.http.Http;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -39,6 +38,7 @@ import io.helidon.security.providers.common.EvictableCache;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SubjectMappingProvider;
+import io.helidon.webclient.api.HttpClientRequest;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;

@@ -27,7 +27,7 @@
 
     <groupId>io.helidon.examples.microprofile</groupId>
     <artifactId>helidon-examples-microprofile-tls</artifactId>
-    <name>Helidon Microprofile Examples TLS</name>
+    <name>Helidon Examples Microprofile TLS</name>
 
     <description>
         Microprofile example that configures TLS

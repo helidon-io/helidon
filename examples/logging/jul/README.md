@@ -23,8 +23,8 @@ Expected output should be similar to the following:
 2020.11.19 15:37:28 INFO io.helidon.logging.jul.JulProvider Thread[#1,main,5,main]: Logging at initialization configured using classpath: /logging.properties ""
 2020.11.19 15:37:28 INFO io.helidon.examples.logging.jul.Main Thread[main,5,main]: Starting up "startup"
 2020.11.19 15:37:28 INFO io.helidon.examples.logging.jul.Main Thread[pool-1-thread-1,5,main]: Running on another thread "propagated"
-2020.11.19 15:37:28 INFO io.helidon.common.features.HelidonFeatures Thread[#23,features-thread,5,main]: Helidon NIMA 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer] ""
-2020.11.19 15:37:28 INFO io.helidon.nima.webserver.LoomServer Thread[#1,main,5,main]: Started all channels in 46 milliseconds. 577 milliseconds since JVM startup. Java 20.0.1+9-29 "propagated"
+2020.11.19 15:37:28 INFO io.helidon.common.features.HelidonFeatures Thread[#23,features-thread,5,main]: Helidon 4.0.0-SNAPSHOT features: [Config, Encoding, Media, WebServer] ""
+2020.11.19 15:37:28 INFO io.helidon.webserver.LoomServer Thread[#1,main,5,main]: Started all channels in 46 milliseconds. 577 milliseconds since JVM startup. Java 20.0.1+9-29 "propagated"
 ```
 
 # Running as native image

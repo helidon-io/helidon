@@ -30,14 +30,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.common.http.Http;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.nima.webclient.api.HttpClientRequest;
-import io.helidon.nima.webclient.api.HttpClientResponse;
-import io.helidon.nima.webclient.api.WebClient;
+import io.helidon.http.Http;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -50,12 +47,15 @@ import io.helidon.security.jwt.SignedJwt;
 import io.helidon.security.jwt.Validator;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.spi.SubjectMappingProvider;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 
 /**
- * Common functionality for IDCS role mapping using {@link io.helidon.nima.webclient.http1.Http1Client}.
+ * Common functionality for IDCS role mapping using {@link io.helidon.webclient.http1.Http1Client}.
  */
 public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     /**

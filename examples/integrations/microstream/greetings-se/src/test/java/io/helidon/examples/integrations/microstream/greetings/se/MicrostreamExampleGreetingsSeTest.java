@@ -18,11 +18,11 @@ package io.helidon.examples.integrations.microstream.greetings.se;
 
 import java.nio.file.Path;
 
-import io.helidon.nima.testing.junit5.webserver.ServerTest;
-import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.http1.Http1Client;
-import io.helidon.nima.webclient.http1.Http1ClientResponse;
-import io.helidon.nima.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;

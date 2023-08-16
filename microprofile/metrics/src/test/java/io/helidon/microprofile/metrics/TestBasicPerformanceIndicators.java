@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.inject.Inject;

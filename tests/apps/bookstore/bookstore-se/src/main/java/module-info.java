@@ -21,16 +21,16 @@ module io.helidon.tests.apps.bookstore.se {
     requires java.logging;
     requires jakarta.json;
 
-    requires io.helidon.nima.webserver;
+    requires io.helidon.webserver;
     requires io.helidon.config.yaml;
     requires io.helidon.config;
     requires io.helidon.health;
     requires io.helidon.health.checks;
-    requires io.helidon.nima.observe.metrics;
-    requires io.helidon.nima.observe.health;
-    requires io.helidon.nima.http.media.jsonp;
-    requires io.helidon.nima.http.media.jackson;
-    requires io.helidon.nima.http.media.jsonb;
+    requires io.helidon.webserver.observe.metrics;
+    requires io.helidon.webserver.observe.health;
+    requires io.helidon.http.media.jsonp;
+    requires io.helidon.http.media.jackson;
+    requires io.helidon.http.media.jsonb;
     requires io.helidon.tests.apps.bookstore.common;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;

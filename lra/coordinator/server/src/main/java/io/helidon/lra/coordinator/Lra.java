@@ -31,9 +31,9 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.http.ClientRequestHeaders;
-import io.helidon.common.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Http;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 

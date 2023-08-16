@@ -453,7 +453,7 @@ call it.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.tracing.jersey.client.ClientTracingFilter;
 import io.helidon.reactive.webserver.Routing;

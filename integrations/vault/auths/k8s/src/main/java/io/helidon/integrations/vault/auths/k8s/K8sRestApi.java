@@ -19,11 +19,11 @@ package io.helidon.integrations.vault.auths.k8s;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
-import io.helidon.common.http.Http;
+import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
-import io.helidon.nima.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientRequest;
 
 class K8sRestApi extends VaultRestApi {
 

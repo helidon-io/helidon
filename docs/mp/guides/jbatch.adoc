@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -214,20 +214,20 @@ Add this code to your job descriptor.xml file:
                 version="2.0">
     <step id="step1" next="step2">
         <chunk item-count="3"> <!--1-->
-            <reader ref="io.helidon.jbatch.example.jobs.MyItemReader"/>
-            <processor ref="io.helidon.jbatch.example.jobs.MyItemProcessor"/>
-            <writer ref="io.helidon.jbatch.example.jobs.MyItemWriter"/>
+            <reader ref="io.helidon.examples.jbatch.jobs.MyItemReader"/>
+            <processor ref="io.helidon.examples.jbatch.jobs.MyItemProcessor"/>
+            <writer ref="io.helidon.examples.jbatch.jobs.MyItemWriter"/>
         </chunk>
     </step>
     <step id="step2"> <!--2-->
-        <batchlet ref="io.helidon.jbatch.example.jobs.MyBatchlet"/>
+        <batchlet ref="io.helidon.examples.jbatch.jobs.MyBatchlet"/>
     </step>
 </job>
 ----
 <1> The first step of the job includes `MyItemReader`, `MyItemProcessor` and `MyItemWriter`.
 <2> The second step of the job includes `MyBatchlet`.
 
-NOTE: You must specify the fully qualified names in the `ref` properties, like “io.helidon.jbatch.example.jobs.MyItemReader”, otherwise it will not work.
+NOTE: You must specify the fully qualified names in the `ref` properties, like “jobs.io.helidon.examples.jbatch.MyItemReader”, otherwise it will not work.
 
 == Create an Endpoint
 Create a small endpoint to activate the job:

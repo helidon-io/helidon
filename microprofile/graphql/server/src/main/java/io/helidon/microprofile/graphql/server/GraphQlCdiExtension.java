@@ -24,7 +24,7 @@ import java.util.Set;
 
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.graphql.server.GraphQlService;
+import io.helidon.webserver.graphql.GraphQlService;
 
 import graphql.schema.GraphQLSchema;
 import jakarta.annotation.Priority;

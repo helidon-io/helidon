@@ -25,7 +25,7 @@ import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.microprofile.server.RoutingName;
 import io.helidon.microprofile.server.RoutingPath;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.nima.webserver.WebServer;
+import io.helidon.webserver.WebServer;
 
 import jakarta.annotation.Priority;
 import jakarta.enterprise.context.ApplicationScoped;
