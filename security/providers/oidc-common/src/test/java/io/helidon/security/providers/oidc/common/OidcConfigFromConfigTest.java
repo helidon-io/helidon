@@ -20,6 +20,7 @@ import io.helidon.config.Config;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -49,6 +50,12 @@ class OidcConfigFromConfigTest extends OidcConfigAbstractTest {
         OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-optional-aud"));
         String audience = oidcConfig.audience();
         assertThat(audience, nullValue());
+    }
+
+    @Test
+    void testDisabledAudience() {
+        OidcConfig oidcConfig = OidcConfig.create(config.get("security.oidc-disabled-aud"));
+        assertThat(oidcConfig.checkAudience(), is(false));
     }
 
 }

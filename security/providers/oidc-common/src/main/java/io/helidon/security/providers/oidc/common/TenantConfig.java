@@ -117,6 +117,13 @@ public interface TenantConfig {
     String audience();
 
     /**
+     * Whether to validate audience token.
+     *
+     * @return audience
+     */
+    boolean checkAudience();
+
+    /**
      * Audience URI of custom scopes.
      *
      * @return scope audience

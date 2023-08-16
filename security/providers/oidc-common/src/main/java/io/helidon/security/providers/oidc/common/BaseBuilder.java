@@ -65,8 +65,10 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     private URI introspectUri;
     private String scopeAudience;
     private boolean useWellKnown = true;
-    // Whether audience claim is optional
+    // Whether audience claim is optional (turned off by default)
     private boolean optionalAudience = false;
+    // Whether to check audience claim (turned on by default)
+    private boolean checkAudience = true;
 
     BaseBuilder() {
     }
@@ -127,6 +129,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
 
         config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
         config.get("optional-audience").asBoolean().ifPresent(this::optionalAudience);
+        config.get("check-audience").asBoolean().ifPresent(this::checkAudience);
         return identity();
     }
 
@@ -424,12 +427,24 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     /**
      * Allow audience claim to be optional.
      *
-     * @param optional whether the audience claim is optional (true) or not (false)
+     * @param optional whether the audience claim is optional ({@code true}) or not ({@code false})
      * @return updated builder instance
      */
     @ConfiguredOption("false")
     public B optionalAudience(boolean optional) {
         this.optionalAudience = optional;
+        return identity();
+    }
+
+    /**
+     * Configure audience claim check.
+     *
+     * @param checkAudience whether the audience claim will be checked ({@code true}) or not ({@code false})
+     * @return updated builder instance
+     */
+    @ConfiguredOption("false")
+    public B checkAudience(boolean checkAudience) {
+        this.checkAudience = checkAudience;
         return identity();
     }
 
@@ -471,6 +486,10 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
 
     String audience() {
         return audience;
+    }
+
+    boolean checkAudience() {
+        return checkAudience;
     }
 
     String serverType() {
