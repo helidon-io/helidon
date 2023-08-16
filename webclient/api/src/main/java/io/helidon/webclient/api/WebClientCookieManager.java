@@ -142,12 +142,12 @@ public class WebClientCookieManager extends CookieManager implements RuntimeType
 
                 if (headers.contains(Http.HeaderNames.SET_COOKIE)) {
                     cookies = new HashMap<>();
-                    cookies.put(SET_COOKIE, headers.values(Http.HeaderNames.SET_COOKIE));
+                    cookies.put(SET_COOKIE, headers.get(Http.HeaderNames.SET_COOKIE).allValues());
                 }
 
                 if (headers.contains(Http.HeaderNames.SET_COOKIE2)) {
                     cookies = cookies == null ? new HashMap<>() : cookies;
-                    cookies.put(SET_COOKIE2, headers.values(Http.HeaderNames.SET_COOKIE2));
+                    cookies.put(SET_COOKIE2, headers.get(Http.HeaderNames.SET_COOKIE2).allValues());
                 }
 
                 if (cookies != null) {

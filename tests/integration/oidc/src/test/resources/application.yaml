@@ -15,8 +15,9 @@
 #
 
 client:
-  cookies:
+  cookie-manager:
     automatic-store-enabled: true
+  send-expect-continue: false
   follow-redirects: true
 
 security:
