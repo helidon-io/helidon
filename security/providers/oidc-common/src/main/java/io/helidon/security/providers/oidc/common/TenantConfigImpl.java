@@ -40,6 +40,7 @@ class TenantConfigImpl implements TenantConfig {
     private final boolean validateJwtWithJwk;
     private final String issuer;
     private final String audience;
+    private final boolean checkAudience;
     private final String realm;
     private final OidcConfig.ClientAuthentication tokenEndpointAuthentication;
     private final Duration clientTimeout;
@@ -60,6 +61,7 @@ class TenantConfigImpl implements TenantConfig {
         this.validateJwtWithJwk = builder.validateJwtWithJwk();
         this.issuer = builder.issuer();
         this.audience = builder.audience();
+        this.checkAudience = builder.checkAudience();
         this.identityUri = builder.identityUri();
         this.realm = builder.realm();
         this.tokenEndpointUri = builder.tokenEndpointUri();
@@ -142,6 +144,11 @@ class TenantConfigImpl implements TenantConfig {
     @Override
     public String audience() {
         return audience;
+    }
+
+    @Override
+    public boolean checkAudience() {
+        return checkAudience;
     }
 
     @Override

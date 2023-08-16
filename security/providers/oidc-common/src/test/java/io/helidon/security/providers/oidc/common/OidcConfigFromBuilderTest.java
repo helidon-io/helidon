@@ -205,6 +205,17 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
         assertThat(audience, nullValue());
     }
 
+    @Test
+    void testCheckAudience() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("http://localhost/identity"))
+                .clientSecret("top-secret")
+                .clientId("client-id")
+                .checkAudience(false)
+                .build();
+        assertThat(config.checkAudience(), is(false));
+    }
+
     // Stub the Builder class to be able to retrieve the cookie-encryption-password value
     private static class TestOidcConfigBuilder extends OidcConfig.Builder {
 

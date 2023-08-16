@@ -439,7 +439,9 @@ class TenantAuthenticationHandler {
                                                            Errors.Collector collector) {
         Jwt jwt = signedJwt.getJwt();
         Errors errors = collector.collect();
-        Errors validationErrors = jwt.validate(tenant.issuer(), tenantConfig.audience());
+        Errors validationErrors = jwt.validate(tenant.issuer(),
+                                               tenantConfig.audience(),
+                                               tenantConfig.checkAudience());
 
         if (errors.isValid() && validationErrors.isValid()) {
 

@@ -36,3 +36,9 @@ security:
     client-id: "my-id"
     client-secret: "my-well-known-secret"
     optional-audience: true
+
+  oidc-disabled-aud:
+    identity-uri: "https://my.identity"
+    client-id: "my-id"
+    client-secret: "my-well-known-secret"
+    check-audience: false
