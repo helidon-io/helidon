@@ -280,7 +280,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                         }
                     }
                     SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
-                    invokeAll(tasks, secrets);
+                    completeAllSecretsTasks(tasks, secrets);
                     ObjectNode.Builder onb = ObjectNode.builder();
                     for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
                         onb.addValue(e.getKey(), e.getValue());
@@ -321,7 +321,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             return new Builder();
         }
 
-        private static void invokeAll(Collection<? extends Callable<Void>> tasks, AutoCloseable secrets) {
+        private static void completeAllSecretsTasks(Collection<? extends Callable<Void>> tasks, AutoCloseable secrets) {
             RuntimeException re = null;
             List<Future<Void>> futures = null;
             try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
