@@ -70,7 +70,10 @@ class ClientUriTest {
         assertThat(helper.path(), is(UriPath.create("/loom/quick")));
         assertThat(helper.port(), is(8080));
         assertThat(helper.scheme(), is("http"));
-        assertThat(helper.query(), is(query));
+        assertThat(helper.query().value("p1"), is("v1"));
+        assertThat(helper.query().value("p2"), is("v2"));
+        assertThat(helper.query().value("p3"), is("//v3//"));
+        assertThat(helper.query().getRaw("p3"), is("%2F%2Fv3%2F%2F"));
     }
 
     @Test
