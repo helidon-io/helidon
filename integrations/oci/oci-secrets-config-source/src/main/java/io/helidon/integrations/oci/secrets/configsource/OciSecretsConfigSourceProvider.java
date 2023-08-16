@@ -197,7 +197,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
     }
 
     /**
-     * Returns a (determinate) weight {{@value #WEIGHT}) for this {@link OciSecretsConfigSourceProvider} when invoked.
+     * Returns a (determinate) weight ({@value #WEIGHT}) for this {@link OciSecretsConfigSourceProvider} when invoked.
      *
      * @return a determinate weight ({@value #WEIGHT}) when invoked
      *
@@ -217,10 +217,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
     private static final class SecretBundleConfigSource extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
 
-        /**
-         * The name of a configuration property ({@value #COMPARTMENT_OCID_PROPERTY_NAME}) whose value should be a valid OCI
-         * Compartment <a href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/identifiers.htm">OCID</a>.
-         */
         private static final String COMPARTMENT_OCID_PROPERTY_NAME = "compartment-ocid";
 
         private static final Optional<NodeContent> ABSENT_NODE_CONTENT =
@@ -228,10 +224,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private static final Logger LOGGER = System.getLogger(SecretBundleConfigSource.class.getName());
 
-        /**
-         * The name of a configuration property ({@value #VAULT_OCID_PROPERTY_NAME}) whose value should be a valid OCI Vault
-         * <a href="https://docs.oracle.com/en-us/iaas/Content/General/Concepts/identifiers.htm">OCID</a>.
-         */
         private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
 
         private final Supplier<? extends Optional<NodeContent>> loader;
@@ -245,7 +237,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
             String vaultOcid = b.vaultOcid;
             Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
-
             if (compartmentOcid == null || vaultOcid == null) {
                 this.loader = () -> ABSENT_NODE_CONTENT;
             } else {
@@ -277,11 +268,11 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                         tasks.add(() -> {
                                 valueNodes.put(ss.getSecretName(),
                                                ValueNode.create(new String(decoder.decode(((Base64SecretBundleContentDetails) (secretsSupplier.get()
-                                                                                                                               .getSecretBundle(GetSecretBundleRequest.builder()
-                                                                                                                                                .secretId(ss.getId())
-                                                                                                                                                .build())
-                                                                                                                               .getSecretBundle()
-                                                                                                                               .getSecretBundleContent()))
+                                                                                                                                   .getSecretBundle(GetSecretBundleRequest.builder()
+                                                                                                                                                        .secretId(ss.getId())
+                                                                                                                                                        .build())
+                                                                                                                                   .getSecretBundle()
+                                                                                                                                   .getSecretBundleContent()))
                                                                                           .getContent()),
                                                                            UTF_8)));
                                 return null;

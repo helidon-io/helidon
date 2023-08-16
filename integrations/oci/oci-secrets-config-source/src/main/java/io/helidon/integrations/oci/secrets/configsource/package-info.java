@@ -20,5 +20,7 @@
  * Retrieval</a> and <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/vault/package-summary.html">Vault</a> APIs
  * as part of a {@linkplain io.helidon.config.spi.ConfigSourceProvider} implementation.
+ *
+ * @see io.helidon.integrations.oci.secrets.configsource.OciSecretsConfigSourceProvider
  */
 package io.helidon.integrations.oci.secrets.configsource;

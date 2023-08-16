@@ -20,6 +20,8 @@
  * Retrieval</a> and <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/vault/package-summary.html">Vault</a>
  * API-using {@linkplain io.helidon.config.spi.ConfigSource configuration sources}.
+ *
+ * @see io.helidon.integrations.oci.secrets.configsource.OciSecretsConfigSourceProvider
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.oci.secrets.configsource {

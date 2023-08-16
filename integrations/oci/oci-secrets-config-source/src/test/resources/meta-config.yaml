@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 sources:
-  - type: 'system-properties'
+  - type: 'system-properties' # for testing
   - type: 'oci-secrets'
     properties: # required
         compartment-ocid: ${compartment-ocid}

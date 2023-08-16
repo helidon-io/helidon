@@ -36,13 +36,13 @@ final class UsageTest {
     }
 
     @Test
-    final void testUsage() {
+    void testUsage() {
         // Get a Config object. Because src/test/resources/meta-config.yaml exists, and because it will be processed
-        // according to the Helidon rules. An
+        // according to the Helidon rules, an
         // io.helidon.integrations.oci.secrets.configsource.OciSecretsConfigSourceProvider will be created and any
         // ConfigSources it creates will become part of the assembled Config object.
         Config c = Config.create();
-        
+
         // Make sure non-existent properties don't cause the Vault to get involved.
         assertThat(c.get("bogus").asNode().orElse(null), nullValue());
 
@@ -50,7 +50,7 @@ final class UsageTest {
         // other (default) ConfigSource, e.g., System properties, etc. (The OCI Secrets Retrieval API should never be
         // consulted for java.home, in other words.)
         assertThat(c.get("java.home").asString().orElse(null), is(System.getProperty("java.home")));
-        
+
         // Do the rest of this test only if the following assumptions hold. To avoid skipping the rest of this test:
         //
         // 1. Set up a ${HOME}/.oci/config file following
@@ -67,7 +67,7 @@ final class UsageTest {
         assumeFalse(System.getProperty("vault-ocid", "").isBlank()); // condition 2
         String expectedValue = System.getProperty("FrancqueSecret.expectedValue", "");
         assumeFalse(expectedValue.isBlank()); // condition 2
-        
+
         //
         // (Code below this line executes only if the above JUnit assumptions passed. Otherwise control flow stops above.)
         //
