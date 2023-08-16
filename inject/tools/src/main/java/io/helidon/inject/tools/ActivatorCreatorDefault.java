@@ -37,8 +37,8 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.processor.CopyrightHandler;
 import io.helidon.common.processor.GeneratorTools;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.Activator;
 import io.helidon.inject.api.DeActivator;
 import io.helidon.inject.api.DependenciesInfo;
@@ -245,7 +245,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
 
     static ClassInfo toClassInfo(TypeName serviceTypeName,
                                  LazyValue<ScanResult> scan) {
-        ClassInfo classInfo = scan.get().getClassInfo(serviceTypeName.fqName());
+        ClassInfo classInfo = scan.get().getClassInfo(serviceTypeName.resolvedName());
         if (classInfo == null) {
             throw new ToolsException("Unable to introspect: " + serviceTypeName);
         }
@@ -581,7 +581,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
             return AbstractServiceProvider.class.getName() + "<" + activatorTypeName.classNameWithEnclosingNames() + ">";
         }
 
-        return parentTypeName.fqName();
+        return parentTypeName.resolvedName();
     }
 
     List<String> toCodegenDependencies(DependenciesInfo dependencies) {
@@ -620,7 +620,7 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                 .append(ipInfo.ipName())
                 .append("\")");
         builder.append(".ipType(io.helidon.common.types.TypeName.create(")
-                .append(ipInfo.ipType().genericTypeName().fqName())
+                .append(ipInfo.ipType().genericTypeName().resolvedName())
                 .append(".class))");
         if (!qualifiers.isEmpty()) {
             builder.append(toCodegenQualifiers(qualifiers));
@@ -735,7 +735,8 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
                     } else {
                         assert (nameRef.get().equals(dep2.baseIdentity())) : "only 1 constructor can be injectable";
                     }
-                    String cn = dep2.ipType().fqName(); // fully qualified type of the injection point, as we are assigning to it
+                    // fully qualified type of the injection point, as we are assigning to it
+                    String cn = dep2.ipType().resolvedName();
                     String argName = dep2.ipName();
                     String id = dep2.id();
                     String argBuilder = cn + " "
@@ -1264,12 +1265,12 @@ public class ActivatorCreatorDefault extends AbstractCreator implements Activato
             ServiceInfo serviceInfo = ((ServiceInfo) args.serviceInfo());
             Set<TypeName> extContracts = serviceInfo.externalContractsImplemented();
             subst.put("externalcontracts", extContracts.stream()
-                    .map(TypeName::fqName)
+                    .map(TypeName::resolvedName)
                     .toList());
             // there is no need to list these twice, since external contracts will implicitly back-full into contracts
             subst.put("contracts", args.serviceInfo().contractsImplemented().stream()
                     .filter(it -> !extContracts.contains(it))
-                    .map(TypeName::fqName)
+                    .map(TypeName::resolvedName)
                     .collect(Collectors.toList()));
         }
         subst.put("qualifiers", toCodegenQualifiers(args.serviceInfo().qualifiers()));

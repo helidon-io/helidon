@@ -456,7 +456,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         @Override
         public String toString() {
-            return serviceTypeName().fqName();
+            return serviceTypeName().resolvedName();
         }
 
         /**
@@ -540,7 +540,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
                        System.Logger logger) {
             super(interceptedService, realCreator, createResolverFromProcessor(processEnv), logger);
 
-            TypeElement typeElement = processEnv.getElementUtils().getTypeElement(serviceTypeName().fqName());
+            TypeElement typeElement = processEnv.getElementUtils().getTypeElement(serviceTypeName().resolvedName());
             if (typeElement == null) {
                 throw new ToolsException("Failed to get type element for " + serviceTypeName());
             }
@@ -887,9 +887,10 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
      */
     AbstractInterceptorProcessor createInterceptorProcessorFromReflection(ServiceInfoBasics interceptedService,
                                                                           InterceptorCreator realCreator) {
+        String resolvedType = interceptedService.serviceTypeName().resolvedName();
         return new ReflectionBased(Objects.requireNonNull(interceptedService),
                                    Objects.requireNonNull(realCreator),
-                                   Objects.requireNonNull(SCAN.get().getClassInfo(interceptedService.serviceTypeName().fqName())),
+                                   Objects.requireNonNull(SCAN.get().getClassInfo(resolvedType)),
                                    logger());
     }
 
@@ -900,7 +901,7 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
      * @return the interceptor type name
      */
     static TypeName createInterceptorSourceTypeName(InterceptionPlan plan) {
-        String parent = plan.interceptedService().serviceTypeName().fqName();
+        String parent = plan.interceptedService().serviceTypeName().resolvedName();
         return toInterceptorTypeName(parent);
     }
 
@@ -912,9 +913,9 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
      */
     String createInterceptorSourceBody(InterceptionPlan plan) {
         TypeName generatorType = TypeName.create(getClass());
-        TypeName triggerType = TypeName.create(plan.interceptedService().serviceTypeName().fqName());
+        TypeName triggerType = TypeName.create(plan.interceptedService().serviceTypeName().resolvedName());
 
-        String parent = plan.interceptedService().serviceTypeName().fqName();
+        String parent = plan.interceptedService().serviceTypeName().resolvedName();
         TypeName interceptorTypeName = toInterceptorTypeName(parent);
         Map<String, Object> subst = new HashMap<>();
         subst.put("packageName", interceptorTypeName.packageName());

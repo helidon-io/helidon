@@ -201,7 +201,7 @@ public class OciInjectionProcessorObserver implements InjectionAnnotationProcess
         TemplateHelper templateHelper = TemplateHelper.create();
         String template = loadTemplate(templateName);
         Map<String, Object> subst = new HashMap<>();
-        subst.put("classname", ociServiceTypeName.fqName());
+        subst.put("classname", ociServiceTypeName.resolvedName());
         subst.put("simpleclassname", ociServiceTypeName.className());
         subst.put("packagename", generatedOciActivatorTypeName.packageName());
         subst.put("generatedanno", templateHelper.generatedStickerFor(PROCESSOR_TYPE,
@@ -313,7 +313,7 @@ public class OciInjectionProcessorObserver implements InjectionAnnotationProcess
             typeName = typeName.typeArguments().get(0);
         }
 
-        String name = typeName.fqName();
+        String name = typeName.resolvedName();
         if (!name.startsWith(OCI_ROOT_PACKAGE_NAME_PREFIX)
                 || name.endsWith(".Builder")
                 || name.endsWith("Client")

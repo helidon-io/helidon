@@ -16,12 +16,13 @@
 
 package io.helidon.builder.processor;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import io.helidon.common.processor.classmodel.Field;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -114,18 +115,13 @@ record PrototypeProperty(MethodSignature signature,
         );
     }
 
-    List<GeneratedMethod> setters(TypeName builderType, Javadoc blueprintJavadoc) {
-        List<GeneratedMethod> result = new ArrayList<>();
-
-        typeHandler()
-                .setters(configuredOption(),
-                         singular(),
-                         result,
-                         factoryMethods(),
-                         builderType,
-                         blueprintJavadoc);
-
-        return result;
+    void setters(InnerClass.Builder classBuilder, TypeName builderType, Javadoc blueprintJavadoc) {
+        typeHandler().setters(classBuilder,
+                              configuredOption(),
+                              singular(),
+                              factoryMethods(),
+                              builderType,
+                              blueprintJavadoc);
     }
 
     String name() {
@@ -158,7 +154,7 @@ record PrototypeProperty(MethodSignature signature,
                                                  configuredOption.hasDefault());
     }
 
-    public String fieldDeclaration(boolean isBuilder) {
+    public Field.Builder fieldDeclaration(boolean isBuilder) {
         return typeHandler.fieldDeclaration(configuredOption(), isBuilder, !isBuilder);
     }
 
@@ -289,10 +285,10 @@ record PrototypeProperty(MethodSignature signature,
             return new ConfiguredOption(null,
                                         element.description()
                                                 .map(Javadoc::parse)
-                                                .orElseGet(() -> new Javadoc(List.of("Option " + typeHandler.name()),
-                                                                             List.of(),
-                                                                             List.of(typeHandler.name()),
-                                                                             List.of())),
+                                                .orElseGet(() -> Javadoc.builder()
+                                                        .addLine("Option " + typeHandler.name())
+                                                        .returnDescription(typeHandler.name())
+                                                        .build()),
                                         false,
                                         false,
                                         null,
@@ -313,10 +309,10 @@ record PrototypeProperty(MethodSignature signature,
                             .filter(Predicate.not(String::isBlank))
                             .or(element::description)
                             .map(Javadoc::parse)
-                            .orElseGet(() -> new Javadoc(List.of("Option " + typeHandler.name()),
-                                                         List.of(),
-                                                         List.of(typeHandler.name()),
-                                                         List.of())),
+                            .orElseGet(() -> Javadoc.builder()
+                                    .addLine("Option " + typeHandler.name())
+                                    .returnDescription(typeHandler.name())
+                                    .build()),
                     required,
                     required,
                     configuredAnnotation.value()

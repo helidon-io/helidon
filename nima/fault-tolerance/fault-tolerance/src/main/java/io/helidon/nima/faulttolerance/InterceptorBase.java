@@ -164,7 +164,7 @@ abstract class InterceptorBase<T> implements Interceptor {
                     for (int i = 0; i < expectedTypes.size(); i++) {
                         TypedElementInfo expectedType = expectedTypes.get(i);
                         GenericType<?> supportedType = supportedTypes.get(i);
-                        if (!supportedType.type().getTypeName().equals(expectedType.typeName().fqName())) {
+                        if (!supportedType.type().getTypeName().equals(expectedType.typeName().resolvedName())) {
                             return false;
                         }
                     }

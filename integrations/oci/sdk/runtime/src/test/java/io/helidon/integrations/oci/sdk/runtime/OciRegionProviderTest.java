@@ -16,9 +16,9 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.ContextualServiceQuery;
 import io.helidon.inject.api.ElementKind;
 import io.helidon.inject.api.InjectionPointInfo;

@@ -44,10 +44,16 @@ import io.helidon.common.Errors;
 import io.helidon.common.processor.CopyrightHandler;
 import io.helidon.common.processor.GeneratedAnnotationHandler;
 import io.helidon.common.processor.TypeInfoFactory;
+import io.helidon.common.processor.classmodel.Annotation;
+import io.helidon.common.processor.classmodel.ClassModel;
+import io.helidon.common.processor.classmodel.ClassType;
+import io.helidon.common.processor.classmodel.Javadoc;
+import io.helidon.common.processor.classmodel.Method;
+import io.helidon.common.processor.classmodel.TypeArgument;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
-import static io.helidon.builder.processor.Types.FACTORY_METHOD;
 import static io.helidon.builder.processor.Types.GENERATED;
 import static io.helidon.builder.processor.Types.OVERRIDE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_BLUEPRINT;
@@ -253,331 +259,223 @@ public class BlueprintProcessor extends AbstractProcessor {
         TypeInfo typeInfo = typeInformation.blueprintType();
         TypeName prototype = typeContext.typeInfo().prototype();
         String ifaceName = prototype.className();
+        List<TypeName> typeGenericArguments = blueprintDef.typeArguments();
+        String typeArgumentString = createTypeArgumentString(typeGenericArguments);
 
         JavaFileObject generatedIface = filer.createSourceFile(prototype.name(), builderInterface);
-        try (PrintWriter pw = new PrintWriter(generatedIface.openWriter())) {
-            // prototype interface (with inner class Builder)
-            pw.println(CopyrightHandler.copyright(GENERATOR,
-                                                  typeInfo.typeName(),
-                                                  prototype));
-            pw.print("package ");
-            pw.print(typeInfo.typeName().packageName());
-            pw.println(";");
-            pw.println();
-            pw.print("import ");
-            pw.print(typeInfo.typeName().genericTypeName().fqName());
-            pw.println(";");
-            pw.print("import ");
-            pw.print(FACTORY_METHOD);
-            pw.println(";");
-            pw.println("import java.util.Objects;");
-            if (propertyData.hasRequired() || propertyData.hasNonNulls()) {
-                pw.println("import io.helidon.common.Errors;");
-            }
-            // TODO add "hasConfigProperty" to propertyData, and remove "hasConfig" method
-            if (configuredData.configured() || GenerateAbstractBuilder.hasConfig(propertyData.properties())) {
-                pw.println("import io.helidon.common.config.Config;");
-            }
-            if (propertyData.hasOptional() || configuredData.configured()) {
-                pw.println();
-                pw.println("import java.util.Optional;");
-            }
-            pw.println();
-            String javadoc = blueprintDef.javadoc();
-            if (javadoc == null) {
-                javadoc = " Interface generated from definition. Please add javadoc to the definition interface.";
-            }
-            pw.println("/**");
-            for (String javadocLine : javadoc.split("\n")) {
-                pw.print(" *");
-                pw.println(javadocLine);
-            }
-            pw.println(" *");
-            if (blueprintDef.builderPublic()) {
-                pw.println(" * @see #builder()");
-            }
-            if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
-                pw.println(" * @see #create()");
-            }
-            pw.println(" */");
-            typeContext.typeInfo()
-                    .annotationsToGenerate()
-                    .forEach(pw::println);
-            pw.println(GeneratedAnnotationHandler.createString(GENERATOR,
-                                                               typeInfo.typeName(),
-                                                               prototype,
-                                                               "1",
-                                                               ""));
-            if (typeContext.blueprintData().prototypePublic()) {
-                pw.print("public ");
-            }
-            pw.print("interface ");
-            pw.print(ifaceName);
-            pw.print(blueprintDef.typeArguments());
-            pw.print(" extends ");
-            pw.print(blueprintDef.extendsList().stream().map(TypeName::fqName).collect(Collectors.joining(", ")));
-            pw.println(" {");
 
-            if (blueprintDef.builderPublic()) {
-            /*
-              static Builder builder()
-             */
-                pw.print(SOURCE_SPACING);
-                pw.println("/**");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * Create a new fluent API builder to customize configuration.");
-                pw.print(SOURCE_SPACING);
-                pw.println(" *");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * @return a new builder");
-                pw.print(SOURCE_SPACING);
-                pw.println(" */");
-                pw.print(SOURCE_SPACING);
-                pw.print("static");
-                if (!blueprintDef.typeArguments().isEmpty()) {
-                    pw.print(" ");
-                    pw.print(blueprintDef.typeArguments());
-                }
-                pw.print(" Builder");
-                pw.print(blueprintDef.typeArguments());
-                pw.println(" builder() {");
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                if (blueprintDef.typeArguments().isEmpty()) {
-                    pw.print("return new ");
-                    pw.print(ifaceName);
-                    pw.println(".Builder();");
-                } else {
-                    pw.print("return new ");
-                    pw.print(ifaceName);
-                    pw.println(".Builder<>();");
-                }
-                pw.print(SOURCE_SPACING);
-                pw.println("}");
-                pw.println();
+        // prototype interface (with inner class Builder)
+        ClassModel.Builder classModel = ClassModel.builder()
+                .type(prototype)
+                .classType(ClassType.INTERFACE)
+                .copyright(CopyrightHandler.copyright(GENERATOR,
+                                                      typeInfo.typeName(),
+                                                      prototype));
 
-            /*
-              static Builder builder(T type)
-             */
-                pw.print(SOURCE_SPACING);
-                pw.println("/**");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * Create a new fluent API builder from an existing instance.");
-                pw.print(SOURCE_SPACING);
-                pw.println(" *");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * @param instance an existing instance used as a base for the builder");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * @return a builder based on an instance");
-                pw.print(SOURCE_SPACING);
-                pw.println(" */");
-                pw.print(SOURCE_SPACING);
-                pw.print("static");
-                if (!blueprintDef.typeArguments().isEmpty()) {
-                    pw.print(" ");
-                    pw.print(blueprintDef.typeArguments());
+        String javadocString = blueprintDef.javadoc();
+        List<TypeArgument> typeArguments = new ArrayList<>();
+        if (javadocString == null) {
+            classModel.description("Interface generated from definition. Please add javadoc to the definition interface.");
+            typeGenericArguments.forEach(arg -> typeArguments.add(TypeArgument.builder()
+                                      .token(arg.className())
+                                      .build()));
+        } else {
+            Javadoc javadoc = Javadoc.parse(blueprintDef.javadoc());
+            classModel.javadoc(javadoc);
+            typeGenericArguments.forEach(arg -> {
+                TypeArgument.Builder tokenBuilder = TypeArgument.builder().token(arg.className());
+                if (javadoc.genericsTokens().containsKey(arg.className())) {
+                    tokenBuilder.description(javadoc.genericsTokens().get(arg.className()));
                 }
-                pw.print(" Builder");
-                pw.print(blueprintDef.typeArguments());
-                pw.print(" builder(");
-                pw.print(ifaceName);
-                pw.print(blueprintDef.typeArguments());
-                pw.println(" instance) {");
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                pw.print("return ");
-                pw.print(ifaceName);
-                pw.print(".");
-                pw.print(blueprintDef.typeArguments());
-                pw.println("builder().from(instance);");
-                pw.print(SOURCE_SPACING);
-                pw.println("}");
-                pw.println();
-            }
-
-            /*
-             static X create(Config config)
-             */
-            if (blueprintDef.createFromConfigPublic() && configuredData.configured()) {
-                pw.print(SOURCE_SPACING);
-                pw.println("/**");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * Create a new instance from configuration.");
-                pw.print(SOURCE_SPACING);
-                pw.println(" *");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * @param config used to configure the new instance");
-                pw.print(SOURCE_SPACING);
-                pw.println(" * @return a new instance configured from configuration");
-                pw.print(SOURCE_SPACING);
-                pw.println(" */");
-                pw.print(SOURCE_SPACING);
-                pw.print("static ");
-                if (!blueprintDef.typeArguments().isEmpty()) {
-                    pw.print(blueprintDef.typeArguments());
-                    pw.print(" ");
-                }
-                pw.print(ifaceName);
-                pw.print(blueprintDef.typeArguments());
-                pw.println(" create(Config config) {");
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                if (blueprintDef.builderPublic()) {
-                    pw.print("return ");
-                    pw.print(ifaceName);
-                    pw.print(".");
-                    pw.print(blueprintDef.typeArguments());
-                    pw.println("builder().config(config).buildPrototype();");
-                } else {
-                    if (blueprintDef.typeArguments().isEmpty()) {
-                        pw.println("return new Builder().config(config).build();");
-                    } else {
-                        pw.println("return new Builder()<>.config(config).build();");
-                    }
-                }
-                pw.print(SOURCE_SPACING);
-                pw.println("}");
-                pw.println();
-            }
-
-            if (blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
-            /*
-            static X create()
-             */
-                if (!propertyData.hasRequired()) {
-                    pw.print(SOURCE_SPACING);
-                    pw.println("/**");
-                    pw.print(SOURCE_SPACING);
-                    pw.println(" * Create a new instance with default values.");
-                    pw.print(SOURCE_SPACING);
-                    pw.println(" *");
-                    pw.print(SOURCE_SPACING);
-                    pw.println(" * @return a new instance");
-                    pw.print(SOURCE_SPACING);
-                    pw.println(" */");
-                    pw.print(SOURCE_SPACING);
-                    pw.print("static ");
-                    if (!blueprintDef.typeArguments().isEmpty()) {
-                        pw.print(blueprintDef.typeArguments());
-                        pw.print(" ");
-                    }
-                    pw.print(ifaceName);
-                    pw.print(blueprintDef.typeArguments());
-                    pw.println(" create() {");
-                    pw.print(SOURCE_SPACING);
-                    pw.print(SOURCE_SPACING);
-                    pw.print(" return ");
-                    pw.print(ifaceName);
-                    pw.print(".");
-                    pw.print(blueprintDef.typeArguments());
-                    pw.println("builder().buildPrototype();");
-                    pw.print(SOURCE_SPACING);
-                    pw.println("}");
-                    pw.println();
-                }
-            }
-
-            for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
-                // prototype definition - custom static factory methods
-                CustomMethods.Method generated = customMethod.generatedMethod().method();
-                // static TypeName create(Type type);
-                if (!generated.javadoc().isEmpty()) {
-                    pw.print(SOURCE_SPACING);
-                    pw.println("/**");
-                    for (String docLine : generated.javadoc()) {
-                        pw.print(SOURCE_SPACING);
-                        pw.print(" *");
-                        pw.println(docLine);
-                    }
-                    pw.print(SOURCE_SPACING);
-                    pw.println(" */");
-                }
-                for (String annotation : customMethod.generatedMethod().annotations()) {
-                    pw.print(SOURCE_SPACING);
-                    pw.print('@');
-                    pw.println(annotation);
-                }
-                pw.print(SOURCE_SPACING);
-                pw.print("static ");
-                pw.print(generated.returnType().fqName());
-                pw.print(" ");
-                pw.print(generated.name());
-                pw.print("(");
-                pw.print(generated.arguments()
-                                 .stream()
-                                 .map(it -> it.typeName().fqName() + " " + it.name())
-                                 .collect(Collectors.joining(", ")));
-                pw.println(") {");
-                pw.print(SOURCE_SPACING);
-                pw.print(SOURCE_SPACING);
-                pw.print(customMethod.generatedMethod().callCode());
-                pw.println(";");
-                pw.print(SOURCE_SPACING);
-                pw.println("}");
-                pw.println();
-            }
-
-            for (CustomMethods.CustomMethod customMethod : customMethods.prototypeMethods()) {
-                // prototype definition - custom methods must have a new method defined on this interface, missing on blueprint
-                CustomMethods.Method generated = customMethod.generatedMethod().method();
-
-                if (generated.javadoc().isEmpty() && customMethod.generatedMethod().annotations().contains(OVERRIDE)) {
-                    // there is no javadoc, and this is overriding a method from super interface, ignore
-                    continue;
-                }
-
-                // TypeName boxed();
-                if (!generated.javadoc().isEmpty()) {
-                    Javadoc parsed = Javadoc.parse(generated.javadoc()).removeFirstParam();
-                    pw.print(SOURCE_SPACING);
-                    pw.println("/**");
-                    for (String docLine : parsed.toLines()) {
-                        pw.print(SOURCE_SPACING);
-                        pw.print(" *");
-                        pw.println(docLine);
-                    }
-                    pw.print(SOURCE_SPACING);
-                    pw.println(" */");
-                }
-                for (String annotation : customMethod.generatedMethod().annotations()) {
-                    pw.print(SOURCE_SPACING);
-                    pw.print('@');
-                    pw.println(annotation);
-                }
-                pw.print(SOURCE_SPACING);
-                pw.print(generated.returnType().fqName());
-                pw.print(" ");
-                pw.print(generated.name());
-                pw.print("(");
-                pw.print(generated.arguments()
-                                 .stream()
-                                 .map(it -> it.typeName().fqName() + " " + it.name())
-                                 .collect(Collectors.joining(", ")));
-                pw.println(");");
-                pw.println();
-            }
-
-            /*
-            abstract class BuilderBase...
-             */
-            GenerateAbstractBuilder.generate(pw,
-                                             typeInformation.prototype(),
-                                             typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
-                                             blueprintDef.typeArguments(),
-                                             typeContext);
-            /*
-              class Builder extends Builder Base ...
-             */
-            GenerateBuilder.generate(pw,
-                                     typeInformation.prototype(),
-                                     typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
-                                     blueprintDef.typeArguments(),
-                                     typeContext.blueprintData().isFactory(),
-                                     typeContext);
-
-            // end of prototype class
-            pw.println("}");
+                typeArguments.add(tokenBuilder.build());
+            });
         }
+        typeArguments.forEach(classModel::addGenericArgument);
+
+        if (blueprintDef.builderPublic()) {
+            classModel.addJavadocTag("see", "#builder()");
+        }
+        if (!propertyData.hasRequired() && blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
+            classModel.addJavadocTag("see", "#create()");
+        }
+
+        typeContext.typeInfo()
+                .annotationsToGenerate()
+                .forEach(annotation -> classModel.addAnnotation(Annotation.parse(annotation)));
+
+        classModel.addAnnotation(builder -> {
+            io.helidon.common.types.Annotation generated = GeneratedAnnotationHandler.create(GENERATOR,
+                                                                                             typeInfo.typeName(),
+                                                                                             prototype,
+                                                                                             "1",
+                                                                                             "");
+            builder.type(generated.typeName());
+            generated.values()
+                    .forEach(builder::addParameter);
+        });
+
+        if (typeContext.blueprintData().prototypePublic()) {
+            classModel.accessModifier(AccessModifier.PUBLIC);
+        }
+        blueprintDef.extendsList()
+                .forEach(classModel::addInterface);
+
+        TypeName builderTypeName = TypeName.builder()
+                .from(TypeName.create(prototype.fqName() + ".Builder"))
+                .typeArguments(prototype.typeArguments())
+                .build();
+
+        /*
+          static Builder builder()
+         */
+        classModel.addMethod(builder -> {
+            builder.isStatic(true)
+                    .name("builder")
+                    .description("Create a new fluent API builder to customize configuration.")
+                    .returnType(builderTypeName, "a new builder");
+            typeArguments.forEach(builder::addGenericArgument);
+            if (typeArguments.isEmpty()) {
+                builder.addLine("return new " + ifaceName + ".Builder();");
+            } else {
+                builder.addLine("return new " + ifaceName + ".Builder<>();");
+            }
+        });
+
+        /*
+          static Builder builder(T instance)
+         */
+        classModel.addMethod(builder -> {
+            builder.isStatic(true)
+                    .name("builder")
+                    .description("Create a new fluent API builder from an existing instance.")
+                    .returnType(builderTypeName, "a builder based on an instance")
+                    .addParameter(paramBuilder -> paramBuilder.type(prototype)
+                            .name("instance")
+                            .description("an existing instance used as a base for the builder"));
+            typeArguments.forEach(builder::addGenericArgument);
+            builder.addLine("return " + ifaceName + "." + typeArgumentString + "builder().from(instance);");
+        });
+
+        /*
+          static T create(Config config)
+         */
+        if (blueprintDef.createFromConfigPublic() && configuredData.configured()) {
+            Method.Builder method = Method.builder()
+                    .name("create")
+                    .isStatic(true)
+                    .description("Create a new instance from configuration.")
+                    .returnType(prototype, "a new instance configured from configuration")
+                    .addParameter(paramBuilder -> paramBuilder.type(Types.CONFIG_TYPE)
+                            .name("config")
+                            .description("used to configure the new instance"));
+            typeArguments.forEach(method::addGenericArgument);
+            if (blueprintDef.builderPublic()) {
+                method.addLine("return " + ifaceName + "." + typeArgumentString + "builder().config(config).buildPrototype();");
+            } else {
+                if (typeArguments.isEmpty()) {
+                    method.addLine("return new Builder().config(config).build();");
+                } else {
+                    method.addLine("return new Builder()<>.config(config).build();");
+                }
+            }
+            classModel.addMethod(method);
+        }
+
+        if (blueprintDef.createEmptyPublic() && blueprintDef.builderPublic()) {
+        /*
+          static X create()
+         */
+            if (!propertyData.hasRequired()) {
+                classModel.addMethod(builder -> {
+                    builder.isStatic(true)
+                            .name("create")
+                            .description("Create a new instance with default values.")
+                            .returnType(prototype, "a new instance")
+                            .addLine("return " + ifaceName + "." + typeArgumentString + "builder().buildPrototype();");
+                    typeArguments.forEach(builder::addGenericArgument);
+                });
+            }
+        }
+
+        generateCustomMethods(customMethods, classModel);
+
+        /*
+          abstract class BuilderBase...
+         */
+        GenerateAbstractBuilder.generate(classModel,
+                                         typeInformation.prototype(),
+                                         typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
+                                         typeArguments,
+                                         typeContext);
+        /*
+          class Builder extends BuilderBase ...
+         */
+        GenerateBuilder.generate(classModel,
+                                 typeInformation.prototype(),
+                                 typeInformation.runtimeObject().orElseGet(typeInformation::prototype),
+                                 typeArguments,
+                                 typeContext.blueprintData().isFactory(),
+                                 typeContext);
+
+        try (PrintWriter pw = new PrintWriter(generatedIface.openWriter())) {
+            classModel.build()
+                    .write(pw, SOURCE_SPACING);
+        }
+    }
+
+    private static void generateCustomMethods(CustomMethods customMethods, ClassModel.Builder classModel) {
+        for (CustomMethods.CustomMethod customMethod : customMethods.factoryMethods()) {
+            // prototype definition - custom static factory methods
+            // static TypeName create(Type type);
+            CustomMethods.Method generated = customMethod.generatedMethod().method();
+            Method.Builder method = Method.builder()
+                    .name(generated.name())
+                    .javadoc(Javadoc.parse(generated.javadoc()))
+                    .isStatic(true)
+                    .returnType(generated.returnType())
+                    .addLine(customMethod.generatedMethod().callCode() + ";");
+            for (String annotation : customMethod.generatedMethod().annotations()) {
+                method.addAnnotation(Annotation.parse(annotation));
+            }
+            for (CustomMethods.Argument argument : generated.arguments()) {
+                method.addParameter(param -> param.name(argument.name())
+                        .type(argument.typeName()));
+            }
+            classModel.addMethod(method);
+        }
+
+        for (CustomMethods.CustomMethod customMethod : customMethods.prototypeMethods()) {
+            // prototype definition - custom methods must have a new method defined on this interface, missing on blueprint
+            CustomMethods.Method generated = customMethod.generatedMethod().method();
+            if (generated.javadoc().isEmpty() && customMethod.generatedMethod().annotations().contains(OVERRIDE)) {
+                // there is no javadoc, and this is overriding a method from super interface, ignore
+                continue;
+            }
+
+            // TypeName boxed();
+            Method.Builder method = Method.builder()
+                    .name(generated.name())
+                    .javadoc(Javadoc.parse(generated.javadoc()))
+                    .returnType(generated.returnType());
+            for (String annotation : customMethod.generatedMethod().annotations()) {
+                method.addAnnotation(Annotation.parse(annotation));
+            }
+            for (CustomMethods.Argument argument : generated.arguments()) {
+                method.addParameter(param -> param.name(argument.name())
+                        .type(argument.typeName()));
+            }
+            classModel.addMethod(method);
+        }
+    }
+
+    private String createTypeArgumentString(List<TypeName> typeArguments) {
+        if (!typeArguments.isEmpty()) {
+            String arguments = typeArguments.stream()
+                    .map(TypeName::className)
+                    .collect(Collectors.joining(", "));
+            return "<" + arguments + ">";
+        }
+        return "";
     }
 
 }

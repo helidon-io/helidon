@@ -32,6 +32,7 @@ import static io.helidon.builder.processor.Types.CUSTOM_METHODS_TYPE;
 import static io.helidon.builder.processor.Types.FACTORY_METHOD_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_CUSTOM_METHOD_TYPE;
 import static io.helidon.builder.processor.Types.VOID_TYPE;
+import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 record CustomMethods(List<CustomMethod> factoryMethods,
                      List<CustomMethod> builderMethods,
@@ -101,7 +102,10 @@ record CustomMethods(List<CustomMethod> factoryMethods,
         // return CustomMethodsType.methodName(this, param1, param2)
         String generatedCall =
                 VOID_TYPE.equals(customMethod.returnType) ? "" : "return "
-                        + customMethodsType.genericTypeName().fqName() + "."
+                        + TYPE_TOKEN
+                        + customMethodsType.genericTypeName().fqName()
+                        + TYPE_TOKEN
+                        + "."
                         + customMethod.name()
                         + "("
                         + String.join(", ", argumentNames)
@@ -146,12 +150,15 @@ record CustomMethods(List<CustomMethod> factoryMethods,
                                      .toList());
 
         // return CustomMethodsType.methodName(this, param1, param2)
-        String generatedCall = customMethodsType.genericTypeName().fqName() + "."
+        String generatedCall = TYPE_TOKEN
+                + customMethodsType.genericTypeName().fqName()
+                + TYPE_TOKEN
+                + "."
                 + customMethod.name()
                 + "("
                 + String.join(", ", argumentNames)
                 + ");"
-                + "  return self()";
+                + "\nreturn self()";
 
         return new GeneratedMethod(
                 new Method(typeInformation.prototypeBuilder(),
@@ -192,7 +199,10 @@ record CustomMethods(List<CustomMethod> factoryMethods,
         // if returns: return CustomMethodsType.methodName(param1, param2)
         String generatedCall =
                 VOID_TYPE.equals(customMethod.returnType) ? "" : "return "
-                        + customMethodsType.genericTypeName().fqName() + "."
+                        + TYPE_TOKEN
+                        + customMethodsType.genericTypeName().fqName()
+                        + TYPE_TOKEN
+                        + "."
                         + customMethod.name()
                         + "("
                         + customMethod.arguments().stream().map(Argument::name).collect(Collectors.joining(", "))

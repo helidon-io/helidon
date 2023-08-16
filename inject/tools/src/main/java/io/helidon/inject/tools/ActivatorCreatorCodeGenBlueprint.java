@@ -21,9 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.api.AccessModifier;
 import io.helidon.inject.api.DependenciesInfo;
 import io.helidon.inject.api.Qualifier;
 

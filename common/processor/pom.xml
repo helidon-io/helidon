@@ -38,6 +38,7 @@
     <modules>
         <module>processor</module>
         <module>helidon-copyright</module>
+        <module>class-model</module>
     </modules>
 
 </project>

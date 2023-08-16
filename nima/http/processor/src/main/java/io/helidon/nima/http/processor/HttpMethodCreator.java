@@ -190,7 +190,7 @@ public class HttpMethodCreator extends HttpCreatorBase implements CustomAnnotati
         Annotation httpAnnotation = null;
 
         for (Annotation annotation : annotations) {
-            if (PARAM_ANNOTATIONS.contains(annotation.typeName().fqName())) {
+            if (PARAM_ANNOTATIONS.contains(annotation.typeName().resolvedName())) {
                 if (httpAnnotation == null) {
                     httpAnnotation = annotation;
                 } else {
@@ -208,7 +208,7 @@ public class HttpMethodCreator extends HttpCreatorBase implements CustomAnnotati
         }
 
         // todo now we only support String for query, path and header -> add conversions
-        switch (httpAnnotation.typeName().fqName()) {
+        switch (httpAnnotation.typeName().resolvedName()) {
         case PATH_PARAM_ANNOTATION -> parameters.add("req.path().pathParameters().value(\"" + httpAnnotation.value().orElseThrow()
                                                              + "\"),");
         case (ENTITY_PARAM_ANNOTATION) -> parameters.add("req.content().as(" + type + ".class),");
@@ -229,7 +229,7 @@ public class HttpMethodCreator extends HttpCreatorBase implements CustomAnnotati
             // TODO string is hardcoded, we need to add support for mapping
             parameters.add("query(req, res, \"" + queryParam + "\", " + defaultValue + ", String.class),");
         }
-        default -> throw new IllegalStateException("Invalid annotation \"" + httpAnnotation.typeName().fqName()
+        default -> throw new IllegalStateException("Invalid annotation \"" + httpAnnotation.typeName().resolvedName()
                                                            + "\" on HTTP parameter: " + elementArg.elementName());
         }
     }

@@ -68,7 +68,7 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
         // the type must be either a valid prototype, or a prototype blueprint (in case this is the same module)
         if ("<error>".equals(configDriven.configBeanType().className())) {
             throw new ToolsException("The config bean type must be set to the Blueprint type if they are within the same "
-                                             + "module! Failed on: " + service.typeName().fqName());
+                                             + "module! Failed on: " + service.typeName().resolvedName());
         }
         TypeInfo configBeanTypeInfo = TypeInfoFactory.create(processingEnv, asElement(configDriven.configBeanType()))
                 .orElseThrow();
@@ -117,13 +117,14 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
         TypeName namedInstanceWithGeneric = TypeName.builder(NAMED_INSTANCE)
                 .addTypeArgument(configBean.typeName())
                 .build();
-        String configBeanName = configBean.typeName().fqName();
+        String configBeanName = configBean.typeName().resolvedName();
 
         return List.of(
                 // config bean field
                 "\n\tprivate final " + configBeanName + " configBean;\n",
                 // constructor with NamedInstance
-                "\n\tprivate " + activatorImplType.className() + "(" + namedInstanceWithGeneric.fqName() + " configBean) {\n"
+                "\n\tprivate " + activatorImplType.className() + "(" + namedInstanceWithGeneric.resolvedName()
+                        + " configBean) {\n"
                         + "\t\tsuper(configBean.name());\n"
                         + "\t\tassertIsRootProvider(false, true);\n"
                         + "\t\tserviceInfo(serviceInfo);\n"
@@ -138,7 +139,8 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
                         + "\t}\n",
                 // createInstance(NamedInstance)
                 "\n\t@Override\n"
-                        + "\tprotected " + superType.fqName() + " createInstance(" + namedInstanceWithGeneric.fqName() + " "
+                        + "\tprotected " + superType.resolvedName() + " createInstance("
+                        + namedInstanceWithGeneric.resolvedName() + " "
                         + "configBean) {\n"
                         + "\t\treturn new " + activatorImplType.className() + "(configBean);\n"
                         + "\t}\n",
@@ -168,7 +170,7 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
         StringBuilder method = new StringBuilder();
         method.append("\n\t@Override\n")
                 .append("\tpublic List<")
-                .append(namedInstanceWithGeneric.fqName())
+                .append(namedInstanceWithGeneric.resolvedName())
                 .append("> createConfigBeans(io.helidon.common.config.Config config){\n")
                 .append("\t\tvar beanConfig = config.get(\"")
                 .append(prefix)
@@ -189,7 +191,7 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
                     .append("\\\"\");");
         } else if (wantDefault) {
             method.append("\t\t\treturn List.of(new io.helidon.inject.configdriven.api.NamedInstance<>(")
-                    .append(configBean.typeName().fqName())
+                    .append(configBean.typeName().resolvedName())
                     .append(".create(io.helidon.common.config.Config.empty()), io.helidon.inject.configdriven.api.NamedInstance"
                                     + ".DEFAULT_NAME));\n");
         } else {
@@ -202,7 +204,7 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
             method.append("\t\treturn createRepeatableBeans(beanConfig, ")
                     .append(wantDefault)
                     .append(", ")
-                    .append(configBean.typeName().fqName())
+                    .append(configBean.typeName().resolvedName())
                     .append("::create);\n");
         } else {
             method.append("\t\tif (beanConfig.isList()) {\n")
@@ -211,11 +213,11 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
                     .append("\\\", but got a list\");\n")
                     .append("\t\t}\n");
             method.append("\t\treturn java.util.List.of(new ")
-                    .append(NAMED_INSTANCE.fqName())
+                    .append(NAMED_INSTANCE.resolvedName())
                     .append("<>(")
-                    .append(configBean.typeName().fqName())
+                    .append(configBean.typeName().resolvedName())
                     .append(".create(beanConfig), ")
-                    .append(NAMED_INSTANCE.fqName())
+                    .append(NAMED_INSTANCE.resolvedName())
                     .append(".DEFAULT_NAME));\n");
         }
         method.append("\t}\n");
@@ -224,6 +226,6 @@ public class ConfigDrivenProcessor extends InjectionAnnotationProcessor {
     }
 
     private TypeElement asElement(TypeName typeName) {
-        return processingEnv.getElementUtils().getTypeElement(typeName.fqName());
+        return processingEnv.getElementUtils().getTypeElement(typeName.resolvedName());
     }
 }

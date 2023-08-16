@@ -16,8 +16,13 @@
 
 package io.helidon.builder.processor;
 
-import java.io.PrintWriter;
+import java.util.List;
 
+import io.helidon.common.Builder;
+import io.helidon.common.processor.classmodel.Annotation;
+import io.helidon.common.processor.classmodel.ClassModel;
+import io.helidon.common.processor.classmodel.TypeArgument;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -27,117 +32,67 @@ import io.helidon.common.types.TypeName;
  * Super class name is always "BuilderBase"
  */
 final class GenerateBuilder {
-    private static final String SOURCE_SPACING = "    ";
 
     private GenerateBuilder() {
     }
 
-    static void generate(PrintWriter pw,
+    static void generate(ClassModel.Builder classBuilder,
                          TypeName prototype,
                          TypeName runtimeType,
-                         String typeArguments,
+                         List<TypeArgument> typeArguments,
                          boolean isFactory,
                          TypeContext typeContext) {
-        String prototypeWithTypes = prototype.className() + typeArguments;
-        String runtimeTypeWithTypes = runtimeType.className() + typeArguments;
-        String typeArgumentNames = "";
-        if (!typeArguments.isEmpty()) {
-            typeArgumentNames = typeArguments.substring(1, typeArguments.length() - 1) + ", ";
-        }
-
-        pw.print(SOURCE_SPACING);
-        pw.println("/**");
-        pw.print(SOURCE_SPACING);
-        pw.print(" * Fluent API builder for {@link ");
-        pw.print(runtimeType.className());
-        pw.println("}.");
-        pw.print(SOURCE_SPACING);
-        pw.println(" */");
-        pw.print(SOURCE_SPACING);
-        // this class is on interface, so it is public by default
-        pw.print("class Builder");
-        pw.print(typeArguments);
-        pw.print(" extends BuilderBase<");
-        pw.print(typeArgumentNames);
-        pw.print("Builder");
-        pw.print(typeArguments);
-        pw.print(", ");
-        pw.print(prototypeWithTypes);
-        pw.print("> implements io.helidon.common.Builder<Builder");
-        pw.print(typeArguments);
-        pw.print(", ");
-        pw.print(runtimeTypeWithTypes);
-        pw.println("> {");
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        if (typeContext.blueprintData().builderPublic()) {
-            pw.println("private Builder() {");
-        } else {
-            // package private to allow instantiation
-            pw.println("Builder() {");
-        }
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.println("}");
-        /*
-        RuntimeObject build()
-        Prototype buildPrototype()
-         */
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.println("@Override");
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.print("public ");
-        pw.print(prototypeWithTypes);
-        pw.println(" buildPrototype() {");
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.println("preBuildPrototype();");
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.println("validatePrototype();");
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.print("return new ");
-        pw.print(prototype.className());
-        pw.print("Impl");
-        if (!typeArguments.isEmpty()) {
-            pw.print("<>");
-        }
-        pw.println("(this);");
-        pw.print(SOURCE_SPACING);
-        pw.print(SOURCE_SPACING);
-        pw.println("}");
-        pw.println();
-
-        if (isFactory) {
-            GenerateAbstractBuilder.buildRuntimeObjectMethod(pw, typeContext, true);
-        } else {
-            // build method returns the same as buildPrototype method
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
-            pw.println("@Override");
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
-            pw.print("public ");
-            pw.print(runtimeTypeWithTypes);
-            pw.println(" build() {");
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
-            pw.println("return buildPrototype();");
-            pw.print(SOURCE_SPACING);
-            pw.print(SOURCE_SPACING);
-            pw.println("}");
-            pw.println();
-        }
-
-        // end of class builder
-        pw.print(SOURCE_SPACING);
-        pw.println("}");
+        classBuilder.addInnerClass(builder -> {
+            TypeName builderType = TypeName.builder()
+                    .from(TypeName.create(prototype.fqName() + ".Builder"))
+                    .addTypeArguments(typeArguments)
+                    .build();
+            typeArguments.forEach(builder::addGenericArgument);
+            builder.name("Builder")
+                    .accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                    .description("Fluent API builder for {@link " + runtimeType.className() + "}.")
+                    .superType(TypeName.builder()
+                                         .from(TypeName.create(prototype.fqName() + ".BuilderBase"))
+                                         .addTypeArguments(typeArguments)
+                                         .addTypeArgument(builderType)
+                                         .addTypeArgument(prototype)
+                                         .build())
+                    .addInterface(TypeName.builder()
+                                          .from(TypeName.create(Builder.class))
+                                          .addTypeArgument(builderType)
+                                          .addTypeArgument(runtimeType)
+                                          .build())
+                    .addConstructor(constructor -> {
+                        if (typeContext.blueprintData().builderPublic()) {
+                            constructor.accessModifier(AccessModifier.PRIVATE);
+                        } else {
+                            // package private to allow instantiation
+                            constructor.accessModifier(AccessModifier.PACKAGE_PRIVATE);
+                        }
+                    })
+                    .addMethod(method -> {
+                        method.name("buildPrototype")
+                                .returnType(prototype)
+                                .addAnnotation(Annotation.create(Override.class))
+                                .addLine("preBuildPrototype();")
+                                .addLine("validatePrototype();")
+                                .add("return new ")
+                                .typeName(prototype)
+                                .add("Impl");
+                        if (!typeArguments.isEmpty()) {
+                            method.add("<>");
+                        }
+                        method.addLine("(this);");
+                    });
+            if (isFactory) {
+                GenerateAbstractBuilder.buildRuntimeObjectMethod(builder, typeContext, true);
+            } else {
+                // build method returns the same as buildPrototype method
+                builder.addMethod(method -> method.name("build")
+                        .addAnnotation(Annotation.create(Override.class))
+                        .returnType(runtimeType)
+                        .addLine("return buildPrototype();"));
+            }
+        });
     }
 }

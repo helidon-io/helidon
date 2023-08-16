@@ -506,6 +506,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.common.processor</groupId>
+                <artifactId>helidon-common-processor-class-model</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.common.testing</groupId>
                 <artifactId>helidon-common-testing-junit5</artifactId>
                 <version>${helidon.version}</version>

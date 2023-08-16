@@ -13,30 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package io.helidon.inject.api;
+package io.helidon.common.processor.classmodel;
 
 /**
- * The access describing the target injection point.
+ * Class type.
  */
-public enum AccessModifier {
-    /**
-     * public.
-     */
-    PUBLIC,
+public enum ClassType {
 
     /**
-     * protected.
+     * Class type is an interface.
      */
-    PROTECTED,
-
+    INTERFACE("interface"),
     /**
-     * package private.
+     * Class type is a class.
      */
-    PACKAGE_PRIVATE,
+    CLASS("class");
 
-    /**
-     * private.
-     */
-    PRIVATE
+    private final String typeName;
+
+    ClassType(String typeName) {
+        this.typeName = typeName;
+    }
+
+    String typeName() {
+        return typeName;
+    }
 }

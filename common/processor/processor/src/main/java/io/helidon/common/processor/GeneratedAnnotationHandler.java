@@ -75,7 +75,7 @@ public final class GeneratedAnnotationHandler {
 
         Annotation annotation = create(generator, trigger, generatedType, versionId, comments);
         StringBuilder result = new StringBuilder("@");
-        result.append(annotation.typeName().fqName())
+        result.append(annotation.typeName().resolvedName())
                 .append("(");
 
         List<String> values = new ArrayList<>();
@@ -102,8 +102,8 @@ public final class GeneratedAnnotationHandler {
                                  String comments) {
             return Annotation.builder()
                     .typeName(GENERATED)
-                    .putValue("value", generator.fqName())
-                    .putValue("trigger", trigger.fqName())
+                    .putValue("value", generator.resolvedName())
+                    .putValue("trigger", trigger.resolvedName())
                     .update(it -> {
                         if (!"1".equals(versionId)) {
                             it.putValue("version", versionId);

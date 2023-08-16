@@ -16,7 +16,12 @@
 
 package io.helidon.common.types;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -39,19 +44,20 @@ import io.helidon.common.Errors;
  * </ul>
  * Finally, this class offers a number of methods that are helpful for code generation:
  * <ul>
- * <li>{@link #declaredName()} and {@link #fqName()}.</li>
+ * <li>{@link #declaredName()} and {@link #resolvedName()}.</li>
  * </ul>
  *
  * @see #builder()
  */
 public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<TypeName> {
+
     /**
      * Create a new fluent API builder to customize configuration.
      *
      * @return a new builder
      */
-    static Builder builder() {
-        return new Builder();
+    static TypeName.Builder builder() {
+        return new TypeName.Builder();
     }
 
     /**
@@ -60,7 +66,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(TypeName instance) {
+    static TypeName.Builder builder(TypeName instance) {
         return TypeName.builder().from(instance);
     }
 
@@ -70,7 +76,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
      * @param type the type
      * @return type name for the provided type
      */
-    static TypeName create(java.lang.reflect.Type type) {
+    static TypeName create(Type type) {
         return TypeNameSupport.create(type);
     }
 
@@ -103,29 +109,30 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     TypeName boxed();
 
     /**
-     * The base generic type name, stripped of any {@link io.helidon.common.types.TypeName#typeArguments()}.
-     * This is equivalent to the type name represented by {@link io.helidon.common.types.TypeName#name()}.
+     * The base generic type name, stripped of any {@link TypeName#typeArguments()}.
+     * This is equivalent to the type name represented by {@link TypeName#name()}.
      *
      * @return based generic type name
      */
     TypeName genericTypeName();
 
     /**
-     * Fluent API builder base for {@link io.helidon.common.types.TypeName}.
+     * Fluent API builder base for {@link TypeName}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
-            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE> {
-        private final java.util.List<String> enclosingNames = new java.util.ArrayList<>();
-        private final java.util.List<TypeName> typeArguments = new java.util.ArrayList<>();
-        private String packageName = "";
-        private String className;
-        private boolean primitive = false;
+    abstract class BuilderBase<BUILDER extends TypeName.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypeName>
+            implements Prototype.Builder<BUILDER, PROTOTYPE> {
+
+        private final List<TypeName> typeArguments = new ArrayList<>();
+        private final List<String> enclosingNames = new ArrayList<>();
         private boolean array = false;
         private boolean generic = false;
+        private boolean primitive = false;
         private boolean wildcard = false;
+        private String className;
+        private String packageName = "";
 
         /**
          * Protected to support extensibility.
@@ -157,7 +164,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(TypeName.BuilderBase<?, ?> builder) {
             packageName(builder.packageName());
             builder.className().ifPresent(this::className);
             addEnclosingNames(builder.enclosingNames());
@@ -175,7 +182,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @param type type to get information (package name, class name, primitive, array)
          * @return updated builder instance
          */
-        public BUILDER type(java.lang.reflect.Type type) {
+        public BUILDER type(Type type) {
             TypeNameSupport.type(this, type);
             return self();
         }
@@ -215,7 +222,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #enclosingNames()
          */
-        public BUILDER enclosingNames(java.util.List<? extends String> enclosingNames) {
+        public BUILDER enclosingNames(List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             this.enclosingNames.clear();
             this.enclosingNames.addAll(enclosingNames);
@@ -231,7 +238,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #enclosingNames()
          */
-        public BUILDER addEnclosingNames(java.util.List<? extends String> enclosingNames) {
+        public BUILDER addEnclosingNames(List<? extends String> enclosingNames) {
             Objects.requireNonNull(enclosingNames);
             this.enclosingNames.addAll(enclosingNames);
             return self();
@@ -307,7 +314,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeArguments()
          */
-        public BUILDER typeArguments(java.util.List<? extends TypeName> typeArguments) {
+        public BUILDER typeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
             this.typeArguments.clear();
             this.typeArguments.addAll(typeArguments);
@@ -321,7 +328,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeArguments()
          */
-        public BUILDER addTypeArguments(java.util.List<? extends TypeName> typeArguments) {
+        public BUILDER addTypeArguments(List<? extends TypeName> typeArguments) {
             Objects.requireNonNull(typeArguments);
             this.typeArguments.addAll(typeArguments);
             return self();
@@ -347,7 +354,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          * @return updated builder instance
          * @see #typeArguments()
          */
-        public BUILDER addTypeArgument(java.util.function.Consumer<Builder> consumer) {
+        public BUILDER addTypeArgument(Consumer<TypeName.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
@@ -369,8 +376,8 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @return the class name
          */
-        public java.util.Optional<String> className() {
-            return java.util.Optional.ofNullable(className);
+        public Optional<String> className() {
+            return Optional.ofNullable(className);
         }
 
         /**
@@ -380,7 +387,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @return the enclosing names
          */
-        public java.util.List<String> enclosingNames() {
+        public List<String> enclosingNames() {
             return enclosingNames;
         }
 
@@ -425,8 +432,14 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
          *
          * @return the type arguments
          */
-        public java.util.List<TypeName> typeArguments() {
+        public List<TypeName> typeArguments() {
             return typeArguments;
+        }
+
+        /**
+         * Handles providers and decorators.
+         */
+        protected void preBuildPrototype() {
         }
 
         /**
@@ -441,38 +454,33 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Handles providers and decorators.
-         */
-        protected void preBuildPrototype() {
-        }
-
-        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypeNameImpl implements TypeName {
-            private final String packageName;
-            private final String className;
-            private final java.util.List<String> enclosingNames;
-            private final boolean primitive;
+
             private final boolean array;
             private final boolean generic;
+            private final boolean primitive;
             private final boolean wildcard;
-            private final java.util.List<TypeName> typeArguments;
+            private final List<TypeName> typeArguments;
+            private final List<String> enclosingNames;
+            private final String className;
+            private final String packageName;
 
             /**
              * Create an instance providing a builder.
              *
              * @param builder extending builder base of this prototype
              */
-            protected TypeNameImpl(BuilderBase<?, ?> builder) {
+            protected TypeNameImpl(TypeName.BuilderBase<?, ?> builder) {
                 this.packageName = builder.packageName();
                 this.className = builder.className().get();
-                this.enclosingNames = java.util.List.copyOf(builder.enclosingNames());
+                this.enclosingNames = List.copyOf(builder.enclosingNames());
                 this.primitive = builder.primitive();
                 this.array = builder.array();
                 this.generic = builder.generic();
                 this.wildcard = builder.wildcard();
-                this.typeArguments = java.util.List.copyOf(builder.typeArguments());
+                this.typeArguments = List.copyOf(builder.typeArguments());
             }
 
             @Override
@@ -506,6 +514,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
+            public String resolvedName() {
+                return TypeNameSupport.resolvedName(this);
+            }
+
+            @Override
             public String packageName() {
                 return packageName;
             }
@@ -516,7 +529,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
-            public java.util.List<String> enclosingNames() {
+            public List<String> enclosingNames() {
                 return enclosingNames;
             }
 
@@ -541,7 +554,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             }
 
             @Override
-            public java.util.List<TypeName> typeArguments() {
+            public List<TypeName> typeArguments() {
                 return typeArguments;
             }
 
@@ -553,23 +566,28 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 if (!(o instanceof TypeName other)) {
                     return false;
                 }
-                return Objects.equals(packageName, other.packageName()) && Objects.equals(className,
-                                                                                          other.className()) && Objects.equals(
-                        enclosingNames,
-                        other.enclosingNames()) && primitive == other.primitive() && array == other.array();
+                return Objects.equals(packageName, other.packageName())
+                        && Objects.equals(className, other.className())
+                        && Objects.equals(enclosingNames, other.enclosingNames())
+                        && primitive == other.primitive()
+                        && array == other.array();
             }
 
             @Override
             public int hashCode() {
                 return Objects.hash(packageName, className, enclosingNames, primitive, array);
             }
+
         }
+
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.common.types.TypeName}.
+     * Fluent API builder for {@link TypeName}.
      */
-    class Builder extends BuilderBase<Builder, TypeName> implements io.helidon.common.Builder<Builder, TypeName> {
+    class Builder extends TypeName.BuilderBase<TypeName.Builder, TypeName>
+            implements io.helidon.common.Builder<TypeName.Builder, TypeName> {
+
         private Builder() {
         }
 
@@ -586,4 +604,5 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
     }
+
 }

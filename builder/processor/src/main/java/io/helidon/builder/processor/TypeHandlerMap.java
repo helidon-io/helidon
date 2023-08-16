@@ -16,13 +16,19 @@
 
 package io.helidon.builder.processor;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.common.processor.GeneratorTools;
+import io.helidon.common.processor.classmodel.ClassModel;
+import io.helidon.common.processor.classmodel.Field;
+import io.helidon.common.processor.classmodel.InnerClass;
+import io.helidon.common.processor.classmodel.Javadoc;
+import io.helidon.common.processor.classmodel.Method;
+import io.helidon.common.processor.classmodel.TypeArgument;
 import io.helidon.common.types.TypeName;
 
 import static io.helidon.builder.processor.Types.STRING_TYPE;
@@ -34,7 +40,7 @@ import static io.helidon.common.types.TypeNames.SET;
 class TypeHandlerMap extends TypeHandler {
     private static final TypeName SAME_GENERIC_TYPE = TypeName.createFromGenericDeclaration("TYPE");
     private final TypeName actualType;
-    private final String implTypeName;
+    private final TypeName implTypeName;
     private final boolean sameGeneric;
 
     TypeHandlerMap(String name, String getterName, String setterName, TypeName declaredType, boolean sameGeneric) {
@@ -50,9 +56,12 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     @Override
-    String fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
-        return super.fieldDeclaration(configured, isBuilder, true)
-                + (isBuilder && !configured.hasDefault() ? " = new " + implTypeName + "<>()" : "");
+    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
+        Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
+        if (isBuilder && !configured.hasDefault()) {
+            builder.defaultValue("new " + ClassModel.TYPE_TOKEN + implTypeName.fqName() + ClassModel.TYPE_TOKEN + "<>()");
+        }
+        return builder;
     }
 
     @Override
@@ -76,12 +85,14 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     @Override
-    Optional<String> generateFromConfig(PrototypeProperty.ConfiguredOption configured, FactoryMethods factoryMethods) {
-        return Optional.of("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
-                                   + "(node -> "
-                                   + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"
-                                   + generateFromConfig(factoryMethods)
-                                   + ".get())));");
+    void generateFromConfig(Method.Builder method,
+                            PrototypeProperty.ConfiguredOption configured,
+                            FactoryMethods factoryMethods) {
+        method.addLine("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
+                               + "(node -> "
+                               + name() + ".put(node.get(\"name\").asString().orElse(node.name()), node"
+                               + generateFromConfig(factoryMethods)
+                               + ".get())));");
     }
 
     @Override
@@ -94,47 +105,39 @@ class TypeHandlerMap extends TypeHandler {
 
     @SuppressWarnings("checkstyle:MethodLength") // will be shorter when we switch to class model
     @Override
-    void setters(PrototypeProperty.ConfiguredOption configured,
+    void setters(InnerClass.Builder classBuilder,
+                 PrototypeProperty.ConfiguredOption configured,
                  PrototypeProperty.Singular singular,
-                 List<GeneratedMethod> setters,
                  FactoryMethods factoryMethod,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
 
-        declaredSetter(configured, setters, returnType, blueprintJavadoc);
-        declaredSetterAdd(configured, setters, returnType, blueprintJavadoc);
+        declaredSetter(classBuilder, configured, returnType, blueprintJavadoc);
+        declaredSetterAdd(classBuilder, configured, returnType, blueprintJavadoc);
 
         if (factoryMethod.createTargetType().isPresent()) {
             // factory method
             FactoryMethods.FactoryMethod fm = factoryMethod.createTargetType().get();
-            String argumentName = name() + "Config";
-
-            List<String> lines = new ArrayList<>();
-            lines.add("Objects.requireNonNull(" + argumentName + ");");
-            lines.add("this." + name() + ".clear();");
-            lines.add("this." + name() + ".putAll("
-                              + fm.typeWithFactoryMethod().genericTypeName().fqName()
-                              + "." + fm.createMethodName() + "(" + argumentName + "));");
-            lines.add("return self();");
-
-            List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
-            docLines.add("This method keeps existing values, then puts all new values into the map.");
-
-            Javadoc javadoc = new Javadoc(docLines,
-                                          List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
-                                          List.of("updated builder instance"),
-                                          List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-            setters.add(new GeneratedMethod(
-                    Set.of(setterModifier(configured).trim()),
-                    null,
-                    setterName(),
-                    returnType,
-                    List.of(new GeneratedMethod.Argument(argumentName, fm.argumentType())),
-                    List.of(),
-                    javadoc,
-                    lines
-            ));
+            String name = name();
+            String argumentName = name + "Config";
+            classBuilder.addMethod(builder -> {
+                builder.name(name + "Config")
+                        .description(blueprintJavadoc.content())
+                        .accessModifier(setterAccessModifier(configured))
+                        .addDescriptionLine("This method keeps existing values, then puts all new values into the map.")
+                        .addParameter(param -> param.name(argumentName)
+                                .type(fm.argumentType())
+                                .description(blueprintJavadoc.returnDescription()))
+                        .addJavadocTag("see", "#" + getterName() + "()")
+                        .returnType(returnType, "updated builder instance")
+                        .typeName(Objects.class)
+                        .addLine(".requireNonNull(" + argumentName + ");")
+                        .addLine("this." + name + ".clear();")
+                        .add("this." + name + ".putAll(")
+                        .typeName(fm.typeWithFactoryMethod().genericTypeName())
+                        .addLine("." + fm.createMethodName() + "(" + argumentName + "));")
+                        .addLine("return self();");
+            });
         }
 
         TypeName keyType = declaredType().typeArguments().get(0);
@@ -145,64 +148,53 @@ class TypeHandlerMap extends TypeHandler {
             // builder.addValue(String key, String value)
             // builder.addValues(String key, Set<String> values)
             String singularName = singular.singularName();
+            setterAddValueToCollection(classBuilder,
+                                       configured,
+                                       singularName,
+                                       keyType,
+                                       actualType().typeArguments().get(0),
+                                       returnType,
+                                       blueprintJavadoc);
 
-            setters.add(setterAddValueToCollection(configured,
-                                                   "add" + GeneratorTools.capitalize(singularName),
-                                                   singularName,
-                                                   keyType,
-                                                   actualType().typeArguments().get(0),
-                                                   returnType,
-                                                   blueprintJavadoc));
-            setters.add(setterAddValuesToCollection(configured,
-                                                    "add" + GeneratorTools.capitalize(name()),
-                                                    keyType,
-                                                    returnType,
-                                                    blueprintJavadoc));
+            setterAddValuesToCollection(classBuilder,
+                                        configured,
+                                        "add" + GeneratorTools.capitalize(name()),
+                                        keyType,
+                                        returnType,
+                                        blueprintJavadoc);
         }
         if (singular.hasSingular()) {
             // Builder putValue(String key, String value)
             String singularName = singular.singularName();
             String methodName = "put" + GeneratorTools.capitalize(singularName);
 
-            List<GeneratedMethod.Argument> args;
-            String typeDeclaration = null;
+            Method.Builder method = Method.builder()
+                    .name(methodName)
+                    .accessModifier(setterAccessModifier(configured))
+                    .returnType(returnType, "updated builder instance")
+                    .description(blueprintJavadoc.content())
+                    .addDescriptionLine("This method adds a new value to the map, or replaces it if the key already exists.")
+                    .addJavadocTag("see", "#" + getterName() + "()");
             if (sameGeneric) {
-                SameGenericArgs sameGenArgs = sameGenericArgs("key", keyType, singularName, actualType());
-                typeDeclaration = sameGenArgs.typeDeclaration();
-                args = sameGenArgs.arguments();
+                sameGenericArgs(method, keyType, singularName, actualType());
             } else {
-                args = List.of(new GeneratedMethod.Argument("key", keyType),
-                               new GeneratedMethod.Argument(singularName, actualType()));
+                method.addParameter(param -> param.name("key")
+                                .type(keyType)
+                                .description("key to add or replace"))
+                        .addParameter(param -> param.name(singularName)
+                                .type(actualType())
+                                .description("new value for the key"));
             }
+            method.typeName(Objects.class)
+                    .addLine(".requireNonNull(key);")
+                    .typeName(Objects.class)
+                    .addLine(".requireNonNull(" + singularName + ");")
+                    .add("this." + name() + ".put(key, ");
+            secondArgToPut(method, actualType(), singularName);
+            method.addLine(");")
+                    .addLine("return self();");
 
-            List<Javadoc.Tag> docParamTags = new ArrayList<>();
-            docParamTags.add(new Javadoc.Tag("key", List.of("key to add or replace")));
-            docParamTags.add(new Javadoc.Tag(singularName, List.of("new value for the key")));
-            if (sameGeneric) {
-                docParamTags.add(new Javadoc.Tag("<TYPE>", List.of("Type to correctly map key and value")));
-            }
-
-            List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
-            docLines.add("This method adds a new value to the map, or replaces it if the key already exists.");
-            Javadoc javadoc = new Javadoc(docLines,
-                                          docParamTags,
-                                          List.of("updated builder instance"),
-                                          List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-            List<String> lines = new ArrayList<>();
-            lines.add("Objects.requireNonNull(key);");
-            lines.add("Objects.requireNonNull(" + singularName + ");");
-            lines.add("this." + name() + ".put(key, " + secondArgToPut(actualType(), singularName) + ");");
-            lines.add("return self();");
-            setters.add(new GeneratedMethod(
-                    Set.of(setterModifier(configured).trim()),
-                    typeDeclaration,
-                    methodName,
-                    returnType,
-                    args,
-                    List.of(),
-                    javadoc,
-                    lines));
+            classBuilder.addMethod(method);
 
             if (factoryMethod.builder().isPresent()) {
                 FactoryMethods.FactoryMethod fm = factoryMethod.builder().get();
@@ -212,45 +204,39 @@ class TypeHandlerMap extends TypeHandler {
                 } else {
                     builderType = TypeName.create(fm.factoryMethodReturnType().fqName() + ".Builder");
                 }
-
-                GeneratedMethod.Argument keyArg = new GeneratedMethod.Argument("key", keyType);
-                GeneratedMethod.Argument valArg = new GeneratedMethod.Argument("consumer", TypeName.builder()
-                        .type(Consumer.class)
-                        .addTypeArgument(builderType)
-                        .build());
-
-                docLines = new ArrayList<>(blueprintJavadoc.lines());
-                docLines.add("This method adds a new value to the map, or replaces it if the key already exists.");
-                javadoc = new Javadoc(docLines,
-                                      List.of(new Javadoc.Tag("key", List.of("key to add or replace")),
-                                              new Javadoc.Tag("consumer",
-                                                              List.of("builder consumer to create new value for the key"))),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-                lines = new ArrayList<>();
-                lines.add("Objects.requireNonNull(key);");
-                lines.add("Objects.requireNonNull(consumer);");
-                lines.add("var builder = " + fm.typeWithFactoryMethod().genericTypeName().fqName()
-                                  + "." + fm.createMethodName() + "();");
-                lines.add("consumer.accept(builder);");
-                lines.add("this." + methodName + "(key, builder.build());");
-                lines.add("return self();");
-
-                setters.add(new GeneratedMethod(
-                        Set.of(setterModifier(configured).trim()),
-                        null,
-                        methodName,
-                        returnType,
-                        List.of(keyArg, valArg),
-                        List.of(),
-                        javadoc,
-                        lines));
+                classBuilder.addMethod(builder -> builder.name(methodName)
+                        .accessModifier(setterAccessModifier(configured))
+                        .returnType(returnType, "updated builder instance")
+                        .description(blueprintJavadoc.content())
+                        .addDescriptionLine("This method adds a new value to the map, or replaces it if the key already exists.")
+                        .addJavadocTag("see", "#" + getterName() + "()")
+                        .addParameter(param -> param.name("key")
+                                .type(keyType)
+                                .description("key to add or replace"))
+                        .addParameter(param -> param.name("consumer")
+                                .type(TypeName.builder()
+                                              .type(Consumer.class)
+                                              .addTypeArgument(builderType)
+                                              .build())
+                                .description("builder consumer to create new value for the key"))
+                        .typeName(Objects.class)
+                        .addLine(".requireNonNull(key);")
+                        .typeName(Objects.class)
+                        .addLine(".requireNonNull(consumer);")
+                        .add("var builder = ")
+                        .typeName(fm.typeWithFactoryMethod().genericTypeName())
+                        .addLine("." + fm.createMethodName() + "();")
+                        .addLine("consumer.accept(builder);")
+                        .addLine("this." + methodName + "(key, builder.build());")
+                        .addLine("return self();"));
             }
         }
     }
 
-    private SameGenericArgs sameGenericArgs(String key, TypeName keyType, String value, TypeName valueType) {
+    private void sameGenericArgs(Method.Builder method,
+                                 TypeName keyType,
+                                 String value,
+                                 TypeName valueType) {
 
         String typeDeclaration;
         TypeName genericTypeBase;
@@ -294,7 +280,11 @@ class TypeHandlerMap extends TypeHandler {
                                                        + " argument.");
         }
 
-        typeDeclaration = "<TYPE extends " + genericTypeBase.fqName() + ">";
+        method.addGenericArgument(TypeArgument.builder()
+                                           .token("TYPE")
+                                           .bound(genericTypeBase)
+                                           .description("Type to correctly map key and value")
+                                           .build());
 
         // now resolve value
         if (valueType.typeArguments().isEmpty()) {
@@ -322,164 +312,142 @@ class TypeHandlerMap extends TypeHandler {
                                                        + " argument.");
         }
 
-        return new SameGenericArgs(typeDeclaration, List.of(new GeneratedMethod.Argument(key, resolvedKeyType),
-                                                            new GeneratedMethod.Argument(value, resolvedValueType)));
+        method.addParameter(param -> param.name("key")
+                        .type(resolvedKeyType)
+                        .description("key to add or replace"))
+                .addParameter(param -> param.name(value)
+                        .type(resolvedValueType)
+                        .description("new value for the key"));
     }
 
-    private GeneratedMethod setterAddValueToCollection(PrototypeProperty.ConfiguredOption configured,
-                                                       String methodName,
-                                                       String singularName,
-                                                       TypeName keyType,
-                                                       TypeName valueType,
-                                                       TypeName returnType,
-                                                       Javadoc blueprintJavadoc) {
+    private void setterAddValueToCollection(InnerClass.Builder classBuilder,
+                                            PrototypeProperty.ConfiguredOption configured,
+                                            String singularName,
+                                            TypeName keyType,
+                                            TypeName valueType,
+                                            TypeName returnType,
+                                            Javadoc blueprintJavadoc) {
+        String methodName = "add" + GeneratorTools.capitalize(singularName);
+        TypeName implType = collectionImplType(actualType());
 
-        GeneratedMethod.Argument keyArg = new GeneratedMethod.Argument("key", keyType);
-        GeneratedMethod.Argument valArg = new GeneratedMethod.Argument(singularName, valueType);
-        String implType = collectionImplType(actualType());
-        List<String> methodLines = List.of(
-                "Objects.requireNonNull(key);",
-                "Objects.requireNonNull(" + singularName + ");",
-                "this." + name() + ".compute(key, (k, v) -> {",
-                "    v = v == null ? new " + implType + "<>() : new " + implType + "<>(v);",
-                "    v.add(" + singularName + ");",
-                "    return v;",
-                "});",
-                "return self();"
-        );
-
-        List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
-        docLines.add("This method adds a new value to the map value, or creates a new value.");
-        Javadoc javadoc = new Javadoc(docLines,
-                                      List.of(new Javadoc.Tag("key", List.of("key to add to")),
-                                              new Javadoc.Tag(singularName, List.of("additional value for the key"))),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        return new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                null,
-                methodName,
-                returnType,
-                List.of(keyArg, valArg),
-                List.of(),
-                javadoc,
-                methodLines
-        );
+        classBuilder.addMethod(builder -> builder.name(methodName)
+                .accessModifier(setterAccessModifier(configured))
+                .addParameter(param -> param.name("key")
+                        .type(keyType)
+                        .description("key to add to"))
+                .addParameter(param -> param.name(singularName)
+                        .type(valueType)
+                        .description("additional value for the key"))
+                .description(blueprintJavadoc.content())
+                .addDescriptionLine("This method adds a new value to the map value, or creates a new value.")
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType, "updated builder instance")
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(key);")
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + singularName + ");")
+                .addLine("this." + name() + ".compute(key, (k, v) -> {")
+                .add("v = v == null ? new ")
+                .typeName(implType)
+                .add("<>() : new ")
+                .typeName(implType)
+                .addLine("<>(v);")
+                .addLine("v.add(" + singularName + ");")
+                .addLine("return v;")
+                .decreasePadding()
+                .addLine("});")
+                .addLine("return self();"));
     }
 
-    private GeneratedMethod setterAddValuesToCollection(PrototypeProperty.ConfiguredOption configured,
+    private void setterAddValuesToCollection(InnerClass.Builder classBuilder,
+                                                        PrototypeProperty.ConfiguredOption configured,
                                                         String methodName,
                                                         TypeName keyType,
                                                         TypeName returnType,
                                                         Javadoc blueprintJavadoc) {
+        TypeName implType = collectionImplType(actualType());
+        String name = name();
 
-        GeneratedMethod.Argument keyArg = new GeneratedMethod.Argument("key", keyType);
-        GeneratedMethod.Argument valArg = new GeneratedMethod.Argument(name(), actualType());
-        String implType = collectionImplType(actualType());
-        List<String> methodLines = List.of(
-                "Objects.requireNonNull(key);",
-                "Objects.requireNonNull(" + name() + ");",
-                "this." + name() + ".compute(key, (k, v) -> {",
-                "    v = v == null ? new " + implType + "<>() : new " + implType + "<>(v);",
-                "    v.addAll(" + name() + ");",
-                "    return v;",
-                "});",
-                "return self();"
-        );
-
-        List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
-        docLines.add("This method adds a new value to the map value, or creates a new value.");
-        Javadoc javadoc = new Javadoc(docLines,
-                                      List.of(new Javadoc.Tag("key", List.of("key to add to")),
-                                              new Javadoc.Tag(name(), List.of("additional values for the key"))),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        return new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                null,
-                methodName,
-                returnType,
-                List.of(keyArg, valArg),
-                List.of(),
-                javadoc,
-                methodLines
-        );
+        classBuilder.addMethod(builder -> builder.name(methodName)
+                .accessModifier(setterAccessModifier(configured))
+                .addParameter(param -> param.name("key")
+                        .type(keyType)
+                        .description("key to add to"))
+                .addParameter(param -> param.name(name)
+                        .type(actualType())
+                        .description("additional values for the key"))
+                .description(blueprintJavadoc.content())
+                .addDescriptionLine("This method adds a new value to the map value, or creates a new value.")
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .returnType(returnType, "updated builder instance")
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(key);")
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + name + ");")
+                .addLine("this." + name + ".compute(key, (k, v) -> {")
+                .add("v = v == null ? new ")
+                .typeName(implType)
+                .add("<>() : new ")
+                .typeName(implType)
+                .addLine("<>(v);")
+                .addLine("v.addAll(" + name + ");")
+                .addLine("return v;")
+                .decreasePadding()
+                .addLine("});")
+                .addLine("return self();"));
     }
 
-    private void declaredSetterAdd(PrototypeProperty.ConfiguredOption configured,
-                                   List<GeneratedMethod> setters,
+    private void declaredSetterAdd(InnerClass.Builder classBuilder, PrototypeProperty.ConfiguredOption configured,
                                    TypeName returnType,
                                    Javadoc blueprintJavadoc) {
         // declared type - add content
-        List<String> lines = new ArrayList<>();
-        lines.add("Objects.requireNonNull(" + name() + ");");
-        lines.add("this." + name() + ".putAll(" + name() + ");");
-        lines.add("return self();");
-
-        List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
-        docLines.add("This method keeps existing values, then puts all new values into the map.");
-
-        Javadoc javadoc = new Javadoc(docLines,
-                                      List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                null,
-                "add" + GeneratorTools.capitalize(name()),
-                returnType,
-                List.of(new GeneratedMethod.Argument(name(), argumentTypeName())),
-                List.of(),
-                javadoc,
-                lines
-        ));
+        classBuilder.addMethod(builder -> builder.name("add" + GeneratorTools.capitalize(name()))
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addDescriptionLine("This method keeps existing values, then puts all new values into the map.")
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(name())
+                        .type(argumentTypeName())
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + name() + ");")
+                .addLine("this." + name() + ".putAll(" + name() + ");")
+                .addLine("return self();"));
     }
 
-    private void declaredSetter(PrototypeProperty.ConfiguredOption configured,
-                                List<GeneratedMethod> setters,
+    private void declaredSetter(InnerClass.Builder classBuilder,
+                                PrototypeProperty.ConfiguredOption configured,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc) {
         // declared type (such as Map<String, String>) - replace content
-        List<String> lines = new ArrayList<>();
-        lines.add("Objects.requireNonNull(" + name() + ");");
-        lines.add("this." + name() + ".clear();");
-        lines.add("this." + name() + ".putAll(" + name() + ");");
-        lines.add("return self();");
-
-        List<String> docLines = new ArrayList<>(blueprintJavadoc.lines());
-        docLines.add("This method replaces all values with the new ones.");
-
-        Javadoc javadoc = new Javadoc(docLines,
-                                      List.of(new Javadoc.Tag(name(), blueprintJavadoc.returns())),
-                                      List.of("updated builder instance"),
-                                      List.of(new Javadoc.Tag("see", List.of("#" + getterName() + "()"))));
-
-        // there is always a setter with the declared type
-        setters.add(new GeneratedMethod(
-                Set.of(setterModifier(configured).trim()),
-                null,
-                setterName(),
-                returnType,
-                List.of(new GeneratedMethod.Argument(name(), argumentTypeName())),
-                List.of(),
-                javadoc,
-                lines
-        ));
+        classBuilder.addMethod(builder -> builder.name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addDescriptionLine("This method replaces all values with the new ones.")
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(name())
+                        .type(argumentTypeName())
+                        .description(blueprintJavadoc.returnDescription()))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + name() + ");")
+                .addLine("this." + name() + ".clear();")
+                .addLine("this." + name() + ".putAll(" + name() + ");")
+                .addLine("return self();"));
     }
 
-    private String secondArgToPut(TypeName typeName, String singularName) {
+    private void secondArgToPut(Method.Builder method, TypeName typeName, String singularName) {
         TypeName genericTypeName = typeName.genericTypeName();
         if (genericTypeName.equals(LIST)) {
-            return "java.util.List.copyOf(" + singularName + ")";
+            method.typeName(List.class).add(".copyOf(" + singularName + ")");
         } else if (genericTypeName.equals(SET)) {
-            return "java.util.Set.copyOf(" + singularName + ")";
+            method.typeName(Set.class).add(".copyOf(" + singularName + ")");
         } else if (genericTypeName.equals(MAP)) {
-            return "java.util.Map.copyOf(" + singularName + ")";
+            method.typeName(Map.class).add(".copyOf(" + singularName + ")");
+        } else {
+            method.add(singularName);
         }
-        return singularName;
     }
 
     private boolean isCollection(TypeName typeName) {
@@ -490,12 +458,7 @@ class TypeHandlerMap extends TypeHandler {
         if (genericTypeName.equals(LIST)) {
             return true;
         }
-        if (genericTypeName.equals(SET)) {
-            return true;
-        }
-        return false;
+        return genericTypeName.equals(SET);
     }
 
-    record SameGenericArgs(String typeDeclaration, List<GeneratedMethod.Argument> arguments) {
-    }
 }

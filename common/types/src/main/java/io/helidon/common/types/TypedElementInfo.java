@@ -16,8 +16,15 @@
 
 package io.helidon.common.types;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
@@ -28,13 +35,14 @@ import io.helidon.common.Errors;
  * @see #builder()
  */
 public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.Api {
+
     /**
      * Create a new fluent API builder to customize configuration.
      *
      * @return a new builder
      */
-    static Builder builder() {
-        return new Builder();
+    static TypedElementInfo.Builder builder() {
+        return new TypedElementInfo.Builder();
     }
 
     /**
@@ -43,7 +51,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(TypedElementInfo instance) {
+    static TypedElementInfo.Builder builder(TypedElementInfo instance) {
         return TypedElementInfo.builder().from(instance);
     }
 
@@ -55,24 +63,24 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
     String toDeclaration();
 
     /**
-     * Fluent API builder base for {@link io.helidon.common.types.TypedElementInfo}.
+     * Fluent API builder base for {@link TypedElementInfo}.
      *
-     * @param <BUILDER>   type of the builder extending this abstract builder
+     * @param <BUILDER> type of the builder extending this abstract builder
      * @param <PROTOTYPE> type of the prototype interface that would be built by {@link #buildPrototype()}
      */
-    abstract class BuilderBase<BUILDER extends BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo>
-            implements io.helidon.builder.api.Prototype.Builder<BUILDER, PROTOTYPE> {
-        private final java.util.List<Annotation> elementTypeAnnotations = new java.util.ArrayList<>();
-        private final java.util.List<TypeName> componentTypes = new java.util.ArrayList<>();
-        private final java.util.Set<String> modifiers = new java.util.LinkedHashSet<>();
-        private final java.util.List<TypedElementInfo> parameterArguments = new java.util.ArrayList<>();
-        private final java.util.List<Annotation> annotations = new java.util.ArrayList<>();
+    abstract class BuilderBase<BUILDER extends TypedElementInfo.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends TypedElementInfo> implements Prototype.Builder<BUILDER, PROTOTYPE> {
+
+        private final List<Annotation> annotations = new ArrayList<>();
+        private final List<Annotation> elementTypeAnnotations = new ArrayList<>();
+        private final List<TypeName> componentTypes = new ArrayList<>();
+        private final List<TypedElementInfo> parameterArguments = new ArrayList<>();
+        private final Set<String> modifiers = new LinkedHashSet<>();
+        private String defaultValue;
         private String description;
-        private TypeName typeName;
         private String elementName;
         private String elementTypeKind;
-        private String defaultValue;
         private TypeName enclosingType;
+        private TypeName typeName;
 
         /**
          * Protected to support extensibility.
@@ -107,7 +115,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(TypedElementInfo.BuilderBase<?, ?> builder) {
             builder.description().ifPresent(this::description);
             builder.typeName().ifPresent(this::typeName);
             builder.elementName().ifPresent(this::elementName);
@@ -119,22 +127,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             builder.enclosingType().ifPresent(this::enclosingType);
             addParameterArguments(builder.parameterArguments());
             addAnnotations(builder.annotations());
-            return self();
-        }
-
-        /**
-         * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
-         *
-         * @param enclosingType the enclosing type element
-         * @return updated builder instance
-         * @see #enclosingType()
-         */
-        public BUILDER enclosingType(TypeName enclosingType) {
-            Objects.requireNonNull(enclosingType);
-            this.enclosingType = enclosingType;
             return self();
         }
 
@@ -185,7 +177,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #typeName()
          */
-        public BUILDER typeName(java.util.function.Consumer<TypeName.Builder> consumer) {
+        public BUILDER typeName(Consumer<TypeName.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = TypeName.builder();
             consumer.accept(builder);
@@ -198,11 +190,11 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * the method.
          *
          * @param supplier supplier of
-         * the type name of the element
+         *                 the type name of the element
          * @return updated builder instance
          * @see #typeName()
          */
-        public BUILDER typeName(java.util.function.Supplier<? extends TypeName> supplier) {
+        public BUILDER typeName(Supplier<? extends TypeName> supplier) {
             Objects.requireNonNull(supplier);
             this.typeName(supplier.get());
             return self();
@@ -265,7 +257,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #elementTypeAnnotations()
          */
-        public BUILDER elementTypeAnnotations(java.util.List<? extends Annotation> elementTypeAnnotations) {
+        public BUILDER elementTypeAnnotations(List<? extends Annotation> elementTypeAnnotations) {
             Objects.requireNonNull(elementTypeAnnotations);
             this.elementTypeAnnotations.clear();
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
@@ -279,7 +271,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #elementTypeAnnotations()
          */
-        public BUILDER addElementTypeAnnotations(java.util.List<? extends Annotation> elementTypeAnnotations) {
+        public BUILDER addElementTypeAnnotations(List<? extends Annotation> elementTypeAnnotations) {
             Objects.requireNonNull(elementTypeAnnotations);
             this.elementTypeAnnotations.addAll(elementTypeAnnotations);
             return self();
@@ -292,7 +284,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #componentTypes()
          */
-        public BUILDER componentTypes(java.util.List<? extends TypeName> componentTypes) {
+        public BUILDER componentTypes(List<? extends TypeName> componentTypes) {
             Objects.requireNonNull(componentTypes);
             this.componentTypes.clear();
             this.componentTypes.addAll(componentTypes);
@@ -306,7 +298,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #componentTypes()
          */
-        public BUILDER addComponentTypes(java.util.List<? extends TypeName> componentTypes) {
+        public BUILDER addComponentTypes(List<? extends TypeName> componentTypes) {
             Objects.requireNonNull(componentTypes);
             this.componentTypes.addAll(componentTypes);
             return self();
@@ -319,7 +311,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #modifiers()
          */
-        public BUILDER modifiers(java.util.Set<? extends String> modifiers) {
+        public BUILDER modifiers(Set<? extends String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.clear();
             this.modifiers.addAll(modifiers);
@@ -333,7 +325,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #modifiers()
          */
-        public BUILDER addModifiers(java.util.Set<? extends String> modifiers) {
+        public BUILDER addModifiers(Set<? extends String> modifiers) {
             Objects.requireNonNull(modifiers);
             this.modifiers.addAll(modifiers);
             return self();
@@ -353,24 +345,6 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
-         *
-         * @param consumer the enclosing type element
-         * @return updated builder instance
-         * @see #enclosingType()
-         */
-        public BUILDER enclosingType(java.util.function.Consumer<TypeName.Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypeName.builder();
-            consumer.accept(builder);
-            this.enclosingType(builder.build());
-            return self();
-        }
-
-        /**
          * Clear existing value of this property.
          *
          * @return updated builder instance
@@ -382,42 +356,49 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
-         * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
-         * @param consumer the list of parameters belonging to this method if applicable
+         * @param enclosingType the enclosing type element
          * @return updated builder instance
-         * @see #parameterArguments()
+         * @see #enclosingType()
          */
-        public BUILDER addParameterArgument(java.util.function.Consumer<Builder> consumer) {
-            Objects.requireNonNull(consumer);
-            var builder = TypedElementInfo.builder();
-            consumer.accept(builder);
-            this.parameterArguments.add(builder.build());
+        public BUILDER enclosingType(TypeName enclosingType) {
+            Objects.requireNonNull(enclosingType);
+            this.enclosingType = enclosingType;
             return self();
         }
 
         /**
-         * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
-         * the method.
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
-         * @return the type name
+         * @param consumer the enclosing type element
+         * @return updated builder instance
+         * @see #enclosingType()
          */
-        public Optional<TypeName> typeName() {
-            return Optional.ofNullable(typeName);
+        public BUILDER enclosingType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.enclosingType(builder.build());
+            return self();
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param parameterArguments the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
          */
-        public BUILDER parameterArguments(java.util.List<? extends TypedElementInfo> parameterArguments) {
+        public BUILDER parameterArguments(List<? extends TypedElementInfo> parameterArguments) {
             Objects.requireNonNull(parameterArguments);
             this.parameterArguments.clear();
             this.parameterArguments.addAll(parameterArguments);
@@ -425,24 +406,24 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param parameterArguments the list of parameters belonging to this method if applicable
          * @return updated builder instance
          * @see #parameterArguments()
          */
-        public BUILDER addParameterArguments(java.util.List<? extends TypedElementInfo> parameterArguments) {
+        public BUILDER addParameterArguments(List<? extends TypedElementInfo> parameterArguments) {
             Objects.requireNonNull(parameterArguments);
             this.parameterArguments.addAll(parameterArguments);
             return self();
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @param parameterArgument the list of parameters belonging to this method if applicable
          * @return updated builder instance
@@ -455,12 +436,20 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * The element (e.g., method, field, etc) name.
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
+         * Each instance of this list
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
-         * @return the element name
+         * @param consumer the list of parameters belonging to this method if applicable
+         * @return updated builder instance
+         * @see #parameterArguments()
          */
-        public Optional<String> elementName() {
-            return Optional.ofNullable(elementName);
+        public BUILDER addParameterArgument(Consumer<TypedElementInfo.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypedElementInfo.builder();
+            consumer.accept(builder);
+            this.parameterArguments.add(builder.build());
+            return self();
         }
 
         /**
@@ -471,7 +460,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #annotations()
          */
-        public BUILDER annotations(java.util.List<? extends Annotation> annotations) {
+        public BUILDER annotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
             this.annotations.clear();
             this.annotations.addAll(annotations);
@@ -486,7 +475,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #annotations()
          */
-        public BUILDER addAnnotations(java.util.List<? extends Annotation> annotations) {
+        public BUILDER addAnnotations(List<? extends Annotation> annotations) {
             Objects.requireNonNull(annotations);
             this.annotations.addAll(annotations);
             return self();
@@ -514,7 +503,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * @return updated builder instance
          * @see #annotations()
          */
-        public BUILDER addAnnotation(java.util.function.Consumer<Annotation.Builder> consumer) {
+        public BUILDER addAnnotation(Consumer<Annotation.Builder> consumer) {
             Objects.requireNonNull(consumer);
             var builder = Annotation.builder();
             consumer.accept(builder);
@@ -532,24 +521,31 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
+         * The type name for the element (e.g., java.util.List). If the element is a method, then this is the return type of
+         * the method.
+         *
+         * @return the type name
+         */
+        public Optional<TypeName> typeName() {
+            return Optional.ofNullable(typeName);
+        }
+
+        /**
+         * The element (e.g., method, field, etc) name.
+         *
+         * @return the element name
+         */
+        public Optional<String> elementName() {
+            return Optional.ofNullable(elementName);
+        }
+
+        /**
          * The kind of element (e.g., method, field, etc).
          *
          * @return the element type kind
          */
         public Optional<String> elementTypeKind() {
             return Optional.ofNullable(elementTypeKind);
-        }
-
-        /**
-         * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
-         *
-         * @return the enclosing type
-         */
-        public Optional<TypeName> enclosingType() {
-            return Optional.ofNullable(enclosingType);
         }
 
         /**
@@ -566,7 +562,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the element type annotations
          */
-        public java.util.List<Annotation> elementTypeAnnotations() {
+        public List<Annotation> elementTypeAnnotations() {
             return elementTypeAnnotations;
         }
 
@@ -575,7 +571,7 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the component types
          */
-        public java.util.List<TypeName> componentTypes() {
+        public List<TypeName> componentTypes() {
             return componentTypes;
         }
 
@@ -584,18 +580,30 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the modifiers
          */
-        public java.util.Set<String> modifiers() {
+        public Set<String> modifiers() {
             return modifiers;
         }
 
         /**
-         * Parameter arguments applicable if this type element represents a {@link TypeValues#KIND_METHOD}.
+         * The enclosing type name for this typed element. Applicable when this instance represents a
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
+         *
+         * @return the enclosing type
+         */
+        public Optional<TypeName> enclosingType() {
+            return Optional.ofNullable(enclosingType);
+        }
+
+        /**
+         * Parameter arguments applicable if this type element represents a {@link io.helidon.common.types.TypeValues#KIND_METHOD}.
          * Each instance of this list
-         * will be the individual {@link TypeValues#KIND_PARAMETER}'s for the method.
+         * will be the individual {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}'s for the method.
          *
          * @return the parameter arguments
          */
-        public java.util.List<TypedElementInfo> parameterArguments() {
+        public List<TypedElementInfo> parameterArguments() {
             return parameterArguments;
         }
 
@@ -605,8 +613,14 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          *
          * @return the annotations
          */
-        public java.util.List<Annotation> annotations() {
+        public List<Annotation> annotations() {
             return annotations;
+        }
+
+        /**
+         * Handles providers and decorators.
+         */
+        protected void preBuildPrototype() {
         }
 
         /**
@@ -653,16 +667,10 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
         /**
-         * Handles providers and decorators.
-         */
-        protected void preBuildPrototype() {
-        }
-
-        /**
          * The enclosing type name for this typed element. Applicable when this instance represents a
-         * {@link TypeValues#KIND_FIELD}, or
-         * {@link TypeValues#KIND_METHOD}, or
-         * {@link TypeValues#KIND_PARAMETER}
+         * {@link io.helidon.common.types.TypeValues#KIND_FIELD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_METHOD}, or
+         * {@link io.helidon.common.types.TypeValues#KIND_PARAMETER}
          *
          * @param enclosingType the enclosing type element
          * @return updated builder instance
@@ -678,35 +686,36 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypedElementInfoImpl implements TypedElementInfo {
+
+            private final List<Annotation> annotations;
+            private final List<Annotation> elementTypeAnnotations;
+            private final List<TypeName> componentTypes;
+            private final List<TypedElementInfo> parameterArguments;
+            private final Optional<TypeName> enclosingType;
+            private final Optional<String> defaultValue;
             private final Optional<String> description;
-            private final TypeName typeName;
+            private final Set<String> modifiers;
             private final String elementName;
             private final String elementTypeKind;
-            private final Optional<String> defaultValue;
-            private final java.util.List<Annotation> elementTypeAnnotations;
-            private final java.util.List<TypeName> componentTypes;
-            private final java.util.Set<String> modifiers;
-            private final Optional<TypeName> enclosingType;
-            private final java.util.List<TypedElementInfo> parameterArguments;
-            private final java.util.List<Annotation> annotations;
+            private final TypeName typeName;
 
             /**
              * Create an instance providing a builder.
              *
              * @param builder extending builder base of this prototype
              */
-            protected TypedElementInfoImpl(BuilderBase<?, ?> builder) {
+            protected TypedElementInfoImpl(TypedElementInfo.BuilderBase<?, ?> builder) {
                 this.description = builder.description();
                 this.typeName = builder.typeName().get();
                 this.elementName = builder.elementName().get();
                 this.elementTypeKind = builder.elementTypeKind().get();
                 this.defaultValue = builder.defaultValue();
-                this.elementTypeAnnotations = java.util.List.copyOf(builder.elementTypeAnnotations());
-                this.componentTypes = java.util.List.copyOf(builder.componentTypes());
-                this.modifiers = java.util.Collections.unmodifiableSet(new java.util.LinkedHashSet<>(builder.modifiers()));
+                this.elementTypeAnnotations = List.copyOf(builder.elementTypeAnnotations());
+                this.componentTypes = List.copyOf(builder.componentTypes());
+                this.modifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.modifiers()));
                 this.enclosingType = builder.enclosingType();
-                this.parameterArguments = java.util.List.copyOf(builder.parameterArguments());
-                this.annotations = java.util.List.copyOf(builder.annotations());
+                this.parameterArguments = List.copyOf(builder.parameterArguments());
+                this.annotations = List.copyOf(builder.annotations());
             }
 
             @Override
@@ -745,17 +754,17 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
-            public java.util.List<Annotation> elementTypeAnnotations() {
+            public List<Annotation> elementTypeAnnotations() {
                 return elementTypeAnnotations;
             }
 
             @Override
-            public java.util.List<TypeName> componentTypes() {
+            public List<TypeName> componentTypes() {
                 return componentTypes;
             }
 
             @Override
-            public java.util.Set<String> modifiers() {
+            public Set<String> modifiers() {
                 return modifiers;
             }
 
@@ -765,12 +774,12 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             }
 
             @Override
-            public java.util.List<TypedElementInfo> parameterArguments() {
+            public List<TypedElementInfo> parameterArguments() {
                 return parameterArguments;
             }
 
             @Override
-            public java.util.List<Annotation> annotations() {
+            public List<Annotation> annotations() {
                 return annotations;
             }
 
@@ -794,13 +803,16 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
             public int hashCode() {
                 return Objects.hash(typeName, elementName, elementTypeKind, enclosingType, parameterArguments, annotations);
             }
+
         }
+
     }
 
     /**
-     * Fluent API builder for {@link io.helidon.common.types.TypedElementInfo}.
+     * Fluent API builder for {@link TypedElementInfo}.
      */
-    class Builder extends BuilderBase<Builder, TypedElementInfo> implements io.helidon.common.Builder<Builder, TypedElementInfo> {
+    class Builder extends TypedElementInfo.BuilderBase<TypedElementInfo.Builder, TypedElementInfo> implements io.helidon.common.Builder<TypedElementInfo.Builder, TypedElementInfo> {
+
         private Builder() {
         }
 
@@ -817,4 +829,5 @@ public interface TypedElementInfo extends TypedElementInfoBlueprint, Prototype.A
         }
 
     }
+
 }
