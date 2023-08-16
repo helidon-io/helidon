@@ -15,10 +15,7 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Optional;
 import java.util.function.ToDoubleFunction;
-
-import io.helidon.common.media.type.MediaType;
 
 /**
  * Behavior of implementations of the Helidon metrics API.

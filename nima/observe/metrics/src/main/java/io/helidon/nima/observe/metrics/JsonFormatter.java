@@ -400,8 +400,10 @@ class JsonFormatter implements MeterRegistryFormatter {
             @Override
             protected void add(Meter meter) {
                 if (!meter().getClass().isInstance(meter)) {
-                    throw new IllegalArgumentException("Attempt to add meter of type " + meter.getClass().getName()
-                                                               + " to existing output for a meter of type " + meter().getClass().getName());
+                    throw new IllegalArgumentException(
+                            String.format("Attempt to add meter of type %s to existing output for a meter of type %s",
+                                          meter.getClass().getName(),
+                                          meter().getClass().getName()));
                 }
                 children.add(meter);
             }

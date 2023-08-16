@@ -18,10 +18,14 @@ package io.helidon.nima.observe.metrics;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 
+/**
+ * JSON formatter provider.
+ */
 public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatterProvider {
 
     @Override
@@ -30,10 +34,13 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
                                                       String scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
-        return Optional.of(JsonFormatter.builder(meterRegistry)
-                                   .scopeTagName(scopeTagName)
-                                   .scopeSelection(scopeSelection)
-                                   .meterNameSelection(nameSelection)
-                                   .build());
+        return mediaType.type().equals(MediaTypes.APPLICATION_JSON.type())
+                        && mediaType.subtype().equals(MediaTypes.APPLICATION_JSON.subtype())
+                ? Optional.of(JsonFormatter.builder(meterRegistry)
+                                     .scopeTagName(scopeTagName)
+                                     .scopeSelection(scopeSelection)
+                                     .meterNameSelection(nameSelection)
+                                     .build())
+                : Optional.empty();
     }
 }

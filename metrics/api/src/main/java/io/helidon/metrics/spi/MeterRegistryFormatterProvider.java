@@ -36,6 +36,10 @@ public interface MeterRegistryFormatterProvider {
      * Returns, if possible, a {@link io.helidon.metrics.api.MeterRegistryFormatter} capable of preparing output according to
      * the specified {@link io.helidon.common.media.type.MediaType}.
      * @param mediaType media type of the desired output
+     * @param meterRegistry {@link io.helidon.metrics.api.MeterRegistry} from which to gather data
+     * @param scopeTagName tag name used to record scope
+     * @param scopeSelection scope names to format; empty means no scope-based restriction
+     * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
      */
     Optional<MeterRegistryFormatter> formatter(MediaType mediaType,

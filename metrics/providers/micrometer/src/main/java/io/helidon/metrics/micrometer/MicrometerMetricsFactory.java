@@ -15,12 +15,9 @@
  */
 package io.helidon.metrics.micrometer;
 
-import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.media.type.MediaType;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -30,7 +27,6 @@ import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.api.MetricsProgrammaticSettings;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 

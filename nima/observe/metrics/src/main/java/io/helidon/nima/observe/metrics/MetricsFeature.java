@@ -190,21 +190,22 @@ public class MetricsFeature extends HelidonFeatureSupport {
     Optional<?> output(MediaType mediaType,
                        Iterable<String> scopeSelection,
                        Iterable<String> nameSelection) {
-        Optional<MeterRegistryFormatter> formatter = chooseFormatter(meterRegistry,
+        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
                                                            metricsConfig.scopeTagName(),
                                                            scopeSelection,
                                                            nameSelection);
 
-        return formatter.flatMap(MeterRegistryFormatter::format);
+        return formatter.format();
     }
 
-    private Optional<MeterRegistryFormatter> chooseFormatter(MeterRegistry meterRegistry,
+    private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,
                                                              MediaType mediaType,
                                                              String scopeTagName,
                                                              Iterable<String> scopeSelection,
                                                              Iterable<String> nameSelection) {
-        return HelidonServiceLoader.builder(ServiceLoader.load(MeterRegistryFormatterProvider.class))
+        Optional<MeterRegistryFormatter> formatter = HelidonServiceLoader.builder(
+                        ServiceLoader.load(MeterRegistryFormatterProvider.class))
                 .build()
                 .stream()
                 .map(provider -> provider.formatter(mediaType,
@@ -215,6 +216,11 @@ public class MetricsFeature extends HelidonFeatureSupport {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst();
+
+        if (formatter.isPresent()) {
+            return formatter.get();
+        }
+        throw new UnsupportedOperationException("Unable to find a meter registry formatter for media type " + mediaType);
     }
 
     private void getAll(ServerRequest req, ServerResponse res) {
@@ -252,7 +258,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                 res.send();
             }
         } catch (UnsupportedOperationException ex) {
-            // The registry factory does not support that media type.
+            // We could not find a formatter for that media type from any provider we could locate.
             res.status(NOT_ACCEPTABLE_406);
             res.send();
         } catch (NoClassDefFoundError ex) {

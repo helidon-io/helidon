@@ -15,11 +15,7 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.ToDoubleFunction;
-
-import io.helidon.common.media.type.MediaType;
 
 /**
  * No-op implementation of the {@link io.helidon.metrics.api.spi.MetricFactory} interface.
@@ -28,7 +24,7 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
 
-    private static final Clock SYSTEM_CLOCK = new Clock() {
+    private static final Clock SYSTEM_CLOCK = new Clock() {OMicro
         @Override
         public <R> R unwrap(Class<? extends R> c) {
             return c.cast(this);
