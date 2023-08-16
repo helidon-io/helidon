@@ -68,36 +68,6 @@ public interface OciConfig extends OciConfigBlueprint {
          return OciConfig.builder().buildPrototype();
     }
 
-
-//    public interface ConfiguredBuilder<BUILDER, PROTOTYPE> extends Builder<BUILDER, PROTOTYPE> {
-//        BUILDER config(Config var1);
-//
-//        default <S extends NamedService, T extends ConfiguredProvider<S>> List<S> discoverServices(Config config, HelidonServiceLoader<T> serviceLoader, Class<T> providerType, Class<S> configType, boolean allFromServiceLoader) {
-//            return ProvidedUtil.discoverServices(config, serviceLoader, providerType, configType, allFromServiceLoader);
-//        }
-//    }
-//
-//    /**
-//     * To be used with {@link io.helidon.common.config.ConfiguredProvider}, each configured service may have a name.
-//     */
-//    public interface NamedService {
-//        /**
-//         * Name of this implementation, as provided in {@link io.helidon.common.config.ConfiguredProvider#create(Config, String)}.
-//         *
-//         * @return name of this service
-//         */
-//        String name();
-//
-//        /**
-//         * Type of this implementation, to distinguish instances of same type, with different {@link #name()}.
-//         * Use for example {@link ConfiguredProvider#configKey()} to define the type.
-//         *
-//         * @return type of this service
-//         */
-//        String type();
-//    }
-
-
     /**
      * Fluent API builder base for {@link OciConfig}.
      *
@@ -1043,7 +1013,7 @@ public interface OciConfig extends OciConfigBlueprint {
         /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
-        protected static class OciConfigImpl implements OciConfig{
+        protected static class OciConfigImpl implements OciConfig {
             private final Optional<String> authStrategy;
             private final java.util.List<String> authStrategies;
             private final Optional<String> configPath;
@@ -1168,6 +1138,7 @@ public interface OciConfig extends OciConfigBlueprint {
                          + "imdsTimeout=" + imdsTimeout
                         + "}";
         }
+
         @Override
         public boolean equals(Object o) {
             if (o == this) {
@@ -1176,21 +1147,43 @@ public interface OciConfig extends OciConfigBlueprint {
             if (!(o instanceof OciConfig other)) {
                 return false;
             }
-            return Objects.equals(authStrategy, other.authStrategy()) && Objects.equals(authStrategies, other.authStrategies()) && Objects.equals(configPath, other.configPath()) && Objects.equals(configProfile, other.configProfile()) && Objects.equals(authFingerprint, other.authFingerprint()) && Objects.equals(authKeyFile, other.authKeyFile()) && Objects.equals(authPrivateKeyPath, other.authPrivateKeyPath()) && Objects.equals(authPrivateKey, other.authPrivateKey()) && Objects.equals(authPassphrase, other.authPassphrase()) && Objects.equals(authRegion, other.authRegion()) && Objects.equals(authTenantId, other.authTenantId()) && Objects.equals(authUserId, other.authUserId()) && Objects.equals(imdsHostName, other.imdsHostName()) && Objects.equals(imdsTimeout, other.imdsTimeout());
+            return Objects.equals(authStrategy, other.authStrategy())
+                    && Objects.equals(authStrategies, other.authStrategies())
+                    && Objects.equals(configPath, other.configPath())
+                    && Objects.equals(configProfile, other.configProfile())
+                    && Objects.equals(authFingerprint, other.authFingerprint())
+                    && Objects.equals(authKeyFile, other.authKeyFile())
+                    && Objects.equals(authPrivateKeyPath, other.authPrivateKeyPath())
+                    && Objects.equals(authPrivateKey, other.authPrivateKey())
+                    && Objects.equals(authPassphrase, other.authPassphrase())
+                    && Objects.equals(authRegion, other.authRegion())
+                    && Objects.equals(authTenantId, other.authTenantId())
+                    && Objects.equals(authUserId, other.authUserId())
+                    && Objects.equals(imdsHostName, other.imdsHostName())
+                    && Objects.equals(imdsTimeout, other.imdsTimeout());
         }
+
         @Override
         public int hashCode() {
-            return Objects.hash(authStrategy, authStrategies, configPath, configProfile, authFingerprint, authKeyFile, authPrivateKeyPath, authPrivateKey, authPassphrase, authRegion, authTenantId, authUserId, imdsHostName, imdsTimeout);
+            return Objects.hash(authStrategy, authStrategies, configPath, configProfile, authFingerprint, authKeyFile,
+                                authPrivateKeyPath, authPrivateKey, authPassphrase, authRegion, authTenantId, authUserId,
+                                imdsHostName, imdsTimeout);
         }
         }
     }
+
     /**
      * Fluent API builder for {@link OciConfig}.
      */
     class Builder extends BuilderBase<Builder, OciConfig> implements io.helidon.common.Builder<Builder, OciConfig> {
         private Builder() {
         }
-//        @Override
+
+        /**
+         * Builds the prototype.
+         *
+         * @return the prototype
+         */
         public OciConfig buildPrototype() {
             preBuildPrototype();
             validatePrototype();
