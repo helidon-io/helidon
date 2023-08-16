@@ -15,6 +15,6 @@
  */
 
 /**
- * Helidon Injection Runtime Integrations to support OCI SDK.
+ * Helidon Runtime Integrations to support OCI SDK.
  */
 package io.helidon.integrations.oci.sdk.runtime;
