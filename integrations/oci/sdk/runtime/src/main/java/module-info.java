@@ -14,20 +14,21 @@
  * limitations under the License.
  */
 
+import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
+
 /**
  * Helidon Injection Integrations to support OCI Runtime module.
  */
 module io.helidon.integrations.oci.sdk.runtime {
     requires static jakarta.inject;
     requires static jakarta.annotation;
+    requires static io.helidon.config.metadata;
 
     requires io.helidon.builder.api;
-    requires io.helidon.common;
-    requires io.helidon.config;
-    requires io.helidon.config.metadata;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.inject.runtime;
     requires oci.java.sdk.common;
-    requires io.helidon.common.types;
 
     exports io.helidon.integrations.oci.sdk.runtime;
 

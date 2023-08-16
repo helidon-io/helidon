@@ -165,6 +165,9 @@ class OciAuthenticationDetailsProviderTest {
                 OciExtensionTest.basicTestingConfigSource());
         resetWith(config);
 
+        assertThat(OciExtension.isSufficientlyConfigured(config),
+                   is(false));
+
         ServiceProvider<AbstractAuthenticationDetailsProvider> authServiceProvider =
                 services.lookupFirst(AbstractAuthenticationDetailsProvider.class, true).orElseThrow();
         Objects.requireNonNull(authServiceProvider);
