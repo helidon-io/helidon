@@ -42,6 +42,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+
 @ServerTest
 class AuthHttpsProxyTest {
 
@@ -54,15 +59,14 @@ class AuthHttpsProxyTest {
     private final HttpClient<?> clientHttp1;
     private final HttpClient<?> clientHttp2;
 
-    AuthHttpsProxyTest(WebServer server) {
+    AuthHttpsProxyTest(WebServer server) throws CertificateException {
         int port = server.port();
 
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         Tls clientTls = Tls.builder()
-                .trust(trust -> trust
-                        .keystore(store -> store
-                                .passphrase("password")
-                                .trustStore(true)
-                                .keystore(Resource.create("client.p12"))))
+                .trust(trust -> trust.addCert(cert))
                 .build();
 
         this.clientHttp1 = Http1Client.builder()

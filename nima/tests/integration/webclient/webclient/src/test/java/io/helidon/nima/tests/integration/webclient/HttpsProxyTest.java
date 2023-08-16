@@ -16,9 +16,13 @@
 
 package io.helidon.nima.tests.integration.webclient;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.http.Http;
@@ -55,14 +59,13 @@ class HttpsProxyTest {
     private final HttpClient<?> clientHttp1;
     private final HttpClient<?> clientHttp2;
 
-    HttpsProxyTest(WebServer server) {
+    HttpsProxyTest(WebServer server) throws CertificateException {
         int port = server.port();
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         Tls clientTls = Tls.builder()
-                .trust(trust -> trust
-                        .keystore(store -> store
-                                .passphrase("password")
-                                .trustStore(true)
-                                .keystore(Resource.create("client.p12"))))
+                .trust(trust -> trust.addCert(cert))
                 .build();
 
         this.clientHttp1 = Http1Client.builder()
@@ -72,6 +75,7 @@ class HttpsProxyTest {
                 .build();
         this.clientHttp2 = Http2Client.builder()
                 .baseUri("https://localhost:" + port)
+                .shareConnectionCache(false)
                 .tls(clientTls)
                 .proxy(Proxy.noProxy())
                 .build();

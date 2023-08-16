@@ -36,6 +36,10 @@ import io.helidon.nima.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -51,19 +55,19 @@ class Http2ClientTest {
     private final Supplier<Http2Client> tlsClient;
     private final Supplier<Http2Client> plainClient;
 
-    Http2ClientTest(WebServer server, Http1Client http1Client) {
+    Http2ClientTest(WebServer server, Http1Client http1Client) throws CertificateException {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         int plainPort = server.port();
         int tlsPort = server.port("https");
         this.http1Client = http1Client;
         Tls clientTls = Tls.builder()
-                .trust(trust -> trust
-                        .keystore(store -> store
-                                .passphrase("password")
-                                .trustStore(true)
-                                .keystore(Resource.create("client.p12"))))
+                .trust(trust -> trust.addCert(cert))
                 .build();
         this.tlsClient = () -> Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
+                .shareConnectionCache(false)
                 .tls(clientTls)
                 .build();
         this.plainClient = () -> Http2Client.builder()

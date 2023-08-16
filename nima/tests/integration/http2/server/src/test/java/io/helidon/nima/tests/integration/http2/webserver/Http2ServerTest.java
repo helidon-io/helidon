@@ -16,11 +16,15 @@
 
 package io.helidon.nima.tests.integration.http2.webserver;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -59,16 +63,15 @@ class Http2ServerTest {
     private final Http1Client http1Client;
     private final Tls clientTls;
 
-    Http2ServerTest(WebServer server, Http1Client http1Client) {
+    Http2ServerTest(WebServer server, Http1Client http1Client) throws CertificateException {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         this.plainPort = server.port();
         this.tlsPort = server.port("https");
         this.http1Client = http1Client;
         this.clientTls = Tls.builder()
-                .trust(trust -> trust
-                        .keystore(store -> store
-                                .passphrase("password")
-                                .trustStore(true)
-                                .keystore(Resource.create("client.p12"))))
+                .trust(trust -> trust.addCert(cert))
                 .build();
     }
 

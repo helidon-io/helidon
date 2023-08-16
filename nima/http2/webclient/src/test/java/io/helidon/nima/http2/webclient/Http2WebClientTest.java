@@ -15,9 +15,13 @@
  */
 package io.helidon.nima.http2.webclient;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -39,15 +43,11 @@ import io.helidon.nima.http2.webserver.Http2ConnectionSelector;
 import io.helidon.nima.http2.webserver.Http2Route;
 import io.helidon.nima.testing.junit5.webserver.ServerTest;
 import io.helidon.nima.testing.junit5.webserver.SetUpServer;
-import io.helidon.nima.webclient.api.WebClient;
 import io.helidon.nima.webserver.WebServer;
 import io.helidon.nima.webserver.WebServerConfig;
 import io.helidon.nima.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -89,16 +89,25 @@ class Http2WebClientTest {
             .shareConnectionCache(false)
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
             .build();
-    private static final LazyValue<Http2Client> tlsClient = LazyValue.create(() -> Http2Client.builder()
-            .baseUri("https://localhost:" + tlsPort + "/versionspecific")
-            .tls(Tls.builder()
-                    .trust(trust -> trust
-                            .keystore(store -> store
-                                    .passphrase("password")
-                                    .trustStore(true)
-                                    .keystore(Resource.create("client.p12"))))
-                    .build())
-            .build());
+    private static final LazyValue<Http2Client> tlsClient;
+
+    static {
+        try {
+            CertificateFactory cf = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                    new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
+            tlsClient = LazyValue.create(() -> Http2Client.builder()
+                    .baseUri("https://localhost:" + tlsPort + "/versionspecific")
+                    .shareConnectionCache(false)
+                    .tls(Tls.builder()
+                            .trust(trust -> trust.addCert(cert))
+                            .build())
+                    .build());
+        } catch (CertificateException e) {
+            throw new IllegalStateException("Cannot load client certificate", e);
+        }
+        
+    }
 
     Http2WebClientTest(WebServer server) {
         plainPort = server.port();

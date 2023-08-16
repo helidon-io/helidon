@@ -16,11 +16,15 @@
 
 package io.helidon.nima.tests.integration.http2.webserver;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 
 import io.helidon.common.configurable.Resource;
@@ -38,13 +42,12 @@ class Http2WebServerStopIdleTest {
 
     private final Tls clientTls;
 
-    Http2WebServerStopIdleTest() {;
+    Http2WebServerStopIdleTest() throws CertificateException {;
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         this.clientTls = Tls.builder()
-                .trust(trust -> trust
-                        .keystore(store -> store
-                                .passphrase("password")
-                                .trustStore(true)
-                                .keystore(Resource.create("client.p12"))))
+                .trust(trust -> trust.addCert(cert))
                 .build();
     }
 

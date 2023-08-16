@@ -82,7 +82,7 @@ class UpgradeCodecsCompositionTest {
                 .sslContext(insecureContext())
                 .trust(trust -> trust
                         .keystore(store -> store
-                                .passphrase("helidon")
+                                .passphrase("password")
                                 .keystore(Resource.create("server.p12"))))
                 .build();
 
