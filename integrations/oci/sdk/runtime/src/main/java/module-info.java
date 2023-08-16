@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
-
 /**
  * Helidon Injection Integrations to support OCI Runtime module.
  */
