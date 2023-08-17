@@ -87,6 +87,14 @@ class CookieTest {
         }
     }
 
+    @Test
+    @Order(3)
+    void testCookieGetAfterPut() {
+        try (Http1ClientResponse response = client.get("/cookie").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+        }
+    }
+
     private static void getHandler(ServerRequest req, ServerResponse res) {
         if (req.headers().contains(Http.HeaderNames.COOKIE)) {
             Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
@@ -111,6 +119,10 @@ class CookieTest {
                     && cookies.allValues().contains("flavor2=vanilla")
                     && cookies.allValues().contains("flavor3=strawberry")
                     && cookies.allValues().contains("flavor4=raspberry")) {
+                // clear flavor1 and flavor2
+                res.header(Http.HeaderNames.SET_COOKIE,
+                        "flavor1=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0",
+                        "flavor2=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0");
                 res.status(Http.Status.OK_200).send();
             } else {
                 res.status(Http.Status.BAD_REQUEST_400).send();

@@ -22,7 +22,6 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.oidc.TestResource.EXPECTED_POST_LOGOUT_TEST_MESSAGE;
@@ -31,7 +30,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled("https://github.com/helidon-io/helidon/issues/7094")
 class CookieBasedLoginIT extends CommonLoginBase {
 
     @Test
