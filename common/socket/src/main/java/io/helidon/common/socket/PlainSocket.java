@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 package io.helidon.common.socket;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
@@ -38,7 +37,7 @@ public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
     private final Socket delegate;
     private final String childSocketId;
     private final String socketId;
-    private final InputStream inputStream;
+    private final IdleInputStream inputStream;
     private final OutputStream outputStream;
 
     /**
@@ -53,7 +52,7 @@ public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
         this.childSocketId = childSocketId;
         this.socketId = socketId;
         try {
-            this.inputStream = delegate.getInputStream();
+            this.inputStream = new IdleInputStream(delegate.getInputStream(), childSocketId, socketId);
             this.outputStream = delegate.getOutputStream();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -115,6 +114,16 @@ public sealed class PlainSocket implements HelidonSocket permits TlsSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    @Override
+    public void idle() {
+        inputStream.idle();
+    }
+
+    @Override
+    public boolean isConnected() {
+        return !inputStream.isClosed();
     }
 
     @Override

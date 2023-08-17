@@ -154,6 +154,7 @@ class Http1ConnectionCache {
         if (conn.isConnected()) {
             try {
                 if (connectionQueue.offer(conn, QUEUE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                    conn.helidonSocket().idle(); // mark it as idle to stay blocked at read for closed conn detection
                     if (LOGGER.isLoggable(DEBUG)) {
                         LOGGER.log(DEBUG, "[%s] client connection returned %s",
                                    conn.channelId(),

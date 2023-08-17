@@ -76,6 +76,16 @@ public class DirectSocket implements HelidonSocket {
     }
 
     @Override
+    public void idle() {
+
+    }
+
+    @Override
+    public boolean isConnected() {
+        return true;
+    }
+
+    @Override
     public int read(BufferData buffer) {
         return 0;
     }

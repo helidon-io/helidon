@@ -232,7 +232,7 @@ public class TcpClientConnection implements ClientConnection {
     }
 
     public boolean isConnected() {
-        return socket != null && socket.isConnected();
+        return socket != null && socket.isConnected() && helidonSocket().isConnected();
     }
 
     Socket socket() {
