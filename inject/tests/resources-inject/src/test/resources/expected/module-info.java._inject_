@@ -24,7 +24,7 @@ module io.helidon.inject.tests.inject {
     requires io.helidon.common.types;
     requires io.helidon.common;
     requires io.helidon.inject.api;
-    requires transitive io.helidon.inject.runtime;
+    requires io.helidon.inject.runtime;
     requires io.helidon.inject.tests.plain;
     requires io.helidon.config;
 
