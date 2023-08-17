@@ -202,23 +202,41 @@ public final class OciExtension {
      *
      * @return the supplier for the raw config-backed by the OCI config source(s)
      * @see #ociAuthenticationProvider()
+     * @see #configSupplier(Supplier)
      */
     public static Supplier<io.helidon.common.config.Config> configSupplier() {
         if (ociConfigSupplier == null) {
-            ociConfigSupplier = () -> {
+            configSupplier(() -> {
                 // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
                 // (not advertised in the javadoc)
                 String ociConfigFile = ociConfigFilename();
                 return Config.create(
                         ConfigSources.classpath(ociConfigFile).optional(),
                         ConfigSources.file(ociConfigFile).optional());
-            };
+            });
         }
 
         return ociConfigSupplier;
     }
 
-    static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
+    /**
+     * Establishes the supplier for the raw config-backed by the OCI config source(s).
+     *
+     * @param configSupplier the config supplier
+     * @see #configSupplier()
+     */
+    public static void configSupplier(Supplier<io.helidon.common.config.Config> configSupplier) {
+        ociConfigSupplier = configSupplier;
+    }
+
+    /**
+     * Returns {@code true} if the given config is sufficiently configured in order to identity an OCI authentication strategy.
+     * If {@code false} then {@link OciAuthenticationDetailsProvider.AuthStrategy#AUTO} will be applied.
+     *
+     * @param config the config
+     * @return true if the given config can be used to identify an OCI authentication strategy
+     */
+    public static boolean isSufficientlyConfigured(io.helidon.common.config.Config config) {
         return (config != null
                         && (config.get(KEY_AUTH_STRATEGY).exists()
                                     || config.get(KEY_AUTH_STRATEGIES).exists()));
