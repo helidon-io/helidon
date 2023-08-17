@@ -107,10 +107,6 @@
                     <includes>
                         <include>**/*Test*.java</include>
                     </includes>
-                    <excludes>
-                        <exclude>TckParticipantTests</exclude>
-                        <exclude>TckUnknownStatusTests</exclude>
-                    </excludes>
                 </configuration>
                 <dependencies>
                     <dependency>
