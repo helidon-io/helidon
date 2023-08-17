@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.encoding.ContentDecoder;
@@ -30,6 +31,8 @@ import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.ServerRequestEntity;
 
 final class Http1ServerRequestWithEntity extends Http1ServerRequest {
+    private static final System.Logger LOGGER = System.getLogger(Http1ServerRequestWithEntity.class.getName());
+
     private final LazyValue<ReadableEntity> entity;
     private final ConnectionContext ctx;
     private final Http1Connection connection;
@@ -85,7 +88,12 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
 
     private void trySend100(boolean drain) {
         if (!continueImmediately && expectContinue && !drain) {
-            ctx.dataWriter().writeNow(BufferData.create(Http1Connection.CONTINUE_100));
+            BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);
+            if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Http.Status.CONTINUE_100);
+                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send %n%s", buffer.debugDataHex());
+            }
+            ctx.dataWriter().writeNow(buffer);
             this.continueSent = true;
         }
     }

@@ -18,6 +18,7 @@ package io.helidon.webserver.http1;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Headers;
+import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.ConnectionContext;
 
@@ -69,5 +70,12 @@ public class Http1LoggingConnectionListener implements Http1ConnectionListener {
         ctx.log(logger, DEBUG, "%s headers: %n%s",
                 prefix,
                 headers);
+    }
+
+    @Override
+    public void status(ConnectionContext ctx, Http.Status status) {
+        ctx.log(logger, DEBUG, "%s status: %s",
+                prefix,
+                status);
     }
 }

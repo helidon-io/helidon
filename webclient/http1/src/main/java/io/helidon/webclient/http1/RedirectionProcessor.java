@@ -28,19 +28,18 @@ class RedirectionProcessor {
     }
 
     static boolean redirectionStatusCode(Http.Status status) {
-        int code = status.code();
-        return code >= 300 && code < 400;
+        return status.family() == Http.Status.Family.REDIRECTION;
     }
 
-    static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, Object entity) {
+    static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, byte[] entity) {
         return invokeWithFollowRedirects(request, 0, entity);
     }
 
-    static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, int initial, Object entity) {
+    static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, int initial, byte[] entity) {
         //Request object which should be used for invoking the next request. This will change in case of any redirection.
         Http1ClientRequestImpl clientRequest = request;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
-        Object entityToBeSent = entity;
+        byte[] entityToBeSent = entity;
         for (int i = initial; i < request.maxRedirects(); i++) {
             Http1ClientResponseImpl clientResponse = clientRequest.invokeRequestWithEntity(entityToBeSent);
             if (!redirectionStatusCode(clientResponse.status())) {

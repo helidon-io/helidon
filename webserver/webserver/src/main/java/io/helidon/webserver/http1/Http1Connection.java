@@ -444,6 +444,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             buffer.write(message);
         }
 
+        sendListener.status(ctx, response.status());
         sendListener.headers(ctx, headers);
         sendListener.data(ctx, buffer);
         writer.write(buffer);

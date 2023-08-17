@@ -92,6 +92,38 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         bufferData.write(Bytes.LF_BYTE);
     }
 
+    static WebClientServiceResponse createServiceResponse(HttpClientConfig clientConfig,
+                                                          WebClientServiceRequest serviceRequest,
+                                                          ClientConnection connection,
+                                                          DataReader reader,
+                                                          Http.Status responseStatus,
+                                                          ClientResponseHeaders responseHeaders,
+                                                          CompletableFuture<WebClientServiceResponse> whenComplete) {
+        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
+        AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
+
+        if (mayHaveEntity(responseStatus, responseHeaders)) {
+            // this may be an entity (if content length is set to zero, we know there is no entity)
+            builder.inputStream(inputStream(clientConfig,
+                                            connection.helidonSocket(),
+                                            response,
+                                            responseHeaders,
+                                            reader,
+                                            whenComplete));
+        }
+
+        WebClientServiceResponse serviceResponse = builder
+                .connection(connection)
+                .headers(responseHeaders)
+                .status(responseStatus)
+                .whenComplete(whenComplete)
+                .serviceRequest(serviceRequest)
+                .build();
+
+        response.set(serviceResponse);
+        return serviceResponse;
+    }
+
     @Override
     public WebClientServiceResponse proceed(WebClientServiceRequest serviceRequest) {
         // either use the explicit connection, or obtain one (keep alive or one-off)
@@ -181,38 +213,21 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         ClientResponseHeaders responseHeaders = readHeaders(reader);
         connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
 
-        return createServiceResponse(serviceRequest, connection, reader, responseStatus, responseHeaders);
+        return createServiceResponse(clientConfig,
+                                     serviceRequest,
+                                     connection,
+                                     reader,
+                                     responseStatus,
+                                     responseHeaders,
+                                     whenComplete);
     }
 
-    WebClientServiceResponse createServiceResponse(WebClientServiceRequest serviceRequest,
-                                                   ClientConnection connection,
-                                                   DataReader reader,
-                                                   Http.Status responseStatus,
-                                                   ClientResponseHeaders responseHeaders) {
-        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
-        AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
-
-        if (mayHaveEntity(responseStatus, responseHeaders)) {
-            // this may be an entity (if content length is set to zero, we know there is no entity)
-            builder.inputStream(inputStream(connection.helidonSocket(), response, responseHeaders, reader));
-        }
-
-        WebClientServiceResponse serviceResponse = builder
-                .connection(connection)
-                .headers(responseHeaders)
-                .status(responseStatus)
-                .whenComplete(whenComplete)
-                .serviceRequest(serviceRequest)
-                .build();
-
-        response.set(serviceResponse);
-        return serviceResponse;
-    }
-
-    private InputStream inputStream(HelidonSocket helidonSocket,
-                                    AtomicReference<WebClientServiceResponse> response,
-                                    ClientResponseHeaders responseHeaders,
-                                    DataReader reader) {
+    private static InputStream inputStream(HttpClientConfig clientConfig,
+                                           HelidonSocket helidonSocket,
+                                           AtomicReference<WebClientServiceResponse> response,
+                                           ClientResponseHeaders responseHeaders,
+                                           DataReader reader,
+                                           CompletableFuture<WebClientServiceResponse> whenComplete) {
         ContentEncodingContext encodingSupport = clientConfig.contentEncoding();
 
         ContentDecoder decoder;
@@ -240,7 +255,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
     }
 
-    private boolean mayHaveEntity(Http.Status responseStatus, ClientResponseHeaders responseHeaders) {
+    private static boolean mayHaveEntity(Http.Status responseStatus, ClientResponseHeaders responseHeaders) {
         if (responseHeaders.contains(Http.Headers.CONTENT_LENGTH_ZERO)) {
             return false;
         }

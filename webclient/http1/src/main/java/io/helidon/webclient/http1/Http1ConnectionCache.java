@@ -17,9 +17,9 @@
 package io.helidon.webclient.http1;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
@@ -46,7 +46,7 @@ class Http1ConnectionCache {
     private static final Http1ConnectionCache SHARED = create();
     private static final List<String> ALPN_ID = List.of(Http1Client.PROTOCOL_ID);
     private static final Duration QUEUE_TIMEOUT = Duration.ofMillis(10);
-    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new HashMap<>();
+    private final Map<ConnectionKey, LinkedBlockingDeque<TcpClientConnection>> cache = new ConcurrentHashMap<>();
 
     static Http1ConnectionCache shared() {
         return SHARED;
