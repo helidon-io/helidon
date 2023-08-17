@@ -908,6 +908,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci.sdk</groupId>
+                <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.oci.metrics</groupId>
                 <artifactId>helidon-integrations-oci-metrics</artifactId>
                 <version>${helidon.version}</version>
