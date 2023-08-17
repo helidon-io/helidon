@@ -266,12 +266,18 @@ class Http2ClientConnection {
             return;
         }
         if (streamId < lastStreamId) {
-            for (var s : streams.values()) {
-                if (s.streamId() > streamId && s.streamState() != Http2StreamState.IDLE) {
-                    // RC against parallel newer streams, data already buffered at client being read
-                    // There is no need to do request for more data as stream is no more usable
-                    return;
+            Lock lock = streamsLock.readLock();
+            lock.lock();
+            try {
+                for (var s : streams.values()) {
+                    if (s.streamId() > streamId && s.streamState() != Http2StreamState.IDLE) {
+                        // RC against parallel newer streams, data already buffered at client being read
+                        // There is no need to do request for more data as stream is no more usable
+                        return;
+                    }
                 }
+            } finally {
+                lock.unlock();
             }
         }
         Http2ClientStream stream = stream(streamId);
