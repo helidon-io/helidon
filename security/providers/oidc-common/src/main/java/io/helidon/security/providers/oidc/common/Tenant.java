@@ -17,11 +17,8 @@
 package io.helidon.security.providers.oidc.common;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import io.helidon.common.Errors;
-import io.helidon.http.Http;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -30,6 +27,7 @@ import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.security.providers.httpauth.HttpBasicOutboundConfig;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
+import io.helidon.webclient.security.WebClientSecurity;
 
 import jakarta.json.JsonObject;
 
@@ -121,12 +119,7 @@ public final class Tenant {
                     .addOutboundSecurityProvider(httpBasicAuth)
                     .build();
 
-            //TODO client security?
-//            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
-            //This is workaround for missing client security. This adds Authorization header to be used in every request.
-            byte[] byteArray = (tenantConfig.clientId() + ":" + tenantConfig.clientSecret()).getBytes(StandardCharsets.UTF_8);
-            String base64 = Base64.getEncoder().encodeToString(byteArray);
-            webClientBuilder.addHeader(Http.HeaderNames.AUTHORIZATION, "Basic " + base64);
+            webClientBuilder.addService(WebClientSecurity.create(tokenOutboundSecurity));
         }
 
         WebClient appWebClient = webClientBuilder.build();
