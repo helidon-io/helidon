@@ -102,7 +102,7 @@ public final class AnnotationFactory {
         Map<String, Object> result = new LinkedHashMap<>();
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
-            Object value = val.accept(new AnnotationValueVisitor(elements), null);
+            Object value = val.accept(new ToAnnotationValueVisitor(elements), null);
             if (value != null) {
                 result.put(name, value);
             }

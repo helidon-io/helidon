@@ -25,7 +25,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
-class AnnotationValueVisitor implements javax.lang.model.element.AnnotationValueVisitor<Object, Object> {
+class ToAnnotationValueVisitor implements javax.lang.model.element.AnnotationValueVisitor<Object, Object> {
     private final Elements elements;
     private boolean mapVoidToNull;
     private boolean mapFalseToNull;
@@ -33,31 +33,31 @@ class AnnotationValueVisitor implements javax.lang.model.element.AnnotationValue
     private boolean mapBlankArrayToNull;
     private boolean mapToSourceDeclaration;
 
-    AnnotationValueVisitor(Elements elements) {
+    ToAnnotationValueVisitor(Elements elements) {
         this.elements = elements;
     }
 
-    AnnotationValueVisitor mapVoidToNull(boolean val) {
+    ToAnnotationValueVisitor mapVoidToNull(boolean val) {
         this.mapVoidToNull = val;
         return this;
     }
 
-    AnnotationValueVisitor mapBooleanToNull(boolean val) {
+    ToAnnotationValueVisitor mapBooleanToNull(boolean val) {
         this.mapFalseToNull = val;
         return this;
     }
 
-    AnnotationValueVisitor mapEmptyStringToNull(boolean val) {
+    ToAnnotationValueVisitor mapEmptyStringToNull(boolean val) {
         this.mapEmptyStringToNull = val;
         return this;
     }
 
-    AnnotationValueVisitor mapBlankArrayToNull(boolean val) {
+    ToAnnotationValueVisitor mapBlankArrayToNull(boolean val) {
         this.mapBlankArrayToNull = val;
         return this;
     }
 
-    AnnotationValueVisitor mapToSourceDeclaration(boolean val) {
+    ToAnnotationValueVisitor mapToSourceDeclaration(boolean val) {
         this.mapToSourceDeclaration = val;
         return this;
     }

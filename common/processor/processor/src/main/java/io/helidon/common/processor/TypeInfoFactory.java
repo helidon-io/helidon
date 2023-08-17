@@ -126,7 +126,7 @@ public final class TypeInfoFactory {
                     .collect(Collectors.toList());
             AnnotationValue annotationValue = ee.getDefaultValue();
             defaultValue = (annotationValue == null) ? null
-                    : String.valueOf(annotationValue.accept(new AnnotationValueVisitor(elements)
+                    : String.valueOf(annotationValue.accept(new ToAnnotationValueVisitor(elements)
                                                      .mapBooleanToNull(true)
                                                      .mapVoidToNull(true)
                                                      .mapBlankArrayToNull(true)
