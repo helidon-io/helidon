@@ -34,7 +34,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.Weighted;
+import io.helidon.common.Weight;
 import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
@@ -100,7 +100,8 @@ import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
  *
  * @see ConfigSourceProvider
  */
-public final class OciSecretsConfigSourceProvider implements ConfigSourceProvider, Weighted {
+@Weight(300D) // a higher weight than default
+public final class OciSecretsConfigSourceProvider implements ConfigSourceProvider {
 
 
     /*
@@ -109,8 +110,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
 
     private static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
-
-    private static final double WEIGHT = 300D;
 
 
     /*
@@ -196,19 +195,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
     @Override // ConfigSourceProvider
     public boolean supports(String type) {
         return this.supported().contains(type);
-    }
-
-    /**
-     * Returns a (determinate) weight ({@value #WEIGHT}) for this {@link OciSecretsConfigSourceProvider} when invoked.
-     *
-     * @return a determinate weight ({@value #WEIGHT}) when invoked
-     *
-     * @deprecated For use by the Helidon service loading subsystem only.
-     */
-    @Deprecated // For use by the Helidon service loading subsystem only.
-    @Override // Weighted
-    public double weight() {
-        return WEIGHT;
     }
 
 
@@ -311,8 +297,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
             Base64.Decoder decoder = Base64.getDecoder();
             Secrets secrets = secretsSupplier.get();
-            Instant mostDistantExpirationInstant =
-                SecretBundleConfigSource.this.mostDistantExpirationInstant; // volatile read
+            Instant mostDistantExpirationInstant = this.mostDistantExpirationInstant; // volatile read
             for (SecretSummary ss : secretSummaries) {
                 tasks.add(() -> {
                         valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
@@ -324,7 +309,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     mostDistantExpirationInstant = i;
                 }
             }
-            SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
+            this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
             completeAllSecretsTasks(tasks, secrets);
             ObjectNode.Builder onb = ObjectNode.builder();
             for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
