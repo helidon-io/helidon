@@ -20,7 +20,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -56,7 +55,6 @@ import com.oracle.bmc.vault.Vaults;
 import com.oracle.bmc.vault.VaultsClient;
 import com.oracle.bmc.vault.model.SecretSummary;
 import com.oracle.bmc.vault.requests.ListSecretsRequest;
-import com.oracle.bmc.vault.responses.ListSecretsResponse;
 
 import static io.helidon.integrations.oci.sdk.runtime.OciExtension.ociAuthenticationProvider;
 import static java.lang.System.Logger.Level.WARNING;
@@ -217,10 +215,10 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
     private static final class SecretBundleConfigSource extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
 
-        private static final String COMPARTMENT_OCID_PROPERTY_NAME = "compartment-ocid";
-
         private static final Optional<NodeContent> ABSENT_NODE_CONTENT =
             Optional.of(NodeContent.builder().node(ObjectNode.empty()).build());
+
+        private static final String COMPARTMENT_OCID_PROPERTY_NAME = "compartment-ocid";
 
         private static final Logger LOGGER = System.getLogger(SecretBundleConfigSource.class.getName());
 
@@ -247,27 +245,16 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     .vaultId(vaultOcid)
                     .build();
                 this.loader = () -> {
-                    ListSecretsResponse listSecretsResponse;
-                    try (Vaults v = vaultsSupplier.get()) {
-                        listSecretsResponse = v.listSecrets(listSecretsRequest);
-                    } catch (RuntimeException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        }
-                        throw new IllegalStateException(e.getMessage(), e);
-                    }
-                    Collection<SecretSummary> secretSummaries = listSecretsResponse.getItems();
+                    Collection<? extends SecretSummary> secretSummaries = secretSummaries(vaultsSupplier, listSecretsRequest);
                     if (secretSummaries == null || secretSummaries.isEmpty()) {
                         return ABSENT_NODE_CONTENT;
                     }
                     Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
                     Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
-                    Instant mostDistantExpirationInstant =
-                        SecretBundleConfigSource.this.mostDistantExpirationInstant; // volatile read
                     Base64.Decoder decoder = Base64.getDecoder();
                     Secrets secrets = secretsSupplier.get();
+                    Instant mostDistantExpirationInstant =
+                        SecretBundleConfigSource.this.mostDistantExpirationInstant; // volatile read
                     for (SecretSummary ss : secretSummaries) {
                         tasks.add(() -> {
                                 valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
@@ -323,9 +310,27 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private static void completeAllSecretsTasks(Collection<? extends Callable<Void>> tasks, AutoCloseable secrets) {
             RuntimeException re = null;
-            List<Future<Void>> futures = null;
             try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
-                futures = es.invokeAll(tasks);
+                for (Future<?> future : es.invokeAll(tasks)) {
+                    try {
+                        future.get();
+                    } catch (RuntimeException e) {
+                        if (re == null) {
+                            re = e;
+                        } else {
+                            re.addSuppressed(e);
+                        }
+                    } catch (Exception e) {
+                        if (e instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                        if (re == null) {
+                            re = new IllegalStateException(e.getMessage(), e);
+                        } else {
+                            re.addSuppressed(e);
+                        }
+                    }
+                }
             } catch (RuntimeException e) {
                 re = e;
             } catch (Exception e) {
@@ -356,29 +361,20 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     throw re;
                 }
             }
-            assert futures != null;
-            for (Future<?> future : futures) {
-                try {
-                    future.get();
-                } catch (RuntimeException e) {
-                    if (re == null) {
-                        re = e;
-                    } else {
-                        re.addSuppressed(e);
-                    }
-                } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
-                    if (re == null) {
-                        re = new IllegalStateException(e.getMessage(), e);
-                    } else {
-                        re.addSuppressed(e);
-                    }
+        }
+
+        @SuppressWarnings("try")
+        private static Collection<? extends SecretSummary> secretSummaries(Supplier<? extends Vaults> vaultsSupplier,
+                                                                           ListSecretsRequest listSecretsRequest) {
+            try (Vaults v = vaultsSupplier.get()) {
+                return v.listSecrets(listSecretsRequest).getItems();
+            } catch (RuntimeException e) {
+                throw e;
+            } catch (Exception e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
                 }
-            }
-            if (re != null) {
-                throw re;
+                throw new IllegalStateException(e.getMessage(), e);
             }
         }
 
