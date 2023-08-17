@@ -262,6 +262,21 @@ interface ListenerConfigBlueprint {
     Duration idleConnectionPeriod();
 
     /**
+     * If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize
+     * performance when writing it.
+     * If bigger, streaming will be used.
+     * <p>
+     * Note that for some entity types we cannot use streaming, as they are already fully in memory (String, byte[]), for such
+     * cases, this option is ignored.
+     * <p>
+     * Default is 128Kb.
+     *
+     * @return maximal number of bytes to buffer in memory for supported writers
+     */
+    @ConfiguredOption("131072")
+    int maxInMemoryEntity();
+
+    /**
      * Server listener socket options.
      * Unless configured through builder, {@code SO_REUSEADDR} is set to {@code true},
      * and {@code SO_RCVBUF} is set to {@code 4096}.

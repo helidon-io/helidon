@@ -51,6 +51,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private final MediaContext mediaContext;
     private final ServerRequestHeaders requestHeaders;
     private final List<Runnable> whenSent = new ArrayList<>(5);
+    private final int maxInMemory;
 
     private Http.Status status;
     private boolean nexted;
@@ -68,6 +69,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.mediaContext = ctx.listenerContext().mediaContext();
         this.requestHeaders = request.headers();
+        this.maxInMemory = ctx.listenerContext().config().maxInMemoryEntity();
     }
 
     @Override
@@ -247,7 +249,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
                 return;
             }
             long contentLength = instanceWriter.contentLength().orElse(configuredContentLength);
-            if (contentLength != -1 && contentLength < 131023) {
+            if (contentLength != -1 && contentLength < maxInMemory) {
                 send(instanceWriter.instanceBytes());
                 return;
             }
@@ -256,7 +258,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         }
 
 
-        if (configuredContentLength == -1 || configuredContentLength > 131023) {
+        if (configuredContentLength == -1 || configuredContentLength > maxInMemory) {
             OutputStream outputStream = outputStream();
             writer.write(type, entity, outputStream, requestHeaders, this.headers());
             return;
