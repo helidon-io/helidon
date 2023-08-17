@@ -27,8 +27,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -36,7 +38,6 @@ import io.helidon.common.Weighted;
 import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
@@ -50,6 +51,7 @@ import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.SecretsClient;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
+import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import com.oracle.bmc.vault.Vaults;
 import com.oracle.bmc.vault.VaultsClient;
@@ -78,12 +80,15 @@ import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
  * <ol>
  *
  * <li>Ensure you have an authentication mechanism set up to connect to OCI (e.g. a valid <a
- * href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration file</a>)</li>
+ * href="https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdkconfig.htm">OCI configuration
+ * file</a>). Authentication with OCI is accomplished via the {@link
+ * io.helidon.integrations.oci.sdk.runtime.OciExtension} class; please see its documentation for how and when to set up
+ * an {@code oci.yaml} classpath resource to further refine the mechanism of authentication.</li>
  *
  * <li>Ensure there is a classpath resource present named {@code meta-config.yaml}.</li>
  *
- * <li>Ensure the {@code meta-config.yaml} classpath resource contains a {@code source} with a {@code type} of {@code
- * oci-secrets} that looks similar to the following, substituting values as appropriate:<blockquote><pre>sources:
+ * <li>Ensure the {@code meta-config.yaml} classpath resource contains a {@code sources} element with a {@code type} of
+ * {@code oci-secrets} that looks similar to the following, substituting values as appropriate:<blockquote><pre>sources:
  *  - type: 'oci-secrets'
  *    properties:
  *      compartment-ocid: 'your vault compartment OCID goes here'
@@ -102,8 +107,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      * Static fields.
      */
 
-
-    private static final Logger LOGGER = System.getLogger(OciSecretsConfigSourceProvider.class.getName());
 
     private static final Set<String> SUPPORTED_TYPES = Set.of("oci-secrets");
 
@@ -136,8 +139,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      * Infrastructure (OCI) <a
      * href="https://docs.oracle.com/en-us/iaas/Content/KeyManagement/Concepts/keyoverview.htm">Vault</a>.
      *
-     * @param type one of the {@linkplain #supported() supported types}, or an {@linkplain ConfigSources#empty() empty
-     * <code>ConfigSource</code>} will be returned
+     * @param type one of the {@linkplain #supported() supported types}; not actually used
      *
      * @param metaConfig a {@link Config} serving as meta-configuration for this provider; must not be {@code null} when
      * {@code type} is {@linkplain #supports(String) supported}
@@ -154,7 +156,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
     @Deprecated // For use by the Helidon Config subsystem only.
     @Override // ConfigSourceProvider
     public ConfigSource create(String type, Config metaConfig) {
-        return this.supports(type) ? SecretBundleConfigSource.builder().config(metaConfig).build() : ConfigSources.empty();
+        return SecretBundleConfigSource.builder().config(metaConfig).build();
     }
 
     /**
@@ -176,13 +178,13 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
     }
 
     /**
-     * Returns {@code true} if and only if the supplied {@code type} is non-{@code null} and the {@link Set} returned by
-     * an invocation of the {@link #supported()} method {@linkplain Set#contains(Object) contains} it.
+     * Returns {@code true} if and only if the {@link Set} returned by an invocation of the {@link #supported()} method
+     * {@linkplain Set#contains(Object) contains} it.
      *
-     * @param type the type to test; may be {@code null} in which case {@code false} will be returned
+     * @param type the type to test
      *
-     * @return {@code true} if and only if the supplied {@code type} is non-{@code null} and the {@link Set} returned by
-     * an invocation of the {@link #supported()} method {@linkplain Set#contains(Object) contains} it
+     * @return {@code true} if and only if the {@link Set} returned by an invocation of the {@link #supported()} method
+     * {@linkplain Set#contains(Object) contains} it
      *
      * @see #supported()
      *
@@ -193,7 +195,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
     @Deprecated // For use by the Helidon Config subsystem only.
     @Override // ConfigSourceProvider
     public boolean supports(String type) {
-        return type != null && this.supported().contains(type);
+        return this.supported().contains(type);
     }
 
     /**
@@ -215,7 +217,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      */
 
 
-    private static final class SecretBundleConfigSource extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
+    private static final class SecretBundleConfigSource
+        extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
 
 
         /*
@@ -264,38 +267,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     .compartmentId(compartmentOcid)
                     .vaultId(vaultOcid)
                     .build();
-                this.loader = () -> {
-                    Collection<? extends SecretSummary> secretSummaries = secretSummaries(vaultsSupplier, listSecretsRequest);
-                    if (secretSummaries == null || secretSummaries.isEmpty()) {
-                        return this.absentNodeContent();
-                    }
-                    Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
-                    Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
-                    Base64.Decoder decoder = Base64.getDecoder();
-                    Secrets secrets = secretsSupplier.get();
-                    Instant mostDistantExpirationInstant =
-                        SecretBundleConfigSource.this.mostDistantExpirationInstant; // volatile read
-                    for (SecretSummary ss : secretSummaries) {
-                        tasks.add(() -> {
-                                valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
-                                return null;
-                            });
-                        java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
-                        Instant i = d == null ? null : d.toInstant();
-                        if (i != null && (mostDistantExpirationInstant == null || mostDistantExpirationInstant.isBefore(i))) {
-                            mostDistantExpirationInstant = i;
-                        }
-                    }
-                    SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
-                    completeAllSecretsTasks(tasks, secrets);
-                    ObjectNode.Builder onb = ObjectNode.builder();
-                    for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
-                        onb.addValue(e.getKey(), e.getValue());
-                    }
-                    return Optional.of(NodeContent.builder()
-                                       .node(onb.build())
-                                       .build());
-                };
+                this.loader = () -> this.load(vaultsSupplier, secretsSupplier, listSecretsRequest);
             }
         }
 
@@ -329,6 +301,41 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             return ABSENT_NODE_CONTENT;
         }
 
+        private Optional<NodeContent> load(Supplier<? extends Vaults> vaultsSupplier,
+                                           Supplier<? extends Secrets> secretsSupplier,
+                                           ListSecretsRequest listSecretsRequest) {
+            Collection<? extends SecretSummary> secretSummaries = secretSummaries(vaultsSupplier, listSecretsRequest);
+            if (secretSummaries == null || secretSummaries.isEmpty()) {
+                return this.absentNodeContent();
+            }
+            Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
+            Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
+            Base64.Decoder decoder = Base64.getDecoder();
+            Secrets secrets = secretsSupplier.get();
+            Instant mostDistantExpirationInstant =
+                SecretBundleConfigSource.this.mostDistantExpirationInstant; // volatile read
+            for (SecretSummary ss : secretSummaries) {
+                tasks.add(() -> {
+                        valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
+                        return null;
+                    });
+                java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
+                Instant i = d == null ? null : d.toInstant();
+                if (i != null && (mostDistantExpirationInstant == null || mostDistantExpirationInstant.isBefore(i))) {
+                    mostDistantExpirationInstant = i;
+                }
+            }
+            SecretBundleConfigSource.this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
+            completeAllSecretsTasks(tasks, secrets);
+            ObjectNode.Builder onb = ObjectNode.builder();
+            for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
+                onb.addValue(e.getKey(), e.getValue());
+            }
+            return Optional.of(NodeContent.builder()
+                               .node(onb.build())
+                               .build());
+        }
+
 
         /*
          * Static methods.
@@ -339,24 +346,26 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             return new Builder();
         }
 
+        private static void closeUnchecked(AutoCloseable c) {
+            try {
+                c.close();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e.getMessage(), e);
+            } catch (Exception e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
+
         private static void completeAllSecretsTasks(Collection<? extends Callable<Void>> tasks, AutoCloseable secrets) {
             RuntimeException re = null;
             try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
                 for (Future<?> future : es.invokeAll(tasks)) {
                     try {
-                        future.get();
+                        futureGetUnchecked(future);
                     } catch (RuntimeException e) {
                         if (re == null) {
                             re = e;
-                        } else {
-                            re.addSuppressed(e);
-                        }
-                    } catch (Exception e) {
-                        if (e instanceof InterruptedException) {
-                            Thread.currentThread().interrupt();
-                        }
-                        if (re == null) {
-                            re = new IllegalStateException(e.getMessage(), e);
                         } else {
                             re.addSuppressed(e);
                         }
@@ -364,33 +373,33 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                 }
             } catch (RuntimeException e) {
                 re = e;
-            } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 re = new IllegalStateException(e.getMessage(), e);
             } finally {
                 try {
-                    secrets.close();
+                    closeUnchecked(secrets);
                 } catch (RuntimeException e) {
                     if (re == null) {
-                        throw e;
-                    } else {
-                        re.addSuppressed(e);
-                    }
-                } catch (Exception e) {
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
-                    if (re == null) {
-                        throw new IllegalStateException(e.getMessage(), e);
+                        re = e;
                     } else {
                         re.addSuppressed(e);
                     }
                 }
-                if (re != null) {
-                    throw re;
-                }
+            }
+            if (re != null) {
+                throw re;
+            }
+        }
+
+        private static <T> T futureGetUnchecked(Future<T> future) {
+            try {
+                return future.get();
+            } catch (ExecutionException e) {
+                throw new IllegalStateException(e.getMessage(), e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e.getMessage(), e);
             }
         }
 
@@ -401,25 +410,23 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                 return v.listSecrets(listSecretsRequest).getItems();
             } catch (RuntimeException e) {
                 throw e;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e.getMessage(), e);
             } catch (Exception e) {
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
                 throw new IllegalStateException(e.getMessage(), e);
             }
         }
 
-        @SuppressWarnings("checkstyle:linelength")
         private static ValueNode valueNode(Secrets s, SecretSummary ss, Base64.Decoder d) {
-            return
-                ValueNode.create(new String(d.decode(((Base64SecretBundleContentDetails) (s.getSecretBundle(GetSecretBundleRequest.builder()
-                                                                                                                .secretId(ss.getId())
-                                                                                                                .build())
-                                                                                              .getSecretBundle()
-                                                                                              .getSecretBundleContent()))
-                                                     .getContent()),
-                                            UTF_8)
-                                     .intern());
+            SecretBundleContentDetails sbcd = s.getSecretBundle(GetSecretBundleRequest.builder()
+                                                                .secretId(ss.getId())
+                                                                .build())
+                .getSecretBundle()
+                .getSecretBundleContent();
+            String base64EncodedContent = ((Base64SecretBundleContentDetails) sbcd).getContent();
+            String decodedContent = new String(d.decode(base64EncodedContent), UTF_8).intern();
+            return ValueNode.create(decodedContent);
         }
 
 
@@ -470,7 +477,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             protected Builder config(Config metaConfig) {
                 metaConfig.get("compartment-ocid")
                     .asString()
-                    .flatMap(s -> s.isBlank() ? Optional.empty() : Optional.of(s))
+                    .filter(Predicate.not(String::isBlank))
                     .ifPresentOrElse(this::compartmentOcid,
                                      () -> {
                                          if (LOGGER.isLoggable(WARNING)) {
@@ -482,7 +489,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                                      });
                 metaConfig.get("vault-ocid")
                     .asString()
-                    .flatMap(s -> s.isBlank() ? Optional.empty() : Optional.of(s))
+                    .filter(Predicate.not(String::isBlank))
                     .ifPresentOrElse(this::vaultOcid,
                                      () -> {
                                          if (LOGGER.isLoggable(WARNING)) {

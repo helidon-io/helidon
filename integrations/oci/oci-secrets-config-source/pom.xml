@@ -24,7 +24,7 @@
         <version>4.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>helidon-integrations-oci-secrets-config-source</artifactId>
-    <name>Helidon Config OCI Secrets ConfigSourceProvider</name>
+    <name>Helidon Integrations OCI Secrets Config Source</name>
 
     <description>
         OCI Secrets Retrieval API ConfigSourceProvider Implementation
