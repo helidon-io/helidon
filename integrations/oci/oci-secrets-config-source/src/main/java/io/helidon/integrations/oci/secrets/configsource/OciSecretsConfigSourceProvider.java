@@ -251,7 +251,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
          */
 
 
-        @SuppressWarnings("try")
         private SecretBundleConfigSource(Builder b) {
             super(b);
             Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
@@ -403,6 +402,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             }
         }
 
+        // Suppress "[try] auto-closeable resource Vaults has a member method close() that could throw InterruptedException"
         @SuppressWarnings("try")
         private static Collection<? extends SecretSummary> secretSummaries(Supplier<? extends Vaults> vaultsSupplier,
                                                                            ListSecretsRequest listSecretsRequest) {
