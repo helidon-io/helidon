@@ -17,4 +17,4 @@
 # Extension config
 authorityKeyIdentifier = keyid:always,issuer:always
 keyUsage               = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment, keyAgreement, keyCertSign
-subjectAltName         = DNS:localhost
+subjectAltName         = DNS:localhost,IP:127.0.0.1

@@ -36,6 +36,10 @@ import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
+import java.io.ByteArrayInputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -51,19 +55,20 @@ class Http2ClientTest {
     private final Supplier<Http2Client> tlsClient;
     private final Supplier<Http2Client> plainClient;
 
-    Http2ClientTest(WebServer server, Http1Client http1Client) {
+    Http2ClientTest(WebServer server, Http1Client http1Client) throws CertificateException {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         int plainPort = server.port();
         int tlsPort = server.port("https");
         this.http1Client = http1Client;
-        Tls insecureTls = Tls.builder()
-                // insecure setup, as we have self-signed certificate
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
-                .trustAll(true)
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust.addCert(cert))
                 .build();
         this.tlsClient = () -> Http2Client.builder()
                 .baseUri("https://localhost:" + tlsPort + "/")
-                .tls(insecureTls)
                 .shareConnectionCache(false)
+                .tls(clientTls)
                 .build();
         this.plainClient = () -> Http2Client.builder()
                 .baseUri("http://localhost:" + plainPort + "/")
@@ -74,14 +79,14 @@ class Http2ClientTest {
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                        .keystore(Resource.create("certificate.p12"))
-                        .keystorePassphrase("helidon"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
 
         serverBuilder.putSocket("https",

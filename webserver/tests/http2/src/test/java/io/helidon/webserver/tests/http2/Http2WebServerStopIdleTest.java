@@ -16,11 +16,15 @@
 
 package io.helidon.webserver.tests.http2;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 
 import io.helidon.common.configurable.Resource;
@@ -36,25 +40,28 @@ import static org.hamcrest.Matchers.lessThan;
 
 class Http2WebServerStopIdleTest {
 
-    private final Tls insecureTls;
+    private final Tls clientTls;
 
-    Http2WebServerStopIdleTest() {;
-        this.insecureTls = Tls.builder()
-                // insecure setup, as we have self-signed certificate
-                .trustAll(true)
+    Http2WebServerStopIdleTest() throws CertificateException {;
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
+        this.clientTls = Tls.builder()
+                .trust(trust -> trust.addCert(cert))
                 .build();
     }
 
     @Test
     void stopWhenIdleExpectTimelyStopHttp2() throws IOException, InterruptedException {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                .keystore(Resource.create("certificate.p12"))
-                .keystorePassphrase("helidon"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
+
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
         WebServer webServer = WebServer.builder()
                 .putSocket("https", socketBuilder -> socketBuilder.tls(tls))
@@ -65,7 +72,7 @@ class Http2WebServerStopIdleTest {
         int port = webServer.port("https");
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
-                .sslContext(insecureTls.sslContext())
+                .sslContext(clientTls.sslContext())
                 .connectTimeout(Duration.ofSeconds(5))
                 .build()
                 .send(HttpRequest.newBuilder()

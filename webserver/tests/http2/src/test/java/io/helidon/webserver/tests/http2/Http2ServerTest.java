@@ -16,11 +16,15 @@
 
 package io.helidon.webserver.tests.http2;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -57,29 +61,31 @@ class Http2ServerTest {
     private final int plainPort;
     private final int tlsPort;
     private final Http1Client http1Client;
-    private final Tls insecureTls;
+    private final Tls clientTls;
 
-    Http2ServerTest(WebServer server, Http1Client http1Client) {
+    Http2ServerTest(WebServer server, Http1Client http1Client) throws CertificateException {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
         this.plainPort = server.port();
         this.tlsPort = server.port("https");
         this.http1Client = http1Client;
-        this.insecureTls = Tls.builder()
-                // insecure setup, as we have self-signed certificate
-                .trustAll(true)
+        this.clientTls = Tls.builder()
+                .trust(trust -> trust.addCert(cert))
                 .build();
     }
 
     @SetUpServer
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                        .keystore(Resource.create("certificate.p12"))
-                        .passphrase("helidon"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
 
         serverBuilder.putSocket("https",
@@ -143,7 +149,7 @@ class Http2ServerTest {
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofSeconds(5))
-                .sslContext(insecureTls.sslContext())
+                .sslContext(clientTls.sslContext())
                 .build()
                 .send(HttpRequest.newBuilder()
                               .timeout(Duration.ofSeconds(5))
@@ -163,7 +169,7 @@ class Http2ServerTest {
         HttpResponse<String> response = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofSeconds(5))
-                .sslContext(insecureTls.sslContext())
+                .sslContext(clientTls.sslContext())
                 .build()
                 .send(HttpRequest.newBuilder()
                               .timeout(Duration.ofSeconds(5))

@@ -16,9 +16,13 @@
 
 package io.helidon.webclient.tests;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.http.Http;
@@ -55,22 +59,24 @@ class HttpsProxyTest {
     private final HttpClient<?> clientHttp1;
     private final HttpClient<?> clientHttp2;
 
-    HttpsProxyTest(WebServer server) {
+    HttpsProxyTest(WebServer server) throws CertificateException {
         int port = server.port();
-
-        Tls tls = Tls.builder()
-                .trustAll(true)
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        X509Certificate cert = (X509Certificate) cf.generateCertificate(
+                new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
+        Tls clientTls = Tls.builder()
+                .trust(trust -> trust.addCert(cert))
                 .build();
 
         this.clientHttp1 = Http1Client.builder()
                 .baseUri("https://localhost:" + port)
-                .tls(tls)
+                .tls(clientTls)
                 .proxy(Proxy.noProxy())
                 .build();
         this.clientHttp2 = Http2Client.builder()
                 .baseUri("https://localhost:" + port)
-                .tls(tls)
+                .shareConnectionCache(false)
+                .tls(clientTls)
                 .proxy(Proxy.noProxy())
                 .build();
     }
@@ -90,19 +96,17 @@ class HttpsProxyTest {
     @SetUpServer
     static void server(Builder builder) {
         Keys privateKeyConfig = Keys.builder()
-                .keystore(keystore -> keystore
-                        .keystore(Resource.create("server.p12"))
-                        .passphrase("password"))
+                .keystore(store -> store
+                        .passphrase("password")
+                        .keystore(Resource.create("server.p12")))
                 .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig.privateKey().get())
-                .privateKeyCertChain(privateKeyConfig.certChain())
-                .trustAll(true)
-                .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
+                .privateKey(privateKeyConfig)
+                .privateKeyCertChain(privateKeyConfig)
                 .build();
 
-        builder.tls(tls);
+        builder.host("localhost").tls(tls);
     }
 
     @SetUpRoute
