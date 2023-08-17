@@ -100,7 +100,7 @@ import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
  *
  * @see ConfigSourceProvider
  */
-@Weight(300D) // a higher weight than default
+@Weight(300D) // a higher weight than the default (100D)
 public final class OciSecretsConfigSourceProvider implements ConfigSourceProvider {
 
 
@@ -229,7 +229,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private final Supplier<? extends Optional<NodeContent>> loader;
 
-        private volatile Instant closestExpirationInstant;
+        private volatile Instant closestSecretExpirationInstant;
 
 
         /*
@@ -241,6 +241,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             super(b);
             Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
             Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
+            this.closestSecretExpirationInstant = now();
             String compartmentOcid = b.compartmentOcid;
             String vaultOcid = b.vaultOcid;
             if (compartmentOcid == null || vaultOcid == null) {
@@ -264,9 +265,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         @Deprecated // For use by the Helidon Config subsystem only.
         @Override // PollableSource
-        public boolean isModified(Instant instant) {
-            Instant i = this.closestExpirationInstant;
-            return i == null || i.isBefore(instant == null ? now() : instant);
+        public boolean isModified(Instant pollInstant) {
+            return isModified(pollInstant, this.closestSecretExpirationInstant); // volatile read
         }
 
         @Deprecated // For use by the Helidon Config subsystem only.
@@ -282,7 +282,6 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
         }
 
         private Optional<NodeContent> absentNodeContent() {
-            this.closestExpirationInstant = null; // volatile write
             return ABSENT_NODE_CONTENT;
         }
 
@@ -297,19 +296,19 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
             Base64.Decoder decoder = Base64.getDecoder();
             Secrets secrets = secretsSupplier.get();
-            Instant closestExpirationInstant = this.closestExpirationInstant; // volatile read
+            Instant closestSecretExpirationInstant = this.closestSecretExpirationInstant; // volatile read
             for (SecretSummary ss : secretSummaries) {
                 tasks.add(() -> {
                         valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
                         return null;
                     });
                 java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
-                Instant i = d == null ? null : d.toInstant();
-                if (i != null && (closestExpirationInstant == null || i.isBefore(closestExpirationInstant))) {
-                    closestExpirationInstant = i;
+                Instant secretExpirationInstant = d == null ? null : d.toInstant();
+                if (secretExpirationInstant != null && secretExpirationInstant.isBefore(closestSecretExpirationInstant)) {
+                    closestSecretExpirationInstant = secretExpirationInstant;
                 }
             }
-            this.closestExpirationInstant = closestExpirationInstant; // volatile write
+            this.closestSecretExpirationInstant = closestSecretExpirationInstant; // volatile write
             completeAllSecretsTasks(tasks, secrets);
             ObjectNode.Builder onb = ObjectNode.builder();
             for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
@@ -325,6 +324,10 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
          * Static methods.
          */
 
+
+        static boolean isModified(Instant pollInstant, Instant closestSecretExpirationInstant) {
+            return closestSecretExpirationInstant.isBefore(pollInstant);
+        }
 
         private static Builder builder() {
             return new Builder();
