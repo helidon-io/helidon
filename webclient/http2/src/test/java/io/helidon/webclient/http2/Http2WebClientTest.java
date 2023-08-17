@@ -15,13 +15,9 @@
  */
 package io.helidon.webclient.http2;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -48,6 +44,9 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -89,25 +88,17 @@ class Http2WebClientTest {
             .shareConnectionCache(false)
             .baseUri("http://localhost:" + plainPort + "/versionspecific")
             .build();
-    private static final LazyValue<Http2Client> tlsClient;
-
-    static {
-        try {
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate) cf.generateCertificate(
-                    new ByteArrayInputStream(Resource.create("certificate.pem").bytes()));
-            tlsClient = LazyValue.create(() -> Http2Client.builder()
-                    .baseUri("https://localhost:" + tlsPort + "/versionspecific")
-                    .shareConnectionCache(false)
-                    .tls(Tls.builder()
-                            .trust(trust -> trust.addCert(cert))
-                            .build())
-                    .build());
-        } catch (CertificateException e) {
-            throw new IllegalStateException("Cannot load client certificate", e);
-        }
-        
-    }
+    private static final Supplier<Http2Client> tlsClient = () -> Http2Client.builder()
+            .shareConnectionCache(false)
+            .baseUri("https://localhost:" + tlsPort + "/versionspecific")
+            .tls(Tls.builder()
+                    .trust(trust -> trust
+                            .keystore(store -> store
+                                    .passphrase("password")
+                                    .trustStore(true)
+                                    .keystore(Resource.create("client.p12"))))
+                         .build())
+            .build();
 
     Http2WebClientTest(WebServer server) {
         plainPort = server.port();
@@ -118,15 +109,15 @@ class Http2WebClientTest {
     static void setUpServer(WebServerConfig.Builder serverBuilder) {
         executorService = Executors.newFixedThreadPool(10);
 
-        Keys privateKeyConfig = Keys.builder()
-                .keystore(store -> store
-                        .passphrase("password")
-                        .keystore(Resource.create("server.p12")))
-                .build();
+        Keys privateKeyConfig =
+                Keys.builder()
+                        .keystore(keystore -> keystore.keystore(Resource.create("server.p12"))
+                                .passphrase("password"))
+                        .build();
 
         Tls tls = Tls.builder()
-                .privateKey(privateKeyConfig)
-                .privateKeyCertChain(privateKeyConfig)
+                .privateKey(privateKeyConfig.privateKey().get())
+                .privateKeyCertChain(privateKeyConfig.certChain())
                 .build();
 
         serverBuilder

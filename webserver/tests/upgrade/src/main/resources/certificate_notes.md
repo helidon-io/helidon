@@ -7,4 +7,6 @@ openssl req -newkey rsa:2048 -nodes -keyout key.pem -out certificate.csr -config
 openssl x509 -req -in certificate.csr -signkey key.pem -out certificate.pem -days 99999 -sha256 -extfile cert-config.ext
 # Convert to pkcs12 keystore (set a password using a prompt)
 openssl pkcs12 -inkey key.pem -in certificate.pem -export -out server.p12
+# Create the client truststore
+keytool -import -file certificate.pem -storetype PKCS12 -alias 1 -keystore client.p12
 ```
