@@ -229,7 +229,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private final Supplier<? extends Optional<NodeContent>> loader;
 
-        private volatile Instant mostDistantExpirationInstant;
+        private volatile Instant closestExpirationInstant;
 
 
         /*
@@ -265,7 +265,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
         @Deprecated // For use by the Helidon Config subsystem only.
         @Override // PollableSource
         public boolean isModified(Instant instant) {
-            Instant i = this.mostDistantExpirationInstant;
+            Instant i = this.closestExpirationInstant;
             return i == null || i.isBefore(instant == null ? now() : instant);
         }
 
@@ -282,7 +282,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
         }
 
         private Optional<NodeContent> absentNodeContent() {
-            this.mostDistantExpirationInstant = null; // volatile write
+            this.closestExpirationInstant = null; // volatile write
             return ABSENT_NODE_CONTENT;
         }
 
@@ -297,7 +297,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
             Base64.Decoder decoder = Base64.getDecoder();
             Secrets secrets = secretsSupplier.get();
-            Instant mostDistantExpirationInstant = this.mostDistantExpirationInstant; // volatile read
+            Instant closestExpirationInstant = this.closestExpirationInstant; // volatile read
             for (SecretSummary ss : secretSummaries) {
                 tasks.add(() -> {
                         valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
@@ -305,11 +305,11 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                     });
                 java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
                 Instant i = d == null ? null : d.toInstant();
-                if (i != null && (mostDistantExpirationInstant == null || mostDistantExpirationInstant.isBefore(i))) {
-                    mostDistantExpirationInstant = i;
+                if (i != null && (closestExpirationInstant == null || i.isBefore(closestExpirationInstant))) {
+                    closestExpirationInstant = i;
                 }
             }
-            this.mostDistantExpirationInstant = mostDistantExpirationInstant; // volatile write
+            this.closestExpirationInstant = closestExpirationInstant; // volatile write
             completeAllSecretsTasks(tasks, secrets);
             ObjectNode.Builder onb = ObjectNode.builder();
             for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
