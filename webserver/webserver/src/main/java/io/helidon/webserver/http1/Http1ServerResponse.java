@@ -75,7 +75,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private boolean streamingEntity;
     private boolean isSent;
     private ClosingBufferedOutputStream outputStream;
-    private long entitySize;
+    private long bytesWritten;
     private String streamResult = "";
     private final boolean validateHeaders;
 
@@ -146,7 +146,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     public void send(byte[] bytes) {
         byte[] entity = entityBytes(bytes);
         BufferData bufferData = responseBuffer(entity);
-        entitySize = bufferData.available();
+        bytesWritten = bufferData.available();
+        isSent = true;
         request.reset();
         dataWriter.write(bufferData);
         afterSend();
@@ -193,7 +194,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         if (streamingEntity) {
             return outputStream.totalBytesWritten();
         } else {
-            return entitySize;
+            return bytesWritten;
         }
     }
 
@@ -280,7 +281,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
     }
 
-
     private BufferData responseBuffer(byte[] bytes) {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
@@ -289,20 +289,39 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             throw new IllegalStateException("When output stream is used, response is completed by closing the output stream"
                                                     + ", do not call send().");
         }
-        isSent = true;
 
+        int contentLength = bytes.length;
+        boolean forcedChunkedEncoding = false;
         headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
-        if (!headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-            headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(bytes.length)));
+
+        if (headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+            headers.remove(Http.HeaderNames.CONTENT_LENGTH);
+            // chunked enforced (and even if empty entity, will be used)
+            forcedChunkedEncoding = true;
+        } else {
+            if (!headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+                headers.contentLength(contentLength);
+            }
         }
 
+        Http.Status usedStatus = status();
+        sendListener.status(ctx, usedStatus);
         sendListener.headers(ctx, headers);
 
         // give some space for code and headers + entity
         BufferData responseBuffer = BufferData.growing(256 + bytes.length);
 
-        nonEntityBytes(headers, status(), responseBuffer, keepAlive, validateHeaders);
-        if (bytes.length > 0) {
+        nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
+        if (forcedChunkedEncoding) {
+            byte[] hex = Integer.toHexString(contentLength).getBytes(StandardCharsets.US_ASCII);
+            responseBuffer.write(hex);
+            responseBuffer.write('\r');
+            responseBuffer.write('\n');
+            responseBuffer.write(bytes);
+            responseBuffer.write('\r');
+            responseBuffer.write('\n');
+            responseBuffer.write(TERMINATING_CHUNK);
+        } else {
             responseBuffer.write(bytes);
         }
 
@@ -466,10 +485,12 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
+                    Http.Status usedStatus = status.get();
+                    sendListener.status(ctx, usedStatus);
                     sendListener.headers(ctx, headers);
                     // write headers and payload part in one buffer to avoid TCP/ACK delay problems
                     BufferData growing = BufferData.growing(256 + buffer.available());
-                    nonEntityBytes(headers, status.get(), growing, keepAlive, validateHeaders);
+                    nonEntityBytes(headers, usedStatus, growing, keepAlive, validateHeaders);
                     // check not exceeding content-length
                     bytesWritten += buffer.available();
                     checkContentLength(buffer);
@@ -520,9 +541,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
 
             // at this moment, we must send headers
+            Http.Status usedStatus = status.get();
+            sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
-            nonEntityBytes(headers, status.get(), bufferData, keepAlive, validateHeaders);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
 
             if (firstBuffer != null) {
                 bufferData.write(firstBuffer);
@@ -551,9 +574,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             // at this moment, we must send headers
+            Http.Status usedStatus = status.get();
+            sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);
-            nonEntityBytes(headers, status.get(), bufferData, keepAlive, validateHeaders);
+            nonEntityBytes(headers, usedStatus, bufferData, keepAlive, validateHeaders);
             sendListener.data(ctx, bufferData);
             responseBytesTotal += bufferData.available();
             dataWriter.write(bufferData);
@@ -561,7 +586,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         private void writeChunked(BufferData buffer) {
             int available = buffer.available();
-            byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.UTF_8);
+            byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.US_ASCII);
 
             BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
             toWrite.write(hex);

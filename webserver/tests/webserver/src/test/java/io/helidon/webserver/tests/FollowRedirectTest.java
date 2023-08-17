@@ -19,13 +19,12 @@ package io.helidon.webserver.tests;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.http.Http;
-import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -221,25 +220,17 @@ class FollowRedirectTest {
 
     @Test
     void test100ContinueTimeout() {
-        UncheckedIOException exception = assertThrows(UncheckedIOException.class, () -> webClient.put()
+        // the webclient just starts sending entity (that is the reason for the timeout, for servers that may not send continue)
+        ClientResponseTyped<String> http1ClientResponse = webClient.put()
                 .path("/wait")
                 .readContinueTimeout(Duration.ofMillis(200))
                 .outputStream(it -> {
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.write("0123456789".getBytes(StandardCharsets.UTF_8));
                     it.close();
-                }));
-        assertThat(exception.getMessage(), is("java.net.SocketTimeoutException: Read timed out"));
+                }, String.class);
 
-        HttpClientResponse response = webClient
-                .put()
-                .path("/wait")
-                .outputStream(it -> {
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.write("0123456789".getBytes(StandardCharsets.UTF_8));
-                    it.close();
-                });
-        assertThat(response.as(String.class), is("Request did not timeout"));
+        assertThat(http1ClientResponse.entity(), is("Request did not timeout"));
     }
 
 }

@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
@@ -104,6 +105,18 @@ public class PathSupport implements MediaSupport {
         return WRITER;
     }
 
+    private static void updateHeaders(Path path, WritableHeaders<?> writableHeaders) {
+        if (!writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+            MediaType mediaType = MediaTypes.detectType(path).orElse(MediaTypes.APPLICATION_OCTET_STREAM);
+            writableHeaders.contentType(mediaType);
+        }
+        if (!writableHeaders.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
+            writableHeaders.set(ContentDisposition.builder()
+                                        .filename(String.valueOf(path.getFileName()))
+                                        .build());
+        }
+    }
+
     private static final class PathWriter implements EntityWriter<Path> {
         @Override
         public void write(GenericType<Path> type,
@@ -122,22 +135,80 @@ public class PathSupport implements MediaSupport {
             write(object, outputStream, headers);
         }
 
+        @Override
+        public boolean supportsInstanceWriter() {
+            return true;
+        }
+
+        @Override
+        public InstanceWriter instanceWriter(GenericType<Path> type, Path object, WritableHeaders<?> requestHeaders) {
+            return new PathInstanceWriter(object, requestHeaders);
+        }
+
+        @Override
+        public InstanceWriter instanceWriter(GenericType<Path> type,
+                                             Path object,
+                                             Headers requestHeaders,
+                                             WritableHeaders<?> responseHeaders) {
+            return new PathInstanceWriter(object, responseHeaders);
+        }
+
         private void write(Path toWrite,
                            OutputStream outputStream,
                            WritableHeaders<?> writableHeaders) {
 
-            if (!writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
-                MediaType mediaType = MediaTypes.detectType(toWrite).orElse(MediaTypes.APPLICATION_OCTET_STREAM);
-                writableHeaders.contentType(mediaType);
-            }
-            if (!writableHeaders.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
-                writableHeaders.set(ContentDisposition.builder()
-                                            .filename(String.valueOf(toWrite.getFileName()))
-                                            .build());
-            }
+            updateHeaders(toWrite, writableHeaders);
 
             try (InputStream in = Files.newInputStream(toWrite); outputStream) {
                 in.transferTo(outputStream);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private static class PathInstanceWriter implements InstanceWriter {
+        private final OptionalLong contentLength;
+        private final Path path;
+
+        private PathInstanceWriter(Path path, WritableHeaders<?> writableHeaders) {
+            this.path = path;
+
+            OptionalLong discoveredLength;
+            try {
+                discoveredLength = OptionalLong.of(Files.size(path));
+            } catch (IOException e) {
+                discoveredLength = OptionalLong.empty();
+            }
+            this.contentLength = discoveredLength;
+
+            updateHeaders(path, writableHeaders);
+        }
+
+        @Override
+        public OptionalLong contentLength() {
+            return contentLength;
+        }
+
+        @Override
+        public boolean alwaysInMemory() {
+            // we can have huge files that may not fit in memory, always return false here
+            return false;
+        }
+
+        @Override
+        public void write(OutputStream stream) {
+            try (InputStream in = Files.newInputStream(path); stream) {
+                in.transferTo(stream);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        @Override
+        public byte[] instanceBytes() {
+            try {
+                return Files.readAllBytes(path);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

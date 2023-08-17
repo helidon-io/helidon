@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
@@ -60,14 +61,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         this.osHandler = osHandler;
     }
 
-    private static void checkRedirectHeaders(Headers headerValues) {
-        if (!headerValues.contains(Http.HeaderNames.LOCATION)) {
-            throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the"
-                                                    + " response! "
-                                                    + "It is not clear where to redirect.");
-        }
-    }
-
     @Override
     WebClientServiceResponse doProceed(ClientConnection connection,
                                        WebClientServiceRequest serviceRequest,
@@ -85,31 +78,23 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                             http1Client.protocolConfig(),
                                                                             serviceRequest,
                                                                             originalRequest(),
-                                                                            whenSent);
+                                                                            whenSent,
+                                                                            whenComplete());
 
+        boolean interrupted = false;
         try {
             osHandler.handle(cos);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (OutputStreamInterruptedException e) {
-            Http1ClientResponseImpl response = cos.response();
-            return createServiceResponse(serviceRequest,
-                                         response.connection(),
-                                         response.connection().reader(),
-                                         response.status(),
-                                         response.headers());
+            interrupted = true;
         }
 
-        if (cos.interrupted()) {
+        if (interrupted || cos.interrupted()) {
             //If cos is marked as interrupted, we know that our interrupted exception has been thrown, but
             //it was intercepted by the user OutputStreamHandler and not rethrown.
             //This is a fallback mechanism to correctly handle such a situations.
-            Http1ClientResponseImpl response = cos.response();
-            return createServiceResponse(serviceRequest,
-                                         response.connection(),
-                                         response.connection().reader(),
-                                         response.status(),
-                                         response.headers());
+            return cos.serviceResponse();
         } else if (!cos.closed()) {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
@@ -117,6 +102,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         Http.Status responseStatus;
         try {
             responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
+            if (responseStatus == Http.Status.CONTINUE_100) {
+                // skip the next empty end of line
+                readHeaders(reader);
+                responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
+            }
         } catch (UncheckedIOException e) {
             // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
             // data of this request on the next use of this connection
@@ -149,14 +139,30 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             Http1ClientResponseImpl clientResponse = RedirectionProcessor.invokeWithFollowRedirects(request,
                                                                                                     1,
                                                                                                     BufferData.EMPTY_BYTES);
-            return createServiceResponse(serviceRequest,
+            return createServiceResponse(clientConfig(),
+                                         serviceRequest,
                                          clientResponse.connection(),
                                          clientResponse.connection().reader(),
                                          clientResponse.status(),
-                                         clientResponse.headers());
+                                         clientResponse.headers(),
+                                         whenComplete());
         }
 
-        return createServiceResponse(serviceRequest, connection, reader, responseStatus, responseHeaders);
+        return createServiceResponse(clientConfig(),
+                                     serviceRequest,
+                                     connection,
+                                     reader,
+                                     responseStatus,
+                                     responseHeaders,
+                                     whenComplete());
+    }
+
+    private static void checkRedirectHeaders(Headers headerValues) {
+        if (!headerValues.contains(Http.HeaderNames.LOCATION)) {
+            throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the"
+                                                    + " response! "
+                                                    + "It is not clear where to redirect.");
+        }
     }
 
     private static class ClientConnectionOutputStream extends OutputStream {
@@ -165,6 +171,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private final WebClientServiceRequest request;
         private final Http1ClientRequestImpl originalRequest;
         private final CompletableFuture<WebClientServiceRequest> whenSent;
+        private final CompletableFuture<WebClientServiceResponse> whenComplete;
         private final HttpClientConfig clientConfig;
         private final Http1ClientProtocolConfig protocolConfig;
         private final WritableHeaders<?> headers;
@@ -178,10 +185,12 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private boolean closed;
         private boolean interrupted;
         private ClientConnection connection;
+        private SocketContext ctx;
         private DataWriter writer;
         private DataReader reader;
         private Http1ClientRequestImpl lastRequest;
         private Http1ClientResponseImpl response;
+        private WebClientServiceResponse serviceResponse;
 
         private ClientConnectionOutputStream(ClientConnection connection,
                                              DataWriter writer,
@@ -192,8 +201,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                              Http1ClientProtocolConfig protocolConfig,
                                              WebClientServiceRequest request,
                                              Http1ClientRequestImpl originalRequest,
-                                             CompletableFuture<WebClientServiceRequest> whenSent) {
+                                             CompletableFuture<WebClientServiceRequest> whenSent,
+                                             CompletableFuture<WebClientServiceResponse> whenComplete) {
             this.connection = connection;
+            this.ctx = connection.helidonSocket();
             this.writer = writer;
             this.reader = reader;
             this.headers = headers;
@@ -206,6 +217,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.originalRequest = originalRequest;
             this.lastRequest = originalRequest;
             this.whenSent = whenSent;
+            this.whenComplete = whenComplete;
         }
 
         @Override
@@ -257,7 +269,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 } else if (noData) {
                     sendPrologueAndHeader();
                 }
-                writer.write(BufferData.create(TERMINATING_CHUNK));
+                BufferData terminating = BufferData.create(TERMINATING_CHUNK);
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    ctx.log(LOGGER, System.Logger.Level.TRACE, "send data%n%s", terminating.debugDataHex());
+                }
+                writer.write(terminating);
             } else {
                 headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
                 if (noData) {
@@ -272,6 +288,20 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
             }
             super.close();
+        }
+
+        WebClientServiceResponse serviceResponse() {
+            if (serviceResponse != null) {
+                return serviceResponse;
+            }
+
+            return createServiceResponse(clientConfig,
+                                         request,
+                                         response.connection(),
+                                         response.connection().reader(),
+                                         response.status(),
+                                         response.headers(),
+                                         whenComplete);
         }
 
         boolean closed() {
@@ -298,6 +328,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             toWrite.write(Bytes.CR_BYTE);
             toWrite.write(Bytes.LF_BYTE);
 
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", toWrite.debugDataHex());
+            }
             writer.writeNow(toWrite);
         }
 
@@ -308,7 +341,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                               + ", but you are writing additional " + (bytesWritten - contentLength) + " "
                                               + "bytes");
             }
-
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER, System.Logger.Level.TRACE, "send data:%n%s", buffer.debugDataHex());
+            }
             writer.writeNow(buffer);
         }
 
@@ -331,9 +366,15 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 headers.remove(Http.HeaderNames.CONTENT_LENGTH);
             }
 
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER, System.Logger.Level.TRACE, "send prologue: %n%s", prologue.debugDataHex());
+            }
             writer.writeNow(prologue);
 
             BufferData headerBuffer = BufferData.growing(128);
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                ctx.log(LOGGER, System.Logger.Level.TRACE, "send headers:%n%s", headers);
+            }
             writeHeaders(headers, headerBuffer, protocolConfig.validateRequestHeaders());
             writer.writeNow(headerBuffer);
 
@@ -341,40 +382,55 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
             if (expects100Continue) {
                 Http.Status responseStatus;
+
                 try {
                     connection.readTimeout(originalRequest.readContinueTimeout());
                     responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+                    connection.helidonSocket().log(LOGGER, TRACE, "recv status: %n%s", responseStatus);
+                } catch (UncheckedIOException ignored) {
+                    // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
+                    // we treat this as receiving 100-Continue
+                    responseStatus = null;
                 } finally {
                     connection.readTimeout(originalRequest.readTimeout());
                 }
-                if (redirectStatus(responseStatus, true)) {
-                    if (!originalRequest.followRedirects()) {
-                        throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
-                                                                + responseStatus + "' instead");
-                    }
-                    WritableHeaders<?> headerValues = Http1HeadersParser.readHeaders(reader,
-                                                                                     protocolConfig.maxHeaderSize(),
-                                                                                     protocolConfig.validateResponseHeaders());
-                    // Discard any remaining data from the response
-                    reader.skip(reader.available());
-                    checkRedirectHeaders(headerValues);
-                    redirect(responseStatus, headerValues);
-                } else {
-                    // Discard any remaining data from the response
-                    reader.skip(reader.available());
+                if (responseStatus == Http.Status.CONTINUE_100) {
+                    // there is the status and (usually) empty headers. We ignore such headers
+                    Http1HeadersParser.readHeaders(reader,
+                                                   protocolConfig.maxHeaderSize(),
+                                                   protocolConfig.validateResponseHeaders());
                 }
-            }
-        }
+                if (responseStatus == null) {
+                    responseStatus = Http.Status.CONTINUE_100;
+                }
 
-        private boolean redirectStatus(Http.Status status, boolean sendEntity) {
-            if (!RedirectionProcessor.redirectionStatusCode(status)) {
-                if (status != Http.Status.CONTINUE_100 && sendEntity) {
-                    throw new IllegalStateException("Expected a status of '100 Continue' but received a '"
-                                                            + status + "' instead");
+                if (responseStatus != Http.Status.CONTINUE_100) {
+                    WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
+                                                                                        protocolConfig.maxHeaderSize(),
+                                                                                        protocolConfig.validateResponseHeaders());
+                    connection.helidonSocket().log(LOGGER, TRACE, "client received headers %n%s", responseHeaders);
+
+                    if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
+                        // redirect as needed
+                        // Discard any remaining data from the response
+                        reader.skip(reader.available());
+                        checkRedirectHeaders(responseHeaders);
+                        redirect(responseStatus, responseHeaders);
+                    } else {
+                        //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
+                        this.interrupted = true;
+                        this.serviceResponse = createServiceResponse(clientConfig,
+                                                                     request,
+                                                                     connection,
+                                                                     reader,
+                                                                     responseStatus,
+                                                                     ClientResponseHeaders.create(responseHeaders),
+                                                                     whenComplete);
+                        //we are not sending anything by this OS, we need to interrupt it.
+                        throw new OutputStreamInterruptedException();
+                    }
                 }
-                return false;
             }
-            return true;
         }
 
         private void redirect(Http.Status lastStatus, WritableHeaders<?> headerValues) {
@@ -418,10 +474,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 lastRequest = clientRequest;
 
                 connection = response.connection();
+                ctx = connection.helidonSocket();
                 reader = connection.reader();
                 writer = connection.writer();
 
-                if (redirectStatus(response.status(), sendEntity)) {
+                if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                     try (response) {
                         checkRedirectHeaders(response.headers());
                         if (response.status() != Http.Status.TEMPORARY_REDIRECT_307

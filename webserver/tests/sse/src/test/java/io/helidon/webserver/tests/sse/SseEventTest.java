@@ -18,6 +18,7 @@ package io.helidon.webserver.tests.sse;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.http.sse.SseEvent;
 
 import org.junit.jupiter.api.Test;
@@ -57,7 +58,7 @@ class SseEventTest extends SseBaseTest {
                 .data("{\"hello\":\"world\"}")
                 .mediaContext(emptyMediaContext)
                 .build();
-        assertThrows(IllegalArgumentException.class, () -> event.data(Object.class));
+        assertThrows(UnsupportedTypeException.class, () -> event.data(Object.class));
     }
 
     @Test
@@ -66,7 +67,7 @@ class SseEventTest extends SseBaseTest {
                 .data("{\"hello\":\"world\"}")
                 .mediaContext(mediaContext)
                 .build();
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(UnsupportedTypeException.class,
                      () -> event.data(HelloWorld.class, MediaTypes.TEXT_YAML));
     }
 
@@ -76,7 +77,7 @@ class SseEventTest extends SseBaseTest {
                 .data("{\"hello\":\"world\"}")
                 .mediaContext(emptyMediaContext)
                 .build();
-        assertThrows(IllegalArgumentException.class, () -> event.data(HelloWorld.class));
+        assertThrows(UnsupportedTypeException.class, () -> event.data(HelloWorld.class));
     }
 
     @Test

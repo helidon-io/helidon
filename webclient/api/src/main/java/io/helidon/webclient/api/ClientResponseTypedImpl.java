@@ -61,7 +61,8 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
         if (thrown == null) {
             return entity;
         }
-        throw new IllegalStateException("Failed to read response entity", thrown);
+        // re-throw the same exception, somebody may be interested in catching it
+        throw thrown;
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -57,7 +58,8 @@ public class StreamingService implements HttpService {
         LOGGER.info("Entering upload ... " + Thread.currentThread());
         try {
             Path tempFilePath = Files.createTempFile("large-file", ".tmp");
-            Files.copy(request.content().inputStream(), tempFilePath);
+            Files.copy(request.content().inputStream(), tempFilePath, StandardCopyOption.REPLACE_EXISTING);
+            response.send("File was stored as " + tempFilePath);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -33,7 +33,10 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.media.EntityWriter;
+import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.UnsupportedTypeException;
 import io.helidon.webserver.ConnectionContext;
 
 /**
@@ -94,18 +97,10 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             return;
         }
 
-        GenericType type;
-        if (entity instanceof String) {
-            type = GenericType.STRING;
-        } else {
-            type = GenericType.create(entity);
-        }
-
-        OutputStream outputStream = outputStream();
         try {
-            mediaContext.writer(type, requestHeaders, headers())
-                    .write(type, entity, outputStream, requestHeaders, this.headers());
-        } catch (IllegalArgumentException e) {
+            // now we have to use a media writer, so we may fail
+            doSend(entity);
+        } catch (UnsupportedTypeException e) {
             throw new HttpException(e.getMessage(), Http.Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
         }
     }
@@ -232,5 +227,44 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
         for (Runnable runnable : whenSent) {
             runnable.run();
         }
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void doSend(Object entity) {
+        GenericType type;
+        if (entity instanceof String) {
+            type = GenericType.STRING;
+        } else {
+            type = GenericType.create(entity);
+        }
+
+        EntityWriter writer = mediaContext.writer(type, requestHeaders, headers());
+        long configuredContentLength = headers().contentLength().orElse(-1);
+        if (writer.supportsInstanceWriter()) {
+            InstanceWriter instanceWriter = writer.instanceWriter(type, entity, requestHeaders, headers());
+            if (instanceWriter.alwaysInMemory()) {
+                send(instanceWriter.instanceBytes());
+                return;
+            }
+            long contentLength = instanceWriter.contentLength().orElse(configuredContentLength);
+            if (contentLength != -1 && contentLength < 131023) {
+                send(instanceWriter.instanceBytes());
+                return;
+            }
+            instanceWriter.write(outputStream());
+            return;
+        }
+
+
+        if (configuredContentLength == -1 || configuredContentLength > 131023) {
+            OutputStream outputStream = outputStream();
+            writer.write(type, entity, outputStream, requestHeaders, this.headers());
+            return;
+        }
+
+        // safe to cast to int, as the maxInMemoryEntity configuration option is an int
+        ByteArrayOutputStream baos = new ByteArrayOutputStream((int) configuredContentLength);
+        writer.write(type, entity, baos, requestHeaders, headers());
+        send(baos.toByteArray());
     }
 }

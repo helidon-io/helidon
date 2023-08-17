@@ -35,16 +35,17 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
+import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.WritableHeaders;
-import io.helidon.common.socket.HelidonSocket;
-import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.HttpClientResponse;
 
@@ -167,6 +168,7 @@ class Http1ClientTest {
 
     @Test
     void testExpect100() {
+        LogConfig.configureRuntime();
         String[] requestEntityParts = {"First", "Second", "Third"};
 
         Http1Client client = Http1Client.builder()
@@ -662,7 +664,7 @@ class Http1ClientTest {
                     // Send 100-Continue if requested
                     if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
                         serverWriter.write(
-                                BufferData.create("HTTP/1.1 100 Continue\r\n".getBytes(StandardCharsets.UTF_8)));
+                                BufferData.create("HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8)));
                     }
 
                     // Assemble the entity from the chunks

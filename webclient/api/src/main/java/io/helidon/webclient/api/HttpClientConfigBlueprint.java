@@ -234,4 +234,16 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      */
     @ConfiguredOption("true")
     boolean shareConnectionCache();
+
+    /**
+     * If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance.
+     * If bigger, streaming will be used.
+     * <p>
+     * Note that for some entity types we cannot use streaming, as they are already fully in memory (String, byte[]), for such
+     * cases, this option is ignored. Default is 128Kb.
+     *
+     * @return maximal number of bytes to buffer in memory for supported writers
+     */
+    @ConfiguredOption("131072")
+    int maxInMemoryEntity();
 }
