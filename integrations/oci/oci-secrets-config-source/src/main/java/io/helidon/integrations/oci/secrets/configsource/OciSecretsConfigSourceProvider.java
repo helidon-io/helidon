@@ -139,11 +139,13 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      * @param type one of the {@linkplain #supported() supported types}, or an {@linkplain ConfigSources#empty() empty
      * <code>ConfigSource</code>} will be returned
      *
-     * @param metaConfig a {@link Config} serving as meta-configuration for this provider; must not be {@code null}
+     * @param metaConfig a {@link Config} serving as meta-configuration for this provider; must not be {@code null} when
+     * {@code type} is {@linkplain #supports(String) supported}
      *
      * @return a non-{@code null} {@link ConfigSource}
      *
-     * @exception NullPointerException if {@code metaConfig} is {@code null}
+     * @exception NullPointerException if {@code type} is {@linkplain #supports(String) supported} and {@code
+     * metaConfig} is {@code null}
      *
      * @see #supported()
      *
@@ -215,6 +217,12 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
     private static final class SecretBundleConfigSource extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
 
+
+        /*
+         * Static fields.
+         */
+
+
         private static final Optional<NodeContent> ABSENT_NODE_CONTENT =
             Optional.of(NodeContent.builder().node(ObjectNode.empty()).build());
 
@@ -224,21 +232,33 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
 
+
+        /*
+         * Instance fields.
+         */
+
+
         private final Supplier<? extends Optional<NodeContent>> loader;
 
         private volatile Instant mostDistantExpirationInstant;
 
+
+        /*
+         * Constructors.
+         */
+
+
         @SuppressWarnings("try")
         private SecretBundleConfigSource(Builder b) {
             super(b);
-            String compartmentOcid = b.compartmentOcid;
             Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
-            String vaultOcid = b.vaultOcid;
             Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
+            String compartmentOcid = b.compartmentOcid;
+            String vaultOcid = b.vaultOcid;
             if (compartmentOcid == null || vaultOcid == null) {
                 // (It is not immediately clear why the OCI Java SDK requires a Compartment OCID, since a Vault OCID is
                 // sufficient to uniquely identify any Vault.)
-                this.loader = () -> ABSENT_NODE_CONTENT;
+                this.loader = this::absentNodeContent;
             } else {
                 ListSecretsRequest listSecretsRequest = ListSecretsRequest.builder()
                     .compartmentId(compartmentOcid)
@@ -247,7 +267,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                 this.loader = () -> {
                     Collection<? extends SecretSummary> secretSummaries = secretSummaries(vaultsSupplier, listSecretsRequest);
                     if (secretSummaries == null || secretSummaries.isEmpty()) {
-                        return ABSENT_NODE_CONTENT;
+                        return this.absentNodeContent();
                     }
                     Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
                     Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
@@ -279,6 +299,12 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             }
         }
 
+
+        /*
+         * Instance methods.
+         */
+
+
         @Deprecated // For use by the Helidon Config subsystem only.
         @Override // PollableSource
         public boolean isModified(Instant instant) {
@@ -296,6 +322,11 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
         @Override // PollableSource
         public Optional<PollingStrategy> pollingStrategy() {
             return super.pollingStrategy();
+        }
+
+        private Optional<NodeContent> absentNodeContent() {
+            this.mostDistantExpirationInstant = null; // volatile write
+            return ABSENT_NODE_CONTENT;
         }
 
 
@@ -399,6 +430,12 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
         private static final class Builder extends AbstractConfigSourceBuilder<Builder, Void> {
 
+
+            /*
+             * Instance fields.
+             */
+
+
             private String compartmentOcid;
 
             private Supplier<? extends Secrets> secretsSupplier;
@@ -406,6 +443,12 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             private String vaultOcid;
 
             private Supplier<? extends Vaults> vaultsSupplier;
+
+
+            /*
+             * Constructors.
+             */
+
 
             private Builder() {
                 super();
@@ -417,21 +460,18 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                 this.vaultsSupplier = () -> vcb.build(adpSupplier.get());
             }
 
-            private SecretBundleConfigSource build() {
-                return new SecretBundleConfigSource(this);
-            }
 
-            private Builder compartmentOcid(String compartmentOcid) {
-                this.compartmentOcid = Objects.requireNonNull(compartmentOcid, "compartmentOcid");
-                return this;
-            }
+            /*
+             * Instance methods.
+             */
+
 
             @Override // AbstractConfigSourceBuilder<Builder, Void>
             protected Builder config(Config metaConfig) {
                 metaConfig.get("compartment-ocid")
                     .asString()
                     .flatMap(s -> s.isBlank() ? Optional.empty() : Optional.of(s))
-                    .ifPresentOrElse(ocid -> this.compartmentOcid(ocid),
+                    .ifPresentOrElse(this::compartmentOcid,
                                      () -> {
                                          if (LOGGER.isLoggable(WARNING)) {
                                              LOGGER.log(WARNING,
@@ -442,8 +482,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                                      });
                 metaConfig.get("vault-ocid")
                     .asString()
-                    .flatMap(s -> s.isBlank() ? Optional.<String>empty() : Optional.of(s))
-                    .ifPresentOrElse(ocid -> this.vaultOcid(ocid),
+                    .flatMap(s -> s.isBlank() ? Optional.empty() : Optional.of(s))
+                    .ifPresentOrElse(this::vaultOcid,
                                      () -> {
                                          if (LOGGER.isLoggable(WARNING)) {
                                              LOGGER.log(WARNING,
@@ -453,6 +493,15 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                                          }
                                      });
                 return super.config(metaConfig);
+            }
+
+            private SecretBundleConfigSource build() {
+                return new SecretBundleConfigSource(this);
+            }
+
+            private Builder compartmentOcid(String compartmentOcid) {
+                this.compartmentOcid = Objects.requireNonNull(compartmentOcid, "compartmentOcid");
+                return this;
             }
 
             private Builder secretsSupplier(Supplier<? extends Secrets> secretsSupplier) {
