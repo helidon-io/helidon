@@ -18,7 +18,7 @@ package io.helidon.integrations.oci.tls.certificates;
 
 import java.util.function.Consumer;
 
-import io.helidon.nima.common.tls.Tls;
+import io.helidon.common.tls.Tls;
 
 /**
  * The default implementation (service loader and provider-driven) of {@link OciCertificatesTlsManager}.

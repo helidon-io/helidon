@@ -18,22 +18,20 @@
  * Helidon Integrations of OCI Certificates Service.
  */
 module io.helidon.integrations.oci.tls.certificates {
-    requires io.helidon.common;
-    requires io.helidon.common.pki;
-
-    requires io.helidon.common.config;
-
-    requires io.helidon.nima.common.tls;
-
     requires static io.helidon.builder.api;
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
     requires static jakarta.inject;
 
-    uses io.helidon.nima.common.tls.spi.TlsManagerProvider;
+    requires io.helidon.common;
+    requires io.helidon.common.config;
+    requires io.helidon.common.pki;
+    requires io.helidon.common.tls;
+
+    uses io.helidon.common.tls.spi.TlsManagerProvider;
 
     exports io.helidon.integrations.oci.tls.certificates;
 
-    provides io.helidon.nima.common.tls.spi.TlsManagerProvider
+    provides io.helidon.common.tls.spi.TlsManagerProvider
             with io.helidon.integrations.oci.tls.certificates.DefaultOciCertificatesTlsManagerProvider;
 }

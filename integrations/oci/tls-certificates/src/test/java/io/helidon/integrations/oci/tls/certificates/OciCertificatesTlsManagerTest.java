@@ -22,8 +22,8 @@ import java.util.ServiceLoader;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.nima.common.tls.TlsManager;
-import io.helidon.nima.common.tls.spi.TlsManagerProvider;
+import io.helidon.common.tls.TlsManager;
+import io.helidon.common.tls.spi.TlsManagerProvider;
 
 import org.junit.jupiter.api.Test;
 

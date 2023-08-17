@@ -20,11 +20,11 @@ import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
-import io.helidon.nima.common.tls.TlsManager;
+import io.helidon.common.tls.TlsManager;
 
 /**
- * The OCI KMS version of {@link io.helidon.nima.common.tls.TlsManager}. This implementation will load/create
- * {@link io.helidon.nima.common.tls.Tls} instances from integrating to the certificates stored remotely in OCI's
+ * The OCI KMS version of {@link io.helidon.common.tls.TlsManager}. This implementation will load/create
+ * {@link io.helidon.common.tls.Tls} instances from integrating to the certificates stored remotely in OCI's
  * Certificates Service.
  */
 @RuntimeType.PrototypedBy(OciCertificatesTlsManagerConfig.class)

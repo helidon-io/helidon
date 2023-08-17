@@ -26,5 +26,5 @@ module io.helidon.common.tls {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.common.tls;
-    exports io.helidon.nima.common.tls.spi;
+    exports io.helidon.common.tls.spi;
 }

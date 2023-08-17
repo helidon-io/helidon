@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.common.tls.spi;
+package io.helidon.common.tls.spi;
 
 import io.helidon.common.config.ConfiguredProvider;
-import io.helidon.nima.common.tls.TlsManager;
+import io.helidon.common.tls.TlsManager;
 
 /**
- * {@link java.util.ServiceLoader} service provider for {@link io.helidon.nima.common.tls.TlsManager}.
+ * {@link java.util.ServiceLoader} service provider for {@link io.helidon.common.tls.TlsManager}.
  */
 public interface TlsManagerProvider extends ConfiguredProvider<TlsManager> {
 

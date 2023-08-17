@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.nima.common.tls;
+package io.helidon.common.tls;
 
 import java.util.function.Consumer;
 

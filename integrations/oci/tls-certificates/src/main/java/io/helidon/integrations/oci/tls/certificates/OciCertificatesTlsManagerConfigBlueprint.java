@@ -31,7 +31,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<OciCertificatesTlsManager> {
 
     /**
-     * The schedule to trigger {@link io.helidon.nima.common.tls.TlsManager#reload()}.
+     * The schedule to trigger {@link io.helidon.common.tls.TlsManager#reload()}.
      *
      * @return the schedule for reload
      */

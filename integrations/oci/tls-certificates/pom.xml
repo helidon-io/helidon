@@ -47,12 +47,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.builder</groupId>
-            <artifactId>helidon-builder-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>
@@ -70,8 +71,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.nima.common</groupId>
-            <artifactId>helidon-nima-common-tls</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-tls</artifactId>
         </dependency>
     </dependencies>
 

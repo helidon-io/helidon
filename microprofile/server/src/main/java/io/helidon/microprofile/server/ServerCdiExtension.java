@@ -39,7 +39,6 @@ import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.http.Http;
 import io.helidon.microprofile.cdi.RuntimeStart;
-import io.helidon.nima.common.tls.TlsManager;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.Router;
