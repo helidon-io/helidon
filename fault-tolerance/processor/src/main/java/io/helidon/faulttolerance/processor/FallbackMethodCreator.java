@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import javax.lang.model.element.ElementKind;
 
@@ -108,13 +107,9 @@ public class FallbackMethodCreator extends FtMethodCreatorBase implements Custom
         fallback.fallbackName = fallbackAnnotation.value()
                 .orElseThrow(() -> new ToolsException("Missing value on " + FALLBACK_ANNOTATION
                                                               + " on type: " + fallback.beanType));
-        fallback.applyOn = fallbackAnnotation.getValue("applyOn")
-                .filter(Predicate.not(String::isBlank))
-                .map(it -> List.of(it.split(",")))
+        fallback.applyOn = fallbackAnnotation.stringValues("applyOn")
                 .orElseGet(List::of);
-        fallback.skipOn = fallbackAnnotation.getValue("skipOn")
-                .filter(Predicate.not(String::isBlank))
-                .map(it -> List.of(it.split(",")))
+        fallback.skipOn = fallbackAnnotation.stringValues("skipOn")
                 .orElseGet(List::of);
 
         // method parameters

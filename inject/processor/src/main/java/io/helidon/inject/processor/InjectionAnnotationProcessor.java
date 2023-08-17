@@ -758,14 +758,14 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
                 .findFirst(ExternalContracts.class, typeInfo.annotations())
                 .orElse(null);
         if (externalContractAnno != null) {
-            String[] externalContractNames = externalContractAnno.getValue("value").orElse("").split(",[ \t]*");
+            List<String> externalContractNames = externalContractAnno.stringValues().orElseGet(List::of);
             for (String externalContractName : externalContractNames) {
                 TypeName externalContractTypeName = TypeName.create(externalContractName);
                 externalContracts.add(externalContractTypeName);
                 filterModuleName(typeInfo.moduleNameOf(externalContractTypeName)).ifPresent(externalModuleNamesRequired::add);
             }
 
-            String[] moduleNames = externalContractAnno.getValue("moduleNames").orElse("").split(",[ \t]*");
+            List<String> moduleNames = externalContractAnno.stringValues("moduleNames").orElseGet(List::of);
             for (String externalModuleName : moduleNames) {
                 if (!externalModuleName.isBlank()) {
                     externalModuleNamesRequired.add(externalModuleName);

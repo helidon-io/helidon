@@ -7,4 +7,6 @@ module io.helidon.inject.tests.inject/test {
     requires transitive io.helidon.inject.runtime;
     // Application - @io.helidon.common.Generated(value = "io.helidon.inject.tools.ApplicationCreatorDefault", trigger = "io.helidon.inject.tools.ApplicationCreatorDefault")
     provides io.helidon.inject.api.Application with io.helidon.inject.tests.inject.Injection$$TestApplication;
+    // Contract usage - @io.helidon.common.Generated(value = "io.helidon.inject.tools.ActivatorCreatorDefault", trigger = "io.helidon.inject.tools.ActivatorCreatorDefault")
+    exports io.helidon.inject.tests.inject.stacking;
 }

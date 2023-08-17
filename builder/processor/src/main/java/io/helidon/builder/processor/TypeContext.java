@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
@@ -171,6 +170,9 @@ record TypeContext(
         boolean hasNonNulls = propertyMethods.stream()
                 .map(PrototypeProperty::configuredOption)
                 .anyMatch(PrototypeProperty.ConfiguredOption::validateNotNull);
+        boolean hasAllowedValues = propertyMethods.stream()
+                .map(PrototypeProperty::configuredOption)
+                .anyMatch(PrototypeProperty.ConfiguredOption::hasAllowedValues);
         boolean prototypePublic = blueprintAnnotation.getValue("isPublic")
                 .map(Boolean::parseBoolean)
                 .orElse(true);
@@ -246,6 +248,7 @@ record TypeContext(
                                              hasRequired,
                                              hasNonNulls,
                                              hasProvider,
+                                             hasAllowedValues,
                                              propertyMethods,
                                              overridingProperties),
                 CustomMethods.create(processingContext, typeInformation));
@@ -253,20 +256,18 @@ record TypeContext(
 
     static List<String> annotationsToGenerate(Annotated annotated) {
         return annotated.findAnnotation(Types.PROTOTYPE_ANNOTATED_TYPE)
-                .flatMap(Annotation::value)
-                .map(annotation -> annotation.split(","))
-                .map(List::of)
-                .orElseGet(List::of);
+                .flatMap(Annotation::stringValues)
+                .stream()
+                .flatMap(List::stream)
+                .toList();
     }
 
     private static List<TypeName> prototypeImplements(Annotation annotation) {
-        return annotation.value()
-                .map(value -> {
-                    return Stream.of(value.split(","))
-                            .map(TypeName::create)
-                            .toList();
-                })
-                .orElseGet(List::of);
+        return annotation.stringValues()
+                .stream()
+                .flatMap(List::stream)
+                .map(TypeName::create)
+                .toList();
     }
 
     private static void gatherExtends(TypeInfo typeInfo, Set<TypeName> extendList,
@@ -465,6 +466,7 @@ record TypeContext(
             boolean hasRequired,
             boolean hasNonNulls,
             boolean hasProvider,
+            boolean hasAllowedValues,
             List<PrototypeProperty> properties,
             List<PrototypeProperty> overridingProperties) {
     }

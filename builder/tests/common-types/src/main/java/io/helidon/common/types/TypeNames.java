@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Commonly used type names.
@@ -50,6 +51,10 @@ public final class TypeNames {
      * Type name for {@link java.util.Optional}.
      */
     public static final TypeName OPTIONAL = TypeName.create(Optional.class);
+    /**
+     * Type name for {@link java.util.function.Supplier}.
+     */
+    public static final TypeName SUPPLIER = TypeName.create(Supplier.class);
     /**
      * Type name for {@link java.util.Collection}.
      */

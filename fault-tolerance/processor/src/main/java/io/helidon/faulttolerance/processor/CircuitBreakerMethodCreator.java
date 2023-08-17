@@ -105,13 +105,9 @@ public class CircuitBreakerMethodCreator extends FtMethodCreatorBase implements 
             ftDef.customName = beanType + "." + ftDef.methodName + "-" + System.identityHashCode(beanType);
         }
 
-        ftDef.applyOn = ftAnnotation.getValue("applyOn")
-                .filter(Predicate.not(String::isBlank))
-                .map(it -> List.of(it.split(",")))
+        ftDef.applyOn = ftAnnotation.stringValues("applyOn")
                 .orElseGet(List::of);
-        ftDef.skipOn = ftAnnotation.getValue("skipOn")
-                .filter(Predicate.not(String::isBlank))
-                .map(it -> List.of(it.split(",")))
+        ftDef.skipOn = ftAnnotation.stringValues("skipOn")
                 .orElseGet(List::of);
 
         // method parameters

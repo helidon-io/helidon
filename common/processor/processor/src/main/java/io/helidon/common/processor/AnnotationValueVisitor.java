@@ -21,93 +21,97 @@ import java.util.List;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 
-class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, Object> {
+class AnnotationValueVisitor implements javax.lang.model.element.AnnotationValueVisitor<Object, Object> {
+    private final Elements elements;
     private boolean mapVoidToNull;
     private boolean mapFalseToNull;
     private boolean mapEmptyStringToNull;
     private boolean mapBlankArrayToNull;
     private boolean mapToSourceDeclaration;
 
-    ToStringAnnotationValueVisitor mapVoidToNull(boolean val) {
+    AnnotationValueVisitor(Elements elements) {
+        this.elements = elements;
+    }
+
+    AnnotationValueVisitor mapVoidToNull(boolean val) {
         this.mapVoidToNull = val;
         return this;
     }
 
-    ToStringAnnotationValueVisitor mapBooleanToNull(boolean val) {
+    AnnotationValueVisitor mapBooleanToNull(boolean val) {
         this.mapFalseToNull = val;
         return this;
     }
 
-    ToStringAnnotationValueVisitor mapEmptyStringToNull(boolean val) {
+    AnnotationValueVisitor mapEmptyStringToNull(boolean val) {
         this.mapEmptyStringToNull = val;
         return this;
     }
 
-    ToStringAnnotationValueVisitor mapBlankArrayToNull(boolean val) {
+    AnnotationValueVisitor mapBlankArrayToNull(boolean val) {
         this.mapBlankArrayToNull = val;
         return this;
     }
 
-    ToStringAnnotationValueVisitor mapToSourceDeclaration(boolean val) {
+    AnnotationValueVisitor mapToSourceDeclaration(boolean val) {
         this.mapToSourceDeclaration = val;
         return this;
     }
 
     @Override
-    public String visit(AnnotationValue av, Object o) {
+    public Object visit(AnnotationValue av, Object o) {
         return av.accept(this, o);
     }
 
     @Override
-    public String visitBoolean(boolean b, Object o) {
-        String val = String.valueOf(b);
-        if (mapFalseToNull && !Boolean.parseBoolean(val)) {
-            val = null;
+    public Object visitBoolean(boolean b, Object o) {
+        if (!b && mapFalseToNull) {
+            return null;
         }
-        return val;
+        return b;
     }
 
     @Override
-    public String visitByte(byte b, Object o) {
-        return String.valueOf(b);
+    public Object visitByte(byte b, Object o) {
+        return b;
     }
 
     @Override
-    public String visitChar(char c, Object o) {
-        return String.valueOf(c);
+    public Object visitChar(char c, Object o) {
+        return c;
     }
 
     @Override
-    public String visitDouble(double d, Object o) {
-        return String.valueOf(d);
+    public Object visitDouble(double d, Object o) {
+        return d;
     }
 
     @Override
-    public String visitFloat(float f, Object o) {
-        return String.valueOf(f);
+    public Object visitFloat(float f, Object o) {
+        return f;
     }
 
     @Override
-    public String visitInt(int i, Object o) {
-        return String.valueOf(i);
+    public Object visitInt(int i, Object o) {
+        return i;
     }
 
     @Override
-    public String visitLong(long i, Object o) {
-        return String.valueOf(i);
+    public Object visitLong(long i, Object o) {
+        return i;
     }
 
     @Override
-    public String visitShort(short s, Object o) {
-        return String.valueOf(s);
+    public Object visitShort(short s, Object o) {
+        return s;
     }
 
     @Override
-    public String visitString(String s, Object o) {
+    public Object visitString(String s, Object o) {
         if (mapEmptyStringToNull && s != null && s.isBlank()) {
             return null;
         }
@@ -120,7 +124,7 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
     }
 
     @Override
-    public String visitType(TypeMirror t, Object o) {
+    public Object visitType(TypeMirror t, Object o) {
         String val = t.toString();
         if (mapVoidToNull && ("void".equals(val) || Void.class.getName().equals(val))) {
             val = null;
@@ -129,24 +133,23 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
     }
 
     @Override
-    public String visitEnumConstant(VariableElement c, Object o) {
+    public Object visitEnumConstant(VariableElement c, Object o) {
         return String.valueOf(c.getSimpleName());
     }
 
     @Override
-    public String visitAnnotation(AnnotationMirror a, Object o) {
-        // todo do something (nested annotations)
-        return null;
+    public Object visitAnnotation(AnnotationMirror a, Object o) {
+        return AnnotationFactory.createAnnotation(a, elements);
     }
 
     @Override
-    public String visitArray(List<? extends AnnotationValue> vals, Object o) {
-        List<String> values = new ArrayList<>(vals.size());
+    public Object visitArray(List<? extends AnnotationValue> vals, Object o) {
+        List<Object> values = new ArrayList<>(vals.size());
 
         for (AnnotationValue val : vals) {
-            String stringVal = val.accept(this, null);
-            if (stringVal != null) {
-                values.add(stringVal);
+            Object elementValue = val.accept(this, null);
+            if (elementValue != null) {
+                values.add(elementValue);
             }
         }
 
@@ -156,7 +159,7 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
             StringBuilder resultBuilder = new StringBuilder("{");
 
             for (AnnotationValue val : vals) {
-                String stringVal = val.accept(this, null);
+                Object stringVal = val.accept(this, null);
                 if (stringVal != null) {
                     if (resultBuilder.length() > 1) {
                         resultBuilder.append(", ");
@@ -170,7 +173,7 @@ class ToStringAnnotationValueVisitor implements AnnotationValueVisitor<String, O
             return resultBuilder.toString();
         }
 
-        return String.join(", ", values);
+        return values;
     }
 
     @Override

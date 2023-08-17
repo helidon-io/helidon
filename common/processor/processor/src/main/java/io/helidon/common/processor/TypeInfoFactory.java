@@ -126,12 +126,12 @@ public final class TypeInfoFactory {
                     .collect(Collectors.toList());
             AnnotationValue annotationValue = ee.getDefaultValue();
             defaultValue = (annotationValue == null) ? null
-                    : annotationValue.accept(new ToStringAnnotationValueVisitor()
+                    : String.valueOf(annotationValue.accept(new AnnotationValueVisitor(elements)
                                                      .mapBooleanToNull(true)
                                                      .mapVoidToNull(true)
                                                      .mapBlankArrayToNull(true)
                                                      .mapEmptyStringToNull(true)
-                                                     .mapToSourceDeclaration(true), null);
+                                                     .mapToSourceDeclaration(true), null));
         } else if (v instanceof VariableElement) {
             VariableElement ve = (VariableElement) v;
             typeMirror = Objects.requireNonNull(ve.asType());

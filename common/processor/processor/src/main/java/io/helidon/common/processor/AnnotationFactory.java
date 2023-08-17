@@ -86,9 +86,9 @@ public final class AnnotationFactory {
      * @param elements the elements
      * @return the extracted values
      */
-    private static Map<String, String> extractAnnotationValues(AnnotationMirror am,
+    private static Map<String, Object> extractAnnotationValues(AnnotationMirror am,
                                                                Elements elements) {
-        return extractAnnotationValues(elements.getElementValuesWithDefaults(am));
+        return extractAnnotationValues(elements, elements.getElementValuesWithDefaults(am));
     }
 
     /**
@@ -97,12 +97,12 @@ public final class AnnotationFactory {
      * @param values the element values
      * @return the extracted values
      */
-    private static Map<String, String>
-    extractAnnotationValues(Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
-        Map<String, String> result = new LinkedHashMap<>();
+    private static Map<String, Object>
+    extractAnnotationValues(Elements elements, Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
+        Map<String, Object> result = new LinkedHashMap<>();
         values.forEach((el, val) -> {
             String name = el.getSimpleName().toString();
-            String value = val.accept(new ToStringAnnotationValueVisitor(), null);
+            Object value = val.accept(new AnnotationValueVisitor(elements), null);
             if (value != null) {
                 result.put(name, value);
             }
