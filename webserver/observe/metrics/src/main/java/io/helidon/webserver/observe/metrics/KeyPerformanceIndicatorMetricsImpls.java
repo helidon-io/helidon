@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.metrics;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
 import io.helidon.metrics.api.Registry;
 import io.helidon.metrics.api.RegistryFactory;
@@ -68,6 +69,7 @@ class KeyPerformanceIndicatorMetricsImpls {
     private KeyPerformanceIndicatorMetricsImpls() {
     }
 
+    // TODO remove this factory method once conversion to Helidon metrics API is complete
     /**
      * Provides a KPI metrics instance.
      *
@@ -81,6 +83,21 @@ class KeyPerformanceIndicatorMetricsImpls {
              kpiConfig.isExtended()
                     ? new Extended(metricsNamePrefix, kpiConfig)
                     : new Basic(metricsNamePrefix));
+    }
+
+    /**
+     * Provides a KPI metrics instance.
+     *
+     * @param metricsNamePrefix prefix to use for the created metrics
+     * @param kpiConfig         KPI metrics config which may influence the construction of the metrics
+     * @return properly prepared new KPI metrics instance
+     */
+    static KeyPerformanceIndicatorSupport.Metrics get(String metricsNamePrefix,
+                                                      KeyPerformanceIndicatorMetricsConfig kpiConfig) {
+        return KPI_METRICS.computeIfAbsent(metricsNamePrefix, prefix ->
+                kpiConfig.isExtended()
+                        ? new Extended(metricsNamePrefix, kpiConfig)
+                        : new Basic(metricsNamePrefix));
     }
 
     /**
@@ -134,9 +151,18 @@ class KeyPerformanceIndicatorMetricsImpls {
         protected static final String LOAD_DESCRIPTION =
                 "Measures the total number of in-flight requests and rates at which they occur";
 
+        // TODO Remove once conversion to Helidon metrics API is done
         protected Extended(String metricsNamePrefix, KeyPerformanceIndicatorMetricsSettings kpiConfig) {
+            this(metricsNamePrefix, kpiConfig.longRunningRequestThresholdMs());
+        }
+
+        protected Extended(String metricsNamePrefix, KeyPerformanceIndicatorMetricsConfig kpiConfig) {
+            this(metricsNamePrefix, kpiConfig.longRunningRequestThresholdMs());
+        }
+
+        private Extended(String metricsNamePrefix, long longRunningRequestThresholdMs) {
             super(metricsNamePrefix);
-            longRunningRequestThresdholdMs = kpiConfig.longRunningRequestThresholdMs();
+            this.longRunningRequestThresdholdMs = longRunningRequestThresholdMs;
 
             inflightRequests = kpiMetricRegistry().gauge(Metadata.builder()
                                                                  .withName(metricsNamePrefix + INFLIGHT_REQUESTS_NAME)

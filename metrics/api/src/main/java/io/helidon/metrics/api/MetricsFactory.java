@@ -47,12 +47,25 @@ import java.util.function.ToDoubleFunction;
 public interface MetricsFactory {
 
     /**
-     * Returns an implementation which has the highest weight of the factories available at runtime.
+     * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
+     * runtime and using the {@value MetricsConfig.Builder#METRICS_CONFIG_KEY} section from the
+     * {@link io.helidon.common.config.GlobalConfig}.
      *
-     * @return highest-weight metrics factory
+     * @return current or new metrics factory
      */
     static MetricsFactory getInstance() {
         return MetricsFactoryManager.getInstance();
+    }
+
+    /**
+     * Returns a new instance from a highest-weight provider available at runtime using the provided
+     * {@link io.helidon.metrics.api.MetricsConfig}.
+     *
+     * @param metricsConfig metrics config
+     * @return new metrics factory
+     */
+    static MetricsFactory getInstance(MetricsConfig metricsConfig) {
+        return MetricsFactoryManager.getInstance(metricsConfig);
     }
 
     /**

@@ -192,6 +192,17 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
+    public Iterable<String> scopes() {
+        return scopeMembership.keySet();
+    }
+
+    // TODO enhance after adding back the filtering config
+    @Override
+    public boolean isMeterEnabled(io.helidon.metrics.api.Meter.Id meterId) {
+        return metricsConfig.enabled();
+    }
+
+    @Override
     public Clock clock() {
         return clock;
     }

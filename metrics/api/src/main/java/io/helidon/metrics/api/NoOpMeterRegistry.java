@@ -86,6 +86,16 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
+    public boolean isMeterEnabled(Meter.Id meterId) {
+        return true;
+    }
+
+    @Override
+    public Iterable<String> scopes() {
+        return Set.of();
+    }
+
+    @Override
     public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
         NoOpMeter.Builder<?, ?> b = (NoOpMeter.Builder<?, ?>) builder;
         return findOrRegister(NoOpMeter.Id.create(b.name(),
