@@ -2,11 +2,13 @@ com.sun.research.ws.wadl
 jersey.repackaged.org.objectweb.asm
 org.glassfish.jersey
 org.glassfish.jersey.apache.connector
+org.glassfish.jersey.apache5.connector
 org.glassfish.jersey.client
 org.glassfish.jersey.client.authentication
 org.glassfish.jersey.client.filter
 org.glassfish.jersey.client.http
 org.glassfish.jersey.client.inject
+org.glassfish.jersey.client.innate
 org.glassfish.jersey.client.internal
 org.glassfish.jersey.client.spi
 org.glassfish.jersey.ext.cdi1x.internal
@@ -31,6 +33,7 @@ org.glassfish.jersey.jdkhttp.internal
 org.glassfish.jersey.jettison
 org.glassfish.jersey.jettison.internal
 org.glassfish.jersey.jetty.connector
+org.glassfish.jersey.jnh.connector
 org.glassfish.jersey.jsonb
 org.glassfish.jersey.jsonb.internal
 org.glassfish.jersey.jsonp
@@ -49,6 +52,8 @@ org.glassfish.jersey.media.sse.internal
 org.glassfish.jersey.message
 org.glassfish.jersey.message.internal
 org.glassfish.jersey.microprofile.config
+org.glassfish.jersey.microprofile.restclient
+org.glassfish.jersey.microprofile.restclient.internal
 org.glassfish.jersey.model
 org.glassfish.jersey.model.internal
 org.glassfish.jersey.moxy.internal
@@ -86,4 +91,3 @@ org.glassfish.jersey.simple.internal
 org.glassfish.jersey.spi
 org.glassfish.jersey.uri
 org.glassfish.jersey.uri.internal
-org.glassfish.jersey.wadl.doclet

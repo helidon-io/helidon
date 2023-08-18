@@ -20,3 +20,4 @@ com.fasterxml.jackson.databind.ser.impl
 com.fasterxml.jackson.databind.ser.std
 com.fasterxml.jackson.databind.type
 com.fasterxml.jackson.databind.util
+com.fasterxml.jackson.databind.util.internal

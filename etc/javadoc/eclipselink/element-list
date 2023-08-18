@@ -1,6 +1,13 @@
+module:eclipselink
+commonj.sdo
+commonj.sdo.helper
 commonj.sdo.impl
 org.eclipse.persistence
 org.eclipse.persistence.annotations
+org.eclipse.persistence.asm
+org.eclipse.persistence.asm.internal
+org.eclipse.persistence.asm.internal.platform.eclipselink
+org.eclipse.persistence.asm.internal.platform.ow2
 org.eclipse.persistence.config
 org.eclipse.persistence.core.descriptors
 org.eclipse.persistence.core.mappings
@@ -64,7 +71,6 @@ org.eclipse.persistence.jpa.rs.logging
 org.eclipse.persistence.jpa.rs.logging.i18n
 org.eclipse.persistence.jpa.rs.resources
 org.eclipse.persistence.jpa.rs.resources.common
-org.eclipse.persistence.jpa.rs.resources.unversioned
 org.eclipse.persistence.jpa.rs.util
 org.eclipse.persistence.jpa.rs.util.list
 org.eclipse.persistence.jpa.rs.util.metadatasources
@@ -72,6 +78,7 @@ org.eclipse.persistence.jpa.rs.util.xmladapters
 org.eclipse.persistence.logging
 org.eclipse.persistence.mappings
 org.eclipse.persistence.mappings.converters
+org.eclipse.persistence.mappings.converters.spi
 org.eclipse.persistence.mappings.foundation
 org.eclipse.persistence.mappings.querykeys
 org.eclipse.persistence.mappings.structures
@@ -99,15 +106,16 @@ org.eclipse.persistence.platform.database.oracle.annotations
 org.eclipse.persistence.platform.database.oracle.converters
 org.eclipse.persistence.platform.database.oracle.dcn
 org.eclipse.persistence.platform.database.oracle.jdbc
+org.eclipse.persistence.platform.database.oracle.json
 org.eclipse.persistence.platform.database.oracle.plsql
 org.eclipse.persistence.platform.database.oracle.ucp
 org.eclipse.persistence.platform.database.partitioning
 org.eclipse.persistence.platform.server
 org.eclipse.persistence.platform.server.glassfish
 org.eclipse.persistence.platform.server.jboss
-org.eclipse.persistence.platform.server.oc4j
 org.eclipse.persistence.platform.server.sap
 org.eclipse.persistence.platform.server.was
+org.eclipse.persistence.platform.server.wildfly
 org.eclipse.persistence.platform.server.wls
 org.eclipse.persistence.platform.xml
 org.eclipse.persistence.platform.xml.jaxp
@@ -128,6 +136,7 @@ org.eclipse.persistence.services.jboss
 org.eclipse.persistence.services.mbean
 org.eclipse.persistence.services.weblogic
 org.eclipse.persistence.services.websphere
+org.eclipse.persistence.services.wildfly
 org.eclipse.persistence.sessions
 org.eclipse.persistence.sessions.broker
 org.eclipse.persistence.sessions.changesets
@@ -156,7 +165,7 @@ org.eclipse.persistence.transaction
 org.eclipse.persistence.transaction.glassfish
 org.eclipse.persistence.transaction.jboss
 org.eclipse.persistence.transaction.jotm
-org.eclipse.persistence.transaction.oc4j
 org.eclipse.persistence.transaction.sap
 org.eclipse.persistence.transaction.was
+org.eclipse.persistence.transaction.wildfly
 org.eclipse.persistence.transaction.wls

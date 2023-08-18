@@ -135,13 +135,13 @@
         <version.helidon-cli>3.0.0</version.helidon-cli>
 
         <!-- Links to external javadocs. If you see a hardcoded version it means the javadocs for the version we use is not available. -->
-        <javadoc.link.jakarta-jaxrs>https://jakarta.ee/specifications/restful-ws/3.0/apidocs/</javadoc.link.jakarta-jaxrs>
-        <javadoc.link.jakarta-cdi>https://jakarta.ee/specifications/cdi/3.0/apidocs/</javadoc.link.jakarta-cdi>
-        <javadoc.link.jakarta-jsonb>https://jakarta.ee/specifications/jsonb/2.0/apidocs/</javadoc.link.jakarta-jsonb>
-        <javadoc.link.jakarta-persistence>https://jakarta.ee/specifications/persistence/3.0/apidocs/</javadoc.link.jakarta-persistence>
-        <javadoc.link.jakarta-jsonp>https://jakarta.ee/specifications/jsonp/2.0/apidocs/</javadoc.link.jakarta-jsonp>
+        <javadoc.link.jakarta-jaxrs>https://jakarta.ee/specifications/restful-ws/3.1/apidocs/</javadoc.link.jakarta-jaxrs>
+        <javadoc.link.jakarta-cdi>https://jakarta.ee/specifications/cdi/4.0/apidocs/</javadoc.link.jakarta-cdi>
+        <javadoc.link.jakarta-jsonb>https://jakarta.ee/specifications/jsonb/3.0/apidocs/</javadoc.link.jakarta-jsonb>
+        <javadoc.link.jakarta-persistence>https://jakarta.ee/specifications/persistence/3.1/apidocs/</javadoc.link.jakarta-persistence>
+        <javadoc.link.jakarta-jsonp>https://jakarta.ee/specifications/jsonp/2.1/apidocs/</javadoc.link.jakarta-jsonp>
         <javadoc.link.jakarta-inject>https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/</javadoc.link.jakarta-inject>
-        <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/3.0/apidocs/</javadoc.link.jakarta-jaxb>
+        <javadoc.link.jakarta-jaxb>https://jakarta.ee/specifications/xml-binding/4.0/apidocs/</javadoc.link.jakarta-jaxb>
         <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
 
         <javadoc.link.microprofile-config>https://download.eclipse.org/microprofile/microprofile-config-${version.lib.microprofile-config}/apidocs/</javadoc.link.microprofile-config>
@@ -159,16 +159,14 @@
 
 
         <javadoc.link.jersey>https://eclipse-ee4j.github.io/jersey.github.io/apidocs/${version.lib.jersey}/jersey</javadoc.link.jersey>
-        <javadoc.link.weld>https://docs.jboss.org/weld/javadoc/3.0/weld-spi/</javadoc.link.weld>
+        <javadoc.link.weld>https://javadoc.io/doc/org.jboss.weld/weld-spi/${version.lib.weld-api}</javadoc.link.weld>
         <javadoc.link.narayana>http://narayana.io/docs/api/</javadoc.link.narayana>
-        <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/3.0/</javadoc.link.eclipselink>
+        <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
 
-        <javadoc.jackson.version>2.12</javadoc.jackson.version>
+        <javadoc.jackson.version>2.14</javadoc.jackson.version>
         <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
         <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
         <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
-        <javadoc.link.netty>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty>
-        <javadoc.link.netty-transport>https://static.javadoc.io/io.netty/netty-transport/${version.lib.netty}</javadoc.link.netty-transport>
         <javadoc.link.reactive-streams>http://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
@@ -278,10 +276,6 @@
                                 <location>${javadoc.packagelist.dir}/jakarta-jaxrs</location>
                             </offlineLink>
                             <offlineLink>
-                                <url>${javadoc.link.netty}</url>
-                                <location>${javadoc.packagelist.dir}/netty</location>
-                            </offlineLink>
-                            <offlineLink>
                                 <url>${javadoc.link.jakarta-cdi}</url>
                                 <location>${javadoc.packagelist.dir}/jakarta-cdi</location>
                             </offlineLink>
@@ -300,10 +294,6 @@
                             <offlineLink>
                                 <url>${javadoc.link.typesafe-config}</url>
                                 <location>${javadoc.packagelist.dir}/typesafe-config</location>
-                            </offlineLink>
-                            <offlineLink>
-                                <url>${javadoc.link.netty-transport}</url>
-                                <location>${javadoc.packagelist.dir}/netty-transport</location>
                             </offlineLink>
                             <offlineLink>
                                 <url>${javadoc.link.opentracing}</url>
