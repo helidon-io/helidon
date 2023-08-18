@@ -33,7 +33,7 @@ openssl x509 -req \
 	-CA ca.crt \
 	-CAkey ca.key \
 	-out client.crt \
-	-extfile <(printf "subjectAltName = DNS:localhost") \
+	-extfile <(printf "subjectAltName = DNS:localhost, IP:127.0.0.1") \
 	-days 99999 -sha256 -passin pass:password
 
 openssl pkcs12 \
@@ -61,7 +61,7 @@ openssl x509 -req \
 	-CA ca.crt \
 	-CAkey ca.key \
 	-out server.crt \
-	-extfile <(printf "subjectAltName = DNS:localhost") \
+	-extfile <(printf "subjectAltName = DNS:localhost, IP:127.0.0.1") \
 	-days 99999 -sha256 -passin pass:password
 
 openssl pkcs12 \
@@ -88,7 +88,7 @@ openssl x509 -req \
 	-CA ca.crt \
 	-CAkey ca.key \
 	-out server2.crt \
-	-extfile <(printf "subjectAltName = DNS:localhost") \
+	-extfile <(printf "subjectAltName = DNS:localhost, IP:127.0.0.1") \
 	-days 99999 -sha256 -passin pass:password
 
 openssl pkcs12 \
@@ -98,4 +98,35 @@ openssl pkcs12 \
 	-out src/main/resources/second-valid/server.p12 \
 	-passin pass:password \
 	-passout pass:password
+```
+
+### Trust CA certificates in client keystore
+
+```bash
+keytool -import \
+    -noprompt \
+    -file ca.crt \
+    -storetype PKCS12 \
+    -alias truststoreCA \
+    -keystore src/main/resources/client.p12 \
+    -storepass password
+```
+
+### Trust CA certificates in server keystore
+```bash
+keytool -import \
+    -noprompt \
+    -file ca.crt \
+    -storetype PKCS12 \
+    -alias truststoreCA \
+    -keystore src/main/resources/server.p12 \
+    -storepass password
+
+keytool -import \
+    -noprompt \
+    -file ca.crt \
+    -storetype PKCS12 \
+    -alias truststoreCA \
+    -keystore src/main/resources/second-valid/server.p12 \
+    -storepass password
 ```
