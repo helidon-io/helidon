@@ -21,7 +21,7 @@ import io.micrometer.core.instrument.Tag;
 class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter {
 
     /**
-     * Creates a new builder for a wrapper around a Micrometer counter that will be registered later, typically if the
+     * Creates a new builder for a wrapper around a to-be-created Micrometer counter, typically if the
      * developer is creating a counter using the Helidon API.
      *
      * @param name name of the new counter
@@ -96,4 +96,72 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
             return identity();
         }
     }
+
+//    static class MFunctionCounter extends MMeter<FunctionCounter> implements io.helidon.metrics.api.Counter {
+//
+//        static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+//            return new Builder<>(name, stateObject, fn);
+//        }
+//
+//        static class Builder<T> extends MMeter.Builder<FunctionCounter.Builder<T>, FunctionCounter,
+//                MFunctionCounter.Builder<T>, MFunctionCounter> {
+//
+//            private final T stateObject;
+//            private final ToDoubleFunction<T> fn;
+//
+//            Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+//                super(FunctionCounter.builder(name, stateObject, fn));
+//                this.stateObject = stateObject;
+//                this.fn = fn;
+//            }
+//
+//            @Override
+//            protected Builder<T> delegateTags(Iterable<Tag> tags) {
+//                delegate().tags(tags);
+//                return identity();
+//            }
+//
+//            @Override
+//            protected Builder<T> delegateDescription(String description) {
+//                delegate().description(description);
+//                return identity();
+//            }
+//
+//            @Override
+//            protected Builder<T> delegateBaseUnit(String baseUnit) {
+//                delegate().baseUnit(baseUnit);
+//                return identity();
+//            }
+//
+//            @Override
+//            public MFunctionCounter build(FunctionCounter functionCounter) {
+//                return new MFunctionCounter(functionCounter, this);
+//            }
+//        }
+//
+//        private MFunctionCounter(FunctionCounter delegate, Builder<?> builder) {
+//            super(delegate, builder);
+//        }
+//
+//        private MFunctionCounter(FunctionCounter delegate) {
+//            super(delegate);
+//        }
+//
+//        @Override
+//        public void increment() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public void increment(long amount) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public long count() {
+//            return (long) delegate().count();
+//        }
+//    }
+
+
 }

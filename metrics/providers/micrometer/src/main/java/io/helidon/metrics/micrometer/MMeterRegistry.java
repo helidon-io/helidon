@@ -31,6 +31,7 @@ import io.helidon.metrics.api.MetricsConfig;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -421,6 +422,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 //            case DistributionSummary summary -> MDistributionSummary.create(summary);
 //            case Gauge gauge -> MGauge.create(gauge);
 //            case Timer timer -> MTimer.create(timer);
+//            case FunctionCounter functionCounter -> MCounter.create(functionCounter);
 //            default -> null;
 //        };
 
@@ -434,6 +436,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             helidonMeter = MGauge.create(gauge);
         } else if (addedMeter instanceof Timer timer) {
             helidonMeter = MTimer.create(timer);
+        } else if (addedMeter instanceof FunctionCounter functionCounter) {
+            helidonMeter = MFunctionalCounter.create(functionCounter);
         }
         if (helidonMeter == null) {
             LOGGER.log(System.Logger.Level.WARNING,

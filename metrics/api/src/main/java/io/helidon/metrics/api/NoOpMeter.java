@@ -224,10 +224,6 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return new Builder(name);
         }
 
-        static <T> FunctionalCounter.Builder<T> builder(String name, T target, ToDoubleFunction<T> fn) {
-            return new FunctionalCounter.Builder<>(name, target, fn);
-        }
-
         protected Counter(Builder builder) {
             super(builder);
         }
@@ -246,32 +242,32 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
     }
 
-    static class FunctionalCounter<T> extends Counter {
+    static class FunctionalCounter extends NoOpMeter implements io.helidon.metrics.api.FunctionalCounter {
 
-        static class Builder<T> extends Counter.Builder implements io.helidon.metrics.api.Counter.Builder {
+        static <T> FunctionalCounter.Builder<T> builder(String name, T target, ToDoubleFunction<T> fn) {
+            return new FunctionalCounter.Builder<>(name, target, fn);
+        }
+
+        static class Builder<T> extends NoOpMeter.Builder<Builder<T>, FunctionalCounter>
+                implements io.helidon.metrics.api.FunctionalCounter.Builder {
 
             private Builder(String name, T target, ToDoubleFunction<T> fn) {
-                super(name);
+                super(name, Type.COUNTER);
             }
 
             @Override
-            public FunctionalCounter<T> build() {
-                return new FunctionalCounter<>(this);
+            public FunctionalCounter build() {
+                return new FunctionalCounter(this);
             }
         }
 
-        private FunctionalCounter(Builder<T> builder) {
+        @Override
+        public long count() {
+            return 0;
+        }
+
+        private FunctionalCounter(Builder<?> builder) {
             super(builder);
-        }
-
-        @Override
-        public void increment() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void increment(long amount) {
-            throw new UnsupportedOperationException();
         }
     }
 

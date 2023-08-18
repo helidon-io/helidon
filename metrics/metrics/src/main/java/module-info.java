@@ -41,7 +41,6 @@ module io.helidon.metrics {
 
     requires transitive io.helidon.common.configurable;
     requires transitive io.helidon.metrics.api;
-    requires transitive io.helidon.metrics.serviceapi;
     requires transitive microprofile.metrics.api;
 
     exports io.helidon.metrics;
@@ -51,5 +50,7 @@ module io.helidon.metrics {
     provides io.helidon.metrics.api.spi.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
     provides io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver
             with io.helidon.metrics.ExecutorServiceMetricsObserver;
-	
+    provides io.helidon.metrics.spi.MetersProvider
+            with io.helidon.metrics.BaseMetricsProvider;
+
 }

@@ -76,6 +76,11 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public <T> FunctionalCounter.Builder functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+        return NoOpMeter.FunctionalCounter.builder(name, stateObject, fn);
+    }
+
+    @Override
     public DistributionSummary.Builder distributionSummaryBuilder(String name,
                                                                   DistributionStatisticsConfig.Builder configBuilder) {
         return NoOpMeter.DistributionSummary.builder(name)

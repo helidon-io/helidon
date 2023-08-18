@@ -30,7 +30,6 @@ public interface Counter extends Meter {
         return MetricsFactory.getInstance().counterBuilder(name);
     }
 
-
     /**
      * Updates the counter by one.
      */

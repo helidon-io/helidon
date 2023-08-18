@@ -17,6 +17,8 @@ package io.helidon.metrics.api;
 
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.common.config.Config;
+
 /**
  * Behavior of implementations of the Helidon metrics API.
  * <p>
@@ -59,13 +61,12 @@ public interface MetricsFactory {
 
     /**
      * Returns a new instance from a highest-weight provider available at runtime using the provided
-     * {@link io.helidon.metrics.api.MetricsConfig}.
-     *
-     * @param metricsConfig metrics config
-     * @return new metrics factory
+     * {@link io.helidon.common.config.Config} to set up the factory.
+     * @param rootConfig top-level config node
+     * @return new instance configured as directed
      */
-    static MetricsFactory getInstance(MetricsConfig metricsConfig) {
-        return MetricsFactoryManager.getInstance(metricsConfig);
+    static MetricsFactory getInstance(Config rootConfig) {
+        return MetricsFactoryManager.getInstance(rootConfig);
     }
 
     /**
@@ -108,6 +109,18 @@ public interface MetricsFactory {
      * @return counter builder
      */
     Counter.Builder counterBuilder(String name);
+
+    /**
+     * Creates a builder for a functional {@link io.helidon.metrics.api.Counter}, essentially a counter-style
+     * wrapper around an external object.
+     *
+     * @param name name of the counter
+     * @param stateObject object which provides the counter value
+     * @param fn function which, when applied to the state object, yields the counter value
+     * @return counter builder
+     * @param <T> type of the state object
+     */
+    <T> FunctionalCounter.Builder functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.DistributionStatisticsConfig}.

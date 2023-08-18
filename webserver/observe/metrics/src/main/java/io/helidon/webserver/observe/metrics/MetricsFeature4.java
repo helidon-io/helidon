@@ -374,7 +374,7 @@ public class MetricsFeature4 extends MetricsFeature {
     public static final class Builder extends MetricsFeature.Builder {
         private LazyValue<MetricsFactory> metricsFactory;
         private MeterRegistry meterRegistry;
-        private MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder();
+        private MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder().config(config());
 
         private Builder() {
             super("metrics");
@@ -384,7 +384,7 @@ public class MetricsFeature4 extends MetricsFeature {
         public MetricsFeature4 build() {
             metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
                                                            () -> LazyValue.create(() -> MetricsFactory.getInstance(
-                                                                   metricsConfigBuilder.build())));
+                                                                   config())));
             return new MetricsFeature4(this);
         }
 
