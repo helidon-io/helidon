@@ -18,12 +18,28 @@ package io.helidon.metrics.micrometer;
 import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Tag;
 
 class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
 
+    /**
+     * Creates a new builder for a wrapper around a Micrometer gauge that will be registered later, typically if the
+     * developer is creating a gauge using the Helidon API.
+     *
+     * @param name name of the new gauge
+     * @return new builder for a wrapper gauge
+     */
     static <T> MGauge.Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return new MGauge.Builder<>(name, stateObject, fn);
     }
+    /**
+     * Creates a new wrapper gauge around an existing Micrometer gauge, typically if the developer has registered a
+     * gauge directly using the Micrometer API rather than through the Helidon adapter but we need to expose the gauge
+     * via a wrapper.
+     *
+     * @param gauge the Micrometer gauge
+     * @return new wrapper around the gauge
+     */
     static MGauge create(Gauge gauge) {
         return new MGauge(gauge);
     }
@@ -32,19 +48,43 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
         super(delegate);
     }
 
+    private <T> MGauge(Gauge delegate, Builder<T> builder) {
+        super(delegate, builder);
+    }
+
     @Override
     public double value() {
         return delegate().value();
     }
 
-    static class Builder<T> extends MMeter.Builder<Gauge.Builder<T>, MGauge.Builder<T>, MGauge>
-            implements io.helidon.metrics.api.Gauge.Builder<T> {
+    static class Builder<T> extends MMeter.Builder<Gauge.Builder<T>, Gauge, MGauge.Builder<T>, MGauge>
+                implements io.helidon.metrics.api.Gauge.Builder<T> {
 
         private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
             super(Gauge.builder(name, stateObject, fn));
-            prep(delegate()::tags,
-                 delegate()::description,
-                 delegate()::baseUnit);
+        }
+
+        @Override
+        protected Builder delegateTags(Iterable<Tag> tags) {
+            delegate().tags(tags);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateDescription(String description) {
+            delegate().description(description);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateBaseUnit(String baseUnit) {
+            delegate().baseUnit(baseUnit);
+            return identity();
+        }
+
+        @Override
+        protected MGauge build(Gauge meter) {
+            return new MGauge(meter, this);
         }
     }
 }

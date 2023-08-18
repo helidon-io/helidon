@@ -41,6 +41,11 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
+    public Iterable<Meter> meters(Iterable<String> scopeSelection) {
+        return Set.of();
+    }
+
+    @Override
     public Clock clock() {
         return Clock.system();
     }
@@ -61,12 +66,27 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
+    public Optional<Meter> remove(Meter.Id id, String scope) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<Meter> remove(String name, Iterable<Tag> tags, String scope) {
+        return Optional.empty();
+    }
+
+    @Override
     public <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
         return Optional.empty();
     }
 
     @Override
-    public <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder) {
+    public boolean isDeleted(Meter meter) {
+        return false;
+    }
+
+    @Override
+    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
         NoOpMeter.Builder<?, ?> b = (NoOpMeter.Builder<?, ?>) builder;
         return findOrRegister(NoOpMeter.Id.create(b.name(),
                                                   b.tags()),

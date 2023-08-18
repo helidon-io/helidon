@@ -67,4 +67,13 @@ public class SimpleApiTest {
                                                                                "t2", "v2"));
         assertThat("Fetched timer", fetchedTimer, OptionalMatcher.optionalEmpty());
     }
+
+    @Test
+    void testConfig() {
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .build();
+
+        assertThat("Scope tagging", metricsConfig.scopeTagEnabled(), is(MetricsConfig.SCOPE_TAG_ENABLED_DEFAULT));
+        assertThat("Scope tag name", metricsConfig.scopeTagName(), is(MetricsConfig.SCOPE_TAG_NAME_DEFAULT));
+    }
 }

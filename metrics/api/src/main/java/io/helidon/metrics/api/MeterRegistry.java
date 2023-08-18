@@ -41,6 +41,14 @@ public interface MeterRegistry extends Wrapper {
     Collection<? extends Meter> meters(Predicate<Meter> filter);
 
     /**
+     * Returns previously-registered meters which match one of the specified scopes.
+     *
+     * @param scopeSelection scopes to match
+     * @return matching meters
+     */
+    Iterable<Meter> meters(Iterable<String> scopeSelection);
+
+    /**
      * Returns the default {@link io.helidon.metrics.api.Clock} in use by the registry.
      *
      * @return default clock
@@ -53,10 +61,10 @@ public interface MeterRegistry extends Wrapper {
      *
      * @param builder builder to use in finding or creating a meter
      * @return the previously-registered meter with the same name and tags or, if none, the newly-registered one
-     * @param <M> type of the meter
      * @param <B> builder for the meter
+     * @param <M> type of the meter
      */
-    <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder);
+    <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder);
 
     /**
      * Locates a previously-registered counter.
@@ -134,12 +142,38 @@ public interface MeterRegistry extends Wrapper {
     Optional<Meter> remove(Meter.Id id);
 
     /**
+     * Removes a previously-registered meter with the specified ID and scope.
+     *
+     * @param id ID for the meter to remove
+     * @param scope scope of the meter to remove
+     * @return the removed meter; empty if the specified ID and scope do not correspond to a registered meter
+     */
+    Optional<Meter> remove(Meter.Id id, String scope);
+
+    /**
      * Removes a previously-registered meter with the specified name and tags.
      *
-     * @param name counter name
+     * @param name meter name
      * @param tags tags for further identifying the meter
-     * @return the removed meter; empty if the specified name and tags does not correspond to a registered meter
+     * @return the removed meter; empty if the specified name and tags do not correspond to a registered meter
      */
-    Optional<Meter> remove(String name,
-                 Iterable<Tag> tags);
+    Optional<Meter> remove(String name, Iterable<Tag> tags);
+
+    /**
+     * Removes a previously-registered meter with the specified name, tags, and scope.
+     *
+     * @param name meter name
+     * @param tags tags for further identifying the meter
+     * @param scope scope within which to locate the meter
+     * @return the removed meter; empty if the specified name, tags, and scope do not correspond to a registered meter
+     */
+    Optional<Meter> remove(String name, Iterable<Tag> tags, String scope);
+
+    /**
+     * Indicates if the meter has been deleted.
+     *
+     * @param meter {@link io.helidon.metrics.api.Meter} to check
+     * @return true if the meter has been deleted; false if it is still active
+     */
+    boolean isDeleted(Meter meter);
 }

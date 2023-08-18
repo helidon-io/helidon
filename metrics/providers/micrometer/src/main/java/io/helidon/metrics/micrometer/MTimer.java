@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import io.helidon.metrics.api.HistogramSnapshot;
 
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 
 class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
@@ -83,6 +84,10 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
             throw new IllegalArgumentException("Expected timer type " + MTimer.class.getName()
             + " but was " + timer.getClass().getName());
         }
+    }
+
+    private MTimer(Timer delegate, Builder builder) {
+        super(delegate, builder);
     }
 
     private MTimer(Timer delegate) {
@@ -162,8 +167,8 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
                                          baseTimeUnit.toChronoUnit()));
     }
 
-    static class Builder extends MMeter.Builder<Timer.Builder, MTimer.Builder, MTimer>
-    implements io.helidon.metrics.api.Timer.Builder {
+    static class Builder extends MMeter.Builder<Timer.Builder, Timer, MTimer.Builder, MTimer>
+                implements io.helidon.metrics.api.Timer.Builder {
 
         private Builder(String name) {
             super(Timer.builder(name));
@@ -191,6 +196,29 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         public Builder maximumExpectedValue(Duration max) {
             delegate().maximumExpectedValue(max);
             return identity();
+        }
+
+        @Override
+        protected Builder delegateTags(Iterable<Tag> tags) {
+            delegate().tags(tags);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateDescription(String description) {
+            delegate().description(description);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateBaseUnit(String baseUnit) {
+            // The Micrometer Timer does not have baseUnit (it's fixed at ns) but for uniformity we implement this anyway.
+            return identity();
+        }
+
+        @Override
+        protected MTimer build(Timer meter) {
+            return new MTimer(meter, this);
         }
     }
 }

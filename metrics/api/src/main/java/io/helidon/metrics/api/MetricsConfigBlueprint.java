@@ -31,6 +31,18 @@ import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * Blueprint for {@link io.helidon.metrics.api.MetricsConfig}.
+ *
+ * <p>
+ *     <h2>Scope handling configuration</h2>
+ *     Helidon allows developers to associate a scope with each meter. The {@value SCOPE_CONFIG_KEY} subsection of the
+ *     {@value METRICS_CONFIG_KEY} configuration controls
+ *     <ul>
+ *         <li>the default scope value to use if a meter is registered without an explicit scope setting, and</li>
+ *         <li>whether and how Helidon records each meter's scope as a tag in the underlying implementation meter registry.
+ *         <p>
+ *             Specifically, users can specify whether scope tags are used at all and, if so, what tag name to use.
+ *         </li>
+ *     </ul>
  */
 @ConfigBean()
 @Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)
@@ -52,6 +64,47 @@ interface MetricsConfigBlueprint {
      * Config key for the app tag value to be applied to all metrics in this application.
      */
     String APP_TAG_CONFIG_KEY = "app-name";
+
+    /**
+     * Config key for scope-related settings.
+     */
+    String SCOPE_CONFIG_KEY = "scope";
+
+    /**
+     * Config key for the default scope value.
+     */
+    String SCOPE_DEFAULT_VALUE_CONFIG_KEY = "default";
+
+    /**
+     * Config key for tag settings within the scope config section.
+     */
+    String SCOPE_TAG_CONFIG_KEY = "tag";
+
+    /**
+     * Config key for the tag name to use for storing scope values within the scope config section.
+     */
+    String SCOPE_TAG_NAME_CONFIG_KEY = "name";
+
+    /**
+     * Default tag name to use for recording a meter's scope as a tag (if that behavior is enabled).
+     */
+    String SCOPE_TAG_NAME_DEFAULT = "scope";
+
+    /**
+     * Config key for whether to store scopes as tags.
+     */
+    String SCOPE_TAG_ENABLED_CONFIG_KEY = "enabled";
+
+    /**
+     * Default setting for whether to use scope tags (as text).
+     */
+    String SCOPE_TAG_ENABLED_DEFAULT_VALUE = "false";
+
+    /**
+     * Default setting for whether to use scope tags (as boolean).
+     */
+    boolean SCOPE_TAG_ENABLED_DEFAULT = Boolean.parseBoolean(SCOPE_TAG_ENABLED_DEFAULT_VALUE);
+
 
     /**
      * Whether metrics functionality is enabled.
@@ -80,10 +133,37 @@ interface MetricsConfigBlueprint {
     /**
      * Application tag value added to each meter ID.
      *
-     * @return  application tag value
+     * @return application tag value
      */
     @ConfiguredOption(key = APP_TAG_CONFIG_KEY)
     Optional<String> appTagValue();
+
+    /**
+     * Default scope value to associate with meters that are registered without an explicit setting; no setting means meters
+     * receive no default scope value.
+     *
+     * @return default scope value
+     */
+    @ConfiguredOption(key = SCOPE_CONFIG_KEY + "." + SCOPE_DEFAULT_VALUE_CONFIG_KEY)
+    Optional<String> scopeDefaultValue();
+
+    /**
+     * Whether a meter's scope is recorded as a tag value in the meter's ID in the underlying implementation meter registry.
+     *
+     * @return if scopes are recorded as tags in the underlying implementation meter registry
+     */
+    @ConfiguredOption(key = SCOPE_CONFIG_KEY + "." + SCOPE_TAG_CONFIG_KEY + "." + SCOPE_TAG_ENABLED_CONFIG_KEY,
+                      value = SCOPE_TAG_ENABLED_DEFAULT_VALUE)
+    Boolean scopeTagEnabled();
+
+    /**
+     * Tag name for storing meter scope values in the underlying implementation meter registry.
+     *
+     * @return tag name for storing scope values
+     */
+    @ConfiguredOption(key = SCOPE_CONFIG_KEY + "." + SCOPE_TAG_CONFIG_KEY + "." + SCOPE_TAG_NAME_CONFIG_KEY,
+                      value = SCOPE_TAG_NAME_DEFAULT)
+    String scopeTagName();
 
     /**
      * Metrics configuration node.

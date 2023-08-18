@@ -17,7 +17,7 @@ package io.helidon.metrics.micrometer;
 
 import java.util.Iterator;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.Optional;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
@@ -27,12 +27,26 @@ import io.micrometer.core.instrument.Tag;
  */
 class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
+    private static final String DEFAULT_SCOPE = "application";
+
     private final M delegate;
     private final io.helidon.metrics.api.Meter.Id id;
 
+    private Optional<String> scope;
+    private boolean isDeleted = false;
+
+    protected MMeter(M delegate, Builder<?, ?, ?, ?> builder) {
+        this(delegate, builder.scope);
+    }
+
     protected MMeter(M delegate) {
+        this(delegate, (String) null);
+    }
+
+    private MMeter(M delegate, String scope) {
         this.delegate = delegate;
         id = Id.of(delegate.getId());
+        this.scope = Optional.ofNullable(scope);
     }
 
     @Override
@@ -55,6 +69,11 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         return io.helidon.metrics.api.Meter.Type.valueOf(delegate.getId()
                                                                  .getType()
                                                                  .name());
+    }
+
+    @Override
+    public Optional<String> scope() {
+        return scope;
     }
 
     @Override
@@ -83,23 +102,33 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         return delegate;
     }
 
-    abstract static class Builder<B, HB extends Builder<B, HB, HM>, HM extends io.helidon.metrics.api.Meter> {
+    protected void scope(String scope) {
+        this.scope = Optional.of(scope);
+    }
+
+    protected boolean isDeleted() {
+        return isDeleted;
+    }
+
+    protected void markAsDeleted() {
+        isDeleted = true;
+    }
+
+    /**
+     * Builder for a wrapping meter around a Micrometer meter.
+     *
+     * @param <B> type of the Micrometer builder (there is no common supertype for all Micrometer meter builders)
+     * @param <M> type of the Micrometer meter to build
+     * @param <HB> type of the Helidon meter builder which wraps the Micrometer meter builder
+     * @param <HM> type of the Helidon meter which wraps the Micrometer meter
+     */
+    abstract static class Builder<B, M extends Meter, HB extends Builder<B, M, HB, HM>, HM extends MMeter<M>> {
 
         private final B delegate;
-        private Function<Iterable<Tag>, B> tagsSetter;
-        private Function<String, B> descriptionSetter;
-        private Function<String, B> baseUnitSetter;
+        private String scope;
 
         protected Builder(B delegate) {
             this.delegate = delegate;
-        }
-
-        protected void prep(Function<Iterable<Tag>, B> tagsSetter,
-                            Function<String, B> descriptionSetter,
-                            Function<String, B> baseUnitSetter) {
-            this.tagsSetter = tagsSetter;
-            this.descriptionSetter = descriptionSetter;
-            this.baseUnitSetter = baseUnitSetter;
         }
 
         protected B delegate() {
@@ -107,17 +136,19 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         public HB tags(Iterable<io.helidon.metrics.api.Tag> tags) {
-           tagsSetter.apply(MTag.tags(tags));
-           return identity();
+           return delegateTags(MTag.tags(tags));
         }
 
         public HB description(String description) {
-            descriptionSetter.apply(description);
-            return identity();
+            return delegateDescription(description);
         }
 
         public HB baseUnit(String baseUnit) {
-            baseUnitSetter.apply(baseUnit);
+            return delegateBaseUnit(baseUnit);
+        }
+
+        public HB scope(String scope) {
+            this.scope = scope;
             return identity();
         }
 
@@ -125,7 +156,16 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return (HB) this;
         }
 
-//        abstract HM register(MMeterRegistry meterRegistry);
+        protected String scope() {
+            return scope;
+        }
+
+        protected abstract HB delegateTags(Iterable<Tag> tags);
+        protected abstract HB delegateDescription(String description);
+        protected abstract HB delegateBaseUnit(String baseUnit);
+
+
+        protected abstract HM build(M meter);
 
     }
 

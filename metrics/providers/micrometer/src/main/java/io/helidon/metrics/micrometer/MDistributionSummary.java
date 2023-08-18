@@ -19,22 +19,42 @@ import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.HistogramSnapshot;
 
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Tag;
 
 import static io.micrometer.core.instrument.distribution.DistributionStatisticConfig.DEFAULT;
 
 class MDistributionSummary extends MMeter<DistributionSummary> implements io.helidon.metrics.api.DistributionSummary {
 
+    /**
+     * Creates a new builder for a wrapper around a Micrometer summary that will be registered later, typically if the
+     * developer is creating a summary using the Helidon API.
+     *
+     * @param name name of the new summary
+     * @param configBuilder builder for the distribution statistics config the summary should use
+     * @return new builder for a wrapper summary
+     */
     static Builder builder(String name,
                            DistributionStatisticsConfig.Builder configBuilder) {
         return new Builder(name, configBuilder);
     }
 
-    static MDistributionSummary create(DistributionSummary summary) {
+    /**
+     * Creates a new wrapper summary around an existing Micrometer summary, typically if the developer has registered a
+     * summary directly using the Micrometer API rather than through the Helidon adapter but we need to expose the summary
+     * via a wrapper.
+     *
+     * @param summary the Micrometer summary
+     * @return new wrapper around the summary
+     */static MDistributionSummary create(DistributionSummary summary) {
         return new MDistributionSummary(summary);
     }
 
     private MDistributionSummary(DistributionSummary delegate) {
         super(delegate);
+    }
+
+    private MDistributionSummary(DistributionSummary delegate, Builder builder) {
+        super(delegate, builder);
     }
 
     @Override
@@ -67,7 +87,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         return MHistogramSnapshot.create(delegate().takeSnapshot());
     }
 
-    static class Builder extends MMeter.Builder<DistributionSummary.Builder, Builder, MDistributionSummary>
+    static class Builder extends MMeter.Builder<DistributionSummary.Builder, DistributionSummary, Builder, MDistributionSummary>
                          implements io.helidon.metrics.api.DistributionSummary.Builder {
 
         private Builder(String name, DistributionStatisticsConfig.Builder configBuilder) {
@@ -88,6 +108,11 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         }
 
         @Override
+        protected MDistributionSummary build(DistributionSummary summary) {
+            return new MDistributionSummary(summary, this);
+        }
+
+        @Override
         public Builder scale(double scale) {
             delegate().scale(scale);
             return identity();
@@ -104,6 +129,24 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
             config.minimumExpectedValue().ifPresent(delegate::minimumExpectedValue);
             config.maximumExpectedValue().ifPresent(delegate::maximumExpectedValue);
 
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateTags(Iterable<Tag> tags) {
+            delegate().tags(tags);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateDescription(String description) {
+            delegate().description(description);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateBaseUnit(String baseUnit) {
+            delegate().baseUnit(baseUnit);
             return identity();
         }
     }

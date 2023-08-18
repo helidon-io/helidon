@@ -39,6 +39,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
     private final String unit;
     private final String description;
     private final Type type;
+    private final String scope;
 
     static class Id implements Meter.Id {
         static Id create(String name, Iterable<Tag> tags) {
@@ -94,14 +95,16 @@ class NoOpMeter implements Meter, NoOpWrapper {
         this(new NoOpMeter.Id(builder.name, builder.tags.values()),
              builder.unit,
              builder.description,
-             builder.type);
+             builder.type,
+             builder.scope);
     }
 
-    private NoOpMeter(Id id, String baseUnit, String description, Type type) {
+    private NoOpMeter(Id id, String baseUnit, String description, Type type, String scope) {
         this.id = id;
         this.unit = baseUnit;
         this.description = description;
         this.type = type;
+        this.scope = scope;
     }
 
     @Override
@@ -124,6 +127,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
         return type;
     }
 
+    @Override
+    public Optional<String> scope() {
+        return Optional.ofNullable(scope);
+    }
+
     abstract static class Builder<B extends Builder<B, M>, M extends Meter> {
 
         private final String name;
@@ -131,6 +139,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
         private String description;
         private String unit;
         private final Type type;
+        private String scope = Scope.DEFAULT;
 
         private Builder(String name, Type type) {
             this.name = name;
@@ -159,6 +168,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return identity();
         }
 
+        public B scope(String scope) {
+            this.scope = scope;
+            return identity();
+        }
+
         public B identity() {
             return (B) this;
         }
@@ -177,6 +191,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         public String description() {
             return description;
+        }
+
+        public String scope() {
+            return scope;
         }
     }
 

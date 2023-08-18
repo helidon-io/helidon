@@ -16,15 +16,35 @@
 package io.helidon.metrics.micrometer;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Tag;
 
 class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter {
 
+    /**
+     * Creates a new builder for a wrapper around a Micrometer counter that will be registered later, typically if the
+     * developer is creating a counter using the Helidon API.
+     *
+     * @param name name of the new counter
+     * @return new builder for a wrapper counter
+     */
     static Builder builder(String name) {
         return new Builder(name);
     }
 
+    /**
+     * Creates a new wrapper counter around an existing Micrometer counter, typically if the developer has registered a
+     * counter directly using the Micrometer API rather than through the Helidon adapter but we need to expose the counter
+     * via a wrapper.
+     *
+     * @param counter the Micrometer counter
+     * @return new wrapper around the counter
+     */
     static MCounter create(Counter counter) {
         return new MCounter(counter);
+    }
+
+    private MCounter(Counter delegate, Builder builder) {
+        super(delegate, builder);
     }
 
     private MCounter(Counter delegate) {
@@ -46,14 +66,34 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
         return (long) delegate().count();
     }
 
-    static class Builder extends MMeter.Builder<Counter.Builder, Builder, MCounter>
-                         implements io.helidon.metrics.api.Counter.Builder {
+    static class Builder extends MMeter.Builder<Counter.Builder, Counter, Builder, MCounter>
+                    implements io.helidon.metrics.api.Counter.Builder {
 
         private Builder(String name) {
             super(Counter.builder(name));
-            prep(delegate()::tags,
-                  delegate()::description,
-                  delegate()::baseUnit);
+        }
+
+        @Override
+        public MCounter build(Counter counter) {
+            return new MCounter(counter, this);
+        }
+
+        @Override
+        protected Builder delegateTags(Iterable<Tag> tags) {
+            delegate().tags(tags);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateDescription(String description) {
+            delegate().description(description);
+            return identity();
+        }
+
+        @Override
+        protected Builder delegateBaseUnit(String baseUnit) {
+            delegate().baseUnit(baseUnit);
+            return identity();
         }
     }
 }

@@ -25,4 +25,5 @@ module helidon.metrics.testing {
     requires org.junit.jupiter.api;
     requires hamcrest.all;
     requires io.helidon.config;
+    requires org.junit.jupiter.params;
 }

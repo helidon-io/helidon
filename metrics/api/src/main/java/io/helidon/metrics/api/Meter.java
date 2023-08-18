@@ -15,13 +15,50 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
+
 /**
  * Common behavior of all meters.
  */
 public interface Meter extends Wrapper {
 
     /**
+     * Constants for the pre-defined scopes.
+     */
+    class Scope {
+
+        /**
+         * Application scope.
+         */
+        public static final String APPLICATION = "application";
+
+        /**
+         * Base scope.
+         */
+        public static final String BASE = "base";
+
+        /**
+         * Vendor scope.
+         */
+        public static final String VENDOR = "vendor";
+
+        /**
+         * Default scope if none is specified for a given meter.
+         */
+        public static final String DEFAULT = APPLICATION;
+
+        private Scope() {
+        }
+    }
+
+    /**
      * Common behavior of specific meter builders.
+     *
+     * <p>
+     *     This builder does not extend the conventional Helidon builder because, typically, "building" a meter involves
+     *     registering it which is implementation-specific and therefore should be performed only by each implementation.
+     *     We do not want developers to see a {@code build()} operation that they should not invoke.
+     * </p>
      *
      * @param <B> type of the builder
      * @param <M> type of the meter the builder creates
@@ -60,6 +97,14 @@ public interface Meter extends Wrapper {
          * @return updated builder
          */
         B baseUnit(String baseUnit);
+
+        /**
+         * Sets the scope to be associated with this meter.
+         *
+         * @param scope scope
+         * @return updated builder
+         */
+        B scope(String scope);
     }
 
     /**
@@ -152,4 +197,11 @@ public interface Meter extends Wrapper {
      * @return meter type
      */
     Type type();
+
+    /**
+     * Returns the scope associated with the meter.
+     *
+     * @return scope
+     */
+    Optional<String> scope();
 }
