@@ -396,6 +396,7 @@ public class MetricsFeature4 extends MetricsFeature {
          * @see io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder Details about key
          *         performance metrics configuration
          */
+        @Override
         public Builder config(Config config) {
             super.config(config);
             metricsConfigBuilder.config(config);

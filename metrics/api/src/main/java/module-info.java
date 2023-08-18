@@ -44,4 +44,5 @@ module io.helidon.metrics.api {
     uses io.helidon.metrics.spi.MetricsFactoryProvider;
     uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
     uses MetricsFactory;
+    uses io.helidon.metrics.spi.MetersProvider;
 }
