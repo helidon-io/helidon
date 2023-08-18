@@ -84,7 +84,9 @@ import static io.helidon.http.Http.Status.OK_200;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
-public class MetricsFeature4 extends HelidonFeatureSupport {
+// TODO change back to extend HFS
+//public class MetricsFeature4 extends HelidonFeatureSupport {
+public class MetricsFeature4 extends MetricsFeature {
     private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
     private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(NOT_FOUND_404)
             .send("Metrics are disabled");
@@ -368,8 +370,9 @@ public class MetricsFeature4 extends HelidonFeatureSupport {
     /**
      * A fluent API builder to build instances of {@link MetricsFeature}.
      */
-    public static final class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature4> {
-
+    // TODO change back to normal extends clause
+//    public static final class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature4> {
+    public static final class Builder extends MetricsFeature.Builder {
         private LazyValue<MetricsFactory> metricsFactory;
         private MeterRegistry meterRegistry;
         private MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder();

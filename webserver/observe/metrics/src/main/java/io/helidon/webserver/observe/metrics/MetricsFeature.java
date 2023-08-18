@@ -87,6 +87,12 @@ public class MetricsFeature extends HelidonFeatureSupport {
         SystemTagsManager.create(metricsSettings);
     }
 
+    protected MetricsFeature(System.Logger logger, Builder builder, String serviceName) {
+        super(logger, builder, serviceName);
+        metricsSettings = null;
+        registryFactory = null;
+    }
+
     /**
      * Create an instance to be registered with WebServer with all defaults.
      *
@@ -117,7 +123,10 @@ public class MetricsFeature extends HelidonFeatureSupport {
      * @return a new builder instance
      */
     public static Builder builder() {
-        return new Builder();
+//        return new Builder();
+        return System.getProperty("newMetricsAPI") == null
+        ? new Builder()
+        : MetricsFeature4.builder();
     }
 
     @Override
@@ -297,12 +306,17 @@ public class MetricsFeature extends HelidonFeatureSupport {
     /**
      * A fluent API builder to build instances of {@link MetricsFeature}.
      */
-    public static final class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
+    //public static final class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
+    public static class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
         private LazyValue<RegistryFactory> registryFactory;
         private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
 
         private Builder() {
             super("metrics");
+        }
+
+        protected Builder(String serviceName) {
+            super(serviceName);
         }
 
         @Override
