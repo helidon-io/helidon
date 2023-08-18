@@ -5,7 +5,6 @@ org.jboss.weld.bootstrap.spi.helpers
 org.jboss.weld.configuration.spi
 org.jboss.weld.configuration.spi.helpers
 org.jboss.weld.construction.api
-org.jboss.weld.context.api
 org.jboss.weld.ejb.api
 org.jboss.weld.ejb.spi
 org.jboss.weld.ejb.spi.helpers
@@ -22,4 +21,3 @@ org.jboss.weld.servlet.api.helpers
 org.jboss.weld.servlet.spi
 org.jboss.weld.servlet.spi.helpers
 org.jboss.weld.transaction.spi
-org.jboss.weld.validation.spi
