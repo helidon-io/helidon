@@ -416,7 +416,8 @@ class TypeHandlerMap extends TypeHandler {
                 .addLine("return self();"));
     }
 
-    private void declaredSetter(InnerClass.Builder classBuilder,
+    @Override
+    protected void declaredSetter(InnerClass.Builder classBuilder,
                                 PrototypeProperty.ConfiguredOption configured,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc) {

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 final class EmptyConfig {
     static final Config.Key ROOT_KEY = new KeyImpl(null, "");
@@ -138,6 +139,21 @@ final class EmptyConfig {
         @Override
         public <N> ConfigValue<N> as(Function<T, N> mapper) {
             return new EmptyValue<>(key);
+        }
+
+        @Override
+        public Supplier<T> supplier() {
+            return this::get;
+        }
+
+        @Override
+        public Supplier<T> supplier(T defaultValue) {
+            return () -> defaultValue;
+        }
+
+        @Override
+        public Supplier<Optional<T>> optionalSupplier() {
+            return this::asOptional;
         }
     }
 
