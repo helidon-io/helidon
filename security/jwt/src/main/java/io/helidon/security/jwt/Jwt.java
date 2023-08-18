@@ -959,8 +959,7 @@ public class Jwt {
      *                 issuer claim mandatory
      * @param audience validates that this JWT was issued for this audience. Setting this to non-null value will make
      *                 audience claim mandatory
-     * @param checkAudience whether audience claim check is turned on. Validation will fail when {@code true}
-     *                      and audience claim is null
+     * @param checkAudience whether audience claim validation should be executed
      * @return errors instance to check for validation result
      */
     public Errors validate(String issuer, String audience, boolean checkAudience) {
@@ -982,8 +981,7 @@ public class Jwt {
      *                 issuer claim mandatory
      * @param audience validates that this JWT was issued for this audience. Setting this to non-null value and with
      *                 any non-null value in the Set will make audience claim mandatory
-     * @param checkAudience whether audience claim check is configured as mandatory. Validation will fail when {@code true}
-     *                      and audience claim is null
+     * @param checkAudience whether audience claim validation should be executed
      * @return errors instance to check for validation result
      */
     public Errors validate(String issuer, Set<String> audience, boolean checkAudience) {
