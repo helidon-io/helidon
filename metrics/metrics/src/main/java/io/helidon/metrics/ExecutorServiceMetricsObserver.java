@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -78,18 +77,6 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
         return supplierInfo.context();
     }
 
-    @Override
-    public SupplierObserverContext registerSupplier(Supplier<? extends ExecutorService> supplier,
-                                                                                int supplierIndex,
-                                                                                String supplierCategory,
-                                                                                List<MethodInvocation> methodInvocations) {
-        SupplierInfo supplierInfo = new SupplierInfoWithMethods(supplierCategory,
-                                                                supplierIndex,
-                                                                methodInvocations);
-        LOGGER.log(Level.FINE, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
-        return supplierInfo.context();
-    }
-
     private class MetricsObserverContext implements ExecutorServiceSupplierObserver.SupplierObserverContext {
 
         private final SupplierInfo supplierInfo;
@@ -107,10 +94,8 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                                  supplierInfo.supplierCategory(),
                                                  supplierInfo.supplierIndex()));
 
-            if (executorService instanceof ThreadPoolExecutor) {
-                registerMetrics((ThreadPoolExecutor) executorService, index);
-            } else if (supplierInfo instanceof SupplierInfoWithMethods) {
-                registerMetrics(executorService, ((SupplierInfoWithMethods) supplierInfo).methodInvocations(), index);
+            if (executorService instanceof ThreadPoolExecutor tpe) {
+                registerMetrics(tpe, index);
             }
         }
 
@@ -122,27 +107,6 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                    threadPoolExecutor,
                                    index,
                                    metricsIDs));
-        }
-
-        private void registerMetrics(ExecutorService executorService, List<MethodInvocation> methodInvocations, int index) {
-            methodInvocations.forEach(mi -> {
-                Metadata metadata = Metadata.builder()
-                        .withName(METRIC_NAME_PREFIX + mi.displayName())
-                        .withDescription(mi.description())
-                        .withUnit(MetricUnits.NONE)
-                        .build();
-                Tag[] tags = tags(supplierInfo.supplierCategory(),
-                                  supplierInfo.supplierIndex(),
-                                  index);
-                registry.get().gauge(metadata, () -> {
-                    try {
-                        return (Number) mi.method().invoke(executorService);
-                    } catch (IllegalAccessException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    }
-                }, tags);
-                metricsIDs.add(new MetricID(metadata.getName(), tags));
-            });
         }
 
         @Override
@@ -183,38 +147,6 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
             return new StringJoiner(", ", SupplierInfo.class.getSimpleName() + "[", "]")
                     .add("supplierCategory='" + supplierCategory + "'")
                     .add("supplierIndex=" + supplierIndex)
-                    .toString();
-        }
-    }
-
-    /**
-     * Information about an executor service supplier that provides its own mechanisms for retrieving metrics.
-     * <p>
-     *     This is for supporting Loom's {@code ThreadPerTaskExecutorService} when it is available without requiring it to be
-     *     present at compile or runtime.
-     * </p>
-     */
-    private class SupplierInfoWithMethods extends SupplierInfo {
-
-        private final List<MethodInvocation> methodInvocations;
-
-        private SupplierInfoWithMethods(String supplierCategory,
-                                        int supplierIndex,
-                                        List<MethodInvocation> methodInvocations) {
-            super(supplierCategory, supplierIndex);
-            this.methodInvocations = methodInvocations;
-        }
-
-        private List<MethodInvocation> methodInvocations() {
-            return methodInvocations;
-        }
-
-        @Override
-        public String toString() {
-            return new StringJoiner(", ", SupplierInfoWithMethods.class.getSimpleName() + "[", "]")
-                    .add("supplierCategory='" + supplierCategory() + "'")
-                    .add("supplierIndex=" + supplierIndex())
-                    .add("methodInvocations=" + methodInvocations)
                     .toString();
         }
     }
