@@ -22,7 +22,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Settings which control metrics behavior for a metrics-capable component.
  * <p>
- *     <em>Do not</em> use this for controlling overall metrics. Use {@link MetricsSettings} instead.
+ *     <em>Do not</em> use this for controlling overall metrics. Use {@link io.helidon.metrics.api.MetricsConfig} instead.
  * </p>
  */
 public interface ComponentMetricsSettings {

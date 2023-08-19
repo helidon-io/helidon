@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 
 /**
  * Adapter to Micrometer meter for Helidon metrics.
@@ -45,7 +46,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     private MMeter(M delegate, String scope) {
         this.delegate = delegate;
-        id = Id.of(delegate.getId());
+        id = Id.create(delegate.getId());
         this.scope = Optional.ofNullable(scope);
     }
 
@@ -171,7 +172,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     static class Id implements io.helidon.metrics.api.Meter.Id {
 
-        static Id of(Meter.Id id) {
+        static Id create(Meter.Id id) {
             return new Id(id);
         }
 

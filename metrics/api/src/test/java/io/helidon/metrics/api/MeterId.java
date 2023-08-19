@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,5 +15,15 @@
  */
 package io.helidon.metrics.api;
 
-interface NoOpMetric extends HelidonMetric {
+import java.util.Set;
+
+record MeterId(String name, Iterable<Tag> tags) implements Meter.Id {
+
+    static Meter.Id create(String name, Iterable<Tag> tags) {
+        return new MeterId(name, tags);
+    }
+
+    static Meter.Id create(String name, Tag tag) {
+        return new MeterId(name, Set.of(tag));
+    }
 }

@@ -88,10 +88,10 @@ class Util {
         };
     }
 
-    static <T extends io.helidon.metrics.api.Tag> Iterable<Tag> tags(Iterable<T> tags) {
+    static Iterable<Tag> tags(Iterable<io.helidon.metrics.api.Tag> tags) {
         return () -> new Iterator<>() {
 
-            private final Iterator<T> tagsIter = tags.iterator();
+            private final Iterator<io.helidon.metrics.api.Tag> tagsIter = tags.iterator();
 
             @Override
             public boolean hasNext() {
@@ -105,4 +105,6 @@ class Util {
             }
         };
     }
+
+
 }

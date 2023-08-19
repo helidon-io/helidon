@@ -15,10 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Map;
-
-import org.eclipse.microprofile.metrics.MetricID;
-
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
  * meter registries) for all metrics.
@@ -29,11 +25,11 @@ public interface SystemTagsManager {
      * Creates a new system tags manager using the provided metrics settings, saving the new instance as the initialized
      * singleton which will be returned to subsequent invocatinos of {@link #instance()}.
      *
-     * @param metricsSettings settings containing the global and app-level tags (if any)
+     * @param metricsConfig settings containing the global and app-level tags (if any)
      * @return new tags manager
      */
-    static SystemTagsManager create(MetricsSettings metricsSettings) {
-        return SystemTagsManagerImpl.create(metricsSettings);
+    static SystemTagsManager create(MetricsConfig metricsConfig) {
+        return SystemTagsManagerImpl.create(metricsConfig);
     }
 
     /**
@@ -46,57 +42,21 @@ public interface SystemTagsManager {
     }
 
     /**
-     * Returns a single iterator over the explicit tags in the metric ID plus any global and app tags.
+     * Returns a single iterator over the explicit tags in the meter ID plus any global and app tags.
      *
-     * @param metricID metric ID possibly containing explicit tag settings
+     * @param meterId meter ID possibly containing explicit tag settings
      * @param scope the registry scope
      * @return iterator over all tags, explicit and global and app
      */
-    Iterable<Map.Entry<String, String>> allTags(MetricID metricID, String scope);
+    Iterable<Tag> allTags(Meter.Id meterId, String scope);
 
     /**
-     * Returns a single iterator over the explicit tags in the provided map plus any global and app tags.
-     *
-     * @param explicitTags map containing explicitly-defined tags for a metric
-     * @param scope registry scope
-     * @return iterator over all tags, explicit and global and app
-     */
-    Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope);
-
-    /**
-     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-     * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
-     * with a scope tag name).
-     * @param explicitTags iterable over the key/value pairs for tags
-     * @param scope scope value
-     * @return iterator over all tags, explicit and global and app
-     */
-    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
-
-    /**
-     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-     * and app tags, <em>without</em>> a tag for scope.
-     *
-     * @param explicitTags iterable over the key/value pairs for tags
-     * @return iterator over all tags, explicit and global and app
-     */
-    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
-
-    /**
-     * Returns a single iterator over the explicit tags in the provided {@link org.eclipse.microprofile.metrics.MetricID}, plus
+     * Returns a single iterator over the explicit tags in the provided {@link io.helidon.metrics.api.Meter.Id}, plus
      * any global and app tags <em>without</em> scope.
      *
-     * @param metricId metric ID
+     * @param meterId meter ID
      * @return iterator over all tags, explicit and global and app, without a tag for scope
      */
-    Iterable<Map.Entry<String, String>> allTags(MetricID metricId);
+    Iterable<Tag> allTags(Meter.Id meterId);
 
-    /**
-     * Creates a new {@link org.eclipse.microprofile.metrics.MetricID} using the original ID and adding the system tags.
-     *
-     * @param original original metric ID
-     * @param scope scope to use in augmenting the tags
-     * @return augmented metric ID
-     */
-    MetricID metricIdWithAllTags(MetricID original, String scope);
 }

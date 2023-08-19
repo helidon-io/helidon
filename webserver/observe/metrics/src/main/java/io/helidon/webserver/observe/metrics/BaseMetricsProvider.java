@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics;
+package io.helidon.webserver.observe.metrics;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -32,16 +32,13 @@ import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.config.Config;
-import io.helidon.metrics.api.BaseMetricsSettings;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.spi.MetersProvider;
 
-import org.eclipse.microprofile.metrics.MetricUnits;
-
-import static io.helidon.metrics.api.BaseMetricsSettings.Builder.BASE_METRICS_CONFIG_KEY;
 import static io.helidon.metrics.api.MetricsConfig.METRICS_CONFIG_KEY;
 
 /**
@@ -53,19 +50,20 @@ public class BaseMetricsProvider implements MetersProvider {
     private static final String SECONDS  = "seconds";
     private static final String NONE  = "";
 
-    private BaseMetricsSettings settings;
+    private MetricsConfig metricsConfig;
 
     @Override
     public Iterable<Meter.Builder<?, ?>> meters(Config config) {
-        settings = BaseMetricsSettings.create(config.get(METRICS_CONFIG_KEY)
-                                                      .get(BASE_METRICS_CONFIG_KEY));
+        metricsConfig = MetricsConfig.create(config.get(METRICS_CONFIG_KEY));
         return prepareMeterBuilders();
     }
 
     private Collection<Meter.Builder<?, ?>> prepareMeterBuilders() {
-        if (!settings.isEnabled()) {
+        if (!metricsConfig.enabled()) {
             return Set.of();
         }
+
+        // TODO Apply any scope-level filtering that might be in the metrics config
 
         Collection<Meter.Builder<?, ?>> result = new ArrayList<>();
 
@@ -116,7 +114,7 @@ public class BaseMetricsProvider implements MetersProvider {
                                                      T object,
                                                      Function<T, R> fn,
                                                      Tag... tags) {
-        if (settings.isBaseMetricEnabled(metadata.name)) {
+        if (metricsConfig.isMeterEnabled(metadata.name, "base")) {
             result.add(Gauge.builder(metadata.name, object, obj -> fn.apply(obj).doubleValue())
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
@@ -129,7 +127,7 @@ public class BaseMetricsProvider implements MetersProvider {
                                                T object,
                                                ToDoubleFunction<T> fn,
                                                Tag... tags) {
-        if (settings.isBaseMetricEnabled(metadata.name)) {
+        if (metricsConfig.isMeterEnabled(metadata.name, "base")) {
             result.add(FunctionalCounter.builder(metadata.name, object, fn)
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
@@ -267,7 +265,7 @@ public class BaseMetricsProvider implements MetersProvider {
                             + "timer to measure the elapsed time. This attribute may display the same value "
                             + "even if the collection count has been incremented if the collection elapsed "
                             + "time is very short.")
-            .withUnit(MetricUnits.SECONDS)
+            .withUnit("seconds")
             .build();
 
     private static final Metadata GC_COUNT = Metadata.builder()
@@ -275,7 +273,7 @@ public class BaseMetricsProvider implements MetersProvider {
             .withDescription(
                     "Displays the total number of collections that have occurred. This attribute lists "
                             + "-1 if the collection count is undefined for this collector.")
-            .withUnit(MetricUnits.NONE)
+            .withUnit("")
             .build();
 
     private static class Metadata {

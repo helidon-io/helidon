@@ -37,6 +37,37 @@ class MetricsConfigSupport {
                 .asOptional();
     }
 
+    /**
+     * Reports whether the specified meter within the indicated scope is enabled, according to the metrics configuration.
+     *
+     * @param metricsConfig metrics configuration
+     * @param name meter name
+     * @param targetScope scope within which to check
+     * @return whether the meter is enabled
+     */
+    @Prototype.PrototypeMethod
+    static boolean isMeterEnabled(MetricsConfig metricsConfig, String name, String targetScope) {
+        return true;
+
+        // TODO actually do the filtering
+//        if (!metricsConfig.enabled()) {
+//            return false;
+//        }
+//        // First, look for a direct match of a scope config with the targetScope name.
+//        Optional<ScopeConfig> matchedScopeConfig = metricsConfig.scopes().stream()
+//                .filter(scope -> scope.scope().isPresent()
+//                        && scope.scope().get().equals(targetScope))
+//                .findAny();
+//
+//        // Failing a direct match, treat settings with no scope name as a wildcard.
+//        matchedScopeConfig = matchedScopeConfig.isPresent() ? matchedScopeConfig
+//                : metricsConfig.scopes().stream()
+//                        .filter(scope -> scope.scope().isEmpty() || scope.scope().get().isBlank())
+//                        .findAny();
+//        return matchedScopeConfig.map(s -> s.isMeterEnabled(name)).orElse(true);
+
+    }
+
     // Pattern of a single tag assignment (tag=value):
     //   - capture reluctant match of anything
     //   - non-capturing match of an unescaped =

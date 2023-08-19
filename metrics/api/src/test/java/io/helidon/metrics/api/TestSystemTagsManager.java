@@ -16,14 +16,12 @@
 package io.helidon.metrics.api;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.Tag;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,13 +44,13 @@ class TestSystemTagsManager {
     private static final String APP_TAG_VALUE = "my-app";
 
     private static final Map<String, String> GLOBAL_ONLY_TAGS_SETTINGS = Map.of(
-            MetricsSettings.Builder.METRICS_CONFIG_KEY
-                    + "." + MetricsSettings.Builder.GLOBAL_TAGS_CONFIG_KEY,
+            MetricsConfig.METRICS_CONFIG_KEY
+                    + "." + MetricsConfig.GLOBAL_TAGS_CONFIG_KEY,
             String.format("%s=%s,%s=%s", GLOBAL_TAG_1, GLOBAL_VALUE_1, GLOBAL_TAG_2, GLOBAL_VALUE_2));
 
     private static final Map<String, String> APP_ONLY_TAGS_SETTINGS = Map.of(
-            MetricsSettings.Builder.METRICS_CONFIG_KEY
-                    + "." + MetricsSettings.Builder.APP_TAG_CONFIG_KEY,
+            MetricsConfig.METRICS_CONFIG_KEY
+                    + "." + MetricsConfig.APP_TAG_CONFIG_KEY,
             APP_TAG_VALUE);
 
     private static final Map<String, String> GLOBAL_AND_APP_TAG_SETTINGS;
@@ -64,26 +62,29 @@ class TestSystemTagsManager {
 
     @Test
     void checkMetricsSettingsForGlobalTagsConfig() {
-        Config metricsConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
-        Map<String, String> tags = metricsSettings.globalTags();
+        Config mConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
+        MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
+        Map<String, String> tags = new HashMap<>();
+
+        metricsConfig.globalTags().forEach(t -> tags.put(t.key(), t.value()));
 
         assertThat("Global tags in settings",
                    tags,
                    allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                          hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                         not(hasKey(MetricsSettings.Builder.APP_TAG_CONFIG_KEY))));
+                         not(hasKey(MetricsConfig.APP_TAG_CONFIG_KEY))));
     }
 
     @Test
     void checkSystemTagsManagerForGlobalTags() {
-        Config metricsConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
-        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+        Config mConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
+        MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
-        MetricID metricID = new MetricID("my-metric", new Tag(METRIC_TAG_NAME, METRIC_TAG_VALUE));
+        Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
+                                                                                                METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
@@ -95,13 +96,15 @@ class TestSystemTagsManager {
 
     @Test
     void checkForAppTag() {
-        Config metricsConfig = Config.just(ConfigSources.create(APP_ONLY_TAGS_SETTINGS)).get("metrics");
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
-        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+        Config mConfig = Config.just(ConfigSources.create(APP_ONLY_TAGS_SETTINGS)).get("metrics");
+        MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
-        MetricID metricID = new MetricID("my-metric", new Tag(METRIC_TAG_NAME, METRIC_TAG_VALUE));
+
+        Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
+                                                                                         METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(not(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1)),
@@ -112,13 +115,14 @@ class TestSystemTagsManager {
 
     @Test
     void checkForGlobalAndAppTags() {
-        Config metricsConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
-        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+        Config mConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
+        MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
-        MetricID metricID = new MetricID("my-metric", new Tag(METRIC_TAG_NAME, METRIC_TAG_VALUE));
+        Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
+                                                                                         METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
@@ -129,25 +133,25 @@ class TestSystemTagsManager {
 
     @Test
     void checkForNoTags() {
-        MetricsSettings metricsSettings = MetricsSettings.create(); // no global tags
-        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+        MetricsConfig mConfig = MetricsConfig.create(); // no global tags
+        SystemTagsManager mgr = SystemTagsManager.create(mConfig);
 
-        MetricID metricID = new MetricID("no-tags-metric");
+        Meter.Id meterId = MeterId.create("no-tags-metric", Set.of());
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
         assertThat("Global tags (with scope) size", fullTags.size(), is(1));
     }
 
     @Test
     void checkForGlobalButNoMetricTags() {
-        Config metricsConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
-        MetricsSettings metricsSettings = MetricsSettings.create(metricsConfig);
-        SystemTagsManager mgr = SystemTagsManager.create(metricsSettings);
+        Config mConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
+        MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
-        MetricID metricID = new MetricID("no-tags-metric");
+        Meter.Id meterId = MeterId.create("no-tags-metric", Set.of());
         Map<String, String> fullTags = new HashMap<>();
-        mgr.allTags(metricID, "myScope").forEach(entry -> fullTags.put(entry.getKey(), entry.getValue()));
+        mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),

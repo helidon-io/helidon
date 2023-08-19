@@ -15,18 +15,12 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
-
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Captures and makes available for output any system tag settings to be applied when metric IDs are output.
@@ -43,8 +37,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
-    private final Map<String, String> systemTags;
-
+    private final List<Tag> systemTags;
     private final String scopeTagName;
 
     /**
@@ -56,75 +49,46 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return instance;
     }
 
-    static SystemTagsManagerImpl create(MetricsSettings metricsSettings) {
-        instance = createWithoutSaving(metricsSettings);
+    static SystemTagsManagerImpl create(MetricsConfig metricsConfig) {
+        instance = createWithoutSaving(metricsConfig);
         return instance;
     }
 
-    static SystemTagsManagerImpl createWithoutSaving(MetricsSettings metricsSettings) {
-        return new SystemTagsManagerImpl(metricsSettings);
+    static SystemTagsManagerImpl createWithoutSaving(MetricsConfig metricsConfig) {
+        return new SystemTagsManagerImpl(metricsConfig);
     }
 
-    private SystemTagsManagerImpl(MetricsSettings metricsSettings) {
-        Map<String, String> result = new HashMap<>(metricsSettings.globalTags());
+    private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
+        List<Tag> result = new ArrayList<>(metricsConfig.globalTags());
+
         String appTagName = MetricsProgrammaticSettings.instance().appTagName();
-        if (metricsSettings.appTagValue() != null && appTagName != null && !appTagName.isBlank()) {
-            result.put(appTagName, metricsSettings.appTagValue());
+        if (metricsConfig.appTagValue().isPresent() && appTagName != null && !appTagName.isBlank()) {
+            result.add(Tag.create(appTagName, metricsConfig.appTagValue().get()));
         }
-        systemTags = Collections.unmodifiableMap(result);
+        systemTags = Collections.unmodifiableList(result);
         scopeTagName = MetricsProgrammaticSettings.instance().scopeTagName();
     }
 
     // for testing
     private SystemTagsManagerImpl() {
-        systemTags = Collections.emptyMap();
+        systemTags = Collections.emptyList();
         scopeTagName = "_testScope_";
     }
 
     @Override
-    public Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope) {
-        return new MultiIterable<>(explicitTags.entrySet(),
-                                   systemTags.entrySet(),
+    public Iterable<Tag> allTags(Meter.Id meterId, String scope) {
+        return new MultiIterable<>(meterId.tags(),
+                                   systemTags,
                                    scopeIterable(scope));
     }
 
     @Override
-    public Iterable<Map.Entry<String, String>> allTags(MetricID metricID, String scope) {
-        return new MultiIterable<>(metricID.getTags().entrySet(),
-                                   systemTags.entrySet(),
-                                   scopeIterable(scope));
+    public Iterable<Tag> allTags(Meter.Id meterId) {
+        return new MultiIterable<>(meterId.tags(),
+                                   systemTags);
     }
 
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
-        return new MultiIterable<>(explicitTags,
-                                   systemTags.entrySet(),
-                                   scopeIterable(scope));
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags) {
-        return new MultiIterable<>(explicitTags,
-                                   systemTags.entrySet());
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(MetricID metricId) {
-        return new MultiIterable<>(metricId.getTags().entrySet(),
-                                   systemTags.entrySet());
-    }
-
-    @Override
-    public MetricID metricIdWithAllTags(MetricID original, String scope) {
-        List<Tag> tags = new ArrayList<>();
-        List.of(original.getTags().entrySet(),
-                systemTags.entrySet(),
-                scopeIterable(scope))
-                .forEach(iter -> iter.forEach(entry -> tags.add(new Tag(entry.getKey(), entry.getValue()))));
-        return new MetricID(original.getName(), tags.toArray(new Tag[0]));
-    }
-
-    private Iterable<Map.Entry<String, String>> scopeIterable(String scope) {
+    private Iterable<Tag> scopeIterable(String scope) {
         return () -> new Iterator<>() {
 
             private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank() && scope != null;
@@ -135,12 +99,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
             }
 
             @Override
-            public Map.Entry<String, String> next() {
+            public Tag next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
                 hasNext = false;
-                return new AbstractMap.SimpleImmutableEntry<>(scopeTagName, scope);
+                return Tag.create(scopeTagName, scope);
             }
         };
     }

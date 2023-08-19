@@ -30,9 +30,8 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
- * Blueprint for {@link io.helidon.metrics.api.MetricsConfig}.
+ * Configuration settings for metrics.
  *
- * <p>
  *     <h2>Scope handling configuration</h2>
  *     Helidon allows developers to associate a scope with each meter. The {@value SCOPE_CONFIG_KEY} subsection of the
  *     {@value METRICS_CONFIG_KEY} configuration controls
@@ -166,11 +165,28 @@ interface MetricsConfigBlueprint {
     String scopeTagName();
 
     /**
+     * Settings for individual scopes.
+     *
+     * @return scope settings
+     */
+    @ConfiguredOption
+    Map<String, ScopeConfig> scopes();
+
+    /**
      * Metrics configuration node.
      *
      * @return metrics configuration
      */
     Config config();
+
+    /**
+     * Determines whether the meter with the specified name and within the indicated scope is enabled.
+     *
+     * @param name meter name
+     * @param scope scope name
+     * @return whether the meter is enabled
+     */
+    boolean isMeterEnabled(String name, String scope);
 
     class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
 
@@ -217,7 +233,10 @@ interface MetricsConfigBlueprint {
                     }
                     if (errorsForThisAssignment.isEmpty()) {
                         result.put(name,
-                                   Tag.create(name,
+                                   // Do not use Tag.create in the next line. That would delegate to the MetricsFactoryManager
+                                   // which, ultimately, might try to load config to set up the MetricFactory. But we are
+                                   // already trying to load config and that would set up an infinite recursive loop.
+                                   NoOpTag.create(name,
                                               value.replace("\\,", ",")
                                                    .replace("\\=", "=")));
                     }
