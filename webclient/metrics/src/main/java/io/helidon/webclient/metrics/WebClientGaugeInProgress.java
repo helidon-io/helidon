@@ -17,6 +17,7 @@ package io.helidon.webclient.metrics;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import io.helidon.metrics.api.Gauge;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -33,7 +34,9 @@ class WebClientGaugeInProgress extends WebClientMetric {
 
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-        metricRegistry().gauge(createMetadata(request, null), holder, AtomicLong::get);
+        Metadata metadata = createMetadata(request, null);
+        meterRegistry().getOrCreate(Gauge.builder(metadata.name(),holder, AtomicLong::get)
+                                            .description(metadata.description()));
         boolean update = handlesMethod(request.method());
         try {
             if (update) {
