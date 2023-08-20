@@ -15,42 +15,39 @@
  */
 package io.helidon.dbclient.metrics.hikari;
 
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Snapshot;
-
 /**
- * {@link Histogram} metric wrapper for Hikari CP metric.
+ * Histogram metric wrapper for Hikari CP metric.
  */
-public class HikariMetricsHistogram implements Histogram {
+public class HikariMetricsHistogram /* implements Histogram */ {
 
-    private final com.codahale.metrics.Histogram histogram;
-
-    HikariMetricsHistogram(com.codahale.metrics.Histogram histogram) {
-        this.histogram = histogram;
-    }
-
-    @Override
-    public void update(int value) {
-        histogram.update(value);
-    }
-
-    @Override
-    public void update(long value) {
-        histogram.update(value);
-    }
-
-    @Override
-    public long getCount() {
-        return histogram.getCount();
-    }
-
-    @Override
-    public Snapshot getSnapshot() {
-        return new HikariMetricsSnapshot(histogram.getSnapshot());
-    }
-
-    @Override
-    public long getSum() {
-        return (long) (histogram.getCount() * histogram.getSnapshot().getMean());
-    }
+//    private final com.codahale.metrics.Histogram histogram;
+//
+//    HikariMetricsHistogram(com.codahale.metrics.Histogram histogram) {
+//        this.histogram = histogram;
+//    }
+//
+//    @Override
+//    public void update(int value) {
+//        histogram.update(value);
+//    }
+//
+//    @Override
+//    public void update(long value) {
+//        histogram.update(value);
+//    }
+//
+//    @Override
+//    public long getCount() {
+//        return histogram.getCount();
+//    }
+//
+//    @Override
+//    public Snapshot getSnapshot() {
+//        return new HikariMetricsSnapshot(histogram.getSnapshot());
+//    }
+//
+//    @Override
+//    public long getSum() {
+//        return (long) (histogram.getCount() * histogram.getSnapshot().getMean());
+//    }
 }

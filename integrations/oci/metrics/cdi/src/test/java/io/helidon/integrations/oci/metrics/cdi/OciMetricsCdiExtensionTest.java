@@ -20,8 +20,10 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.integrations.oci.metrics.OciMetricsSupport;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
@@ -64,8 +66,6 @@ import com.oracle.bmc.monitoring.responses.RetrieveDimensionStatesResponse;
 import com.oracle.bmc.monitoring.responses.SummarizeMetricsDataResponse;
 import com.oracle.bmc.monitoring.responses.UpdateAlarmResponse;
 
-import org.eclipse.microprofile.metrics.MetricRegistry;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -98,10 +98,7 @@ class OciMetricsCdiExtensionTest {
     private static CountDownLatch countDownLatch = new CountDownLatch(1);
     private static PostMetricDataDetails postMetricDataDetails;
     private static boolean activateOciMetricsSupportIsInvoked;
-    private final RegistryFactory rf = RegistryFactory.getInstance();
-    private final MetricRegistry appMetricRegistry = rf.getRegistry(Registry.APPLICATION_SCOPE);
-    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Registry.BASE_SCOPE);
-    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Registry.VENDOR_SCOPE);
+    private static MeterRegistry registry = Metrics.globalRegistry();
 
     @AfterEach
     void resetState() {
@@ -128,9 +125,13 @@ class OciMetricsCdiExtensionTest {
     }
 
     private void validateOciMetricsSupport(boolean enabled) throws InterruptedException {
-        baseMetricRegistry.counter("baseDummyCounter").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter").inc();
-        appMetricRegistry.counter("appDummyCounter").inc();
+        registry.getOrCreate(Counter.builder("baseDummyCounter")
+                                     .scope(Meter.Scope.BASE)).increment();
+        registry.getOrCreate(Counter.builder("vendorDummyCounter")
+                                     .scope(Meter.Scope.VENDOR)).increment();
+        registry.getOrCreate(Counter.builder("appDummyCounter")
+                                     .scope(Meter.Scope.APPLICATION)).increment();
+
         // Wait for signal from metric update that testMetricCount has been retrieved
         if (!countDownLatch.await(3, TimeUnit.SECONDS)) {
             // If Oci Metrics is enabled, this means that countdown() of CountDownLatch was never triggered, and hence should fail

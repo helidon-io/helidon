@@ -15,76 +15,70 @@
  */
 package io.helidon.dbclient.metrics.hikari;
 
-import java.time.Duration;
-import java.util.concurrent.Callable;
-
-import org.eclipse.microprofile.metrics.Snapshot;
-import org.eclipse.microprofile.metrics.Timer;
-
 /**
- * {@link Timer} metric wrapper for Hikari CP metric.
+ * Timer metric wrapper for Hikari CP metric.
  */
-public class HikariMetricsTimer implements Timer {
+public class HikariMetricsTimer /* implements Timer */ {
 
-    private final com.codahale.metrics.Timer meter;
-    private long elapsedTimeNanos;
-
-    HikariMetricsTimer(com.codahale.metrics.Timer meter) {
-        this.meter = meter;
-    }
-
-    @Override
-    public <T> T time(Callable<T> event) throws Exception {
-        long start = System.nanoTime();
-        try {
-            return meter.time(event);
-        } finally {
-            updateElapsedWithStart(start);
-        }
-    }
-
-    @Override
-    public void time(Runnable event) {
-        long start = System.nanoTime();
-        try {
-            meter.time(event);
-        } finally {
-            updateElapsedWithStart(start);
-        }
-    }
-
-    @Override
-    public Context time() {
-        return new HikariMetricsTimerContext(meter.time(), this::updateElapsed);
-    }
-
-    @Override
-    public long getCount() {
-        return meter.getCount();
-    }
-
-    @Override
-    public Snapshot getSnapshot() {
-        return new HikariMetricsSnapshot(meter.getSnapshot());
-    }
-
-    @Override
-    public void update(Duration duration) {
-        updateElapsed(duration.toNanos());
-        meter.update(duration);
-    }
-
-    @Override
-    public Duration getElapsedTime() {
-        return Duration.ofNanos(elapsedTimeNanos);
-    }
-
-    private long updateElapsed(long delta) {
-        elapsedTimeNanos += delta;
-        return delta;
-    }
-
-    private long updateElapsedWithStart(long start) {
-        return updateElapsed(System.nanoTime() - start);
-    }
+//    private final com.codahale.metrics.Timer meter;
+//    private long elapsedTimeNanos;
+//
+//    HikariMetricsTimer(com.codahale.metrics.Timer meter) {
+//        this.meter = meter;
+//    }
+//
+//    @Override
+//    public <T> T time(Callable<T> event) throws Exception {
+//        long start = System.nanoTime();
+//        try {
+//            return meter.time(event);
+//        } finally {
+//            updateElapsedWithStart(start);
+//        }
+//    }
+//
+//    @Override
+//    public void time(Runnable event) {
+//        long start = System.nanoTime();
+//        try {
+//            meter.time(event);
+//        } finally {
+//            updateElapsedWithStart(start);
+//        }
+//    }
+//
+//    @Override
+//    public Context time() {
+//        return new HikariMetricsTimerContext(meter.time(), this::updateElapsed);
+//    }
+//
+//    @Override
+//    public long getCount() {
+//        return meter.getCount();
+//    }
+//
+//    @Override
+//    public Snapshot getSnapshot() {
+//        return new HikariMetricsSnapshot(meter.getSnapshot());
+//    }
+//
+//    @Override
+//    public void update(Duration duration) {
+//        updateElapsed(duration.toNanos());
+//        meter.update(duration);
+//    }
+//
+//    @Override
+//    public Duration getElapsedTime() {
+//        return Duration.ofNanos(elapsedTimeNanos);
+//    }
+//
+//    private long updateElapsed(long delta) {
+//        elapsedTimeNanos += delta;
+//        return delta;
+//    }
+//
+//    private long updateElapsedWithStart(long start) {
+//        return updateElapsed(System.nanoTime() - start);
+//    }
 }

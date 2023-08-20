@@ -15,31 +15,27 @@
  */
 package io.helidon.dbclient.metrics.hikari;
 
-import java.util.function.Function;
-
-import org.eclipse.microprofile.metrics.Timer;
-
 /**
- * Metric {@link Timer.Context} wrapper for Hikari CP metric.
+ * Metric Timer.Context wrapper for Hikari CP metric.
  */
-public class HikariMetricsTimerContext implements Timer.Context {
+public class HikariMetricsTimerContext /* implements Timer.Context */ {
 
-    private final com.codahale.metrics.Timer.Context context;
-    private final Function<Long, Long> elapsedTimeUpdater;
-
-    HikariMetricsTimerContext(com.codahale.metrics.Timer.Context context, Function<Long, Long> elapsedTimeUpdater) {
-        this.context = context;
-        this.elapsedTimeUpdater = elapsedTimeUpdater;
-    }
-
-    @Override
-    public long stop() {
-        return elapsedTimeUpdater.apply(context.stop());
-    }
-
-    @Override
-    public void close() {
-        context.close();
-    }
+//    private final com.codahale.metrics.Timer.Context context;
+//    private final Function<Long, Long> elapsedTimeUpdater;
+//
+//    JdbcMetricsTimerContext(com.codahale.metrics.Timer.Context context, Function<Long, Long> elapsedTimeUpdater) {
+//        this.context = context;
+//        this.elapsedTimeUpdater = elapsedTimeUpdater;
+//    }
+//
+//    @Override
+//    public long stop() {
+//        return elapsedTimeUpdater.apply(context.stop());
+//    }
+//
+//    @Override
+//    public void close() {
+//        context.close();
+//    }
 
 }

@@ -15,24 +15,22 @@
  */
 package io.helidon.dbclient.metrics.hikari;
 
-import org.eclipse.microprofile.metrics.Gauge;
-
 /**
- * {@link Gauge} metric wrapper for Hikari CP metric.
+ * Gauge metric wrapper for Hikari CP metric.
  *
  * @param <T> metric value type
  */
-public class HikariMetricsGauge<T extends Number> implements Gauge<T> {
+public class HikariMetricsGauge<T extends Number> /* implements Gauge<T> */ {
 
-    private final com.codahale.metrics.Gauge<T> gauge;
-
-    HikariMetricsGauge(com.codahale.metrics.Gauge<T> counter) {
-        this.gauge = counter;
-    }
-
-    @Override
-    public T getValue() {
-        return gauge.getValue();
-    }
+//    private final com.codahale.metrics.Gauge<T> gauge;
+//
+//    HikariMetricsGauge(com.codahale.metrics.Gauge<T> counter) {
+//        this.gauge = counter;
+//    }
+//
+//    @Override
+//    public T getValue() {
+//        return gauge.getValue();
+//    }
 
 }
