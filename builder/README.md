@@ -22,7 +22,7 @@ The following list of features is currently supported:
 - `Map` options - key/value map, builders support any key/value types, but if configuration is used, the key must be a string
 - "Singular" for collection based options, which adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)
 - A type can be `@Configured`, which adds integration with Helidon common Config module, by adding a static factory method `create(io.helidon.common.Config)` to the generated type, as well as `config(Config)` method to the generated builder, that sets all options annotated with `@ConfiguredOption` from configuration (if present in the Config instance)
-- Capability to update the builder before validation (interceptor)
+- Capability to update the builder before validation (decorator)
 - Support for custom methods (`@Prototype.CustomMethods`) for factory methods, prototype methods, and builder methods
 
 ## Non-Goals
@@ -84,4 +84,4 @@ Generated types will be available under `./target/generated-sources/annotations`
 * Support for `builder(MyConfigBean)` to create a new builder from an existing instance
 * Support for `from(MyConfigBean)` and `from(MyConfigBean.BuilderBase<?, ?>)` to update builder from an instance or builder
 * Support for validation of required and non-nullable options (required options are options that have `@ConfiguredOption(required=true)`, non-nullable option is any option that is not primitive, collection, and does not return an `Optional`)
-* Support for builder interception (`@Bluprint(builderInterceptor = MyInterceptor.class)`)
+* Support for builder decorator (`@Bluprint(decorator = MyDecorator.class)`), `class MyDecorator implements BuilderDecorator`

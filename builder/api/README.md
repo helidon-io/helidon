@@ -87,14 +87,14 @@ Annotations:
 
 Interfaces:
 
-| Interface                      | Generated | Description                                                                                                                                                                                                                        |
-|--------------------------------|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `RuntimeType.Api`              | `false`   | runtime type must implement this interface to mark which prototype is used to create it                                                                                                                                            |
-| `Prototype.Factory`            | `false`   | if blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object |
-| `Prototype.BuilderInterceptor` | `false`   | custom interceptor to modidfy buider before validation is done in method `build`                                                                                                                                                   |
-| `Prototype.Api`                | `true`    | all prototypes implement this interface                                                                                                                                                                                            |
-| `Prototype.Builder`            | `true`    | all prototype builders implement this interface, defines method `buildPrototype`                                                                                                                                                   |
-| `Prototype.ConfiguredBuilder`  | `true`    | all prototype builders that support configuration implement this interface, defines method `config(Config)`                                                                                                                        |
+| Interface                     | Generated | Description                                                                                                                                                                                                                        |
+|-------------------------------|-----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `RuntimeType.Api`             | `false`   | runtime type must implement this interface to mark which prototype is used to create it                                                                                                                                            |
+| `Prototype.Factory`           | `false`   | if blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object |
+| `Prototype.BuilderDecorator`  | `false`   | custom decorator to modify builder before validation is done in method `build`                                                                                                                                                     |
+| `Prototype.Api`               | `true`    | all prototypes implement this interface                                                                                                                                                                                            |
+| `Prototype.Builder`           | `true`    | all prototype builders implement this interface, defines method `buildPrototype`                                                                                                                                                   |
+| `Prototype.ConfiguredBuilder` | `true`    | all prototype builders that support configuration implement this interface, defines method `config(Config)`                                                                                                                        |
 
 ## Configured providers
 
