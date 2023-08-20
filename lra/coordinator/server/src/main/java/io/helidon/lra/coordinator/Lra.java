@@ -34,13 +34,12 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Http;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Timer;
 
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Timer;
 
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_CONTEXT_HEADER;
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_ENDED_CONTEXT_HEADER;
@@ -74,15 +73,15 @@ class Lra {
     private boolean isChild;
     private long whenReadyToDelete = 0;
 
-    private final MetricRegistry registry = RegistryFactory.getInstance()
-            .getRegistry(Registry.APPLICATION_SCOPE);
-    private final Counter lraCtr = registry.counter("lractr");
-    private final Timer.Context lraLifeSpanTmr = registry.timer("lralifespantmr").time();
+    private final MeterRegistry registry = Metrics.globalRegistry();
+    private final Counter lraCtr = registry.getOrCreate(Counter.builder("lractr"));
+    private final Timer lrfLifeSpanTmr = registry.getOrCreate(Timer.builder("lralifespantmr"));
+    private final Timer.Sample lraLifeSpanTmrSample = Timer.start(registry);
 
     Lra(CoordinatorService coordinatorService, String lraUUID, Config config) {
         lraId = lraUUID;
         this.config = config;
-        lraCtr.inc();
+        lraCtr.increment();
         coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
     }
 
@@ -90,7 +89,7 @@ class Lra {
         lraId = lraUUID;
         this.parentId = parentId;
         this.config = config;
-        lraCtr.inc();
+        lraCtr.increment();
         coordinatorURL = LazyValue.create(coordinatorService.getCoordinatorURL());
     }
 
@@ -183,7 +182,7 @@ class Lra {
             LOGGER.log(Level.WARNING, "Can't close LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
-        lraLifeSpanTmr.close();
+        lraLifeSpanTmrSample.stop(lrfLifeSpanTmr);
         if (lock.tryLock()) {
             try {
                 sendComplete();
@@ -208,7 +207,7 @@ class Lra {
             LOGGER.log(Level.WARNING, "Can't cancel LRA, it's already " + status.get().name() + " " + this.lraId);
             return;
         }
-        lraLifeSpanTmr.close();
+        lraLifeSpanTmrSample.stop(lrfLifeSpanTmr);
         for (Lra nestedLra : children) {
             nestedLra.cancel();
         }

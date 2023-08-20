@@ -30,7 +30,6 @@ module io.helidon.integrations.oci.metrics {
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
     requires transitive io.helidon.webserver;
-    requires transitive microprofile.metrics.api;
     requires transitive oci.java.sdk.monitoring;
 
     exports io.helidon.integrations.oci.metrics;

@@ -20,8 +20,7 @@ import java.util.function.BiFunction;
 import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbStatementType;
-
-import org.eclipse.microprofile.metrics.Metadata;
+import io.helidon.metrics.api.Metadata;
 
 /**
  * A {@link io.helidon.dbclient.DbClientService} builder base for metrics.
@@ -147,7 +146,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Db
      * <tr>
      *     <td>description</td>
      *     <td>&nbsp;</td>
-     *     <td>Description of this metric, used in metric {@link org.eclipse.microprofile.metrics.Metadata}</td>
+     *     <td>Description of this metric.</td>
      * </tr>
      * </table>
      *

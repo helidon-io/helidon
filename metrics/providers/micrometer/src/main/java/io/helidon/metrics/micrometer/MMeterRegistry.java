@@ -182,14 +182,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public List<? extends io.helidon.metrics.api.Meter> meters() {
-        return meters.values().stream().toList();
+    public List<io.helidon.metrics.api.Meter> meters() {
+        return meters.values()
+                .stream()
+                .map(io.helidon.metrics.api.Meter.class::cast)
+                .toList();
     }
 
     @Override
-    public Collection<? extends io.helidon.metrics.api.Meter> meters(Predicate<io.helidon.metrics.api.Meter> filter) {
+    public Collection<io.helidon.metrics.api.Meter> meters(Predicate<io.helidon.metrics.api.Meter> filter) {
         return meters.values()
                 .stream()
+                .map(io.helidon.metrics.api.Meter.class::cast)
                 .filter(filter)
                 .toList();
     }
@@ -331,7 +335,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public Iterable<? extends io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
+    public Iterable<io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
         if (scopeSelection.iterator().hasNext()) {
             Set<io.helidon.metrics.api.Meter> result = new HashSet<>();
             for (String scope : scopeSelection) {
@@ -429,8 +433,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             helidonMeter = MFunctionalCounter.create(functionCounter);
         }
         if (helidonMeter == null) {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       "Attempt to record addition of unrecognized meter type " + addedMeter.getClass().getName());
+            LOGGER.log(System.Logger.Level.DEBUG,
+                       String.format("Addition of meter %s which is of an unsupported type; ignored", addedMeter));
             return;
         }
         lock.lock();

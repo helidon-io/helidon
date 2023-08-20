@@ -25,5 +25,5 @@ public interface HistogramSupport {
      *
      * @return snapshot of the histogram
      */
-    HistogramSnapshot takeSnapshot();
+    HistogramSnapshot snapshot();
 }

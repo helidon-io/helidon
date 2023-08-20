@@ -41,11 +41,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api</artifactId>
+            <artifactId>helidon-metrics-api</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.features</groupId>

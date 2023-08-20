@@ -15,8 +15,10 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Common behavior of all meters.
@@ -54,6 +56,64 @@ public interface Meter extends Wrapper {
         public static final String DEFAULT = APPLICATION;
 
         private Scope() {
+        }
+    }
+
+    /**
+     * Common unit declarations (inspired by the list from MicroProfile metrics). Users can use any units they wish.
+     */
+    class BaseUnits {
+
+        /** No unit. */
+        public static final String NONE = "none";
+
+        /** Represents bits. Not defined by SI, but by IEC 60027. */
+        public static final String BITS = "bits";
+        /** 1000 {@link #BITS}. */
+        public static final String KILOBITS = "kilobits";
+        /** 1000 {@link #KILOBITS}. */
+        public static final String MEGABITS = "megabits";
+        /** 1000 {@link #MEGABITS}. */
+        public static final String GIGABITS = "gigabits";
+        /** 1024 {@link #BITS}. */
+        public static final String KIBIBITS = "kibibits";
+        /** 1024 {@link #KIBIBITS}. */
+        public static final String MEBIBITS = "mebibits";
+        /** 1024 {@link #MEBIBITS}. */
+        public static final String GIBIBITS = "gibibits";
+
+        /** 8 {@link #BITS}. */
+        public static final String BYTES = "bytes";
+        /** 1000 {@link #BYTES}. */
+        public static final String KILOBYTES = "kilobytes";
+        /** 1000 {@link #KILOBYTES}. */
+        public static final String MEGABYTES = "megabytes";
+        /** 1000 {@link #MEGABYTES}. */
+        public static final String GIGABYTES = "gigabytes";
+
+        /** 1/1000 {@link #MICROSECONDS}.*/
+        public static final String NANOSECONDS = "nanoseconds";
+        /** 1/1000 {@link #MILLISECONDS}. */
+        public static final String MICROSECONDS = "microseconds";
+        /** 1/1000 {@link #SECONDS}. */
+        public static final String MILLISECONDS = "milliseconds";
+        /** Represents seconds. */
+        public static final String SECONDS = "seconds";
+        /** 60 {@link #SECONDS}. */
+        public static final String MINUTES = "minutes";
+        /** 60 {@link #MINUTES}. */
+        public static final String HOURS = "hours";
+        /** 24 {@link #HOURS}. */
+        public static final String DAYS = "days";
+
+        /** Represents percentage. */
+        public static final String PERCENT = "percent";
+
+        /** Represent per second. */
+        public static final String PER_SECOND = "per_second";
+
+
+        private BaseUnits() {
         }
     }
 
@@ -166,6 +226,17 @@ public interface Meter extends Wrapper {
          * @return meter tags
          */
         Iterable<Tag> tags();
+
+        /**
+         * Return the tags as a map.
+         *
+         * @return map of tag keys to values
+         */
+        default Map<String, String> tagsMap() {
+            Map<String, String> result = new TreeMap<>();
+            tags().forEach(tag -> result.put(tag.key(), tag.value()));
+            return result;
+        }
 
         /**
          * Unwraps the ID as the specified type.

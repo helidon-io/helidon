@@ -15,7 +15,6 @@
  */
 package io.helidon.integrations.oci.metrics;
 
-import org.eclipse.microprofile.metrics.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,27 +27,29 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.Timer;
 
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 
 class OciMetricsDataTest {
     private final OciMetricsSupport.NameFormatter nameFormatter = new OciMetricsSupport.NameFormatter() { };
-    private final String[] types = {Registry.BASE_SCOPE, Registry.VENDOR_SCOPE, Registry.APPLICATION_SCOPE};
     private final String dimensionScopeName = "scope";
 
-    private final RegistryFactory rf = RegistryFactory.getInstance();
-    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Registry.BASE_SCOPE);
-    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Registry.VENDOR_SCOPE);
-    private final MetricRegistry appMetricRegistry = rf.getRegistry(Registry.APPLICATION_SCOPE);
+    private final MeterRegistry meterRegistry = Metrics.globalRegistry();
+
+
 
     @BeforeEach
     void clearAllRegistry() {
-        for (String type: types) {
-            MetricRegistry metricRegistry = rf.getRegistry(type);
-            metricRegistry.removeMatching(MetricFilter.ALL);
-        }
+        List<Meter> meters = meterRegistry.meters();
+        meters.forEach(meterRegistry::remove);
     }
 
     @Test
@@ -56,23 +57,23 @@ class OciMetricsDataTest {
         String counterName = "DummyCounter";
         String timerName = "DummyTimer";
 
-        Map<MetricRegistry, String> metricRegistries = new HashMap<>();
-        metricRegistries.put(baseMetricRegistry, Registry.BASE_SCOPE);
-        metricRegistries.put(vendorMetricRegistry, Registry.VENDOR_SCOPE);
-        metricRegistries.put(appMetricRegistry, Registry.APPLICATION_SCOPE);
-        baseMetricRegistry.counter(counterName).inc();
+        meterRegistry.getOrCreate(Counter.builder(counterName)
+                                          .scope(Meter.Scope.BASE))
+                .increment();
         int counterMetricCount = 1;
-        appMetricRegistry.timer(timerName).update(Duration.of(100, ChronoUnit.MILLIS));
+        meterRegistry.getOrCreate(Timer.builder(timerName)
+                                          .scope(Meter.Scope.APPLICATION))
+                .record(Duration.of(100, ChronoUnit.MILLIS));
         int timerMetricCount = 3;
         int totalMetricCount = counterMetricCount + timerMetricCount;
         OciMetricsData ociMetricsData = new OciMetricsData(
-                metricRegistries, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
+                Meter.Scope.BUILT_IN_SCOPES, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         allMetricDataDetails.stream().forEach((c) -> {
             if (c.getName().contains(counterName)) {
-                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Registry.BASE_SCOPE)));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Meter.Scope.BASE)));
             } else if (c.getName().contains(timerName)) {
-                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Registry.APPLICATION_SCOPE)));
+                assertThat(c.getDimensions().get(dimensionScopeName), is(equalTo(Meter.Scope.APPLICATION)));
             }
             else {
                 fail("Unknown metric: " + c.getName());
@@ -87,11 +88,12 @@ class OciMetricsDataTest {
         String namespace = "dummy-namespace";
         String resourceGroup = "dummy_resourceGroup";
 
-        Map<MetricRegistry, String> metricRegistries = new HashMap<>();
-        baseMetricRegistry.counter("dummy.counter").inc();
-        metricRegistries.put(baseMetricRegistry, Registry.BASE_SCOPE);
+        meterRegistry.getOrCreate(Counter.builder("dummy.counter")
+                                          .scope(Meter.Scope.BASE))
+                .increment();
+
         OciMetricsData ociMetricsData = new OciMetricsData(
-                metricRegistries, nameFormatter, compartmentId, namespace, resourceGroup, false);
+                Set.of(Meter.Scope.BASE), nameFormatter, compartmentId, namespace, resourceGroup, false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         MetricDataDetails metricDataDetails = allMetricDataDetails.get(0);
         assertThat(metricDataDetails.getCompartmentId(), is(equalTo(compartmentId)));
@@ -104,15 +106,16 @@ class OciMetricsDataTest {
         String dummyTagName = "DummyTag";
         String dummyTagValue = "DummyValue";
 
-        Map<MetricRegistry, String> metricRegistries = new HashMap<>();
-        baseMetricRegistry.counter("dummy.counter", new Tag(dummyTagName, dummyTagValue)).inc();
-        metricRegistries.put(baseMetricRegistry, Registry.BASE_SCOPE);
+        meterRegistry.getOrCreate(Counter.builder("dummy.counter")
+                                          .scope(Meter.Scope.BASE)
+                                          .tags(Set.of(Tag.create(dummyTagName, dummyTagValue))))
+                        .increment();
         OciMetricsData ociMetricsData = new OciMetricsData(
-                metricRegistries, nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
+                Set.of(Meter.Scope.BASE), nameFormatter, "compartmentId", "namespace", "resourceGroup", false);
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
         MetricDataDetails metricDataDetails = allMetricDataDetails.get(0);
         Map<String, String> dimensions = metricDataDetails.getDimensions();
-        assertThat(dimensions.get(dimensionScopeName), is(equalTo(Registry.BASE_SCOPE)));
+        assertThat(dimensions.get(dimensionScopeName), is(equalTo(Meter.Scope.BASE)));
         assertThat(dimensions.get(dummyTagName), is(equalTo(dummyTagValue)));
     }
 }

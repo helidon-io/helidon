@@ -18,9 +18,9 @@ package io.helidon.dbclient.metrics;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Timer;
+import io.helidon.metrics.api.Metadata;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Timer;
 
 /**
  * {@link MetricService} implementation for {@link Timer}.
@@ -59,7 +59,7 @@ final class MetricTimer extends MetricService<Timer> {
 
     private void update(Timer metric, long started) {
         long delta = System.nanoTime() - started;
-        metric.update(Duration.ofNanos(delta));
+        metric.record(Duration.ofNanos(delta));
     }
 
     @Override
@@ -73,8 +73,8 @@ final class MetricTimer extends MetricService<Timer> {
     }
 
     @Override
-    protected Timer metric(MetricRegistry registry, Metadata meta) {
-        return registry.timer(meta);
+    protected Timer metric(MeterRegistry registry, Metadata meta) {
+        return registry.getOrCreate(meta.apply(Timer.builder(meta.name())));
     }
 
     /**

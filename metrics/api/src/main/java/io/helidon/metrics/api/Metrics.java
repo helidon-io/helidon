@@ -47,6 +47,14 @@ public interface Metrics {
     }
 
     /**
+     * Creates a meter registry, not added to the global registry, using default metrics config information.
+     * @return new meter registry
+     */
+    static MeterRegistry createMeterRegistry() {
+        return createMeterRegistry(MetricsConfig.create());
+    }
+
+    /**
      * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new
      * one using the provided builder.
      *

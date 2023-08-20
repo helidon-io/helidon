@@ -17,9 +17,9 @@ package io.helidon.dbclient.metrics;
 
 import java.util.concurrent.CompletionStage;
 
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Metadata;
+import io.helidon.metrics.api.MeterRegistry;
 
 /**
  * {@link MetricService} implementation for {@link Counter}.
@@ -42,11 +42,11 @@ final class MetricCounter extends MetricService<Counter> {
     protected void executeMetric(Counter metric, CompletionStage<Void> future) {
         future.thenRun(() -> {
             if (measureSuccess()) {
-                metric.inc();
+                metric.increment();
             }
         }).exceptionally(throwable -> {
             if (measureErrors()) {
-                metric.inc();
+                metric.increment();
             }
             return null;
         });
@@ -58,8 +58,8 @@ final class MetricCounter extends MetricService<Counter> {
     }
 
     @Override
-    protected Counter metric(MetricRegistry registry, Metadata meta) {
-        return registry.counter(meta);
+    protected Counter metric(MeterRegistry registry, Metadata meta) {
+        return registry.getOrCreate(meta.apply(Counter.builder(meta.name())));
     }
 
     @Override

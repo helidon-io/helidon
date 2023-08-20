@@ -23,23 +23,20 @@ import io.helidon.common.LazyValue;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
-
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricRegistry;
+import io.helidon.metrics.api.Metadata;
+import io.helidon.metrics.api.MetadataBuilder;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 
 /**
  * Common ancestor for DbClient metrics.
  */
-abstract class MetricService<T extends Metric> extends DbClientServiceBase {
+abstract class MetricService<T extends Meter> extends DbClientServiceBase {
     private final Metadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
-    private final LazyValue<MetricRegistry> registry = LazyValue.create(
-            () -> RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE));
+    private final LazyValue<MeterRegistry> registry = LazyValue.create(Metrics::globalRegistry);
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
@@ -129,7 +126,7 @@ abstract class MetricService<T extends Metric> extends DbClientServiceBase {
      *
      * @return metric type
      */
-    protected abstract Class<? extends Metric> metricType();
+    protected abstract Class<? extends Meter> metricType();
 
     /**
      * Create a new metric.
@@ -138,5 +135,5 @@ abstract class MetricService<T extends Metric> extends DbClientServiceBase {
      * @param meta     metadata
      * @return metric
      */
-    protected abstract T metric(MetricRegistry registry, Metadata meta);
+    protected abstract T metric(MeterRegistry registry, Metadata meta);
 }

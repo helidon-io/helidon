@@ -18,31 +18,30 @@ package io.helidon.integrations.oci.metrics;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
+
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.HistogramSnapshot;
+import io.helidon.metrics.api.Metadata;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Timer;
 
 import com.oracle.bmc.monitoring.model.Datapoint;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Snapshot;
-import org.eclipse.microprofile.metrics.Timer;
 
 class OciMetricsData {
     private static final UnitConverter STORAGE_UNIT_CONVERTER = UnitConverter.storageUnitConverter();
     private static final UnitConverter TIME_UNIT_CONVERTER = UnitConverter.timeUnitConverter();
     private static final List<UnitConverter> UNIT_CONVERTERS = List.of(STORAGE_UNIT_CONVERTER, TIME_UNIT_CONVERTER);
 
-    private final Map<MetricRegistry, String> metricRegistries;
+    private final Set<String> scopes;
     private final OciMetricsSupport.NameFormatter nameFormatter;
     private final String compartmentId;
     private final String namespace;
@@ -50,104 +49,100 @@ class OciMetricsData {
     private final boolean descriptionEnabled;
 
     OciMetricsData(
-            Map<MetricRegistry, String> metricRegistries,
+            Set<String> scopes,
             OciMetricsSupport.NameFormatter nameFormatter,
             String compartmentId,
             String namespace,
             String resourceGroup,
             boolean descriptionEnabled) {
-        this.metricRegistries = metricRegistries;
         this.compartmentId = compartmentId;
         this.nameFormatter = nameFormatter;
         this.namespace = namespace;
         this.resourceGroup = resourceGroup;
         this.descriptionEnabled = descriptionEnabled;
+        this.scopes = scopes;
     }
 
     List<MetricDataDetails> getMetricDataDetails() {
+        boolean hasWildcardScope = scopes.contains("*");
         List<MetricDataDetails> allMetricDataDetails = new ArrayList<>();
-        for (MetricRegistry metricRegistry : metricRegistries.keySet()) {
-            metricRegistry.getMetrics().entrySet().stream()
-                    .flatMap(entry -> metricDataDetails(metricRegistry, entry.getKey(), entry.getValue()))
+        Metrics.globalRegistry().meters().stream()
+                .filter(meter -> hasWildcardScope || (meter.scope().isPresent() && scopes.contains(meter.scope().get())))
+                    .flatMap(this::metricDataDetails)
                     .forEach(allMetricDataDetails::add);
-        }
         return allMetricDataDetails;
     }
 
-    Stream<MetricDataDetails> metricDataDetails(MetricRegistry metricRegistry, MetricID metricId, Metric metric) {
+    Stream<MetricDataDetails> metricDataDetails(Meter metric) {
         if (metric instanceof Counter) {
-            return forCounter(metricRegistry, metricId, ((Counter) metric));
-        } else if (metric instanceof Gauge<?>) {
-            return forGauge(metricRegistry, metricId, ((Gauge<? extends Number>) metric));
+            return forCounter(metric.id(), ((Counter) metric));
+        } else if (metric instanceof Gauge) {
+            return forGauge(metric.id(), ((Gauge) metric));
         } else if (metric instanceof Timer) {
-            return forTimer(metricRegistry, metricId, ((Timer) metric));
-        } else if (metric instanceof Histogram) {
-            return forHistogram(metricRegistry, metricId, ((Histogram) metric));
+            return forTimer(metric.id(), ((Timer) metric));
+        } else if (metric instanceof DistributionSummary) {
+            return forHistogram(metric.id(), ((DistributionSummary) metric));
         } else {
             return Stream.empty();
         }
     }
 
-    private Stream<MetricDataDetails> forCounter(MetricRegistry metricRegistry, MetricID metricId, Counter counter) {
-        return Stream.of(metricDataDetails(counter, metricRegistry, metricId, null, counter.getCount()));
+    private Stream<MetricDataDetails> forCounter(Meter.Id metricId, Counter counter) {
+        return Stream.of(metricDataDetails(counter, metricId, null, counter.count()));
     }
 
-    private Stream<MetricDataDetails> forGauge(MetricRegistry metricRegistry, MetricID metricId, Gauge<? extends Number> gauge) {
-        return Stream.of(metricDataDetails(gauge, metricRegistry, metricId, null, gauge.getValue().doubleValue()));
+    private Stream<MetricDataDetails> forGauge(Meter.Id metricId, Gauge gauge) {
+        return Stream.of(metricDataDetails(gauge, metricId, null, gauge.value()));
     }
 
-    private Stream<MetricDataDetails> forTimer(MetricRegistry metricRegistry, MetricID metricId, Timer timer) {
+    private Stream<MetricDataDetails> forTimer(Meter.Id metricId, Timer timer) {
         Stream.Builder<MetricDataDetails> result = Stream.builder();
-        long count = timer.getCount();
-        result.add(metricDataDetails(timer, metricRegistry, metricId, "seconds_count", count));
+        long count = timer.count();
+        result.add(metricDataDetails(timer, metricId, "seconds_count", count));
         if (count > 0) {
-            Snapshot snapshot = timer.getSnapshot();
+            HistogramSnapshot snapshot = timer.snapshot();
             result.add(metricDataDetails(timer,
-                                         metricRegistry,
                                          metricId,
                                          "mean_seconds",
-                                         snapshot.getMean()));
+                                         snapshot.mean()));
             result.add(metricDataDetails(timer,
-                                         metricRegistry,
                                          metricId,
                                         "max_seconds",
-                                         snapshot.getMax()));
+                                         snapshot.max()));
         }
         return result.build();
     }
 
-    private Stream<MetricDataDetails> forHistogram(MetricRegistry metricRegistry, MetricID metricId, Histogram histogram) {
+    private Stream<MetricDataDetails> forHistogram(Meter.Id metricId, DistributionSummary histogram) {
         Stream.Builder<MetricDataDetails> result = Stream.builder();
-        long count = histogram.getCount();
-        Metadata metadata = metricRegistry.getMetadata().get(metricId.getName());
+        long count = histogram.count();
+        Metadata metadata = Metadata.create(histogram);
         String units = metadata.getUnit();
-        String unitsPrefix = units != null && !Objects.equals(units, MetricUnits.NONE) ? units + "_" : "";
-        String unitsSuffix = units != null && !Objects.equals(units, MetricUnits.NONE) ? "_" + units : "";
-        result.add(metricDataDetails(histogram, metricRegistry, metricId, unitsPrefix + "count", count));
+        String unitsPrefix = units != null && !Objects.equals(units, Meter.BaseUnits.NONE) ? units + "_" : "";
+        String unitsSuffix = units != null && !Objects.equals(units, Meter.BaseUnits.NONE) ? "_" + units : "";
+        result.add(metricDataDetails(histogram, metricId, unitsPrefix + "count", count));
         if (count > 0) {
-            Snapshot snapshot = histogram.getSnapshot();
+            HistogramSnapshot snapshot = histogram.snapshot();
             result.add(metricDataDetails(histogram,
-                                         metricRegistry,
                                          metricId,
                                          "mean" + unitsSuffix,
-                                         snapshot.getMean()));
+                                         snapshot.mean()));
             result.add(metricDataDetails(histogram,
-                                         metricRegistry,
                                          metricId,
                                          "max" + unitsSuffix,
-                                         snapshot.getMax()));
+                                         snapshot.max()));
         }
         return result.build();
     }
 
-    private MetricDataDetails metricDataDetails(Metric metric,
-            MetricRegistry metricRegistry, MetricID metricId, String suffix, double value) {
+    private MetricDataDetails metricDataDetails(Meter metric,
+            Meter.Id metricId, String suffix, double value) {
         if (Double.isNaN(value)) {
             return null;
         }
 
-        Metadata metadata = metricRegistry.getMetadata().get(metricId.getName());
-        Map<String, String> dimensions = dimensions(metricId, metricRegistry);
+        Metadata metadata = Metadata.create(metric);
+        Map<String, String> dimensions = dimensions(metric);
         List<Datapoint> datapoints = datapoints(metadata, value);
         String metricName = nameFormatter.format(metric, metricId, suffix, metadata);
         return MetricDataDetails.builder()
@@ -161,10 +156,9 @@ class OciMetricsData {
                 .build();
     }
 
-    private Map<String, String> dimensions(MetricID metricId, MetricRegistry metricRegistry) {
-        String registryType = metricRegistries.get(metricRegistry);
-        Map<String, String> result = new HashMap<>(metricId.getTags());
-        result.put("scope", registryType);
+    private Map<String, String> dimensions(Meter metric) {
+        Map<String, String> result = metric.id().tagsMap();
+        result.put("scope", metric.scope().orElse(Meter.Scope.VENDOR));
         return result;
     }
 

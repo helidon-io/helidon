@@ -16,19 +16,22 @@
 
 package io.helidon.integrations.microstream.metrics;
 
+import java.util.List;
 import java.util.Objects;
-import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.config.Config;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.Metadata;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
 
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Tag;
+import one.microstream.storage.types.StorageRawFileStatistics;
+
+import static io.helidon.metrics.api.Meter.BaseUnits.BYTES;
 
 /**
  *
@@ -43,38 +46,37 @@ public class MicrostreamMetricsSupport {
     private static final Metadata GLOBAL_FILE_COUNT = Metadata.builder()
             .withName("microstream.globalFileCount")
             .withDescription("Displays the number of storage files.")
-            .withUnit(MetricUnits.NONE)
             .build();
 
     private static final Metadata LIVE_DATA_LENGTH = Metadata.builder()
             .withName("microstream.liveDataLength")
             .withDescription("Displays live data length. This is the 'real' size of the stored data.")
-            .withUnit(MetricUnits.BYTES)
+            .withUnit(BYTES)
             .build();
 
     private static final Metadata TOTAL_DATA_LENGTH = Metadata.builder()
             .withName("microstream.totalDataLength")
             .withDescription("Displays total data length. This is the accumulated size of all storage data files.")
-            .withUnit(MetricUnits.BYTES)
+            .withUnit(BYTES)
             .build();
 
     private final Config config;
     private final EmbeddedStorageManager embeddedStorageManager;
-    private final RegistryFactory registryFactory;
-    private final MetricRegistry vendorRegistry;
+    private final MetricsFactory metricsFactory;
+    private final MeterRegistry vendorRegistry;
 
     private MicrostreamMetricsSupport(Builder builder) {
         super();
         this.config = builder.config();
         this.embeddedStorageManager = builder.embeddedStorageManager();
 
-        if (builder.registryFactory() == null) {
-            registryFactory = RegistryFactory.getInstance(MetricsSettings.create(config));
+        if (builder.metricsFactory() == null) {
+            metricsFactory = MetricsFactory.getInstance(config.get(MetricsConfig.METRICS_CONFIG_KEY));
         } else {
-            registryFactory = builder.registryFactory();
+            metricsFactory = builder.metricsFactory();
         }
 
-        this.vendorRegistry = registryFactory.getRegistry(Registry.VENDOR_SCOPE);
+        this.vendorRegistry = metricsFactory.globalRegistry();
     }
 
     /**
@@ -87,11 +89,12 @@ public class MicrostreamMetricsSupport {
         return new Builder(embeddedStorageManager);
     }
 
-    private <T extends Number> void register(Metadata meta, Supplier<T> supplier, Tag... tags) {
+    private <T> void register(Metadata meta, T stateObject, ToDoubleFunction<T> fn, Tag... tags) {
         if (config.get(CONFIG_METRIC_ENABLED_VENDOR + meta.getName() + ".enabled")
                 .asBoolean()
                 .orElse(true)) {
-            vendorRegistry.gauge(meta, supplier, tags);
+            vendorRegistry.getOrCreate(meta.apply(Gauge.builder(meta.name(), stateObject, fn)
+                                                          .tags(List.of(tags))));
         }
     }
 
@@ -99,9 +102,10 @@ public class MicrostreamMetricsSupport {
      * Register this metrics at the vendor metrics registry.
      */
     public void registerMetrics() {
-        register(GLOBAL_FILE_COUNT,  () -> embeddedStorageManager.createStorageStatistics().fileCount());
-        register(LIVE_DATA_LENGTH,  () -> embeddedStorageManager.createStorageStatistics().liveDataLength());
-        register(TOTAL_DATA_LENGTH, () -> embeddedStorageManager.createStorageStatistics().totalDataLength());
+        StorageRawFileStatistics stats = embeddedStorageManager.createStorageStatistics();
+        register(GLOBAL_FILE_COUNT,  stats, StorageRawFileStatistics::fileCount);
+        register(LIVE_DATA_LENGTH,  stats, StorageRawFileStatistics::liveDataLength);
+        register(TOTAL_DATA_LENGTH, stats, StorageRawFileStatistics::totalDataLength);
     }
 
     /**
@@ -111,7 +115,7 @@ public class MicrostreamMetricsSupport {
 
         private final EmbeddedStorageManager embeddedStorageManager;
         private Config config = Config.empty();
-        private RegistryFactory registryFactory;
+        private MetricsFactory metricsFactory;
 
         private Builder(EmbeddedStorageManager embeddedStorageManager) {
             Objects.requireNonNull(embeddedStorageManager);
@@ -124,11 +128,11 @@ public class MicrostreamMetricsSupport {
         }
 
         /**
-         * get the current configured RegistryFactory.
-         * @return RegistryFactory
+         * get the current configured MetricsFactory.
+         * @return MetricsFactory
          */
-        public RegistryFactory registryFactory() {
-            return this.registryFactory;
+        public MetricsFactory metricsFactory() {
+            return this.metricsFactory;
         }
 
         /**
@@ -148,20 +152,20 @@ public class MicrostreamMetricsSupport {
         }
 
         /**
-         * set the RegistryFactory.
+         * set the MetricsFactory.
          *
-         * @param registryFactory
+         * @param metricsFactory metrics factory
          * @return MicrostreamMetricsSupport builder
          */
-        public Builder registryFactory(RegistryFactory registryFactory) {
-            this.registryFactory = registryFactory;
+        public Builder metricsFactory(MetricsFactory metricsFactory) {
+            this.metricsFactory = metricsFactory;
             return this;
         }
 
         /**
          * set the helidon configuration used by the builder.
          *
-         * @param config
+         * @param config configuration
          * @return MicrostreamMetricsSupport builder
          */
         public Builder config(Config config) {

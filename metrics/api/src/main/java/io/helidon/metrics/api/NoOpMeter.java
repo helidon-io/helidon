@@ -573,7 +573,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
 
         @Override
-        public io.helidon.metrics.api.HistogramSnapshot takeSnapshot() {
+        public io.helidon.metrics.api.HistogramSnapshot snapshot() {
             return null;
         }
 

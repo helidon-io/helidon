@@ -17,18 +17,14 @@
 package io.helidon.integrations.microstream.metrics;
 
 import java.util.Date;
+import java.util.Set;
 
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.Metrics;
 
 import one.microstream.X;
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import one.microstream.storage.types.StorageRawFileStatistics;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricFilter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -55,44 +51,30 @@ class MicrostreamMetricsTest {
 
     @Test
     void testGlobalFileCount() {
-        Gauge<?> metric = findFirstGauge("microstream.globalFileCount");
+        Gauge metric = findFirstGauge("microstream.globalFileCount");
 
-        long value = (long) metric.getValue();
+        long value = (long) metric.value();
         assertThat("metric microstream.globalFileCount", value, is(42L));
     }
 
     @Test
     void testLivDataLength() {
-        Gauge<?> metric = findFirstGauge("microstream.liveDataLength");
+        Gauge metric = findFirstGauge("microstream.liveDataLength");
 
-        long value = (long) metric.getValue();
+        long value = (long) metric.value();
         assertThat("metric microstream.liveDataLength", value, is(1001L));
     }
 
     @Test
     void testTotalDataLength() {
-        Gauge<?> metric = findFirstGauge("microstream.totalDataLength");
+        Gauge metric = findFirstGauge("microstream.totalDataLength");
 
-        long value = (long) metric.getValue();
+        long value = (long) metric.value();
         assertThat("metric microstream.totalDataLength", value, is(2002L));
     }
 
-    private Gauge<?> findFirstGauge(String name) {
-        MetricRegistry metricsRegistry = RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE);
-        MetricID id = metricsRegistry.getGauges(new MetricNameFilter(name)).firstKey();
-        return metricsRegistry.getGauges().get(id);
+    private Gauge findFirstGauge(String name) {
+        return Metrics.globalRegistry().getGauge(name, Set.of()).orElse(null);
     }
 
-    private static class MetricNameFilter implements MetricFilter {
-        private final String name;
-
-        private MetricNameFilter(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public boolean matches(MetricID metricID, Metric metric) {
-            return metricID.getName().equals(name);
-        }
-    }
 }

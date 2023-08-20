@@ -46,6 +46,9 @@
             <artifactId>helidon-builder-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+        </dependency><dependency>
             <groupId>io.helidon.inject.configdriven</groupId>
             <artifactId>helidon-inject-configdriven-api</artifactId>
             <optional>true</optional>
@@ -85,6 +88,7 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>

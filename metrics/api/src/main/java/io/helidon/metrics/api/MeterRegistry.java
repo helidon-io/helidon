@@ -30,7 +30,7 @@ public interface MeterRegistry extends Wrapper {
      *
      * @return registered meters
      */
-    List<? extends Meter> meters();
+    List<Meter> meters();
 
     /**
      * Returns previously-registered meters which match the specified {@link java.util.function.Predicate}.
@@ -38,7 +38,7 @@ public interface MeterRegistry extends Wrapper {
      * @param filter the predicate with which to evaluate each {@link io.helidon.metrics.api.Meter}
      * @return meters which match the predicate
      */
-    Collection<? extends Meter> meters(Predicate<Meter> filter);
+    Collection<Meter> meters(Predicate<Meter> filter);
 
     /**
      * Returns previously-registered meters which match one of the specified scopes.
@@ -46,7 +46,7 @@ public interface MeterRegistry extends Wrapper {
      * @param scopeSelection scopes to match
      * @return matching meters
      */
-    Iterable<? extends Meter> meters(Iterable<String> scopeSelection);
+    Iterable<Meter> meters(Iterable<String> scopeSelection);
 
     /**
      * Returns the scopes (if any) as represented by tags on meter IDs.

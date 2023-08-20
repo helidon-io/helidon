@@ -97,7 +97,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
     }
 
     @Override
-    public HistogramSnapshot takeSnapshot() {
+    public HistogramSnapshot snapshot() {
         return MHistogramSnapshot.create(delegate().takeSnapshot());
     }
 
