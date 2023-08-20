@@ -42,16 +42,16 @@ import io.helidon.common.Errors;
  *     <li>short - {@code @TheAnnotation(1)}</li>
  *     <li>float - {@code @TheAnnotation(4.2f)}</li>
  *     <li>double - {@code @TheAnnotation(4.2)}</li>
- *     <li>enum value - {@code @TheAnnotation(MyEnum.OPTION_1)}</li>
- *     <li>Class - {@code @TheAnnotation(MyType.class)}</li>
+ *     <li>enum value - {@code @TheAnnotation(MyEnum.OPTION_1)}, default representation is String</li>
+ *     <li>Class - {@code @TheAnnotation(MyType.class)}, default representation is String</li>
  *     <li>another annotation - {@code @TheAnnotation(@TheOtherAnnotation("some-value"))}</li>
- *     <li>arrays of the above - {@code @TheAnnotation({"first-value", "second-value"})}</li>
+ *     <li>arrays of the above - {@code @TheAnnotation({"first-value", "second-value"})}, represented as List</li>
  * </ul>
  * These types will be built into this type, with a few rules:
  * <ul>
  *     <li>Any type except for another annotation and array is available as String (similar for arrays)</li>
  *     <li>primitive types - only available as boxed types</li>
- *     <li>Class - use string, the method that provides class instances uses {@link Class#forName(String)},
+ *     <li>Class - use string, the method that provides class instances uses {@link java.lang.Class#forName(String)},
  *          which is not ideal, and may require additional configuration in native image</li>
  *     <li>enum value - available as a String or enum value</li>
  *     <li>another annotation - available as instance(s) of Annotation</li>
@@ -67,8 +67,8 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      *
      * @return a new builder
      */
-    static Builder builder() {
-        return new Builder();
+    static Annotation.Builder builder() {
+        return new Annotation.Builder();
     }
 
     /**
@@ -77,7 +77,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      * @param instance an existing instance used as a base for the builder
      * @return a builder based on an instance
      */
-    static Builder builder(Annotation instance) {
+    static Annotation.Builder builder(Annotation instance) {
         return Annotation.builder().from(instance);
     }
 
@@ -180,7 +180,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @param builder existing builder prototype to update this builder from
          * @return updated builder instance
          */
-        public BUILDER from(BuilderBase<?, ?> builder) {
+        public BUILDER from(Annotation.BuilderBase<?, ?> builder) {
             builder.typeName().ifPresent(this::typeName);
             addValues(builder.values());
             return self();
@@ -349,7 +349,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
              *
              * @param builder extending builder base of this prototype
              */
-            protected AnnotationImpl(BuilderBase<?, ?> builder) {
+            protected AnnotationImpl(Annotation.BuilderBase<?, ?> builder) {
                 this.typeName = builder.typeName().get();
                 this.values = Collections.unmodifiableMap(new LinkedHashMap<>(builder.values()));
             }
@@ -401,7 +401,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
     /**
      * Fluent API builder for {@link Annotation}.
      */
-    class Builder extends BuilderBase<Builder, Annotation> implements io.helidon.common.Builder<Builder, Annotation> {
+    class Builder extends Annotation.BuilderBase<Annotation.Builder, Annotation> implements io.helidon.common.Builder<Annotation.Builder, Annotation> {
 
         private Builder() {
         }

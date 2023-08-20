@@ -21,11 +21,12 @@ import java.util.List;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
-class ToAnnotationValueVisitor implements javax.lang.model.element.AnnotationValueVisitor<Object, Object> {
+class ToAnnotationValueVisitor implements AnnotationValueVisitor<Object, Object> {
     private final Elements elements;
     private boolean mapVoidToNull;
     private boolean mapFalseToNull;

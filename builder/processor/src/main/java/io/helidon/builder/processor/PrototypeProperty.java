@@ -116,7 +116,7 @@ record PrototypeProperty(MethodSignature signature,
         );
     }
 
-    public Field.Builder fieldDeclaration(boolean isBuilder) {
+    Field.Builder fieldDeclaration(boolean isBuilder) {
         return typeHandler.fieldDeclaration(configuredOption(), isBuilder, !isBuilder);
     }
 

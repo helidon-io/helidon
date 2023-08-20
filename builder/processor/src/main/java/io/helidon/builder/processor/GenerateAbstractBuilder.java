@@ -533,9 +533,10 @@ final class GenerateAbstractBuilder {
                 .superPrototype()
                 .ifPresent(it -> validateBuilder.addLine("super.validatePrototype();"));
 
-        if (typeContext.propertyData().hasRequired()
-                || typeContext.propertyData().hasNonNulls()
-                || typeContext.propertyData().hasAllowedValues()) {
+        TypeContext.PropertyData propertyData = typeContext.propertyData();
+        if (propertyData.hasRequired()
+                || propertyData.hasNonNulls()
+                || propertyData.hasAllowedValues()) {
             requiredValidation(validateBuilder, typeContext);
         }
         classBuilder.addMethod(validateBuilder);
