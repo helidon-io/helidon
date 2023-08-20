@@ -26,18 +26,16 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.metrics.api.Timer;
 
 import jakarta.json.Json;
@@ -101,8 +99,8 @@ class JsonFormatter implements MeterRegistryFormatter {
      * If we organize by multiple scopes, then meterOutputBuildersByScope will have one top-level entry per scope we find,
      * keyed by the scope name. We will gather the output for the metrics in each scope under a JSON node for that scope.
      *
-     * If the scope selection accepts only one scope, or if we are NOT organizing by scopes, then we don't use that map and
-     * instead use meterOutputBuildersIgnoringScope to gather all JSON for the meters under the same parent.
+     * On the other hand, if the scope selection accepts only one scope, or if we are NOT organizing by scopes, then we don't
+     *  use that map and instead use meterOutputBuildersIgnoringScope to gather all JSON for the meters under the same parent.
      *
      * The JSON output format has one "flat" entry for each single-valued meter--counter or gauge--with the JSON
      * key set to the name and tags from the meter ID and the JSON value reporting the single value.
@@ -128,40 +126,29 @@ class JsonFormatter implements MeterRegistryFormatter {
      */
 
 
-        var scopes = new HashSet<>();
-        scopeSelection.forEach(scopes::add);
-
-        var names = new HashSet<>();
-        meterNameSelection.forEach(names::add);
-
-        Predicate<String> namePredicate = names.isEmpty() ? n -> true : names::contains;
-
         AtomicBoolean isAnyOutput = new AtomicBoolean(false);
 
-        meterRegistry.scopes().forEach(scope -> {
-            String matchingScope = matchingScope(scope);
-            if (matchingScope != null) {
-                meterRegistry.meters().forEach(meter -> {
-                    if (meterRegistry.isMeterEnabled(meter.id()) && namePredicate.test(meter.id().name())) {
-                        if (matchesName(meter.id().name())) {
+        // Process each meter which matches the scope selection, adding it to the output map entry for its scope if the meter is
+        // enabled and it matches any name selection.
 
-                            Map<String, MetricOutputBuilder> meterOutputBuildersWithinParent =
-                                    organizeByScope ? meterOutputBuildersByScope
-                                            .computeIfAbsent(matchingScope,
-                                                             ms -> new HashMap<>())
-                                            : meterOutputBuildersIgnoringScope;
+        meterRegistry.meters(scopeSelection).forEach(meter -> {
+            String name = meter.id().name();
+            if (meterRegistry.isMeterEnabled(name, meter.id().tags(), meter.scope())
+                    && matchesName(name)) {
 
-                            // Find the output builder for the key relevant to this meter and then add this meter's contribution
-                            // to the output.
-                            MetricOutputBuilder metricOutputBuilder = meterOutputBuildersWithinParent
-                                    .computeIfAbsent(metricOutputKey(meter),
-                                                     k -> MetricOutputBuilder.create(meter));
-                            metricOutputBuilder.add(meter);
-                            isAnyOutput.set(true);
+                Map<String, MetricOutputBuilder> meterOutputBuilderMapToUpdate =
+                        organizeByScope ? meterOutputBuildersByScope
+                                .computeIfAbsent(meter.scope().orElse(""),
+                                                 ms -> new HashMap<>())
+                                : meterOutputBuildersIgnoringScope;
 
-                        }
-                    }
-                });
+                // Find the output builder for the key relevant to this meter and then
+                // add this meter's contribution to the output.
+                MetricOutputBuilder metricOutputBuilder = meterOutputBuilderMapToUpdate
+                        .computeIfAbsent(metricOutputKey(meter),
+                                         k -> MetricOutputBuilder.create(meter));
+                metricOutputBuilder.add(meter);
+                isAnyOutput.set(true);
             }
         });
 
@@ -188,50 +175,43 @@ class JsonFormatter implements MeterRegistryFormatter {
         Map<String, JsonObjectBuilder> metadataOutputBuildersIgnoringScope = organizeByScope ? null : new HashMap<>();
 
         AtomicBoolean isAnyOutput = new AtomicBoolean(false);
-        RegistryFactory registryFactory = RegistryFactory.getInstance();
-        registryFactory.scopes().forEach(scope -> {
-            String matchingScope = matchingScope(scope);
-            if (matchingScope != null) {
-                Registry registry = registryFactory.getRegistry(scope);
-                registry.getMetadata().forEach((name, metadata) -> {
-                    if (matchesName(name)) {
 
-                        Map<String, JsonObjectBuilder> metadataOutputBuilderWithinParent =
-                                organizeByScope ? metadataOutputBuildersByScope
-                                        .computeIfAbsent(matchingScope, ms -> new HashMap<>())
-                                        : metadataOutputBuildersIgnoringScope;
+        meterRegistry.meters(scopeSelection).forEach(meter -> {
+                String name = meter.id().name();
+                if (meterRegistry.isMeterEnabled(name, meter.id().tags(), meter.scope())
+                        && matchesName(name)) {
 
-                        JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
-                                .computeIfAbsent(name, k -> JSON.createObjectBuilder());
-                        addNonEmpty(builderForThisName, "unit", metadata.getUnit());
-                        addNonEmpty(builderForThisName, "description", metadata.getDescription());
-                        isAnyOutput.set(true);
+                    Map<String, JsonObjectBuilder> metadataOutputBuilderWithinParent =
+                            organizeByScope ? metadataOutputBuildersByScope
+                                    .computeIfAbsent(meter.scope().orElse(""),
+                                                     ms -> new HashMap<>())
+                                    : metadataOutputBuildersIgnoringScope;
 
-                        List<List<String>> tagGroups = new ArrayList<>();
+                    JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
+                            .computeIfAbsent(name, k -> JSON.createObjectBuilder());
+                    addNonEmpty(builderForThisName, "unit", meter.baseUnit());
+                    addNonEmpty(builderForThisName, "description", meter.description());
+                    isAnyOutput.set(true);
 
-                        registry.metricIdsByName(name).forEach(metricId -> {
-                            if (registry.enabled(name)) {
-                                List<String> tags = metricId.getTags().entrySet().stream()
-                                        .map(entry -> jsonEscape(entry.getKey()) + "=" + jsonEscape(entry.getValue()))
-                                        .toList();
-                                if (!tags.isEmpty()) {
-                                    tagGroups.add(tags);
-                                }
-                            }
-                        });
-                        if (!tagGroups.isEmpty()) {
-                            JsonArrayBuilder tagsOverAllMetricsWithSameName = JSON.createArrayBuilder();
-                            for (List<String> tagGroup : tagGroups) {
-                                JsonArrayBuilder tagsForMetricBuilder = JSON.createArrayBuilder();
-                                tagGroup.forEach(tagsForMetricBuilder::add);
-                                tagsOverAllMetricsWithSameName.add(tagsForMetricBuilder);
-                            }
-                            builderForThisName.add("tags", tagsOverAllMetricsWithSameName);
-                            isAnyOutput.set(true);
-                        }
+                    List<List<String>> tagGroups = new ArrayList<>();
+
+                    List<String> tags = StreamSupport.stream(meter.id().tags().spliterator(), false)
+                            .map(tag -> jsonEscape(tag.key()) + "=" + jsonEscape(tag.value()))
+                            .toList();
+                    if (!tags.isEmpty()) {
+                        tagGroups.add(tags);
                     }
-                });
-            }
+                    if (!tagGroups.isEmpty()) {
+                        JsonArrayBuilder tagsOverAllMetricsWithSameName = JSON.createArrayBuilder();
+                        for (List<String> tagGroup : tagGroups) {
+                            JsonArrayBuilder tagsForMetricBuilder = JSON.createArrayBuilder();
+                            tagGroup.forEach(tagsForMetricBuilder::add);
+                            tagsOverAllMetricsWithSameName.add(tagsForMetricBuilder);
+                        }
+                        builderForThisName.add("tags", tagsOverAllMetricsWithSameName);
+                        isAnyOutput.set(true);
+                    }
+                }
         });
         JsonObjectBuilder top = JSON.createObjectBuilder();
         if (organizeByScope) {
@@ -307,21 +287,21 @@ class JsonFormatter implements MeterRegistryFormatter {
         return meterId.name();
     }
 
-    private String matchingScope(String scope) {
-        Iterator<String> scopeIterator = scopeSelection.iterator();
-        if (!scopeIterator.hasNext()) {
-            return scope;
-        }
-        if (scope == null) {
-            return null;
-        }
+    private Iterable<String> scopesToReport() {
 
-        while (scopeIterator.hasNext()) {
-            if (scopeIterator.next().equals(scope)) {
-                return scope;
-            }
+        Set<String> selection = new HashSet<>();
+        scopeSelection.forEach(selection::add);
+
+        List<String> scopesToReport = new ArrayList<>();
+
+        if (!selection.isEmpty()) {
+            meterRegistry.scopes().forEach(candidateScope -> {
+                if (selection.contains(candidateScope)) {
+                    scopesToReport.add(candidateScope);
+                }
+            });
         }
-        return null;
+        return scopesToReport;
     }
 
     private boolean matchesName(String metricName) {

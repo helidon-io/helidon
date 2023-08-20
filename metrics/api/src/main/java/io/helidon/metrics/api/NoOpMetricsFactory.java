@@ -18,7 +18,7 @@ package io.helidon.metrics.api;
 import java.util.function.ToDoubleFunction;
 
 /**
- * No-op implementation of the {@link io.helidon.metrics.api.spi.MetricFactory} interface.
+ * No-op implementation of the {@link io.helidon.metrics.api.MetricsFactory} interface.
  */
 class NoOpMetricsFactory implements MetricsFactory {
 
@@ -76,7 +76,9 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public <T> FunctionalCounter.Builder functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+    public <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name,
+                                                                     T stateObject,
+                                                                     ToDoubleFunction<T> fn) {
         return NoOpMeter.FunctionalCounter.builder(name, stateObject, fn);
     }
 

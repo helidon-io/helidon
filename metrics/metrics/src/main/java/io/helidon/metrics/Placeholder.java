@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.metrics;
 
-import org.eclipse.microprofile.metrics.Metric;
+// TODO remove once we add to this module or remove the module entirely
 
 /**
- * Helidon Extension of {@link Metric}.
- * All metrics should inherit from {@link MetricImpl}.
+ * Placeholder class.
  */
-interface HelidonMetric extends io.helidon.metrics.api.HelidonMetric {
-    /**
-     * Name of this metric.
-     *
-     * @return metric name
-     */
-    String getName();
-
-    /**
-     * Returns the delegate metric which actually records the value(s) of interest.
-     *
-     * @return the delegate
-     */
-    io.micrometer.core.instrument.Meter delegate();
+public class Placeholder {
 }

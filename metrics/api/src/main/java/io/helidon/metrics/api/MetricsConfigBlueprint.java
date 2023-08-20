@@ -119,7 +119,7 @@ interface MetricsConfigBlueprint {
      * @return key performance indicator metrics settings
      */
     @ConfiguredOption(key = KeyPerformanceIndicatorMetricsConfigBlueprint.KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
-    Optional<KeyPerformanceIndicatorMetricsConfig> keyPerformanceIndicatorMetricsConfig();
+    KeyPerformanceIndicatorMetricsConfig keyPerformanceIndicatorMetricsConfig();
 
     /**
      * Global tags.
@@ -194,6 +194,9 @@ interface MetricsConfigBlueprint {
         public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
             if (builder.config().isEmpty()) {
                 builder.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
+            }
+            if (builder.keyPerformanceIndicatorMetricsConfig().isEmpty()) {
+                builder.keyPerformanceIndicatorMetricsConfig(KeyPerformanceIndicatorMetricsConfig.create());
             }
         }
     }

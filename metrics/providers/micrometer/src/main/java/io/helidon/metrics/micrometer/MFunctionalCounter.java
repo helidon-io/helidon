@@ -55,10 +55,15 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         return (long) delegate().count();
     }
     static class Builder<T> extends MMeter.Builder<FunctionCounter.Builder<T>, FunctionCounter, Builder<T>, MFunctionalCounter>
-                implements FunctionalCounter.Builder {
+                implements FunctionalCounter.Builder<T> {
+
+        private final T stateObject;
+        private final ToDoubleFunction<T> fn;
 
         Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-            super(FunctionCounter.builder(name, stateObject, fn));
+            super(name, FunctionCounter.builder(name, stateObject, fn));
+            this.stateObject = stateObject;
+            this.fn = fn;
         }
 
         @Override
@@ -77,6 +82,16 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         protected Builder<T> delegateBaseUnit(String baseUnit) {
             delegate().baseUnit(baseUnit);
             return identity();
+        }
+
+        @Override
+        public T stateObject() {
+            return stateObject;
+        }
+
+        @Override
+        public ToDoubleFunction<T> fn() {
+            return fn;
         }
 
         @Override

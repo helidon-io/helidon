@@ -60,26 +60,41 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
     static class Builder<T> extends MMeter.Builder<Gauge.Builder<T>, Gauge, MGauge.Builder<T>, MGauge>
                 implements io.helidon.metrics.api.Gauge.Builder<T> {
 
+        private final T stateObject;
+        private final ToDoubleFunction<T> fn;
+
         private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-            super(Gauge.builder(name, stateObject, fn));
+            super(name, Gauge.builder(name, stateObject, fn));
+            this.stateObject = stateObject;
+            this.fn = fn;
         }
 
         @Override
-        protected Builder delegateTags(Iterable<Tag> tags) {
+        protected Builder<T> delegateTags(Iterable<Tag> tags) {
             delegate().tags(tags);
             return identity();
         }
 
         @Override
-        protected Builder delegateDescription(String description) {
+        protected Builder<T> delegateDescription(String description) {
             delegate().description(description);
             return identity();
         }
 
         @Override
-        protected Builder delegateBaseUnit(String baseUnit) {
+        protected Builder<T> delegateBaseUnit(String baseUnit) {
             delegate().baseUnit(baseUnit);
             return identity();
+        }
+
+        @Override
+        public T stateObject() {
+            return stateObject;
+        }
+
+        @Override
+        public ToDoubleFunction<T> fn() {
+            return fn;
         }
 
         @Override

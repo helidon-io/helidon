@@ -44,7 +44,23 @@ public interface FunctionalCounter extends Meter {
 
     /**
      * Builder for a {@link io.helidon.metrics.api.FunctionalCounter}.
+     *
+     * @param <T> type of the state object
      */
-    interface Builder extends Meter.Builder<Builder, FunctionalCounter> {
+    interface Builder<T> extends Meter.Builder<Builder<T>, FunctionalCounter> {
+
+        /**
+         * Returns the state object which would supply the counter value.
+         *
+         * @return state object
+         */
+        T stateObject();
+
+        /**
+         * Returns the function which, when applied to the state object, returns the counter value.
+         *
+         * @return function returning the counter value
+         */
+        ToDoubleFunction<T> fn();
     }
 }

@@ -53,5 +53,19 @@ public interface Gauge extends Meter {
      * @param <T> type of the state object which exposes the gauge value.
      */
     interface Builder<T> extends Meter.Builder<Builder<T>, Gauge> {
+
+        /**
+         * Returns the state object to be used in the resulting gauge.
+         *
+         * @return the state object
+         */
+        T stateObject();
+
+        /**
+         * Returns the function which, when applied to the state object, returns the gauge value.
+         *
+         * @return function which yields the gauge value
+         */
+        ToDoubleFunction<T> fn();
     }
 }

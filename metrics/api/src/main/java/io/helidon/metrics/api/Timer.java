@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -222,5 +223,33 @@ public interface Timer extends Meter, HistogramSupport {
          * @return updated builder
          */
         Builder maximumExpectedValue(Duration max);
+
+        /**
+         * Returns the percentiles set in the builder, if any.
+         *
+         * @return percentiles
+         */
+        Iterable<Double> percentiles();
+
+        /**
+         * Returns the bucket boundary values set in the builder, if any.
+         *
+         * @return bucket boundary values
+         */
+        Iterable<Duration> buckets();
+
+        /**
+         * Returns the minimum expected value set in the builder, if any.
+         *
+         * @return  minimum expected value if set; empty otherwise
+         */
+        Optional<Duration> minimumExpectedValue();
+
+        /**
+         * Returns the maximum expected value set in the builder, if any.
+         *
+         * @return maximum expected value if set; empty otherwise
+         */
+        Optional<Duration> maximumExpectedValue();
     }
 }

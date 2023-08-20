@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.metrics.Registry;
 import io.helidon.metrics.api.RegistryFactory;
 
 import com.oracle.bmc.monitoring.model.MetricDataDetails;

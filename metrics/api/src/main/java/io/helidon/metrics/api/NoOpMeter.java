@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.io.PrintStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -62,7 +63,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         @Override
         public  List<Tag> tags() {
-            return tags.stream().toList();
+            return Collections.unmodifiableList(tags);
         }
 
         String tag(String key) {
@@ -99,10 +100,15 @@ class NoOpMeter implements Meter, NoOpWrapper {
              builder.scope);
     }
 
+    private static NoOpMeter.Id create(NoOpMeter.Builder<?, ?> builder) {
+        return new NoOpMeter.Id(builder.name(), builder.tags());
+
+    }
+
     private NoOpMeter(Id id, String baseUnit, String description, Type type, String scope) {
         this.id = id;
-        this.unit = baseUnit;
-        this.description = description;
+        this.unit = Objects.requireNonNullElse(baseUnit, "");
+        this.description = Objects.requireNonNullElse(description, "");
         this.type = type;
         this.scope = scope;
     }
@@ -139,7 +145,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
         private String description;
         private String unit;
         private final Type type;
-        private String scope = Scope.DEFAULT;
+        private String scope;
 
         private Builder(String name, Type type) {
             this.name = name;
@@ -185,16 +191,16 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return tags.values();
         }
 
-        public String baseUnit() {
-            return unit;
+        public Optional<String> baseUnit() {
+            return Optional.ofNullable(unit);
         }
 
-        public String description() {
-            return description;
+        public Optional<String> description() {
+            return Optional.ofNullable(description);
         }
 
-        public String scope() {
-            return scope;
+        public Optional<String> scope() {
+            return Optional.ofNullable(scope);
         }
     }
 
@@ -249,10 +255,25 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
 
         static class Builder<T> extends NoOpMeter.Builder<Builder<T>, FunctionalCounter>
-                implements io.helidon.metrics.api.FunctionalCounter.Builder {
+                implements io.helidon.metrics.api.FunctionalCounter.Builder<T> {
 
-            private Builder(String name, T target, ToDoubleFunction<T> fn) {
+            private final T stateObject;
+            private final ToDoubleFunction<T> fn;
+
+            private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
                 super(name, Type.COUNTER);
+                this.stateObject = stateObject;
+                this.fn = fn;
+            }
+
+            @Override
+            public T stateObject() {
+                return stateObject;
+            }
+
+            @Override
+            public ToDoubleFunction<T> fn() {
+                return fn;
             }
 
             @Override
@@ -276,6 +297,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
         static class Builder extends NoOpMeter.Builder<Builder, DistributionSummary>
                 implements io.helidon.metrics.api.DistributionSummary.Builder {
 
+            private static final double DEFAULT_SCALE = 1.0D;
+
+            private io.helidon.metrics.api.DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder;
+            private Double scale;
+
             private Builder(String name) {
                 super(name, Type.DISTRIBUTION_SUMMARY);
             }
@@ -287,13 +313,25 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public Builder scale(double scale) {
+                this.scale = scale;
                 return identity();
             }
 
             @Override
             public Builder distributionStatisticsConfig(
                     io.helidon.metrics.api.DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
+                this.distributionStatisticsConfigBuilder = distributionStatisticsConfigBuilder;
                 return identity();
+            }
+
+            @Override
+            public Optional<Double> scale() {
+                return Optional.ofNullable(scale);
+            }
+
+            @Override
+            public Optional<io.helidon.metrics.api.DistributionStatisticsConfig.Builder> distributionStatisticsConfig() {
+                return Optional.ofNullable(distributionStatisticsConfigBuilder);
             }
         }
 
@@ -417,6 +455,16 @@ class NoOpMeter implements Meter, NoOpWrapper {
             public Gauge build() {
                 return new Gauge(this);
             }
+
+            @Override
+            public T stateObject() {
+                return stateObject;
+            }
+
+            @Override
+            public ToDoubleFunction<T> fn() {
+                return fn;
+            }
         }
 
         private <T> Gauge(Builder<T> builder) {
@@ -456,6 +504,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         static class Builder extends NoOpMeter.Builder<Builder, Timer> implements io.helidon.metrics.api.Timer.Builder {
 
+            private double[] percentiles;
+            private Duration[] buckets;
+            private Duration min;
+            private Duration max;
+
             private Builder(String name) {
                 super(name, Type.TIMER);
             }
@@ -467,23 +520,48 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public Builder percentiles(double... percentiles) {
+                this.percentiles = percentiles;
                 return identity();
             }
 
             @Override
             public Builder buckets(Duration... buckets) {
+                this.buckets = buckets;
                 return identity();
             }
 
             @Override
             public Builder minimumExpectedValue(Duration min) {
+                this.min = min;
                 return identity();
             }
 
             @Override
             public Builder maximumExpectedValue(Duration max) {
+                this.max = max;
                 return identity();
             }
+
+            @Override
+            public Iterable<Double> percentiles() {
+                return Util.iterable(percentiles);
+            }
+
+            @Override
+            public Iterable<Duration> buckets() {
+                return Util.iterable(buckets);
+            }
+
+            @Override
+            public Optional<Duration> minimumExpectedValue() {
+                return Optional.ofNullable(min);
+            }
+
+            @Override
+            public Optional<Duration> maximumExpectedValue() {
+                return Optional.ofNullable(max);
+            }
+
         }
 
         static Builder builder(String name) {

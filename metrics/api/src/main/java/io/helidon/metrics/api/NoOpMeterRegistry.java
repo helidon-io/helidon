@@ -86,7 +86,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public boolean isMeterEnabled(Meter.Id meterId) {
+    public boolean isMeterEnabled(String name, Iterable<Tag> tags, Optional<String> scope) {
         return true;
     }
 

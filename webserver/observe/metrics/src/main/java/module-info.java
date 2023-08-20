@@ -44,4 +44,6 @@ module io.helidon.webserver.observe.metrics {
     provides io.helidon.webserver.observe.spi.ObserveProvider
             with io.helidon.webserver.observe.metrics.MetricsObserveProvider;
 
+    uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
+
 }

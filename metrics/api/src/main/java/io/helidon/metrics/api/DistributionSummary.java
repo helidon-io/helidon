@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
+
 /**
  * Records a distribution of values (e.g., sizes of responses returned by a server).
  */
@@ -108,5 +110,19 @@ public interface DistributionSummary extends Meter {
          * @return updated builder
          */
         Builder distributionStatisticsConfig(DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder);
+
+        /**
+         * Returns the scale set on the builder.
+         *
+         * @return the scale
+         */
+        Optional<Double> scale();
+
+        /**
+         * Returns the statistics config set on the builder, if any.
+         *
+         * @return distribution statistics config, if set; empty otherwise
+         */
+        Optional<DistributionStatisticsConfig.Builder> distributionStatisticsConfig();
     }
 }

@@ -28,6 +28,8 @@ import java.util.function.Predicate;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -199,7 +201,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     // TODO enhance after adding back the filtering config
     @Override
-    public boolean isMeterEnabled(io.helidon.metrics.api.Meter.Id meterId) {
+    public boolean isMeterEnabled(String name, Iterable<Tag> tags, Optional<String> scope) {
         return metricsConfig.enabled();
     }
 
@@ -223,23 +225,17 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         try {
 
-//            io.helidon.metrics.api.Meter helidonMeter = switch (builder) {
-//                case MCounter.Builder cBuilder ->
-//                        registerAndPostProcess(cBuilder, cBuilder.delegate()::tag, cBuilder.delegate()::register);
-//                case MDistributionSummary.Builder sBuilder ->
-//                        registerAndPostProcess(sBuilder, sBuilder.delegate()::tag, sBuilder.delegate()::register);
-//                case MGauge.Builder<?> gBuilder ->
-//                        registerAndPostProcess(gBuilder, gBuilder.delegate()::tag, gBuilder.delegate()::register);
-//                case MTimer.Builder tBuilder ->
-//                        registerAndPostProcess(tBuilder, tBuilder.delegate()::tag, tBuilder.delegate()::register);
-//                default -> null;
-//            };
-
             // It really would be nice to use switch with instanceof pattern variables as above, but checkstyle outright
             // fails (not even issuing a false report we can make it ignore, just failing with an exception).
             io.helidon.metrics.api.Meter helidonMeter = null;
+            if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
+                return (HM) MetricsFactory.getInstance().noOpMeter(builder);
+            }
             if (builder instanceof MCounter.Builder cBuilder) {
                 helidonMeter = registerAndPostProcess(cBuilder, cBuilder.delegate()::tag, cBuilder.delegate()::register);
+            }
+            if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
+                helidonMeter = registerAndPostProcess(fcBuilder, fcBuilder.delegate()::tag, fcBuilder.delegate()::register);
             }
             if (builder instanceof MDistributionSummary.Builder sBuilder) {
                 helidonMeter = registerAndPostProcess(sBuilder, sBuilder.delegate()::tag, sBuilder.delegate()::register);
@@ -335,21 +331,22 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public Iterable<io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
-        Set<io.helidon.metrics.api.Meter> result = new HashSet<>();
-        for (String scope : scopeSelection) {
-            if (scopeMembership.containsKey(scope)) {
-                result.addAll(scopeMembership.get(scope));
+    public Iterable<? extends io.helidon.metrics.api.Meter> meters(Iterable<String> scopeSelection) {
+        if (scopeSelection.iterator().hasNext()) {
+            Set<io.helidon.metrics.api.Meter> result = new HashSet<>();
+            for (String scope : scopeSelection) {
+                if (scopeMembership.containsKey(scope)) {
+                    result.addAll(scopeMembership.get(scope));
+                }
             }
+            return result;
         }
-        return result;
+        return meters();
     }
 
-    private Optional<String> effectiveScope(String explicitScope) {
-        return explicitScope != null
-                ? (explicitScope.isBlank()
-                        ? Optional.empty()
-                        : Optional.of(explicitScope))
+    private Optional<String> effectiveScope(Optional<String> explicitScope) {
+        return explicitScope.isPresent()
+                ? explicitScope
                 : metricsConfig.scopeDefaultValue();
     }
 
@@ -374,7 +371,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             //
             // If scope tagging is NOT on then the callback cannot do those updates so we need to do them here.
             HM helidonMeter = (HM) meters.get(meter);
-            updateScope(meter, helidonMeter, Optional.ofNullable(mBuilder.scope()));
+            updateScope(meter, helidonMeter, mBuilder.scope());
             return helidonMeter;
         } finally {
             lock.unlock();
@@ -417,16 +414,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private void recordAdd(Meter addedMeter) {
 
-//        MMeter<?> helidonMeter = switch (addedMeter) {
-//            case Counter counter -> MCounter.create(counter);
-//            case DistributionSummary summary -> MDistributionSummary.create(summary);
-//            case Gauge gauge -> MGauge.create(gauge);
-//            case Timer timer -> MTimer.create(timer);
-//            case FunctionCounter functionCounter -> MCounter.create(functionCounter);
-//            default -> null;
-//        };
-
-        // Here a switch with instanceof pattern variables (see above) would be nice; checkstyle fails with that.
+        // Here (and other places) a switch with instanceof pattern variables (see above) would be nice;
+        // checkstyle fails with that.
         MMeter<?> helidonMeter = null;
         if (addedMeter instanceof Counter counter) {
             helidonMeter = MCounter.create(counter);

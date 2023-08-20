@@ -17,25 +17,16 @@ package io.helidon.webserver.observe.metrics;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
-import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-
 class KeyPerformanceIndicatorMetricsImpls {
-
-    /**
-     * Prefix for key performance indicator metrics names.
-     */
-    static final String METRICS_NAME_PREFIX = "requests";
 
     /**
      * Name for metric counting total requests received.
@@ -62,42 +53,27 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     public static final String DEFERRED_NAME = "deferred";
 
-    static final String KPI_METRICS_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
+    static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
 
     private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new HashMap<>();
 
     private KeyPerformanceIndicatorMetricsImpls() {
     }
 
-    // TODO remove this factory method once conversion to Helidon metrics API is complete
     /**
      * Provides a KPI metrics instance.
      *
-     * @param metricsNamePrefix prefix to use for the created metrics
+     * @param meterNamePrefix prefix to use for the created metrics (e.g., "requests")
      * @param kpiConfig         KPI metrics config which may influence the construction of the metrics
      * @return properly prepared new KPI metrics instance
      */
-    static KeyPerformanceIndicatorSupport.Metrics get(String metricsNamePrefix,
-                                                      KeyPerformanceIndicatorMetricsSettings kpiConfig) {
-        return KPI_METRICS.computeIfAbsent(metricsNamePrefix, prefix ->
-             kpiConfig.isExtended()
-                    ? new Extended(metricsNamePrefix, kpiConfig)
-                    : new Basic(metricsNamePrefix));
-    }
-
-    /**
-     * Provides a KPI metrics instance.
-     *
-     * @param metricsNamePrefix prefix to use for the created metrics
-     * @param kpiConfig         KPI metrics config which may influence the construction of the metrics
-     * @return properly prepared new KPI metrics instance
-     */
-    static KeyPerformanceIndicatorSupport.Metrics get(String metricsNamePrefix,
+    static KeyPerformanceIndicatorSupport.Metrics get(MeterRegistry kpiMeterRegistry,
+                                                      String meterNamePrefix,
                                                       KeyPerformanceIndicatorMetricsConfig kpiConfig) {
-        return KPI_METRICS.computeIfAbsent(metricsNamePrefix, prefix ->
+        return KPI_METRICS.computeIfAbsent(meterNamePrefix, prefix ->
                 kpiConfig.isExtended()
-                        ? new Extended(metricsNamePrefix, kpiConfig)
-                        : new Basic(metricsNamePrefix));
+                        ? new Extended(kpiMeterRegistry, meterNamePrefix, kpiConfig)
+                        : new Basic(kpiMeterRegistry, meterNamePrefix));
     }
 
     /**
@@ -105,27 +81,19 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     private static class Basic implements KeyPerformanceIndicatorSupport.Metrics {
 
-        private final MetricRegistry kpiMetricRegistry;
-
         private final Counter totalCount;
 
-        protected Basic(String metricsNamePrefix) {
-            kpiMetricRegistry = RegistryFactory.getInstance()
-                    .getRegistry(KPI_METRICS_REGISTRY_TYPE);
-            totalCount = kpiMetricRegistry().counter(Metadata.builder()
-                    .withName(metricsNamePrefix + REQUESTS_COUNT_NAME)
-                    .withDescription("Each request (regardless of HTTP method) will increase this counter")
-                    .withUnit(MetricUnits.NONE)
-                    .build());
+        protected Basic(MeterRegistry kpiMeterRegistry, String meterNamePrefix) {
+            totalCount = kpiMeterRegistry.getOrCreate(
+                    Counter.builder(meterNamePrefix + REQUESTS_COUNT_NAME)
+                            .description(
+                                    "Each request (regardless of HTTP method) will increase this counter")
+                            .scope(KPI_METERS_SCOPE));
         }
 
         @Override
         public void onRequestReceived() {
-            totalCount.inc();
-        }
-
-        protected MetricRegistry kpiMetricRegistry() {
-            return kpiMetricRegistry;
+            totalCount.increment();
         }
 
         protected Counter totalCount() {
@@ -138,7 +106,7 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     private static class Extended extends Basic {
 
-        private final Gauge<Integer> inflightRequests;
+        private final Gauge inflightRequests;
         private final DeferredRequests deferredRequests;
         private final Counter longRunningRequests;
         private final Counter load;
@@ -146,52 +114,38 @@ class KeyPerformanceIndicatorMetricsImpls {
         // The deferred-requests metric is derived from load and totalCount, so no need to have a reference to update
         // it directly.
 
-        private int inflightRequestsCount;
+        private AtomicInteger inflightRequestsCount = new AtomicInteger();
 
         protected static final String LOAD_DESCRIPTION =
-                "Measures the total number of in-flight requests and rates at which they occur";
+                "Measures the total number of in-flight requests over the life of the server";
 
-        // TODO Remove once conversion to Helidon metrics API is done
-        protected Extended(String metricsNamePrefix, KeyPerformanceIndicatorMetricsSettings kpiConfig) {
-            this(metricsNamePrefix, kpiConfig.longRunningRequestThresholdMs());
+        protected Extended(MeterRegistry kpiMeterRegistry,
+                           String meterNamePrefix,
+                           KeyPerformanceIndicatorMetricsConfig kpiConfig) {
+            this(kpiMeterRegistry, meterNamePrefix, kpiConfig.longRunningRequestThresholdMs());
         }
 
-        protected Extended(String metricsNamePrefix, KeyPerformanceIndicatorMetricsConfig kpiConfig) {
-            this(metricsNamePrefix, kpiConfig.longRunningRequestThresholdMs());
-        }
-
-        private Extended(String metricsNamePrefix, long longRunningRequestThresholdMs) {
-            super(metricsNamePrefix);
+        private Extended(MeterRegistry kpiMeterRegistry, String meterNamePrefix, long longRunningRequestThresholdMs) {
+            super(kpiMeterRegistry, meterNamePrefix);
             this.longRunningRequestThresdholdMs = longRunningRequestThresholdMs;
 
-            inflightRequests = kpiMetricRegistry().gauge(Metadata.builder()
-                                                                 .withName(metricsNamePrefix + INFLIGHT_REQUESTS_NAME)
-                                                                 .withDescription(
-                                                                         "Measures the number of currently in-flight requests")
-                                                                 .withUnit(MetricUnits.NONE)
-                                                                 .build(),
-                                                         () -> inflightRequestsCount);
+            inflightRequests = kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + INFLIGHT_REQUESTS_NAME,
+                                                                                      inflightRequestsCount,
+                                                                                      AtomicInteger::get));
 
-            longRunningRequests = kpiMetricRegistry().counter(Metadata.builder()
-                    .withName(metricsNamePrefix + LONG_RUNNING_REQUESTS_NAME)
-                    .withDescription("Measures the total number of long-running requests and rates at which they occur")
-                    .withUnit(MetricUnits.NONE)
-                    .build());
+            longRunningRequests = kpiMeterRegistry.getOrCreate(
+                    Counter.builder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
+                            .description("Measures the total number of long-running requests and rates at which they occur")
+            );
 
-            load = kpiMetricRegistry().counter(Metadata.builder()
-                    .withName(metricsNamePrefix + LOAD_NAME)
-                    .withDescription(LOAD_DESCRIPTION)
-                    .withUnit(MetricUnits.NONE)
-                    .build());
+            load = kpiMeterRegistry.getOrCreate(Counter.builder(meterNamePrefix + LOAD_NAME)
+                    .description(LOAD_DESCRIPTION));
 
             deferredRequests = new DeferredRequests();
-            kpiMetricRegistry().gauge(Metadata.builder()
-                                              .withName(metricsNamePrefix + DEFERRED_NAME)
-                                              .withDescription("Measures deferred requests")
-                                              .withUnit(MetricUnits.NONE)
-                                              .build(),
-                                      deferredRequests,
-                                      DeferredRequests::getValue);
+            kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + DEFERRED_NAME,
+                                                       deferredRequests,
+                                                       DeferredRequests::value)
+                                              .description("Measures deferred requests"));
         }
 
         @Override
@@ -203,17 +157,17 @@ class KeyPerformanceIndicatorMetricsImpls {
         @Override
         public void onRequestStarted() {
             super.onRequestStarted();
-            inflightRequestsCount++;
-            load.inc();
+            inflightRequestsCount.incrementAndGet();
+            load.increment();
             deferredRequests.startRequest();
         }
 
         @Override
         public void onRequestCompleted(boolean isSuccessful, long processingTimeMs) {
             super.onRequestCompleted(isSuccessful, processingTimeMs);
-            inflightRequestsCount--;
+            inflightRequestsCount.decrementAndGet();
             if (processingTimeMs >= longRunningRequestThresdholdMs) {
-                longRunningRequests.inc();
+                longRunningRequests.increment();
             }
             deferredRequests.completeRequest();
         }
@@ -222,7 +176,7 @@ class KeyPerformanceIndicatorMetricsImpls {
          * {@code Counter} which exposes the number of deferred requests as derived from the hit counter (arrivals) - load counter
          * (processing).
          */
-        private static class DeferredRequests implements Gauge<Long> {
+        private static class DeferredRequests {
 
             private long hits;
             private long load;
@@ -243,8 +197,7 @@ class KeyPerformanceIndicatorMetricsImpls {
                 load--;
             }
 
-            @Override
-            public Long getValue() {
+            double value() {
                 return hits - load;
             }
         }

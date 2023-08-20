@@ -46,7 +46,7 @@ public interface MeterRegistry extends Wrapper {
      * @param scopeSelection scopes to match
      * @return matching meters
      */
-    Iterable<Meter> meters(Iterable<String> scopeSelection);
+    Iterable<? extends Meter> meters(Iterable<String> scopeSelection);
 
     /**
      * Returns the scopes (if any) as represented by tags on meter IDs.
@@ -59,10 +59,12 @@ public interface MeterRegistry extends Wrapper {
      * Returns whether the specified meter is enabled or not, based on whether the meter registry as a whole is enabled and also
      * whether the config settings for filtering include and exclude indicate the specific meter is enabled.
      *
-     * @param meterId meter ID to check
+     * @param name name of the meter to check
+     * @param tags tags of the meter to check
+     * @param scope scope, if present, of the meter to check
      * @return true if the meter (and its meter registry) are enabled; false otherwise
      */
-    boolean isMeterEnabled(Meter.Id meterId);
+    boolean isMeterEnabled(String name, Iterable<Tag> tags, Optional<String> scope);
 
     /**
      * Returns the default {@link io.helidon.metrics.api.Clock} in use by the registry.

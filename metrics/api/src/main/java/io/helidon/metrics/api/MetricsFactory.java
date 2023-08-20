@@ -120,7 +120,7 @@ public interface MetricsFactory {
      * @return counter builder
      * @param <T> type of the state object
      */
-    <T> FunctionalCounter.Builder functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
+    <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.DistributionStatisticsConfig}.
@@ -201,4 +201,32 @@ public interface MetricsFactory {
      * @return histogram snapshot
      */
     HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max);
+
+    /**
+     * Returns a no-op {@link io.helidon.metrics.api.Meter} of the type implied by the builder's type, initialized with
+     * the builder's name and other required parameters.
+     *
+     * @param builder original builder
+     * @return corresponding no-op meter
+     * @param <B> type of the builder
+     * @param <M> type of the meter the builder produces
+     */
+    default <M extends Meter, B extends Meter.Builder<B, M>> Meter noOpMeter(B builder) {
+        if (builder instanceof Counter.Builder cb) {
+            return NoOpMeter.Counter.builder(cb.name()).build();
+        }
+        if (builder instanceof FunctionalCounter.Builder fcb) {
+            return NoOpMeter.FunctionalCounter.builder(fcb.name(), fcb.stateObject(), fcb.fn()).build();
+        }
+        if (builder instanceof DistributionSummary.Builder sb) {
+            return NoOpMeter.DistributionSummary.builder(sb.name()).build();
+        }
+        if (builder instanceof Gauge.Builder gb) {
+            return NoOpMeter.Gauge.builder(gb.name(), gb.stateObject(), gb.fn()).build();
+        }
+        if (builder instanceof Timer.Builder tb) {
+            return NoOpMeter.Timer.builder(tb.name()).build();
+        }
+        throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
+    }
 }

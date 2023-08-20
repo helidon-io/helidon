@@ -25,7 +25,6 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.HistogramSnapshot;
-import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -108,7 +107,9 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public <T> FunctionalCounter.Builder functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+    public <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name,
+                                                                     T stateObject,
+                                                                     ToDoubleFunction<T> fn) {
         return MFunctionalCounter.builder(name, stateObject, fn);
     }
 

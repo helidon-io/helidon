@@ -18,19 +18,24 @@ package io.helidon.webserver.observe.metrics;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.function.Supplier;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Http;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MeterRegistryFormatter;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
+import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
@@ -39,6 +44,12 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
+
+import static io.helidon.http.Http.HeaderNames.ALLOW;
+import static io.helidon.http.Http.Status.METHOD_NOT_ALLOWED_405;
+import static io.helidon.http.Http.Status.NOT_ACCEPTABLE_406;
+import static io.helidon.http.Http.Status.NOT_FOUND_404;
+import static io.helidon.http.Http.Status.OK_200;
 
 /**
  * Support for metrics for Helidon WebServer.
@@ -71,26 +82,36 @@ import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
  * }</pre>
  */
 public class MetricsFeature extends HelidonFeatureSupport {
+
+    /**
+     * Prefix for key performance indicator metrics names.
+     */
+    static final String KPI_METER_NAME_PREFIX = "requests";
+    private static final String KPI_METER_NAME_PREFIX_WITH_DOT = KPI_METER_NAME_PREFIX + ".";
+
     private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
     private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Http.Status.NOT_FOUND_404)
             .send("Metrics are disabled");
 
     private static final Iterable<String> EMPTY_ITERABLE = Collections::emptyIterator;
-    private final MetricsSettings metricsSettings;
-    private final RegistryFactory registryFactory;
+
+
+
+    private final MetricsConfig metricsConfig;
+    private final MeterRegistry meterRegistry;
 
     private MetricsFeature(Builder builder) {
         super(LOGGER, builder, "Metrics");
 
-        this.registryFactory = builder.registryFactory();
-        this.metricsSettings = builder.metricsSettings();
-        SystemTagsManager.create(metricsSettings);
+        this.meterRegistry = builder.meterRegistry();
+        this.metricsConfig = builder.metricsConfig();
+        SystemTagsManager.create(metricsConfig);
     }
 
     protected MetricsFeature(System.Logger logger, Builder builder, String serviceName) {
         super(logger, builder, serviceName);
-        metricsSettings = null;
-        registryFactory = null;
+        metricsConfig = null;
+        meterRegistry = null;
     }
 
     /**
@@ -123,17 +144,14 @@ public class MetricsFeature extends HelidonFeatureSupport {
      * @return a new builder instance
      */
     public static Builder builder() {
-//        return new Builder();
-        return System.getProperty("newMetricsAPI") == null
-        ? new Builder()
-        : MetricsFeature4.builder();
+        return new Builder();
     }
 
     @Override
     public Optional<HttpService> service() {
         // main service is responsible for exposing metrics endpoints over HTTP
         return Optional.of(rules -> {
-            if (registryFactory.enabled()) {
+            if (metricsConfig.enabled()) {
                 setUpEndpoints(rules);
             } else {
                 setUpDisabledEndpoints(rules);
@@ -147,12 +165,11 @@ public class MetricsFeature extends HelidonFeatureSupport {
      * @param rules     rules to use
      */
     public void configureVendorMetrics(HttpRouting.Builder rules) {
-        String metricPrefix = "requests.";
-
         KeyPerformanceIndicatorSupport.Metrics kpiMetrics =
-                KeyPerformanceIndicatorMetricsImpls.get(metricPrefix,
-                                                        metricsSettings
-                                                                .keyPerformanceIndicatorSettings());
+                KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
+                                                        KPI_METER_NAME_PREFIX_WITH_DOT,
+                                                        metricsConfig
+                                                                .keyPerformanceIndicatorMetricsConfig());
 
         rules.addFilter((chain, req, res) -> {
             KeyPerformanceIndicatorSupport.Context kpiContext = kpiContext(req);
@@ -170,20 +187,6 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     @Override
-    public void beforeStart() {
-        if (registryFactory.enabled()) {
-            registryFactory.start();
-        }
-    }
-
-    @Override
-    public void afterStop() {
-        if (registryFactory.enabled()) {
-            registryFactory.stop();
-        }
-    }
-
-    @Override
     protected void context(String context) {
         super.context(context);
     }
@@ -191,8 +194,44 @@ public class MetricsFeature extends HelidonFeatureSupport {
     @Override
     protected void postSetup(HttpRouting.Builder defaultRouting, HttpRouting.Builder featureRouting) {
         configureVendorMetrics(defaultRouting);
-        RegistryFactory.getInstance().getRegistry(Registry.BASE_SCOPE); // to trigger lazy creation if it's not already done.
     }
+
+    Optional<?> output(MediaType mediaType,
+                       Iterable<String> scopeSelection,
+                       Iterable<String> nameSelection) {
+        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
+                                                           mediaType,
+                                                           metricsConfig.scopeTagName(),
+                                                           scopeSelection,
+                                                           nameSelection);
+
+        return formatter.format();
+    }
+
+    private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,
+                                                   MediaType mediaType,
+                                                   String scopeTagName,
+                                                   Iterable<String> scopeSelection,
+                                                   Iterable<String> nameSelection) {
+        Optional<MeterRegistryFormatter> formatter = HelidonServiceLoader.builder(
+                        ServiceLoader.load(MeterRegistryFormatterProvider.class))
+                .build()
+                .stream()
+                .map(provider -> provider.formatter(mediaType,
+                                                    meterRegistry,
+                                                    scopeTagName,
+                                                    scopeSelection,
+                                                    nameSelection))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+
+        if (formatter.isPresent()) {
+            return formatter.get();
+        }
+        throw new UnsupportedOperationException("Unable to find a meter registry formatter for media type " + mediaType);
+    }
+
 
     private void getAll(ServerRequest req, ServerResponse res) {
         getMatching(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
@@ -209,22 +248,33 @@ public class MetricsFeature extends HelidonFeatureSupport {
             res.send();
         }
 
+        getOrOptionsMatching(mediaType, res, () -> output(mediaType,
+                                                          scopeSelection,
+                                                          nameSelection));
+    }
+
+    private void getOrOptionsMatching(MediaType mediaType,
+                                      ServerResponse res,
+                                      Supplier<Optional<?>> dataSupplier) {
         try {
-            Optional<?> output = RegistryFactory.getInstance().scrape(mediaType,
-                                                                           scopeSelection,
-                                                                           nameSelection);
+            Optional<?> output = dataSupplier.get();
+
             if (output.isPresent()) {
-                res.status(Http.Status.OK_200)
+                res.status(OK_200)
                         .headers().contentType(mediaType);
                 res.send(output.get());
             } else {
-                res.status(Http.Status.NOT_FOUND_404);
+                res.status(NOT_FOUND_404);
                 res.send();
             }
         } catch (UnsupportedOperationException ex) {
-            // The registry factory does not support that media type.
-            res.status(Http.Status.NOT_ACCEPTABLE_406);
+            // We could not find a formatter for that media type from any provider we could locate.
+            res.status(NOT_ACCEPTABLE_406);
             res.send();
+        } catch (NoClassDefFoundError ex) {
+            // Prometheus seems not to be on the path.
+            LOGGER.log(System.Logger.Level.DEBUG, "Unable to find Micrometer Prometheus types to scrape the registry");
+            res.status(NOT_FOUND_404);
         }
     }
 
@@ -235,6 +285,14 @@ public class MetricsFeature extends HelidonFeatureSupport {
                               MediaTypes.APPLICATION_JSON)
                 .orElse(null);
     }
+
+    private static MediaType bestAcceptedForMetadata(ServerRequest req) {
+        return req.headers()
+                .bestAccepted(MediaTypes.APPLICATION_JSON)
+                .orElse(null);
+    }
+
+
 
     private static KeyPerformanceIndicatorSupport.Context kpiContext(ServerRequest request) {
         return request.context()
@@ -247,24 +305,28 @@ public class MetricsFeature extends HelidonFeatureSupport {
         // As of Helidon 4, this is the only path we should need because scope-based or metric-name-based
         // selection should use query parameters instead of paths.
         rules.get("/", this::getAll)
-                .options("/", this::rejectOptions);
+                .options("/", this::optionsAll);
 
         // routing to each scope
         // As of Helidon 4, users should use /metrics?scope=xyz instead of /metrics/xyz, and
         // /metrics/?scope=xyz&name=abc instead of /metrics/xyz/abc. These routings are kept
         // temporarily for backward compatibility.
 
-        Stream.of(Registry.APPLICATION_SCOPE,
-                  Registry.BASE_SCOPE,
-                  Registry.VENDOR_SCOPE)
-                .map(registryFactory::getRegistry)
-                .forEach(registry -> {
-                    String type = registry.scope();
-
-                    rules.get("/" + type, (req, res) -> getMatching(req, res, Set.of(type), Set.of()))
-                            .get("/" + type + "/{metric}", (req, res) -> getByName(req, res, Set.of(type))) // should use ?scope=
-                            .options("/" + type, this::rejectOptions)
-                            .options("/" + type + "/{metric}", this::rejectOptions);
+        Meter.Scope.BUILT_IN_SCOPES
+                .forEach(scope -> {
+                    boolean isScopeEnabled = metricsConfig.scopes().get(scope).enabled();
+                    rules.get("/" + scope,
+                              isScopeEnabled ? (req, res) -> getMatching(req, res, Set.of(scope), Set.of())
+                                      : DISABLED_ENDPOINT_HANDLER)
+                            .get("/" + scope + "/{metric}",
+                                 isScopeEnabled ? (req, res) -> getByName(req, res, Set.of(scope)) // should use ?scope=
+                                         : DISABLED_ENDPOINT_HANDLER)
+                            .options("/" + scope,
+                                     isScopeEnabled ? (req, res) -> optionsMatching(req, res, Set.of(scope), Set.of())
+                                             : DISABLED_ENDPOINT_HANDLER)
+                            .options("/" + scope + "/{metric}",
+                                     isScopeEnabled ? (req, res) -> optionsByName(req, res, Set.of(scope))
+                                             : DISABLED_ENDPOINT_HANDLER);
                 });
     }
 
@@ -282,25 +344,44 @@ public class MetricsFeature extends HelidonFeatureSupport {
         prms.runTasks(request, response, throwable);
     }
 
-    private void rejectOptions(ServerRequest req, ServerResponse res) {
-        // Options used to return metadata but it's no longer supported unless we restore JSON support.
-        res.header(Http.HeaderNames.ALLOW, "GET");
-        res.status(Http.Status.METHOD_NOT_ALLOWED_405);
-        res.send();
-    }
+        private void optionsAll(ServerRequest req, ServerResponse res) {
+            optionsMatching(req, res, req.query().all("scope", List::of), req.query().all("name", List::of));
+        }
+
+        private void optionsByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
+            String metricName = req.path().pathParameters().value("metric");
+            optionsMatching(req, res, scopeSelection, Set.of(metricName));
+        }
+
+        private void optionsMatching(ServerRequest req,
+                                     ServerResponse res,
+                                     Iterable<String> scopeSelection,
+                                     Iterable<String> nameSelection) {
+            MediaType mediaType = bestAcceptedForMetadata(req);
+            if (mediaType == null) {
+                res.header(ALLOW, "GET");
+                res.status(METHOD_NOT_ALLOWED_405);
+                res.send();
+            }
+
+            getOrOptionsMatching(mediaType, res, () -> output(mediaType,
+                                                              scopeSelection,
+                                                              nameSelection));
+        }
 
     private void setUpDisabledEndpoints(HttpRules rules) {
         rules.get("/", DISABLED_ENDPOINT_HANDLER)
-                .options("/", this::rejectOptions);
+                .options("/", DISABLED_ENDPOINT_HANDLER);
 
-        // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
-        // application, base, vendor
-        Registry.BUILT_IN_SCOPES
-                .forEach(type -> Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
-                        .map(suffix -> "/" + type + suffix)
-                        .forEach(path -> rules.get(path, DISABLED_ENDPOINT_HANDLER)
-                                .options(path, this::rejectOptions)
-                        ));
+        // TODO we should not need the following because catching the root (within metrics) should reject even subresource reqs.
+//        // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
+//        // application, base, vendor
+//        Meter.Scope.BUILT_IN_SCOPES
+//                .forEach(type -> Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
+//                        .map(suffix -> "/" + type + suffix)
+//                        .forEach(path -> rules.get(path, DISABLED_ENDPOINT_HANDLER)
+//                                .options(path, this::rejectOptions)
+//                        ));
     }
 
     /**
@@ -308,8 +389,8 @@ public class MetricsFeature extends HelidonFeatureSupport {
      */
     //public static final class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
     public static class Builder extends HelidonFeatureSupport.Builder<Builder, MetricsFeature> {
-        private LazyValue<RegistryFactory> registryFactory;
-        private MetricsSettings.Builder metricsSettingsBuilder = MetricsSettings.builder();
+        private LazyValue<MeterRegistry> meterRegistry;
+        private MetricsConfig.Builder metricsSettingsBuilder = MetricsConfig.builder();
 
         private Builder() {
             super("metrics");
@@ -321,8 +402,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         @Override
         public MetricsFeature build() {
-            if (registryFactory == null) {
-                registryFactory = LazyValue.create(() -> RegistryFactory.getInstance(metricsSettingsBuilder.build()));
+            if (meterRegistry == null) {
+                meterRegistry = LazyValue.create(() -> MetricsFactory.getInstance()
+                        .createMeterRegistry(metricsSettingsBuilder.build()));
             }
             return new MetricsFeature(this);
         }
@@ -332,7 +414,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
          *
          * @param config configuration instance
          * @return updated builder instance
-         * @see io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings.Builder Details about key
+         * @see io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.Builder Details about key
          *         performance metrics configuration
          */
         public Builder config(Config config) {
@@ -348,38 +430,42 @@ public class MetricsFeature extends HelidonFeatureSupport {
          * @return updated builder
          */
         @ConfiguredOption(mergeWithParent = true,
-                          type = MetricsSettings.class)
-        public Builder metricsSettings(MetricsSettings.Builder metricsSettingsBuilder) {
+                          type = MetricsConfig.class)
+        public Builder metricsConfig(MetricsConfig.Builder metricsSettingsBuilder) {
             this.metricsSettingsBuilder = metricsSettingsBuilder;
             return this;
         }
 
         /**
-         * If you want to have multiple registry factories with different
+         * If you want to have multiple meter registries with different
          * endpoints, you may create them using
-         * {@link RegistryFactory#create(MetricsSettings)} or
-         * {@link RegistryFactory#create()} and create multiple
-         * {@link MetricsFeature} instances with different
-         * {@link #webContext(String)} contexts}.
+         * {@snippet :
+         *      MeterRegistry meterRegistry = MetricsFactory.getInstance()
+         *              .createMeterRegistry(metricsConfig);
+         *      MetricsFeature.builder()
+         *              .meterRegistry(meterRegistry) // further settings on the feature builder, etc.
+         * }
+         * where {@code metricsConfig} in each case has different
+         * {@link #webContext(String)} settings}.
          * <p>
          * If this method is not called,
          * {@link MetricsFeature} would use the shared
          * instance as provided by
-         * {@link io.helidon.metrics.api.RegistryFactory#getInstance(io.helidon.config.Config)}
+         * {@link io.helidon.metrics.api.MetricsFactory#globalRegistry()}.
          *
-         * @param factory factory to use in this metric support
+         * @param meterRegistry meterRegistry to use in this metric support
          * @return updated builder instance
          */
-        public Builder registryFactory(RegistryFactory factory) {
-            registryFactory = LazyValue.create(() -> factory);
+        public Builder meterRegistry(MeterRegistry meterRegistry) {
+            this.meterRegistry = LazyValue.create(() -> meterRegistry);
             return this;
         }
 
-        RegistryFactory registryFactory() {
-            return registryFactory.get();
+        MeterRegistry meterRegistry() {
+            return meterRegistry.get();
         }
 
-        MetricsSettings metricsSettings() {
+        MetricsConfig metricsConfig() {
             return metricsSettingsBuilder.build();
         }
     }

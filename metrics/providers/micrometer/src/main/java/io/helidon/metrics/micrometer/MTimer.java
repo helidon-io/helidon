@@ -16,6 +16,8 @@
 package io.helidon.metrics.micrometer;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -170,30 +172,39 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
     static class Builder extends MMeter.Builder<Timer.Builder, Timer, MTimer.Builder, MTimer>
                 implements io.helidon.metrics.api.Timer.Builder {
 
+        private double[] percentiles;
+        private Duration[] buckets;
+        private Duration min;
+        private Duration max;
+
         private Builder(String name) {
-            super(Timer.builder(name));
+            super(name, Timer.builder(name));
         }
 
         @Override
         public Builder percentiles(double... percentiles) {
+            this.percentiles = percentiles;
             delegate().publishPercentiles(percentiles);
             return identity();
         }
 
         @Override
         public Builder buckets(Duration... buckets) {
+            this.buckets = buckets;
             delegate().serviceLevelObjectives(buckets);
             return identity();
         }
 
         @Override
         public Builder minimumExpectedValue(Duration min) {
+            this.min = min;
             delegate().minimumExpectedValue(min);
             return identity();
         }
 
         @Override
         public Builder maximumExpectedValue(Duration max) {
+            this.max = max;
             delegate().maximumExpectedValue(max);
             return identity();
         }
@@ -214,6 +225,26 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         protected Builder delegateBaseUnit(String baseUnit) {
             // The Micrometer Timer does not have baseUnit (it's fixed at ns) but for uniformity we implement this anyway.
             return identity();
+        }
+
+        @Override
+        public Iterable<Double> percentiles() {
+            return Util.iterable(percentiles);
+        }
+
+        @Override
+        public Iterable<Duration> buckets() {
+            return List.of(buckets);
+        }
+
+        @Override
+        public Optional<Duration> minimumExpectedValue() {
+            return Optional.ofNullable(min);
+        }
+
+        @Override
+        public Optional<Duration> maximumExpectedValue() {
+            return Optional.ofNullable(max);
         }
 
         @Override

@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Common behavior of all meters.
@@ -41,6 +42,11 @@ public interface Meter extends Wrapper {
          * Vendor scope.
          */
         public static final String VENDOR = "vendor";
+
+        /**
+         * All the predefined scopes.
+         */
+        public static final Set<String> BUILT_IN_SCOPES = Set.of(BASE, VENDOR, APPLICATION);
 
         /**
          * Default scope if none is specified for a given meter.
@@ -105,6 +111,41 @@ public interface Meter extends Wrapper {
          * @return updated builder
          */
         B scope(String scope);
+
+        /**
+         * Returns the name the builder will use.
+         *
+         * @return name
+         */
+        String name();
+
+        /**
+         * Returns the tags the builder will use.
+         *
+         * @return tags
+         */
+        Iterable<Tag> tags();
+
+        /**
+         * Returns the description the builder will use.
+         *
+         * @return description if set; empty otherwise
+         */
+        Optional<String> description();
+
+        /**
+         * Returns the base unit the builder will use.
+         *
+         * @return base unit if set; empty otherwise
+         */
+        Optional<String> baseUnit();
+
+        /**
+         * Returns the scope set in the builder, if any.
+         *
+         * @return the assigned scope if set; empty otherwise
+         */
+        Optional<String> scope();
     }
 
     /**

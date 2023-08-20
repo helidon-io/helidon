@@ -18,10 +18,10 @@ package io.helidon.metrics.micrometer;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 
 /**
  * Adapter to Micrometer meter for Helidon metrics.
@@ -33,7 +33,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
     private final M delegate;
     private final io.helidon.metrics.api.Meter.Id id;
 
-    private Optional<String> scope;
+    private String scope;
     private boolean isDeleted = false;
 
     protected MMeter(M delegate, Builder<?, ?, ?, ?> builder) {
@@ -47,7 +47,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
     private MMeter(M delegate, String scope) {
         this.delegate = delegate;
         id = Id.create(delegate.getId());
-        this.scope = Optional.ofNullable(scope);
+        this.scope = scope;
     }
 
     @Override
@@ -74,7 +74,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     @Override
     public Optional<String> scope() {
-        return scope;
+        return Optional.ofNullable(scope);
     }
 
     @Override
@@ -104,7 +104,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
     }
 
     protected void scope(String scope) {
-        this.scope = Optional.of(scope);
+        this.scope = scope;
     }
 
     protected boolean isDeleted() {
@@ -125,26 +125,33 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
      */
     abstract static class Builder<B, M extends Meter, HB extends Builder<B, M, HB, HM>, HM extends MMeter<M>> {
 
+        private final String name;
         private final B delegate;
-        private String scope;
 
-        protected Builder(B delegate) {
+        private Iterable<io.helidon.metrics.api.Tag> tags = Set.of();
+
+        private String scope;
+        private String description;
+        private String baseUnit;
+
+
+        protected Builder(String name, B delegate) {
+            this.name = name;
             this.delegate = delegate;
         }
 
-        protected B delegate() {
-            return delegate;
-        }
-
         public HB tags(Iterable<io.helidon.metrics.api.Tag> tags) {
-           return delegateTags(MTag.tags(tags));
+            this.tags = tags;
+            return delegateTags(MTag.tags(tags));
         }
 
         public HB description(String description) {
+            this.description = description;
             return delegateDescription(description);
         }
 
         public HB baseUnit(String baseUnit) {
+            this.baseUnit = baseUnit;
             return delegateBaseUnit(baseUnit);
         }
 
@@ -157,14 +164,33 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return (HB) this;
         }
 
-        protected String scope() {
-            return scope;
+        public String name() {
+            return name;
+        }
+
+        public Iterable<io.helidon.metrics.api.Tag> tags() {
+            return tags;
+        }
+
+        public Optional<String> scope() {
+            return Optional.ofNullable(scope);
+        }
+
+        public Optional<String> description() {
+            return Optional.ofNullable(description);
+        }
+
+        public Optional<String> baseUnit() {
+            return Optional.ofNullable(baseUnit);
+        }
+
+        protected B delegate() {
+            return delegate;
         }
 
         protected abstract HB delegateTags(Iterable<Tag> tags);
         protected abstract HB delegateDescription(String description);
         protected abstract HB delegateBaseUnit(String baseUnit);
-
 
         protected abstract HM build(M meter);
 
