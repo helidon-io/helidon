@@ -31,37 +31,87 @@ import io.helidon.config.spi.NodeConfigSource;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
+import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class SupplierTest {
     private static final String KEY = "string-supplier";
+    private static final String KEY_OPTIONAL = "optional-supplier";
     private static final String ORIGINAL_VALUE = "value";
+    public static final char[] ORIGINAL_VALUE_CHARS = ORIGINAL_VALUE.toCharArray();
     private static final String NEW_VALUE = "new-value";
+    public static final char[] NEW_VALUE_CHARS = NEW_VALUE.toCharArray();
 
     @Test
     void testChangeString() {
-        TestSource testSource = new TestSource();
+        TestSource testSource = new TestSource(ORIGINAL_VALUE);
         Config config = Config.just(testSource);
         SupplierBean b = SupplierBean.create(config);
 
         Supplier<String> stringSupplier = b.stringSupplier();
         Supplier<char[]> arraySupplier = b.charSupplier();
+        Supplier<Optional<String>> optionalSupplier = b.optionalSupplier();
+        Supplier<Optional<char[]>> optionalCharSupplier = b.optionalCharSupplier();
 
         assertThat(stringSupplier.get(), is(ORIGINAL_VALUE));
-        assertThat(arraySupplier.get(), is(ORIGINAL_VALUE.toCharArray()));
+        assertThat(arraySupplier.get(), is(ORIGINAL_VALUE_CHARS));
+        assertThat(optionalSupplier.get(), optionalValue(is(ORIGINAL_VALUE)));
+        assertThat(optionalCharSupplier.get(), optionalValue(is(ORIGINAL_VALUE_CHARS)));
 
-        testSource.update();
+        testSource.update(NEW_VALUE);
 
         assertThat(stringSupplier.get(), is(NEW_VALUE));
-        assertThat(arraySupplier.get(), is(NEW_VALUE.toCharArray()));
+        assertThat(arraySupplier.get(), is(NEW_VALUE_CHARS));
+        assertThat(optionalSupplier.get(), optionalValue(is(NEW_VALUE)));
+        assertThat(optionalCharSupplier.get(), optionalValue(is(NEW_VALUE_CHARS)));
     }
 
+    @Test
+    void testChangeOptionalStringFromEmpty() {
+        TestSource testSource = new TestSource(null);
+        Config config = Config.just(testSource);
+        SupplierBean b = SupplierBean.create(config);
 
+        Supplier<Optional<String>> optionalSupplier = b.optionalSupplier();
+        Supplier<Optional<char[]>> optionalCharSupplier = b.optionalCharSupplier();
+
+        assertThat(optionalSupplier.get(), optionalEmpty());
+        assertThat(optionalCharSupplier.get(), optionalEmpty());
+
+        testSource.update(NEW_VALUE);
+
+        assertThat(optionalSupplier.get(), optionalValue(is(NEW_VALUE)));
+        assertThat(optionalCharSupplier.get(), optionalValue(is(NEW_VALUE_CHARS)));
+    }
+
+    @Test
+    void testChangeOptionalStringToEmpty() {
+        TestSource testSource = new TestSource(ORIGINAL_VALUE);
+        Config config = Config.just(testSource);
+        SupplierBean b = SupplierBean.create(config);
+
+        Supplier<Optional<String>> optionalSupplier = b.optionalSupplier();
+        Supplier<Optional<char[]>> optionalCharSupplier = b.optionalCharSupplier();
+
+        assertThat(optionalSupplier.get(), optionalValue(is(ORIGINAL_VALUE)));
+        assertThat(optionalCharSupplier.get(), optionalValue(is(ORIGINAL_VALUE_CHARS)));
+
+        testSource.update(null);
+
+        assertThat(optionalSupplier.get(), optionalEmpty());
+        assertThat(optionalCharSupplier.get(), optionalEmpty());
+    }
 
     private static class TestSource implements ConfigSource, EventConfigSource, NodeConfigSource {
 
+        private final String optionalValue;
         private BiConsumer<String, ConfigNode> consumer;
+
+        private TestSource(String optionalValue) {
+            this.optionalValue = optionalValue;
+        }
 
         @Override
         public void onChange(BiConsumer<String, ConfigNode> changedNode) {
@@ -70,15 +120,27 @@ class SupplierTest {
 
         @Override
         public Optional<ConfigContent.NodeContent> load() throws ConfigException {
+            ConfigNode.ObjectNode.Builder rootNode = ConfigNode.ObjectNode.builder()
+                    .addValue(KEY, ORIGINAL_VALUE);
+            if (optionalValue != null) {
+                rootNode.addValue(KEY_OPTIONAL, optionalValue);
+
+            }
             return Optional.of(ConfigContent.NodeContent.builder()
-                                       .node(ConfigNode.ObjectNode.builder()
-                                                     .addValue(KEY, ORIGINAL_VALUE)
-                                                     .build())
+                                       .node(rootNode.build())
                                        .build());
         }
 
-        void update() {
-            consumer.accept(KEY, ConfigNode.ValueNode.create(NEW_VALUE));
+        void update(String newOptionalValue) {
+            ConfigNode.ObjectNode.Builder rootNode = ConfigNode.ObjectNode.builder()
+                    .addValue(KEY, NEW_VALUE);
+            if (newOptionalValue == null) {
+                rootNode.addObject(KEY_OPTIONAL, ConfigNode.ObjectNode.empty());
+            } else {
+                rootNode.addValue(KEY_OPTIONAL, newOptionalValue);
+            }
+
+            consumer.accept("", rootNode.build());
         }
     }
 }

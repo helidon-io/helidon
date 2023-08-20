@@ -65,12 +65,30 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
             method.addLine(configGet(configured)
                                    + generateFromConfig(factoryMethods)
                                    + ".ifPresent(this::" + setterName() + ");");
+        } else if (actualType().isOptional()) {
+            method.add(setterName() + "(");
+            method.add(configGet(configured));
+            method.add(generateFromConfigOptional(factoryMethods));
+            method.addLine(".optionalSupplier());");
         } else {
             method.add(setterName() + "(");
             method.add(configGet(configured));
             method.add(generateFromConfig(factoryMethods));
             method.addLine(".supplier());");
         }
+    }
+
+    String generateFromConfigOptional(FactoryMethods factoryMethods) {
+        TypeName optionalType = actualType().typeArguments().get(0);
+        if (optionalType.fqName().equals("char[]")) {
+            return ".asString().as(String::toCharArray)";
+        }
+
+        TypeName boxed = optionalType.boxed();
+        return factoryMethods.createFromConfig()
+                .map(it -> ".map(" + it.typeWithFactoryMethod().genericTypeName().fqName() + "::" + it.createMethodName() + ")")
+                .orElseGet(() -> ".as(" + boxed.fqName() + ".class)");
+
     }
 
     @Override
@@ -173,18 +191,16 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
                                   PrototypeProperty.ConfiguredOption configured,
                                   TypeName returnType,
                                   Javadoc blueprintJavadoc) {
-        Method.Builder builder = Method.builder()
-                .name(setterName())
+        classBuilder.addMethod(method -> method.name(setterName())
                 .returnType(returnType, "updated builder instance")
                 .description(blueprintJavadoc.content())
                 .addJavadocTag("see", "#" + getterName() + "()")
                 .addParameter(param -> param.name(name())
                         .type(argumentTypeName())
                         .description(blueprintJavadoc.returnDescription()))
-                .accessModifier(setterAccessModifier(configured));
-        builder.typeName(Objects.class).addLine(".requireNonNull(" + name() + ");");
-        builder.addLine("this." + name() + " = " + name() + "::get;")
-                .addLine("return self();");
-        classBuilder.addMethod(builder);
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class).addLine(".requireNonNull(" + name() + ");")
+                .addLine("this." + name() + " = " + name() + "::get;")
+                .addLine("return self();"));
     }
 }

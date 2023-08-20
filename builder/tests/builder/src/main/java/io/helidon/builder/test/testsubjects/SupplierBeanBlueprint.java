@@ -16,6 +16,7 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
@@ -39,4 +40,10 @@ interface SupplierBeanBlueprint {
 
     @ConfiguredOption(key = "string-supplier")
     Supplier<char[]> charSupplier();
+
+    @ConfiguredOption
+    Supplier<Optional<String>> optionalSupplier();
+
+    @ConfiguredOption(key = "optional-supplier")
+    Supplier<Optional<char[]>> optionalCharSupplier();
 }
