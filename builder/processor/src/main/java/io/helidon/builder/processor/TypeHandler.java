@@ -56,6 +56,9 @@ class TypeHandler {
         if (TypeNames.OPTIONAL.equals(returnType)) {
             return new TypeHandlerOptional(name, getterName, setterName, returnType);
         }
+        if (TypeNames.SUPPLIER.equals(returnType)) {
+            return new TypeHandlerSupplier(name, getterName, setterName, returnType);
+        }
         if (TypeNames.SET.equals(returnType)) {
             return new TypeHandlerSet(name, getterName, setterName, returnType);
         }
@@ -202,7 +205,7 @@ class TypeHandler {
 
     String generateFromConfig(FactoryMethods factoryMethods) {
         if (actualType().fqName().equals("char[]")) {
-            return ".asString().map(String::toCharArray)";
+            return ".asString().as(String::toCharArray)";
         }
 
         TypeName boxed = actualType().boxed();
@@ -214,7 +217,7 @@ class TypeHandler {
 
     void generateFromConfig(Method.Builder method, FactoryMethods factoryMethods) {
         if (actualType().fqName().equals("char[]")) {
-            method.add(".asString().map(").typeName(String.class).add("::toCharArray)");
+            method.add(".asString().as(").typeName(String.class).add("::toCharArray)");
             return;
         }
 
@@ -296,10 +299,10 @@ class TypeHandler {
 
     }
 
-    private void declaredSetter(InnerClass.Builder classBuilder,
-                                PrototypeProperty.ConfiguredOption configured,
-                                TypeName returnType,
-                                Javadoc blueprintJavadoc) {
+    protected void declaredSetter(InnerClass.Builder classBuilder,
+                                  PrototypeProperty.ConfiguredOption configured,
+                                  TypeName returnType,
+                                  Javadoc blueprintJavadoc) {
         Method.Builder builder = Method.builder()
                 .name(setterName())
                 .returnType(returnType, "updated builder instance")

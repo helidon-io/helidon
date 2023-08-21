@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -284,4 +284,41 @@ public interface ConfigValue<T> {
         return asOptional().stream();
     }
 
+    /**
+     * Returns a supplier of a typed value. The semantics depend on implementation, this may always return the
+     * same value, or it may provide latest value if changes are enabled.
+     * <p>
+     * Note that {@link Supplier#get()} can throw a {@link io.helidon.common.config.ConfigException} if the value
+     * cannot be converted, or if the value is missing.
+     *
+     * @return a supplier of a typed value
+     */
+    Supplier<T> supplier();
+
+    /**
+     * Returns a supplier of a typed value with a default.
+     * <p>
+     * The semantics depend on implementation, this may always return the
+     * same value, or it may provide latest value if changes are enabled.
+     * <p>
+     * Note that {@link Supplier#get()} can throw a {@link io.helidon.common.config.ConfigException} if the value
+     * cannot be converted.
+     *
+     * @param defaultValue a value to be returned if the supplied value represents a {@link Config} node that has no direct
+     *                     value
+     * @return a supplier of a typed value
+     */
+    Supplier<T> supplier(T defaultValue);
+
+    /**
+     * Returns a {@link Supplier} of an {@link Optional Optional&lt;T&gt;} of the configuration node.
+     * <p>
+     * Supplier returns a {@link Optional#empty() empty} if the node does not have a direct value.
+     *
+     * @return a supplier of the value as an {@link Optional} typed instance, {@link Optional#empty() empty} in case the node
+     * does not have a direct value
+     * @see #asOptional()
+     * @see #supplier()
+     */
+    Supplier<Optional<T>> optionalSupplier();
 }
