@@ -25,10 +25,11 @@ module io.helidon.messaging.connectors.wls {
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
+    requires jakarta.messaging;
 
     requires transitive io.helidon.config.mp;
-    requires transitive jakarta.jms.api;
     requires transitive microprofile.config.api;
+
 
     exports io.helidon.messaging.connectors.wls;
 }

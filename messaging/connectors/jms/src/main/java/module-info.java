@@ -48,7 +48,6 @@ module io.helidon.messaging.connectors.jms {
 
     requires transitive io.helidon.config;
     requires transitive io.helidon.messaging;
-    requires transitive jakarta.jms.api;
     requires transitive microprofile.reactive.messaging.api;
     requires transitive microprofile.reactive.streams.operators.api;
 

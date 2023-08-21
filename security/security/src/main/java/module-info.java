@@ -37,7 +37,6 @@ module io.helidon.security {
     requires static io.helidon.config.metadata;
 
     requires transitive io.helidon.common.configurable;
-    requires transitive io.helidon.common.reactive;
     requires transitive io.helidon.common.security;
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;

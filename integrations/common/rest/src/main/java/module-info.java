@@ -25,7 +25,6 @@
  */
 module io.helidon.integrations.common.rest {
     requires io.helidon.common.context;
-    requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
     requires io.helidon.http.media.jsonp;

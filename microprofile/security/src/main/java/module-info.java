@@ -38,7 +38,7 @@ module io.helidon.microprofile.security {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.config;
-    requires transitive io.helidon.webserver.security.;
+    requires transitive io.helidon.webserver.security;
     requires transitive io.helidon.security;
     requires transitive jakarta.cdi;
     requires transitive jakarta.ws.rs;

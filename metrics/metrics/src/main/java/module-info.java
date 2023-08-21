@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.metrics {
 
+    requires io.helidon.common.media.type;
     requires io.helidon.common;
     requires jakarta.json;
     requires java.logging;
