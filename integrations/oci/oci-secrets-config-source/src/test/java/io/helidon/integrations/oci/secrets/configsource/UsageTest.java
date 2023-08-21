@@ -31,10 +31,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class UsageTest {
 
-    private UsageTest() {
-        super();
-    }
-
     @Test
     void testUsage() {
         // Get a Config object. Because src/test/resources/meta-config.yaml exists, and because it will be processed

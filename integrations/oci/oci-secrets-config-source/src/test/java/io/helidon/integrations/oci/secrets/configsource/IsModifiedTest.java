@@ -25,10 +25,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class IsModifiedTest {
 
-    private IsModifiedTest() {
-        super();
-    }
-
     @Test
     void testIsModified() {
         // Test java.time behavior.

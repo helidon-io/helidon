@@ -26,10 +26,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class ValueNodeTest {
 
-    private ValueNodeTest() {
-        super();
-    }
-
     @Test
     void testValueNode() {
       // Test the JDK's base64 decoding behavior.
