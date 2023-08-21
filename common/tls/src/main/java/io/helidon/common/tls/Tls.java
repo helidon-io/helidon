@@ -26,7 +26,6 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
@@ -46,7 +45,8 @@ import io.helidon.common.config.Config;
  * TLS configuration - common for server and client.
  */
 @RuntimeType.PrototypedBy(TlsConfig.class)
-public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
+public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
+        permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
 
     /**
      * HTTPS endpoint identification algorithm, verifies certificate cn against host name.
@@ -68,21 +68,25 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
     private final List<TlsReloadableComponent> reloadableComponents;
     private final X509TrustManager originalTrustManager;
     private final X509KeyManager originalKeyManager;
-    private final boolean enabled;
     private final TlsConfig tlsConfig;
 
     private Tls(TlsConfig config) {
         // at this time, the TlsConfigInterceptor should have created SSL parameters, and an SSL context
-        this.sslContext = config.sslContext().get();
-        this.sslParameters = config.sslParameters().get();
+        this(config, config.sslContext().orElseThrow(), config.sslParameters().orElseThrow(), config.tlsInfo());
+    }
+
+    private Tls(TlsConfig config,
+                  SSLContext sslContext,
+                  SSLParameters sslParameters,
+                  TlsInfo tlsInfo) {
+        this.tlsConfig = Objects.requireNonNull(config);
+        this.sslContext = sslContext;
+        this.sslParameters = sslParameters;
         this.sslSocketFactory = sslContext.getSocketFactory();
         this.sslServerSocketFactory = sslContext.getServerSocketFactory();
-        this.enabled = config.enabled();
-        TlsInternalInfo internalInfo = config.internalInfo();
-        this.reloadableComponents = List.copyOf(internalInfo.reloadableComponents());
-        this.originalTrustManager = internalInfo.originalTrustManager();
-        this.originalKeyManager = internalInfo.originalKeyManager();
-        this.tlsConfig = config;
+        this.reloadableComponents = List.copyOf(tlsInfo.reloadableComponents());
+        this.originalTrustManager = tlsInfo.originalTrustManager();
+        this.originalKeyManager = tlsInfo.originalKeyManager();
     }
 
     /**
@@ -111,7 +115,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return a new TLS instance
      */
     public static Tls create(TlsConfig tlsConfig) {
-        if (tlsConfig.internalInfo().explicitContext()) {
+        if (tlsConfig.tlsInfo().explicitContext()) {
             return new ExplicitContextTlsConfig(tlsConfig);
         }
         return new TlsConfigImpl(tlsConfig);
@@ -233,30 +237,33 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
     }
 
     /**
-     * The manager for this TLS instance, if there is one.
+     * The manager for this Tls instance.
      *
-     * @return the tls manager
+     * @return the tls manager for this instance
      */
-    public Optional<TlsManager> manager() {
-        return tlsConfig.managers().isEmpty() ? Optional.empty() : Optional.of(tlsConfig.managers().get(0));
+    public TlsManager manager() {
+        return tlsConfig.manager().orElseThrow(() -> new IllegalStateException("Excepted to always have a manager present"));
     }
 
-    /**
-     * Reload reloadable TLS components with the new configuration.
-     *
-     * @param tls new TLS configuration
-     */
+//    @Override // TlsReloadableComponent iface multiplexer
     public void reload(Tls tls) {
         for (TlsReloadableComponent reloadableComponent : reloadableComponents) {
             reloadableComponent.reload(tls);
         }
     }
 
-    X509TrustManager originalTrustManager() {
+    @Override
+    public List<TlsReloadableComponent> reloadableComponents() {
+        return List.copyOf(reloadableComponents);
+    }
+
+    @Override
+    public X509TrustManager originalTrustManager() {
         return originalTrustManager;
     }
 
-    X509KeyManager originalKeyManager() {
+    @Override
+    public X509KeyManager originalKeyManager() {
         return originalKeyManager;
     }
 
@@ -266,7 +273,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return whether TLS is enabled
      */
     public boolean enabled() {
-        return enabled;
+        return tlsConfig.enabled();
     }
 
     private static int hashCode(SSLParameters first) {
@@ -411,4 +418,5 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
             super(config);
         }
     }
+
 }

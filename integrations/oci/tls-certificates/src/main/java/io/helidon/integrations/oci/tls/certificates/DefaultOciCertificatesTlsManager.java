@@ -41,16 +41,19 @@ class DefaultOciCertificatesTlsManager implements OciCertificatesTlsManager {
 
     @Override
     public String name() {
+        // TODO:
         return null;
     }
 
     @Override
     public String type() {
+        // TODO:
         return null;
     }
 
     @Override
     public boolean reload() {
+        // TODO:
         return false;
     }
 
@@ -61,6 +64,7 @@ class DefaultOciCertificatesTlsManager implements OciCertificatesTlsManager {
 
     @Override
     public Tls tls() {
+        // TODO:
         return null;
     }
 
