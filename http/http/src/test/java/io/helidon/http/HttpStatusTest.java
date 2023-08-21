@@ -18,16 +18,19 @@ package io.helidon.http;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -75,7 +78,19 @@ class HttpStatusTest {
                     () -> assertThat(value, notNullValue()),
                     () -> assertThat(value.reasonPhrase(), notNullValue()),
                     () -> assertThat(value.codeText(), notNullValue()),
-                    () -> assertThat(value.code(), not(0))
+                    () -> assertThat(value.code(), not(0)),
+                    () -> assertThat(value.codeText(), is(String.valueOf(value.code()))),
+                    () -> assertThat(constant, endsWith("_" + value.code())),
+                    () -> {
+                        // except for teapot
+                        if (value != Http.Status.I_AM_A_TEAPOT_418) {
+                            assertThat(constant,
+                                       startsWith(value.reasonPhrase()
+                                                          .toUpperCase(Locale.ROOT)
+                                                          .replace(' ', '_')
+                                                          .replace('-', '_')));
+                        }
+                    }
             );
 
         }
