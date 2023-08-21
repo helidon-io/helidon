@@ -218,8 +218,8 @@ class WebSecurityBuilderGateDefaultsTest {
     private HttpClientResponse callProtected(String uri, String username, String password) {
         // here we call the endpoint
         return securityClient.get(uri)
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, username)
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, password)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, username)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
                 .request();
     }
 }

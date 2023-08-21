@@ -51,8 +51,8 @@ public class SecurityTest extends TestParent {
     private void performOperation(String path) {
         try (Http1ClientResponse response = client.get()
                 .path(path)
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.OK_200));

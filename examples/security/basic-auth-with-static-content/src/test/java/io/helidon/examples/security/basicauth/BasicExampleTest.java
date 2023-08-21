@@ -142,8 +142,8 @@ public abstract class BasicExampleTest {
         // here we call the endpoint
         return client.get()
                 .uri(uri)
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, username)
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, password)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, username)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
                 .request();
     }
 

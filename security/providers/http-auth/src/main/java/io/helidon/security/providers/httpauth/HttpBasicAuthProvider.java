@@ -119,7 +119,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                                        EndpointConfig outboundEp) {
 
         // explicitly overridden username and/or password
-        if (outboundEp.abacAttributeNames().contains(EndpointConfig.EP_PROPERTY_OUTBOUND_ID)) {
+        if (outboundEp.abacAttributeNames().contains(EndpointConfig.PROPERTY_OUTBOUND_ID)) {
             return true;
         }
 
@@ -132,7 +132,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                                                      EndpointConfig outboundEp) {
 
         // explicit username in request properties
-        Optional<Object> maybeUsername = outboundEp.abacAttribute(EndpointConfig.EP_PROPERTY_OUTBOUND_ID);
+        Optional<Object> maybeUsername = outboundEp.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_ID);
         if (maybeUsername.isPresent()) {
             String username = maybeUsername.get().toString();
             char[] password = passwordFromEndpoint(outboundEp);
@@ -172,7 +172,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
                         .flatMap(this::credentialsFromSubject);
             }
 
-            Optional<char[]> overridePassword = outboundEp.abacAttribute(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET)
+            Optional<char[]> overridePassword = outboundEp.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_SECRET)
                     .map(String::valueOf)
                     .map(String::toCharArray);
 
@@ -191,7 +191,7 @@ public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSe
     }
 
     private char[] passwordFromEndpoint(EndpointConfig outboundEp) {
-        return outboundEp.abacAttribute(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET)
+        return outboundEp.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_SECRET)
                 .map(String::valueOf)
                 .map(String::toCharArray)
                 .orElse(HttpBasicOutboundConfig.EMPTY_PASSWORD);

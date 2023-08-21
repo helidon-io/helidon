@@ -51,12 +51,12 @@ public class EndpointConfig implements AbacSupport {
      * Configure this for outbound requests to override id to use (client id, user - depending on use case).
      * This is supported for example for HTTP Basic authentication and JWT authentication providers.
      */
-    public static final String EP_PROPERTY_OUTBOUND_ID = "io.helidon.security.outbound.identity";
+    public static final String PROPERTY_OUTBOUND_ID = "io.helidon.security.outbound.identity";
     /**
      * Configure this for outbound requests to override secret to use (client secret, actual password - depending on use case).
      * This is supported for example for HTTP Basic authentication provider.
      */
-    public static final String EP_PROPERTY_OUTBOUND_SECRET = "io.helidon.security.outbound.secret";
+    public static final String PROPERTY_OUTBOUND_SECRET = "io.helidon.security.outbound.secret";
 
     private final List<SecurityLevel> securityLevels;
     private final AbacSupport attributes;

@@ -29,8 +29,8 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.security.EndpointConfig.EP_PROPERTY_OUTBOUND_ID;
-import static io.helidon.security.EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_SECRET;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -66,8 +66,8 @@ public abstract class SignatureExampleTest {
 
     private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
         try (Http1ClientResponse response = client.get(uri)
-                .property(EP_PROPERTY_OUTBOUND_ID, "jack")
-                .property(EP_PROPERTY_OUTBOUND_SECRET, "password")
+                .property(PROPERTY_OUTBOUND_ID, "jack")
+                .property(PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

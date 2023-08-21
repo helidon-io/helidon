@@ -67,16 +67,16 @@ public class BasicAuthOutboundOverrideTest {
         when(requestContext.getConfiguration()).thenReturn(configuration);
         when(requestContext.getProperty(ClientSecurity.PROPERTY_CONTEXT)).thenReturn(context);
         when(requestContext.getProperty(ClientSecurity.PROPERTY_PROVIDER)).thenReturn("http-basic-auth");
-        when(requestContext.getProperty(EndpointConfig.EP_PROPERTY_OUTBOUND_ID)).thenReturn(user);
-        when(requestContext.getProperty(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET)).thenReturn(password);
+        when(requestContext.getProperty(EndpointConfig.PROPERTY_OUTBOUND_ID)).thenReturn(user);
+        when(requestContext.getProperty(EndpointConfig.PROPERTY_OUTBOUND_SECRET)).thenReturn(password);
         when(requestContext.getUri()).thenReturn(URI.create("http://localhost:7070/test"));
         when(requestContext.getStringHeaders()).thenReturn(new MultivaluedHashMap<>());
         when(requestContext.getHeaders()).thenReturn(jerseyHeaders);
         when(requestContext.getPropertyNames()).thenReturn(List.of(
                 ClientSecurity.PROPERTY_CONTEXT,
                 ClientSecurity.PROPERTY_PROVIDER,
-                EndpointConfig.EP_PROPERTY_OUTBOUND_ID,
-                EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET
+                EndpointConfig.PROPERTY_OUTBOUND_ID,
+                EndpointConfig.PROPERTY_OUTBOUND_SECRET
         ));
 
         ClientSecurityFilter csf = new ClientSecurityFilter();

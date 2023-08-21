@@ -61,8 +61,8 @@ public class OutboundOverrideJwtExampleTest {
     public void testOverrideExample() {
         try (Http1ClientResponse response = client.get()
                 .path("/override")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));
@@ -76,8 +76,8 @@ public class OutboundOverrideJwtExampleTest {
     public void testPropagateExample() {
         try (Http1ClientResponse response = client.get()
                 .path("/propagate")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));

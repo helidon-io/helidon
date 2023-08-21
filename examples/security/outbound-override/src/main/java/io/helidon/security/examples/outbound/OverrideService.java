@@ -48,8 +48,8 @@ class OverrideService implements HttpService {
                 .orElseThrow(() -> new RuntimeException("WebServer not found in context"));
 
         String result = client.get("http://localhost:" + server.port("backend") + "/hello")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, "jill")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, "anotherPassword")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jill")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "anotherPassword")
                 .requestEntity(String.class);
 
         res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n");

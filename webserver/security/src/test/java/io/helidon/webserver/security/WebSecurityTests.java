@@ -31,8 +31,8 @@ import io.helidon.webserver.WebServer;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.security.EndpointConfig.EP_PROPERTY_OUTBOUND_ID;
-import static io.helidon.security.EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_SECRET;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -163,8 +163,8 @@ abstract class WebSecurityTests {
 
     private HttpClientResponse callProtected(String uri, String username, String password) {
         return securityClient.get(uri)
-                .property(EP_PROPERTY_OUTBOUND_ID, username)
-                .property(EP_PROPERTY_OUTBOUND_SECRET, password)
+                .property(PROPERTY_OUTBOUND_ID, username)
+                .property(PROPERTY_OUTBOUND_SECRET, password)
                 .request();
     }
 

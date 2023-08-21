@@ -60,8 +60,8 @@ public class OutboundOverrideExampleTest {
     public void testOverrideExample() {
         String value = client.get()
                 .path("/override")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .requestEntity(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jill\n"));
@@ -71,8 +71,8 @@ public class OutboundOverrideExampleTest {
     public void testPropagateExample() {
         String value = client.get()
                 .path("/propagate")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.EP_PROPERTY_OUTBOUND_SECRET, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .requestEntity(String.class);
 
         assertThat(value, is("You are: jack, backend service returned: jack\n"));

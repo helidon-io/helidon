@@ -94,7 +94,7 @@ import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import static io.helidon.security.EndpointConfig.EP_PROPERTY_OUTBOUND_ID;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -376,7 +376,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
                                                      SecurityEnvironment outboundEnv,
                                                      EndpointConfig outboundEndpointConfig) {
 
-        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_ID);
+        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(PROPERTY_OUTBOUND_ID);
         return maybeUsername
                 .map(String::valueOf)
                 .flatMap(username -> {
@@ -948,7 +948,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
 
         /**
          * Whether to allow impersonation by explicitly overriding
-         * username from outbound requests using {@link io.helidon.security.EndpointConfig#EP_PROPERTY_OUTBOUND_ID}
+         * username from outbound requests using {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID}
          * property.
          * By default this is not allowed and identity can only be propagated.
          *
