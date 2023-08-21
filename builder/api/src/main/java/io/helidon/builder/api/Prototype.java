@@ -84,7 +84,7 @@ public final class Prototype {
          * Any configured option that is defined on this prototype will be checked in configuration, and if it exists,
          * it will override current value for that option on this builder.
          * Options that do not exist in the provided config will not impact current values.
-         * The config instance is kept and may be used in builder interceptor, it is not available in prototype implementation.
+         * The config instance is kept and may be used in builder decorator, it is not available in prototype implementation.
          *
          * @param config configuration to use
          * @return updated builder instance
@@ -221,7 +221,7 @@ public final class Prototype {
 
         /**
          * Used to decorate the builder, right before method build is called.
-         * Validations are done AFTER the interceptor is handled.
+         * Validations are done AFTER the decorator is handled.
          * This class may be package local if located in the same package as blueprint.
          * The class must have accessible constructor with no parameters.
          *
@@ -232,13 +232,12 @@ public final class Prototype {
 
     /**
      * Provides a contract by which the {@link Prototype.Blueprint}
-     * annotated type can be intercepted (i.e., including decoration or
-     * mutation).
+     * annotated type can be decorated.
      * <p>
      * The implementation class type must provide a no-arg accessible constructor available to the generated class
      * <p>
-     * Note that when intercepting config, you may get {@code null} even for required types, as these may be configured
-     * by your very builder interceptor.
+     * The builder provides accessors to all types, using {@link java.util.Optional} for any field that is optional,
+     * or any other field unless it has a default value. Primitive types are an exception (unless declared as required).
      *
      * @param <T> the type of the bean builder to intercept
      * @see io.helidon.builder.api.Prototype.Blueprint#decorator()
@@ -246,9 +245,9 @@ public final class Prototype {
     @FunctionalInterface
     public interface BuilderDecorator<T> {
         /**
-         * Provides the ability to intercept (i.e., including decoration or mutation) the target.
+         * Provides the ability to decorate the target.
          *
-         * @param target the target being intercepted
+         * @param target the target being decorated
          */
         void decorate(T target);
     }
