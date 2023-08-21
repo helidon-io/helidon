@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static io.helidon.inject.testing.InjectionTestingSupport.resetAll;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -114,28 +115,27 @@ class OciExtensionTest {
         assertThat(cfg.potentialAuthStrategies(),
                    contains("config", "config-file"));
 
-        config = createTestConfig(ociAuthConfigStrategies("", ""))
+        // this must fail, as empty string is not an allowed strategy
+        Config configWithEmpty = createTestConfig(ociAuthConfigStrategies("", ""))
                 .get(OciConfig.CONFIG_KEY);
-        cfg = OciConfig.create(config);
-        assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+        assertThrows(RuntimeException.class, () -> OciConfig.create(configWithEmpty));
     }
 
     @Test
     void bogusAuthStrategyAttempted() {
         Config config = createTestConfig(ociAuthConfigStrategies("bogus"))
                 .get(OciConfig.CONFIG_KEY);
-        OciConfig cfg = OciConfig.create(config);
-        IllegalStateException e = assertThrows(IllegalStateException.class, cfg::potentialAuthStrategies);
+        RuntimeException e = assertThrows(RuntimeException.class, () -> OciConfig.create(config));
         assertThat(e.getMessage(),
-                   equalTo("Unknown auth strategy: bogus"));
-
-        config = createTestConfig(ociAuthConfigStrategies(null, "config", "bogus"))
+                   containsString("Configured: \"bogus\", expected one of:"));
+    }
+    @Test
+    void testBogusAuthStrategies() {
+        Config config = createTestConfig(ociAuthConfigStrategies(null, "config", "bogus"))
                 .get(OciConfig.CONFIG_KEY);
-        cfg = OciConfig.create(config);
-        e = assertThrows(IllegalStateException.class, cfg::potentialAuthStrategies);
+        RuntimeException e = assertThrows(RuntimeException.class, () -> OciConfig.create(config));
         assertThat(e.getMessage(),
-                   equalTo("Unknown auth strategy: bogus"));
+                   containsString("Configured: \"bogus\", expected one of:"));
     }
 
     @Test
@@ -306,7 +306,7 @@ class OciExtensionTest {
         if (strategy != null) {
             map.put(OciConfig.CONFIG_KEY + ".auth-strategy", strategy);
         }
-        if (strategies != null) {
+        if (strategies != null && strategies.length != 0) {
             map.put(OciConfig.CONFIG_KEY + ".auth-strategies", String.join(",", strategies));
         }
         return ConfigSources.create(map, "config-oci-auth-strategies");

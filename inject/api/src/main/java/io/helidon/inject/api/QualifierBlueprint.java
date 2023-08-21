@@ -177,9 +177,12 @@ interface QualifierBlueprint extends Annotation {
             return qualifierType;
         }
 
-        private static Map<String, String> removeEmptyProperties(Map<String, String> values) {
-            HashMap<String, String> result = new HashMap<>(values);
-            result.entrySet().removeIf(entry -> entry.getValue().isBlank());
+        private static Map<String, Object> removeEmptyProperties(Map<String, Object> values) {
+            HashMap<String, Object> result = new HashMap<>(values);
+            result.entrySet().removeIf(entry -> {
+                Object value = entry.getValue();
+                return value instanceof String str && str.isBlank();
+            });
             return result;
         }
     }

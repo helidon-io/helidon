@@ -99,13 +99,9 @@ public class RetryMethodCreator extends FtMethodCreatorBase implements CustomAnn
         if (retry.retryName != null) {
             retry.retryNamed = true;
         }
-        retry.applyOn = retryAnnotation.getValue("applyOn")
-                .filter(Predicate.not(String::isBlank))
-                .map(it -> List.of(it.split(",")))
+        retry.applyOn = retryAnnotation.stringValues("applyOn")
                 .orElseGet(List::of);
-        retry.skipOn = retryAnnotation.getValue("skipOn")
-                .filter(Predicate.not(String::isBlank))
-                .map(it -> List.of(it.split(",")))
+        retry.skipOn = retryAnnotation.stringValues("skipOn")
                 .orElseGet(List::of);
 
         // method parameters

@@ -16,6 +16,7 @@
 
 package io.helidon.builder.processor;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -115,6 +116,10 @@ record PrototypeProperty(MethodSignature signature,
         );
     }
 
+    Field.Builder fieldDeclaration(boolean isBuilder) {
+        return typeHandler.fieldDeclaration(configuredOption(), isBuilder, !isBuilder);
+    }
+
     void setters(InnerClass.Builder classBuilder, TypeName builderType, Javadoc blueprintJavadoc) {
         typeHandler().setters(classBuilder,
                               configuredOption(),
@@ -144,6 +149,7 @@ record PrototypeProperty(MethodSignature signature,
         return typeHandler.builderGetterType(configuredOption.required(),
                                              configuredOption.hasDefault());
     }
+
     String builderGetter() {
         return typeHandler.generateBuilderGetter(configuredOption.required(),
                                                  configuredOption.hasDefault());
@@ -152,10 +158,6 @@ record PrototypeProperty(MethodSignature signature,
     boolean builderGetterOptional() {
         return typeHandler.builderGetterOptional(configuredOption.required(),
                                                  configuredOption.hasDefault());
-    }
-
-    public Field.Builder fieldDeclaration(boolean isBuilder) {
-        return typeHandler.fieldDeclaration(configuredOption(), isBuilder, !isBuilder);
     }
 
     private static String setterName(String name, boolean beanStyleAccessors) {
@@ -237,7 +239,8 @@ record PrototypeProperty(MethodSignature signature,
                             boolean builderMethod,
                             boolean notConfigured,
                             boolean provider,
-                            ProviderOption providerOption) {
+                            ProviderOption providerOption,
+                            List<AllowedValue> allowedValues) {
 
         static ConfiguredOption create(TypeHandler typeHandler, TypedElementInfo element) {
             ConfiguredOption configuredOption = element.findAnnotation(CONFIGURED_OPTION_TYPE)
@@ -269,6 +272,10 @@ record PrototypeProperty(MethodSignature signature,
             return defaultValue != null;
         }
 
+        boolean hasAllowedValues() {
+            return allowedValues != null && !allowedValues.isEmpty();
+        }
+
         ConfiguredOption withValidateNotNull() {
             return new ConfiguredOption(configKey,
                                         description,
@@ -278,7 +285,8 @@ record PrototypeProperty(MethodSignature signature,
                                         builderMethod,
                                         notConfigured,
                                         provider,
-                                        providerOption);
+                                        providerOption,
+                                        allowedValues);
         }
 
         private static ConfiguredOption configuredNoAnnotation(TypeHandler typeHandler, TypedElementInfo element) {
@@ -295,6 +303,7 @@ record PrototypeProperty(MethodSignature signature,
                                         true,
                                         true,
                                         false,
+                                        null,
                                         null);
         }
 
@@ -303,6 +312,13 @@ record PrototypeProperty(MethodSignature signature,
                                                                  Annotation configuredAnnotation) {
             boolean required = configuredAnnotation.getValue("required").map(Boolean::parseBoolean).orElse(false);
             boolean provider = configuredAnnotation.getValue("provider").map(Boolean::parseBoolean).orElse(false);
+            List<AllowedValue> allowedValues = configuredAnnotation.annotationValues("allowedValues")
+                    .stream()
+                    .flatMap(List::stream)
+                    .map(it -> new AllowedValue(it.stringValue().orElseThrow(),
+                                                it.stringValue("description").orElseThrow()))
+                    .toList();
+
             return new ConfiguredOption(
                     toConfigKey(configuredAnnotation, typeHandler.name()),
                     configuredAnnotation.getValue("description")
@@ -322,7 +338,8 @@ record PrototypeProperty(MethodSignature signature,
                     configuredAnnotation.getValue("builderMethod").map(Boolean::parseBoolean).orElse(true),
                     configuredAnnotation.getValue("notConfigured").map(Boolean::parseBoolean).orElse(false),
                     provider,
-                    provider ? ProviderOption.create(configuredAnnotation) : null);
+                    provider ? ProviderOption.create(configuredAnnotation) : null,
+                    allowedValues);
         }
 
         private static String toConfigKey(Annotation configuredOption, String propertyName) {
@@ -349,5 +366,8 @@ record PrototypeProperty(MethodSignature signature,
                     ))
                     .orElseGet(Singular::empty);
         }
+    }
+
+    record AllowedValue(String value, String description) {
     }
 }

@@ -30,6 +30,33 @@ import io.helidon.common.Errors;
 
 /**
  * An annotation with defined values.
+ * <p>
+ * Annotations can have the following values:
+ * <ul>
+ *     <li>String - {@code @TheAnnotation("some-value")}</li>
+ *     <li>int - {@code @TheAnnotation(49)}</li>
+ *     <li>long - {@code @TheAnnotation(49L)}</li>
+ *     <li>boolean - {@code @TheAnnotation(true)}</li>
+ *     <li>byte - {@code @TheAnnotation(49)}</li>
+ *     <li>char - {@code @TheAnnotation('x')}</li>
+ *     <li>short - {@code @TheAnnotation(1)}</li>
+ *     <li>float - {@code @TheAnnotation(4.2f)}</li>
+ *     <li>double - {@code @TheAnnotation(4.2)}</li>
+ *     <li>enum value - {@code @TheAnnotation(MyEnum.OPTION_1)}, default representation is String</li>
+ *     <li>Class - {@code @TheAnnotation(MyType.class)}, default representation is String</li>
+ *     <li>another annotation - {@code @TheAnnotation(@TheOtherAnnotation("some-value"))}</li>
+ *     <li>arrays of the above - {@code @TheAnnotation({"first-value", "second-value"})}, represented as List</li>
+ * </ul>
+ * These types will be built into this type, with a few rules:
+ * <ul>
+ *     <li>Any type except for another annotation and array is available as String (similar for arrays)</li>
+ *     <li>primitive types - only available as boxed types</li>
+ *     <li>Class - use string, the method that provides class instances uses {@link java.lang.Class#forName(String)},
+ *          which is not ideal, and may require additional configuration in native image</li>
+ *     <li>enum value - available as a String or enum value</li>
+ *     <li>another annotation - available as instance(s) of Annotation</li>
+ *     <li>arrays - available as a {@link java.util.List} of values</li>
+ * </ul>
  *
  * @see #builder()
  */
@@ -78,7 +105,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      * Creates an instance for an annotation with a value.
      *
      * @param annoType the annotation type
-     * @param value the annotation value
+     * @param value    the annotation value
      * @return the new instance
      */
     static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType, String value) {
@@ -89,10 +116,10 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      * Creates an instance for an annotation with a value.
      *
      * @param annoType the annotation type
-     * @param values the annotation values
+     * @param values   the annotation values
      * @return the new instance
      */
-    static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType, Map<String, String> values) {
+    static Annotation create(Class<? extends java.lang.annotation.Annotation> annoType, Map<String, ?> values) {
         return AnnotationSupport.create(annoType, values);
     }
 
@@ -114,7 +141,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      * @param values the annotation values
      * @return the new instance
      */
-    static Annotation create(TypeName annoTypeName, Map<String, String> values) {
+    static Annotation create(TypeName annoTypeName, Map<String, ?> values) {
         return AnnotationSupport.create(annoTypeName, values);
     }
 
@@ -126,7 +153,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
      */
     abstract class BuilderBase<BUILDER extends Annotation.BuilderBase<BUILDER, PROTOTYPE>, PROTOTYPE extends Annotation> implements Prototype.Builder<BUILDER, PROTOTYPE> {
 
-        private final Map<String, String> values = new LinkedHashMap<>();
+        private final Map<String, Object> values = new LinkedHashMap<>();
         private TypeName typeName;
 
         /**
@@ -173,7 +200,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         /**
          * Configure the value of this annotation (property of name {@code value}).
          *
-         * @param value value of the annotation
+         * @param value   value of the annotation
          * @return updated builder instance
          */
         public BUILDER value(String value) {
@@ -231,7 +258,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @return updated builder instance
          * @see #values()
          */
-        public BUILDER values(Map<? extends String, ? extends String> values) {
+        public BUILDER values(Map<? extends String, ?> values) {
             Objects.requireNonNull(values);
             this.values.clear();
             this.values.putAll(values);
@@ -245,7 +272,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @return updated builder instance
          * @see #values()
          */
-        public BUILDER addValues(Map<? extends String, ? extends String> values) {
+        public BUILDER addValues(Map<? extends String, ?> values) {
             Objects.requireNonNull(values);
             this.values.putAll(values);
             return self();
@@ -259,7 +286,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          * @return updated builder instance
          * @see #values()
          */
-        public BUILDER putValue(String key, String value) {
+        public BUILDER putValue(String key, Object value) {
             Objects.requireNonNull(key);
             Objects.requireNonNull(value);
             this.values.put(key, value);
@@ -280,7 +307,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          *
          * @return the values
          */
-        public Map<String, String> values() {
+        public Map<String, Object> values() {
             return values;
         }
 
@@ -314,7 +341,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
          */
         protected static class AnnotationImpl implements Annotation {
 
-            private final Map<String, String> values;
+            private final Map<String, Object> values;
             private final TypeName typeName;
 
             /**
@@ -338,7 +365,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
             }
 
             @Override
-            public Map<String, String> values() {
+            public Map<String, Object> values() {
                 return values;
             }
 

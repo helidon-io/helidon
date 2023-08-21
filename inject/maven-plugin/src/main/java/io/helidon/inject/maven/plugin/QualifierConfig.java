@@ -69,7 +69,7 @@ public class QualifierConfig implements Qualifier {
     }
 
     @Override
-    public Map<String, String> values() {
+    public Map<String, Object> values() {
         if (value == null) {
             return Map.of();
         }

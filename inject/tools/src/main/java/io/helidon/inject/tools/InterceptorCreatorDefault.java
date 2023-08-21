@@ -1005,30 +1005,46 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
     private static IdAndToString toDecl(Annotation anno) {
         StringBuilder builder = new StringBuilder("Annotation.create(" + anno.typeName() + ".class");
-        Map<String, String> map = anno.values();
-        String val = anno.value().orElse(null);
+        Map<String, Object> map = anno.values();
+        Object val = anno.objectValue().orElse(null);
         if (map != null && !map.isEmpty()) {
             builder.append(", Map.of(");
             int count = 0;
-            TreeMap<String, String> sortedMap = new TreeMap<>(map);
-            for (Map.Entry<String, String> e : sortedMap.entrySet()) {
+            TreeMap<String, Object> sortedMap = new TreeMap<>(map);
+            for (Map.Entry<String, Object> e : sortedMap.entrySet()) {
                 if (count++ > 0) {
                     builder.append(", ");
                 }
                 builder.append("\"")
                         .append(e.getKey())
-                        .append("\", \"")
-                        .append(e.getValue())
-                        .append("\"");
+                        .append("\", ")
+                        .append(mapValueInSources(e.getValue()));
             }
             builder.append(")");
         } else if (val != null) {
             builder.append(", \"")
-                    .append(val)
+                    .append(mapValueInSources(val))
                     .append("\"");
         }
         builder.append(")");
         return new IdAndToString(anno.typeName().name(), builder);
+    }
+
+    private static String mapValueInSources(Object value) {
+        if (value instanceof String str) {
+            return "\"" + str + "\"";
+        }
+        if (value instanceof Annotation ann) {
+            throw new IllegalArgumentException("Cannot process nested annotation in a sample map: " + ann);
+        }
+        if (value instanceof List<?> list) {
+            return "java.util.List.of(" + list.stream()
+                    .map(InterceptorCreatorDefault::mapValueInSources)
+                    .collect(Collectors.joining(", "))
+                    + ")";
+        }
+        // for primitive types, just use them
+        return String.valueOf(value);
     }
 
     @SuppressWarnings("checkstyle:OperatorWrap")

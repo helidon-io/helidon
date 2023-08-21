@@ -253,9 +253,7 @@ record CustomMethods(List<CustomMethod> factoryMethods,
 
                     // annotations to be added to generated code
                     List<String> annotations = it.findAnnotation(Types.PROTOTYPE_ANNOTATED_TYPE)
-                            .flatMap(Annotation::value)
-                            .map(annotation -> annotation.split(","))
-                            .map(List::of)
+                            .flatMap(Annotation::stringValues)
                             .orElseGet(List::of)
                             .stream()
                             .map(String::trim) // to remove spaces after commas when used

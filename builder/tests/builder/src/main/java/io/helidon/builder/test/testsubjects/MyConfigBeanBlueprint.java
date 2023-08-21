@@ -52,7 +52,7 @@ interface MyConfigBeanBlueprint {
      */
     @ConfiguredOption(key = "port", value = "8080", allowedValues = {
             @ConfiguredValue(value = "8080", description = "t1"),
-            @ConfiguredValue(value = "false", description = "t2")})
+            @ConfiguredValue(value = "80", description = "t2")})
     int getPort();
 
 }
