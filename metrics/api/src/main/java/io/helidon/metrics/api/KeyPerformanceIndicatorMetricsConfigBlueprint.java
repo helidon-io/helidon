@@ -73,7 +73,7 @@ interface KeyPerformanceIndicatorMetricsConfigBlueprint {
      */
     @ConfiguredOption(key = KEY_PERFORMANCE_INDICATORS_EXTENDED_CONFIG_KEY,
                       value = KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT)
-    boolean isExtended();
+    boolean extended();
 
     /**
      * Threshold in ms that characterizes whether a request is long running.

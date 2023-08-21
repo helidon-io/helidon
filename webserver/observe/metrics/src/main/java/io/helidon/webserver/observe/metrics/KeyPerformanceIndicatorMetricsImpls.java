@@ -71,7 +71,7 @@ class KeyPerformanceIndicatorMetricsImpls {
                                                       String meterNamePrefix,
                                                       KeyPerformanceIndicatorMetricsConfig kpiConfig) {
         return KPI_METRICS.computeIfAbsent(meterNamePrefix, prefix ->
-                kpiConfig.isExtended()
+                kpiConfig.extended()
                         ? new Extended(kpiMeterRegistry, meterNamePrefix, kpiConfig)
                         : new Basic(kpiMeterRegistry, meterNamePrefix));
     }

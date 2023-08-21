@@ -18,8 +18,8 @@ package io.helidon.examples.metrics.kpi;
 
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
-import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsSettings;
-import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -111,14 +111,13 @@ public final class Main {
      * @return {@code MetricsSupport} object with extended KPI metrics enabled
      */
     private static MetricsFeature metricsSupportWithoutConfig() {
-
-        KeyPerformanceIndicatorMetricsSettings.Builder settingsBuilder =
-                KeyPerformanceIndicatorMetricsSettings.builder()
+        KeyPerformanceIndicatorMetricsConfig.Builder configBuilder =
+                KeyPerformanceIndicatorMetricsConfig.builder()
                         .extended(true)
                         .longRunningRequestThresholdMs(2000);
         return MetricsFeature.builder()
-                .metricsSettings(MetricsSettings.builder()
-                        .keyPerformanceIndicatorSettings(settingsBuilder))
+                .metricsConfig(MetricsConfig.builder()
+                        .keyPerformanceIndicatorMetricsConfig(configBuilder))
                 .build();
     }
 }

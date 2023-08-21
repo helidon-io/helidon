@@ -21,8 +21,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.http.Http;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Metadata;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -31,11 +35,6 @@ import io.helidon.webserver.http.ServerResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * A simple service to greet you. Examples:
@@ -68,18 +67,11 @@ public class GreetService implements HttpService {
 
     GreetService(Config config) {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
-        Metadata metadata = Metadata.builder()
-                .withName(TIMER_FOR_GETS)
-                .withUnit(MetricUnits.NANOSECONDS)
-                .build();
-        timerForGets = registry.timer(metadata);
 
-        metadata = Metadata.builder()
-                .withName(COUNTER_FOR_PERSONALIZED_GREETINGS)
-                .withUnit(MetricUnits.NONE)
-                .build();
-        personalizedGreetingsCounter = registry.counter(metadata);
+        MeterRegistry meterRegistry = Metrics.globalRegistry();
+        timerForGets = meterRegistry.getOrCreate(Timer.builder(TIMER_FOR_GETS)
+                                                         .baseUnit(Meter.BaseUnits.NANOSECONDS));
+        personalizedGreetingsCounter = meterRegistry.getOrCreate(Counter.builder(COUNTER_FOR_PERSONALIZED_GREETINGS));
     }
 
     /**
@@ -154,11 +146,11 @@ public class GreetService implements HttpService {
     }
 
     private void timeGet(ServerRequest request, ServerResponse response) {
-        timerForGets.time((Runnable) response::next);
+        timerForGets.record((Runnable) response::next);
     }
 
     private void countPersonalized(ServerRequest request, ServerResponse response) {
-        personalizedGreetingsCounter.inc();
+        personalizedGreetingsCounter.increment();
         response.next();
     }
 }

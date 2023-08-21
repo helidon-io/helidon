@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.is;
 // No port setting, so use any available one
 @AddConfig(key = "server.sockets.0.bind-address", value = "0.0.0.0")
 @AddConfig(key = "metrics.routing", value = "metrics")
-@AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
+@AddConfig(key = "metrics.key-performance-indicators.isExtended", value = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestMetricsOnOwnSocket {
 

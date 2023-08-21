@@ -31,7 +31,7 @@ public class TestKpiMetricsConfig {
     void checkExtendedEnabled() {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("extended-enabled"));
-        assertThat("KPI extended setting", settings.isExtended(), is(true));
+        assertThat("KPI extended setting", settings.extended(), is(true));
         assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(),
                    is(Long.parseLong(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT)));
     }
@@ -40,7 +40,7 @@ public class TestKpiMetricsConfig {
     void checkExtendedDisabled() {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("extended-disabled"));
-        assertThat("KPI extended setting", settings.isExtended(), is(false));
+        assertThat("KPI extended setting", settings.extended(), is(false));
         assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(),
                    is(Long.parseLong(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT)));
     }
@@ -49,7 +49,7 @@ public class TestKpiMetricsConfig {
     void longRunningSet() {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("long-running-set"));
-        assertThat("KPI extended setting", settings.isExtended(),
+        assertThat("KPI extended setting", settings.extended(),
                    is(Boolean.parseBoolean(KeyPerformanceIndicatorMetricsConfig.KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT)));
         assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(), is(123L));
     }
@@ -58,7 +58,7 @@ public class TestKpiMetricsConfig {
     void bothSet() {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("both"));
-        assertThat("KPI extended setting", settings.isExtended(), is(true));
+        assertThat("KPI extended setting", settings.extended(), is(true));
         assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(), is(456L));
     }
 }

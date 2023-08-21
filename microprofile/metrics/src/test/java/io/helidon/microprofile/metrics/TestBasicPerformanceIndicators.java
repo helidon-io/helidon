@@ -53,7 +53,7 @@ class TestBasicPerformanceIndicators {
 
         assertThat("Vendor metric requests.count present", vendorMetrics.containsKey("requests.count"), is(true));
 
-        // This test runs with extended KPI metrics disabled. Make sure the count and meter are still updated.
+        // This test runs with isExtended KPI metrics disabled. Make sure the count and meter are still updated.
         int count = vendorMetrics.getInt("requests.count");
         assertThat("requests.count", count, is(greaterThan(0)));
     }

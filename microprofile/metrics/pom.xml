@@ -115,7 +115,7 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <!-- Run in separate invocation to enable extended KPI metrics (checked in the test) -->
+                        <!-- Run in separate invocation to enable isExtended KPI metrics (checked in the test) -->
                         <id>key-performance-indicator-metrics-enabled</id>
                         <goals>
                             <goal>test</goal>
