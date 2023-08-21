@@ -62,8 +62,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         List<Tag> result = new ArrayList<>(metricsConfig.globalTags());
 
         String appTagName = MetricsProgrammaticSettings.instance().appTagName();
-        if (metricsConfig.appTagValue().isPresent() && appTagName != null && !appTagName.isBlank()) {
-            result.add(Tag.create(appTagName, metricsConfig.appTagValue().get()));
+        if (metricsConfig.appName().isPresent() && appTagName != null && !appTagName.isBlank()) {
+            result.add(Tag.create(appTagName, metricsConfig.appName().get()));
         }
         systemTags = Collections.unmodifiableList(result);
         scopeTagName = MetricsProgrammaticSettings.instance().scopeTagName();

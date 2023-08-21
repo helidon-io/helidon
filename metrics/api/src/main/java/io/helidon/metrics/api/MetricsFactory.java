@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.config.Config;
@@ -50,7 +51,7 @@ public interface MetricsFactory {
 
     /**
      * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
-     * runtime and using the {@value MetricsConfig.Builder#METRICS_CONFIG_KEY} section from the
+     * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
      * {@link io.helidon.common.config.GlobalConfig}.
      *
      * @return current or new metrics factory
@@ -139,7 +140,7 @@ public interface MetricsFactory {
     DistributionSummary.Builder distributionSummaryBuilder(String name, DistributionStatisticsConfig.Builder configBuilder);
 
     /**
-     * Creates a builder for a {@link io.helidon.metrics.api.Gauge}.
+     * Creates a builder for a state-based {@link io.helidon.metrics.api.Gauge}.
      *
      * @param name name of the gauge
      * @param stateObject object which maintains the value to be exposed via the gauge
@@ -148,6 +149,26 @@ public interface MetricsFactory {
      * @param <T> type of the state object
      */
     <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
+
+    /**
+     * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a {@link Number} instance.
+     *
+     * @param name name of the gauge
+     * @param number instance of a subtype of {@code Number} which provides the gauge value
+     * @return new builder
+     * @param <N> subtype of {@code Number} which is the type of the object that provides the gauge value
+     */
+    <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, N number);
+
+    /**
+     * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a supplier of a subtype of {@link Number}.
+     *
+     * @param name gauge name
+     * @param supplier supplier for an instance of the specified subtype of {@code Number}
+     * @return new builder
+     * @param <N> subtype of {@code Number} which the supplier providers
+     */
+    <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, Supplier<N> supplier);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Timer}.

@@ -19,6 +19,9 @@ import io.helidon.builder.api.Prototype;
 
 class ScopeConfigSupport {
 
+    private ScopeConfigSupport() {
+    }
+
     /**
      * Indicates whether the specified meter is enabled according to the scope configuration.
      *
@@ -31,8 +34,4 @@ class ScopeConfigSupport {
         // TODO actually do the filtering using the include and exclude patterns
         return scopeConfig.enabled();
     }
-
-    private ScopeConfigSupport() {
-    }
-
 }

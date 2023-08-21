@@ -40,7 +40,7 @@ public class TestRegistrySettingsProperties {
     void testInclude() {
         MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
         assertThat("'pass.me' metric is enabled",
-                   metricsConfig.scopes().get("vendor").isMeterEnabled("pass.me"),
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("pass.me"),
                    is(true));
     }
 
@@ -50,7 +50,7 @@ public class TestRegistrySettingsProperties {
     void testExclude() {
         MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
         assertThat("'ignore.me' metric is enabled",
-                   metricsConfig.scopes().get("vendor").isMeterEnabled("ignore.me"),
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("ignore.me"),
                    is(false));
     }
 
@@ -58,7 +58,7 @@ public class TestRegistrySettingsProperties {
     void testIncludeYaml() {
         MetricsConfig metricsConfig = MetricsConfig.create(fromYaml);
         assertThat("'pass.me' metric is enabled",
-                   metricsConfig.scopes().get("vendor").isMeterEnabled("pass.me"),
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("pass.me"),
                    is(true));
     }
 
@@ -68,7 +68,7 @@ public class TestRegistrySettingsProperties {
     void testExcludeYaml() {
         MetricsConfig metricsConfig = MetricsConfig.create(fromYaml);
         assertThat("'ignore.me' metric is enabled",
-                   metricsConfig.scopes().get("vendor").isMeterEnabled("ignore.me"),
+                   metricsConfig.scoping().scopes().get("vendor").isMeterEnabled("ignore.me"),
                    is(false));
     }
 }

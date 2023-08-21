@@ -21,6 +21,17 @@ package io.helidon.metrics.api;
 public interface Tag extends Wrapper {
 
     /**
+     * Creates a new tag using the specified key and value.
+     *
+     * @param key the tag's key
+     * @param value the tag's value
+     * @return new {@code Tag} representing the key and value
+     */
+    static Tag create(String key, String value) {
+        return MetricsFactory.getInstance().tagCreate(key, value);
+    }
+
+    /**
      * Returns the tag's key.
      *
      * @return the tag's key
@@ -33,15 +44,4 @@ public interface Tag extends Wrapper {
      * @return the tag's value
      */
     String value();
-
-    /**
-     * Creates a new tag using the specified key and value.
-     *
-     * @param key the tag's key
-     * @param value the tag's value
-     * @return new {@code Tag} representing the key and value
-     */
-    static Tag create(String key, String value) {
-        return MetricsFactory.getInstance().tagCreate(key, value);
-    }
 }

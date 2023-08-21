@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 /**
@@ -34,6 +35,30 @@ public interface Gauge extends Meter {
      */
     static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return MetricsFactory.getInstance().gaugeBuilder(name, stateObject, fn);
+    }
+
+    /**
+     * Creates a builder for a new gauge based on an instance of a subtype of {@link Number}.
+     *
+     * @param name gauge name
+     * @param number {@code Number} which provides the gauge value
+     * @return new builder
+     * @param <N> subtype of {@code Number} which the gauge wraps
+     */
+    static <N extends Number> Builder<?> builder(String name, N number) {
+        return MetricsFactory.getInstance().gaugeBuilder(name, number);
+    }
+
+    /**
+     * Creates a builder for a supplier-based gauge.
+     *
+     * @param name gauge name
+     * @param numberSupplier {@link java.util.function.Supplier} for an instance of a type which extends {@link Number}
+     * @return new builder
+     * @param <N> subtype of {@code Number} which the supplier provides
+     */
+    static <N extends Number> Builder<?> builder(String name, Supplier<N> numberSupplier) {
+        return MetricsFactory.getInstance().gaugeBuilder(name, numberSupplier);
     }
 
     /**

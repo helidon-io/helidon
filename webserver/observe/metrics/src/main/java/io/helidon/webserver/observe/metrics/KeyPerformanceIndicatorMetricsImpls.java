@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.observe.metrics;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -122,12 +123,12 @@ class KeyPerformanceIndicatorMetricsImpls {
         protected Extended(MeterRegistry kpiMeterRegistry,
                            String meterNamePrefix,
                            KeyPerformanceIndicatorMetricsConfig kpiConfig) {
-            this(kpiMeterRegistry, meterNamePrefix, kpiConfig.longRunningRequestThresholdMs());
+            this(kpiMeterRegistry, meterNamePrefix, kpiConfig.longRunningRequestThreshold());
         }
 
-        private Extended(MeterRegistry kpiMeterRegistry, String meterNamePrefix, long longRunningRequestThresholdMs) {
+        private Extended(MeterRegistry kpiMeterRegistry, String meterNamePrefix, Duration longRunningRequestThreshold) {
             super(kpiMeterRegistry, meterNamePrefix);
-            this.longRunningRequestThresdholdMs = longRunningRequestThresholdMs;
+            this.longRunningRequestThresdholdMs = longRunningRequestThreshold.toMillis();
 
             inflightRequests = kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + INFLIGHT_REQUESTS_NAME,
                                                                                       inflightRequestsCount,

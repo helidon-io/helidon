@@ -24,6 +24,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,7 +41,8 @@ class TestScopeManagement {
     @ValueSource(booleans = {true, false})
     void testExplicitScopeOnMetersWithNoDefaultScope(boolean scopeTagEnabled) {
         MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(MetricsConfig.builder()
-                                                                                     .scopeTagEnabled(scopeTagEnabled)
+                                                                                     .scoping(ScopingConfig.builder()
+                                                                                        .tagEnabled(scopeTagEnabled))
                                                                                      .build());
 
         // We explicitly set the scope for the counter and not for the timer.
@@ -77,8 +79,9 @@ class TestScopeManagement {
     @ValueSource(booleans = {true, false})
     void testExplicitScopeOnMetersWithDefaultScope(boolean scopeTagEnabled) {
         MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(MetricsConfig.builder()
-                                                                                     .scopeTagEnabled(scopeTagEnabled)
-                                                                                     .scopeDefaultValue("def-scope")
+                                                                                     .scoping(ScopingConfig.builder()
+                                                                                        .tagEnabled(scopeTagEnabled)
+                                                                                        .defaultValue("def-scope"))
                                                                                      .build());
 
         // The config sets a default scope value of def-scope. So the counter gets its explicit setting

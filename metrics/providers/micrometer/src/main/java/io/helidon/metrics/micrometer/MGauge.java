@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.micrometer.core.instrument.Gauge;
@@ -32,6 +33,15 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
     static <T> MGauge.Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return new MGauge.Builder<>(name, stateObject, fn);
     }
+
+    static <N extends Number> MGauge.Builder<N> builder(String name, N number) {
+        return new MGauge.Builder<>(name, number, Number::doubleValue);
+    }
+
+    static <N extends Number> MGauge.Builder<?> builder(String name, Supplier<N> supplier) {
+        return builder(name, supplier, s -> s.get().doubleValue());
+    }
+
     /**
      * Creates a new wrapper gauge around an existing Micrometer gauge, typically if the developer has registered a
      * gauge directly using the Micrometer API rather than through the Helidon adapter but we need to expose the gauge

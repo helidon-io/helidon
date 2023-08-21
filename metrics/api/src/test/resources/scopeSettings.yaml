@@ -13,10 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 metrics:
-  scopes:
-    - name: application
-      filter:
-        exclude: ignore\..*
-    - name: vendor
-      filter:
-        include: pass\..*
+  scoping:
+    scopes:
+      - name: application
+        filter:
+          exclude: ignore\..*
+      - name: vendor
+        filter:
+          include: pass\..*

@@ -48,14 +48,6 @@
         <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
-        </dependency><dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.inject.configdriven</groupId>
-            <artifactId>helidon-inject-configdriven-runtime</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -168,7 +160,7 @@
                                 <testSelection>topLevelAndMetricsLevel</testSelection>
                                 <!-- Use properties for the metrics global tag instead of env var;
                                      dots in env names seem to not always work. -->
-                                <metrics.tags>myTag=myValue</metrics.tags>
+                                <metrics.global-tags>myTag=myValue</metrics.global-tags>
                             </systemPropertyVariables>
                             <environmentVariables>
                                 <tags>topLevel</tags>

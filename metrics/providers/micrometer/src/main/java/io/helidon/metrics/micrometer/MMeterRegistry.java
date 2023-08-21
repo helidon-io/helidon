@@ -351,7 +351,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private Optional<String> effectiveScope(Optional<String> explicitScope) {
         return explicitScope.isPresent()
                 ? explicitScope
-                : metricsConfig.scopeDefaultValue();
+                : metricsConfig.scoping().defaultValue();
     }
 
     private <M extends Meter, HB extends MMeter.Builder<?, M, HB, HM>, HM extends MMeter<M>> HM registerAndPostProcess(
@@ -359,9 +359,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             BiConsumer<String, String> builderTagSetter,
             Function<MeterRegistry, M> registration) {
 
-        if (metricsConfig.scopeTagEnabled()) {
+        if (metricsConfig.scoping().tagEnabled()) {
             effectiveScope(mBuilder.scope())
-                    .ifPresent(s -> builderTagSetter.accept(metricsConfig.scopeTagName(), s));
+                    .ifPresent(s -> builderTagSetter.accept(metricsConfig.scoping().tagName(), s));
         }
 
         lock.lock();
@@ -386,7 +386,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                   Iterable<io.helidon.metrics.api.Tag> tags) {
         return internalRemove(name,
                               tags,
-                              metricsConfig.scopeDefaultValue()
+                              metricsConfig.scoping().defaultValue()
                                       .orElse(null));
     }
 
@@ -394,8 +394,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                   Iterable<io.helidon.metrics.api.Tag> tags,
                                                                   String scope) {
         List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
-        if (scope != null && metricsConfig.scopeTagEnabled()) {
-            tagList.add(io.helidon.metrics.api.Tag.create(metricsConfig.scopeTagName(), scope));
+        if (scope != null && metricsConfig.scoping().tagEnabled()) {
+            tagList.add(io.helidon.metrics.api.Tag.create(metricsConfig.scoping().tagName(), scope));
         }
         Meter nativeMeter = delegate.find(name)
                 .tags(Util.tags(tags))
@@ -449,11 +449,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         String scopeToSet = reliableScope.orElse(helidonMeter.scope()
                                                          .orElse(null));
 
-        if (scopeToSet == null && metricsConfig.scopeTagEnabled()) {
-            scopeToSet = meter.getId().getTag(metricsConfig.scopeTagName());
+        if (scopeToSet == null && metricsConfig.scoping().tagEnabled()) {
+            scopeToSet = meter.getId().getTag(metricsConfig.scoping().tagName());
         }
         if (scopeToSet == null) {
-            scopeToSet = metricsConfig.scopeDefaultValue().orElse(null);
+            scopeToSet = metricsConfig.scoping().defaultValue().orElse(null);
         }
         String fixedScopeToSet = scopeToSet;
         if (scopeToSet != null) {

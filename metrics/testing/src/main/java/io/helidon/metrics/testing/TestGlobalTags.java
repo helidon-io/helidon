@@ -55,7 +55,7 @@ class TestGlobalTags {
 
     @Test
     void testWithConfig() {
-        var settings = Map.of("metrics.tags", "g1=v1,g2=v2");
+        var settings = Map.of("metrics.global-tags", "g1=v1,g2=v2");
 
         Config config = Config.just(ConfigSources.create(settings));
 

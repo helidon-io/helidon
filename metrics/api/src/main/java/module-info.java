@@ -23,9 +23,9 @@ import io.helidon.metrics.api.MetricsFactory;
  * Helidon metrics API.
  */
 @Feature(value = "Metrics",
-         description = "Metrics for gRPC services",
+         description = "Metrics",
          in = HelidonFlavor.SE,
-         path = {"grpc", "Metrics"}
+         path = {"Metrics"}
 )module io.helidon.metrics.api {
 
     requires static io.helidon.common.features.api;
@@ -35,8 +35,6 @@ import io.helidon.metrics.api.MetricsFactory;
 
     requires io.helidon.builder.api;
     requires static io.helidon.config.metadata;
-
-    requires io.helidon.inject.configdriven.api;
 
     exports io.helidon.metrics.api;
     exports io.helidon.metrics.api.spi;

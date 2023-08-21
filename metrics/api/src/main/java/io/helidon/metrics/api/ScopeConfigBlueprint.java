@@ -20,13 +20,11 @@ import java.util.Optional;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.inject.configdriven.api.ConfigBean;
 
 /**
  * Configuration settings for a scope within the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} config section.
  */
-@ConfigBean()
-@Configured(prefix = "scopes")
+@Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(ScopeConfigSupport.class)
 interface ScopeConfigBlueprint {

@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.LazyValue;
@@ -127,6 +128,16 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return MGauge.builder(name, stateObject, fn);
+    }
+
+    @Override
+    public <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, N number) {
+        return MGauge.builder(name, number);
+    }
+
+    @Override
+    public <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, Supplier<N> supplier) {
+        return MGauge.builder(name, supplier);
     }
 
     @Override

@@ -27,12 +27,12 @@ public interface MeterRegistryFormatter {
      *
      * @return formatted output
      */
-    Optional<?> format();
+    Optional<Object> format();
 
     /**
      * Formats the meter registry's metadata.
      *
      * @return formatted metadata output
      */
-    Optional<?> formatMetadata();
+    Optional<Object> formatMetadata();
 }

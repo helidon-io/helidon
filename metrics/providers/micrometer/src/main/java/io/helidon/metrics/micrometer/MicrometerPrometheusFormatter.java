@@ -82,7 +82,7 @@ class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
      * @return filtered Prometheus output
      */
     @Override
-    public Optional<String> format() {
+    public Optional<Object> format() {
 
         Optional<PrometheusMeterRegistry> prometheusMeterRegistry = prometheusMeterRegistry(meterRegistry);
         if (prometheusMeterRegistry.isPresent()) {
@@ -106,7 +106,7 @@ class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     @Override
-    public Optional<?> formatMetadata() {
+    public Optional<Object> formatMetadata() {
         return Optional.empty();
     }
 

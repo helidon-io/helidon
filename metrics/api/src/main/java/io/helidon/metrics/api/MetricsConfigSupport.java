@@ -22,6 +22,15 @@ import io.helidon.builder.api.Prototype;
 
 class MetricsConfigSupport {
 
+    // Pattern of a single tag assignment (tag=value):
+    //   - capture reluctant match of anything
+    //   - non-capturing match of an unescaped =
+    //   - capture the rest.
+    static final Pattern TAG_ASSIGNMENT_PATTERN = Pattern.compile("(.*?)(?<!\\\\)=(.*)");
+
+    private MetricsConfigSupport() {
+    }
+
     /**
      * Looks up a single config value within the metrics configuration by config key.
      *
@@ -47,7 +56,7 @@ class MetricsConfigSupport {
      */
     @Prototype.PrototypeMethod
     static boolean isScopeEnabled(MetricsConfig metricsConfig, String scope) {
-        var scopeConfig = metricsConfig.scopes().get(scope);
+        var scopeConfig = metricsConfig.scoping().scopes().get(scope);
         return scopeConfig == null || scopeConfig.enabled();
     }
 
@@ -80,14 +89,5 @@ class MetricsConfigSupport {
 //                        .findAny();
 //        return matchedScopeConfig.map(s -> s.isMeterEnabled(name)).orElse(true);
 
-    }
-
-    // Pattern of a single tag assignment (tag=value):
-    //   - capture reluctant match of anything
-    //   - non-capturing match of an unescaped =
-    //   - capture the rest.
-    static final Pattern TAG_ASSIGNMENT_PATTERN = Pattern.compile("(.*?)(?<!\\\\)=(.*)");
-
-    private MetricsConfigSupport() {
     }
 }

@@ -25,6 +25,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
@@ -46,9 +48,10 @@ class TestPrometheusFormatting {
     @BeforeAll
     static void prep() {
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder()
-                .scopeTagName(SCOPE_TAG_NAME)
-                .scopeDefaultValue("app")
-                .scopeTagEnabled(true);
+                .scoping(ScopingConfig.builder()
+                                 .tagName(SCOPE_TAG_NAME)
+                                 .defaultValue("app")
+                                 .tagEnabled(true));
 
         meterRegistry = Metrics.createMeterRegistry(metricsConfigBuilder.build());
     }
@@ -70,27 +73,26 @@ class TestPrometheusFormatting {
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
                 .scopeTagName(SCOPE_TAG_NAME)
                 .build();
-        Optional<String> output = formatter.format();
+        Optional<Object> outputOpt = formatter.format();
 
         assertThat("Formatted output",
-                                 output,
-                                 OptionalMatcher.optionalValue(
-                                         allOf(containsString(scopeExpr("c1_total",
-                                                                        "this_scope",
-                                                                        "app",
-                                                                        "1.0")),
-                                               containsString(scopeExpr("t1_seconds_count",
-                                                                        "this_scope",
-                                                                        "other",
-                                                                        "1.0")),
-                                               containsString(scopeExpr("t1_seconds_sum",
-                                                                        "this_scope",
-                                                                        "other",
-                                                                        "3.0")),
-                                               containsString(scopeExpr("t1_1_seconds_count",
-                                                                        "this_scope",
-                                                                        "app",
-                                                                                 "1.0")))));
+                   checkAndCast(outputOpt),
+                   allOf(containsString(scopeExpr("c1_total",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0")),
+                         containsString(scopeExpr("t1_seconds_count",
+                                                  "this_scope",
+                                                  "other",
+                                                  "1.0")),
+                         containsString(scopeExpr("t1_seconds_sum",
+                                                  "this_scope",
+                                                  "other",
+                                                  "3.0")),
+                         containsString(scopeExpr("t1_1_seconds_count",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0"))));
     }
 
     @Test
@@ -107,22 +109,21 @@ class TestPrometheusFormatting {
                 .scopeTagName(SCOPE_TAG_NAME)
                 .meterNameSelection(Set.of("c2"))
                 .build();
-        Optional<String> output = formatter.format();
+        Optional<Object> outputOpt = formatter.format();
 
         assertThat("Formatted output",
-                                 output,
-                                 OptionalMatcher.optionalValue(
-                                         allOf(containsString(scopeExpr("c2_total",
-                                                                        "this_scope",
-                                                                        "app",
-                                                                        "1.0")),
-                                               not(containsString(scopeExpr("t2_seconds_count",
-                                                                            "this_scope",
-                                                                            "app",
-                                                                            "1.0"))),
-                                               not(containsString(scopeExpr("t2_seconds_sum",
-                                                                            "this_scope",
-                                                                            "app", "7.0"))))));
+                   checkAndCast(outputOpt),
+                   allOf(containsString(scopeExpr("c2_total",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0")),
+                         not(containsString(scopeExpr("t2_seconds_count",
+                                                      "this_scope",
+                                                      "app",
+                                                      "1.0"))),
+                         not(containsString(scopeExpr("t2_seconds_sum",
+                                                      "this_scope",
+                                                      "app", "7.0")))));
 
     }
 
@@ -147,30 +148,36 @@ class TestPrometheusFormatting {
                 .scopeSelection(Set.of("app"))
                 .build();
 
-        Optional<String> output = formatter.format();
+        Optional<Object> outputOpt = formatter.format();
 
         assertThat("Formatted output",
-                                 output,
-                                 OptionalMatcher.optionalValue(
-                                         allOf(containsString(scopeExpr("c3_total",
-                                                                        "this_scope",
-                                                                        "app",
-                                                                        "1.0")),
-                                               not(containsString(scopeExpr("t3_seconds_count",
-                                                                                     "this_scope",
-                                                                                     "other-scope",
-                                                                                     "1.0"))),
-                                               not(containsString(scopeExpr("t3_seconds_sum",
-                                                                                     "this_scope",
-                                                                                     "other-scope",
-                                                                                     "3.0"))),
-                                               containsString(scopeExpr("t3_1_seconds_count",
-                                                                        "this_scope",
-                                                                        "app",
-                                                                        "1.0")))));
+                   checkAndCast(outputOpt),
+                   allOf(containsString(scopeExpr("c3_total",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0")),
+                         not(containsString(scopeExpr("t3_seconds_count",
+                                                      "this_scope",
+                                                      "other-scope",
+                                                      "1.0"))),
+                         not(containsString(scopeExpr("t3_seconds_sum",
+                                                      "this_scope",
+                                                      "other-scope",
+                                                      "3.0"))),
+                         containsString(scopeExpr("t3_1_seconds_count",
+                                                  "this_scope",
+                                                  "app",
+                                                  "1.0"))));
     }
 
     private static String scopeExpr(String meterName, String key, String value, String suffix) {
         return meterName + "{" + key + "=\"" + value + "\",} " + suffix;
+    }
+
+    private static String checkAndCast(Optional<Object> outputOpt) {
+        assertThat("Formatted output", outputOpt, OptionalMatcher.optionalPresent());
+        assertThat("Formatted output", outputOpt.get(), is(instanceOf(String.class)));
+
+        return (String) outputOpt.get();
     }
 }

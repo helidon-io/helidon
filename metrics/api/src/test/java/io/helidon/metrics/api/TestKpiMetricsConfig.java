@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import java.time.Duration;
+
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
@@ -32,8 +34,8 @@ public class TestKpiMetricsConfig {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("extended-enabled"));
         assertThat("KPI extended setting", settings.extended(), is(true));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(),
-                   is(Long.parseLong(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT)));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(),
+                   is(Duration.parse(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_DEFAULT)));
     }
 
     @Test
@@ -41,8 +43,8 @@ public class TestKpiMetricsConfig {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("extended-disabled"));
         assertThat("KPI extended setting", settings.extended(), is(false));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(),
-                   is(Long.parseLong(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_MS_DEFAULT)));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(),
+                   is(Duration.parse(KeyPerformanceIndicatorMetricsConfig.LONG_RUNNING_REQUESTS_THRESHOLD_DEFAULT)));
     }
 
     @Test
@@ -50,8 +52,8 @@ public class TestKpiMetricsConfig {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("long-running-set"));
         assertThat("KPI extended setting", settings.extended(),
-                   is(Boolean.parseBoolean(KeyPerformanceIndicatorMetricsConfig.KEY_PERFORMANCE_INDICATORS_EXTENDED_DEFAULT)));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(), is(123L));
+                   is(false));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(), is(Duration.ofSeconds(3)));
     }
 
     @Test
@@ -59,6 +61,6 @@ public class TestKpiMetricsConfig {
         KeyPerformanceIndicatorMetricsConfig settings =
                 KeyPerformanceIndicatorMetricsConfig.create(TEST_CONFIG.get("both"));
         assertThat("KPI extended setting", settings.extended(), is(true));
-        assertThat("Long-running threshold", settings.longRunningRequestThresholdMs(), is(456L));
+        assertThat("Long-running threshold", settings.longRunningRequestThreshold(), is(Duration.ofSeconds(4)));
     }
 }

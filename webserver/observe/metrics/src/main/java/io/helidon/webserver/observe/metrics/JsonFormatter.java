@@ -41,7 +41,6 @@ import io.helidon.metrics.api.Timer;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
 
 /**
@@ -88,7 +87,7 @@ class JsonFormatter implements MeterRegistryFormatter {
      * @return meter data
      */
     @Override
-    public Optional<JsonObject> format() {
+    public Optional<Object> format() {
 
         boolean organizeByScope = shouldOrganizeByScope();
 
@@ -167,7 +166,7 @@ class JsonFormatter implements MeterRegistryFormatter {
     }
 
     @Override
-    public Optional<JsonObject> formatMetadata() {
+    public Optional<Object> formatMetadata() {
 
         boolean organizeByScope = shouldOrganizeByScope();
 

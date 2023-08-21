@@ -41,17 +41,17 @@ class TestSystemTagsManager {
     private static final String METRIC_TAG_NAME = "myTag";
     private static final String METRIC_TAG_VALUE = "myValue";
 
-    private static final String APP_TAG_VALUE = "my-app";
+    private static final String APP_NAME = "my-app";
 
     private static final Map<String, String> GLOBAL_ONLY_TAGS_SETTINGS = Map.of(
             MetricsConfig.METRICS_CONFIG_KEY
-                    + "." + MetricsConfig.GLOBAL_TAGS_CONFIG_KEY,
+                    + ".global-tags",
             String.format("%s=%s,%s=%s", GLOBAL_TAG_1, GLOBAL_VALUE_1, GLOBAL_TAG_2, GLOBAL_VALUE_2));
 
     private static final Map<String, String> APP_ONLY_TAGS_SETTINGS = Map.of(
             MetricsConfig.METRICS_CONFIG_KEY
-                    + "." + MetricsConfig.APP_TAG_CONFIG_KEY,
-            APP_TAG_VALUE);
+                    + "." + "app-name",
+            APP_NAME);
 
     private static final Map<String, String> GLOBAL_AND_APP_TAG_SETTINGS;
 
@@ -72,7 +72,7 @@ class TestSystemTagsManager {
                    tags,
                    allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                          hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                         not(hasKey(MetricsConfig.APP_TAG_CONFIG_KEY))));
+                         not(hasKey("app-name"))));
     }
 
     @Test

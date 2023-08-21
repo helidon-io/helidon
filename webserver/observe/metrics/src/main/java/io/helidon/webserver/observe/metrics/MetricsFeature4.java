@@ -191,7 +191,7 @@ public class MetricsFeature4 /* extends MetricsFeature */ {
 //                       Iterable<String> nameSelection) {
 //        MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
 //                                                           mediaType,
-//                                                           metricsConfig.scopeTagName(),
+//                                                           metricsConfig.tagName(),
 //                                                           scopeSelection,
 //                                                           nameSelection);
 //
@@ -200,7 +200,7 @@ public class MetricsFeature4 /* extends MetricsFeature */ {
 //
 //    private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,
 //                                                   MediaType mediaType,
-//                                                   String scopeTagName,
+//                                                   String tagName,
 //                                                   Iterable<String> scopeSelection,
 //                                                   Iterable<String> nameSelection) {
 //        Optional<MeterRegistryFormatter> formatter = HelidonServiceLoader.builder(
@@ -209,7 +209,7 @@ public class MetricsFeature4 /* extends MetricsFeature */ {
 //                .stream()
 //                .map(provider -> provider.formatter(mediaType,
 //                                                    meterRegistry,
-//                                                    scopeTagName,
+//                                                    tagName,
 //                                                    scopeSelection,
 //                                                    nameSelection))
 //                .filter(Optional::isPresent)
