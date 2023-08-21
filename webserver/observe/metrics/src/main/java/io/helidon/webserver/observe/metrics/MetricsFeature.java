@@ -314,7 +314,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         Meter.Scope.BUILT_IN_SCOPES
                 .forEach(scope -> {
-                    boolean isScopeEnabled = metricsConfig.scopes().get(scope).enabled();
+                    boolean isScopeEnabled = metricsConfig.isScopeEnabled(scope);
                     rules.get("/" + scope,
                               isScopeEnabled ? (req, res) -> getMatching(req, res, Set.of(scope), Set.of())
                                       : DISABLED_ENDPOINT_HANDLER)

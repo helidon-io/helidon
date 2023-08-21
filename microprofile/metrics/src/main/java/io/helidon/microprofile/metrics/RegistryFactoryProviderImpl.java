@@ -13,19 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package io.helidon.microprofile.metrics;
 
+import io.helidon.metrics.api.MetricsSettings;
+import io.helidon.metrics.api.spi.RegistryFactoryProvider;
 
 /**
- * Provides exemplar support in metrics using tracing identifiers.
+ * Full-featured metrics implementation of {@link io.helidon.metrics.api.spi.RegistryFactoryProvider}.
  */
-module io.helidon.metrics.traceexemplar {
+public class RegistryFactoryProviderImpl implements RegistryFactoryProvider {
 
-    requires io.helidon.common.context;
-    requires io.helidon.tracing;
-    requires io.helidon.metrics.api;
+    /**
+     * Creates a new instance (for service loading).
+     */
+    public RegistryFactoryProviderImpl() {
+    }
 
-    requires transitive io.helidon.metrics;
-
-    provides io.helidon.metrics.api.spi.ExemplarService
-            with io.helidon.metrics.exemplartrace.TraceExemplarService;
+    @Override
+    public io.helidon.metrics.api.RegistryFactory create(MetricsSettings metricsSettings) {
+        return RegistryFactory.create(metricsSettings);
+    }
 }

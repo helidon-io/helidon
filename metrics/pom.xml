@@ -37,5 +37,6 @@
         <module>api</module>
         <module>service-api</module>
         <module>testing</module>
+        <module>system-meters</module>
     </modules>
 </project>

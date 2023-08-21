@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.webserver.observe.metrics;
+package io.helidon.metrics.systemmeters;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
@@ -39,31 +39,29 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.spi.MetersProvider;
 
-import static io.helidon.metrics.api.MetricsConfig.METRICS_CONFIG_KEY;
-
 /**
- * Provider for the base metrics.
+ * Provider for the built-in system meters.
  */
-public class BaseMetricsProvider implements MetersProvider {
+public class SystemMetersProvider implements MetersProvider {
 
     private static final String BYTES = "bytes";
     private static final String SECONDS  = "seconds";
     private static final String NONE  = "";
 
+    private static final String SCOPE = Meter.Scope.BASE;
+
     private MetricsConfig metricsConfig;
 
     @Override
     public Iterable<Meter.Builder<?, ?>> meters(Config config) {
-        metricsConfig = MetricsConfig.create(config.get(METRICS_CONFIG_KEY));
+        metricsConfig = MetricsConfig.create(config.get(MetricsConfig.METRICS_CONFIG_KEY));
         return prepareMeterBuilders();
     }
 
     private Collection<Meter.Builder<?, ?>> prepareMeterBuilders() {
-        if (!metricsConfig.enabled()) {
+        if (!metricsConfig.enabled() || !metricsConfig.isScopeEnabled(SCOPE)) {
             return Set.of();
         }
-
-        // TODO Apply any scope-level filtering that might be in the metrics config
 
         Collection<Meter.Builder<?, ?>> result = new ArrayList<>();
 
@@ -116,6 +114,7 @@ public class BaseMetricsProvider implements MetersProvider {
                                                      Tag... tags) {
         if (metricsConfig.isMeterEnabled(metadata.name, "base")) {
             result.add(Gauge.builder(metadata.name, object, obj -> fn.apply(obj).doubleValue())
+                               .scope(SCOPE)
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
                                .tags(Arrays.asList(tags)));
@@ -129,6 +128,7 @@ public class BaseMetricsProvider implements MetersProvider {
                                                Tag... tags) {
         if (metricsConfig.isMeterEnabled(metadata.name, "base")) {
             result.add(FunctionalCounter.builder(metadata.name, object, fn)
+                               .scope(SCOPE)
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
                                .tags(Arrays.asList(tags)));
@@ -292,15 +292,15 @@ public class BaseMetricsProvider implements MetersProvider {
             baseUnit = builder.baseUnit;
         }
 
-        private static class Builder implements io.helidon.common.Builder<Builder, BaseMetricsProvider.Metadata> {
+        private static class Builder implements io.helidon.common.Builder<Builder, SystemMetersProvider.Metadata> {
 
             private String name;
             private String description;
             private String baseUnit;
 
             @Override
-            public BaseMetricsProvider.Metadata build() {
-                return new BaseMetricsProvider.Metadata(this);
+            public SystemMetersProvider.Metadata build() {
+                return new SystemMetersProvider.Metadata(this);
             }
 
             Builder withName(String name) {

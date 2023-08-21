@@ -35,7 +35,7 @@ Change the `pom.xml` of the component to depend on `helidon-metrics-api` instead
    </dependency>
    ```
 ### Change imports
-Change imports of `io.helidon.metrics.RegistryFactory` to `io.helidon.metrics.api.
+Change imports of `io.helidon.microprofile.metrics.RegistryFactory` to `io.helidon.metrics.api.
    RegistryFactory`.
 
 The interfaces in the new module are API-compatible with their counterparts in `helidon-metrics` so existing code that works with the existing `RegistryFactory` should compile and run just the same as before.

@@ -224,7 +224,7 @@ will demonstrate how to use a `Counter` to track the number of times the `/cards
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -322,7 +322,7 @@ The following example marks an event each time the `/cards` endpoint is called.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -408,7 +408,7 @@ endpoint is called, the `Timer` will be updated with additional timing informati
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -504,7 +504,7 @@ the `/cards` endpoint is invoked.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -597,8 +597,7 @@ how a `Gauge` is used to get the current temperature.
 .Add new imports to `Main.java` and replace the `Main.createRouting` method with the following code:
 ----
 
-import io.helidon.metrics.RegistryFactory;
-import java.util.Random;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 
@@ -628,7 +627,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;
@@ -699,7 +698,7 @@ endpoint is called, the `SimpleTimer` updates its count and total elapsed time.
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.metrics.RegistryFactory;
+import io.helidon.microprofile.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;

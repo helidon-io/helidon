@@ -170,6 +170,7 @@ interface MetricsConfigBlueprint {
      * @return scope settings
      */
     @ConfiguredOption
+    @Prototype.Singular
     Map<String, ScopeConfig> scopes();
 
     /**
@@ -178,6 +179,15 @@ interface MetricsConfigBlueprint {
      * @return metrics configuration
      */
     Config config();
+
+    /**
+     * Reports whether the specified scope is enabled, according to any scope configuration that
+     * is part of this metrics configuration.
+     *
+     * @param scope scope name
+     * @return true if the scope as a whole is enabled; false otherwise
+     */
+    boolean isScopeEnabled(String scope);
 
     /**
      * Determines whether the meter with the specified name and within the indicated scope is enabled.

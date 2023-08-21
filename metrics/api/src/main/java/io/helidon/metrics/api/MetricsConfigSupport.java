@@ -38,6 +38,20 @@ class MetricsConfigSupport {
     }
 
     /**
+     * Reports whether the specified scope is enabled, according to any scope configuration that
+     * is part of this metrics configuration.
+     *
+     * @param metricsConfig metrics configuration
+     * @param scope scope name
+     * @return true if the scope as a whole is enabled; false otherwise
+     */
+    @Prototype.PrototypeMethod
+    static boolean isScopeEnabled(MetricsConfig metricsConfig, String scope) {
+        var scopeConfig = metricsConfig.scopes().get(scope);
+        return scopeConfig == null || scopeConfig.enabled();
+    }
+
+    /**
      * Reports whether the specified meter within the indicated scope is enabled, according to the metrics configuration.
      *
      * @param metricsConfig metrics configuration
