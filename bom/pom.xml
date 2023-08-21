@@ -913,6 +913,11 @@
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-secrets-configsource</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>io.helidon.integrations.oci.metrics</groupId>
                 <artifactId>helidon-integrations-oci-metrics</artifactId>
                 <version>${helidon.version}</version>
