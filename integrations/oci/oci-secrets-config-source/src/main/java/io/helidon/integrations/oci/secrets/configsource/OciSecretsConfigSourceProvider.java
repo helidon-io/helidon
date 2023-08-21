@@ -21,16 +21,17 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -299,16 +300,17 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             if (secretSummaries.isEmpty()) {
                 return this.absentNodeContent();
             }
-            Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
+            ConcurrentMap<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
             Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
             Base64.Decoder decoder = Base64.getDecoder();
             Secrets secrets = secretsSupplier.get();
             Instant closestSecretExpirationInstant = this.closestSecretExpirationInstant; // volatile read
             for (SecretSummary ss : secretSummaries) {
-                tasks.add(() -> {
-                        valueNodes.put(ss.getSecretName(), valueNode(secrets, ss, decoder));
-                        return null;
-                    });
+                tasks.add(task(valueNodes::put,
+                               ss.getSecretName(),
+                               r -> secrets.getSecretBundle(r).getSecretBundle().getSecretBundleContent(),
+                               ss.getId(),
+                               decoder));
                 java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
                 // If d is null, which is permitted by the OCI Vaults API, you could interpret it as meaning "this
                 // secret never ever expires, so never poll it for changes ever again". (This is sort of like if its
@@ -316,8 +318,9 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                 //
                 // Or you could interpret it as the much more common "this secret never had its expiration time set,
                 // probably by mistake, or because it's a temporary scratch secret, or any of a zillion other possible
-                // explanations, so we'd better check each poll time to see if the secret is still there". (This is sort
-                // of like if its expiration time wer set to the beginning of time.)
+                // common human explanations, so we'd better check each time we poll to see if the secret is still
+                // there; i.e. we should pretend it is continually expiring". (This is sort of like if its expiration
+                // time were set to the beginning of time.)
                 //
                 // We opt for the latter interpretation.
                 Instant secretExpirationInstant = d == null ? null : d.toInstant();
@@ -423,7 +426,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             return GetSecretBundleRequest.builder().secretId(secretId).build();
         }
 
-        // Suppress "[try] auto-closeable resource Vaults has a member method close() that could throw InterruptedException"
+        // Suppress "[try] auto-closeable resource Vaults has a member method close() that could throw
+        // InterruptedException" since we handle it.
         @SuppressWarnings("try")
         private static Collection<? extends SecretSummary> secretSummaries(Supplier<? extends Vaults> vaultsSupplier,
                                                                            ListSecretsRequest listSecretsRequest) {
@@ -441,11 +445,15 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             }
         }
 
-        private static ValueNode valueNode(Secrets s, SecretSummary ss, Base64.Decoder base64Decoder) {
-            return
-                valueNode(r -> s.getSecretBundle(r).getSecretBundle().getSecretBundleContent(),
-                          ss.getId(),
-                          base64Decoder);
+        static Callable<Void> task(BiConsumer<? super String, ? super ValueNode> valueNodes,
+                                   String secretName,
+                                   Function<? super GetSecretBundleRequest, ? extends SecretBundleContentDetails> f,
+                                   String secretId,
+                                   Base64.Decoder base64Decoder) {
+            return () -> {
+                valueNodes.accept(secretName, valueNode(f, secretId, base64Decoder));
+                return null;
+            };
         }
 
         private static ValueNode valueNode(Function<? super GetSecretBundleRequest, ? extends SecretBundleContentDetails> f,
@@ -454,8 +462,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             return valueNode((Base64SecretBundleContentDetails) f.apply(request(secretId)), base64Decoder);
         }
 
-        private static ValueNode valueNode(Base64SecretBundleContentDetails details,
-                                           Base64.Decoder base64Decoder) {
+        private static ValueNode valueNode(Base64SecretBundleContentDetails details, Base64.Decoder base64Decoder) {
             return valueNode(details.getContent(), base64Decoder);
         }
 
