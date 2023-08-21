@@ -27,15 +27,6 @@ class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.Builder
             theManager = new ConfiguredTlsManager(target);
             target.manager(theManager);
         }
-
-        Tls tls = theManager.tls();
-        if (tls != null) {
-            target.sslParameters(tls.sslParameters());
-            target.sslContext(tls.sslContext());
-            target.tlsInfo(
-                    new TlsInternalInfo(false,
-                                        tls.reloadableComponents(), tls.originalTrustManager(), tls.originalKeyManager()));
-        }
     }
 
 }

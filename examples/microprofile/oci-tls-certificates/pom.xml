@@ -33,7 +33,16 @@
         Microprofile example that configures TLS via a Manager and OCI Certificates Service integration with cert rotation
     </description>
 
+    <properties>
+        <bouncy-castle.version>1.70</bouncy-castle.version>
+    </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>${bouncy-castle.version}</version>
+        </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>

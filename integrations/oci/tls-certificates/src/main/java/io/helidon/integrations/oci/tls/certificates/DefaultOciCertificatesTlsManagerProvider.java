@@ -38,13 +38,13 @@ public class DefaultOciCertificatesTlsManagerProvider implements TlsManagerProvi
 
     @Override
     public String configKey() {
-        return "oci-certificates";
+        return DefaultOciCertificatesTlsManager.TYPE;
     }
 
     @Override
     public TlsManager create(Config config, String name) {
         OciCertificatesTlsManagerConfig cfg = OciCertificatesTlsManagerConfig.create(config);
-        return new DefaultOciCertificatesTlsManager(cfg);
+        return new DefaultOciCertificatesTlsManager(cfg, (io.helidon.config.Config) config, name);
     }
 
 }

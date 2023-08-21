@@ -18,6 +18,7 @@ package io.helidon.integrations.oci.tls.certificates;
 
 import java.net.URI;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
@@ -31,7 +32,8 @@ import io.helidon.config.metadata.ConfiguredOption;
 interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<OciCertificatesTlsManager> {
 
     /**
-     * The schedule to trigger {@link io.helidon.common.tls.TlsManager#reload()}.
+     * The schedule for trigger a reload check, testing whether there is a new {@link io.helidon.common.tls.Tls} instance
+     * available.
      *
      * @return the schedule for reload
      */
@@ -93,6 +95,6 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      * @return key password
      */
     @ConfiguredOption
-    char[] keyPassword();
+    Supplier<char[]> keyPassword();
 
 }

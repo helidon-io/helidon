@@ -35,12 +35,12 @@ class OciCertificatesTlsManagerTest {
     @Test
     void tlsManager() {
         Config config = Config.create(ConfigSources.create(
-                Map.of("oci-certificates.schedule", "123",
-                       "oci-certificates.vault-crypto-endpoint", "http://localhost",
-                       "oci-certificates.ca-ocid", "caOcid",
-                       "oci-certificates.cert-ocid", "certOcid",
-                       "oci-certificates.key-ocid", "keyOcid",
-                       "oci-certificates.key-password", "keyPassword"
+                Map.of("oci-certificates-tls-manager.schedule", "123",
+                       "oci-certificates-tls-manager.vault-crypto-endpoint", "http://localhost",
+                       "oci-certificates-tls-manager.ca-ocid", "caOcid",
+                       "oci-certificates-tls-manager.cert-ocid", "certOcid",
+                       "oci-certificates-tls-manager.key-ocid", "keyOcid",
+                       "oci-certificates-tls-manager.key-password", "keyPassword"
                 )));
         TlsManagerProvider provider = HelidonServiceLoader.builder(ServiceLoader.load(TlsManagerProvider.class))
                 .build()

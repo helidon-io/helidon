@@ -58,6 +58,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return SSL context to use
      */
+    // TODO: should this be changed to Supplier<SSLContext>?
     Optional<SSLContext> sslContext();
 
     /**
@@ -66,6 +67,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return private key to use
      */
+    // TODO: should this be changed to Supplier<SSLContext>?
     @ConfiguredOption
     Optional<PrivateKey> privateKey();
 
@@ -77,6 +79,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     @Prototype.Singular
     @ConfiguredOption(key = "private-key")
     // same config node as privateKey
+    // TODO: should this be changed to Supplier<SSLContext>?
     List<X509Certificate> privateKeyCertChain();
 
     /**
@@ -86,15 +89,17 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      */
     @Prototype.Singular
     @ConfiguredOption
+    // TODO: should this be changed to Supplier<SSLContext>?
     List<X509Certificate> trust();
 
     /**
      * The Tls manager. If one is not explicitly defined in the config then a default manager will be created.
      *
      * @return the tls manager of the tls instance
+     * @see ConfiguredTlsManager
      */
     @ConfiguredOption(provider = true, providerType = TlsManagerProvider.class, providerDiscoverServices = false)
-    Optional<TlsManager> manager();
+    TlsManager manager();
 
     /**
      * Explicit secure random to use.

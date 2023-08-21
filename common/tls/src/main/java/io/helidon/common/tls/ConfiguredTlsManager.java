@@ -47,37 +47,54 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
 
 /**
  * The default configured {@link TlsManager} implementation.
+ *
+ * TODO:
+ * Will watch for configuration changes on {@link TlsConfig}, and
+ * when observed to be changed will trigger reload of the Tls instance.
  */
 public class ConfiguredTlsManager implements TlsManager {
     // secure random cannot be stored in native image, it must
     // be initialized at runtime
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
 
-    private Set<Consumer<Tls>> consumers = new LinkedHashSet<>();
+    private final Set<Consumer<Tls>> consumers = new LinkedHashSet<>();
+    private final String name;
+    private final String type;
+    private Tls tls;
+    private Config config;
 
-    // TODO: ideally we would overload to also take a Tls instance
-    public ConfiguredTlsManager(TlsConfig.BuilderBase<?, ?> target) {
+    ConfiguredTlsManager(TlsConfig.BuilderBase<?, ?> target) {
+        this((Config) target.config().orElse(null), "@default", "tls-manager");
         sslContext(target);
         sslParameters(target);
     }
 
-    @Override // TlsManager
+    protected ConfiguredTlsManager(Config config,
+                                   String name,
+                                   String type) {
+        this.config = config; // can be null
+        this.name = Objects.requireNonNull(name);
+        this.type = type;
+        // TODO: here we can register for watching config changes?
+        //        target.config().ifPresent(config -> {
+        //            ((io.helidon.config.Config) config).onChange(cfg -> {
+        //
+        //            });
+        //        });
+    }
+
+    @Override // NamedService
     public String name() {
-        return "@default";
+        return name;
     }
 
-    @Override // TlsManager
+    @Override // NamedService
     public String type() {
-        return "tls-manager";
-    }
-
-    @Override // TlsManager
-    public boolean reload() {
-        // TODO: should this loop over reloadable consumers?
-        return false;
+        return type;
     }
 
     @Override // TlsManager
@@ -86,10 +103,20 @@ public class ConfiguredTlsManager implements TlsManager {
         consumers.add(tlsConsumer);
     }
 
-    @Override // TlsManager
+    @Override
     public Tls tls() {
-        // TODO:
-        return null;
+        return Objects.requireNonNull(tls);
+    }
+
+    @Override
+    public void tls(Tls tls) {
+        boolean wasPrevioslySet = (this.tls != null);
+        assert (tls != this.tls) : "should not set with same instance: " + tls;
+        this.tls = Objects.requireNonNull(tls);
+        if (wasPrevioslySet) {
+            // notify each consumer to accept the new updated Tls instance
+            consumers.forEach(c -> c.accept(tls));
+        }
     }
 
     private void sslContext(TlsConfig.BuilderBase<?, ?> target) {

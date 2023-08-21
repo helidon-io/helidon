@@ -23,9 +23,9 @@ import io.helidon.common.config.Config;
 import io.helidon.common.tls.TlsManager;
 
 /**
- * The OCI KMS version of {@link io.helidon.common.tls.TlsManager}. This implementation will load/create
+ * The OCI Certificates contract of {@link io.helidon.common.tls.TlsManager}. The implementation should load/create
  * {@link io.helidon.common.tls.Tls} instances from integrating to the certificates stored remotely in OCI's
- * Certificates Service.
+ * Certificates Service, and then allow for a scheduled update check of the Tls instance for changes.
  */
 @RuntimeType.PrototypedBy(OciCertificatesTlsManagerConfig.class)
 public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<OciCertificatesTlsManagerConfig> {
@@ -52,11 +52,11 @@ public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<O
     /**
      * Creates a configured {@link OciCertificatesTlsManager} instance.
      *
-     * @param config the config
+     * @param cfg the config
      * @return a configured instance
      */
-    static OciCertificatesTlsManager create(OciCertificatesTlsManagerConfig config) {
-        // TODO: create the default TlsManager impl
+    static OciCertificatesTlsManager create(OciCertificatesTlsManagerConfig cfg) {
+//        throw new DefaultOciCertificatesTlsManager(cfg, null, null);
         throw new UnsupportedOperationException();
     }
 

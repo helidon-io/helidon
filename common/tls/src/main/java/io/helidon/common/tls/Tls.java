@@ -76,9 +76,9 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
     }
 
     private Tls(TlsConfig config,
-                  SSLContext sslContext,
-                  SSLParameters sslParameters,
-                  TlsInfo tlsInfo) {
+                SSLContext sslContext,
+                SSLParameters sslParameters,
+                TlsInfo tlsInfo) {
         this.tlsConfig = Objects.requireNonNull(config);
         this.sslContext = sslContext;
         this.sslParameters = sslParameters;
@@ -87,6 +87,9 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
         this.reloadableComponents = List.copyOf(tlsInfo.reloadableComponents());
         this.originalTrustManager = tlsInfo.originalTrustManager();
         this.originalKeyManager = tlsInfo.originalKeyManager();
+
+        // have the manager know about this instance as the last step
+        config.manager().tls(this);
     }
 
     /**
@@ -242,7 +245,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      * @return the tls manager for this instance
      */
     public TlsManager manager() {
-        return tlsConfig.manager().orElseThrow(() -> new IllegalStateException("Excepted to always have a manager present"));
+        return tlsConfig.manager();
     }
 
 //    @Override // TlsReloadableComponent iface multiplexer

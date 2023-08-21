@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-/**
- * TLS configuration for client and server.
- */
-module io.helidon.common.tls {
-    requires static io.helidon.builder.api;
-    requires static io.helidon.config.metadata;
+package io.helidon.examples.microprofile.oci.tls.certificates;
 
-    requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.common.pki;
+import java.security.Security;
 
-    exports io.helidon.common.tls;
-    exports io.helidon.common.tls.spi;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+public class Main {
+
+    // TODO: is it ok to have a BC dependency in our examples?
+    public static void main(String args[]) {
+        // OCI uses BC, we need it for decryptAesKey
+        // https://stackoverflow.com/a/23859386/626826
+        // https://bugs.openjdk.org/browse/JDK-7038158
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
 }
