@@ -17,33 +17,17 @@
 package io.helidon.http;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
-import java.time.format.SignStyle;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.function.Predicate;
 
 import io.helidon.common.buffers.Ascii;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.LazyString;
-
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.DAY_OF_WEEK;
-import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.OFFSET_SECONDS;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-import static java.time.temporal.ChronoField.YEAR;
 
 /**
  * HTTP protocol related constants and utilities.
@@ -293,14 +277,17 @@ public final class Http {
 
     /**
      * Commonly used status codes defined by HTTP, see
-     * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10">HTTP/1.1 documentation</a>
-     * for the complete list. Additional status codes can be added by applications
+     * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10">HTTP/1.1 documentation</a>.
+     * Additional status codes can be added by applications
      * by call {@link #create(int)} or {@link #create(int, String)} with unkown status code, or with text
      * that differs from the predefined status codes.
      * <p>
      * Although the constants are instances of this class, they can be compared using instance equality, as the only
      * way to obtain an instance is through methods {@link #create(int)} {@link #create(int, String)}, which ensures
      * the same instance is returned for known status codes and reason phrases.
+     * <p>
+     * A good reference is the IANA list of HTTP Status Codes (we may not cover all of them in this type):
+     * <a href="https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml">IANA HTTP Status Codes</a>
      */
     public static class Status {
         /**
@@ -496,6 +483,41 @@ public final class Http {
          */
         public static final Status I_AM_A_TEAPOT_418 = new Status(418, "I'm a teapot", true);
         /**
+         * Misdirected request, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-421-misdirected-request">RFC 9110 - Http Semantics</a>.
+         */
+        public static final Status MISDIRECTED_REQUEST_421 = new Status(421, "Misdirected Request", true);
+        /**
+         * Unprocessable content, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-422-unprocessable-content">RFC 9110 - Http Semantics</a>.
+         */
+        public static final Status UNPROCESSABLE_CONTENT_422 = new Status(422, "Unprocessable Content", true);
+        /**
+         * Locked, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#page-78">RFC 4918 - HTTP Extensions for WebDAV</a>.
+         */
+        public static final Status LOCKED_423 = new Status(423, "Locked", true);
+        /**
+         * Failed dependency, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc4918.html#section-11.4">RFC 4918 - HTTP Extensions for WebDAV</a>.
+         */
+        public static final Status FAILED_DEPENDENCY_424 = new Status(424, "Failed Dependency", true);
+        /**
+         * Upgrade required, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-426-upgrade-required">RFC 9110 - Http Semantics</a>.
+         */
+        public static final Status UPGRADE_REQUIRED_426 = new Status(426, "Upgrade Required", true);
+        /**
+         * Precondition required, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc6585.html#page-2">RFC 6585 - Additional HTTP Status Codes</a>.
+         */
+        public static final Status PRECONDITION_REQUIRED_428 = new Status(428, "Precondition Required", true);
+        /**
+         * Too many requests, see
+         * <a href="https://www.rfc-editor.org/rfc/rfc6585.html#page-3">RFC 6585 - Additional HTTP Status Codes</a>.
+         */
+        public static final Status TOO_MANY_REQUESTS_429 = new Status(429, "Too Many Requests", true);
+        /**
          * 500 Internal Server Error, see
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1">HTTP/1.1 documentation</a>.
          */
@@ -526,15 +548,6 @@ public final class Http {
          * @since 2.0
          */
         public static final Status GATEWAY_TIMEOUT_504 = new Status(504, "Gateway Timeout", true);
-        /**
-         * 505 HTTP Version Not Supported, see
-         * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.6">HTTP/1.1 documentation</a>.
-         *
-         * @since 2.0
-         * @deprecated use {@link #HTTP_VERSION_NOT_SUPPORTED_505} instead (inconsistent name)
-         */
-        @Deprecated(forRemoval = true, since = "3.0.3")
-        public static final Status HTTP_VERSION_NOT_SUPPORTED = new Status(505, "HTTP Version Not Supported", true);
         /**
          * 505 HTTP Version Not Supported, see
          * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.6">HTTP/1.1 documentation</a>.
@@ -1818,7 +1831,7 @@ public final class Http {
          * Since the format accepts <b>2 digits year</b> representation formatter works well for dates between
          * {@code (now - 50 Years)} and {@code (now + 49 Years)}.
          */
-        public static final DateTimeFormatter RFC_850_DATE_TIME;
+        public static final DateTimeFormatter RFC_850_DATE_TIME = DateTimeHelper.RFC_850_DATE_TIME;
         /**
          * The RFC1123 date-time formatter, such as {@code 'Tue, 3 Jun 2008 11:05:30 GMT'}.
          * <p>
@@ -1834,103 +1847,7 @@ public final class Http {
          * Headers MUST NOT be generated in this format.
          * However it should be used as a fallback for parsing to achieve compatibility with older HTTP standards.
          */
-        public static final DateTimeFormatter ASCTIME_DATE_TIME;
-        /**
-         * Manual list ensures that no localisation can affect standard parsing/generating.
-         */
-        private static final Map<Long, String> MONTH_NAME_3D;
-
-        private static volatile ZonedDateTime time;
-        private static volatile String rfc1123String;
-        private static volatile byte[] http1valueBytes;
-
-        static {
-            MONTH_NAME_3D = Map.ofEntries(Map.entry(1L, "Jan"),
-                                          Map.entry(2L, "Feb"),
-                                          Map.entry(3L, "Mar"),
-                                          Map.entry(4L, "Apr"),
-                                          Map.entry(5L, "May"),
-                                          Map.entry(6L, "Jun"),
-                                          Map.entry(7L, "Jul"),
-                                          Map.entry(8L, "Aug"),
-                                          Map.entry(9L, "Sep"),
-                                          Map.entry(10L, "Oct"),
-                                          Map.entry(11L, "Nov"),
-                                          Map.entry(12L, "Dec"));
-
-            // manually code maps to ensure correct data always used
-            // (locale data can be changed by application code)
-            Map<Long, String> dayOfWeekFull = Map.of(1L, "Monday",
-                                                     2L, "Tuesday",
-                                                     3L, "Wednesday",
-                                                     4L, "Thursday",
-                                                     5L, "Friday",
-                                                     6L, "Saturday",
-                                                     7L, "Sunday");
-            RFC_850_DATE_TIME = new DateTimeFormatterBuilder()
-                    .parseCaseInsensitive()
-                    .parseLenient()
-                    .optionalStart()
-                    .appendText(DAY_OF_WEEK, dayOfWeekFull)
-                    .appendLiteral(", ")
-                    .optionalEnd()
-                    .appendValue(DAY_OF_MONTH, 2, 2, SignStyle.NOT_NEGATIVE)
-                    .appendLiteral('-')
-                    .appendText(MONTH_OF_YEAR, MONTH_NAME_3D)
-                    .appendLiteral('-')
-                    .appendValueReduced(YEAR, 2, 2, LocalDate.now().minusYears(50).getYear())
-                    .appendLiteral(' ')
-                    .appendValue(HOUR_OF_DAY, 2)
-                    .appendLiteral(':')
-                    .appendValue(MINUTE_OF_HOUR, 2)
-                    .optionalStart()
-                    .appendLiteral(':')
-                    .appendValue(SECOND_OF_MINUTE, 2)
-                    .optionalEnd()
-                    .appendLiteral(' ')
-                    .appendOffset("+HHMM", "GMT")
-                    .toFormatter();
-
-            // manually code maps to ensure correct data always used
-            // (locale data can be changed by application code)
-            Map<Long, String> dayOfWeek3d = Map.of(1L, "Mon",
-                                                   2L, "Tue",
-                                                   3L, "Wed",
-                                                   4L, "Thu",
-                                                   5L, "Fri",
-                                                   6L, "Sat",
-                                                   7L, "Sun");
-            ASCTIME_DATE_TIME = new DateTimeFormatterBuilder()
-                    .parseCaseInsensitive()
-                    .parseLenient()
-                    .optionalStart()
-                    .appendText(DAY_OF_WEEK, dayOfWeek3d)
-                    .appendLiteral(' ')
-                    .appendText(MONTH_OF_YEAR, MONTH_NAME_3D)
-                    .appendLiteral(' ')
-                    .padNext(2)
-                    .appendValue(DAY_OF_MONTH, 1, 2, SignStyle.NOT_NEGATIVE)
-                    .appendLiteral(' ')
-                    .appendValue(HOUR_OF_DAY, 2)
-                    .appendLiteral(':')
-                    .appendValue(MINUTE_OF_HOUR, 2)
-                    .appendLiteral(':')
-                    .appendValue(SECOND_OF_MINUTE, 2)
-                    .appendLiteral(' ')
-                    .appendValue(YEAR, 4)
-                    .parseDefaulting(OFFSET_SECONDS, 0)
-                    .toFormatter();
-
-            update();
-
-            // start a timer, scheduled every second to update server time (we do not need better precision)
-            new Timer("helidon-http-timer", true)
-                    .schedule(new TimerTask() {
-                        public void run() {
-                            update();
-                        }
-                    }, 1000, 1000);
-        }
+        public static final DateTimeFormatter ASCTIME_DATE_TIME = DateTimeHelper.ASCTIME_DATE_TIME;
 
         private DateTime() {
         }
@@ -1946,15 +1863,7 @@ public final class Http {
          * @throws java.time.format.DateTimeParseException if not in any of supported formats.
          */
         public static ZonedDateTime parse(String text) {
-            try {
-                return ZonedDateTime.parse(text, RFC_1123_DATE_TIME);
-            } catch (DateTimeParseException pe) {
-                try {
-                    return ZonedDateTime.parse(text, RFC_850_DATE_TIME);
-                } catch (DateTimeParseException pe2) {
-                    return ZonedDateTime.parse(text, ASCTIME_DATE_TIME);
-                }
-            }
+            return DateTimeHelper.parse(text);
         }
 
         /**
@@ -1963,7 +1872,7 @@ public final class Http {
          * @return timestamp
          */
         public static ZonedDateTime timestamp() {
-            return time;
+            return DateTimeHelper.timestamp();
         }
 
         /**
@@ -1973,7 +1882,7 @@ public final class Http {
          * @see #RFC_1123_DATE_TIME
          */
         public static String rfc1123String() {
-            return rfc1123String;
+            return DateTimeHelper.rfc1123String();
         }
 
         /**
@@ -1982,13 +1891,7 @@ public final class Http {
          * @return date bytes for HTTP/1
          */
         public static byte[] http1Bytes() {
-            return http1valueBytes;
-        }
-
-        static void update() {
-            time = ZonedDateTime.now();
-            rfc1123String = time.format(RFC_1123_DATE_TIME);
-            http1valueBytes = (rfc1123String + "\r\n").getBytes(StandardCharsets.US_ASCII);
+            return DateTimeHelper.http1Bytes();
         }
     }
 }
