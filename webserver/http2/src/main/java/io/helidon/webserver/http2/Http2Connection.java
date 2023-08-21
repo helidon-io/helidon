@@ -33,6 +33,7 @@ import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
@@ -94,7 +95,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final Http2Settings serverSettings;
     private final boolean sendErrorDetails;
     private final ConnectionFlowControl flowControl;
-    private final Http2Headers connectionHeaders;
 
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -106,6 +106,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private HttpPrologue upgradePrologue;
     private Http2Headers upgradeHeaders;
     private State state = State.WRITE_SERVER_SETTINGS;
+    private Http2Headers connectionHeaders;
     private int continuationExpectedStreamId;
     private int lastStreamId;
     private long maxClientConcurrentStreams;
@@ -139,11 +140,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .maxFrameSize(http2Config.maxFrameSize())
                 .build();
         this.lastRequestTimestamp = Http.DateTime.timestamp();
-        WritableHeaders<?> writableHeaders = WritableHeaders.create();
-        ctx.remotePeer().tlsCertificates()
-                .flatMap(TlsUtils::parseCn)
-                .ifPresent(cn -> writableHeaders.add(X_HELIDON_CN, cn));
-        connectionHeaders = Http2Headers.create(writableHeaders);
     }
 
     private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
@@ -596,6 +592,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         boolean endOfStream;
         Http2Headers headers;
         Http2ServerStream stream = streamContext.stream();
+        if (connectionHeaders == null) {
+            WritableHeaders<?> writableHeaders = WritableHeaders.create();
+            ctx.remotePeer().tlsCertificates()
+                    .flatMap(TlsUtils::parseCn)
+                    .ifPresent(cn -> writableHeaders.add(X_HELIDON_CN, cn));
+            connectionHeaders = Http2Headers.create(writableHeaders);
+        }
 
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
             // end of continuations with header frames

@@ -31,7 +31,7 @@ import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.common.http.Http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;

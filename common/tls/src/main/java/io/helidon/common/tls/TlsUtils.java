@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.nima.common.tls;
+package io.helidon.common.tls;
 
 import java.security.Principal;
 import java.security.cert.Certificate;
@@ -43,7 +43,7 @@ public class TlsUtils {
             String[] segments = principal.getName().split("=|,");
             while (i + 1 < segments.length) {
                 if ("CN".equals(segments[i])) {
-                    return Optional.of(segments[i+1]);
+                    return Optional.of(segments[i + 1]);
                 }
                 i += 2;
             }

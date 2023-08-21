@@ -50,7 +50,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
-import static io.helidon.common.http.Http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
