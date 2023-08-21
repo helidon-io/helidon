@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -30,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -203,7 +205,7 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      */
 
 
-    private static final class SecretBundleConfigSource
+    static final class SecretBundleConfigSource
         extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
 
 
@@ -289,7 +291,12 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                                            Supplier<? extends Secrets> secretsSupplier,
                                            ListSecretsRequest listSecretsRequest) {
             Collection<? extends SecretSummary> secretSummaries = secretSummaries(vaultsSupplier, listSecretsRequest);
-            if (secretSummaries == null || secretSummaries.isEmpty()) {
+            return this.load(secretSummaries, secretsSupplier);
+        }
+
+        private Optional<NodeContent> load(Collection<? extends SecretSummary> secretSummaries,
+                                           Supplier<? extends Secrets> secretsSupplier) {
+            if (secretSummaries.isEmpty()) {
                 return this.absentNodeContent();
             }
             Map<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
@@ -303,13 +310,23 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
                         return null;
                     });
                 java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
+                // If d is null, which is permitted by the OCI Vaults API, you could interpret it as meaning "this
+                // secret never ever expires, so never poll it for changes ever again". (This is sort of like if its
+                // expiration time were set to the end of time.)
+                //
+                // Or you could interpret it as the much more common "this secret never had its expiration time set,
+                // probably by mistake, or because it's a temporary scratch secret, or any of a zillion other possible
+                // explanations, so we'd better check each poll time to see if the secret is still there". (This is sort
+                // of like if its expiration time wer set to the beginning of time.)
+                //
+                // We opt for the latter interpretation.
                 Instant secretExpirationInstant = d == null ? null : d.toInstant();
                 if (secretExpirationInstant != null && secretExpirationInstant.isBefore(closestSecretExpirationInstant)) {
                     closestSecretExpirationInstant = secretExpirationInstant;
                 }
             }
             this.closestSecretExpirationInstant = closestSecretExpirationInstant; // volatile write
-            completeAllSecretsTasks(tasks, secrets);
+            completeTasks(tasks, secrets);
             ObjectNode.Builder onb = ObjectNode.builder();
             for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
                 onb.addValue(e.getKey(), e.getValue());
@@ -325,47 +342,46 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
          */
 
 
-        static boolean isModified(Instant pollInstant, Instant closestSecretExpirationInstant) {
-            return closestSecretExpirationInstant.isBefore(pollInstant);
-        }
-
         private static Builder builder() {
             return new Builder();
         }
 
-        private static void closeUnchecked(AutoCloseable c) {
+        private static void closeUnchecked(AutoCloseable autoCloseable) {
             try {
-                c.close();
+                autoCloseable.close();
+            } catch (RuntimeException e) {
+                throw e;
             } catch (InterruptedException e) {
+                // (Can legally be thrown by any AutoCloseable. Must preserve interrupt status.)
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e.getMessage(), e);
             } catch (Exception e) {
+                // (Can legally be thrown by any AutoCloseable.)
                 throw new IllegalStateException(e.getMessage(), e);
             }
         }
 
-        private static void completeAllSecretsTasks(Collection<? extends Callable<Void>> tasks, AutoCloseable secrets) {
-            RuntimeException re = null;
-            try (ExecutorService es = newVirtualThreadPerTaskExecutor()) {
-                for (Future<?> future : es.invokeAll(tasks)) {
-                    try {
-                        futureGetUnchecked(future);
-                    } catch (RuntimeException e) {
-                        if (re == null) {
-                            re = e;
-                        } else {
-                            re.addSuppressed(e);
-                        }
-                    }
-                }
+        private static void completeTasks(Collection<? extends Callable<Void>> tasks, AutoCloseable autoCloseable) {
+            try (ExecutorService es = newVirtualThreadPerTaskExecutor();
+                 autoCloseable) {
+                completeTasks(es, tasks);
             } catch (RuntimeException e) {
-                re = e;
+                throw e;
             } catch (InterruptedException e) {
+                // (Can legally be thrown by any AutoCloseable. Must preserve interrupt status.)
                 Thread.currentThread().interrupt();
-                re = new IllegalStateException(e.getMessage(), e);
-            } finally {
+                throw new IllegalStateException(e.getMessage(), e);
+            } catch (Exception e) {
+                // (Can legally be thrown by any AutoCloseable.)
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
+
+        private static void completeTasks(ExecutorService es, Collection<? extends Callable<Void>> tasks) {
+            RuntimeException re = null;
+            for (Future<?> future : invokeAllUnchecked(es, tasks)) {
                 try {
-                    closeUnchecked(secrets);
+                    futureGetUnchecked(future);
                 } catch (RuntimeException e) {
                     if (re == null) {
                         re = e;
@@ -390,6 +406,23 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             }
         }
 
+        private static <T> List<Future<T>> invokeAllUnchecked(ExecutorService es, Collection<? extends Callable<T>> tasks) {
+            try {
+                return es.invokeAll(tasks);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e.getMessage(), e);
+            }
+        }
+
+        static boolean isModified(Instant pollInstant, Instant closestSecretExpirationInstant) {
+            return closestSecretExpirationInstant.isBefore(pollInstant);
+        }
+
+        private static GetSecretBundleRequest request(String secretId) {
+            return GetSecretBundleRequest.builder().secretId(secretId).build();
+        }
+
         // Suppress "[try] auto-closeable resource Vaults has a member method close() that could throw InterruptedException"
         @SuppressWarnings("try")
         private static Collection<? extends SecretSummary> secretSummaries(Supplier<? extends Vaults> vaultsSupplier,
@@ -399,22 +432,36 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
             } catch (RuntimeException e) {
                 throw e;
             } catch (InterruptedException e) {
+                // (Can legally be thrown by any AutoCloseable (such as Vaults). Must preserve interrupt status.)
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e.getMessage(), e);
             } catch (Exception e) {
+                // (Can legally be thrown by any AutoCloseable (such as Vaults).)
                 throw new IllegalStateException(e.getMessage(), e);
             }
         }
 
-        private static ValueNode valueNode(Secrets s, SecretSummary ss, Base64.Decoder d) {
-            SecretBundleContentDetails sbcd = s.getSecretBundle(GetSecretBundleRequest.builder()
-                                                                .secretId(ss.getId())
-                                                                .build())
-                .getSecretBundle()
-                .getSecretBundleContent();
-            String base64EncodedContent = ((Base64SecretBundleContentDetails) sbcd).getContent();
-            String decodedContent = new String(d.decode(base64EncodedContent), UTF_8).intern();
-            return ValueNode.create(decodedContent);
+        private static ValueNode valueNode(Secrets s, SecretSummary ss, Base64.Decoder base64Decoder) {
+            return
+                valueNode(r -> s.getSecretBundle(r).getSecretBundle().getSecretBundleContent(),
+                          ss.getId(),
+                          base64Decoder);
+        }
+
+        private static ValueNode valueNode(Function<? super GetSecretBundleRequest, ? extends SecretBundleContentDetails> f,
+                                           String secretId,
+                                           Base64.Decoder base64Decoder) {
+            return valueNode((Base64SecretBundleContentDetails) f.apply(request(secretId)), base64Decoder);
+        }
+
+        private static ValueNode valueNode(Base64SecretBundleContentDetails details,
+                                           Base64.Decoder base64Decoder) {
+            return valueNode(details.getContent(), base64Decoder);
+        }
+
+        static ValueNode valueNode(String base64EncodedContent, Base64.Decoder base64Decoder) {
+            String decodedContent = new String(base64Decoder.decode(base64EncodedContent), UTF_8);
+            return ValueNode.create(decodedContent.intern());
         }
 
 
