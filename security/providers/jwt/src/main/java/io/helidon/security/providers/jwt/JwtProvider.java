@@ -66,11 +66,6 @@ import io.helidon.security.util.TokenHandler;
 public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
 
-    /**
-     * Configure this for outbound requests to override user to use.
-     */
-    public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
-
     private final boolean optional;
     private final boolean authenticate;
     private final boolean propagate;
@@ -270,7 +265,7 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
                                                      SecurityEnvironment outboundEnv,
                                                      EndpointConfig outboundEndpointConfig) {
 
-        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EndpointConfig.EP_PROPERTY_OUTBOUND_ID);
         return maybeUsername
                 .map(String::valueOf)
                 .flatMap(username -> attemptImpersonation(outboundEnv, username))
@@ -653,7 +648,8 @@ public final class JwtProvider implements AuthenticationProvider, OutboundSecuri
 
         /**
          * Whether to allow impersonation by explicitly overriding
-         * username from outbound requests using {@link #EP_PROPERTY_OUTBOUND_USER} property.
+         * username from outbound requests using {@link io.helidon.security.EndpointConfig#EP_PROPERTY_OUTBOUND_ID}
+         * property.
          * By default this is not allowed and identity can only be propagated.
          *
          * @param allowImpersonation set to true to allow impersonation
