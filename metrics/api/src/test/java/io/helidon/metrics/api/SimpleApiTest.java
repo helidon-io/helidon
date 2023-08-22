@@ -71,8 +71,7 @@ public class SimpleApiTest {
     @Test
     void testConfig() {
         MetricsConfig metricsConfig = MetricsConfig.builder()
-                .scoping(ScopingConfig.builder()
-                                 .)
+                .scoping(ScopingConfig.builder())
                 .build();
         ScopingConfig scopingConfig = metricsConfig.scoping();
         assertThat("Scope tagging", scopingConfig.tagEnabled(), is(false));
