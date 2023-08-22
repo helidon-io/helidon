@@ -22,7 +22,8 @@ import io.helidon.webclient.spi.DnsResolverProvider;
  * This implementation uses the first address from DNS lookup.
  */
 module io.helidon.webclient.dns.resolver.first {
-    requires io.helidon.webclient.api;
+
+    requires transitive io.helidon.webclient.api;
 
     exports io.helidon.webclient.dns.resolver.first;
 

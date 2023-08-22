@@ -29,11 +29,12 @@ import io.helidon.webclient.websocket.WsProtocolProvider;
          path = {"WebClient", "WebSocket"}
 )
 module io.helidon.webclient.websocket {
+
+    requires io.helidon.webclient;
+    requires io.helidon.websocket;
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
-
-    requires io.helidon.websocket;
-    requires io.helidon.webclient;
 
     exports io.helidon.webclient.websocket;
 

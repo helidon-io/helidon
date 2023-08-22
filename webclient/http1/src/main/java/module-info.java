@@ -31,14 +31,13 @@ import io.helidon.webclient.spi.SourceHandlerProvider;
          path = {"WebClient", "HTTP/1.1"}
 )
 module io.helidon.webclient.http1 {
-    uses SourceHandlerProvider;
+
+    requires io.helidon.builder.api; // @Builder - interfaces are a runtime dependency
+
     requires static io.helidon.common.features.api;
-    // @ConfiguredOption etc
-    requires static io.helidon.config.metadata;
+    requires static io.helidon.config.metadata; // @ConfiguredOption etc
 
     requires transitive io.helidon.webclient.api;
-    // @Builder - interfaces are a runtime dependency
-    requires io.helidon.builder.api;
 
     exports io.helidon.webclient.http1;
 
@@ -46,4 +45,6 @@ module io.helidon.webclient.http1 {
             with Http1ClientSpiProvider;
     provides ProtocolConfigProvider
             with Http1ProtocolConfigProvider;
+
+    uses SourceHandlerProvider;
 }

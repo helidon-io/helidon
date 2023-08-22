@@ -28,10 +28,14 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
         path = {"WebClient", "Metrics"}
 )
 module io.helidon.webclient.metrics {
+
+    requires io.helidon.common.features.api;
+    requires io.helidon.metrics.api;
     requires io.helidon.webclient;
     requires microprofile.metrics.api;
-    requires io.helidon.metrics.api;
-    requires io.helidon.common.features.api;
+
+    requires transitive io.helidon.common.config;
+
     provides WebClientServiceProvider
             with WebClientMetricsProvider;
 }

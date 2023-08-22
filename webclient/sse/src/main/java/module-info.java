@@ -21,10 +21,13 @@ import io.helidon.webclient.spi.SourceHandlerProvider;
  * Helidon WebClient SSE Support.
  */
 module io.helidon.webclient.sse {
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.media.type;
-    requires transitive io.helidon.http.sse;
+
     requires io.helidon.webclient;
+
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.http.sse;
+    requires transitive io.helidon.webclient.api;
 
     provides SourceHandlerProvider with SseSourceHandlerProvider;
 
