@@ -28,7 +28,7 @@ import static io.helidon.http.Http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class SharedCacheTest {
+class SharedCacheTest {
     @Test
     void cacheHttp1WithServerRestart() {
         WebServer webServer = null;

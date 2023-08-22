@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -33,6 +34,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.http2.ConnectionFlowControl;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
@@ -70,11 +72,13 @@ class Http2ClientConnection {
     private final ConnectionFlowControl connectionFlowControl;
     private final Http2Headers.DynamicTable inboundDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+    private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
     private final SocketContext ctx;
     private final Http2ConnectionWriter writer;
     private final DataReader reader;
     private final DataWriter dataWriter;
+    private final Semaphore pingPongSemaphore = new Semaphore(0);
     private volatile int lastStreamId;
 
     private Http2Settings serverSettings = Http2Settings.builder()
@@ -83,16 +87,13 @@ class Http2ClientConnection {
 
     private volatile boolean closed = false;
 
-    public boolean closed(){
-        return closed;
-    }
-
     Http2ClientConnection(Http2ClientProtocolConfig protocolConfig, ClientConnection connection) {
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
                 .maxFrameSize(protocolConfig.maxFrameSize())
                 .initialWindowSize(protocolConfig.initialWindowSize())
                 .blockTimeout(protocolConfig.flowControlBlockTimeout())
                 .build();
+        this.protocolConfig = protocolConfig;
         this.connection = connection;
         this.ctx = connection.helidonSocket();
         this.dataWriter = connection.writer();
@@ -172,7 +173,29 @@ class Http2ClientConnection {
         }
     }
 
-    void updateLastStreamId(int lastStreamId){
+    boolean closed() {
+        return closed || (protocolConfig.ping() && !ping());
+    }
+
+    boolean ping() {
+        Http2Ping ping = Http2Ping.create();
+        Http2FrameData frameData = ping.toFrameData();
+        sendListener.frameHeader(ctx, 0, frameData.header());
+        sendListener.frame(ctx, 0, ping);
+        try {
+            this.writer().writeData(frameData, FlowControl.Outbound.NOOP);
+            return pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        } catch (UncheckedIOException | InterruptedException e) {
+            ctx.log(LOGGER, DEBUG, "Ping failed!", e);
+            return false;
+        }
+    }
+
+    void pong() {
+        pingPongSemaphore.release();
+    }
+
+    void updateLastStreamId(int lastStreamId) {
         this.lastStreamId = lastStreamId;
     }
 
@@ -247,6 +270,7 @@ class Http2ClientConnection {
                 }
                 ctx.log(LOGGER, TRACE, "Client listener interrupted");
             } catch (Throwable t) {
+                closed = true;
                 ctx.log(LOGGER, DEBUG, "Failed to handle HTTP/2 client connection", t);
             }
         });
@@ -261,7 +285,7 @@ class Http2ClientConnection {
     }
 
     private void writeWindowsUpdate(int streamId, Http2WindowUpdate windowUpdateFrame) {
-        if (streamId == 0){
+        if (streamId == 0) {
             writer.write(windowUpdateFrame.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             return;
         }
@@ -385,6 +409,8 @@ class Http2ClientConnection {
                                                                   Http2Flag.PingFlags.create(Http2Flag.ACK),
                                                                   0);
                 writer.write(new Http2FrameData(header, frame));
+            } else {
+                pong();
             }
             break;
 
