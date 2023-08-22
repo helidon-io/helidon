@@ -22,6 +22,7 @@ import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.inject.api.Contract;
 import io.helidon.inject.api.InterceptedTrigger;
 import io.helidon.inject.api.ServiceInfoBasics;
@@ -51,7 +52,7 @@ public interface InterceptorCreator {
      *
      * @return the set of type names that should trigger creation
      */
-    default Set<String> allowListedAnnotationTypes() {
+    default Set<TypeName> allowListedAnnotationTypes() {
         return Set.of();
     }
 
@@ -61,23 +62,32 @@ public interface InterceptorCreator {
      * @param annotationType the annotation type name
      * @return true if the annotation type should trigger interceptor creation
      */
-    default boolean isAllowListed(String annotationType) {
+    default boolean isAllowListed(TypeName annotationType) {
         Objects.requireNonNull(annotationType);
         return allowListedAnnotationTypes().contains(annotationType);
     }
 
     /**
-     * Returns the processor appropriate for the context revealed in the calling arguments, favoring reflection if
-     * the serviceTypeElement is provided.
+     * Returns the reflection based interceptor processor.
      *
      * @param interceptedService    the service being intercepted
      * @param delegateCreator       the "real" creator
-     * @param processEnv            optionally, the processing environment (should be passed if in annotation processor)
+     * @return the processor to use for the given arguments
+     */
+    InterceptorProcessor createInterceptorProcessor(ServiceInfoBasics interceptedService,
+                                                    InterceptorCreator delegateCreator);
+
+    /**
+     * Returns the annotation based interceptor processor.
+     *
+     * @param interceptedService    the service being intercepted
+     * @param delegateCreator       the "real" creator
+     * @param processEnv            the processing environment (should be passed if in annotation processor)
      * @return the processor to use for the given arguments
      */
     InterceptorProcessor createInterceptorProcessor(ServiceInfoBasics interceptedService,
                                                     InterceptorCreator delegateCreator,
-                                                    Optional<ProcessingEnvironment> processEnv);
+                                                    ProcessingEnvironment processEnv);
 
     /**
      * The strategy applied for resolving annotations that trigger interception.
@@ -103,8 +113,8 @@ public interface InterceptorCreator {
         ALLOW_LISTED,
 
         /**
-         * A call to {@link #isAllowListed(String)} will be used on a case-by-case basis to check which annotation
-         * types qualify.
+         * A call to {@link #isAllowListed(io.helidon.common.types.TypeName)} will be used on a case-by-case basis to check
+         * which annotation types qualify.
          */
         CUSTOM,
 
@@ -115,7 +125,8 @@ public interface InterceptorCreator {
 
         /**
          * Applies a blend of {@link #EXPLICIT} and {@link #CUSTOM} to determine which annotations qualify (i.e., if
-         * the annotation is not explicitly marked, then a call is still issued to {@link #isAllowListed(String)}. This
+         * the annotation is not explicitly marked, then a call is still issued to
+         * {@link #isAllowListed(io.helidon.common.types.TypeName)}. This
          * strategy is typically the default strategy type in use.
          */
         BLENDED
@@ -132,7 +143,7 @@ public interface InterceptorCreator {
          *
          * @return the set of annotation types that are trigger interception
          */
-        Set<String> allAnnotationTypeTriggers();
+        Set<TypeName> allAnnotationTypeTriggers();
 
         /**
          * Creates the interception plan.
@@ -140,7 +151,7 @@ public interface InterceptorCreator {
          * @param interceptorAnnotationTriggers the annotation type triggering the interception creation.
          * @return the plan, or empty if there is no interception needed
          */
-        Optional<InterceptionPlan> createInterceptorPlan(Set<String> interceptorAnnotationTriggers);
+        Optional<InterceptionPlan> createInterceptorPlan(Set<TypeName> interceptorAnnotationTriggers);
 
     }
 

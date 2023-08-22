@@ -28,8 +28,8 @@ import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.inject.api.InjectionException;
-import io.helidon.inject.api.Interceptor;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.Interceptor;
 import io.helidon.inject.api.ServiceInfo;
 import io.helidon.inject.api.ServiceInfoCriteria;
 import io.helidon.inject.api.ServiceProvider;
@@ -43,7 +43,6 @@ import io.helidon.inject.tests.plain.interceptor.TestNamedInterceptor;
 import jakarta.inject.Named;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.inject.api.Qualifier.create;
@@ -97,7 +96,6 @@ class InterceptorRuntimeTest {
                 java);
     }
 
-    @Disabled // will be handled in https://github.com/helidon-io/helidon/issues/6542
     @Test
     void createInterfaceBasedInterceptorSource() throws Exception {
         TypeName interceptorTypeName = TypeName.create(YImpl$$Injection$$Interceptor.class);

@@ -53,8 +53,8 @@ public class FallbackMethodCreator extends FtMethodCreatorBase implements Custom
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of(FALLBACK_ANNOTATION);
+    public Set<TypeName> annoTypes() {
+        return Set.of(FALLBACK_ANNOTATION_TYPE);
     }
 
     @Override

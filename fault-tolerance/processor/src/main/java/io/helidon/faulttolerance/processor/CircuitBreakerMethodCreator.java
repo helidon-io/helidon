@@ -52,8 +52,8 @@ public class CircuitBreakerMethodCreator extends FtMethodCreatorBase implements 
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of(FT_ANNOTATION);
+    public Set<TypeName> annoTypes() {
+        return Set.of(FT_ANNOTATION_TYPE);
     }
 
     @Override
