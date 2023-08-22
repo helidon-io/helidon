@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,27 @@ class EvictableCacheTest {
 
         assertThat(cache.computeValue("one", () -> Optional.of("1")), is(Optional.of("1")));
         assertThat(cache.get("one"), is(Optional.of("1")));
+        TimeUnit.MILLISECONDS.sleep(200);
+        assertThat(cache.get("one"), is(EMPTY));
+
+        cache.close();
+    }
+
+    @Test
+    void testGetUpdatesAccessed() throws InterruptedException {
+        EvictableCache<String, String> cache = EvictableCache.<String, String>builder()
+                .evictSchedule(100, 100, TimeUnit.MILLISECONDS)
+                .timeout(50, TimeUnit.MILLISECONDS)
+                .build();
+
+        assertThat(cache.computeValue("one", () -> Optional.of("1")), is(Optional.of("1")));
+
+        for (int i = 0; i < 10; i++) {
+            assertThat(cache.get("one"), is(Optional.of("1")));
+            // this should amount to more than 200 millis, which would time out if the record is not marked as accessed
+            Thread.sleep(20);
+        }
+        // now let's make sure it times out
         TimeUnit.MILLISECONDS.sleep(200);
         assertThat(cache.get("one"), is(EMPTY));
 
