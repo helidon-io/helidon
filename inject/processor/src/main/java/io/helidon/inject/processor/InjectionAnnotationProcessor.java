@@ -644,8 +644,8 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
         InterceptorCreator.InterceptorProcessor processor = interceptorCreator.createInterceptorProcessor(
                 interceptedServiceInfo,
                 interceptorCreator,
-                Optional.of(processingEnv));
-        Set<String> annotationTypeTriggers = processor.allAnnotationTypeTriggers();
+                processingEnv);
+        Set<TypeName> annotationTypeTriggers = processor.allAnnotationTypeTriggers();
         if (annotationTypeTriggers.isEmpty()) {
             services.addInterceptorPlanFor(serviceTypeName, Optional.empty());
             return;

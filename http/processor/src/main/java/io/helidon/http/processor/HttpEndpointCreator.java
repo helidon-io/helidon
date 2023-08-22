@@ -45,8 +45,8 @@ public class HttpEndpointCreator extends HttpCreatorBase implements CustomAnnota
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of(PATH_ANNOTATION);
+    public Set<TypeName> annoTypes() {
+        return Set.of(TypeName.create(PATH_ANNOTATION));
     }
 
     @Override

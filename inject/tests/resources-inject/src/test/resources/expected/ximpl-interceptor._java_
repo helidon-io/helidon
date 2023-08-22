@@ -25,8 +25,6 @@ import java.util.function.Function;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
 import io.helidon.common.types.TypeValues;
 import io.helidon.inject.api.ClassNamed;
 import io.helidon.inject.api.InvocationContext;
@@ -228,17 +226,17 @@ public class XImpl$$Injection$$Interceptor extends io.helidon.inject.tests.injec
     @Inject
     @SuppressWarnings("unchecked")
     XImpl$$Injection$$Interceptor(
-                @ClassNamed(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class) List<Provider<Interceptor>> io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno,
                 @ClassNamed(io.helidon.inject.tests.inject.interceptor.TestNamed.class) List<Provider<Interceptor>> io_helidon_inject_tests_inject_interceptor_TestNamed,
+                @ClassNamed(io.helidon.inject.tests.plain.interceptor.InterceptorBasedAnno.class) List<Provider<Interceptor>> io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno,
                 Provider<io.helidon.inject.tests.inject.interceptor.XImpl> provider) {
         this.__provider = Objects.requireNonNull(provider);
         this.__sp = (provider instanceof ServiceProvider) ? (ServiceProvider<io.helidon.inject.tests.inject.interceptor.XImpl>) __provider : null;
         List<Provider<Interceptor>> __ctor__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
         this.__methodIA1__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__methodIA2__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__methodIB__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__methodIB2__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
-        this.__close__interceptors = mergeAndCollapse(io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno, io_helidon_inject_tests_inject_interceptor_TestNamed);
+        this.__methodIA2__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
+        this.__methodIB__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
+        this.__methodIB2__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
+        this.__close__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed, io_helidon_inject_tests_plain_interceptor_InterceptorBasedAnno);
         this.__methodX__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
         this.__methodY__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);
         this.__methodZ__interceptors = mergeAndCollapse(io_helidon_inject_tests_inject_interceptor_TestNamed);

@@ -66,13 +66,13 @@ public class HttpMethodCreator extends HttpCreatorBase implements CustomAnnotati
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of(GET_ANNOTATION,
-                      HEADER_PARAM_ANNOTATION,
-                      HTTP_METHOD_ANNOTATION,
-                      POST_ANNOTATION,
-                      PATH_ANNOTATION,
-                      QUERY_PARAM_ANNOTATION);
+    public Set<TypeName> annoTypes() {
+        return Set.of(TypeName.create(GET_ANNOTATION),
+                      TypeName.create(HEADER_PARAM_ANNOTATION),
+                      TypeName.create(HTTP_METHOD_ANNOTATION),
+                      TypeName.create(POST_ANNOTATION),
+                      TypeName.create(PATH_ANNOTATION),
+                      TypeName.create(QUERY_PARAM_ANNOTATION));
     }
 
     @Override

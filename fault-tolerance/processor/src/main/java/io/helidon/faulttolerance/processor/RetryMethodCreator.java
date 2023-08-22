@@ -52,8 +52,8 @@ public class RetryMethodCreator extends FtMethodCreatorBase implements CustomAnn
     }
 
     @Override
-    public Set<String> annoTypes() {
-        return Set.of(RETRY_ANNOTATION);
+    public Set<TypeName> annoTypes() {
+        return Set.of(RETRY_ANNOTATION_TYPE);
     }
 
     @Override
