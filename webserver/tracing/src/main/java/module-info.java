@@ -25,13 +25,15 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE
 )
 module io.helidon.webserver.tracing {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.http;
-    requires io.helidon.webserver;
-    requires io.helidon.tracing;
     requires io.helidon.tracing.config;
+    requires io.helidon.tracing;
+    requires io.helidon.webserver;
 
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.config;
 
     exports io.helidon.webserver.tracing;
 }

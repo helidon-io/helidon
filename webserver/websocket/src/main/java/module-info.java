@@ -30,15 +30,17 @@ import io.helidon.webserver.websocket.WsUpgradeProvider;
          path = {"WebSocket", "WebServer"}
 )
 module io.helidon.webserver.websocket {
+
+    requires io.helidon.builder.api;
+    requires io.helidon.common.socket;
+    requires io.helidon.common;
+    requires io.helidon.http;
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires io.helidon.common;
-    requires io.helidon.http;
-    requires io.helidon.common.socket;
-    requires io.helidon.builder.api;
-    requires transitive io.helidon.websocket;
     requires transitive io.helidon.webserver;
+    requires transitive io.helidon.websocket;
 
     exports io.helidon.webserver.websocket;
 
