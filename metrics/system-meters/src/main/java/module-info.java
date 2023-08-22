@@ -20,12 +20,12 @@ import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.systemmeters.SystemMetersProvider;
 
 /**
- * Helidon health checks.
+ * Helidon metrics system meters.
  */
 @Feature(value = "Built-ins",
          description = "Built-in system meters",
          in = {HelidonFlavor.MP, HelidonFlavor.SE},
-         path = {"Health", "Builtins"}
+         path = {"Metrics", "Builtins"}
 )
 module io.helidon.metrics.system.meters {
     requires io.helidon.common.features.api;

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -224,7 +224,7 @@ will demonstrate how to use a `Counter` to track the number of times the `/cards
 ----
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.microprofile.metrics.RegistryFactory;
+import io.helidon.metrics.RegistryFactory;
 import io.helidon.reactive.webserver.Routing;
 import io.helidon.reactive.webserver.ServerRequest;
 import io.helidon.reactive.webserver.ServerResponse;

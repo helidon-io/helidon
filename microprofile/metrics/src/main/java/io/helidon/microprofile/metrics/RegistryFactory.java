@@ -26,50 +26,43 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.spi.MetricFactory;
-
-import io.micrometer.core.instrument.Metrics;
 
 /**
- * Micrometer-specific implementation of {@link io.helidon.metrics.api.RegistryFactory}.
- * <p>
- *     Note that normally all code should use methods declared on the {@code RegistryFactory} from the API module and not
- *     access this class directly. If this is the correct factory to use based on configuration and availability of other
- *     implementations, then Helidon will use this one.
- * </p>
+ * Micrometer-specific implementation of a registry factory.
  *
 // this class is not immutable, as we may need to update registries with configuration post creation
 // see Github issue #360
  */
-public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
+class RegistryFactory {
 
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private final HelidonPrometheusConfig prometheusConfig;
-    private MetricsSettings metricsSettings;
+    private MetricsConfig metricsConfig;
     private MetricFactory metricFactory;
 
     /**
      * Create a new instance.
      *
-     * @param metricsSettings metrics setting to use in preparing the registry factory
+     * @param metricsConfig metrics setting to use in preparing the registry factory
      * @param appRegistry application registry to provide from the factory
      * @param vendorRegistry vendor registry to provide from the factory
      */
-    private RegistryFactory(MetricsSettings metricsSettings, Registry appRegistry, Registry vendorRegistry) {
-        this.metricsSettings = metricsSettings;
-        prometheusConfig = new HelidonPrometheusConfig(metricsSettings);
+    private RegistryFactory(MetricsConfig metricsConfig, Registry appRegistry, Registry vendorRegistry) {
+        this.metricsConfig = metricsConfig;
+        prometheusConfig = new HelidonPrometheusConfig(metricsConfig);
         metricFactory = HelidonMicrometerMetricFactory.create(Metrics.globalRegistry);
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }
 
-    private RegistryFactory(MetricsSettings metricsSettings) {
-        this(metricsSettings,
-             Registry.create(Registry.APPLICATION_SCOPE, metricsSettings.registrySettings(Registry.APPLICATION_SCOPE)),
-             Registry.create(Registry.VENDOR_SCOPE, metricsSettings.registrySettings(Registry.VENDOR_SCOPE)));
+    private RegistryFactory(MetricsConfig metricsConfig) {
+        this(metricsConfig,
+             Registry.create(Registry.APPLICATION_SCOPE, metricsConfig.scoping().scopes().get(Registry.APPLICATION_SCOPE)),
+             Registry.create(Registry.VENDOR_SCOPE, metricsConfig.scoping().scopes().get(Registry.VENDOR_SCOPE)));
     }
 
     /**
@@ -78,10 +71,8 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} metrics.
      *
      * @return a new registry factory
-     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create()}
      */
-    @Deprecated(since = "2.4.0", forRemoval = true)
-    public static RegistryFactory create() {
+    static RegistryFactory create() {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create());
     }
 
@@ -92,14 +83,12 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      *
      * @param config configuration to use
      * @return a new registry factory
-     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#create(Config)}
      */
-    @Deprecated(since = "2.4.0", forRemoval = true)
-    public static RegistryFactory create(Config config) {
+    static RegistryFactory create(Config config) {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create(config));
     }
 
-    static RegistryFactory create(MetricsSettings metricsSettings) {
+    static RegistryFactory create(MetricsConfig metricsSettings) {
         return new RegistryFactory(metricsSettings);
     }
 
@@ -107,10 +96,8 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * Get a singleton instance of the registry factory.
      *
      * @return registry factory singleton
-     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance()}
      */
-    @Deprecated(since = "2.4.0", forRemoval = true)
-    public static RegistryFactory getInstance() {
+    static RegistryFactory getInstance() {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance());
     }
 
@@ -122,8 +109,7 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @return registry factory singleton
      * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(MetricsSettings)}
      */
-    @Deprecated(since = "2.4.0", forRemoval = true)
-    public static RegistryFactory getInstance(Config config) {
+    static RegistryFactory getInstance(Config config) {
         return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance(config));
     }
 
@@ -137,30 +123,24 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
      * @param scope scope of registry
      * @return Registry for the scope requested
      */
-    @Override
-    public io.helidon.metrics.api.Registry getRegistry(String scope) {
+    Registry getRegistry(String scope) {
         return accessMetricsSettings(() -> registries.computeIfAbsent(scope, s ->
-                s.equals(Registry.BASE_SCOPE)
-                        ? BaseRegistry.create(metricsSettings)
-                        : Registry.create(s, metricsSettings.registrySettings(s))));
+                Registry.create(s, metricsConfig)));
     }
 
-    @Override
-    public void update(MetricsSettings metricsSettings) {
+    void update(MetricsConfig metricsSettings) {
         accessMetricsSettings(() -> {
-            this.metricsSettings = metricsSettings;
+            this.metricsConfig = metricsSettings;
             prometheusConfig.update(metricsSettings);
-            registries.forEach((key, value) -> value.update(metricsSettings.registrySettings(key)));
+            registries.forEach((key, value) -> value.update(metricsSettings.scoping().scopes().get(key)));
         });
     }
 
-    @Override
-    public boolean enabled() {
+    boolean enabled() {
         return true;
     }
 
-    @Override
-    public Optional<?> scrape(MediaType mediaType,
+    Optional<?> scrape(MediaType mediaType,
                                    Iterable<String> scopeSelection,
                                    Iterable<String> meterNameSelection) {
         if (mediaType.equals(MediaTypes.TEXT_PLAIN) || mediaType.equals(MediaTypes.APPLICATION_OPENMETRICS_TEXT)) {
@@ -185,22 +165,15 @@ public class RegistryFactory implements io.helidon.metrics.api.RegistryFactory {
         throw new UnsupportedOperationException();
     }
 
-    @Override
-    public Iterable<String> scopes() {
-        if (!registries.containsKey(Registry.BASE_SCOPE)) {
-            accessMetricsSettings(() -> registries.computeIfAbsent(Registry.BASE_SCOPE,
-                                                                   key -> BaseRegistry.create(metricsSettings)));
-        }
+    Iterable<String> scopes() {
         return registries.keySet();
     }
 
-    @Override
-    public void start() {
+    void start() {
         PeriodicExecutor.start();
     }
 
-    @Override
-    public void stop() {
+    void stop() {
         /*
             Primarily for successive tests (e.g., in the TCK) which might share the same VM, delete each metric individually
             (which will trickle down into the delegate meter registry) and also clear out the collection of registries.

@@ -32,23 +32,22 @@ import org.eclipse.microprofile.metrics.Tag;
 class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implements Counter, SampledMetric {
     private final io.helidon.metrics.api.Counter delegate;
 
-    private HelidonCounter(String scope, Metadata metadata, io.micrometer.core.instrument.Counter delegate) {
+    private HelidonCounter(String scope, Metadata metadata, io.helidon.metrics.api.Counter delegate) {
         super(scope, metadata);
         this.delegate = delegate;
     }
 
     static HelidonCounter create(String scope, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry, scope, metadata, tags);
+        return create(Metrics.globalRegistry(), scope, metadata, tags);
     }
 
     static HelidonCounter create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return new HelidonCounter(scope,
                                   metadata,
-                                  io.micrometer.core.instrument.Counter.builder(metadata.getName())
+                                  meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
                                           .baseUnit(sanitizeUnit(metadata.getUnit()))
                                           .description(metadata.getDescription())
-                                          .tags(allTags(scope, tags))
-                                          .register(meterRegistry));
+                                          .tags(allTags(scope, tags))));
     }
 
     @Override
@@ -67,7 +66,7 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
     }
 
     @Override
-    public io.micrometer.core.instrument.Counter delegate() {
+    public io.helidon.metrics.api.Counter delegate() {
         return delegate;
     }
 

@@ -18,9 +18,8 @@ package io.helidon.examples.metrics.filtering.se;
 
 import java.util.Map;
 
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.common.config.Config;
-import io.helidon.config.ConfigSources;
+import io.helidon.common.config.GlobalConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;

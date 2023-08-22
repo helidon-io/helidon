@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Map;
+
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
  * meter registries) for all metrics.
@@ -68,16 +70,16 @@ public interface SystemTagsManager {
 //     */
 //    Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope);
 //
-//    /**
-//     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-//     * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
-//     * with a scope tag name).
-//     * @param explicitTags iterable over the key/value pairs for tags
-//     * @param scope scope value
-//     * @return iterator over all tags, explicit and global and app
-//     */
-//    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
-//
+    /**
+     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
+     * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
+     * with a scope tag name).
+     * @param explicitTags iterable over the key/value pairs for tags
+     * @param scope scope value
+     * @return iterator over all tags, explicit and global and app
+     */
+    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
+
 //    /**
 //     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
 //     * and app tags, <em>without</em>> a tag for scope.

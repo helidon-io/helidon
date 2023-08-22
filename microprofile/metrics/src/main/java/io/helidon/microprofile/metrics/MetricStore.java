@@ -38,21 +38,23 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Gauge;
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
+import io.helidon.metrics.api.ScopeConfig;
 import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.api.Tag;
-import io.helidon.metrics.api.Timer;
 
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Abstracts the multiple data stores used for holding metrics information and the various ways of accessing and updating them.
@@ -72,7 +74,7 @@ class MetricStore implements FunctionalCounterRegistry {
     private final Map<String, Set<String>> tagNameSets = new HashMap<>(); // metric name -> tag names
     private final Map<String, Class<? extends Metric>> metricTypes = new HashMap<>(); // metric name -> base type of the metric
 
-    private volatile RegistrySettings registrySettings;
+    private volatile ScopeConfig registrySettings;
     private final MetricFactory metricFactory;
     private final MetricFactory noOpMetricFactory = new NoOpMetricFactory();
     private final String scope;
@@ -94,7 +96,7 @@ class MetricStore implements FunctionalCounterRegistry {
 
     }
 
-    private MetricStore(RegistrySettings registrySettings,
+    private MetricStore(ScopeConfig registrySettings,
                         MetricFactory metricFactory,
                         String scope,
                         BiConsumer<MetricID, HelidonMetric> doRemove) {
@@ -104,7 +106,7 @@ class MetricStore implements FunctionalCounterRegistry {
         this.doRemove = doRemove;
     }
 
-    void update(RegistrySettings registrySettings) {
+    void update(ScopeConfig registrySettings) {
         this.registrySettings = registrySettings;
     }
 
@@ -506,7 +508,7 @@ class MetricStore implements FunctionalCounterRegistry {
     Stream<MetricInstance> stream() {
         return allMetrics.entrySet()
                 .stream()
-                .filter(entry -> registrySettings.isMetricEnabled(entry.getKey().getName()))
+                .filter(entry -> registrySettings.isMeterEnabled(entry.getKey().getName()))
                 .map(it -> new MetricInstance(it.getKey(), it.getValue()));
     }
 
@@ -616,7 +618,7 @@ class MetricStore implements FunctionalCounterRegistry {
         String metricName = metadata.getName();
         Class<? extends Metric> baseClass = baseMetricClass(clazz);
         Metric result;
-        MetricFactory factoryToUse = registrySettings.isMetricEnabled(metricName) ? metricFactory : noOpMetricFactory;
+        MetricFactory factoryToUse = registrySettings.isMeterEnabled(metricName) ? metricFactory : noOpMetricFactory;
         if (baseClass.isAssignableFrom(Counter.class)) {
             result = factoryToUse.counter(scope, metadata, tags);
         } else if (baseClass.isAssignableFrom(Histogram.class)) {
@@ -637,7 +639,7 @@ class MetricStore implements FunctionalCounterRegistry {
         String metricName = metadata.getName();
         Class<? extends Metric> baseClass = baseMetricClass(clazz);
         Metric result;
-        MetricFactory factoryToUse = registrySettings.isMetricEnabled(metricName) ? metricFactory : noOpMetricFactory;
+        MetricFactory factoryToUse = registrySettings.isMeterEnabled(metricName) ? metricFactory : noOpMetricFactory;
         if (baseClass.isAssignableFrom(Counter.class)) {
             result = factoryToUse.counter(scope, metadata, origin, function, tags);
         } else {
@@ -649,7 +651,7 @@ class MetricStore implements FunctionalCounterRegistry {
     private <R extends Number> HelidonMetric createEnabledAwareGauge(Metadata metadata,
                                                                      Function<Metadata, Gauge<R>> gaugeFactory) {
         String metricName = metadata.getName();
-        return (HelidonMetric) (registrySettings.isMetricEnabled(metricName)
+        return (HelidonMetric) (registrySettings.isMeterEnabled(metricName)
                 ? gaugeFactory.apply(metadata)
                 : noOpMetricFactory.gauge(scope, metadata, null));
     }
@@ -682,6 +684,4 @@ class MetricStore implements FunctionalCounterRegistry {
         }
         return newTags.equals(tagMap);
     }
-
-
 }

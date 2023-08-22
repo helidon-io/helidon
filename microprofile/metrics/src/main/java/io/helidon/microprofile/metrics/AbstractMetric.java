@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@ import org.eclipse.microprofile.metrics.Metadata;
 /**
  * Common reusable implementation for any category of metric implementation (full-featured, no-op).
  * <p>
- * Helidon relies on this additional behavior beyond that provided by MP {@code Metric}.
+ * Helidon relies on this additional behavior beyond that provided by MP {@link org.eclipse.microprofile.metrics.Metric}.
  * </p>
+ * @param <M> type of {@link io.helidon.metrics.api.Meter} this metric wraps.
  */
 public abstract class AbstractMetric<M extends Meter> implements HelidonMetric<M> {
 

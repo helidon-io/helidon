@@ -19,8 +19,10 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.stream.StreamSupport;
 
-import io.micrometer.core.instrument.distribution.HistogramSnapshot;
+import io.helidon.metrics.api.HistogramSnapshot;
+
 import org.eclipse.microprofile.metrics.Snapshot;
 
 /**
@@ -61,7 +63,7 @@ public class HelidonSnapshot extends Snapshot {
 
     @Override
     public PercentileValue[] percentileValues() {
-        return Arrays.stream(delegate.percentileValues())
+        return StreamSupport.stream(delegate.percentileValues().spliterator(), false)
                 .map(pv -> new PercentileValue(pv.percentile(), pv.value()))
                 .toArray(PercentileValue[]::new);
     }

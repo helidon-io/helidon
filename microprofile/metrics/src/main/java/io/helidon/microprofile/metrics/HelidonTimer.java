@@ -22,10 +22,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.SnapshotMetric;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Tag;
@@ -36,32 +36,29 @@ import org.eclipse.microprofile.metrics.Timer;
  */
 final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
 
-    private final io.micrometer.core.instrument.Timer delegate;
+    private final io.helidon.metrics.api.Timer delegate;
     private final MeterRegistry meterRegistry;
 
     private HelidonTimer(MeterRegistry meterRegistry,
                          String type,
                          Metadata metadata,
-                         io.micrometer.core.instrument.Timer delegate) {
+                         io.helidon.metrics.api.Timer delegate) {
         super(type, metadata);
         this.delegate = delegate;
         this.meterRegistry = meterRegistry;
     }
 
     static HelidonTimer create(String scope, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry, scope, metadata, tags);
+        return create(Metrics.globalRegistry(), scope, metadata, tags);
     }
 
     static HelidonTimer create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return new HelidonTimer(meterRegistry,
                                 scope,
                                 metadata,
-                                io.micrometer.core.instrument.Timer.builder(metadata.getName())
+                                meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
                                         .description(metadata.getDescription())
-                                        .tags(allTags(scope, tags))
-                                        .publishPercentiles(DEFAULT_PERCENTILES)
-                                        .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
-                                        .register(meterRegistry));
+                                        .tags(allTags(scope, tags))));
     }
 
     @Override
@@ -76,7 +73,7 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
 
     @Override
     public <T> T time(Callable<T> event) throws Exception {
-        return delegate.recordCallable(event);
+        return delegate.record(event);
     }
 
     @Override
@@ -86,7 +83,7 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
 
     @Override
     public Context time() {
-        return new ContextImpl(io.micrometer.core.instrument.Timer.start(meterRegistry));
+        return new ContextImpl(io.helidon.metrics.api.Timer.start(meterRegistry));
     }
 
     @Override
@@ -96,7 +93,7 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
 
     @Override
     public Snapshot getSnapshot() {
-        return HelidonSnapshot.create(delegate.takeSnapshot());
+        return HelidonSnapshot.create(delegate.snapshot());
     }
 
     @Override
@@ -105,14 +102,14 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
     }
 
     @Override
-    public io.micrometer.core.instrument.Timer delegate() {
+    public io.helidon.metrics.api.Timer delegate() {
         return delegate;
     }
 
     private final class ContextImpl implements Context {
-        private final io.micrometer.core.instrument.Timer.Sample delegate;
+        private final io.helidon.metrics.api.Timer.Sample delegate;
 
-        private ContextImpl(io.micrometer.core.instrument.Timer.Sample delegate) {
+        private ContextImpl(io.helidon.metrics.api.Timer.Sample delegate) {
             this.delegate = delegate;
         }
 

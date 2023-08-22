@@ -63,40 +63,44 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
         return "";
     }
 
+    /**
+     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including global tags, any app tag, and a scope
+     * tag (if metrics is so configured to add a scope tag).
+     *
+     * @param scope scope of the meter
+     * @param tags explicitly-defined tags from the application code
+     * @return iterable ot Helidon tags
+     */
+    protected static Iterable<io.helidon.metrics.api.Tag> allTags(String scope, Tag[] tags) {
+        return toHelidonTags(SystemTagsManager.instance().allTags(iterableEntries(tags), scope));
+    }
 
-//    protected static Tags allTags(String scope, Tag[] tags) {
-//        return toTags(SystemTagsManager.instance().allTags(iterable(tags), scope));
-//    }
-//
-//    private static Tags toTags(Iterable<Map.Entry<String, String>> iterable) {
-//        return Tags.of(tags(iterable));
-//    }
+    /**
+     * Converts an iterable of map entries (representing tag names and values) into an iterable of Helidon tags.
+     *
+     * @param entriesIterable iterable of map entries
+     * @return iterable of {@link io.helidon.metrics.api.Tag}
+     */
+    private static Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
+        return () -> new Iterator<>() {
 
-//    private static Iterable<Tag> tags(Iterable<Map.Entry<String, String>> iterable) {
-//        return new Iterable<>() {
-//
-//            private final Iterator<Map.Entry<String, String>> iterator = iterable.iterator();
-//
-//            @Override
-//            public Iterator<io.micrometer.core.instrument.Tag> iterator() {
-//                return new Iterator<>() {
-//                    @Override
-//                    public boolean hasNext() {
-//                        return iterator.hasNext();
-//                    }
-//
-//                    @Override
-//                    public io.micrometer.core.instrument.Tag next() {
-//                        if (!hasNext()) {
-//                            throw new NoSuchElementException();
-//                        }
-//                        var next = iterator.next();
-//                        return io.micrometer.core.instrument.Tag.of(next.getKey(), next.getValue());
-//                    }
-//                };
-//            }
-//        };
-//    }
+            private final Iterator<Map.Entry<String, String>> entriesIterator = entriesIterable.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return entriesIterator.hasNext();
+            }
+
+            @Override
+            public io.helidon.metrics.api.Tag next() {
+                if (!entriesIterator.hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                var entry = entriesIterator.next();
+                return io.helidon.metrics.api.Tag.create(entry.getKey(), entry.getValue());
+            }
+        };
+    }
 
     protected static String sanitizeUnit(String unit) {
         return unit != null && !unit.equals(MetricUnits.NONE)
@@ -104,7 +108,7 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
                 : null;
     }
 
-    private static Iterable<Map.Entry<String, String>> iterable(Tag... tags) {
+    private static Iterable<Map.Entry<String, String>> iterableEntries(Tag... tags) {
         return () -> new Iterator<>() {
             private int next;
 

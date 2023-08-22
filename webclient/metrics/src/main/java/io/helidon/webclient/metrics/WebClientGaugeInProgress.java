@@ -35,7 +35,7 @@ class WebClientGaugeInProgress extends WebClientMetric {
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         Metadata metadata = createMetadata(request, null);
-        meterRegistry().getOrCreate(Gauge.builder(metadata.name(),holder, AtomicLong::get)
+        meterRegistry().getOrCreate(Gauge.builder(metadata.name(), holder, AtomicLong::get)
                                             .description(metadata.description()));
         boolean update = handlesMethod(request.method());
         try {

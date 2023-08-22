@@ -24,18 +24,20 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
-import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Gauge;
-import io.helidon.metrics.api.Metadata;
-import io.helidon.metrics.api.Tag;
-import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.api.ScopeConfig;
 
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Common behavior for any category (e.g., full-featured or no-op) metrics registry.
@@ -44,7 +46,7 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
  *     IDs and metadata. Concrete subclasses create new instances of the various types of metrics (counter, timer, etc.).
  * </p>
  */
-public abstract class AbstractRegistry implements MetricRegistry {
+abstract class AbstractRegistry implements MetricRegistry {
 
     private static final Tag[] NO_TAGS = new Tag[0];
 
@@ -61,7 +63,7 @@ public abstract class AbstractRegistry implements MetricRegistry {
      * @param metricFactory metric factory to use in creating new metrics
      */
     protected AbstractRegistry(String scope,
-                               RegistrySettings registrySettings,
+                               ScopeConfig registrySettings,
                                MetricFactory metricFactory) {
         this.scope = scope;
         this.metricStore = MetricStore.create(registrySettings, metricFactory, scope, this::doRemove);

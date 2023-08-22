@@ -18,12 +18,12 @@ package io.helidon.microprofile.metrics;
 
 import java.util.Objects;
 
+import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.LabeledSnapshot;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.SnapshotMetric;
 
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
 import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Snapshot;
@@ -35,25 +35,22 @@ import org.eclipse.microprofile.metrics.Tag;
 final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMetric {
     private final DistributionSummary delegate;
 
-    private HelidonHistogram(String scope, Metadata metadata, io.micrometer.core.instrument.DistributionSummary delegate) {
+    private HelidonHistogram(String scope, Metadata metadata, DistributionSummary delegate) {
         super(scope, metadata);
         this.delegate = delegate;
     }
 
     static HelidonHistogram create(String type, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry, type, metadata, tags);
+        return create(Metrics.globalRegistry(), type, metadata, tags);
     }
 
     static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return new HelidonHistogram(scope,
                                     metadata,
-                                    io.micrometer.core.instrument.DistributionSummary.builder(metadata.getName())
+                                    meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
                                             .description(metadata.getDescription())
                                             .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                            .publishPercentiles(DEFAULT_PERCENTILES)
-                                            .percentilePrecision(DEFAULT_PERCENTILE_PRECISION)
-                                            .tags(allTags(scope, tags))
-                                            .register(meterRegistry));
+                                            .tags(allTags(scope, tags))));
     }
 
     @Override
@@ -78,7 +75,7 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
 
     @Override
     public Snapshot getSnapshot() {
-        return HelidonSnapshot.create(delegate.takeSnapshot());
+        return HelidonSnapshot.create(delegate.snapshot());
     }
 
     @Override

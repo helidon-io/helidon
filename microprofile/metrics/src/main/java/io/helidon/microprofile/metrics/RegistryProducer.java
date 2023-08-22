@@ -16,8 +16,6 @@
 
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.RegistryFactory;
-
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Default;
 import jakarta.enterprise.inject.Produces;

@@ -21,8 +21,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Metrics;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
+
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Tag;
@@ -30,7 +31,7 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Gauge implementation.
  */
-abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gauge<N> {
+abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metrics.api.Gauge> implements Gauge<N> {
     /*
      * The MicroProfile metrics API parameterizes its gauge type as Gauge<N extends Number> which is the type of
      * value the gauge reports via its getValue() method. To register a gauge, the developer passes us a function-plus-target or
@@ -48,14 +49,14 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
      * This way the typing works out (with the expected unchecked cast).
      */
 
-    private final io.micrometer.core.instrument.Gauge delegate;
+    private final io.helidon.metrics.api.Gauge delegate;
 
     static <T, N extends Number> FunctionBased<N, T> create(String scope,
                                                             Metadata metadata,
                                                             T target,
                                                             Function<T, N> function,
                                                             Tag... tags) {
-        return create(Metrics.globalRegistry,
+        return create(Metrics.globalRegistry(),
                       scope,
                       metadata,
                       target,
@@ -73,20 +74,18 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                    metadata,
                                    target,
                                    function,
-                                   io.micrometer.core.instrument.Gauge
-                                           .builder(metadata.getName(), target, t -> function.apply(t).doubleValue())
+                                   meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                                                  target, t -> function.apply(t).doubleValue())
                                            .description(metadata.getDescription())
                                            .tags(allTags(scope, tags))
-                                           .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                           .strongReference(true)
-                                           .register(meterRegistry));
+                                           .baseUnit(sanitizeUnit(metadata.getUnit()))));
     }
 
     static <N extends Number> SupplierBased<N> create(String scope,
                                                       Metadata metadata,
                                                       Supplier<N> supplier,
                                                       Tag... tags) {
-        return create(Metrics.globalRegistry,
+        return create(Metrics.globalRegistry(),
                       scope,
                       metadata,
                       supplier,
@@ -101,13 +100,11 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
         return new SupplierBased<>(scope,
                                    metadata,
                                    supplier,
-                                   io.micrometer.core.instrument.Gauge
-                                           .builder(metadata.getName(), (Supplier<Number>) supplier)
+                                   meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge
+                                           .builder(metadata.getName(), supplier)
                                            .baseUnit(metadata.getUnit())
                                            .description(metadata.getDescription())
-                                           .strongReference(true)
-                                           .tags(allTags(scope, tags))
-                                           .register(meterRegistry));
+                                           .tags(allTags(scope, tags))));
     }
 
     static <T> DoubleFunctionBased<T> create(String scope,
@@ -115,7 +112,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                              T target,
                                              ToDoubleFunction<T> fn,
                                              Tag... tags) {
-        return create(Metrics.globalRegistry,
+        return create(Metrics.globalRegistry(),
                       scope,
                       metadata,
                       target,
@@ -133,23 +130,23 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                          metadata,
                                          target,
                                          fn,
-                                         io.micrometer.core.instrument.Gauge
-                                                 .builder(metadata.getName(), target, fn)
-                                                 .description(metadata.getDescription())
-                                                 .baseUnit(metadata.getUnit())
-                                                 .tags(allTags(scope, tags))
-                                                 .strongReference(true)
-                                                 .register(meterRegistry));
+                                         meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge
+                                                                           .builder(metadata.getName(),
+                                                                                    target,
+                                                                                    fn)
+                                                                           .description(metadata.getDescription())
+                                                                           .baseUnit(metadata.getUnit())
+                                                                           .tags(allTags(scope, tags))));
 
     }
 
-    protected HelidonGauge(String scope, Metadata metadata, io.micrometer.core.instrument.Gauge delegate) {
+    protected HelidonGauge(String scope, Metadata metadata, io.helidon.metrics.api.Gauge delegate) {
         super(scope, metadata);
         this.delegate = delegate;
     }
 
     @Override
-    public io.micrometer.core.instrument.Gauge delegate() {
+    public io.helidon.metrics.api.Gauge delegate() {
         return delegate;
     }
 
@@ -162,7 +159,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                               Metadata metadata,
                               T target,
                               Function<T, N> function,
-                              io.micrometer.core.instrument.Gauge delegate) {
+                              io.helidon.metrics.api.Gauge delegate) {
             super(scope, metadata, delegate);
             this.target = target;
             this.function = function;
@@ -183,7 +180,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
                                       Metadata metadata,
                                       T target,
                                       ToDoubleFunction<T> fn,
-                                      io.micrometer.core.instrument.Gauge delegate) {
+                                      io.helidon.metrics.api.Gauge delegate) {
             super(scope, metadata, delegate);
             this.target = target;
             this.fn = fn;
@@ -202,7 +199,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl implements Gaug
         private SupplierBased(String scope,
                               Metadata metadata,
                               Supplier<N> supplier,
-                              io.micrometer.core.instrument.Gauge delegate) {
+                              io.helidon.metrics.api.Gauge delegate) {
             super(scope, metadata, delegate);
             this.supplier = supplier;
         }

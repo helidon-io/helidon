@@ -43,8 +43,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
@@ -734,7 +733,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
 
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsConfig.METRICS_CONFIG_KEY);
 
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")

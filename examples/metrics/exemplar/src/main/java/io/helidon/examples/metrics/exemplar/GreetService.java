@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;

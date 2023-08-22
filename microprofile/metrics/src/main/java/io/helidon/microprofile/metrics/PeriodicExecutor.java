@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,8 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Manages a single-thread executor which will invoke callbacks to enrollees at a frequency they request.
@@ -42,7 +41,7 @@ class PeriodicExecutor {
         return new PeriodicExecutor();
     }
 
-    private static final Logger LOGGER = Logger.getLogger(PeriodicExecutor.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(PeriodicExecutor.class.getName());
 
     private static final String STOP_LOG_MESSAGE = "Received stop request in state {0}";
 
@@ -112,7 +111,7 @@ class PeriodicExecutor {
                 if (state == State.STOPPED) {
                     // Unusual during production use, more likely during testing. Keep the logging for diagnosing production
                     // problems if they occur.
-                    LOGGER.log(Level.FINE,
+                    LOGGER.log(Level.DEBUG,
                                "Recording deferred enrollment even though in unexpected state " + State.STOPPED,
                                new IllegalStateException());
                 }
@@ -123,7 +122,7 @@ class PeriodicExecutor {
     void startExecutor() {
         sync("start", () -> {
             if (state.isStartable()) {
-                LOGGER.log(Level.FINE, "Starting up with " + deferredEnrollments.size() + " deferred enrollments"
+                LOGGER.log(Level.DEBUG, "Starting up with " + deferredEnrollments.size() + " deferred enrollments"
                         + (state == State.DORMANT ? "" : " even though in state " + state));
                 state = State.STARTED;
                 currentTimeUpdaterExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -145,7 +144,7 @@ class PeriodicExecutor {
 
     void stopExecutor() {
         sync("stop", () -> {
-            LOGGER.log(Level.FINE, STOP_LOG_MESSAGE, state);
+            LOGGER.log(Level.DEBUG, STOP_LOG_MESSAGE, state);
             switch (state) {
             case STARTED:
                 currentTimeUpdaterExecutorService.shutdownNow();
@@ -155,7 +154,7 @@ class PeriodicExecutor {
                 break;
 
             default:
-                LOGGER.log(Level.FINE, String.format(
+                LOGGER.log(Level.DEBUG, String.format(
                         "Unexpected attempt to stop; the expected states are %s but found %s; ignored",
                         Set.of(State.DORMANT, State.STARTED),
                         state),

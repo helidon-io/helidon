@@ -19,10 +19,9 @@ package io.helidon.microprofile.metrics;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import java.util.NoSuchElementException;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
@@ -119,21 +118,23 @@ class MetricProducer {
     /**
      * Returns the {@link Gauge} matching the criteria from the injection point.
      *
-     * @param <T>      type of the {@code Gauge}
+     * <p>
+     *     We cannot create a gauge on demand because gauges wrap externally-managed values and we cannot tell, from the
+     *     injection point alone, how to create the value which a gauge wraps. So we insist that the gauge implied by the
+     *     injection point exist.
+     * </p>
+     *
      * @param ip       injection point being resolved
      * @return requested gauge
      */
     @Produces
-    @SuppressWarnings("unchecked")
-    private <T extends Number> Gauge<T> produceGauge(InjectionPoint ip) {
-        Metric metric = ip.getAnnotated().getAnnotation(Metric.class);
-        String scope = metric.scope();
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(scope);
-        return (Gauge<T>) registry.getGauges().entrySet().stream()
-                .filter(entry -> entry.getKey().getName().equals(metric.name()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString()))
-                .getValue();
+    private Gauge<?> produceGauge(InjectionPoint ip) {
+        MetricLocator locator = MetricLocator.create(ip);
+        Gauge<?> result = locator.registry.getGauge(locator.metricId);
+        if (result == null) {
+            throw new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString());
+        }
+        return result;
     }
 
     /**
@@ -154,13 +155,9 @@ class MetricProducer {
             InjectionPoint ip, Class<U> annotationClass,
             RegisterFunction<T> registerFn, Class<T> clazz) {
 
-        final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
-        final Tag[] tags = tags(metricAnno);
-        final String scope = metricAnno == null ? MetricRegistry.APPLICATION_SCOPE : metricAnno.scope();
-        Registry registry = RegistryFactory.getInstance().getRegistry(scope);
-        final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
+        MetricLocator locator = MetricLocator.create(ip);
 
-        T result = registry.getMetric(metricID, clazz);
+        T result = locator.registry.getMetric(locator.metricId, clazz);
         if (result != null) {
             final Annotation specificMetricAnno = annotationClass == null ? null
                     : ip.getAnnotated().getAnnotation(annotationClass);
@@ -169,8 +166,8 @@ class MetricProducer {
             }
 
         } else {
-            final Metadata newMetadata = newMetadata(ip, metricAnno, clazz);
-            result = registerFn.apply(registry, newMetadata, tags);
+            final Metadata newMetadata = newMetadata(ip, locator.metricAnno, clazz);
+            result = registerFn.apply(locator.registry, newMetadata, locator.metricId.getTagsAsArray());
         }
         return result;
     }
@@ -179,5 +176,38 @@ class MetricProducer {
     private interface RegisterFunction<T extends org.eclipse.microprofile.metrics.Metric> {
 
         T apply(MetricRegistry metricRegistry, Metadata metadata, Tag[] tags);
+    }
+
+    private static Iterable<String> iterable(String value) {
+        return () -> new Iterator<>() {
+
+            private boolean hasNext = true;
+
+            @Override
+            public boolean hasNext() {
+                return hasNext;
+            }
+
+            @Override
+            public String next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                hasNext = false;
+                return value;
+            }
+        };
+    }
+
+    record MetricLocator(Metric metricAnno, Registry registry, MetricID metricId) {
+
+        static MetricLocator create(InjectionPoint ip) {
+            final Metric metricAnno = ip.getAnnotated().getAnnotation(Metric.class);
+            final Tag[] tags = tags(metricAnno);
+            final String scope = metricAnno == null ? MetricRegistry.APPLICATION_SCOPE : metricAnno.scope();
+            Registry registry = RegistryFactory.getInstance().getRegistry(scope);
+            final MetricID metricID = new MetricID(getName(metricAnno, ip), tags);
+            return new MetricLocator(metricAnno, registry, metricID);
+        }
     }
 }

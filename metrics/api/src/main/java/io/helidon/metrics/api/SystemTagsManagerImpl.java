@@ -15,11 +15,14 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -79,7 +82,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     public Iterable<Tag> allTags(Meter.Id meterId, String scope) {
         return new MultiIterable<>(meterId.tags(),
                                    systemTags,
-                                   scopeIterable(scope));
+                                   scopeIterable(scope, Tag::create));
     }
 
     @Override
@@ -88,7 +91,22 @@ class SystemTagsManagerImpl implements SystemTagsManager {
                                    systemTags);
     }
 
-    private Iterable<Tag> scopeIterable(String scope) {
+    @Override
+    public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
+        return new MultiIterable<>(explicitTags, scopeIterable(scope, AbstractMap.SimpleEntry::new));
+    }
+
+    /**
+     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
+     * is active: the scope tag name is non-null and non-blank.
+     *
+     * @param scopeTagName scope tag name
+     * @param scope scope value
+     * @param factory factory method to accept the scope tag and the scope and return an instance of the implied type
+     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
+     * @param <T> type to which the scope tag and scope are converted
+     */
+    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
         return () -> new Iterator<>() {
 
             private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank() && scope != null;
@@ -99,12 +117,12 @@ class SystemTagsManagerImpl implements SystemTagsManager {
             }
 
             @Override
-            public Tag next() {
+            public T next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
                 hasNext = false;
-                return Tag.create(scopeTagName, scope);
+                return factory.apply(scopeTagName, scope);
             }
         };
     }
@@ -163,4 +181,10 @@ class SystemTagsManagerImpl implements SystemTagsManager {
             }
         }
     }
+
+    private <T> Iterable<T> scopeIterable(String scope, BiFunction<String, String, T> factory) {
+        return scopeIterable(scopeTagName, scope, factory);
+    }
+
+
 }
