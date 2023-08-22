@@ -36,12 +36,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsProgrammaticSettings;
-import io.helidon.metrics.api.ScopeConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -64,50 +63,44 @@ import org.eclipse.microprofile.metrics.Timer;
  *     holding all this information. That, plus the type generality, makes for quite the class here.
  * </p>
  */
-class MetricStore implements FunctionalCounterRegistry {
+class MetricStore {
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock(true);
 
-    private final Map<MetricID, HelidonMetric> allMetrics = new ConcurrentHashMap<>();
+    private final Map<MetricID, HelidonMetric<?>> allMetrics = new ConcurrentHashMap<>();
     private final Map<String, List<MetricID>> allMetricIDsByName = new ConcurrentHashMap<>();
     private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
     private final Map<String, Set<String>> tagNameSets = new HashMap<>(); // metric name -> tag names
     private final Map<String, Class<? extends Metric>> metricTypes = new HashMap<>(); // metric name -> base type of the metric
 
-    private volatile ScopeConfig registrySettings;
+    private volatile MetricsConfig metricsConfig;
     private final MetricFactory metricFactory;
-    private final MetricFactory noOpMetricFactory = new NoOpMetricFactory();
     private final String scope;
-    private final BiConsumer<MetricID, HelidonMetric> doRemove;
+    private final BiConsumer<MetricID, HelidonMetric<?>> doRemove;
 
-    @Override
-    public <T> Counter counter(Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
-        return getOrRegisterMetric(metadata, Counter.class, origin, function, tags);
-    }
-
-    static MetricStore create(RegistrySettings registrySettings,
+    static MetricStore create(MetricsConfig metricsConfig,
                               MetricFactory metricFactory,
                               String scope,
-                              BiConsumer<MetricID, HelidonMetric> doRemove) {
-        return new MetricStore(registrySettings,
+                              BiConsumer<MetricID, HelidonMetric<?>> doRemove) {
+        return new MetricStore(metricsConfig,
                                metricFactory,
                                scope,
                                doRemove);
 
     }
 
-    private MetricStore(ScopeConfig registrySettings,
+    private MetricStore(MetricsConfig metricsConfig,
                         MetricFactory metricFactory,
                         String scope,
-                        BiConsumer<MetricID, HelidonMetric> doRemove) {
-        this.registrySettings = registrySettings;
+                        BiConsumer<MetricID, HelidonMetric<?>> doRemove) {
+        this.metricsConfig = metricsConfig;
         this.metricFactory = metricFactory;
         this.scope = scope;
         this.doRemove = doRemove;
     }
 
-    void update(ScopeConfig registrySettings) {
-        this.registrySettings = registrySettings;
+    void update(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
     }
 
     <U extends Metric> U getOrRegisterMetric(MetricID metricID, Class<U> clazz) {
@@ -135,7 +128,7 @@ class MetricStore implements FunctionalCounterRegistry {
             checkOrStoreTagNames(newMetricID.getName(),
                                  newMetricID.getTags().keySet());
             checkOrStoreMetadata(newMetadata);
-            HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
+            HelidonMetric<?> metric = getMetricLocked(newMetadata.getName(), tags);
             if (metric == null) {
                 getConsistentMetadataLocked(newMetadata);
                 metric = registerMetricLocked(newMetricID,
@@ -212,30 +205,6 @@ class MetricStore implements FunctionalCounterRegistry {
                                   (Metadata metadata) -> metricFactory.gauge(scope,
                                                                              metadata,
                                                                              valueSupplier));
-    }
-
-    <T, U extends Metric> U getOrRegisterMetric(Metadata newMetadata,
-                                                Class<U> clazz,
-                                                T origin,
-                                                ToDoubleFunction<T> function,
-                                                Tag... tags) {
-        Class<? extends Metric> newBaseType = baseMetricClass(clazz);
-        return writeAccess(() -> {
-            enforceConsistentType(newMetadata.getName(), newBaseType);
-            MetricID newMetricID = new MetricID(newMetadata.getName(), tags);
-            checkOrStoreTagNames(newMetricID.getName(),
-                                 newMetricID.getTags().keySet());
-            checkOrStoreMetadata(newMetadata);
-            HelidonMetric metric = getMetricLocked(newMetadata.getName(), tags);
-            if (metric == null) {
-                getConsistentMetadataLocked(newMetadata);
-                metric = registerMetricLocked(newMetricID,
-                                              createEnabledAwareMetric(newBaseType, newMetadata, origin, function, tags));
-                return clazz.cast(metric);
-            }
-            ensureConsistentMetricTypes(metric, newBaseType, () -> newMetricID);
-            return clazz.cast(metric);
-        });
     }
 
     /**
@@ -338,14 +307,14 @@ class MetricStore implements FunctionalCounterRegistry {
                                                    + RegistryFactory.METRIC_TYPES);
     }
 
-    private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<HelidonMetric> metricFinder,
+    private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<HelidonMetric<?>> metricFinder,
                                                            Supplier<Metadata> metadataFinder,
                                                            Supplier<MetricID> metricIDSupplier,
                                                            Function<Metadata, Gauge<R>> gaugeFactory) {
         return writeAccess(() -> {
             Metadata metadata = metadataFinder.get();
             enforceConsistentType(metadata.getName(), Gauge.class);
-            HelidonMetric metric = metricFinder.get();
+            HelidonMetric<?> metric = metricFinder.get();
             if (metric == null) {
                 metric = registerMetricLocked(metricIDSupplier.get(),
                                               createEnabledAwareGauge(metadata, gaugeFactory));
@@ -367,12 +336,11 @@ class MetricStore implements FunctionalCounterRegistry {
                     tagNameSets.remove(metricID.getName());
                     metricTypes.remove(metricID.getName());
                 }
-                HelidonMetric doomedMetric = allMetrics.remove(metricID);
+                HelidonMetric<?> doomedMetric = allMetrics.remove(metricID);
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                 }
-                doRemove.accept(SystemTagsManager.instance()
-                                        .metricIdWithAllTags(metricID, scope),
+                doRemove.accept(metricIdWithAllTags(metricID, scope),
                                 doomedMetric);
                 return doomedMetric != null;
             }
@@ -387,12 +355,11 @@ class MetricStore implements FunctionalCounterRegistry {
             }
             boolean result = false;
             for (MetricID metricID : doomedMetricsIDs) {
-                HelidonMetric doomedMetric = allMetrics.get(metricID);
+                HelidonMetric<?> doomedMetric = allMetrics.get(metricID);
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                     result |= allMetrics.remove(metricID) != null;
-                    doRemove.accept(SystemTagsManager.instance()
-                                            .metricIdWithAllTags(metricID, scope),
+                    doRemove.accept(metricIdWithAllTags(metricID, scope),
                                     doomedMetric);
                 }
             }
@@ -448,7 +415,7 @@ class MetricStore implements FunctionalCounterRegistry {
         );
     }
 
-    HelidonMetric metric(MetricID metricID) {
+    HelidonMetric<?> metric(MetricID metricID) {
         return allMetrics.get(metricID);
     }
 
@@ -460,7 +427,7 @@ class MetricStore implements FunctionalCounterRegistry {
         return allMetadata.get(metricName);
     }
 
-    Map<MetricID, HelidonMetric> metrics() {
+    Map<MetricID, HelidonMetric<?>> metrics() {
         return allMetrics;
     }
 
@@ -508,24 +475,35 @@ class MetricStore implements FunctionalCounterRegistry {
     Stream<MetricInstance> stream() {
         return allMetrics.entrySet()
                 .stream()
-                .filter(entry -> registrySettings.isMeterEnabled(entry.getKey().getName()))
+                .filter(entry -> metricsConfig.isMeterEnabled(entry.getKey().getName(), scope))
                 .map(it -> new MetricInstance(it.getKey(), it.getValue()));
     }
 
-    private void removeLocked(Map.Entry<MetricID, HelidonMetric> entry) {
+    MetricID metricIdWithAllTags(MetricID metricId, String scope) {
+        return new MetricID(metricId.getName(),
+                            tags(SystemTagsManager.instance().allTags(metricId.getTags().entrySet(), scope)));
+    }
+
+    static Tag[] tags(Iterable<Map.Entry<String, String>> entries) {
+        List<Tag> result = new ArrayList<>();
+        entries.forEach(entry -> result.add(new Tag(entry.getKey(), entry.getValue())));
+        return result.toArray(new Tag[0]);
+    }
+
+    private void removeLocked(Map.Entry<MetricID, HelidonMetric<?>> entry) {
         remove(entry.getKey());
     }
 
     private <U extends Metric> U getOrRegisterMetric(String metricName,
                                                      Class<U> clazz,
-                                                     Supplier<HelidonMetric> metricFactory,
+                                                     Supplier<HelidonMetric<?>> metricFactory,
                                                      Supplier<MetricID> metricIDFactory,
                                                      Supplier<Metadata> metadataFactory,
                                                      Tag... tags) {
         Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
             enforceConsistentType(metricName, clazz);
-            HelidonMetric metric = metricFactory.get();
+            HelidonMetric<?> metric = metricFactory.get();
             MetricID newMetricID = metricIDFactory.get();
             checkOrStoreTagNames(newMetricID.getName(),
                                  newMetricID.getTags().keySet());
@@ -548,7 +526,7 @@ class MetricStore implements FunctionalCounterRegistry {
         });
     }
 
-    private HelidonMetric getMetricLocked(String metricName, Tag... tags) {
+    private HelidonMetric<?> getMetricLocked(String metricName, Tag... tags) {
         List<MetricID> metricIDsForName = allMetricIDsByName.get(metricName);
         if (metricIDsForName == null) {
             return null;
@@ -561,11 +539,13 @@ class MetricStore implements FunctionalCounterRegistry {
         return null;
     }
 
-    private HelidonMetric registerMetricLocked(MetricID metricID, HelidonMetric metric) {
-        allMetrics.put(metricID, metric);
-        allMetricIDsByName
-                .computeIfAbsent(metricID.getName(), k -> new ArrayList<>())
-                .add(metricID);
+    private HelidonMetric<?> registerMetricLocked(MetricID metricID, HelidonMetric<?> metric) {
+        if (metricsConfig.isMeterEnabled(metricID.getName(), scope)) {
+            allMetrics.put(metricID, metric);
+            allMetricIDsByName
+                    .computeIfAbsent(metricID.getName(), k -> new ArrayList<>())
+                    .add(metricID);
+        }
         return metric;
     }
 
@@ -595,12 +575,14 @@ class MetricStore implements FunctionalCounterRegistry {
     }
 
     private Metadata registerMetadataLocked(Metadata metadata) {
+        // At least for now, store the metadata even if the metric name in this scope is disabled by configuration.
+        // This lets us do consistency checks across like-named metrics.
         checkOrStoreMetadata(metadata);
         allMetadata.put(metadata.getName(), metadata);
         return metadata;
     }
 
-    private void ensureConsistentMetricTypes(HelidonMetric existingMetric,
+    private void ensureConsistentMetricTypes(HelidonMetric<?> existingMetric,
                                              Class<? extends Metric> newBaseType,
                                              Supplier<MetricID> metricIDSupplier) {
         if (!baseMetricClass(existingMetric.getClass()).isAssignableFrom(newBaseType)) {
@@ -614,46 +596,26 @@ class MetricStore implements FunctionalCounterRegistry {
         }
     }
 
-    private <U extends Metric> HelidonMetric createEnabledAwareMetric(Class<U> clazz, Metadata metadata, Tag... tags) {
+    private <U extends Metric> HelidonMetric<?> createEnabledAwareMetric(Class<U> clazz, Metadata metadata, Tag... tags) {
         String metricName = metadata.getName();
         Class<? extends Metric> baseClass = baseMetricClass(clazz);
         Metric result;
-        MetricFactory factoryToUse = registrySettings.isMeterEnabled(metricName) ? metricFactory : noOpMetricFactory;
         if (baseClass.isAssignableFrom(Counter.class)) {
-            result = factoryToUse.counter(scope, metadata, tags);
+            result = metricFactory.counter(scope, metadata, tags);
         } else if (baseClass.isAssignableFrom(Histogram.class)) {
-            result = factoryToUse.summary(scope, metadata, tags);
+            result = metricFactory.summary(scope, metadata, tags);
         } else if (baseClass.isAssignableFrom(Timer.class)) {
-            result = factoryToUse.timer(scope, metadata, tags);
+            result = metricFactory.timer(scope, metadata, tags);
         } else {
             throw new IllegalArgumentException("Cannot identify correct metric type for " + clazz.getName());
         }
-        return (HelidonMetric) result;
+        return (HelidonMetric<?>) result;
     }
 
-    private <U extends Metric, T> HelidonMetric createEnabledAwareMetric(Class<U> clazz,
-                                                                         Metadata metadata,
-                                                                         T origin,
-                                                                         ToDoubleFunction<T> function,
-                                                                         Tag... tags) {
-        String metricName = metadata.getName();
-        Class<? extends Metric> baseClass = baseMetricClass(clazz);
-        Metric result;
-        MetricFactory factoryToUse = registrySettings.isMeterEnabled(metricName) ? metricFactory : noOpMetricFactory;
-        if (baseClass.isAssignableFrom(Counter.class)) {
-            result = factoryToUse.counter(scope, metadata, origin, function, tags);
-        } else {
-            throw new IllegalArgumentException("Cannot identify correct function metric type for " + clazz.getName());
-        }
-        return (HelidonMetric) result;
-    }
-
-    private <R extends Number> HelidonMetric createEnabledAwareGauge(Metadata metadata,
+    private <R extends Number> HelidonMetric<?> createEnabledAwareGauge(Metadata metadata,
                                                                      Function<Metadata, Gauge<R>> gaugeFactory) {
         String metricName = metadata.getName();
-        return (HelidonMetric) (registrySettings.isMeterEnabled(metricName)
-                ? gaugeFactory.apply(metadata)
-                : noOpMetricFactory.gauge(scope, metadata, null));
+        return (HelidonMetric<?>) (gaugeFactory.apply(metadata));
     }
 
     private <S> S readAccess(Callable<S> action) {

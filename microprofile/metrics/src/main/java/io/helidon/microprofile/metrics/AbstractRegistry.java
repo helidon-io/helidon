@@ -19,14 +19,13 @@ package io.helidon.microprofile.metrics;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import io.helidon.metrics.api.ScopeConfig;
+import io.helidon.metrics.api.MetricsConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -59,14 +58,14 @@ abstract class AbstractRegistry implements MetricRegistry {
      * Create a registry of a certain type.
      *
      * @param scope Registry type.
-     * @param registrySettings registry settings which influence this registry
+     * @param metricsConfig registry settings which influence this registry
      * @param metricFactory metric factory to use in creating new metrics
      */
     protected AbstractRegistry(String scope,
-                               ScopeConfig registrySettings,
+                               MetricsConfig metricsConfig,
                                MetricFactory metricFactory) {
         this.scope = scope;
-        this.metricStore = MetricStore.create(registrySettings, metricFactory, scope, this::doRemove);
+        this.metricStore = MetricStore.create(metricsConfig, metricFactory, scope, this::doRemove);
         this.metricFactory = metricFactory;
     }
 
@@ -78,28 +77,30 @@ abstract class AbstractRegistry implements MetricRegistry {
      */
     public static boolean isMarkedAsDeleted(Metric metric) {
         return (metric instanceof HelidonMetric)
-                && ((HelidonMetric) metric).isDeleted();
+                && ((HelidonMetric<?>) metric).isDeleted();
     }
 
-    @Override
-    public Optional<MetricInstance> find(String name) {
-        return Optional.ofNullable(metricStore.untaggedOrFirstMetricInstance(name));
-    }
+    // TODO remove once verified
+//    @Override
+//    public Optional<MetricInstance> find(String name) {
+//        return Optional.ofNullable(metricStore.untaggedOrFirstMetricInstance(name));
+//    }
 
-    @Override
-    public List<MetricInstance> list(String metricName) {
-        return metricStore.metricsWithIDs(metricName);
-    }
-
-    @Override
-    public List<MetricID> metricIdsByName(String name) {
-        return metricStore.metricIDs(name);
-    }
-
-    @Override
-    public Optional<MetricsForMetadata> metricsByName(String name) {
-        return Optional.ofNullable(metricStore.metadataWithIDs(name));
-    }
+    // TODO remove once verified
+//    @Override
+//    public List<MetricInstance> list(String metricName) {
+//        return metricStore.metricsWithIDs(metricName);
+//    }
+//
+//    @Override
+//    public List<MetricID> metricIdsByName(String name) {
+//        return metricStore.metricIDs(name);
+//    }
+//
+//    @Override
+//    public Optional<MetricsForMetadata> metricsByName(String name) {
+//        return Optional.ofNullable(metricStore.metadataWithIDs(name));
+//    }
 
     @Override
     public Counter counter(String name) {
@@ -329,7 +330,7 @@ abstract class AbstractRegistry implements MetricRegistry {
     }
 
     @Override
-    public HelidonMetric getMetric(MetricID metricID) {
+    public HelidonMetric<?> getMetric(MetricID metricID) {
         return metricStore.metric(metricID);
     }
 
@@ -341,10 +342,10 @@ abstract class AbstractRegistry implements MetricRegistry {
     /**
      * Update the registry settings for this registry.
      *
-     * @param registrySettings new settings to use going forward
+     * @param metricsConfig new settings to use going forward
      */
-    public void update(RegistrySettings registrySettings) {
-        metricStore.update(registrySettings);
+    public void update(MetricsConfig metricsConfig) {
+        metricStore.update(metricsConfig);
     }
 
 
@@ -417,15 +418,15 @@ abstract class AbstractRegistry implements MetricRegistry {
     protected <T, R extends Number> Gauge<R> createGauge(Metadata metadata, T object, Function<T, R> func) {
         return createGauge(metadata, () -> func.apply(object));
     }
-
-    /**
-     * Returns a reference to the underlying metric store that is capable of creating a functional counter.
-     *
-     * @return the metric store
-     */
-    protected FunctionalCounterRegistry metricStore() {
-        return metricStore;
-    }
+// TODO remove commented once verified
+//    /**
+//     * Returns a reference to the underlying metric store that is capable of creating a functional counter.
+//     *
+//     * @return the metric store
+//     */
+//    protected FunctionalCounterRegistry metricStore() {
+//        return metricStore;
+//    }
 
     /**
      * Creates a gauge instance according to the specified supplier which returns the gauge value.
@@ -443,28 +444,28 @@ abstract class AbstractRegistry implements MetricRegistry {
      * @param metricId metric ID of the metric to remove
      * @param metric the metric being removed
      */
-    protected abstract void doRemove(MetricID metricId, HelidonMetric metric);
+    protected abstract void doRemove(MetricID metricId, HelidonMetric<?> metric);
 
     // -- Private methods -----------------------------------------------------
 
-    /**
-     * Infers the specific subtype of {@link Metric} from a provided metric instance.
-     *
-     * @param metric the metric for which to derive the metric type
-     * @return the specific subtype of {@code Metric} of the provided metric instance
-     */
-    protected static Class<? extends Metric> deriveType(Metric metric) {
-        /*
-         * A metric could be passed as a lambda, in which case neither
-         * MetricType.from() nor, for example, Counter.class.isAssignableFrom,
-         * works. Check each specific metric class using instanceof.
-         */
-        return (RegistryFactory.METRIC_TYPES).stream()
-                .filter(clazz -> clazz.isInstance(metric))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Cannot map metric of type " + metric.getClass().getName()
-                + " to one of " + RegistryFactory.METRIC_TYPES));
-    }
+//    /**
+//     * Infers the specific subtype of {@link Metric} from a provided metric instance.
+//     *
+//     * @param metric the metric for which to derive the metric type
+//     * @return the specific subtype of {@code Metric} of the provided metric instance
+//     */
+//    protected static Class<? extends Metric> deriveType(Metric metric) {
+//        /*
+//         * A metric could be passed as a lambda, in which case neither
+//         * MetricType.from() nor, for example, Counter.class.isAssignableFrom,
+//         * works. Check each specific metric class using instanceof.
+//         */
+//        return (RegistryFactory.METRIC_TYPES).stream()
+//                .filter(clazz -> clazz.isInstance(metric))
+//                .findFirst()
+//                .orElseThrow(() -> new IllegalArgumentException("Cannot map metric of type " + metric.getClass().getName()
+//                + " to one of " + RegistryFactory.METRIC_TYPES));
+//    }
 
     /**
      * For testing.

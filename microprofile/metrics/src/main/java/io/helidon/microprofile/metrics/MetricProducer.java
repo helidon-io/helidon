@@ -125,12 +125,13 @@ class MetricProducer {
      * </p>
      *
      * @param ip       injection point being resolved
+     * @param <N> subtype of {@code Number} for the gauge
      * @return requested gauge
      */
     @Produces
-    private Gauge<?> produceGauge(InjectionPoint ip) {
+    private <N extends Number> Gauge<N> produceGauge(InjectionPoint ip) {
         MetricLocator locator = MetricLocator.create(ip);
-        Gauge<?> result = locator.registry.getGauge(locator.metricId);
+        Gauge<N> result = (Gauge<N>) locator.registry.getGauge(locator.metricId);
         if (result == null) {
             throw new IllegalArgumentException("Could not produce Gauge for injection point " + ip.toString());
         }

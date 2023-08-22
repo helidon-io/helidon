@@ -29,57 +29,43 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
-class HelidonMicroProfileMetricFactory {
+class MetricFactory {
 
-    static HelidonMicroProfileMetricFactory create() {
-
-//        // Make sure there is a Prometheus meter registry present in the global registry; add one if needed.
-//        if (Metrics.globalRegistry.getRegistries()
-//                .stream()
-//                .noneMatch(PrometheusMeterRegistry.class::isInstance)) {
-//            Metrics.globalRegistry.add(new PrometheusMeterRegistry(registrySettings::value));
-//        }
-
-        return new HelidonMicroProfileMetricFactory(Metrics.globalRegistry());
+    static MetricFactory create() {
+        return new MetricFactory(Metrics.globalRegistry());
     }
 
-    static HelidonMicroProfileMetricFactory create(MeterRegistry meterRegistry) {
-        return new HelidonMicroProfileMetricFactory(meterRegistry);
+    static MetricFactory create(MeterRegistry meterRegistry) {
+        return new MetricFactory(meterRegistry);
     }
 
     private final MeterRegistry meterRegistry;
 
-    HelidonMicroProfileMetricFactory(MeterRegistry meterRegistry) {
+    MetricFactory(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 
-    @Override
-    public Counter counter(String scope, Metadata metadata, Tag... tags) {
+    Counter counter(String scope, Metadata metadata, Tag... tags) {
         return HelidonCounter.create(meterRegistry, scope, metadata, tags);
     }
 
-    @Override
-    public Timer timer(String scope, Metadata metadata, Tag... tags) {
+    Timer timer(String scope, Metadata metadata, Tag... tags) {
         return HelidonTimer.create(meterRegistry, scope, metadata, tags);
     }
 
-    @Override
-    public Histogram summary(String scope, Metadata metadata, Tag... tags) {
+    Histogram summary(String scope, Metadata metadata, Tag... tags) {
         return HelidonHistogram.create(meterRegistry, scope, metadata, tags);
     }
 
-    @Override
-    public <N extends Number> Gauge<N> gauge(String scope, Metadata metadata, Supplier<N> supplier, Tag... tags) {
+    <N extends Number> Gauge<N> gauge(String scope, Metadata metadata, Supplier<N> supplier, Tag... tags) {
         return HelidonGauge.create(meterRegistry, scope, metadata, supplier, tags);
     }
 
-    @Override
-    public <N extends Number, T> Gauge<N> gauge(String scope, Metadata metadata, T target, Function<T, N> fn, Tag... tags) {
+    <N extends Number, T> Gauge<N> gauge(String scope, Metadata metadata, T target, Function<T, N> fn, Tag... tags) {
         return HelidonGauge.create(meterRegistry, scope, metadata, target, fn, tags);
     }
 
-    @Override
-    public <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
+    <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
         return HelidonGauge.create(meterRegistry, scope, metadata, target, fn, tags);
     }
 }

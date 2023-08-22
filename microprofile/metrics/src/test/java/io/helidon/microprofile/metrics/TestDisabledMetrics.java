@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;

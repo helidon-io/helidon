@@ -16,27 +16,29 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import io.helidon.metrics.api.HelidonMetric;
+import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.micrometer.MicrometerPrometheusFormatter;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
-import static io.helidon.metrics.serviceapi.PrometheusFormat.prometheusData;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.hamcrest.number.OrderingComparison.lessThan;
 
@@ -139,8 +141,17 @@ public class MetricsTest extends MetricsBaseTest {
         bean.setValue(expectedValue);
 
         Gauge<Integer> gauge = getMetric(bean, GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME);
-        String promData =
-                prometheusData(new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), (HelidonMetric) gauge, true).trim();
+        MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(Metrics.globalRegistry())
+                .scopeTagName("mp_scope")
+                .build();
+        Optional<Object> outputOpt = formatter.format();
+//        String promData =
+//                prometheusData(new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), (HelidonMetric<?>) gauge, true).trim();
+
+        assertThat("Output", outputOpt, OptionalMatcher.optionalPresent());
+        assertThat("Output", outputOpt.get(), is(instanceOf(String.class)));
+
+        String promData = (String) outputOpt.get();
 
         assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
         assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));

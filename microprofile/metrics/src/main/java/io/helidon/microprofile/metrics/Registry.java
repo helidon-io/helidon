@@ -16,64 +16,41 @@
 package io.helidon.microprofile.metrics;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.ScopeConfig;
+import io.helidon.metrics.api.MetricsConfig;
 
-import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.Tag;
 
 /**
  * Metrics registry.
  */
 class Registry extends AbstractRegistry {
 
-    private final AtomicReference<ScopeConfig> registrySettings = new AtomicReference<>();
-
     /**
      * Create a registry of a certain scope.
      *
      * @param scope Registry scope.
-     * @param registrySettings Registry settings to use in creating the registry.
+     * @param metricsConfig Registry settings to use in creating the registry.
      * @return The newly created registry.
      */
-    public static Registry create(String scope, ScopeConfig registrySettings) {
-        return new Registry(scope, registrySettings);
-    }
-
-    @Override
-    public void update(ScopeConfig registrySettings) {
-        super.update(registrySettings);
-        this.registrySettings.set(registrySettings);
-    }
-
-    @Override
-    public <T> Counter counter(Metadata metadata, T origin, ToDoubleFunction<T> function, Tag... tags) {
-        return metricStore().counter(metadata, origin, function, tags);
-    }
-
-    @Override
-    public boolean enabled(String metricName) {
-        return registrySettings.get().isMeterEnabled(metricName);
+    public static Registry create(String scope, MetricsConfig metricsConfig) {
+        return new Registry(scope, metricsConfig);
     }
 
     /**
      * Creates a new instance.
      *
      * @param scope registry scope for the new registry
-     * @param registrySettings registry settings to influence the created registry
+     * @param metricsConfig registry settings to influence the created registry
      */
-    protected Registry(String scope, ScopeConfig registrySettings) {
-        super(scope, registrySettings, HelidonMicrometerMetricFactory.create(registrySettings));
-        this.registrySettings.set(registrySettings);
+    protected Registry(String scope, MetricsConfig metricsConfig) {
+        super(scope, metricsConfig, MetricFactory.create(Metrics.globalRegistry()));
     }
 
     @Override
@@ -100,6 +77,6 @@ class Registry extends AbstractRegistry {
 
     @Override
     protected void doRemove(MetricID metricId, HelidonMetric<?> metric) {
-        Metrics.globalRegistry().remove(((HelidonMetric<?>) metric).delegate());
+        Metrics.globalRegistry().remove(metric.delegate());
     }
 }

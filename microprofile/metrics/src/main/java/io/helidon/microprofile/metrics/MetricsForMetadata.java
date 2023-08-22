@@ -15,28 +15,16 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.MetricsSettings;
+import java.util.List;
 
-import io.micrometer.prometheus.PrometheusConfig;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricID;
 
 /**
- * Helidon implementation of {@link io.micrometer.prometheus.PrometheusConfig} for creating a Micrometer Prometheus meter
- * registry.
+ * All metric IDs for specific metadata.
+ *
+ * @param metadata metadata of a metric
+ * @param metricIds metric IDs that exist for the metadata
  */
-class HelidonPrometheusConfig implements PrometheusConfig {
-
-    private MetricsSettings metricsSettings;
-
-    HelidonPrometheusConfig(MetricsSettings metricsSettings) {
-        this.metricsSettings = metricsSettings;
-    }
-
-    @Override
-    public String get(String key) {
-        return metricsSettings.value(key);
-    }
-
-    void update(MetricsSettings metricsSettings) {
-        this.metricsSettings = metricsSettings;
-    }
+record MetricsForMetadata(Metadata metadata, List<MetricID> metricIds) {
 }

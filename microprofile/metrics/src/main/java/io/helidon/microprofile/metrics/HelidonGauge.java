@@ -75,10 +75,12 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                    target,
                                    function,
                                    meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                                  target, t -> function.apply(t).doubleValue())
-                                           .description(metadata.getDescription())
-                                           .tags(allTags(scope, tags))
-                                           .baseUnit(sanitizeUnit(metadata.getUnit()))));
+                                                                                                  target,
+                                                                                                  t -> function.apply(t)
+                                                                                                          .doubleValue())
+                                                                     .description(metadata.getDescription())
+                                                                     .tags(allTags(scope, tags))
+                                                                     .baseUnit(sanitizeUnit(metadata.getUnit()))));
     }
 
     static <N extends Number> SupplierBased<N> create(String scope,

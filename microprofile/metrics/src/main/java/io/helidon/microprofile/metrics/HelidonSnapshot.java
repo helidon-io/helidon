@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.HistogramSnapshot;

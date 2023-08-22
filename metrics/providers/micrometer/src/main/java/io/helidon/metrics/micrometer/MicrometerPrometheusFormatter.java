@@ -42,7 +42,7 @@ import io.prometheus.client.exporter.common.TextFormat;
  *     "m_" if the actual meter name starts with a digit or underscore and underscores replace special characters.
  * </p>
  */
-class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
+public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     /**
      * Mapping from supported media types to the corresponding Prometheus registry content types.
      */

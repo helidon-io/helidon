@@ -16,19 +16,24 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.config.Config;
-import io.helidon.common.media.type.MediaType;
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.MetricsProgrammaticSettings;
+
+import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Micrometer-specific implementation of a registry factory.
@@ -38,11 +43,18 @@ import io.helidon.metrics.api.MetricsProgrammaticSettings;
  */
 class RegistryFactory {
 
+    private static AtomicReference<RegistryFactory> registryFactory = new AtomicReference<>();
+
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
-    private final HelidonPrometheusConfig prometheusConfig;
-    private MetricsConfig metricsConfig;
+    private final MetricsConfig metricsConfig;
     private MetricFactory metricFactory;
+
+
+    static final Collection<Class<? extends Metric>> METRIC_TYPES = Set.of(Counter.class,
+                                                                           Gauge.class,
+                                                                           Histogram.class,
+                                                                           Timer.class);
 
     /**
      * Create a new instance.
@@ -53,43 +65,38 @@ class RegistryFactory {
      */
     private RegistryFactory(MetricsConfig metricsConfig, Registry appRegistry, Registry vendorRegistry) {
         this.metricsConfig = metricsConfig;
-        prometheusConfig = new HelidonPrometheusConfig(metricsConfig);
-        metricFactory = HelidonMicrometerMetricFactory.create(Metrics.globalRegistry);
+        metricFactory = MetricFactory.create(Metrics.globalRegistry());
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }
 
     private RegistryFactory(MetricsConfig metricsConfig) {
         this(metricsConfig,
-             Registry.create(Registry.APPLICATION_SCOPE, metricsConfig.scoping().scopes().get(Registry.APPLICATION_SCOPE)),
-             Registry.create(Registry.VENDOR_SCOPE, metricsConfig.scoping().scopes().get(Registry.VENDOR_SCOPE)));
+             Registry.create(Registry.APPLICATION_SCOPE, metricsConfig),
+             Registry.create(Registry.VENDOR_SCOPE, metricsConfig));
     }
 
     /**
-     * Create a new factory with default configuration, with pre-filled
-     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#VENDOR} and
-     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} metrics.
+     * Create a new factory with default configuration.
      *
      * @return a new registry factory
      */
     static RegistryFactory create() {
-        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create());
+        return RegistryFactory.create(MetricsConfig.create());
     }
 
     /**
-     * Create a new factory with provided configuration, with pre filled
-     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#VENDOR} and
-     * {@link org.eclipse.microprofile.metrics.MetricRegistry.Type#BASE} metrics.
+     * Create a new factory with provided configuration.
      *
      * @param config configuration to use
      * @return a new registry factory
      */
     static RegistryFactory create(Config config) {
-        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.create(config));
+        return RegistryFactory.create(MetricsConfig.create(config.get(MetricsConfig.METRICS_CONFIG_KEY)));
     }
 
-    static RegistryFactory create(MetricsConfig metricsSettings) {
-        return new RegistryFactory(metricsSettings);
+    static RegistryFactory create(MetricsConfig metricsConfig) {
+        return new RegistryFactory(metricsConfig);
     }
 
     /**
@@ -98,24 +105,10 @@ class RegistryFactory {
      * @return registry factory singleton
      */
     static RegistryFactory getInstance() {
-        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance());
+        registryFactory.compareAndSet(null, create());
+        return registryFactory.get();
     }
 
-    /**
-     * Get a singleton instance of the registry factory for and update it with provided configuration.
-     * Note that the config is used only if nobody access the base registry.
-     *
-     * @param config configuration of the registry factory used to update behavior of the instance returned
-     * @return registry factory singleton
-     * @deprecated Use {@link io.helidon.metrics.api.RegistryFactory#getInstance(MetricsSettings)}
-     */
-    static RegistryFactory getInstance(Config config) {
-        return RegistryFactory.class.cast(io.helidon.metrics.api.RegistryFactory.getInstance(config));
-    }
-
-    Registry getARegistry(String scope) {
-        return registries.get(scope);
-    }
 
     /**
      * Get a registry based on its scope.
@@ -126,47 +119,6 @@ class RegistryFactory {
     Registry getRegistry(String scope) {
         return accessMetricsSettings(() -> registries.computeIfAbsent(scope, s ->
                 Registry.create(s, metricsConfig)));
-    }
-
-    void update(MetricsConfig metricsSettings) {
-        accessMetricsSettings(() -> {
-            this.metricsConfig = metricsSettings;
-            prometheusConfig.update(metricsSettings);
-            registries.forEach((key, value) -> value.update(metricsSettings.scoping().scopes().get(key)));
-        });
-    }
-
-    boolean enabled() {
-        return true;
-    }
-
-    Optional<?> scrape(MediaType mediaType,
-                                   Iterable<String> scopeSelection,
-                                   Iterable<String> meterNameSelection) {
-        if (mediaType.equals(MediaTypes.TEXT_PLAIN) || mediaType.equals(MediaTypes.APPLICATION_OPENMETRICS_TEXT)) {
-            var formatter =
-                    MicrometerPrometheusFormatter
-                            .builder()
-                            .resultMediaType(mediaType)
-                            .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
-                            .scopeSelection(scopeSelection)
-                            .meterNameSelection(meterNameSelection)
-                            .build();
-
-            return formatter.filteredOutput();
-        } else if (mediaType.equals(MediaTypes.APPLICATION_JSON)) {
-            var formatter = JsonFormatter.builder()
-                    .scopeTagName(MetricsProgrammaticSettings.instance().scopeTagName())
-                    .scopeSelection(scopeSelection)
-                    .meterNameSelection(meterNameSelection)
-                    .build();
-            return formatter.data(true);
-        }
-        throw new UnsupportedOperationException();
-    }
-
-    Iterable<String> scopes() {
-        return registries.keySet();
     }
 
     void start() {

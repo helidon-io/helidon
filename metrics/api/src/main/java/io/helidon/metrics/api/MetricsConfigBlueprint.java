@@ -57,6 +57,8 @@ interface MetricsConfigBlueprint {
      */
     String SCOPE_CONFIG_KEY = "scoping";
 
+    String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
+
     /**
      * Whether metrics functionality is enabled.
      *
@@ -70,7 +72,7 @@ interface MetricsConfigBlueprint {
      *
      * @return key performance indicator metrics settings
      */
-    @ConfiguredOption(key = "key-performance-indicators")
+    @ConfiguredOption(key = KEY_PERFORMANCE_INDICATORS_CONFIG_KEY)
     KeyPerformanceIndicatorMetricsConfig keyPerformanceIndicatorMetricsConfig();
 
     /**

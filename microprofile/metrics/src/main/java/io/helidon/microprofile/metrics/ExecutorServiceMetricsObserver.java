@@ -15,6 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,8 +24,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver;
@@ -41,7 +40,7 @@ import org.eclipse.microprofile.metrics.Tag;
  */
 public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierObserver {
 
-    private static final Logger LOGGER = Logger.getLogger(ExecutorServiceMetricsObserver.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ExecutorServiceMetricsObserver.class.getName());
 
     private static final String METRIC_NAME_PREFIX = "executor-service.";
 
@@ -59,7 +58,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
             );
 
     private final LazyValue<MetricRegistry> registry = LazyValue
-            .create(() -> io.helidon.metrics.api.RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE));
+            .create(() -> RegistryFactory.getInstance().getRegistry(Registry.VENDOR_SCOPE));
 
     /**
      * Creates a new instance of the observer.
@@ -73,7 +72,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
                                                     String supplierCategory) {
         SupplierInfo supplierInfo = new SupplierInfo(supplierCategory,
                                                      supplierIndex);
-        LOGGER.log(Level.FINE, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
+        LOGGER.log(Level.DEBUG, () -> String.format("Metrics thread pool supplier registration: %s", supplierInfo));
         return supplierInfo.context();
     }
 
@@ -88,7 +87,7 @@ public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierOb
 
         @Override
         public void registerExecutorService(ExecutorService executorService, int index) {
-            LOGGER.log(Level.FINE, String.format("Registering executor service %s:%d for supplier %s%d",
+            LOGGER.log(Level.DEBUG, String.format("Registering executor service %s:%d for supplier %s%d",
                                                  executorService,
                                                  index,
                                                  supplierInfo.supplierCategory(),
