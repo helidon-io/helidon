@@ -277,8 +277,10 @@ class ServerListener implements ListenerContext {
             SSLServerSocket sslServerSocket = tls.enabled() ? tls.createServerSocket() : null;
             serverSocket = tls.enabled() ? sslServerSocket : new ServerSocket();
             listenerConfig.configureSocket(serverSocket);
-
             serverSocket.bind(configuredAddress, listenerConfig.backlog());
+            if (tls.enabled() && listenerConfig.tlsManagerAutoReload()) {
+                tls.manager().register(this::reloadTls);
+            }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to start server", e);
         }

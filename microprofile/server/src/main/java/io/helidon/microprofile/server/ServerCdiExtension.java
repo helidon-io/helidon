@@ -392,16 +392,6 @@ public class ServerCdiExtension implements Extension {
         }
         webserver = serverBuilder.build();
 
-        // setup reloadable Tls Managers
-        namedRoutings.forEach((name, value) -> {
-            ListenerConfig listenerConfig = serverBuilder.sockets().get(name);
-            if (listenerConfig != null
-                    && listenerConfig.tlsManagerAutoReload()
-                    && listenerConfig.tls().isPresent()) {
-                listenerConfig.tls().get().manager().ifPresent(tlsManager -> tlsManager.register(webserver::reloadTls));
-            }
-        });
-
         try {
             webserver.start();
             started = true;

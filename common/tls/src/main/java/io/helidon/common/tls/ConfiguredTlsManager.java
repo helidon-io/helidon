@@ -47,14 +47,14 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.LazyValue;
-import io.helidon.config.Config;
+import io.helidon.common.config.Config;
 
 /**
  * The default configured {@link TlsManager} implementation.
  *
  * TODO:
  * Will watch for configuration changes on {@link TlsConfig}, and
- * when observed to be changed will trigger reload of the Tls instance.
+ * when observed to be changed will trigger reload of the Tls instance?
  */
 public class ConfiguredTlsManager implements TlsManager {
     // secure random cannot be stored in native image, it must
@@ -68,7 +68,7 @@ public class ConfiguredTlsManager implements TlsManager {
     private Config config;
 
     ConfiguredTlsManager(TlsConfig.BuilderBase<?, ?> target) {
-        this((Config) target.config().orElse(null), "@default", "tls-manager");
+        this(target.config().orElse(null), "@default", "tls-manager");
         sslContext(target);
         sslParameters(target);
     }
@@ -79,7 +79,7 @@ public class ConfiguredTlsManager implements TlsManager {
         this.config = config; // can be null
         this.name = Objects.requireNonNull(name);
         this.type = type;
-        // TODO: here we can register for watching config changes?
+        // TODO: here we can register for watching config changes?  will need to downcast to io.helidon.config.Config
         //        target.config().ifPresent(config -> {
         //            ((io.helidon.config.Config) config).onChange(cfg -> {
         //

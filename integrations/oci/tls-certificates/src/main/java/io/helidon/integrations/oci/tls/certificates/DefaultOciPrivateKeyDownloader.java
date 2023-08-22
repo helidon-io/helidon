@@ -71,32 +71,34 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
                                                                        .algorithm(ExportKeyDetails.Algorithm.RsaOaepAesSha256)
                                                                        .build())
                                              .build());
-
             String encryptedKey = exportKeyResponse.getExportedKeyData().getEncryptedKey();
-
-            byte[] encryptedMaterial = Base64.getDecoder().decode(encryptedKey);
-
-            //rfc3394 - first 256 bytes is tmp AES key encrypted by our temp wrapping RSA
-            byte[] tmpAes = decryptAesKey(Arrays.copyOf(encryptedMaterial, 256));
-
-            //rfc3394 - rest of the bytes is secret key wrapped by tmp AES
-            byte[] wrappedSecretKey = Arrays.copyOfRange(encryptedMaterial, 256, encryptedMaterial.length);
-
-            // Unwrap with decrypted tmp AES
-            return (PrivateKey) unwrapRSA(wrappedSecretKey, tmpAes);
+            return decode(encryptedKey);
         } catch (Exception e) {
             throw new RuntimeException("Problem encountered loading key: " + keyOcid + " from: " + vaultCryptoEndpoint, e);
         }
     }
 
-    private Key unwrapRSA(byte[] in, byte[] keyBytes) throws Exception {
+    PrivateKey decode(String encryptedKey) throws Exception {
+        byte[] encryptedMaterial = Base64.getDecoder().decode(encryptedKey);
+
+        //rfc3394 - first 256 bytes is tmp AES key encrypted by our temp wrapping RSA
+        byte[] tmpAes = decryptAesKey(Arrays.copyOf(encryptedMaterial, 256));
+
+        //rfc3394 - rest of the bytes is secret key wrapped by tmp AES
+        byte[] wrappedSecretKey = Arrays.copyOfRange(encryptedMaterial, 256, encryptedMaterial.length);
+
+        // Unwrap with decrypted tmp AES
+        return (PrivateKey) unwrapRSA(wrappedSecretKey, tmpAes);
+    }
+
+    Key unwrapRSA(byte[] in, byte[] keyBytes) throws Exception {
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
         Cipher c = Cipher.getInstance("AESWrapPad");
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(in, "RSA", Cipher.PRIVATE_KEY);
     }
 
-    private byte[] decryptAesKey(byte[] in) throws Exception {
+    byte[] decryptAesKey(byte[] in) throws Exception {
         // OCI uses BC
         //https://stackoverflow.com/a/23859386/626826
         //https://bugs.openjdk.org/browse/JDK-7038158

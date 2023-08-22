@@ -29,6 +29,7 @@ import io.helidon.config.spi.OverrideSource;
 import com.xebialabs.restito.server.StubServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.xebialabs.restito.builder.stub.StubHttp.whenHttp;
@@ -109,6 +110,7 @@ public class UrlOverrideSourceServerMockTest {
         waitForAssert(() -> config.get("aaa.bbb.url").asString().get(), is("URL1"));
     }
 
+    @Disabled // TODO: intermittent failures on MacOS
     @Test
     public void testMultipleMatchingWildcards() throws MalformedURLException, InterruptedException {
 

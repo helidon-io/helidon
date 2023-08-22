@@ -20,12 +20,10 @@ import io.helidon.common.config.Config;
 import io.helidon.common.tls.TlsManager;
 import io.helidon.common.tls.spi.TlsManagerProvider;
 
-import jakarta.inject.Singleton;
-
 /**
  * The service provider for {@link OciCertificatesTlsManager}.
  */
-@Singleton
+//@Singleton
 public class DefaultOciCertificatesTlsManagerProvider implements TlsManagerProvider {
 
     /**

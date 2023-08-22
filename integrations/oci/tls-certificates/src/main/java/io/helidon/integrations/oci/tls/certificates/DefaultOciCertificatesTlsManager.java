@@ -99,7 +99,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
             context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), SecureRandom.getInstance("DEFAULT"));
             builder.sslContext(context);
-            // TODO:
+            // TODO: presumably we have to get all of these into the builder?  How?
 //            builder.tlsInfo(new TlsInternalInfo(boolean explicitContext,
     //            List<TlsReloadableComponent> reloadableComponents,
     //            X509TrustManager originalTrustManager,
