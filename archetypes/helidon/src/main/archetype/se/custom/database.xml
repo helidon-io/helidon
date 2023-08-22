@@ -339,14 +339,14 @@ db:
                 .register("/db", new PokemonService(DbClient.create(config.get("db"))))]]></value>
                         </list>
                         <list key="application-yaml-entries" if="${server} != 'mongo'">
-                            <value if="!${tracing}"><![CDATA[
+                            <value><![CDATA[
 tracing:
   service: jdbc-db
 ]]></value>
                             <value file="../database/files/application-jdbc.yaml.mustache" template="mustache"/>
                         </list>
                         <list key="config-test">
-                            <value if="!${tracing}"><![CDATA[
+                            <value><![CDATA[
 tracing:
   service: jdbc-db
 ]]></value>

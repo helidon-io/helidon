@@ -23,6 +23,7 @@
         <list path="media">
             <value>json</value>
         </list>
+        <boolean path="db">false</boolean>
         <enum path="media.json-lib">jsonp</enum>
         <boolean path="metrics">true</boolean>
         <enum path="metrics.provider">microprofile</enum>
