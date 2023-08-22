@@ -29,19 +29,21 @@ import io.helidon.common.features.api.Preview;
         invalidIn = HelidonFlavor.MP
 )
 module io.helidon.webserver.graphql {
-    requires static io.helidon.common.features.api;
 
-    requires java.logging;
-    requires io.helidon.common;
-    requires io.helidon.common.uri;
     requires io.helidon.common.configurable;
+    requires io.helidon.common.uri;
+    requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.cors;
-    requires io.helidon.webserver.cors;
     requires io.helidon.graphql.server;
-    requires io.helidon.webserver;
-    requires org.eclipse.yasson;
+    requires io.helidon.webserver.cors;
     requires jakarta.json.bind;
+    requires java.logging;
+    requires org.eclipse.yasson;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.graphql;
 }

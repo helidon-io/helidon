@@ -33,19 +33,21 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
          path = {"WebServer", "HTTP/2"}
 )
 module io.helidon.webserver.http2 {
+
+    requires io.helidon.builder.api;
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.uri;
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.task;
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.http;
-    requires transitive io.helidon.http.http2;
+    requires transitive io.helidon.common.uri;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.http.encoding;
+    requires transitive io.helidon.http.http2;
     requires transitive io.helidon.http.media;
-    requires io.helidon.builder.api;
+    requires transitive io.helidon.http;
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.http2;
     exports io.helidon.webserver.http2.spi;

@@ -18,9 +18,12 @@
  * Helidon WebServer Testing JUnit 5 Support for HTTP2.
  */
 module io.helidon.webserver.testing.junit5.http2 {
-    requires transitive io.helidon.webserver.testing.junit5;
-    requires io.helidon.webserver.http2;
+
     requires io.helidon.webclient.http2;
+    requires io.helidon.webserver.http2;
+
+    requires transitive io.helidon.webserver.testing.junit5;
+    requires transitive org.junit.jupiter.api;
 
     exports io.helidon.webserver.testing.junit5.http2;
 

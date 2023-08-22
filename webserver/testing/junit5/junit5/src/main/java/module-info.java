@@ -21,13 +21,14 @@
  * @see io.helidon.webserver.testing.junit5.RoutingTest
  */
 module io.helidon.webserver.testing.junit5 {
-    requires transitive io.helidon.common.testing.http.junit5;
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.webclient;
+
     requires io.helidon.logging.common;
 
-    requires transitive org.junit.jupiter.api;
     requires transitive hamcrest.all;
+    requires transitive io.helidon.common.testing.http.junit5;
+    requires transitive io.helidon.webclient;
+    requires transitive io.helidon.webserver;
+    requires transitive org.junit.jupiter.api;
 
     exports io.helidon.webserver.testing.junit5;
     exports io.helidon.webserver.testing.junit5.spi;

@@ -22,10 +22,12 @@
  * This will create a request specific context accessible through {@link io.helidon.common.context.Contexts#context()}.
  */
 module io.helidon.webserver.context {
+
     requires io.helidon.common.context;
     requires io.helidon.common;
-    requires transitive io.helidon.config;
     requires io.helidon.webserver;
+
+    requires transitive io.helidon.config;
 
     exports io.helidon.webserver.context;
 }

@@ -28,11 +28,12 @@ import io.helidon.webserver.http.spi.SinkProvider;
          path = {"WebServer", "SSE"}
 )
 module io.helidon.webserver.sse {
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.common;
-    requires transitive io.helidon.webserver;
     requires transitive io.helidon.http.sse;
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.sse;
 

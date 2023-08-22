@@ -32,18 +32,19 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
          path = {"WebServer", "GRPC"}
 )
 module io.helidon.webserver.grpc {
+
+    requires grpc.protobuf.lite;
+    requires io.helidon.builder.api;
+    requires io.helidon.webserver.http2;
+    requires java.logging;
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires java.logging;
-
-    requires io.helidon.builder.api;
-    requires io.helidon.webserver.http2;
-
-    requires transitive grpc.stub;
     requires transitive com.google.protobuf;
     requires transitive grpc.api;
-    requires grpc.protobuf.lite;
+    requires transitive grpc.stub;
+    requires transitive io.helidon.common.config;
 
     exports io.helidon.webserver.grpc;
 

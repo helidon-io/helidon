@@ -26,12 +26,14 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"WebServer", "CORS"}
 )
 module io.helidon.webserver.cors {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.webserver;
     requires java.logging;
 
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.common.config;
     requires transitive io.helidon.cors;
-    requires io.helidon.webserver;
 
     exports io.helidon.webserver.cors;
 }

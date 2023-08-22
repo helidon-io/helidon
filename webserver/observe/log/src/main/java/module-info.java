@@ -24,10 +24,13 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
  * Log endpoint is protected by default and is available at {@code /observe/log} (configurable).
  */
 module io.helidon.webserver.observe.log {
-    requires transitive io.helidon.webserver.observe;
-    requires io.helidon.webserver;
+
     requires io.helidon.http.media.jsonp;
+    requires io.helidon.webserver;
     requires java.logging;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.log;
 

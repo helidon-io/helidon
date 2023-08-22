@@ -18,14 +18,16 @@
  * Helidon WebServer Security Support.
  */
 module io.helidon.webserver.security {
-    requires java.logging;
-    requires jakarta.annotation;
 
-    requires transitive io.helidon.security;
-    requires transitive io.helidon.security.util;
     requires io.helidon.common.context;
-    requires io.helidon.webserver;
     requires io.helidon.security.integration.common;
+    requires io.helidon.webserver;
+    requires jakarta.annotation;
+    requires java.logging;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.security.util;
+    requires transitive io.helidon.security;
 
     exports io.helidon.webserver.security;
 }

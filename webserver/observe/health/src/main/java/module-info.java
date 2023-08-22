@@ -27,14 +27,17 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
          description = "WebServer Health check support",
          in = HelidonFlavor.SE)
 module io.helidon.webserver.observe.health {
-    requires java.management;
 
-    requires transitive io.helidon.health;
-    requires transitive io.helidon.webserver.observe;
-    requires io.helidon.webserver;
     requires io.helidon.http.media.jsonp;
     requires io.helidon.servicecommon;
+    requires io.helidon.webserver;
+    requires java.management;
+
     requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.health;
+    requires transitive io.helidon.webserver.observe;
 
     exports io.helidon.webserver.observe.health;
 
