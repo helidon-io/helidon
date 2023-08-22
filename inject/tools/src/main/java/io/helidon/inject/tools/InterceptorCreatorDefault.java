@@ -189,12 +189,12 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
         /**
          * The creator.
          */
-        protected final InterceptorCreator creator;
+        private final InterceptorCreator creator;
 
         /**
          * The way to convert a string to the annotation type.
          */
-        protected final AnnotationTypeNameResolver resolver;
+        private final AnnotationTypeNameResolver resolver;
 
         protected TriggerFilter() {
             this.creator = null;
@@ -212,13 +212,21 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
             this.resolver = Objects.requireNonNull(resolver);
         }
 
+        Optional<InterceptorCreator> creator() {
+            return Optional.ofNullable(creator);
+        }
+
+        Optional<AnnotationTypeNameResolver> resolver() {
+            return Optional.ofNullable(resolver);
+        }
+
         /**
          * Returns true if the annotation qualifies/triggers interceptor creation.
          *
          * @param annotationTypeName the annotation type name
          * @return true if the annotation qualifies/triggers interceptor creation
          */
-        public boolean isQualifyingTrigger(TypeName annotationTypeName) {
+        boolean isQualifyingTrigger(TypeName annotationTypeName) {
             return (creator != null) && creator.isAllowListed(annotationTypeName);
         }
     }
@@ -234,7 +242,8 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         @Override
         public boolean isQualifyingTrigger(TypeName annotationTypeName) {
-            return resolver.resolve(annotationTypeName).contains(TRIGGER)
+            return resolver().map(it -> it.resolve(annotationTypeName).contains(TRIGGER))
+                    .orElse(false)
                     || TRIGGER_TYPE.equals(annotationTypeName);
         }
     }
@@ -253,11 +262,13 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         @Override
         public boolean isQualifyingTrigger(TypeName annotationTypeName) {
-            Objects.requireNonNull(resolver);
             Objects.requireNonNull(annotationTypeName);
-            return (resolver.resolve(annotationTypeName).contains(RUNTIME)
-                            || resolver.resolve(annotationTypeName).contains(CLASS)
-                            || ALLOW_LIST.contains(annotationTypeName));
+            if (ALLOW_LIST.contains(annotationTypeName)) {
+                return true;
+            }
+            return resolver().map(resolver -> resolver.resolve(annotationTypeName).contains(RUNTIME)
+                            || resolver.resolve(annotationTypeName).contains(CLASS))
+                    .orElse(false);
         }
     }
 
@@ -289,9 +300,13 @@ public class InterceptorCreatorDefault extends AbstractCreator implements Interc
 
         @Override
         public boolean isQualifyingTrigger(TypeName annotationTypeName) {
-            Objects.requireNonNull(creator);
             Objects.requireNonNull(annotationTypeName);
-            return (creator.isAllowListed(annotationTypeName) || ALLOW_LIST.contains(annotationTypeName));
+            if (ALLOW_LIST.contains(annotationTypeName)) {
+                return true;
+            }
+
+            return creator().map(it -> it.isAllowListed(annotationTypeName))
+                    .orElse(false);
         }
     }
 
