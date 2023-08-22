@@ -50,7 +50,6 @@ import io.helidon.webserver.WebServer;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -208,11 +207,10 @@ class UpgradeCodecsCompositionTest {
             "HTTP/1.1 GET http://localhost:%d/multi-something",
             "HTTP/1.1 PUT https://localhost:%d/multi-something",
             "HTTP/1.1 POST https://localhost:%d/multi-something",
-            //"HTTP/2.0 GET http://localhost:%d/multi-something",
+            "HTTP/2.0 GET http://localhost:%d/multi-something",
             "HTTP/2.0 PUT https://localhost:%d/multi-something",
             "HTTP/2.0 POST https://localhost:%d/multi-something",
     })
-    @Disabled("Fails on pipeline")
     void versionSpecificHttp20MultipleMethods(String param) throws IOException, InterruptedException {
         String[] split = param.split("\s");
         String version = split[0];

@@ -47,7 +47,10 @@ final class Http2ConnectionCache {
     }
 
     void remove(ConnectionKey connectionKey) {
-        cache.remove(connectionKey);
+        Http2ClientConnectionHandler handler = cache.remove(connectionKey);
+        if (handler != null) {
+            handler.close();
+        }
         http2Supported.remove(connectionKey);
     }
 

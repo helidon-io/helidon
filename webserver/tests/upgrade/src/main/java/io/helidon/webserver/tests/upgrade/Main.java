@@ -58,10 +58,21 @@ public class Main {
                         .route(Http2Route.route(GET, "/versionspecific", (req, res) -> res.send("HTTP/2.0 route\n")))
                         .route(Http1Route.route(GET, "/versionspecific1", (req, res) -> res.send("HTTP/1.1 route\n")))
                         .route(Http2Route.route(GET, "/versionspecific2", (req, res) -> res.send("HTTP/2.0 route\n")))
-                        .route(Http.Method.predicate(GET, POST, PUT),
-                                PathMatchers.create("/multi*"),
-                                (req, res) -> res.send("HTTP/" + req.prologue().protocolVersion()
-                                                               + " route " + req.prologue().method() + "\n")))
+                        .route(Http.Method.predicate(GET),
+                               PathMatchers.create("/multi*"),
+                               (req, res) -> res.send("HTTP/" + req.prologue().protocolVersion()
+                                                              + " route " + req.prologue().method() + "\n"))
+                        .route(Http.Method.predicate(POST, PUT),
+                               PathMatchers.create("/multi*"),
+                               (req, res) ->
+                               {
+                                   if (req.content().hasEntity()) {
+                                       // Workaround for #7427
+                                       req.content().as(String.class);
+                                   }
+                                   res.send("HTTP/" + req.prologue().protocolVersion()
+                                                    + " route " + req.prologue().method() + "\n");
+                               }))
                 .addRouting(WsRouting.builder()
                                     .endpoint("/ws-echo", new EchoWsListener())
                                     .build())

@@ -22,6 +22,7 @@ import io.helidon.common.buffers.BufferData;
  * Ping frame.
  */
 public final class Http2Ping implements Http2Frame<Http2Flag.PingFlags> {
+    private static final byte[] EMPTY_PING_DATA = new byte[8];
     private final BufferData data;
 
     Http2Ping(BufferData data) {
@@ -38,12 +39,35 @@ public final class Http2Ping implements Http2Frame<Http2Flag.PingFlags> {
         return new Http2Ping(data);
     }
 
+    /**
+     * Create ping.
+     *
+     * @return ping frame
+     */
+    public static Http2Ping create() {
+        return new Http2Ping(BufferData.create(EMPTY_PING_DATA));
+    }
+
     @Override
     public Http2FrameData toFrameData(Http2Settings settings, int streamId, Http2Flag.PingFlags flags) {
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
                                                           frameTypes(),
                                                           flags,
                                                           streamId);
+
+        return new Http2FrameData(header, data);
+    }
+
+    /**
+     * Representation of ping data.
+     *
+     * @return frame data crated from this ping
+     */
+    public Http2FrameData toFrameData() {
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          frameTypes(),
+                                                          Http2Flag.PingFlags.create(0),
+                                                          0);
 
         return new Http2FrameData(header, data);
     }
