@@ -19,7 +19,7 @@ import java.time.Instant;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.integrations.oci.secrets.configsource.OciSecretsConfigSourceProvider.SecretBundleConfigSource.isModified;
+import static io.helidon.integrations.oci.secrets.configsource.SecretBundleConfigSource.isModified;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
