@@ -47,7 +47,7 @@ import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
@@ -154,6 +154,10 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final String DEFAULT_HTTP_HOST = "localhost";
     static final int DEFAULT_HTTP_PORT = 14250;
 
+    static final long DEFAULT_SCHEDULE_DELAY_MILLIS = 30_000;
+    static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
+    static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
+
     private final Map<String, String> tags = new HashMap<>();
     // this is a backward incompatible change, but the correct choice is Jaeger, not B3
     private final Set<PropagationFormat> propagationFormats = EnumSet.noneOf(PropagationFormat.class);
@@ -165,12 +169,16 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private Number samplerParam = 1;
     private boolean enabled = DEFAULT_ENABLED;
     private boolean global = true;
-    private Duration exporterTimeout = Duration.ofSeconds(10);
     private byte[] privateKey;
     private byte[] certificate;
     private byte[] trustedCertificates;
     private String path;
     private Config config;
+
+    private Duration exporterTimeout = Duration.ofSeconds(10);
+    private Duration scheduleDelayMillis = Duration.ofMillis(DEFAULT_SCHEDULE_DELAY_MILLIS);
+    private int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
+    private int maxExportBatchSize = DEFAULT_MAX_EXPORT_BATCH_SIZE;
 
     /**
      * Default constructor, does not modify any state.
@@ -264,7 +272,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("exporter-timeout-millis").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
         config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
         config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
         config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
@@ -298,6 +305,11 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 });
 
         config.get("global").asBoolean().ifPresent(this::registerGlobal);
+
+        config.get("exporter-timeout-millis").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
+        config.get("schedule-delay-millis").asInt().ifPresent(it -> scheduleDelayMillis(Duration.ofMillis(it)));
+        config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
+        config.get("max-export-batch-size").asInt().ifPresent(this::maxExportBatchSize);
 
         return this;
     }
@@ -347,6 +359,42 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     @ConfiguredOption(key = "exporter-timeout-millis", value = "10000")
     public JaegerTracerBuilder exporterTimeout(Duration exporterTimeout) {
         this.exporterTimeout = exporterTimeout;
+        return this;
+    }
+
+    /**
+     * Schedule Delay of exporter requests.
+     *
+     * @param scheduleDelayMillis timeout to use
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "schedule-delay-millis", value = "5000")
+    public JaegerTracerBuilder scheduleDelayMillis(Duration scheduleDelayMillis) {
+        this.scheduleDelayMillis = scheduleDelayMillis;
+        return this;
+    }
+
+    /**
+     * Maximum Queue Size of exporter requests.
+     *
+     * @param maxQueueSize to use
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "max-queue-size", value = "2048")
+    public JaegerTracerBuilder maxQueueSize(int maxQueueSize) {
+        this.maxQueueSize = maxQueueSize;
+        return this;
+    }
+
+    /**
+     * Maximum Export Batch Size of exporter requests.
+     *
+     * @param maxExportBatchSize to use
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "max-export-batch-size", value = "512")
+    public JaegerTracerBuilder maxExportBatchSize(int maxExportBatchSize) {
+        this.maxExportBatchSize = maxExportBatchSize;
         return this;
     }
 
@@ -462,7 +510,12 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             Resource serviceName = Resource.create(attributesBuilder.build());
             OpenTelemetry ot = OpenTelemetrySdk.builder()
                     .setTracerProvider(SdkTracerProvider.builder()
-                            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                            .addSpanProcessor(BatchSpanProcessor.builder(exporter)
+                                    .setScheduleDelay(scheduleDelayMillis)
+                                    .setMaxQueueSize(maxQueueSize)
+                                    .setMaxExportBatchSize(maxExportBatchSize)
+                                    .setExporterTimeout(exporterTimeout)
+                                    .build())
                             .setSampler(sampler)
                             .setResource(serviceName)
                             .build())
