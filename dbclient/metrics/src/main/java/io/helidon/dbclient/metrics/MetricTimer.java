@@ -18,7 +18,6 @@ package io.helidon.dbclient.metrics;
 import java.time.Duration;
 import java.util.concurrent.CompletionStage;
 
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Timer;
 
@@ -73,7 +72,7 @@ final class MetricTimer extends MetricService<Timer> {
     }
 
     @Override
-    protected Timer metric(MeterRegistry registry, Metadata meta) {
+    protected Timer metric(MeterRegistry registry, MeterMetadata meta) {
         return registry.getOrCreate(meta.apply(Timer.builder(meta.name())));
     }
 

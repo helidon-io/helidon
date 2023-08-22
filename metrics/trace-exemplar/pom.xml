@@ -34,6 +34,14 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>

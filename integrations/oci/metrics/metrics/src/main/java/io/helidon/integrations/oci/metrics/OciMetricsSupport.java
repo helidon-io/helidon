@@ -34,7 +34,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Gauge;
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webserver.http.HttpRules;
@@ -116,10 +115,10 @@ public class OciMetricsSupport implements HttpService {
          * @param metric the metric to be formatted
          * @param metricId {@code MetricID} of the metric being formatted
          * @param suffix name suffix to append to the recorded metric name (e.g, "total"); can be null
-         * @param metadata metric metadata describing the metric
+         * @param unit metric unit
          * @return the formatted metric name
          */
-        default String format(Meter metric, Meter.Id metricId, String suffix, Metadata metadata) {
+        default String format(Meter metric, Meter.Id metricId, String suffix, String unit) {
 
             StringBuilder result = new StringBuilder(metricId.name());
             if (suffix != null) {
@@ -127,7 +126,7 @@ public class OciMetricsSupport implements HttpService {
             }
             result.append("_").append(textType(metric).replace(" ", "_"));
 
-            String units = formattedBaseUnits(metadata.getUnit());
+            String units = formattedBaseUnits(unit);
             if (units != null && !units.isBlank()) {
                 result.append("_").append(units);
             }
@@ -393,7 +392,7 @@ public class OciMetricsSupport implements HttpService {
          * Sets the {@link NameFormatter} to use in formatting metric
          * names. See the
          * {@link NameFormatter#format(
-         * Meter, Meter.Id, String, Metadata)} method for details
+         * Meter, Meter.Id, String, String)} method for details
          * about the default formatting.
          *
          * @param nameFormatter the formatter to use

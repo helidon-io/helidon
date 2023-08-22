@@ -28,7 +28,6 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.HistogramSnapshot;
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Timer;
@@ -116,8 +115,7 @@ class OciMetricsData {
     private Stream<MetricDataDetails> forHistogram(Meter.Id metricId, DistributionSummary histogram) {
         Stream.Builder<MetricDataDetails> result = Stream.builder();
         long count = histogram.count();
-        Metadata metadata = Metadata.create(histogram);
-        String units = metadata.getUnit();
+        String units = histogram.baseUnit();
         String unitsPrefix = units != null && !Objects.equals(units, Meter.BaseUnits.NONE) ? units + "_" : "";
         String unitsSuffix = units != null && !Objects.equals(units, Meter.BaseUnits.NONE) ? "_" + units : "";
         result.add(metricDataDetails(histogram, metricId, unitsPrefix + "count", count));
@@ -141,16 +139,15 @@ class OciMetricsData {
             return null;
         }
 
-        Metadata metadata = Metadata.create(metric);
         Map<String, String> dimensions = dimensions(metric);
-        List<Datapoint> datapoints = datapoints(metadata, value);
-        String metricName = nameFormatter.format(metric, metricId, suffix, metadata);
+        List<Datapoint> datapoints = datapoints(metric.description(), value);
+        String metricName = nameFormatter.format(metric, metricId, suffix, metric.baseUnit());
         return MetricDataDetails.builder()
                 .compartmentId(compartmentId)
                 .name(metricName)
                 .namespace(namespace)
                 .resourceGroup(resourceGroup)
-                .metadata(ociMetadata(metadata))
+                .metadata(ociMetadata(metric.baseUnit()))
                 .datapoints(datapoints)
                 .dimensions(dimensions)
                 .build();
@@ -171,20 +168,20 @@ class OciMetricsData {
         return value;
     }
 
-    private List<Datapoint> datapoints(Metadata metadata, double value) {
+    private List<Datapoint> datapoints(String unit, double value) {
         return Collections.singletonList(Datapoint.builder()
-                                                 .value(convertUnits(metadata.getUnit(), value))
+                                                 .value(convertUnits(unit, value))
                                                  .timestamp(new Date())
                                                  .build());
     }
 
-    private Map<String, String> ociMetadata(Metadata metadata) {
-        return (descriptionEnabled && metadata.getDescription() != null && !metadata.getDescription().isEmpty())
+    private Map<String, String> ociMetadata(String description) {
+        return (descriptionEnabled && description != null && !description.isEmpty())
                 ? Collections.singletonMap("description",
-                                           metadata.getDescription().length() <= 256
-                                                   ? metadata.getDescription()
+                                           description.length() <= 256
+                                                   ? description
                                                    // trim metadata value as oci metadata.value has a maximum of 256 characters
-                                                   : metadata.getDescription().substring(0, 256))
+                                                   : description.substring(0, 256))
                 : null;
     }
 }

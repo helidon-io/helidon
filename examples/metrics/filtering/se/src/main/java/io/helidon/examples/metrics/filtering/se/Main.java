@@ -81,7 +81,7 @@ public final class Main {
                 .as(MetricsConfig.class)
                 .orElseGet(MetricsConfig::create);
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(initialMetricsConfig)
-                .addScopes(Map.of(Meter.Scope.APPLICATION, scopeConfig));
+                .scoping().scopes().put(Meter.Scope.APPLICATION, scopeConfig);
 
         server.config(config.get("server"))
               .routing(r -> routing(r, config, metricsConfigBuilder));

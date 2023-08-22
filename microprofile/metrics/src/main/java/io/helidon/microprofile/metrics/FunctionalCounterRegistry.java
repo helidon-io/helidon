@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.Tag;
 
 /**

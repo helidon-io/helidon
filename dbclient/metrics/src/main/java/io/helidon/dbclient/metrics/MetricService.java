@@ -23,8 +23,6 @@ import io.helidon.common.LazyValue;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.metrics.api.Metadata;
-import io.helidon.metrics.api.MetadataBuilder;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -33,7 +31,7 @@ import io.helidon.metrics.api.Metrics;
  * Common ancestor for DbClient metrics.
  */
 abstract class MetricService<T extends Meter> extends DbClientServiceBase {
-    private final Metadata meta;
+    private final MeterMetadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
     private final LazyValue<MeterRegistry> registry = LazyValue.create(Metrics::globalRegistry);
@@ -60,7 +58,7 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
         this.measureSuccess = builder.success();
         String tmpDescription;
         if (builder.description() == null) {
-            tmpDescription = ((null == meta) ? null : meta.getDescription());
+            tmpDescription = ((null == meta) ? null : meta.description());
         } else {
             tmpDescription = builder.description();
         }
@@ -81,11 +79,11 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
 
         T metric = cache.computeIfAbsent(statementName, s -> {
             String name = nameFunction.apply(statementName, dbStatementType);
-            MetadataBuilder builder = (meta == null)
-                    ? Metadata.builder().withName(name)
-                    : Metadata.builder(meta);
+            MeterMetadata.Builder builder = (meta == null)
+                    ? MeterMetadata.builder().name(name)
+                    : MeterMetadata.builder(meta);
             if (description != null) {
-                builder = builder.withDescription(description);
+                builder = builder.description(description);
             }
             return metric(registry.get(), builder.build());
         });
@@ -135,5 +133,5 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
      * @param meta     metadata
      * @return metric
      */
-    protected abstract T metric(MeterRegistry registry, Metadata meta);
+    protected abstract T metric(MeterRegistry registry, MeterMetadata meta);
 }

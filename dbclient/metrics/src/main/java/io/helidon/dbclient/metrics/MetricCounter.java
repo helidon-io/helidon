@@ -18,7 +18,6 @@ package io.helidon.dbclient.metrics;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Metadata;
 import io.helidon.metrics.api.MeterRegistry;
 
 /**
@@ -58,7 +57,7 @@ final class MetricCounter extends MetricService<Counter> {
     }
 
     @Override
-    protected Counter metric(MeterRegistry registry, Metadata meta) {
+    protected Counter metric(MeterRegistry registry, MeterMetadata meta) {
         return registry.getOrCreate(meta.apply(Counter.builder(meta.name())));
     }
 

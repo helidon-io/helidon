@@ -20,7 +20,6 @@ import java.util.function.BiFunction;
 import io.helidon.common.config.Config;
 import io.helidon.dbclient.DbClientServiceBase;
 import io.helidon.dbclient.DbStatementType;
-import io.helidon.metrics.api.Metadata;
 
 /**
  * A {@link io.helidon.dbclient.DbClientService} builder base for metrics.
@@ -31,7 +30,7 @@ import io.helidon.metrics.api.Metadata;
 abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends DbClientServiceBase>
         extends DbClientServiceBase.BuilderBase<B, T> {
 
-    private Metadata meta;
+    private MeterMetadata meta;
     private BiFunction<String, DbStatementType, String> nameFormat;
     private boolean measureErrors = true;
     private boolean measureSuccess = true;
@@ -54,7 +53,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Db
      * @param meta metric metadata
      * @return updated builder instance
      */
-    public B metadata(Metadata meta) {
+    public B metadata(MeterMetadata meta) {
         this.meta = meta;
         return identity();
     }
@@ -176,7 +175,7 @@ abstract class MetricBuilderBase<B extends MetricBuilderBase<B, T>, T extends Db
      *
      * @return metadata
      */
-    Metadata meta() {
+    MeterMetadata meta() {
         return meta;
     }
 

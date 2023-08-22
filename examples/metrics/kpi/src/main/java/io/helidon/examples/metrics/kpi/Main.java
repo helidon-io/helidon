@@ -16,6 +16,8 @@
 
 package io.helidon.examples.metrics.kpi;
 
+import java.time.Duration;
+
 import io.helidon.config.Config;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
@@ -114,7 +116,7 @@ public final class Main {
         KeyPerformanceIndicatorMetricsConfig.Builder configBuilder =
                 KeyPerformanceIndicatorMetricsConfig.builder()
                         .extended(true)
-                        .longRunningRequestThresholdMs(2000);
+                        .longRunningRequestThreshold(Duration.ofSeconds(2));
         return MetricsFeature.builder()
                 .metricsConfig(MetricsConfig.builder()
                         .keyPerformanceIndicatorMetricsConfig(configBuilder))
