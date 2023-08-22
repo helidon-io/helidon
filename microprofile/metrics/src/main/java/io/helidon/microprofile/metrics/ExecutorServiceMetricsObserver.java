@@ -38,7 +38,7 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Manages metrics for each Helidon-created thread pool.
  */
-public class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierObserver {
+class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierObserver {
 
     private static final System.Logger LOGGER = System.getLogger(ExecutorServiceMetricsObserver.class.getName());
 

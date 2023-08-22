@@ -56,13 +56,13 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
     }
 
     @Override
-    public String baseUnit() {
-        return delegate.getId().getBaseUnit();
+    public Optional<String> baseUnit() {
+        return Optional.ofNullable(delegate.getId().getBaseUnit());
     }
 
     @Override
-    public String description() {
-        return delegate.getId().getDescription();
+    public Optional<String> description() {
+        return Optional.ofNullable(delegate.getId().getDescription());
     }
 
     @Override

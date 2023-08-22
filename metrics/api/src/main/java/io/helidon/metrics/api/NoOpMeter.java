@@ -119,13 +119,13 @@ class NoOpMeter implements Meter, NoOpWrapper {
     }
 
     @Override
-    public String baseUnit() {
-        return unit;
+    public Optional<String> baseUnit() {
+        return Optional.ofNullable(unit);
     }
 
     @Override
-    public String description() {
-        return description;
+    public Optional<String> description() {
+        return Optional.ofNullable(description);
     }
 
     @Override

@@ -32,16 +32,26 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                       MeterRegistry meterRegistry,
-                                                      String scopeTagName,
+                                                      Optional<String> scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
         return mediaType.type().equals(MediaTypes.APPLICATION_JSON.type())
                 && mediaType.subtype().equals(MediaTypes.APPLICATION_JSON.subtype())
-                ? Optional.of(JsonFormatter.builder(meterRegistry)
-                                      .scopeTagName(scopeTagName)
-                                      .scopeSelection(scopeSelection)
-                                      .meterNameSelection(nameSelection)
-                                      .build())
+                ? Optional.of(create(meterRegistry,
+                                     scopeTagName,
+                                     scopeSelection,
+                                     nameSelection))
                 : Optional.empty();
+    }
+
+    private JsonFormatter create(MeterRegistry meterRegistry,
+                                 Optional<String> scopeTagName,
+                                 Iterable<String> scopeSelection,
+                                 Iterable<String> nameSelection) {
+        JsonFormatter.Builder builder = JsonFormatter.builder(meterRegistry)
+                .scopeSelection(scopeSelection)
+                .meterNameSelection(nameSelection);
+        scopeTagName.ifPresent(builder::scopeTagName);
+        return builder.build();
     }
 }

@@ -15,27 +15,29 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.MetricsProgrammaticSettings;
+import java.util.Optional;
+
+import io.helidon.metrics.api.MetricsProgrammaticConfig;
 
 /**
  * MP implementation of metrics programmatic settings.
  */
-public class MpMetricsProgrammaticSettings implements MetricsProgrammaticSettings {
+public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     /**
      * Creates a new instance (explicit for style checking and service loading).
      *
      */
-    public MpMetricsProgrammaticSettings() {
+    public MpMetricsProgrammaticConfig() {
     }
 
     @Override
-    public String scopeTagName() {
-        return "mp_scope";
+    public Optional<String> scopeTagName() {
+        return Optional.of("mp_scope");
     }
 
     @Override
-    public String appTagName() {
-        return "mp_app";
+    public Optional<String> appTagName() {
+        return Optional.of("mp_app");
     }
 }

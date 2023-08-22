@@ -16,23 +16,22 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.metrics.spi.MetersProvider;
-import io.helidon.metrics.systemmeters.SystemMetersProvider;
 
 /**
  * Helidon metrics system meters.
  */
-@Feature(value = "Built-ins",
+@Feature(value = "System meters",
          description = "Built-in system meters",
          in = {HelidonFlavor.MP, HelidonFlavor.SE},
-         path = {"Metrics", "Builtins"}
+         path = {"Metrics", "Systemmeters"}
 )
-module io.helidon.metrics.system.meters {
+module io.helidon.metrics.systemmeters {
     requires io.helidon.common.features.api;
     requires io.helidon.common;
     requires io.helidon.metrics.api;
     requires java.management;
 
-    provides MetersProvider with SystemMetersProvider;
+    provides io.helidon.metrics.spi.MetersProvider
+            with io.helidon.metrics.systemmeters.SystemMetersProvider;
 
 }

@@ -29,6 +29,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Http;
+import io.helidon.http.HttpException;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -201,7 +202,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           metricsConfig.scopeTagName(),
+                                                           SystemTagsManager.instance().scopeTagName(),
                                                            scopeSelection,
                                                            nameSelection);
 
@@ -210,7 +211,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,
                                                    MediaType mediaType,
-                                                   String scopeTagName,
+                                                   Optional<String> scopeTagName,
                                                    Iterable<String> scopeSelection,
                                                    Iterable<String> nameSelection) {
         Optional<MeterRegistryFormatter> formatter = HelidonServiceLoader.builder(
@@ -229,7 +230,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         if (formatter.isPresent()) {
             return formatter.get();
         }
-        throw new UnsupportedOperationException("Unable to find a meter registry formatter for media type " + mediaType);
+        throw new HttpException("Unsupported media type: " + mediaType, Http.Status.UNSUPPORTED_MEDIA_TYPE_415, true);
     }
 
 
@@ -256,25 +257,15 @@ public class MetricsFeature extends HelidonFeatureSupport {
     private void getOrOptionsMatching(MediaType mediaType,
                                       ServerResponse res,
                                       Supplier<Optional<?>> dataSupplier) {
-        try {
-            Optional<?> output = dataSupplier.get();
+        Optional<?> output = dataSupplier.get();
 
-            if (output.isPresent()) {
-                res.status(OK_200)
-                        .headers().contentType(mediaType);
-                res.send(output.get());
-            } else {
-                res.status(NOT_FOUND_404);
-                res.send();
-            }
-        } catch (UnsupportedOperationException ex) {
-            // We could not find a formatter for that media type from any provider we could locate.
-            res.status(NOT_ACCEPTABLE_406);
-            res.send();
-        } catch (NoClassDefFoundError ex) {
-            // Prometheus seems not to be on the path.
-            LOGGER.log(System.Logger.Level.DEBUG, "Unable to find Micrometer Prometheus types to scrape the registry");
+        if (output.isPresent()) {
+            res.status(OK_200)
+                    .headers().contentType(mediaType);
+            res.send(output.get());
+        } else {
             res.status(NOT_FOUND_404);
+            res.send();
         }
     }
 

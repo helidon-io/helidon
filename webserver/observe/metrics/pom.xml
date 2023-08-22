@@ -54,42 +54,6 @@
             <artifactId>helidon-common-context</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient</artifactId>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-<!--        <dependency>-->
-<!--            <groupId>org.eclipse.microprofile.metrics</groupId>-->
-<!--            <artifactId>microprofile-metrics-api</artifactId>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.osgi</groupId>-->
-<!--                    <artifactId>org.osgi.annotation.versioning</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <groupId>jakarta.inject</groupId>-->
-<!--                    <artifactId>jakarta.inject-api</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <groupId>javax.enterprise</groupId>-->
-<!--                    <artifactId>cdi-api</artifactId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
-        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-service-common</artifactId>
         </dependency>
@@ -98,9 +62,8 @@
             <artifactId>helidon-config-metadata</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-micrometer</artifactId>
-            <scope>test</scope>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-micrometer</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.common.testing</groupId>

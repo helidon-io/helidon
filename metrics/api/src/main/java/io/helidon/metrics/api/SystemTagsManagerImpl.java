@@ -22,8 +22,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * Captures and makes available for output any system tag settings to be applied when metric IDs are output.
@@ -41,7 +43,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
     private final List<Tag> systemTags;
-    private final String scopeTagName;
+    private String scopeTagName;
+    private String defaultScopeValue;
 
     /**
      * Returns the singleton instance of the system tags manager.
@@ -64,17 +67,30 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
         List<Tag> result = new ArrayList<>(metricsConfig.globalTags());
 
-        String appTagName = MetricsProgrammaticSettings.instance().appTagName();
-        if (metricsConfig.appName().isPresent() && appTagName != null && !appTagName.isBlank()) {
-            result.add(Tag.create(appTagName, metricsConfig.appName().get()));
+        // Add a tag for the app name if there is an appName setting in config AND we have a setting
+        // from somewhere for the tag name to use for recording the app name.
+
+        MetricsProgrammaticConfig.instance()
+                .appTagName()
+                .filter(Predicate.not(String::isBlank))
+                .ifPresent(tagNameToUse ->
+                    metricsConfig.appName().ifPresent(appNameToUse -> result.add(Tag.create(tagNameToUse, appNameToUse)))
+                );
+
+        systemTags = List.copyOf(result);
+
+        // Set the scope tag, if appropriate.
+        if (metricsConfig.scoping().tagEnabled()) {
+            MetricsProgrammaticConfig.instance()
+                    .scopeTagName()
+                    .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
         }
-        systemTags = Collections.unmodifiableList(result);
-        scopeTagName = MetricsProgrammaticSettings.instance().scopeTagName();
+        defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
     }
 
     // for testing
     private SystemTagsManagerImpl() {
-        systemTags = Collections.emptyList();
+        systemTags = List.of();
         scopeTagName = "_testScope_";
     }
 
@@ -94,6 +110,18 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     @Override
     public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
         return new MultiIterable<>(explicitTags, scopeIterable(scope, AbstractMap.SimpleEntry::new));
+    }
+
+    @Override
+    public Optional<Map.Entry<String, String>> scopeSetting(String scopeValue) {
+        return scopeTagName == null || (scopeValue == null && defaultScopeValue == null)
+                ? Optional.empty()
+                : Optional.of(new AbstractMap.SimpleEntry<>(scopeTagName, scopeValue == null ? defaultScopeValue : scopeValue));
+    }
+
+    @Override
+    public Optional<String> scopeTagName() {
+        return Optional.ofNullable(scopeTagName);
     }
 
     /**

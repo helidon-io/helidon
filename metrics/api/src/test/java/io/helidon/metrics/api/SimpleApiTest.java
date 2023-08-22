@@ -75,6 +75,8 @@ public class SimpleApiTest {
                 .build();
         ScopingConfig scopingConfig = metricsConfig.scoping();
         assertThat("Scope tagging", scopingConfig.tagEnabled(), is(false));
-        assertThat("Scope tag name", scopingConfig.tagName(), is(ScopingConfig.SCOPE_TAG_NAME_DEFAULT));
+        assertThat("Scope tag name",
+                   scopingConfig.tagName(),
+                   OptionalMatcher.optionalValue(is(ScopingConfig.SCOPE_TAG_NAME_DEFAULT)));
     }
 }

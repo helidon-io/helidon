@@ -36,9 +36,7 @@ module io.helidon.microprofile.metrics {
     requires io.helidon.microprofile.server;
     requires jakarta.annotation;
     requires jakarta.inject;
-    requires micrometer.registry.prometheus;
     requires microprofile.metrics.api;
-    requires simpleclient.common;
 
     requires static io.helidon.common.features.api;
 
@@ -55,7 +53,7 @@ module io.helidon.microprofile.metrics {
     opens io.helidon.microprofile.metrics.spi to io.helidon.microprofile.cdi, weld.core.impl;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.metrics.MetricsCdiExtension;
-    provides io.helidon.metrics.api.MetricsProgrammaticSettings
+    provides io.helidon.metrics.spi.MetricsProgrammaticSettings
             with io.helidon.microprofile.metrics.MpMetricsProgrammaticSettings;
 
 }

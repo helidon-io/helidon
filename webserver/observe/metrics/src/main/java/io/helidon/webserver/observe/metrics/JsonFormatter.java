@@ -188,8 +188,8 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                     JsonObjectBuilder builderForThisName = metadataOutputBuilderWithinParent
                             .computeIfAbsent(name, k -> JSON.createObjectBuilder());
-                    addNonEmpty(builderForThisName, "unit", meter.baseUnit());
-                    addNonEmpty(builderForThisName, "description", meter.description());
+                    meter.baseUnit().ifPresent(u -> addNonEmpty(builderForThisName, "unit", u));
+                    meter.description().ifPresent(d -> addNonEmpty(builderForThisName, "description", d));
                     isAnyOutput.set(true);
 
                     List<List<String>> tagGroups = new ArrayList<>();
@@ -235,7 +235,12 @@ class JsonFormatter implements MeterRegistryFormatter {
         return sb.toString();
     }
 
-
+    /**
+     * Creates a map from escape characters to quoted escape-characters so escape characters in tag names and values can
+     * be escaped before sending to JSON for processing.
+     *
+     * @return prepared map
+     */
     private static Map<String, String> initEscapedCharsMap() {
         final Map<String, String> result = new HashMap<>();
         result.put("\b", bsls("b"));

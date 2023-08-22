@@ -16,8 +16,6 @@
 
 package io.helidon.examples.metrics.filtering.se;
 
-import java.util.Map;
-
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
 import io.helidon.logging.common.LogConfig;
@@ -79,7 +77,7 @@ public final class Main {
                 .build();
 
         MetricsConfig initialMetricsConfig = config.get(MetricsConfig.METRICS_CONFIG_KEY)
-                .as(MetricsConfig.class)
+                .map(MetricsConfig::create)
                 .orElseGet(MetricsConfig::create);
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(initialMetricsConfig)
                 .scoping(ScopingConfig.builder()

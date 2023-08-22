@@ -26,7 +26,7 @@ import org.eclipse.microprofile.metrics.Metadata;
  * </p>
  * @param <M> type of {@link io.helidon.metrics.api.Meter} this metric wraps.
  */
-public abstract class AbstractMetric<M extends Meter> implements HelidonMetric<M> {
+abstract class AbstractMetric<M extends Meter> implements HelidonMetric<M> {
 
     private final String registryType;
     private final Metadata metadata;

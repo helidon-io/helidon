@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.MetricsProgrammaticSettings;
+import io.helidon.metrics.api.MetricsProgrammaticConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -220,7 +220,7 @@ class MetricStore {
     private Set<String> checkOrStoreTagNames(String metricName, Set<String> tagNames) {
 
         Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
-        reservedTagNamesUsed.retainAll(MetricsProgrammaticSettings.instance().reservedTagNames());
+        reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
         if (!reservedTagNamesUsed.isEmpty()) {
             throw new IllegalArgumentException("Program-specified tag names include reserved names: " + reservedTagNamesUsed);
         }

@@ -21,6 +21,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -115,7 +116,7 @@ class OciMetricsData {
     private Stream<MetricDataDetails> forHistogram(Meter.Id metricId, DistributionSummary histogram) {
         Stream.Builder<MetricDataDetails> result = Stream.builder();
         long count = histogram.count();
-        String units = histogram.baseUnit();
+        String units = histogram.baseUnit().orElse(null);
         String unitsPrefix = units != null && !Objects.equals(units, Meter.BaseUnits.NONE) ? units + "_" : "";
         String unitsSuffix = units != null && !Objects.equals(units, Meter.BaseUnits.NONE) ? "_" + units : "";
         result.add(metricDataDetails(histogram, metricId, unitsPrefix + "count", count));
@@ -140,14 +141,14 @@ class OciMetricsData {
         }
 
         Map<String, String> dimensions = dimensions(metric);
-        List<Datapoint> datapoints = datapoints(metric.description(), value);
-        String metricName = nameFormatter.format(metric, metricId, suffix, metric.baseUnit());
+        List<Datapoint> datapoints = datapoints(metric.description().orElse(null), value);
+        String metricName = nameFormatter.format(metric, metricId, suffix, metric.baseUnit().orElse(null));
         return MetricDataDetails.builder()
                 .compartmentId(compartmentId)
                 .name(metricName)
                 .namespace(namespace)
                 .resourceGroup(resourceGroup)
-                .metadata(ociMetadata(metric.baseUnit()))
+                .metadata(ociMetadata(metric.baseUnit().orElse(null)))
                 .datapoints(datapoints)
                 .dimensions(dimensions)
                 .build();

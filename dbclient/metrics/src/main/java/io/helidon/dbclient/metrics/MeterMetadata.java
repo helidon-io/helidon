@@ -135,8 +135,8 @@ class MeterMetadata {
 
         Builder(Meter meter) {
             name = meter.id().name();
-            description = meter.description();
-            unit = meter.baseUnit();
+            meter.description().ifPresent(d -> description = d);
+            meter.baseUnit().ifPresent(u -> unit = u);
         }
 
         Builder() {

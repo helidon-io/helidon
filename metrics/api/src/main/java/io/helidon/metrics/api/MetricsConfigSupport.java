@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.config.GlobalConfig;
 
 class MetricsConfigSupport {
 
@@ -89,5 +90,21 @@ class MetricsConfigSupport {
 //                        .findAny();
 //        return matchedScopeConfig.map(s -> s.isMeterEnabled(name)).orElse(true);
 
+    }
+
+    public static class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
+
+        @Override
+        public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
+            if (builder.config().isEmpty()) {
+                builder.config(GlobalConfig.config().get(MetricsConfigBlueprint.METRICS_CONFIG_KEY));
+            }
+            if (builder.keyPerformanceIndicatorMetricsConfig().isEmpty()) {
+                builder.keyPerformanceIndicatorMetricsConfig(KeyPerformanceIndicatorMetricsConfig.create());
+            }
+            if (builder.scoping().isEmpty()) {
+                builder.scoping(ScopingConfig.create());
+            }
+        }
     }
 }

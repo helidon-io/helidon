@@ -44,7 +44,7 @@ public interface MeterRegistryFormatterProvider {
      */
     Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                MeterRegistry meterRegistry,
-                                               String scopeTagName,
+                                               Optional<String> scopeTagName,
                                                Iterable<String> scopeSelection,
                                                Iterable<String> nameSelection);
 }

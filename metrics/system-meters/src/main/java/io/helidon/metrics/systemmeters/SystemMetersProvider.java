@@ -52,6 +52,15 @@ public class SystemMetersProvider implements MetersProvider {
 
     private MetricsConfig metricsConfig;
 
+    /**
+     * Constructs a new instance for service loading.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public SystemMetersProvider() {
+    }
+
     @Override
     public Iterable<Meter.Builder<?, ?>> meters(Config config) {
         metricsConfig = MetricsConfig.create(config.get(MetricsConfig.METRICS_CONFIG_KEY));

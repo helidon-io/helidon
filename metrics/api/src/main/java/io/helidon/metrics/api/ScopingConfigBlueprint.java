@@ -26,6 +26,9 @@ import io.helidon.config.metadata.ConfiguredOption;
 @Prototype.Blueprint
 interface ScopingConfigBlueprint {
 
+    /**
+     * Default tag name for recording a meter's scope as a tag.
+     */
     String SCOPE_TAG_NAME_DEFAULT = "scope";
 
     /**
@@ -51,7 +54,7 @@ interface ScopingConfigBlueprint {
      * @return tag name for storing scope values
      */
     @ConfiguredOption(value = SCOPE_TAG_NAME_DEFAULT)
-    String tagName();
+    Optional<String> tagName();
 
     /**
      * Settings for individual scopes.

@@ -27,22 +27,42 @@ import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
  * Micrometer (and Prometheus, particularly) specific formatter.
  */
 public class MicrometerPrometheusFormatterProvider implements MeterRegistryFormatterProvider {
+
+    /**
+     * Constructs a new instance for service loading.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public MicrometerPrometheusFormatterProvider() {
+    }
+
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                       MeterRegistry meterRegistry,
-                                                      String scopeTagName,
+                                                      Optional<String> scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
         return matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT)
-                ? Optional.of(MicrometerPrometheusFormatter.builder(meterRegistry)
-                                      .scopeTagName(scopeTagName)
-                                      .scopeSelection(scopeSelection)
-                                      .meterNameSelection(nameSelection)
-                                      .build())
+                ? Optional.of(create(meterRegistry,
+                                     scopeTagName,
+                                     scopeSelection,
+                                     nameSelection))
                 : Optional.empty();
     }
 
     private static boolean matches(MediaType a, MediaType b) {
         return a.type().equals(b.type()) && a.subtype().equals(b.subtype());
+    }
+
+    private static MicrometerPrometheusFormatter create(MeterRegistry meterRegistry,
+                                                        Optional<String> scopeTagName,
+                                                        Iterable<String> scopeSelection,
+                                                        Iterable<String> nameSelection) {
+        MicrometerPrometheusFormatter.Builder builder = MicrometerPrometheusFormatter.builder(meterRegistry)
+                .scopeSelection(scopeSelection)
+                .meterNameSelection(nameSelection);
+        scopeTagName.ifPresent(builder::scopeTagName);
+        return builder.build();
     }
 }

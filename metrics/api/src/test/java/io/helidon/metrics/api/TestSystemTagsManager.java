@@ -89,9 +89,7 @@ class TestSystemTagsManager {
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                                   hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   not(hasKey(MetricsProgrammaticSettings.instance().appTagName()))));
-
+                                   hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE)));
     }
 
     @Test
@@ -109,8 +107,10 @@ class TestSystemTagsManager {
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(not(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1)),
                                    not(hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)),
-                                   hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
+                                   hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE)));
+        if (MetricsProgrammaticConfig.instance().appTagName().isPresent()) {
+            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName().get()));
+        }
     }
 
     @Test
@@ -127,8 +127,10 @@ class TestSystemTagsManager {
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                                   hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE),
-                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
+                                   hasEntry(METRIC_TAG_NAME, METRIC_TAG_VALUE)));
+        if (MetricsProgrammaticConfig.instance().appTagName().isPresent()) {
+            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName()));
+        }
     }
 
     @Test
@@ -140,7 +142,7 @@ class TestSystemTagsManager {
         Map<String, String> fullTags = new HashMap<>();
         mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
-        assertThat("Global tags (with scope) size", fullTags.size(), is(1));
+        assertThat("Global tags (with scope) size", fullTags.size(), is(0));
     }
 
     @Test
@@ -155,7 +157,9 @@ class TestSystemTagsManager {
 
         assertThat("Global tags derived from tagless metric ID",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
-                                   hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2),
-                                   hasKey(MetricsProgrammaticSettings.instance().appTagName())));
+                                   hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
+        if (MetricsProgrammaticConfig.instance().appTagName().isPresent()) {
+            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName()));
+        }
     }
 }

@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
@@ -89,4 +90,18 @@ public interface SystemTagsManager {
 //     */
 //    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
 
+    /**
+     * Returns a tag/value pair to convey the scope tag and value, if configuration is set up that way.
+     *
+     * @param scopeValue scope value to use
+     * @return map entry containing the scope tag name and scope value; empty if no scope tag is in play
+     */
+    Optional<Map.Entry<String, String>> scopeSetting(String scopeValue);
+
+    /**
+     * Returns the scope tag name derived from configuration.
+     *
+     * @return scope tag name; empty if not set
+     */
+    Optional<String> scopeTagName();
 }

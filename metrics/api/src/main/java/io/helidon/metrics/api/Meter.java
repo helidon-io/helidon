@@ -294,14 +294,14 @@ public interface Meter extends Wrapper {
      *
      * @return base unit
      */
-    String baseUnit();
+    Optional<String> baseUnit();
 
     /**
      * Returns the meter's description.
      *
      * @return description
      */
-    String description();
+    Optional<String> description();
 
     /**
      * Returns the meter type.

@@ -15,27 +15,30 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 
 /**
- * Programmatic (rather than configured) settings that govern certain metrics behavior.
+ * Programmatic (rather than user-configurable) settings that govern certain metrics behavior.
  * <p>
  *     Implementations of this interface are typically provided by Helidon itself rather than
  *     developers building applications and are not intended for per-deployment (or even per-application)
  *     customization.
  * </p>
  */
-public interface MetricsProgrammaticSettings {
+public interface MetricsProgrammaticConfig {
 
     /**
      * Returns the singleton instance of the metrics programmatic settings.
      * @return the singleton
      */
-    static MetricsProgrammaticSettings instance() {
+    static MetricsProgrammaticConfig instance() {
         return Instance.INSTANCE.get();
     }
 
@@ -44,14 +47,14 @@ public interface MetricsProgrammaticSettings {
      *
      * @return the scope tag name
      */
-    String scopeTagName();
+    Optional<String> scopeTagName();
 
     /**
      * Returns the name to use for a tag, added to each meter's identity, conveying the application it belongs to.
      *
      * @return the app tag name
      */
-    String appTagName();
+    Optional<String> appTagName();
 
     /**
      * Returns the reserved tag names (for scope and app).
@@ -59,7 +62,10 @@ public interface MetricsProgrammaticSettings {
      * @return reserved tag names
      */
     default Set<String> reservedTagNames() {
-        return Set.of(scopeTagName(), appTagName());
+        return Stream.of(scopeTagName(), appTagName())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     /**
@@ -70,9 +76,9 @@ public interface MetricsProgrammaticSettings {
         private Instance() {
         }
 
-        private static final LazyValue<MetricsProgrammaticSettings> INSTANCE = LazyValue.create(() ->
-                        HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticSettings.class))
-                                .addService(new NoOpMetricsProgrammaticSettings(), Double.MIN_VALUE)
+        private static final LazyValue<MetricsProgrammaticConfig> INSTANCE = LazyValue.create(() ->
+                        HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                                .addService(new BasicMetricsProgrammaticConfig(), Double.MIN_VALUE)
                                 .build()
                                 .asList()
                                 .get(0));

@@ -24,7 +24,6 @@ import java.util.regex.Matcher;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
-import io.helidon.common.config.GlobalConfig;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -43,7 +42,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *     </ul>
  */
 @Configured(root = true, prefix = MetricsConfigBlueprint.METRICS_CONFIG_KEY)
-@Prototype.Blueprint(decorator = MetricsConfigBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = MetricsConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(MetricsConfigSupport.class)
 interface MetricsConfigBlueprint {
 
@@ -57,6 +56,9 @@ interface MetricsConfigBlueprint {
      */
     String SCOPE_CONFIG_KEY = "scoping";
 
+    /**
+     * Config key for KPI metrics settings.
+     */
     String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
 
     /**
@@ -131,22 +133,6 @@ interface MetricsConfigBlueprint {
      * @return whether the meter is enabled
      */
     boolean isMeterEnabled(String name, String scope);
-
-    class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {
-
-        @Override
-        public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
-            if (builder.config().isEmpty()) {
-                builder.config(GlobalConfig.config().get(METRICS_CONFIG_KEY));
-            }
-            if (builder.keyPerformanceIndicatorMetricsConfig().isEmpty()) {
-                builder.keyPerformanceIndicatorMetricsConfig(KeyPerformanceIndicatorMetricsConfig.create());
-            }
-            if (builder.scoping().isEmpty()) {
-                builder.scoping(ScopingConfig.create());
-            }
-        }
-    }
 
     @Prototype.FactoryMethod
     static List<Tag> createGlobalTags(Config globalTagExpression) {

@@ -15,18 +15,20 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
+
 /**
  * Implementation to provide default (no-op) programmatic metrics settings.
  */
-class NoOpMetricsProgrammaticSettings implements MetricsProgrammaticSettings {
+class BasicMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     @Override
-    public String scopeTagName() {
-        return "h_scope";
+    public Optional<String> scopeTagName() {
+        return Optional.empty();
     }
 
     @Override
-    public String appTagName() {
-        return "h_app";
+    public Optional<String> appTagName() {
+        return Optional.empty();
     }
 }

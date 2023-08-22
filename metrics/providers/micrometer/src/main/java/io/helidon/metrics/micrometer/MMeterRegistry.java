@@ -29,6 +29,7 @@ import java.util.function.Predicate;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 
 import io.micrometer.core.instrument.Counter;
@@ -359,10 +360,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             BiConsumer<String, String> builderTagSetter,
             Function<MeterRegistry, M> registration) {
 
-        if (metricsConfig.scoping().tagEnabled()) {
-            effectiveScope(mBuilder.scope())
-                    .ifPresent(s -> builderTagSetter.accept(metricsConfig.scoping().tagName(), s));
-        }
+        effectiveScope(mBuilder.scope())
+                .flatMap(SystemTagsManager.instance()::scopeSetting)
+                .ifPresent(pair -> builderTagSetter.accept(pair.getKey(), pair.getValue()));
 
         lock.lock();
         try {
@@ -394,9 +394,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                   Iterable<io.helidon.metrics.api.Tag> tags,
                                                                   String scope) {
         List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
-        if (scope != null && metricsConfig.scoping().tagEnabled()) {
-            tagList.add(io.helidon.metrics.api.Tag.create(metricsConfig.scoping().tagName(), scope));
-        }
+
+        SystemTagsManager.instance()
+                .scopeSetting(scope)
+                .ifPresent(pair -> tagList.add(io.helidon.metrics.api.Tag.create(pair.getKey(),
+                                                                                 pair.getValue())));
+
         Meter nativeMeter = delegate.find(name)
                 .tags(Util.tags(tags))
                 .meter();
@@ -446,33 +449,45 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     private void updateScope(Meter meter, MMeter<?> helidonMeter, Optional<String> reliableScope) {
-        String scopeToSet = reliableScope.orElse(helidonMeter.scope()
-                                                         .orElse(null));
+        // The so-called "reliable" scope typically comes from a Helidon meter builder if a builder is available to the caller.
+        // IF the reliable scope is present then it is reliable because the developer set it.
+        //
+        // The scope from the meter itself might not be reliable. For example, a Micrometer meter registered directly with the
+        // Micrometer registry by the developer is not guaranteed to follow the scope tagging conventions Helidon expects.
+        // When Micrometer invokes our "on-add" callback, the callback creates a Helidon meter to wrap the Micrometer one, in
+        // the processing looking for the scope tag according to our convention in the Micrometer meter's tags.
+        // The callback uses that tag value--if present--to set the scope in the Helidon meter it creates as a wrapper. If the
+        // developer went to the trouble to create a Micrometer meter with tags following our scope tagging convention, then the
+        // callback respects that and use the value from the tag to set the Helidon meter's scope.
+        //
+        // This method figures out what scope truly applies to this meter, then adds the meter to the correct scope
+        // membership, and updates the scope stored in the meter with the proper scope.
 
-        if (scopeToSet == null && metricsConfig.scoping().tagEnabled()) {
-            scopeToSet = meter.getId().getTag(metricsConfig.scoping().tagName());
-        }
-        if (scopeToSet == null) {
-            scopeToSet = metricsConfig.scoping().defaultValue().orElse(null);
-        }
-        String fixedScopeToSet = scopeToSet;
-        if (scopeToSet != null) {
-            if (reliableScope.isPresent()) {
-                // The meter might have already been added to the wrong scope membership. This will happen if the meter is being
-                // registered via the Helidon API and the meter has a scope different from the default. In such cases remove the
-                // meter from the wrong membership and add it to the correct one.
-                helidonMeter.scope().ifPresent(scopeInMeter -> {
-                    if (!fixedScopeToSet.equals(scopeInMeter)) {
-                        Set<io.helidon.metrics.api.Meter> scopeMembers = scopeMembership.get(scopeInMeter);
-                        if (scopeMembers != null) {
-                            scopeMembers.remove(helidonMeter);
-                        }
+        // Find the correct scope value to use, preferring the reliable scope, then using a scope value in the
+        // meter's tags according to the Helidon scope tagging convention, and last use the configured default scope value.
+
+        Optional<String> scopeToSet = reliableScope.or(() ->
+            metricsConfig.scoping().tagEnabled() && metricsConfig.scoping().tagName().isPresent()
+                    ? Optional.ofNullable(meter.getId().getTag(metricsConfig.scoping().tagName().get()))
+                    : metricsConfig.scoping().defaultValue());
+
+        if (reliableScope.isPresent()) {
+            // The callback might have already added the meter to the wrong scope membership: it would have used the tagging
+            // convention but maybe the developer has specified a different scope in the builder which this method's caller
+            // might have access to but the callback does not. In such cases remove the meter from the wrong membership and
+            // add it to the correct one.
+            helidonMeter.scope().ifPresent(scopeInMeter -> {
+                if (!reliableScope.get().equals(scopeInMeter)) {
+                    Set<io.helidon.metrics.api.Meter> scopeMembers = scopeMembership.get(scopeInMeter);
+                    if (scopeMembers != null) {
+                        scopeMembers.remove(helidonMeter);
                     }
-                });
-            }
-            helidonMeter.scope(scopeToSet);
-            scopeMembership.computeIfAbsent(scopeToSet, s -> new HashSet<>())
-                    .add(helidonMeter);
+                }
+            });
+
+            scopeToSet.ifPresent(helidonMeter::scope);
+            scopeToSet.ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
+                    .add(helidonMeter));
         }
     }
 

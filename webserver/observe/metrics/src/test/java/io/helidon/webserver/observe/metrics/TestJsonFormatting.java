@@ -25,6 +25,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -32,6 +33,7 @@ import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -42,9 +44,10 @@ class TestJsonFormatting {
     @Test
     void testRetrievingAll() {
         MeterRegistry meterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder()
-                                                                          .scopeTagName(SCOPE_TAG_NAME)
-                                                                          .scopeDefaultValue("application")
-                                                                          .scopeTagEnabled(true)
+                                                                          .scoping(ScopingConfig.builder()
+                                                                                           .tagName(SCOPE_TAG_NAME)
+                                                                                           .defaultValue("application")
+                                                                                           .tagEnabled(true))
                                                                           .build());
         Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
         assertThat("Initial counter value", c.count(), is(0L));
@@ -63,10 +66,8 @@ class TestJsonFormatting {
                 .scopeTagName(SCOPE_TAG_NAME)
                 .build();
 
-        Optional<JsonObject> result = formatter.format();
-
-        assertThat("Result", result, OptionalMatcher.optionalPresent());
-        JsonObject app = result.get().getJsonObject("application");
+        JsonObject jsonOutput = checkAndCast(formatter.format());
+        JsonObject app = jsonOutput.getJsonObject("application");
         assertThat("Counter 1",
                    app.getJsonNumber("c1;t1=v1;the-scope=application").intValue(),
                    is(4));
@@ -82,9 +83,10 @@ class TestJsonFormatting {
     @Test
     void testRetrievingByName() {
         MeterRegistry meterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder()
-                                                                          .scopeTagName(SCOPE_TAG_NAME)
-                                                                          .scopeDefaultValue("application")
-                                                                          .scopeTagEnabled(true)
+                                                                          .scoping(ScopingConfig.builder()
+                                                                                           .tagName(SCOPE_TAG_NAME)
+                                                                                           .defaultValue("application")
+                                                                                           .tagEnabled(true))
                                                                           .build());
         Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
         assertThat("Initial counter value", c.count(), is(0L));
@@ -98,13 +100,17 @@ class TestJsonFormatting {
                 .meterNameSelection(Set.of("c2"))
                 .build();
 
-        Optional<JsonObject> result = formatter.format();
-        assertThat("Result", result, OptionalMatcher.optionalPresent());
-
-        JsonObject app = result.get().getJsonObject("application");
+        JsonObject jsonOutput = checkAndCast(formatter.format());
+        JsonObject app = jsonOutput.getJsonObject("application");
         assertThat("Counter 2", app.getJsonNumber("c2;the-scope=application").intValue(), is(1));
 
         assertThat("Timer", app.getJsonObject("t2"), nullValue());
 
+    }
+
+    private static JsonObject checkAndCast(Optional<Object> metricsOutput) {
+        assertThat("Result", metricsOutput, OptionalMatcher.optionalPresent());
+        assertThat("Result", metricsOutput.get(), is(instanceOf(JsonObject.class)));
+        return (JsonObject) metricsOutput.get();
     }
 }

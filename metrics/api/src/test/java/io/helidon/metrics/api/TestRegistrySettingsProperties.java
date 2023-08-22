@@ -32,7 +32,7 @@ public class TestRegistrySettingsProperties {
 
     @BeforeAll
     static void prep() {
-        metricsConfigNode = Config.create(ConfigSources.classpath("registrySettings.properties")).get("metrics");
+        metricsConfigNode = Config.just(ConfigSources.classpath("registrySettings.properties")).get("metrics");
         fromYaml = Config.create(ConfigSources.classpath("scopeSettings.yaml")).get("metrics");
     }
 

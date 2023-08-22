@@ -27,7 +27,7 @@ import org.eclipse.microprofile.metrics.Snapshot;
 /**
  * Snapshot implementation.
  */
-public class HelidonSnapshot extends Snapshot {
+class HelidonSnapshot extends Snapshot {
 
     /**
      * Creates a new snapshot.
