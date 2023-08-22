@@ -50,6 +50,10 @@
                                             <value key="artifactId">helidon-integrations-cdi-hibernate</value>
                                             <value key="scope">runtime</value>
                                         </map>
+                                        <map>
+                                            <value key="groupId">org.hibernate.orm</value>
+                                            <value key="artifactId">hibernate-hikaricp</value>
+                                        </map>
                                     </list>
                                     <list key="maven-plugins">
                                         <value><![CDATA[            <plugin>
@@ -371,10 +375,6 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                                         <value key="name">eclipselink.ddl-generation</value>
                                         <value key="value">drop-and-create-tables</value>
                                     </map>
-                                    <map if="${..server} != 'h2'">
-                                        <value key="name">jakarta.persistence.sql-load-script-source</value>
-                                        <value key="value">META-INF/init_script.sql</value>
-                                    </map>
                                 </list>
                             </model>
                         </output>
@@ -383,10 +383,10 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                     <text id="ds-name" name="Datasource Name" default="ds1" optional="true"/>
                 </inputs>
                 <output>
-                    <files>
+                    <files if="${jpa-impl} == 'hibernate'">
                         <directory>../database/files</directory>
                         <includes>
-                            <include>src/*/resources/*/init_script.sql</include>
+                            <include>src/*/resources/hibernate.properties</include>
                         </includes>
                     </files>
                     <templates engine="mustache" transformations="mustache,packaged">
@@ -394,6 +394,7 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                         <includes>
                             <include>src/main/java/**</include>
                             <include>src/*/resources/*/persistence.xml.mustache</include>
+                            <include>src/*/resources/*/init_script.sql.mustache</include>
                             <include if="${server} == 'oracledb'">src/*/resources/**/serial-config.properties</include>
                         </includes>
                     </templates>
@@ -405,6 +406,22 @@ docker run --rm --name xe -p 1521:1521 -p 8888:8080 -e ORACLE_PWD=oracle wnamele
                             <value>jakarta.json.JsonArray</value>
                             <value>jakarta.ws.rs.core.MediaType</value>
                             <value>jakarta.ws.rs.client.Entity</value>
+                        </list>
+                        <list key="init-script">
+                            <value if="${jpa-impl} == 'hibernate'"><![CDATA[
+INSERT INTO POKEMON VALUES (1, 12, 'Bulbasaur');
+INSERT INTO POKEMON VALUES (2, 10, 'Charmander');
+INSERT INTO POKEMON VALUES (3, 11, 'Squirtle');
+INSERT INTO POKEMON VALUES (4, 7, 'Caterpie');
+INSERT INTO POKEMON VALUES (5, 7, 'Weedle');
+INSERT INTO POKEMON VALUES (6, 3, 'Pidgey');]]></value>
+                            <value if="${jpa-impl} == 'eclipselink'"><![CDATA[
+INSERT INTO POKEMON VALUES (1, 'Bulbasaur', 12);
+INSERT INTO POKEMON VALUES (2, 'Charmander', 10);
+INSERT INTO POKEMON VALUES (3, 'Squirtle', 11);
+INSERT INTO POKEMON VALUES (4, 'Caterpie', 7);
+INSERT INTO POKEMON VALUES (5, 'Weedle', 7);
+INSERT INTO POKEMON VALUES (6, 'Pidgey', 3);]]></value>
                         </list>
                         <list key="dependencies">
                             <map>

@@ -140,6 +140,9 @@
                     <exclude>META-INF/microprofile-config.properties</exclude>
                     <exclude>META-INF/persistence.xml</exclude>
                 </excludes>
+                <includes>
+                    <include>hibernate.properties</include>
+                </includes>
             </resource>
         </resources>
         <pluginManagement>
