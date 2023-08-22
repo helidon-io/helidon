@@ -26,6 +26,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopeConfig;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -81,7 +82,8 @@ public final class Main {
                 .as(MetricsConfig.class)
                 .orElseGet(MetricsConfig::create);
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(initialMetricsConfig)
-                .scoping().scopes().put(Meter.Scope.APPLICATION, scopeConfig);
+                .scoping(ScopingConfig.builder()
+                                 .putScope(Meter.Scope.APPLICATION, scopeConfig));
 
         server.config(config.get("server"))
               .routing(r -> routing(r, config, metricsConfigBuilder));
