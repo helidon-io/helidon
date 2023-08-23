@@ -31,6 +31,10 @@
     <artifactId>helidon-integrations-examples-pokemons</artifactId>
     <name>Helidon Examples CDI Extensions Pokemons JPA</name>
 
+    <properties>
+        <java.util.logging.config.file>src/test/java/logging.properties</java.util.logging.config.file>
+    </properties>
+    
     <dependencies>
         <!-- Compile-scoped dependencies. -->
         <dependency>
@@ -125,6 +129,11 @@
             <artifactId>jakarta.el</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- Test-scoped dependencies. -->
         <dependency>
@@ -158,6 +167,15 @@
                         <id>make-index</id>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${java.util.logging.config.file}</java.util.logging.config.file>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.hibernate.orm.tooling</groupId>
