@@ -38,34 +38,30 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Micrometer-specific implementation of a registry factory.
  *
-// this class is not immutable, as we may need to update registries with configuration post creation
-// see Github issue #360
+ * // this class is not immutable, as we may need to update registries with configuration post creation
+ * // see Github issue #360
  */
 class RegistryFactory {
-
-    private static AtomicReference<RegistryFactory> registryFactory = new AtomicReference<>();
-
-    private final Map<String, Registry> registries = new HashMap<>();
-    private final Lock metricsSettingsAccess = new ReentrantLock(true);
-    private final MetricsConfig metricsConfig;
-    private MetricFactory metricFactory;
-
 
     static final Collection<Class<? extends Metric>> METRIC_TYPES = Set.of(Counter.class,
                                                                            Gauge.class,
                                                                            Histogram.class,
                                                                            Timer.class);
+    private static final AtomicReference<RegistryFactory> registryFactory = new AtomicReference<>();
+    private final Map<String, Registry> registries = new HashMap<>();
+    private final Lock metricsSettingsAccess = new ReentrantLock(true);
+    private final MetricsConfig metricsConfig;
 
     /**
      * Create a new instance.
      *
-     * @param metricsConfig metrics setting to use in preparing the registry factory
-     * @param appRegistry application registry to provide from the factory
+     * @param metricsConfig  metrics setting to use in preparing the registry factory
+     * @param appRegistry    application registry to provide from the factory
      * @param vendorRegistry vendor registry to provide from the factory
      */
     private RegistryFactory(MetricsConfig metricsConfig, Registry appRegistry, Registry vendorRegistry) {
         this.metricsConfig = metricsConfig;
-        metricFactory = MetricFactory.create(Metrics.globalRegistry());
+        MetricFactory.create(Metrics.globalRegistry());
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }
@@ -109,7 +105,6 @@ class RegistryFactory {
         return registryFactory.get();
     }
 
-
     /**
      * Get a registry based on its scope.
      *
@@ -135,15 +130,6 @@ class RegistryFactory {
                         .forEach((id, m) -> r.remove(id)));
         registries.clear();
         PeriodicExecutor.stop();
-    }
-
-    private void accessMetricsSettings(Runnable operation) {
-        metricsSettingsAccess.lock();
-        try {
-            operation.run();
-        } finally {
-            metricsSettingsAccess.unlock();
-        }
     }
 
     private <T> T accessMetricsSettings(Callable<T> callable) {

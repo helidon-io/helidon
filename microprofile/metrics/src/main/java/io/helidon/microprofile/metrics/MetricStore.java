@@ -597,7 +597,6 @@ class MetricStore {
     }
 
     private <U extends Metric> HelidonMetric<?> createEnabledAwareMetric(Class<U> clazz, Metadata metadata, Tag... tags) {
-        String metricName = metadata.getName();
         Class<? extends Metric> baseClass = baseMetricClass(clazz);
         Metric result;
         if (baseClass.isAssignableFrom(Counter.class)) {
@@ -614,7 +613,6 @@ class MetricStore {
 
     private <R extends Number> HelidonMetric<?> createEnabledAwareGauge(Metadata metadata,
                                                                      Function<Metadata, Gauge<R>> gaugeFactory) {
-        String metricName = metadata.getName();
         return (HelidonMetric<?>) (gaugeFactory.apply(metadata));
     }
 
