@@ -44,6 +44,8 @@ import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
@@ -720,6 +722,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
         }
 
+        // Initialize the metrics factory (which sets up the global MeterRegistry and the SystemTagsManager) early.
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsConfig.METRICS_CONFIG_KEY);
+        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+
         HttpRules defaultRouting = super.registerService(adv, bm, server);
         MetricsFeature metricsSupport = serviceSupport();
 
@@ -733,8 +739,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
 
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsConfig.METRICS_CONFIG_KEY);
-
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")
                 .asList(String.class)
@@ -746,8 +750,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                     }
                 });
 
-        // registry factory is available in global
-        Contexts.globalContext().register(RegistryFactory.getInstance());
+        // metrics factory is available in global
+        Contexts.globalContext().register(metricsFactory);
 
         return defaultRouting;
     }

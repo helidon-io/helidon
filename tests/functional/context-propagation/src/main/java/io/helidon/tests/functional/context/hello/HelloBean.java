@@ -22,7 +22,7 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.MetricsFactory;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.faulttolerance.Asynchronous;
@@ -44,7 +44,7 @@ public class HelloBean {
         Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
         // application scoped context
-        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        Objects.requireNonNull(context.get(MetricsFactory.class).orElse(null));
         // request scoped context
         Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return "Hello World";
@@ -60,7 +60,7 @@ public class HelloBean {
         Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
         // application scoped context
-        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        Objects.requireNonNull(context.get(MetricsFactory.class).orElse(null));
         // request scoped context
         Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return "Hello World";
@@ -76,7 +76,7 @@ public class HelloBean {
         Context context = Contexts.context().orElse(null);
         Objects.requireNonNull(context);
         // application scoped context
-        Objects.requireNonNull(context.get(RegistryFactory.class).orElse(null));
+        Objects.requireNonNull(context.get(MetricsFactory.class).orElse(null));
         // request scoped context
         Objects.requireNonNull(context.get(MyMessage.class).orElse(null));
         return CompletableFuture.completedFuture("Hello World");
