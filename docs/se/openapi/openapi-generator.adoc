@@ -23,7 +23,7 @@
 
 include::{rootdir}/includes/se.adoc[]
 
-//:helidon-client-xref: {webclient-page}
+:helidon-client-xref: {webclient-page}
 
 include::{gen-inc}[tag=preamble]
 
@@ -302,4 +302,4 @@ Your code should handle each of them in whatever ways make sense for your applic
 
 include::{gen-inc}[tag=common-references]
 
-//* xref:{helidon-client-xref}[Helidon WebClient documentation]
+* xref:{helidon-client-xref}[Helidon WebClient documentation]
