@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,17 @@ import io.helidon.security.util.AbacSupport;
  * @see SecurityProvider#supportedAttributes
  */
 public class EndpointConfig implements AbacSupport {
+    /**
+     * Configure this for outbound requests to override id to use (client id, user - depending on use case).
+     * This is supported for example for HTTP Basic authentication and JWT authentication providers.
+     */
+    public static final String PROPERTY_OUTBOUND_ID = "io.helidon.security.outbound.user";
+    /**
+     * Configure this for outbound requests to override secret to use (client secret, actual password - depending on use case).
+     * This is supported for example for HTTP Basic authentication provider.
+     */
+    public static final String PROPERTY_OUTBOUND_SECRET = "io.helidon.security.outbound.password";
+
     private final List<SecurityLevel> securityLevels;
     private final AbacSupport attributes;
     private final ClassToInstanceStore<Object> customObjects;

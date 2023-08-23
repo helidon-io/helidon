@@ -28,6 +28,7 @@ import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.ServiceDescriptor;
 import io.helidon.grpc.server.test.Echo;
 import io.helidon.grpc.server.test.EchoServiceGrpc;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.integration.webserver.WebSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -208,8 +209,8 @@ public class OutboundSecurityIT {
     private static void overrideCredentialsWebRequest(ServerRequest req, ServerResponse res) {
         try {
             GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(req)
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Ted")
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "secret")
+                    .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "Ted")
+                    .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "secret")
                     .build();
 
             EchoServiceGrpc.EchoServiceBlockingStub stub = noCredsEchoStub.withCallCredentials(clientSecurity);

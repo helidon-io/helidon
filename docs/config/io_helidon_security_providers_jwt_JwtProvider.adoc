@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ This type provides the following service implementations:
 |key |type |default value |description
 
 |`allow-impersonation` |boolean |`false` |Whether to allow impersonation by explicitly overriding
- username from outbound requests using #EP_PROPERTY_OUTBOUND_USER property.
+ username from outbound requests using EndpointConfig.PROPERTY_OUTBOUND_ID property.
  By default this is not allowed and identity can only be propagated.
 |`allow-unsigned` |boolean |`false` |Configure support for unsigned JWT.
  If this is set to `true` any JWT that has algorithm

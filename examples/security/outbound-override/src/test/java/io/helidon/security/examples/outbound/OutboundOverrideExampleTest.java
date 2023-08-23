@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.security.examples.outbound;
 
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.WebClient;
@@ -60,8 +61,8 @@ public class OutboundOverrideExampleTest {
     public void testOverrideExample() {
         String value = webClient.get()
                 .path("/override")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request(String.class)
                 .await();
 
@@ -72,8 +73,8 @@ public class OutboundOverrideExampleTest {
     public void testPropagateExample() {
         String value = webClient.get()
                 .path("/propagate")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request(String.class)
                 .await();
 

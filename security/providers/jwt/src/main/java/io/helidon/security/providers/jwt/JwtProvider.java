@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,10 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
     /**
      * Configure this for outbound requests to override user to use.
+     * @deprecated use {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID} instead,
+     *          the value will change in 4.x as well
      */
+    @Deprecated(since = "3.2.3", forRemoval = true)
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
 
     private final boolean optional;
@@ -271,7 +274,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
                                                     SecurityEnvironment outboundEnv,
                                                     EndpointConfig outboundEndpointConfig) {
 
-        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_ID);
         return maybeUsername
                 .map(String::valueOf)
                 .flatMap(username -> attemptImpersonation(outboundEnv, username))
@@ -654,7 +657,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         /**
          * Whether to allow impersonation by explicitly overriding
-         * username from outbound requests using {@link #EP_PROPERTY_OUTBOUND_USER} property.
+         * username from outbound requests using {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID} property.
          * By default this is not allowed and identity can only be propagated.
          *
          * @param allowImpersonation set to true to allow impersonation

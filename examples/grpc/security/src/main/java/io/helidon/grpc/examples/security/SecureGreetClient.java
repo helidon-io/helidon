@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.grpc.examples.security;
 
-
 import io.helidon.config.Config;
 import io.helidon.grpc.client.ClientServiceDescriptor;
 import io.helidon.grpc.client.GrpcServiceClient;
 import io.helidon.grpc.examples.common.Greet;
 import io.helidon.grpc.examples.common.GreetServiceGrpc;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.integration.grpc.GrpcClientSecurity;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -64,8 +64,8 @@ public class SecureGreetClient {
         // create the gRPC client security call credentials
         // setting the properties used by the basic auth provider for user name and password
         GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client"))
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, user)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, user)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
                 .build();
 
         // Create the client service descriptor and add the call credentials

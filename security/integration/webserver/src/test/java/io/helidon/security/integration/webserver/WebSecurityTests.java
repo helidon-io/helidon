@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 
 import io.helidon.common.http.Http;
 import io.helidon.security.AuditEvent;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.WebClient;
@@ -208,8 +209,8 @@ public abstract class WebSecurityTests {
             throws ExecutionException, InterruptedException {
         return securitySetup.get()
                 .uri(uri)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, username)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, username)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
                 .request()
                 .toCompletableFuture()
                 .get();

@@ -107,7 +107,10 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
     /**
      * Configure this for outbound requests to override user to use.
+     * @deprecated use {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID} instead,
+     *          the value will change in 4.x as well
      */
+    @Deprecated(since = "3.2.3", forRemoval = true)
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
     /**
      * Configuration key for expected issuer of incoming tokens. Used for validation of JWT.
@@ -360,7 +363,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                                                  SecurityEnvironment outboundEnv,
                                                  EndpointConfig outboundEndpointConfig) {
 
-        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEndpointConfig.abacAttribute(EndpointConfig.PROPERTY_OUTBOUND_ID);
         return maybeUsername
                 .map(String::valueOf)
                 .flatMap(username -> {
@@ -928,7 +931,7 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
 
         /**
          * Whether to allow impersonation by explicitly overriding
-         * username from outbound requests using {@link #EP_PROPERTY_OUTBOUND_USER} property.
+         * username from outbound requests using {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID} property.
          * By default this is not allowed and identity can only be propagated.
          *
          * @param allowImpersonation set to true to allow impersonation
