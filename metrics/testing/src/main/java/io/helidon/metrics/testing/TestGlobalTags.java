@@ -44,7 +44,7 @@ class TestGlobalTags {
                         .build());
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
-                .tags(List.of(Tag.create("local1", "a"))));
+                                                             .tags(List.of(Tag.create("local1", "a"))));
         assertThat("New counter's global tags",
                    counter1.id().tags(),
                    hasItems(globalTags.toArray(new Tag[0])));

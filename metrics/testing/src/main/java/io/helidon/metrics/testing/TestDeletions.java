@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.testing;
 
-
 import java.util.List;
 import java.util.Optional;
 
@@ -34,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
-
 
 class TestDeletions {
 
@@ -74,6 +72,7 @@ class TestDeletions {
                                   List.of(Tag.create("myTag", "b"))),
                    OptionalMatcher.optionalValue(sameInstance(counter2)));
     }
+
     @Test
     void testDeleteByMeter() {
         Counter counter1 = reg.getOrCreate(Counter.builder("a")
@@ -96,6 +95,7 @@ class TestDeletions {
                                   List.of(Tag.create("myTag", "b"))),
                    OptionalMatcher.optionalValue(sameInstance(counter2)));
     }
+
     @Test
     void testDeleteById() {
         Counter counter1 = reg.getOrCreate(Counter.builder("a")

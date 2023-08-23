@@ -23,7 +23,7 @@ public interface Tag extends Wrapper {
     /**
      * Creates a new tag using the specified key and value.
      *
-     * @param key the tag's key
+     * @param key   the tag's key
      * @param value the tag's value
      * @return new {@code Tag} representing the key and value
      */

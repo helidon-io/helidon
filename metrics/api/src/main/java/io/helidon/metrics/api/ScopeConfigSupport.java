@@ -26,7 +26,7 @@ class ScopeConfigSupport {
      * Indicates whether the specified meter is enabled according to the scope configuration.
      *
      * @param scopeConfig scope configuration
-     * @param name meter name to check
+     * @param name        meter name to check
      * @return whether the meter is enabled
      */
     @Prototype.PrototypeMethod

@@ -23,15 +23,16 @@ import io.micrometer.core.instrument.Clock;
  */
 class MClock implements io.helidon.metrics.api.Clock {
 
-    static MClock create(Clock delegate) {
-        return new MClock(delegate);
-    }
-
     private final Clock delegate;
 
     private MClock(Clock delegate) {
         this.delegate = delegate;
     }
+
+    static MClock create(Clock delegate) {
+        return new MClock(delegate);
+    }
+
     @Override
     public long wallTime() {
         return delegate.wallTime();

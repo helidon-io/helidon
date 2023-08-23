@@ -24,8 +24,8 @@ import java.util.function.Predicate;
 /**
  * No-op implementation of {@link io.helidon.metrics.api.MeterRegistry}.
  * <p>
- *     Note that the no-op meter registry implementation <em>does not</em> actually
- *     store meters or their IDs, in line with the documented behavior of disabled metrics.
+ * Note that the no-op meter registry implementation <em>does not</em> actually
+ * store meters or their IDs, in line with the documented behavior of disabled metrics.
  * </p>
  */
 class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {

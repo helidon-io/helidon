@@ -27,15 +27,16 @@ import io.helidon.common.LazyValue;
 /**
  * Programmatic (rather than user-configurable) settings that govern certain metrics behavior.
  * <p>
- *     Implementations of this interface are typically provided by Helidon itself rather than
- *     developers building applications and are not intended for per-deployment (or even per-application)
- *     customization.
+ * Implementations of this interface are typically provided by Helidon itself rather than
+ * developers building applications and are not intended for per-deployment (or even per-application)
+ * customization.
  * </p>
  */
 public interface MetricsProgrammaticConfig {
 
     /**
      * Returns the singleton instance of the metrics programmatic settings.
+     *
      * @return the singleton
      */
     static MetricsProgrammaticConfig instance() {
@@ -73,14 +74,17 @@ public interface MetricsProgrammaticConfig {
      */
     class Instance {
 
+        private static final LazyValue<MetricsProgrammaticConfig> INSTANCE = LazyValue.create(() ->
+                                                                                                      HelidonServiceLoader.builder(
+                                                                                                                      ServiceLoader.load(
+                                                                                                                              MetricsProgrammaticConfig.class))
+                                                                                                              .addService(new BasicMetricsProgrammaticConfig(),
+                                                                                                                          Double.MIN_VALUE)
+                                                                                                              .build()
+                                                                                                              .asList()
+                                                                                                              .get(0));
+
         private Instance() {
         }
-
-        private static final LazyValue<MetricsProgrammaticConfig> INSTANCE = LazyValue.create(() ->
-                        HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticConfig.class))
-                                .addService(new BasicMetricsProgrammaticConfig(), Double.MIN_VALUE)
-                                .build()
-                                .asList()
-                                .get(0));
     }
 }

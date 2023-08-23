@@ -41,10 +41,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
  */
 class MicrometerMetricsFactory implements MetricsFactory {
 
-    static MicrometerMetricsFactory create(MetricsConfig metricsConfig) {
-        return new MicrometerMetricsFactory(metricsConfig);
-    }
-
     private final LazyValue<MeterRegistry> globalMeterRegistry;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
@@ -52,6 +48,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
             ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
             return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig);
         });
+    }
+
+    static MicrometerMetricsFactory create(MetricsConfig metricsConfig) {
+        return new MicrometerMetricsFactory(metricsConfig);
     }
 
     @Override
@@ -67,16 +67,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry.get();
-    }
-
-    private static void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
-                                                 MetricsConfig metricsConfig) {
-        if (compositeMeterRegistry
-                .getRegistries()
-                .stream()
-                .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
-            compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
-        }
     }
 
     @Override
@@ -168,5 +158,15 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max) {
         return MHistogramSnapshot.create(io.micrometer.core.instrument.distribution.HistogramSnapshot.empty(count, total, max));
+    }
+
+    private static void ensurePrometheusRegistry(CompositeMeterRegistry compositeMeterRegistry,
+                                                 MetricsConfig metricsConfig) {
+        if (compositeMeterRegistry
+                .getRegistries()
+                .stream()
+                .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
+            compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
+        }
     }
 }

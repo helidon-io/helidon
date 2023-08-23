@@ -25,11 +25,11 @@ public interface FunctionalCounter extends Meter {
     /**
      * Returns a builder for registering or locating a functional counter.
      *
-     * @param name functional counter name
+     * @param name        functional counter name
      * @param stateObject object which provides the counter value on demand
-     * @param fn function which, when applied to the state object, returns the counter value
+     * @param fn          function which, when applied to the state object, returns the counter value
+     * @param <T>         type of the state object
      * @return new builder
-     * @param <T> type of the state object
      */
     static <T> Builder builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return MetricsFactory.getInstance().functionalCounterBuilder(name, stateObject, fn);

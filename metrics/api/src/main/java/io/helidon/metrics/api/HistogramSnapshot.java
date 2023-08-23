@@ -28,7 +28,7 @@ public interface HistogramSnapshot extends Wrapper {
      *
      * @param count count of observations the snapshot should report
      * @param total total value of observations the snapshot should report
-     * @param max maximum value the snapshot should report
+     * @param max   maximum value the snapshot should report
      * @return empty snapshot reporting the values as specified
      */
     static HistogramSnapshot empty(long count, double total, double max) {
@@ -99,7 +99,7 @@ public interface HistogramSnapshot extends Wrapper {
      * Dumps a summary of the snapshot to the specified {@link java.io.PrintStream} using the indicated scaling factor for
      * observations.
      *
-     * @param out {@code PrintStream} to which to dump the snapshot summary
+     * @param out   {@code PrintStream} to which to dump the snapshot summary
      * @param scale scale factor to apply to observations for output
      */
     void outputSummary(PrintStream out, double scale);

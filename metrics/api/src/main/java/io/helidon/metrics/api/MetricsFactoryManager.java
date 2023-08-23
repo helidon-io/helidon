@@ -32,13 +32,13 @@ import io.helidon.metrics.spi.MetricsFactoryProvider;
  * Provides {@link io.helidon.metrics.api.spi.MetricFactory} instances using a highest-weight implementation of
  * {@link io.helidon.metrics.spi.MetricsFactoryProvider}, defaulting to a no-op implementation if no other is available.
  * <p>
- *     The {@link #getInstance()} and {@link #getInstance(Config)} methods update and use the most-recently used
- *     {@link io.helidon.metrics.api.MetricsConfig} (derived from either the specified {@link io.helidon.common.config.Config}
- *     node or, if none, the {@link io.helidon.common.config.GlobalConfig})
- *     and the most-recently created {@link io.helidon.metrics.api.MetricsFactory}.
+ * The {@link #getInstance()} and {@link #getInstance(Config)} methods update and use the most-recently used
+ * {@link io.helidon.metrics.api.MetricsConfig} (derived from either the specified {@link io.helidon.common.config.Config}
+ * node or, if none, the {@link io.helidon.common.config.GlobalConfig})
+ * and the most-recently created {@link io.helidon.metrics.api.MetricsFactory}.
  * </p>
  * <p>
- *     The {@link #create(MetricsConfig)} method neither reads nor updates the most-recently used config and factory.
+ * The {@link #create(MetricsConfig)} method neither reads nor updates the most-recently used config and factory.
  * </p>
  */
 class MetricsFactoryManager {
@@ -59,23 +59,22 @@ class MetricsFactoryManager {
                            result.getClass().getName());
                 return result;
             });
-
+    private static final ReentrantLock LOCK = new ReentrantLock();
     /**
      * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getInstance} method.
      */
     private static MetricsFactory metricsFactory;
-
     /**
      * The {@link io.helidon.metrics.api.MetricsConfig} used to create {@link #metricsFactory}.
      */
     private static MetricsConfig metricsConfig;
-
     /**
      * The root {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
      */
     private static Config rootConfig;
 
-    private static final ReentrantLock LOCK = new ReentrantLock();
+    private MetricsFactoryManager() {
+    }
 
     /**
      * Creates a new {@link io.helidon.metrics.api.MetricsFactory} according to the {@value MetricsConfig#METRICS_CONFIG_KEY}
@@ -124,25 +123,14 @@ class MetricsFactoryManager {
         return access(() -> metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
                                                                            () -> getInstance(GlobalConfig.config())));
 
-// TODO remove comment once using the preceding line proves out
-//                                                       () -> {
-//                                                           MetricsFactory result = METRICS_FACTORY_PROVIDER.get()
-//                                                                   .create(ensureMetricsConfig());
-//                                                           applyProviders(result.globalRegistry(),
-//                                                                          rootConfig);
-//                                                           return result;
-//                                                       }));
-    }
-
-    private static void applyProviders(MeterRegistry meterRegistry, Config rootConfig) {
-        HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
-                .stream()
-                .map(provider -> provider.meters(rootConfig))
-                .map(Iterable::spliterator)
-                .flatMap(split -> StreamSupport.stream(split, false))
-                // Use raw Meter.Builder below because getOrCreate is generic-typed and here we don't know or really care about
-                // the actual type of the builder.
-                .forEach(b -> meterRegistry.getOrCreate((Meter.Builder) b));
+        // TODO remove comment once using the preceding line proves out
+        //                                                       () -> {
+        //                                                           MetricsFactory result = METRICS_FACTORY_PROVIDER.get()
+        //                                                                   .create(ensureMetricsConfig());
+        //                                                           applyProviders(result.globalRegistry(),
+        //                                                                          rootConfig);
+        //                                                           return result;
+        //                                                       }));
     }
 
     /**
@@ -155,6 +143,17 @@ class MetricsFactoryManager {
      */
     static MetricsFactory create(MetricsConfig metricsConfig) {
         return METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
+    }
+
+    private static void applyProviders(MeterRegistry meterRegistry, Config rootConfig) {
+        HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
+                .stream()
+                .map(provider -> provider.meters(rootConfig))
+                .map(Iterable::spliterator)
+                .flatMap(split -> StreamSupport.stream(split, false))
+                // Use raw Meter.Builder below because getOrCreate is generic-typed and here we don't know or really care about
+                // the actual type of the builder.
+                .forEach(b -> meterRegistry.getOrCreate((Meter.Builder) b));
     }
 
     private static MetricsConfig ensureMetricsConfig() {
@@ -179,9 +178,6 @@ class MetricsFactoryManager {
         } finally {
             LOCK.unlock();
         }
-    }
-
-    private MetricsFactoryManager() {
     }
 
 }

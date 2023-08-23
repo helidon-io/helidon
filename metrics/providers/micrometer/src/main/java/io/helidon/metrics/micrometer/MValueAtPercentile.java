@@ -16,20 +16,21 @@
 package io.helidon.metrics.micrometer;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 
 class MValueAtPercentile implements io.helidon.metrics.api.ValueAtPercentile {
 
-    static MValueAtPercentile create(ValueAtPercentile delegate) {
-        return new MValueAtPercentile(delegate);
-    }
-
     private final ValueAtPercentile delegate;
 
     MValueAtPercentile(ValueAtPercentile delegate) {
         this.delegate = delegate;
+    }
+
+    static MValueAtPercentile create(ValueAtPercentile delegate) {
+        return new MValueAtPercentile(delegate);
     }
 
     @Override
@@ -73,6 +74,9 @@ class MValueAtPercentile implements io.helidon.metrics.api.ValueAtPercentile {
 
     @Override
     public String toString() {
-        return String.format("MValueAtPercentile[percentile=%f,value=%f]", percentile(), value());
+        return new StringJoiner(",", getClass().getSimpleName() + "[", "}")
+                .add("percentile=" + percentile())
+                .add("value=" + value())
+                .toString();
     }
 }

@@ -43,7 +43,6 @@ class TestTimer {
         meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
     }
 
-
     @Test
     void testSimpleRecord() {
         Timer t = meterRegistry.getOrCreate(Timer.builder("a"));
@@ -171,7 +170,6 @@ class TestTimer {
         assertThat("After sample stop",
                    t.totalTime(TimeUnit.MILLISECONDS),
                    greaterThanOrEqualTo((double) waitTime));
-
 
     }
 

@@ -171,8 +171,8 @@ public interface Timer extends Meter, HistogramSupport {
     /**
      * Measures an interval of time from instantiation to an explicit invocation of {@link #stop(io.helidon.metrics.api.Timer)}.
      * <p>
-     *     A {@code Sample} is not bound to a specific {@code Timer} until it is stopped, at
-     *     which time the caller specifies which timer to update.
+     * A {@code Sample} is not bound to a specific {@code Timer} until it is stopped, at
+     * which time the caller specifies which timer to update.
      * </p>
      */
     interface Sample {
@@ -241,7 +241,7 @@ public interface Timer extends Meter, HistogramSupport {
         /**
          * Returns the minimum expected value set in the builder, if any.
          *
-         * @return  minimum expected value if set; empty otherwise
+         * @return minimum expected value if set; empty otherwise
          */
         Optional<Duration> minimumExpectedValue();
 

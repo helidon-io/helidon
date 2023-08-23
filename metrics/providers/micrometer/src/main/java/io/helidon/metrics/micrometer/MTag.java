@@ -24,6 +24,13 @@ import io.micrometer.core.instrument.Tags;
 
 class MTag implements io.helidon.metrics.api.Tag {
 
+    private final Tag delegate;
+
+    private MTag(Tag delegate) {
+        this.delegate = delegate;
+    }
+
+
     /**
      * Adapts an {@link java.lang.Iterable} of Micrometer tag to an iterable of Helidon tag.
      *
@@ -83,12 +90,6 @@ class MTag implements io.helidon.metrics.api.Tag {
         return MTag.create(Tag.of(key, value));
     }
 
-    private final Tag delegate;
-
-    private MTag(Tag delegate) {
-        this.delegate = delegate;
-    }
-
     @Override
     public String key() {
         return delegate.getKey();
@@ -101,7 +102,7 @@ class MTag implements io.helidon.metrics.api.Tag {
 
     @Override
     public String toString() {
-        return new StringJoiner(", ", MTag.class.getSimpleName() + "[", "]")
+        return new StringJoiner(", ", getClass().getSimpleName() + "[", "]")
                 .add(key() + "=" + value())
                 .toString();
     }

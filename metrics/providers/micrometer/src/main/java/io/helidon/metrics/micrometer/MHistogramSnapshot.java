@@ -18,6 +18,7 @@ package io.helidon.metrics.micrometer;
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.Bucket;
@@ -28,14 +29,14 @@ import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 
 class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
 
-    static MHistogramSnapshot create(HistogramSnapshot delegate) {
-        return new MHistogramSnapshot(delegate);
-    }
-
     private final HistogramSnapshot delegate;
 
     private MHistogramSnapshot(HistogramSnapshot delegate) {
         this.delegate = delegate;
+    }
+
+    static MHistogramSnapshot create(HistogramSnapshot delegate) {
+        return new MHistogramSnapshot(delegate);
     }
 
     @Override
@@ -66,6 +67,16 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
     @Override
     public double mean(TimeUnit timeUnit) {
         return delegate.mean(timeUnit);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(",", getClass().getSimpleName() + "[", "]")
+                .add("count=" + count())
+                .add("total=" + total())
+                .add("mean=" + mean())
+                .add("max=" + max())
+                .toString();
     }
 
     @Override

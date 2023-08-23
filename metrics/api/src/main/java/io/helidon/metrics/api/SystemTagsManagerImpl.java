@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -30,12 +31,12 @@ import java.util.function.Predicate;
 /**
  * Captures and makes available for output any system tag settings to be applied when metric IDs are output.
  * <P>
- *     In MP, the config might contain the config key {@code mp.metrics.tags}. In SE, the config might be {@code metrics.tags},
- *     either of which can be a string of the form {@code tag1=value1,tag2=value2,...}.
+ * In MP, the config might contain the config key {@code mp.metrics.tags}. In SE, the config might be {@code metrics.tags},
+ * either of which can be a string of the form {@code tag1=value1,tag2=value2,...}.
  * </P>
  * <p>
- *     Further, the MP config key {@code mp.metrics.appName} or the SE config key {metrics.appName} can convey
- *     an application name which will add a tag conveying the app name to each metric ID written to output.
+ * Further, the MP config key {@code mp.metrics.appName} or the SE config key {metrics.appName} can convey
+ * an application name which will add a tag conveying the app name to each metric ID written to output.
  * </p>
  */
 class SystemTagsManagerImpl implements SystemTagsManager {
@@ -45,6 +46,39 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     private final List<Tag> systemTags;
     private String scopeTagName;
     private String defaultScopeValue;
+
+    private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
+        List<Tag> result = new ArrayList<>(metricsConfig.globalTags());
+
+        // Add a tag for the app name if there is an appName setting in config AND we have a setting
+        // from somewhere for the tag name to use for recording the app name.
+
+        MetricsProgrammaticConfig.instance()
+                .appTagName()
+                .filter(Predicate.not(String::isBlank))
+                .ifPresent(tagNameToUse ->
+                                   metricsConfig.appName()
+                                           .ifPresent(appNameToUse -> result.add(Tag.create(tagNameToUse, appNameToUse)))
+                );
+
+        systemTags = List.copyOf(result);
+
+        // Set the scope tag, if appropriate. Prefer a setting from the programmatic config, then look at the
+        // user-settable config.
+        if (metricsConfig.scoping().tagEnabled()) {
+            MetricsProgrammaticConfig.instance()
+                    .scopeTagName()
+                    .or(metricsConfig.scoping()::tagName)
+                    .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
+        }
+        defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
+    }
+
+    // for testing
+    private SystemTagsManagerImpl() {
+        systemTags = List.of();
+        scopeTagName = "_testScope_";
+    }
 
     /**
      * Returns the singleton instance of the system tags manager.
@@ -60,38 +94,44 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return instance;
     }
 
+    static SystemTagsManagerImpl instance(MetricsConfig metricsConfig) {
+        instance = createWithoutSaving(metricsConfig);
+        return instance;
+    }
+
     static SystemTagsManagerImpl createWithoutSaving(MetricsConfig metricsConfig) {
         return new SystemTagsManagerImpl(metricsConfig);
     }
 
-    private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
-        List<Tag> result = new ArrayList<>(metricsConfig.globalTags());
+    /**
+     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
+     * is active: the scope tag name is non-null and non-blank.
+     *
+     * @param scopeTagName scope tag name
+     * @param scope        scope value
+     * @param factory      factory method to accept the scope tag and the scope and return an instance of the implied type
+     * @param <T>          type to which the scope tag and scope are converted
+     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
+     */
+    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
+        return () -> new Iterator<>() {
 
-        // Add a tag for the app name if there is an appName setting in config AND we have a setting
-        // from somewhere for the tag name to use for recording the app name.
+            private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank() && scope != null;
 
-        MetricsProgrammaticConfig.instance()
-                .appTagName()
-                .filter(Predicate.not(String::isBlank))
-                .ifPresent(tagNameToUse ->
-                    metricsConfig.appName().ifPresent(appNameToUse -> result.add(Tag.create(tagNameToUse, appNameToUse)))
-                );
+            @Override
+            public boolean hasNext() {
+                return hasNext;
+            }
 
-        systemTags = List.copyOf(result);
-
-        // Set the scope tag, if appropriate.
-        if (metricsConfig.scoping().tagEnabled()) {
-            MetricsProgrammaticConfig.instance()
-                    .scopeTagName()
-                    .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
-        }
-        defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
-    }
-
-    // for testing
-    private SystemTagsManagerImpl() {
-        systemTags = List.of();
-        scopeTagName = "_testScope_";
+            @Override
+            public T next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                hasNext = false;
+                return factory.apply(scopeTagName, scope);
+            }
+        };
     }
 
     @Override
@@ -113,10 +153,17 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
-    public Optional<Map.Entry<String, String>> scopeSetting(String scopeValue) {
-        return scopeTagName == null || (scopeValue == null && defaultScopeValue == null)
+    public void assignScope(String validScope, BiConsumer<String, String> tagSetter) {
+        if (scopeTagName != null) {
+            tagSetter.accept(scopeTagName, validScope);
+        }
+    }
+
+    @Override
+    public Optional<String> effectiveScope(Optional<String> candidateScope) {
+        return candidateScope.isEmpty() && defaultScopeValue == null
                 ? Optional.empty()
-                : Optional.of(new AbstractMap.SimpleEntry<>(scopeTagName, scopeValue == null ? defaultScopeValue : scopeValue));
+                : Optional.of(candidateScope.orElse(defaultScopeValue));
     }
 
     @Override
@@ -124,35 +171,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return Optional.ofNullable(scopeTagName);
     }
 
-    /**
-     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
-     * is active: the scope tag name is non-null and non-blank.
-     *
-     * @param scopeTagName scope tag name
-     * @param scope scope value
-     * @param factory factory method to accept the scope tag and the scope and return an instance of the implied type
-     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
-     * @param <T> type to which the scope tag and scope are converted
-     */
-    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
-        return () -> new Iterator<>() {
-
-            private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank() && scope != null;
-
-            @Override
-            public boolean hasNext() {
-                return hasNext;
-            }
-
-            @Override
-            public T next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                hasNext = false;
-                return factory.apply(scopeTagName, scope);
-            }
-        };
+    private <T> Iterable<T> scopeIterable(String scope, BiFunction<String, String, T> factory) {
+        return scopeIterable(scopeTagName, scope, factory);
     }
 
     static class MultiIterable<T> implements Iterable<T> {
@@ -209,10 +229,5 @@ class SystemTagsManagerImpl implements SystemTagsManager {
             }
         }
     }
-
-    private <T> Iterable<T> scopeIterable(String scope, BiFunction<String, String, T> factory) {
-        return scopeIterable(scopeTagName, scope, factory);
-    }
-
 
 }

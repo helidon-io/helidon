@@ -23,18 +23,18 @@ import io.helidon.common.config.Config;
 /**
  * Behavior of implementations of the Helidon metrics API.
  * <p>
- *     An implementation of this interface provides instance methods for each
- *     of the static methods on the Helidon metrics API interfaces. The prefix of each method
- *     here identifies the interface that bears the corresponding static method. For example,
- *     {@link #timerStart(io.helidon.metrics.api.MeterRegistry)} corresponds to the static
- *     {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
+ * An implementation of this interface provides instance methods for each
+ * of the static methods on the Helidon metrics API interfaces. The prefix of each method
+ * here identifies the interface that bears the corresponding static method. For example,
+ * {@link #timerStart(io.helidon.metrics.api.MeterRegistry)} corresponds to the static
+ * {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
  * </p>
  * <p>
- *     Also, various static methods create new instances or return previously-created ones.
+ * Also, various static methods create new instances or return previously-created ones.
  * </p>
  * <p>
- *     Note that this is not intended to be the interface which developers use to work with Helidon metrics.
- *     Instead use
+ * Note that this is not intended to be the interface which developers use to work with Helidon metrics.
+ * Instead use
  *     <ul>
  *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
  *         <li>the static methods on the various interfaces in the API, or</li>
@@ -63,6 +63,7 @@ public interface MetricsFactory {
     /**
      * Returns a new instance from a highest-weight provider available at runtime using the provided
      * {@link io.helidon.common.config.Config} to set up the factory.
+     *
      * @param rootConfig top-level config node
      * @return new instance configured as directed
      */
@@ -89,7 +90,7 @@ public interface MetricsFactory {
      * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided {@link io.helidon.metrics.api.Clock} and
      * metrics config.
      *
-     * @param clock default clock to associate with the meter registry
+     * @param clock         default clock to associate with the meter registry
      * @param metricsConfig metrics configuration which influences the new registry
      * @return new meter registry
      */
@@ -115,11 +116,11 @@ public interface MetricsFactory {
      * Creates a builder for a functional {@link io.helidon.metrics.api.Counter}, essentially a counter-style
      * wrapper around an external object.
      *
-     * @param name name of the counter
+     * @param name        name of the counter
      * @param stateObject object which provides the counter value
-     * @param fn function which, when applied to the state object, yields the counter value
+     * @param fn          function which, when applied to the state object, yields the counter value
+     * @param <T>         type of the state object
      * @return counter builder
-     * @param <T> type of the state object
      */
     <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
@@ -133,7 +134,7 @@ public interface MetricsFactory {
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.DistributionSummary}.
      *
-     * @param name name of the summary
+     * @param name          name of the summary
      * @param configBuilder distribution stats config the summary should use
      * @return summary builder
      */
@@ -142,31 +143,31 @@ public interface MetricsFactory {
     /**
      * Creates a builder for a state-based {@link io.helidon.metrics.api.Gauge}.
      *
-     * @param name name of the gauge
+     * @param name        name of the gauge
      * @param stateObject object which maintains the value to be exposed via the gauge
-     * @param fn function which, when applied to the state object, returns the gauge value
+     * @param fn          function which, when applied to the state object, returns the gauge value
+     * @param <T>         type of the state object
      * @return gauge builder
-     * @param <T> type of the state object
      */
     <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a {@link Number} instance.
      *
-     * @param name name of the gauge
+     * @param name   name of the gauge
      * @param number instance of a subtype of {@code Number} which provides the gauge value
+     * @param <N>    subtype of {@code Number} which is the type of the object that provides the gauge value
      * @return new builder
-     * @param <N> subtype of {@code Number} which is the type of the object that provides the gauge value
      */
     <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, N number);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a supplier of a subtype of {@link Number}.
      *
-     * @param name gauge name
+     * @param name     gauge name
      * @param supplier supplier for an instance of the specified subtype of {@code Number}
+     * @param <N>      subtype of {@code Number} which the supplier providers
      * @return new builder
-     * @param <N> subtype of {@code Number} which the supplier providers
      */
     <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, Supplier<N> supplier);
 
@@ -218,7 +219,7 @@ public interface MetricsFactory {
      *
      * @param count count
      * @param total total
-     * @param max max value
+     * @param max   max value
      * @return histogram snapshot
      */
     HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max);
@@ -228,9 +229,9 @@ public interface MetricsFactory {
      * the builder's name and other required parameters.
      *
      * @param builder original builder
+     * @param <B>     type of the builder
+     * @param <M>     type of the meter the builder produces
      * @return corresponding no-op meter
-     * @param <B> type of the builder
-     * @param <M> type of the meter the builder produces
      */
     default <M extends Meter, B extends Meter.Builder<B, M>> Meter noOpMeter(B builder) {
         if (builder instanceof Counter.Builder cb) {

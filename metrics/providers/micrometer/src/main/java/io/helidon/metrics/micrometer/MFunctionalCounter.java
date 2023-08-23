@@ -24,15 +24,23 @@ import io.micrometer.core.instrument.Tag;
 
 class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.metrics.api.FunctionalCounter {
 
+    private MFunctionalCounter(FunctionCounter delegate, MFunctionalCounter.Builder<?> builder) {
+        super(delegate, builder);
+    }
+
+    private MFunctionalCounter(FunctionCounter delegate) {
+        super(delegate);
+    }
+
     /**
      * Creates a new builder for a wrapper around a to-be-created Micrometer function counter, typically if
      * the developer is creating a function counter using the Helidon API.
      *
-     * @param name name of the new counter
+     * @param name        name of the new counter
      * @param stateObject object which provides the counter value
-     * @param fn function which, when applied to the state object, returns the counter value
+     * @param fn          function which, when applied to the state object, returns the counter value
+     * @param <T>         type of the state object
      * @return new builder for a wrapper counter
-     * @param <T> type of the state object
      */
     static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return new Builder<>(name, stateObject, fn);
@@ -42,20 +50,20 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         return new MFunctionalCounter(functionCounter);
     }
 
-    private MFunctionalCounter(FunctionCounter delegate, MFunctionalCounter.Builder<?> builder) {
-        super(delegate, builder);
-    }
-
-    private MFunctionalCounter(FunctionCounter delegate) {
-        super(delegate);
-    }
-
     @Override
     public long count() {
         return (long) delegate().count();
     }
+
+    @Override
+    public String toString() {
+        return stringJoiner()
+                .add("count=" + count())
+                .toString();
+    }
+
     static class Builder<T> extends MMeter.Builder<FunctionCounter.Builder<T>, FunctionCounter, Builder<T>, MFunctionalCounter>
-                implements FunctionalCounter.Builder<T> {
+            implements FunctionalCounter.Builder<T> {
 
         private final T stateObject;
         private final ToDoubleFunction<T> fn;

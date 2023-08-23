@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringJoiner;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
@@ -115,11 +116,17 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         isDeleted = true;
     }
 
+    protected StringJoiner stringJoiner() {
+        return new StringJoiner(", ", getClass().getSimpleName() + "[", "]")
+                .add("id=" + id)
+                .add("scope='" + (scope == null ? "" : scope) + "'");
+    }
+
     /**
      * Builder for a wrapping meter around a Micrometer meter.
      *
-     * @param <B> type of the Micrometer builder (there is no common supertype for all Micrometer meter builders)
-     * @param <M> type of the Micrometer meter to build
+     * @param <B>  type of the Micrometer builder (there is no common supertype for all Micrometer meter builders)
+     * @param <M>  type of the Micrometer meter to build
      * @param <HB> type of the Helidon meter builder which wraps the Micrometer meter builder
      * @param <HM> type of the Helidon meter which wraps the Micrometer meter
      */
@@ -133,7 +140,6 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         private String scope;
         private String description;
         private String baseUnit;
-
 
         protected Builder(String name, B delegate) {
             this.name = name;
@@ -189,7 +195,9 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         protected abstract HB delegateTags(Iterable<Tag> tags);
+
         protected abstract HB delegateDescription(String description);
+
         protected abstract HB delegateBaseUnit(String baseUnit);
 
         protected abstract HM build(M meter);
@@ -198,14 +206,14 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     static class Id implements io.helidon.metrics.api.Meter.Id {
 
-        static Id create(Meter.Id id) {
-            return new Id(id);
-        }
-
         private final Meter.Id delegate;
 
         private Id(Meter.Id delegate) {
             this.delegate = delegate;
+        }
+
+        static Id create(Meter.Id id) {
+            return new Id(id);
         }
 
         @Override
@@ -214,10 +222,16 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         @Override
+        public String toString() {
+            return String.format("ID[name=%s,tags=[%s]]", delegate.getName(), delegate.getTags());
+        }
+
+        @Override
         public Iterable<io.helidon.metrics.api.Tag> tags() {
             return new Iterable<>() {
 
                 private final Iterator<Tag> iter = delegate.getTags().iterator();
+
                 @Override
                 public Iterator<io.helidon.metrics.api.Tag> iterator() {
                     return new Iterator<>() {

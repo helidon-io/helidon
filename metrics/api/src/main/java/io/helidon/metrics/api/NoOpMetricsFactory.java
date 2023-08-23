@@ -23,8 +23,6 @@ import java.util.function.ToDoubleFunction;
  */
 class NoOpMetricsFactory implements MetricsFactory {
 
-    private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
-
     private static final Clock SYSTEM_CLOCK = new Clock() {
         @Override
         public <R> R unwrap(Class<? extends R> c) {
@@ -41,6 +39,7 @@ class NoOpMetricsFactory implements MetricsFactory {
             return System.nanoTime();
         }
     };
+    private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();

@@ -26,104 +26,79 @@ import java.util.TreeMap;
 public interface Meter extends Wrapper {
 
     /**
-     * Constants for the pre-defined scopes.
+     * Returns the meter ID.
+     *
+     * @return meter ID
      */
-    class Scope {
-
-        /**
-         * Application scope.
-         */
-        public static final String APPLICATION = "application";
-
-        /**
-         * Base scope.
-         */
-        public static final String BASE = "base";
-
-        /**
-         * Vendor scope.
-         */
-        public static final String VENDOR = "vendor";
-
-        /**
-         * All the predefined scopes.
-         */
-        public static final Set<String> BUILT_IN_SCOPES = Set.of(BASE, VENDOR, APPLICATION);
-
-        /**
-         * Default scope if none is specified for a given meter.
-         */
-        public static final String DEFAULT = APPLICATION;
-
-        private Scope() {
-        }
-    }
+    Id id();
 
     /**
-     * Common unit declarations (inspired by the list from MicroProfile metrics). Users can use any units they wish.
+     * Returns the meter's base unit.
+     *
+     * @return base unit
      */
-    class BaseUnits {
+    Optional<String> baseUnit();
 
-        /** No unit. */
-        public static final String NONE = "none";
+    /**
+     * Returns the meter's description.
+     *
+     * @return description
+     */
+    Optional<String> description();
 
-        /** Represents bits. Not defined by SI, but by IEC 60027. */
-        public static final String BITS = "bits";
-        /** 1000 {@link #BITS}. */
-        public static final String KILOBITS = "kilobits";
-        /** 1000 {@link #KILOBITS}. */
-        public static final String MEGABITS = "megabits";
-        /** 1000 {@link #MEGABITS}. */
-        public static final String GIGABITS = "gigabits";
-        /** 1024 {@link #BITS}. */
-        public static final String KIBIBITS = "kibibits";
-        /** 1024 {@link #KIBIBITS}. */
-        public static final String MEBIBITS = "mebibits";
-        /** 1024 {@link #MEBIBITS}. */
-        public static final String GIBIBITS = "gibibits";
+    /**
+     * Returns the meter type.
+     *
+     * @return meter type
+     */
+    Type type();
 
-        /** 8 {@link #BITS}. */
-        public static final String BYTES = "bytes";
-        /** 1000 {@link #BYTES}. */
-        public static final String KILOBYTES = "kilobytes";
-        /** 1000 {@link #KILOBYTES}. */
-        public static final String MEGABYTES = "megabytes";
-        /** 1000 {@link #MEGABYTES}. */
-        public static final String GIGABYTES = "gigabytes";
+    /**
+     * Returns the scope associated with the meter.
+     *
+     * @return scope
+     */
+    Optional<String> scope();
 
-        /** 1/1000 {@link #MICROSECONDS}.*/
-        public static final String NANOSECONDS = "nanoseconds";
-        /** 1/1000 {@link #MILLISECONDS}. */
-        public static final String MICROSECONDS = "microseconds";
-        /** 1/1000 {@link #SECONDS}. */
-        public static final String MILLISECONDS = "milliseconds";
-        /** Represents seconds. */
-        public static final String SECONDS = "seconds";
-        /** 60 {@link #SECONDS}. */
-        public static final String MINUTES = "minutes";
-        /** 60 {@link #MINUTES}. */
-        public static final String HOURS = "hours";
-        /** 24 {@link #HOURS}. */
-        public static final String DAYS = "days";
+    /**
+     * Type of meter.
+     */
+    enum Type {
 
-        /** Represents percentage. */
-        public static final String PERCENT = "percent";
+        /**
+         * Counter (monotonically increasing value).
+         */
+        COUNTER,
 
-        /** Represent per second. */
-        public static final String PER_SECOND = "per_second";
+        /**
+         * Gauge (can increase or decrease).
+         */
+        GAUGE,
 
+        /**
+         * Timer (measures count and distribution of completed events).
+         */
+        TIMER,
 
-        private BaseUnits() {
-        }
+        /**
+         * Distribution summary (measures distribution of samples).
+         */
+        DISTRIBUTION_SUMMARY,
+
+        /**
+         * Other.
+         */
+        OTHER;
+
     }
 
     /**
      * Common behavior of specific meter builders.
      *
      * <p>
-     *     This builder does not extend the conventional Helidon builder because, typically, "building" a meter involves
-     *     registering it which is implementation-specific and therefore should be performed only by each implementation.
-     *     We do not want developers to see a {@code build()} operation that they should not invoke.
+     * This builder does not extend the conventional Helidon builder because, typically, "building" a meter involves
+     * registering it which is implementation-specific and therefore should be performed only by each implementation.
+     * We do not want developers to see a {@code build()} operation that they should not invoke.
      * </p>
      *
      * @param <B> type of the builder
@@ -241,9 +216,9 @@ public interface Meter extends Wrapper {
         /**
          * Unwraps the ID as the specified type.
          *
-         * @param c {@link Class} to which to cast this ID
-         * @return the ID cast as the requested type
+         * @param c   {@link Class} to which to cast this ID
          * @param <R> type to cast to
+         * @return the ID cast as the requested type
          */
         default <R> R unwrap(Class<? extends R> c) {
             return c.cast(this);
@@ -251,69 +226,135 @@ public interface Meter extends Wrapper {
     }
 
     /**
-     * Type of meter.
+     * Constants for the pre-defined scopes.
      */
-    enum Type {
+    class Scope {
 
         /**
-         * Counter (monotonically increasing value).
+         * Application scope.
          */
-        COUNTER,
+        public static final String APPLICATION = "application";
 
         /**
-         * Gauge (can increase or decrease).
+         * Base scope.
          */
-        GAUGE,
+        public static final String BASE = "base";
 
         /**
-         * Timer (measures count and distribution of completed events).
+         * Vendor scope.
          */
-        TIMER,
+        public static final String VENDOR = "vendor";
 
         /**
-         * Distribution summary (measures distribution of samples).
+         * All the predefined scopes.
          */
-        DISTRIBUTION_SUMMARY,
+        public static final Set<String> BUILT_IN_SCOPES = Set.of(BASE, VENDOR, APPLICATION);
 
         /**
-         * Other.
+         * Default scope if none is specified for a given meter.
          */
-        OTHER;
+        public static final String DEFAULT = APPLICATION;
 
+        private Scope() {
+        }
     }
 
     /**
-     * Returns the meter ID.
-     *
-     * @return meter ID
+     * Common unit declarations (inspired by the list from MicroProfile metrics). Users can use any units they wish.
      */
-    Id id();
+    class BaseUnits {
 
-    /**
-     * Returns the meter's base unit.
-     *
-     * @return base unit
-     */
-    Optional<String> baseUnit();
+        /**
+         * No unit.
+         */
+        public static final String NONE = "none";
 
-    /**
-     * Returns the meter's description.
-     *
-     * @return description
-     */
-    Optional<String> description();
+        /**
+         * Represents bits. Not defined by SI, but by IEC 60027.
+         */
+        public static final String BITS = "bits";
+        /**
+         * 1000 {@link #BITS}.
+         */
+        public static final String KILOBITS = "kilobits";
+        /**
+         * 1000 {@link #KILOBITS}.
+         */
+        public static final String MEGABITS = "megabits";
+        /**
+         * 1000 {@link #MEGABITS}.
+         */
+        public static final String GIGABITS = "gigabits";
+        /**
+         * 1024 {@link #BITS}.
+         */
+        public static final String KIBIBITS = "kibibits";
+        /**
+         * 1024 {@link #KIBIBITS}.
+         */
+        public static final String MEBIBITS = "mebibits";
+        /**
+         * 1024 {@link #MEBIBITS}.
+         */
+        public static final String GIBIBITS = "gibibits";
 
-    /**
-     * Returns the meter type.
-     *
-     * @return meter type
-     */
-    Type type();
+        /**
+         * 8 {@link #BITS}.
+         */
+        public static final String BYTES = "bytes";
+        /**
+         * 1000 {@link #BYTES}.
+         */
+        public static final String KILOBYTES = "kilobytes";
+        /**
+         * 1000 {@link #KILOBYTES}.
+         */
+        public static final String MEGABYTES = "megabytes";
+        /**
+         * 1000 {@link #MEGABYTES}.
+         */
+        public static final String GIGABYTES = "gigabytes";
 
-    /**
-     * Returns the scope associated with the meter.
-     *
-     * @return scope
-     */
-    Optional<String> scope();
+        /**
+         * 1/1000 {@link #MICROSECONDS}.
+         */
+        public static final String NANOSECONDS = "nanoseconds";
+        /**
+         * 1/1000 {@link #MILLISECONDS}.
+         */
+        public static final String MICROSECONDS = "microseconds";
+        /**
+         * 1/1000 {@link #SECONDS}.
+         */
+        public static final String MILLISECONDS = "milliseconds";
+        /**
+         * Represents seconds.
+         */
+        public static final String SECONDS = "seconds";
+        /**
+         * 60 {@link #SECONDS}.
+         */
+        public static final String MINUTES = "minutes";
+        /**
+         * 60 {@link #MINUTES}.
+         */
+        public static final String HOURS = "hours";
+        /**
+         * 24 {@link #HOURS}.
+         */
+        public static final String DAYS = "days";
+
+        /**
+         * Represents percentage.
+         */
+        public static final String PERCENT = "percent";
+
+        /**
+         * Represent per second.
+         */
+        public static final String PER_SECOND = "per_second";
+
+        private BaseUnits() {
+        }
+    }
 }

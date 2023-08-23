@@ -29,7 +29,6 @@ import io.helidon.config.metadata.ConfiguredOption;
 @Prototype.CustomMethods(ScopeConfigSupport.class)
 interface ScopeConfigBlueprint {
 
-
     /**
      * Name of the scope to which the configuration applies.
      *

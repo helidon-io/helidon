@@ -48,39 +48,68 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
  * Implementation of {@link io.helidon.metrics.api.MeterRegistry} for the Micrometer adapter.
  *
  * <p>
- *     The flow of control here is interesting during new meter registration. Typically a developer uses the Helidon
- *     metrics API to create a builder for a new Helidon meter. That automatically creates that builder's delegate, an instance
- *     of the corresponding Micrometer meter builder (held as a private reference inside the Helidon builder). The developer's
- *     code then invokes this registry's getOrCreate method passing the Helidon metric builder.
+ * The flow of control here is interesting during new meter registration. Typically a developer uses the Helidon
+ * metrics API to create a builder for a new Helidon meter. That automatically creates that builder's delegate, an instance
+ * of the corresponding Micrometer meter builder (held as a private reference inside the Helidon builder). The developer's
+ * code then invokes this registry's getOrCreate method passing the Helidon metric builder.
  * </p>
  * <p>
- *     This code invokes the Micrometer builder's register method, passing this registry's delegate which is a Micrometer
- *     meter registry. The Micrometer registry records the meter and then invokes a callback to us, passing the new Micrometer
- *     meter. Based on the type of the new Micrometer meter we instantiate the correct type of Helidon meter as a wrapper around
- *     the new new Micrometer meter. We then provisionally update some of our internal data structures as part of the callback.
+ * This code invokes the Micrometer builder's register method, passing this registry's delegate which is a Micrometer
+ * meter registry. The Micrometer registry records the meter and then invokes a callback to us, passing the new Micrometer
+ * meter. Based on the type of the new Micrometer meter we instantiate the correct type of Helidon meter as a wrapper around
+ * the new new Micrometer meter. We then provisionally update some of our internal data structures as part of the callback.
  * </p>
  * <p>
- *     After our callback returns to Micrometer and then Micrometer returns to us, we do some final touch-up to our data
- *     structures as needed and return the new Helidon meter to the developer's code which invoked getOrCreate.
+ * After our callback returns to Micrometer and then Micrometer returns to us, we do some final touch-up to our data
+ * structures as needed and return the new Helidon meter to the developer's code which invoked getOrCreate.
  * </p>
  * <p>
- *     This is a little convoluted, but this approach allows us to automatically create Helidon meters around every Micrometer
- *     meter, <em>even those which the developer registers directly with Micrometer!</em> That way, queries of the registry
- *     using the Helidon API return the same Helidon meter wrapper instance around a given Micrometer meter, regardless of which
- *     API the developer used to register the meter: ours or Micrometer's.
+ * This is a little convoluted, but this approach allows us to automatically create Helidon meters around every Micrometer
+ * meter, <em>even those which the developer registers directly with Micrometer!</em> That way, queries of the registry
+ * using the Helidon API return the same Helidon meter wrapper instance around a given Micrometer meter, regardless of which
+ * API the developer used to register the meter: ours or Micrometer's.
  * </p>
  */
 class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
+    private final MeterRegistry delegate;
+    /**
+     * Helidon API clock to be returned by the {@link #clock} method.
+     */
+    private final Clock clock;
+    private final MetricsConfig metricsConfig;
+    /**
+     * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
+     * for example, to return to the developer's code the proper Helidon wrapper meter during searches that return the same
+     * Micrometer meters, rather than creating new Helidon wrapper meters each time.
+     */
+    private final ConcurrentHashMap<Meter, MMeter<?>> meters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<io.helidon.metrics.api.Meter>> scopeMembership = new ConcurrentHashMap<>();
+    private final ReentrantLock lock = new ReentrantLock();
+
+    private MMeterRegistry(MeterRegistry delegate,
+                           Clock clock,
+                           MetricsConfig metricsConfig) {
+        this.delegate = delegate;
+        this.clock = clock;
+        this.metricsConfig = metricsConfig;
+        delegate.config()
+                .onMeterAdded(this::recordAdd)
+                .onMeterRemoved(this::recordRemove);
+        List<io.helidon.metrics.api.Tag> globalTags = metricsConfig.globalTags();
+        if (!globalTags.isEmpty()) {
+            delegate.config().meterFilter(MeterFilter.commonTags(Util.tags(globalTags)));
+        }
+    }
 
     /**
      * Creates a new meter registry which wraps the specified Micrometer meter registry, ensuring that if
      * the meter registry is a composite registry it has a Prometheus meter registry attached (adding a new one if needed).
      * <p>
-     *     The {@link io.helidon.metrics.api.MetricsConfig} does not override the settings of the pre-existing Micrometer
-     *     meter registry but augments the behavior of this wrapper around it, for example specifying
-     *     global tags.
+     * The {@link io.helidon.metrics.api.MetricsConfig} does not override the settings of the pre-existing Micrometer
+     * meter registry but augments the behavior of this wrapper around it, for example specifying
+     * global tags.
      * </p>
      *
      * @param meterRegistry existing Micrometer meter registry to wrap
@@ -116,7 +145,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      * {@link io.micrometer.core.instrument.composite.CompositeMeterRegistry} with a Prometheus meter registry
      * automatically added, using the specified clock.
      *
-     * @param clock default clock to associate with the new meter registry
+     * @param clock         default clock to associate with the new meter registry
      * @param metricsConfig metrics config
      * @return new wrapper around a new Micrometer composite meter registry
      */
@@ -127,59 +156,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return create(ensurePrometheusRegistryIsPresent(delegate, metricsConfig),
                       clock,
                       metricsConfig);
-    }
-
-    private static MMeterRegistry create(MeterRegistry delegate,
-                                         Clock neutralClock,
-                                         MetricsConfig metricsConfig) {
-        return new MMeterRegistry(delegate, neutralClock, metricsConfig);
-    }
-
-    private static MeterRegistry ensurePrometheusRegistryIsPresent(MeterRegistry meterRegistry,
-                                                                   MetricsConfig metricsConfig) {
-        if (meterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
-            if (compositeMeterRegistry.getRegistries()
-                    .stream()
-                    .noneMatch(r -> r instanceof PrometheusMeterRegistry)) {
-                compositeMeterRegistry.add(
-                        new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
-            }
-        }
-        return meterRegistry;
-    }
-
-    private final MeterRegistry delegate;
-
-    /**
-     * Helidon API clock to be returned by the {@link #clock} method.
-     */
-    private final Clock clock;
-
-    private final MetricsConfig metricsConfig;
-
-    /**
-     * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
-     * for example, to return to the developer's code the proper Helidon wrapper meter during searches that return the same
-     * Micrometer meters, rather than creating new Helidon wrapper meters each time.
-     */
-    private final ConcurrentHashMap<Meter, MMeter<?>> meters = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Set<io.helidon.metrics.api.Meter>> scopeMembership = new ConcurrentHashMap<>();
-
-    private final ReentrantLock lock = new ReentrantLock();
-
-    private MMeterRegistry(MeterRegistry delegate,
-                           Clock clock,
-                           MetricsConfig metricsConfig) {
-        this.delegate = delegate;
-        this.clock = clock;
-        this.metricsConfig = metricsConfig;
-        delegate.config()
-                .onMeterAdded(this::recordAdd)
-                .onMeterRemoved(this::recordRemove);
-        List<io.helidon.metrics.api.Tag> globalTags = metricsConfig.globalTags();
-        if (!globalTags.isEmpty()) {
-            delegate.config().meterFilter(MeterFilter.commonTags(Util.tags(globalTags)));
-        }
     }
 
     @Override
@@ -349,10 +325,23 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return meters();
     }
 
-    private Optional<String> effectiveScope(Optional<String> explicitScope) {
-        return explicitScope.isPresent()
-                ? explicitScope
-                : metricsConfig.scoping().defaultValue();
+    private static MMeterRegistry create(MeterRegistry delegate,
+                                         Clock neutralClock,
+                                         MetricsConfig metricsConfig) {
+        return new MMeterRegistry(delegate, neutralClock, metricsConfig);
+    }
+
+    private static MeterRegistry ensurePrometheusRegistryIsPresent(MeterRegistry meterRegistry,
+                                                                   MetricsConfig metricsConfig) {
+        if (meterRegistry instanceof CompositeMeterRegistry compositeMeterRegistry) {
+            if (compositeMeterRegistry.getRegistries()
+                    .stream()
+                    .noneMatch(r -> r instanceof PrometheusMeterRegistry)) {
+                compositeMeterRegistry.add(
+                        new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
+            }
+        }
+        return meterRegistry;
     }
 
     private <M extends Meter, HB extends MMeter.Builder<?, M, HB, HM>, HM extends MMeter<M>> HM registerAndPostProcess(
@@ -360,9 +349,13 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             BiConsumer<String, String> builderTagSetter,
             Function<MeterRegistry, M> registration) {
 
-        effectiveScope(mBuilder.scope())
-                .flatMap(SystemTagsManager.instance()::scopeSetting)
-                .ifPresent(pair -> builderTagSetter.accept(pair.getKey(), pair.getValue()));
+        // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
+        Optional<String> effectiveScope = SystemTagsManager.instance()
+                .effectiveScope(mBuilder.scope());
+
+        // If there is a usable scope value, add a tag to the builder if configuration has a scope tag name.
+        effectiveScope.ifPresent(realScope -> SystemTagsManager.instance()
+                        .assignScope(realScope, builderTagSetter));
 
         lock.lock();
         try {
@@ -375,7 +368,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             //
             // If scope tagging is NOT on then the callback cannot do those updates so we need to do them here.
             HM helidonMeter = (HM) meters.get(meter);
-            updateScope(meter, helidonMeter, mBuilder.scope());
+            updateScope(meter, helidonMeter, effectiveScope);
             return helidonMeter;
         } finally {
             lock.unlock();
@@ -396,9 +389,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
 
         SystemTagsManager.instance()
-                .scopeSetting(scope)
-                .ifPresent(pair -> tagList.add(io.helidon.metrics.api.Tag.create(pair.getKey(),
-                                                                                 pair.getValue())));
+                .assignScope(scope,
+                             (tag, s) -> tagList.add(io.helidon.metrics.api.Tag.create(tag, s)));
 
         Meter nativeMeter = delegate.find(name)
                 .tags(Util.tags(tags))
@@ -417,7 +409,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             lock.unlock();
         }
     }
-
 
     private void recordAdd(Meter addedMeter) {
 
@@ -466,24 +457,29 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // Find the correct scope value to use, preferring the reliable scope, then using a scope value in the
         // meter's tags according to the Helidon scope tagging convention, and last use the configured default scope value.
 
-        Optional<String> scopeToSet = reliableScope.or(() ->
-            metricsConfig.scoping().tagEnabled() && metricsConfig.scoping().tagName().isPresent()
-                    ? Optional.ofNullable(meter.getId().getTag(metricsConfig.scoping().tagName().get()))
-                    : metricsConfig.scoping().defaultValue());
+        Optional<String> scopeToSet = reliableScope
+                .or(() ->
+                            metricsConfig.scoping()
+                                    .tagName()
+                                    .map(scopeTagName -> meter.getId().getTag(scopeTagName))
+                                    .filter(scopeTagValue -> !scopeTagValue.isBlank()))
+                .or(() ->
+                            metricsConfig.scoping().defaultValue());
 
         if (reliableScope.isPresent()) {
             // The callback might have already added the meter to the wrong scope membership: it would have used the tagging
             // convention but maybe the developer has specified a different scope in the builder which this method's caller
             // might have access to but the callback does not. In such cases remove the meter from the wrong membership and
             // add it to the correct one.
-            helidonMeter.scope().ifPresent(scopeInMeter -> {
-                if (!reliableScope.get().equals(scopeInMeter)) {
-                    Set<io.helidon.metrics.api.Meter> scopeMembers = scopeMembership.get(scopeInMeter);
-                    if (scopeMembers != null) {
-                        scopeMembers.remove(helidonMeter);
-                    }
-                }
-            });
+            helidonMeter.scope()
+                    .ifPresent(scopeInMeter -> {
+                        if (!reliableScope.get().equals(scopeInMeter)) {
+                            Set<io.helidon.metrics.api.Meter> scopeMembers = scopeMembership.get(scopeInMeter);
+                            if (scopeMembers != null) {
+                                scopeMembers.remove(helidonMeter);
+                            }
+                        }
+                    });
 
             scopeToSet.ifPresent(helidonMeter::scope);
             scopeToSet.ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
@@ -517,14 +513,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      */
     private static class ClockWrapper implements io.micrometer.core.instrument.Clock {
 
-        static ClockWrapper create(Clock clock) {
-            return new ClockWrapper(clock);
-        }
-
         private final Clock neutralClock;
 
         private ClockWrapper(Clock neutralClock) {
             this.neutralClock = neutralClock;
+        }
+
+        static ClockWrapper create(Clock clock) {
+            return new ClockWrapper(clock);
         }
 
         @Override

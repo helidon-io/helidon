@@ -44,14 +44,6 @@ class TestDistributionSummary {
         meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
     }
 
-    private static DistributionSummary commonPrep(String name, DistributionStatisticsConfig.Builder statsConfigBuilder) {
-        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder(name, statsConfigBuilder));
-        List.of(1D, 3D, 5D, 7D)
-                .forEach(summary::record);
-        return summary;
-    }
-
-
     @Test
     void testBasicStats() {
         DistributionSummary summary = commonPrep("a",
@@ -93,8 +85,8 @@ class TestDistributionSummary {
     @Test
     void testBuckets() {
         DistributionSummary summary = commonPrep("e",
-                DistributionStatisticsConfig.builder()
-                        .buckets(5.0D, 10.0D, 15.0D));
+                                                 DistributionStatisticsConfig.builder()
+                                                         .buckets(5.0D, 10.0D, 15.0D));
 
         HistogramSnapshot snapshot = summary.snapshot();
 
@@ -109,11 +101,14 @@ class TestDistributionSummary {
 
     }
 
-    private record Vap(double percentile, double value) implements ValueAtPercentile {
+    private static DistributionSummary commonPrep(String name, DistributionStatisticsConfig.Builder statsConfigBuilder) {
+        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder(name, statsConfigBuilder));
+        List.of(1D, 3D, 5D, 7D)
+                .forEach(summary::record);
+        return summary;
+    }
 
-        private static ValueAtPercentile create(double percentile, double value) {
-            return new Vap(percentile, value);
-        }
+    private record Vap(double percentile, double value) implements ValueAtPercentile {
 
         @Override
         public double value(TimeUnit unit) {
@@ -129,13 +124,13 @@ class TestDistributionSummary {
         public String toString() {
             return String.format("Vap[percentile=%f,value=%f]", percentile, value);
         }
+
+        private static ValueAtPercentile create(double percentile, double value) {
+            return new Vap(percentile, value);
+        }
     }
 
     private record Cab(double boundary, long count) implements Bucket {
-
-        private static Cab create(double bucket, long count) {
-            return new Cab(bucket, count);
-        }
 
         @Override
         public double boundary(TimeUnit unit) {
@@ -150,6 +145,10 @@ class TestDistributionSummary {
         @Override
         public String toString() {
             return String.format("Vap[boundary=%f,count=%d]", boundary, count);
+        }
+
+        private static Cab create(double bucket, long count) {
+            return new Cab(bucket, count);
         }
     }
 }

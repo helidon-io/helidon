@@ -20,8 +20,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Representation of a histogram bucket, including the boundary value and the count of observations in that bucket.
  * <p>
- *     The boundary value is an upper bound on the observation values that can occupy the bucket.
- *     That is, an observation occupies a bucket if its value is less than or equal to the bucket's boundary value.
+ * The boundary value is an upper bound on the observation values that can occupy the bucket.
+ * That is, an observation occupies a bucket if its value is less than or equal to the bucket's boundary value.
  * </p>
  */
 public interface Bucket extends Wrapper {

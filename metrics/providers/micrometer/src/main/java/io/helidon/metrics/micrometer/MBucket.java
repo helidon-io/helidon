@@ -16,6 +16,7 @@
 package io.helidon.metrics.micrometer;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.Bucket;
@@ -24,14 +25,14 @@ import io.micrometer.core.instrument.distribution.CountAtBucket;
 
 class MBucket implements Bucket {
 
-    static MBucket create(CountAtBucket delegate) {
-        return new MBucket(delegate);
-    }
-
     private final CountAtBucket delegate;
 
     private MBucket(CountAtBucket delegate) {
         this.delegate = delegate;
+    }
+
+    static MBucket create(CountAtBucket delegate) {
+        return new MBucket(delegate);
     }
 
     @Override
@@ -75,6 +76,9 @@ class MBucket implements Bucket {
 
     @Override
     public String toString() {
-        return String.format("MBucket[boundary=%f,count=%d]", boundary(), count());
+        return new StringJoiner(",", getClass().getSimpleName() + "[", "]")
+                .add("boundary=" + boundary())
+                .add("count=" + count())
+                .toString();
     }
 }

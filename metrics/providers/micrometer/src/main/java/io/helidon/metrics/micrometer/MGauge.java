@@ -23,6 +23,14 @@ import io.micrometer.core.instrument.Tag;
 
 class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
 
+    private MGauge(Gauge delegate) {
+        super(delegate);
+    }
+
+    private <T> MGauge(Gauge delegate, Builder<T> builder) {
+        super(delegate, builder);
+    }
+
     /**
      * Creates a new builder for a wrapper around a Micrometer gauge that will be registered later, typically if the
      * developer is creating a gauge using the Helidon API.
@@ -54,21 +62,20 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
         return new MGauge(gauge);
     }
 
-    private MGauge(Gauge delegate) {
-        super(delegate);
-    }
-
-    private <T> MGauge(Gauge delegate, Builder<T> builder) {
-        super(delegate, builder);
-    }
-
     @Override
     public double value() {
         return delegate().value();
     }
 
+    @Override
+    public String toString() {
+        return stringJoiner()
+                .add("value=" + delegate().value())
+                .toString();
+    }
+
     static class Builder<T> extends MMeter.Builder<Gauge.Builder<T>, Gauge, MGauge.Builder<T>, MGauge>
-                implements io.helidon.metrics.api.Gauge.Builder<T> {
+            implements io.helidon.metrics.api.Gauge.Builder<T> {
 
         private final T stateObject;
         private final ToDoubleFunction<T> fn;

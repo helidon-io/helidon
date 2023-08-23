@@ -59,8 +59,8 @@ public class Util {
      * Creates a new {@link java.util.List} from an {@link java.lang.Iterable}.
      *
      * @param iterable iterable to convert
+     * @param <T>      type of the items
      * @return new list containing the elements reported by the iterable
-     * @param <T> type of the items
      */
     static <T> List<T> list(Iterable<T> iterable) {
         List<T> result = new ArrayList<>();
@@ -90,39 +90,39 @@ public class Util {
                 };
     }
 
-//    static Iterable<io.helidon.metrics.api.Tag> neutralTags(Iterable<Tag> tags) {
-//        return () -> new Iterator<>() {
-//
-//            private final Iterator<Tag> tagsIter = tags.iterator();
-//
-//            @Override
-//            public boolean hasNext() {
-//                return tagsIter.hasNext();
-//            }
-//
-//            @Override
-//            public io.helidon.metrics.api.Tag next() {
-//                Tag next = tagsIter.next();
-//                return io.helidon.metrics.api.Tag.create(next.getKey(), next.getValue());
-//            }
-//        };
-//    }
+    //    static Iterable<io.helidon.metrics.api.Tag> neutralTags(Iterable<Tag> tags) {
+    //        return () -> new Iterator<>() {
+    //
+    //            private final Iterator<Tag> tagsIter = tags.iterator();
+    //
+    //            @Override
+    //            public boolean hasNext() {
+    //                return tagsIter.hasNext();
+    //            }
+    //
+    //            @Override
+    //            public io.helidon.metrics.api.Tag next() {
+    //                Tag next = tagsIter.next();
+    //                return io.helidon.metrics.api.Tag.create(next.getKey(), next.getValue());
+    //            }
+    //        };
+    //    }
 
-//    static <T extends io.helidon.metrics.api.Tag> Iterable<Tag> tags(Iterable<T> tags) {
-//        return () -> new Iterator<>() {
-//
-//            private final Iterator<T> tagsIter = tags.iterator();
-//
-//            @Override
-//            public boolean hasNext() {
-//                return tagsIter.hasNext();
-//            }
-//
-//            @Override
-//            public Tag next() {
-//                io.helidon.metrics.api.Tag next = tagsIter.next();
-//                return Tag.of(next.key(), next.value());
-//            }
-//        };
-//    }
+    //    static <T extends io.helidon.metrics.api.Tag> Iterable<Tag> tags(Iterable<T> tags) {
+    //        return () -> new Iterator<>() {
+    //
+    //            private final Iterator<T> tagsIter = tags.iterator();
+    //
+    //            @Override
+    //            public boolean hasNext() {
+    //                return tagsIter.hasNext();
+    //            }
+    //
+    //            @Override
+    //            public Tag next() {
+    //                io.helidon.metrics.api.Tag next = tagsIter.next();
+    //                return Tag.of(next.key(), next.value());
+    //            }
+    //        };
+    //    }
 }

@@ -15,10 +15,21 @@
  */
 package io.helidon.metrics.micrometer;
 
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 
 class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter {
+
+    private MCounter(Counter delegate, Builder builder) {
+        super(delegate, builder);
+    }
+
+    private MCounter(Counter delegate) {
+        super(delegate);
+    }
 
     /**
      * Creates a new builder for a wrapper around a to-be-created Micrometer counter, typically if the
@@ -43,14 +54,6 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
         return new MCounter(counter);
     }
 
-    private MCounter(Counter delegate, Builder builder) {
-        super(delegate, builder);
-    }
-
-    private MCounter(Counter delegate) {
-        super(delegate);
-    }
-
     @Override
     public void increment() {
         delegate().increment();
@@ -66,8 +69,15 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
         return (long) delegate().count();
     }
 
+    @Override
+    public String toString() {
+        return stringJoiner()
+                .add("count=" + (long) delegate().count())
+                .toString();
+    }
+
     static class Builder extends MMeter.Builder<Counter.Builder, Counter, Builder, MCounter>
-                    implements io.helidon.metrics.api.Counter.Builder {
+            implements io.helidon.metrics.api.Counter.Builder {
 
         private Builder(String name, Counter.Builder delegate) {
             super(name, delegate);

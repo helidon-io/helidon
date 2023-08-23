@@ -59,8 +59,8 @@ public interface MeterRegistry extends Wrapper {
      * Returns whether the specified meter is enabled or not, based on whether the meter registry as a whole is enabled and also
      * whether the config settings for filtering include and exclude indicate the specific meter is enabled.
      *
-     * @param name name of the meter to check
-     * @param tags tags of the meter to check
+     * @param name  name of the meter to check
+     * @param tags  tags of the meter to check
      * @param scope scope, if present, of the meter to check
      * @return true if the meter (and its meter registry) are enabled; false otherwise
      */
@@ -78,9 +78,9 @@ public interface MeterRegistry extends Wrapper {
      * one using the provided builder.
      *
      * @param builder builder to use in finding or creating a meter
+     * @param <B>     builder for the meter
+     * @param <M>     type of the meter
      * @return the previously-registered meter with the same name and tags or, if none, the newly-registered one
-     * @param <B> builder for the meter
-     * @param <M> type of the meter
      */
     <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder);
 
@@ -131,15 +131,15 @@ public interface MeterRegistry extends Wrapper {
     /**
      * Locates a previously-registered meter of the specified type, matching the name and tags.
      * <p>
-     *     The method throws an {@link java.lang.ClassCastException} if a meter exists with
-     *     the name and tags but is not type-compatible with the provided class.
+     * The method throws an {@link java.lang.ClassCastException} if a meter exists with
+     * the name and tags but is not type-compatible with the provided class.
      * </p>
      *
      * @param mClass type of the meter to find
-     * @param name name to match
-     * @param tags tags to match
+     * @param name   name to match
+     * @param tags   tags to match
+     * @param <M>    type of the meter to find
      * @return {@link java.util.Optional} of the previously-regsitered meter; empty if not found
-     * @param <M> type of the meter to find
      */
     <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags);
 
@@ -162,7 +162,7 @@ public interface MeterRegistry extends Wrapper {
     /**
      * Removes a previously-registered meter with the specified ID and scope.
      *
-     * @param id ID for the meter to remove
+     * @param id    ID for the meter to remove
      * @param scope scope of the meter to remove
      * @return the removed meter; empty if the specified ID and scope do not correspond to a registered meter
      */
@@ -180,8 +180,8 @@ public interface MeterRegistry extends Wrapper {
     /**
      * Removes a previously-registered meter with the specified name, tags, and scope.
      *
-     * @param name meter name
-     * @param tags tags for further identifying the meter
+     * @param name  meter name
+     * @param tags  tags for further identifying the meter
      * @param scope scope within which to locate the meter
      * @return the removed meter; empty if the specified name, tags, and scope do not correspond to a registered meter
      */

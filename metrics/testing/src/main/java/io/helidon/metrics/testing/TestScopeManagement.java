@@ -25,6 +25,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,10 +41,12 @@ class TestScopeManagement {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testExplicitScopeOnMetersWithNoDefaultScope(boolean scopeTagEnabled) {
-        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(MetricsConfig.builder()
-                                                                                     .scoping(ScopingConfig.builder()
-                                                                                        .tagEnabled(scopeTagEnabled))
-                                                                                     .build());
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .scoping(ScopingConfig.builder()
+                                 .tagEnabled(scopeTagEnabled))
+                .build();
+        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+        SystemTagsManager.instance(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.
         // With no default scope set in the config used to init the MeterRegistry, only the counter will have a scope.
@@ -61,7 +64,7 @@ class TestScopeManagement {
                    allOf(
                            hasItem((Meter) c1),
                            not(hasItem((Meter) t1))
-                       ));
+                   ));
 
         scopedMeters.clear();
         reg.meters(Set.of("app", "def-scope")).forEach(scopedMeters::add);
@@ -78,11 +81,13 @@ class TestScopeManagement {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void testExplicitScopeOnMetersWithDefaultScope(boolean scopeTagEnabled) {
-        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(MetricsConfig.builder()
-                                                                                     .scoping(ScopingConfig.builder()
-                                                                                        .tagEnabled(scopeTagEnabled)
-                                                                                        .defaultValue("def-scope"))
-                                                                                     .build());
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .scoping(ScopingConfig.builder()
+                                 .tagEnabled(scopeTagEnabled)
+                                 .defaultValue("def-scope"))
+                .build();
+        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+        SystemTagsManager.instance(metricsConfig);
 
         // The config sets a default scope value of def-scope. So the counter gets its explicit setting
         // and the timer gets the default scope value because it has no explicit setting.

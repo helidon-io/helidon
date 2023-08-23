@@ -20,7 +20,6 @@ import java.util.Optional;
 /**
  * Configuration which controls the behavior of distribution statistics from meters that support them
  * (for example, timers and distribution summaries).
- *
  */
 public interface DistributionStatisticsConfig extends Wrapper {
 
@@ -85,12 +84,13 @@ public interface DistributionStatisticsConfig extends Wrapper {
         /**
          * Specifies time series percentiles.
          * <p>
-         *     The system computes these percentiles locally, so they cannot be aggregated with percentiles computed
-         *     elsewhere.
+         * The system computes these percentiles locally, so they cannot be aggregated with percentiles computed
+         * elsewhere.
          * </p>
          * <p>
-         *     Specify percentiles a decimals, for example express the 95th percentile as {@code 0.95}.
+         * Specify percentiles a decimals, for example express the 95th percentile as {@code 0.95}.
          * </p>
+         *
          * @param percentiles percentiles to compute and publish
          * @return updated builder
          */
@@ -99,12 +99,13 @@ public interface DistributionStatisticsConfig extends Wrapper {
         /**
          * Specifies time series percentiles.
          * <p>
-         *     The system computes these percentiles locally, so they cannot be aggregated with percentiles computed
-         *     elsewhere.
+         * The system computes these percentiles locally, so they cannot be aggregated with percentiles computed
+         * elsewhere.
          * </p>
          * <p>
-         *     Specify percentiles a decimals, for example express the 95th percentile as {@code 0.95}.
+         * Specify percentiles a decimals, for example express the 95th percentile as {@code 0.95}.
          * </p>
+         *
          * @param percentiles percentiles to compute and publish
          * @return updated builder
          */

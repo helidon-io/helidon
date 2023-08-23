@@ -36,7 +36,7 @@ class MetricsConfigSupport {
      * Looks up a single config value within the metrics configuration by config key.
      *
      * @param metricsConfig the {@link io.helidon.common.config.Config} node containing the metrics configuration
-     * @param key config key to fetch
+     * @param key           config key to fetch
      * @return config value
      */
     @Prototype.PrototypeMethod
@@ -52,7 +52,7 @@ class MetricsConfigSupport {
      * is part of this metrics configuration.
      *
      * @param metricsConfig metrics configuration
-     * @param scope scope name
+     * @param scope         scope name
      * @return true if the scope as a whole is enabled; false otherwise
      */
     @Prototype.PrototypeMethod
@@ -65,8 +65,8 @@ class MetricsConfigSupport {
      * Reports whether the specified meter within the indicated scope is enabled, according to the metrics configuration.
      *
      * @param metricsConfig metrics configuration
-     * @param name meter name
-     * @param targetScope scope within which to check
+     * @param name          meter name
+     * @param targetScope   scope within which to check
      * @return whether the meter is enabled
      */
     @Prototype.PrototypeMethod
@@ -74,21 +74,21 @@ class MetricsConfigSupport {
         return true;
 
         // TODO actually do the filtering
-//        if (!metricsConfig.enabled()) {
-//            return false;
-//        }
-//        // First, look for a direct match of a scope config with the targetScope name.
-//        Optional<ScopeConfig> matchedScopeConfig = metricsConfig.scopes().stream()
-//                .filter(scope -> scope.scope().isPresent()
-//                        && scope.scope().get().equals(targetScope))
-//                .findAny();
-//
-//        // Failing a direct match, treat settings with no scope name as a wildcard.
-//        matchedScopeConfig = matchedScopeConfig.isPresent() ? matchedScopeConfig
-//                : metricsConfig.scopes().stream()
-//                        .filter(scope -> scope.scope().isEmpty() || scope.scope().get().isBlank())
-//                        .findAny();
-//        return matchedScopeConfig.map(s -> s.isMeterEnabled(name)).orElse(true);
+        //        if (!metricsConfig.enabled()) {
+        //            return false;
+        //        }
+        //        // First, look for a direct match of a scope config with the targetScope name.
+        //        Optional<ScopeConfig> matchedScopeConfig = metricsConfig.scopes().stream()
+        //                .filter(scope -> scope.scope().isPresent()
+        //                        && scope.scope().get().equals(targetScope))
+        //                .findAny();
+        //
+        //        // Failing a direct match, treat settings with no scope name as a wildcard.
+        //        matchedScopeConfig = matchedScopeConfig.isPresent() ? matchedScopeConfig
+        //                : metricsConfig.scopes().stream()
+        //                        .filter(scope -> scope.scope().isEmpty() || scope.scope().get().isBlank())
+        //                        .findAny();
+        //        return matchedScopeConfig.map(s -> s.isMeterEnabled(name)).orElse(true);
 
     }
 

@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
@@ -25,8 +26,7 @@ import java.util.Optional;
 public interface SystemTagsManager {
 
     /**
-     * Creates a new system tags manager using the provided metrics settings, saving the new instance as the initialized
-     * singleton which will be returned to subsequent invocatinos of {@link #instance()}.
+     * Creates a new system tags manager using the provided metrics settings.
      *
      * @param metricsConfig settings containing the global and app-level tags (if any)
      * @return new tags manager
@@ -45,10 +45,21 @@ public interface SystemTagsManager {
     }
 
     /**
+     * Creates a new system tags manager using the provide metrics settings, saving the new instance as the initialized
+     * singleton which will be returned to subsequent invocations of {@link #instance()}.
+     *
+     * @param metricsConfig settings containing the global and app-level tags (if any)
+     * @return new (and saved) tags manager
+     */
+    static SystemTagsManager instance(MetricsConfig metricsConfig) {
+        return SystemTagsManagerImpl.instance(metricsConfig);
+    }
+
+    /**
      * Returns a single iterator over the explicit tags in the meter ID plus any global and app tags.
      *
      * @param meterId meter ID possibly containing explicit tag settings
-     * @param scope the registry scope
+     * @param scope   the registry scope
      * @return iterator over all tags, explicit and global and app
      */
     Iterable<Tag> allTags(Meter.Id meterId, String scope);
@@ -62,41 +73,34 @@ public interface SystemTagsManager {
      */
     Iterable<Tag> allTags(Meter.Id meterId);
 
-//    /**
-//     * Returns a single iterator over the explicit tags in the provided map plus any global and app tags.
-//     *
-//     * @param explicitTags map containing explicitly-defined tags for a metric
-//     * @param scope registry scope
-//     * @return iterator over all tags, explicit and global and app
-//     */
-//    Iterable<Map.Entry<String, String>> allTags(Map<String, String> explicitTags, String scope);
-//
     /**
      * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
      * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
      * with a scope tag name).
+     *
      * @param explicitTags iterable over the key/value pairs for tags
-     * @param scope scope value
+     * @param scope        scope value
      * @return iterator over all tags, explicit and global and app
      */
     Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
 
-//    /**
-//     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-//     * and app tags, <em>without</em>> a tag for scope.
-//     *
-//     * @param explicitTags iterable over the key/value pairs for tags
-//     * @return iterator over all tags, explicit and global and app
-//     */
-//    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags);
+    /**
+     * Invokes the specified consumer with the scope tag name setting from the configuration (if present) and the
+     * provided scope value. This method is most useful to assign a tag to a meter if configuration implies that.
+     *
+     * @param scope    scope value to use
+     * @param consumer uses the tag and scope in some appropriate way
+     */
+    void assignScope(String scope, BiConsumer<String, String> consumer);
 
     /**
-     * Returns a tag/value pair to convey the scope tag and value, if configuration is set up that way.
+     * Returns the effective scope, given the provided candidate scope combined with any default scope value in the
+     * configuration which initialized this manager.
      *
-     * @param scopeValue scope value to use
-     * @return map entry containing the scope tag name and scope value; empty if no scope tag is in play
+     * @param candidateScope candidate scope
+     * @return effective scope, preferring the candidate and falling back to the default; empty if neither is present
      */
-    Optional<Map.Entry<String, String>> scopeSetting(String scopeValue);
+    Optional<String> effectiveScope(Optional<String> candidateScope);
 
     /**
      * Returns the scope tag name derived from configuration.

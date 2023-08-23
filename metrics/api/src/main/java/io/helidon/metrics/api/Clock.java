@@ -23,8 +23,8 @@ public interface Clock extends Wrapper {
     /**
      * Returns the system clock for the Helidon metrics implementation.
      * <p>
-     *     The system clock methods are functionally equivalent to {@link System#currentTimeMillis()}
-     *     and {@link System#nanoTime()}.
+     * The system clock methods are functionally equivalent to {@link System#currentTimeMillis()}
+     * and {@link System#nanoTime()}.
      * </p>
      *
      * @return the system clock
@@ -37,8 +37,8 @@ public interface Clock extends Wrapper {
      * Returns the current wall time in milliseconds since the epoch.
      *
      * <p>
-     *     Typically equivalent to {@link System#currentTimeMillis()}. Should not be used to determine durations.
-     *     For that use {@link #monotonicTime()} instead.
+     * Typically equivalent to {@link System#currentTimeMillis()}. Should not be used to determine durations.
+     * For that use {@link #monotonicTime()} instead.
      * </p>
      *
      * @return wall time in milliseconds
@@ -49,9 +49,9 @@ public interface Clock extends Wrapper {
      * Returns the current time in nanoseconds from a monotonic clock source.
      *
      * <p>
-     *     The value is only meaningful when compared with another value returned from this method to determine the elapsed time
-     *     for an operation. The difference between two samples will have a unit of nanoseconds. The returned value is
-     *     typically equivalent to {@link System#nanoTime()}.
+     * The value is only meaningful when compared with another value returned from this method to determine the elapsed time
+     * for an operation. The difference between two samples will have a unit of nanoseconds. The returned value is
+     * typically equivalent to {@link System#nanoTime()}.
      * </p>
      *
      * @return monotonic time in nanoseconds
@@ -61,9 +61,9 @@ public interface Clock extends Wrapper {
     /**
      * Unwraps the clock to the specified type (typically not needed for custom clocks).
      *
-     * @param c {@link Class} to which to cast this object
-     * @return unwrapped clock
+     * @param c   {@link Class} to which to cast this object
      * @param <R> the type of the unwrapped clock
+     * @return unwrapped clock
      */
     @Override
     default <R> R unwrap(Class<? extends R> c) {

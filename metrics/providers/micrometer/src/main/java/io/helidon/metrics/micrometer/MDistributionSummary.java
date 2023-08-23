@@ -27,11 +27,19 @@ import static io.micrometer.core.instrument.distribution.DistributionStatisticCo
 
 class MDistributionSummary extends MMeter<DistributionSummary> implements io.helidon.metrics.api.DistributionSummary {
 
+    private MDistributionSummary(DistributionSummary delegate) {
+        super(delegate);
+    }
+
+    private MDistributionSummary(DistributionSummary delegate, Builder builder) {
+        super(delegate, builder);
+    }
+
     /**
      * Creates a new builder for a wrapper around a Micrometer summary that will be registered later, typically if the
      * developer is creating a summary using the Helidon API.
      *
-     * @param name name of the new summary
+     * @param name          name of the new summary
      * @param configBuilder builder for the distribution statistics config the summary should use
      * @return new builder for a wrapper summary
      */
@@ -50,14 +58,6 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
      */
     static MDistributionSummary create(DistributionSummary summary) {
         return new MDistributionSummary(summary);
-    }
-
-    private MDistributionSummary(DistributionSummary delegate) {
-        super(delegate);
-    }
-
-    private MDistributionSummary(DistributionSummary delegate, Builder builder) {
-        super(delegate, builder);
     }
 
     @Override
@@ -86,12 +86,20 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
     }
 
     @Override
+    public String toString() {
+        return stringJoiner()
+                .add("count=" + delegate().count())
+                .add("totalAmount=" + delegate().totalAmount())
+                .toString();
+    }
+
+    @Override
     public HistogramSnapshot snapshot() {
         return MHistogramSnapshot.create(delegate().takeSnapshot());
     }
 
     static class Builder extends MMeter.Builder<DistributionSummary.Builder, DistributionSummary, Builder, MDistributionSummary>
-                         implements io.helidon.metrics.api.DistributionSummary.Builder {
+            implements io.helidon.metrics.api.DistributionSummary.Builder {
 
         private Double scale;
         private DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder;
@@ -99,18 +107,19 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         private Builder(String name, DistributionStatisticsConfig.Builder configBuilder) {
             this(name, configBuilder.build());
         }
+
         private Builder(String name, DistributionStatisticsConfig config) {
             super(name, DistributionSummary.builder(name)
-                          .publishPercentiles(config.percentiles()
-                                                      .map(Util::doubleArray)
-                                                      .orElse(DEFAULT.getPercentiles()))
-                          .serviceLevelObjectives(config.buckets()
-                                                          .map(Util::doubleArray)
-                                                          .orElse(DEFAULT.getServiceLevelObjectiveBoundaries()))
-                          .minimumExpectedValue(config.minimumExpectedValue()
-                                                        .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
-                          .maximumExpectedValue(config.maximumExpectedValue()
-                                                        .orElse(DEFAULT.getMaximumExpectedValueAsDouble())));
+                    .publishPercentiles(config.percentiles()
+                                                .map(Util::doubleArray)
+                                                .orElse(DEFAULT.getPercentiles()))
+                    .serviceLevelObjectives(config.buckets()
+                                                    .map(Util::doubleArray)
+                                                    .orElse(DEFAULT.getServiceLevelObjectiveBoundaries()))
+                    .minimumExpectedValue(config.minimumExpectedValue()
+                                                  .orElse(DEFAULT.getMinimumExpectedValueAsDouble()))
+                    .maximumExpectedValue(config.maximumExpectedValue()
+                                                  .orElse(DEFAULT.getMaximumExpectedValueAsDouble())));
         }
 
         @Override

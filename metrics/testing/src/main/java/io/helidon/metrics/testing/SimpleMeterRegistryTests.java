@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.testing;
 
-
 import java.util.List;
 
 import io.helidon.metrics.api.Counter;
@@ -63,9 +62,9 @@ class SimpleMeterRegistryTests {
                            Tag.create("bar", "1"));
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("c")
-                                                       .tags(tags));
+                                                             .tags(tags));
         Counter counter2 = meterRegistry.getOrCreate(Counter.builder("c")
-                                                       .tags(tags));
+                                                             .tags(tags));
         assertThat("Counter with same name, same two tags", counter1, is(sameInstance(counter2)));
     }
 }

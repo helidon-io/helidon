@@ -27,39 +27,39 @@ import io.micrometer.core.instrument.Metrics;
  */
 public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
 
-//    private static final String PROMETHEUS_CONFIG_CLASS_NAME = PrometheusConfig.class.getName();
-//    private static final String PROMETHEUS_METER_REGISTRY_CLASS_NAME = PrometheusMeterRegistry.class.getName();
-//    private LazyValue<MeterRegistry>  meterRegistry = LazyValue.create(this::getRegistry);
+    //    private static final String PROMETHEUS_CONFIG_CLASS_NAME = PrometheusConfig.class.getName();
+    //    private static final String PROMETHEUS_METER_REGISTRY_CLASS_NAME = PrometheusMeterRegistry.class.getName();
+    //    private LazyValue<MeterRegistry>  meterRegistry = LazyValue.create(this::getRegistry);
 
-//    static {
-//        try {
-//            Class<?> prometheusConfigClass = Class.forName(PROMETHEUS_CONFIG_CLASS_NAME);
-//            Class<?> prometheusMeterRegistryClass = Class.forName(PROMETHEUS_METER_REGISTRY_CLASS_NAME);
-//            try {
-//
-//                Constructor<?> ctor = prometheusMeterRegistryClass.getConstructor(PrometheusConfig.class);
-//                meterRegistry = (PrometheusMeterRegistry) ctor.newInstance();
-//                Metrics.globalRegistry.add(meterRegistry);
-//            } catch (NoSuchMethodException e) {
-//                throw new RuntimeException("Found " + PrometheusMeterRegistry.class.getName()
-//                                           + " but unable to locate the expected constructor", e);
-//            } catch (InvocationTargetException  | InstantiationException | IllegalAccessException e) {
-//                throw new RuntimeException(e);
-//            }
-//        } catch (ClassNotFoundException e) {
-//            meterRegistry = null;
-//        }
-//    }
-
-    @Override
-    public MetricsFactory create(MetricsConfig metricsConfig) {
-        return MicrometerMetricsFactory.create(metricsConfig);
-    }
+    //    static {
+    //        try {
+    //            Class<?> prometheusConfigClass = Class.forName(PROMETHEUS_CONFIG_CLASS_NAME);
+    //            Class<?> prometheusMeterRegistryClass = Class.forName(PROMETHEUS_METER_REGISTRY_CLASS_NAME);
+    //            try {
+    //
+    //                Constructor<?> ctor = prometheusMeterRegistryClass.getConstructor(PrometheusConfig.class);
+    //                meterRegistry = (PrometheusMeterRegistry) ctor.newInstance();
+    //                Metrics.globalRegistry.add(meterRegistry);
+    //            } catch (NoSuchMethodException e) {
+    //                throw new RuntimeException("Found " + PrometheusMeterRegistry.class.getName()
+    //                                           + " but unable to locate the expected constructor", e);
+    //            } catch (InvocationTargetException  | InstantiationException | IllegalAccessException e) {
+    //                throw new RuntimeException(e);
+    //            }
+    //        } catch (ClassNotFoundException e) {
+    //            meterRegistry = null;
+    //        }
+    //    }
 
     /**
      * Creates a new {@link io.helidon.metrics.api.MetricsFactory} based on Micrometer.
      */
     public MicrometerMetricsFactoryProvider() {
+    }
+
+    @Override
+    public MetricsFactory create(MetricsConfig metricsConfig) {
+        return MicrometerMetricsFactory.create(metricsConfig);
     }
 
     private MeterRegistry getRegistry() {

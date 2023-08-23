@@ -23,10 +23,6 @@ import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 
 class MDistributionStatisticsConfig implements io.helidon.metrics.api.DistributionStatisticsConfig {
 
-    static Builder builder() {
-        return new Builder();
-    }
-
     private final DistributionStatisticConfig delegate;
 
     /**
@@ -45,6 +41,15 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
      */
     private MDistributionStatisticsConfig(DistributionStatisticConfig delegate) {
         this.delegate = delegate;
+    }
+
+    static Builder builder() {
+        return new Builder();
+    }
+
+    static <T> T chooseOpt(T fromChild, Supplier<Optional<T>> fromParent) {
+        return Objects.requireNonNullElseGet(fromChild,
+                                             () -> fromParent.get().orElse(null));
     }
 
     @Override
@@ -133,10 +138,5 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
         DistributionStatisticConfig.Builder delegate() {
             return delegate;
         }
-    }
-
-    static <T> T chooseOpt(T fromChild, Supplier<Optional<T>> fromParent) {
-        return Objects.requireNonNullElseGet(fromChild,
-                                             () -> fromParent.get().orElse(null));
     }
 }

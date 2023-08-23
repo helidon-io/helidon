@@ -26,6 +26,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.ScopingConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -53,7 +54,10 @@ class TestPrometheusFormatting {
                                  .defaultValue("app")
                                  .tagEnabled(true));
 
-        meterRegistry = Metrics.createMeterRegistry(metricsConfigBuilder.build());
+        MetricsConfig metricsConfig = metricsConfigBuilder.build();
+        SystemTagsManager.create(metricsConfig);
+        meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+
     }
 
     @Test

@@ -27,11 +27,11 @@ public interface Gauge extends Meter {
     /**
      * Creates a builder for creating a new gauge.
      *
-     * @param name gauge name
+     * @param name        gauge name
      * @param stateObject state object which maintains the gauge value
-     * @param fn function which, when applied to the state object, returns the gauge value
+     * @param fn          function which, when applied to the state object, returns the gauge value
+     * @param <T>         type of the state object
      * @return new builder
-     * @param <T> type of the state object
      */
     static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return MetricsFactory.getInstance().gaugeBuilder(name, stateObject, fn);
@@ -40,10 +40,10 @@ public interface Gauge extends Meter {
     /**
      * Creates a builder for a new gauge based on an instance of a subtype of {@link Number}.
      *
-     * @param name gauge name
+     * @param name   gauge name
      * @param number {@code Number} which provides the gauge value
+     * @param <N>    subtype of {@code Number} which the gauge wraps
      * @return new builder
-     * @param <N> subtype of {@code Number} which the gauge wraps
      */
     static <N extends Number> Builder<?> builder(String name, N number) {
         return MetricsFactory.getInstance().gaugeBuilder(name, number);
@@ -52,10 +52,10 @@ public interface Gauge extends Meter {
     /**
      * Creates a builder for a supplier-based gauge.
      *
-     * @param name gauge name
+     * @param name           gauge name
      * @param numberSupplier {@link java.util.function.Supplier} for an instance of a type which extends {@link Number}
+     * @param <N>            subtype of {@code Number} which the supplier provides
      * @return new builder
-     * @param <N> subtype of {@code Number} which the supplier provides
      */
     static <N extends Number> Builder<?> builder(String name, Supplier<N> numberSupplier) {
         return MetricsFactory.getInstance().gaugeBuilder(name, numberSupplier);
@@ -64,8 +64,8 @@ public interface Gauge extends Meter {
     /**
      * Returns the value of the gauge.
      * <p>
-     *     Invoking this method triggers the sampling of the value or invocation of the function provided when the gauge was
-     *     registered.
+     * Invoking this method triggers the sampling of the value or invocation of the function provided when the gauge was
+     * registered.
      * </p>
      *
      * @return current value of the gauge

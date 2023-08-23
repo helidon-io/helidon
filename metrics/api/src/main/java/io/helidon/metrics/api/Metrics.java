@@ -48,6 +48,7 @@ public interface Metrics {
 
     /**
      * Creates a meter registry, not added to the global registry, using default metrics config information.
+     *
      * @return new meter registry
      */
     static MeterRegistry createMeterRegistry() {
@@ -59,9 +60,9 @@ public interface Metrics {
      * one using the provided builder.
      *
      * @param builder builder to use in finding or creating a meter
+     * @param <M>     type of the meter
+     * @param <B>     builder for the meter
      * @return the previously-registered meter with the same name and tags or, if none, the newly-registered one
-     * @param <M> type of the meter
-     * @param <B> builder for the meter
      */
     static <M extends Meter, B extends Meter.Builder<B, M>> M getOrCreate(B builder) {
         return globalRegistry().getOrCreate(builder);
@@ -154,15 +155,15 @@ public interface Metrics {
     /**
      * Locates a previously-registered meter of the specified type, matching the name and tags.
      * <p>
-     *     The method throws an {@link java.lang.IllegalArgumentException} if a meter exists with
-     *     the name and tags but is not type-compatible with the provided class.
+     * The method throws an {@link java.lang.IllegalArgumentException} if a meter exists with
+     * the name and tags but is not type-compatible with the provided class.
      * </p>
      *
      * @param mClass type of the meter to find
-     * @param name name to match
-     * @param tags tags to match
+     * @param name   name to match
+     * @param tags   tags to match
+     * @param <M>    type of the meter to find
      * @return {@link java.util.Optional} of the previously-regsitered meter; empty if not found
-     * @param <M> type of the meter to find
      */
     static <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
         return globalRegistry().get(mClass, name, tags);
@@ -171,7 +172,7 @@ public interface Metrics {
     /**
      * Creates a {@link Tag} for the specified key and value.
      *
-     * @param key tag key
+     * @param key   tag key
      * @param value tag value
      * @return new tag
      */
