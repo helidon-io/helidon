@@ -15,7 +15,6 @@
  */
 package io.helidon.webserver.observe.metrics;
 
-
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
@@ -28,6 +27,12 @@ import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
  * JSON formatter provider.
  */
 public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatterProvider {
+
+    /**
+     * Creates a new instance for service loading.
+     */
+    public JsonMeterRegistryFormatterProvider() {
+    }
 
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,

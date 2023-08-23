@@ -26,6 +26,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.ScopingConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -43,12 +44,16 @@ class TestJsonFormatting {
 
     @Test
     void testRetrievingAll() {
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder()
-                                                                          .scoping(ScopingConfig.builder()
-                                                                                           .tagName(SCOPE_TAG_NAME)
-                                                                                           .defaultValue("application")
-                                                                                           .tagEnabled(true))
-                                                                          .build());
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .scoping(ScopingConfig.builder()
+                                 .tagName(SCOPE_TAG_NAME)
+                                 .defaultValue("application")
+                                 .tagEnabled(true))
+                .build();
+
+        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        SystemTagsManager.instance(metricsConfig);
+
         Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment();
@@ -82,12 +87,16 @@ class TestJsonFormatting {
 
     @Test
     void testRetrievingByName() {
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder()
-                                                                          .scoping(ScopingConfig.builder()
-                                                                                           .tagName(SCOPE_TAG_NAME)
-                                                                                           .defaultValue("application")
-                                                                                           .tagEnabled(true))
-                                                                          .build());
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .scoping(ScopingConfig.builder()
+                                 .tagName(SCOPE_TAG_NAME)
+                                 .defaultValue("application")
+                                 .tagEnabled(true))
+                .build();
+
+        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        SystemTagsManager.instance(metricsConfig);
+
         Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment();

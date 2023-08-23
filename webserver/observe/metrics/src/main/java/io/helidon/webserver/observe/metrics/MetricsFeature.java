@@ -48,7 +48,6 @@ import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
 import static io.helidon.http.Http.HeaderNames.ALLOW;
 import static io.helidon.http.Http.Status.METHOD_NOT_ALLOWED_405;
-import static io.helidon.http.Http.Status.NOT_ACCEPTABLE_406;
 import static io.helidon.http.Http.Status.NOT_FOUND_404;
 import static io.helidon.http.Http.Status.OK_200;
 
@@ -109,6 +108,13 @@ public class MetricsFeature extends HelidonFeatureSupport {
         SystemTagsManager.create(metricsConfig);
     }
 
+    /**
+     * Creates a new instance.
+     *
+     * @param logger logger for messages
+     * @param builder {@link io.helidon.webserver.observe.metrics.MetricsFeature.Builder} to construct the new instance
+     * @param serviceName service name to register
+     */
     protected MetricsFeature(System.Logger logger, Builder builder, String serviceName) {
         super(logger, builder, serviceName);
         metricsConfig = null;
@@ -387,6 +393,11 @@ public class MetricsFeature extends HelidonFeatureSupport {
             super("metrics");
         }
 
+        /**
+         * Creates a new builder.
+         *
+         * @param serviceName service name to register the feature with
+         */
         protected Builder(String serviceName) {
             super(serviceName);
         }
