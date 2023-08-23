@@ -19,6 +19,7 @@ package io.helidon.inject.tools;
 import java.util.Set;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.types.TypeName;
 
 /**
  * Used in the interception model described by {@link InterceptionPlan}. An intercepted
@@ -35,7 +36,7 @@ interface InterceptedElementBlueprint {
      *
      * @return the set of intercepted trigger types that apply to this method/element
      */
-    Set<String> interceptedTriggerTypeNames();
+    Set<TypeName> interceptedTriggerTypeNames();
 
     /**
      * The method element info for this intercepted method.

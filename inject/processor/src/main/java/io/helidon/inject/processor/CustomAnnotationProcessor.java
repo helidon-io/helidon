@@ -78,9 +78,9 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
         List<CustomAnnotationTemplateCreator> creators = HelidonServiceLoader.create(loader()).asList();
         creators.forEach(creator -> {
             try {
-                Set<String> annoTypes = creator.annoTypes();
+                Set<TypeName> annoTypes = creator.annoTypes();
                 annoTypes.forEach(annoType -> {
-                    PRODUCERS_BY_ANNOTATION.compute(TypeName.create(annoType), (k, v) -> {
+                    PRODUCERS_BY_ANNOTATION.compute(annoType, (k, v) -> {
                         if (v == null) {
                             v = new LinkedHashSet<>();
                         }
@@ -88,7 +88,9 @@ public class CustomAnnotationProcessor extends BaseAnnotationProcessor {
                         return v;
                     });
                 });
-                ALL_ANNO_TYPES_HANDLED.addAll(annoTypes);
+                ALL_ANNO_TYPES_HANDLED.addAll(annoTypes.stream()
+                                                      .map(TypeName::fqName)
+                                                      .toList());
             } catch (Throwable t) {
                 System.Logger logger = System.getLogger(CustomAnnotationProcessor.class.getName());
                 ToolsException te = new ToolsException("Failed to initialize: " + creator, t);

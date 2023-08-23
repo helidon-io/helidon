@@ -307,6 +307,16 @@ import io.helidon.webclient.api.WebClientConfig;
  *     <td>Force https for redirects to identity provider.
  *     This is helpful if you have a frontend SSL or cloud load balancer in front and Helidon is serving plain http.</td>
  * </tr>
+ * <tr>
+ *     <td>{@code optional-audience}</td>
+ *     <td>{@code false}</td>
+ *     <td>Allow audience claim to be optional.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code check-audience}</td>
+ *     <td>{@code true}</td>
+ *     <td>Turn audience claim check on when {@code true} or off when {@code false}.</td>
+ * </tr>
  * </table>
  */
 public final class OidcConfig extends TenantConfigImpl {

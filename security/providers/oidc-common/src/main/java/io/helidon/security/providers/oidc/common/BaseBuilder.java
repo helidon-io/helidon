@@ -65,6 +65,10 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     private URI introspectUri;
     private String scopeAudience;
     private boolean useWellKnown = true;
+    // Whether audience claim is optional (turned off by default)
+    private boolean optionalAudience = false;
+    // Whether to check audience claim (turned on by default)
+    private boolean checkAudience = true;
 
     BaseBuilder() {
     }
@@ -78,7 +82,7 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         OidcUtil.validateExists(collector, clientSecret, "Client Secret", "client-secret");
         OidcUtil.validateExists(collector, identityUri, "Identity URI", "identity-uri");
 
-        if ((audience == null) && (identityUri != null)) {
+        if (audience == null && !optionalAudience && identityUri != null) {
             this.audience = identityUri.toString();
         }
         // first set of validations
@@ -124,6 +128,8 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         config.get("server-type").asString().ifPresent(this::serverType);
 
         config.get("client-timeout-millis").asLong().ifPresent(this::clientTimeoutMillis);
+        config.get("optional-audience").asBoolean().ifPresent(this::optionalAudience);
+        config.get("check-audience").asBoolean().ifPresent(this::checkAudience);
         return identity();
     }
 
@@ -418,6 +424,30 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
         return identity();
     }
 
+    /**
+     * Allow audience claim to be optional.
+     *
+     * @param optional whether the audience claim is optional ({@code true}) or not ({@code false})
+     * @return updated builder instance
+     */
+    @ConfiguredOption("false")
+    public B optionalAudience(boolean optional) {
+        this.optionalAudience = optional;
+        return identity();
+    }
+
+    /**
+     * Configure audience claim check.
+     *
+     * @param checkAudience whether the audience claim will be checked ({@code true}) or not ({@code false})
+     * @return updated builder instance
+     */
+    @ConfiguredOption("false")
+    public B checkAudience(boolean checkAudience) {
+        this.checkAudience = checkAudience;
+        return identity();
+    }
+
     private void clientTimeoutMillis(long millis) {
         this.clientTimeout(Duration.ofMillis(millis));
     }
@@ -456,6 +486,10 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
 
     String audience() {
         return audience;
+    }
+
+    boolean checkAudience() {
+        return checkAudience;
     }
 
     String serverType() {
@@ -501,4 +535,5 @@ abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B,
     String name() {
         return TenantConfigFinder.DEFAULT_TENANT_ID;
     }
+
 }

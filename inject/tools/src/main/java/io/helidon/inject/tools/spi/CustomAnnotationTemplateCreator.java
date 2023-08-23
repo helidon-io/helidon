@@ -19,6 +19,7 @@ package io.helidon.inject.tools.spi;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.types.TypeName;
 import io.helidon.inject.tools.CustomAnnotationTemplateRequest;
 import io.helidon.inject.tools.CustomAnnotationTemplateResponse;
 
@@ -34,7 +35,7 @@ public interface CustomAnnotationTemplateCreator {
      *
      * @return the supported annotation types for this producer
      */
-    Set<String> annoTypes();
+    Set<TypeName> annoTypes();
 
     /**
      * The implementor should return empty if the request should not be handled.

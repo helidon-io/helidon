@@ -64,7 +64,7 @@ interface InterceptionPlanBlueprint {
      *
      * @return all the annotation names that contributed to triggering this interceptor plan
      */
-    Set<String> annotationTriggerTypeNames();
+    Set<TypeName> annotationTriggerTypeNames();
 
     /**
      * The list of elements that should be intercepted.
