@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics.providers.micrometer;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -27,7 +26,6 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
 import org.hamcrest.Matchers;

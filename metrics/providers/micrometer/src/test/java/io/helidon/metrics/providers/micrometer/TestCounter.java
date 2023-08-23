@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.micrometer;
-
-import java.util.concurrent.atomic.AtomicLong;
+package io.helidon.metrics.providers.micrometer;
 
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
@@ -28,8 +25,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 
-class TestGauge {
+class TestCounter {
 
     private static MeterRegistry meterRegistry;
 
@@ -40,16 +38,10 @@ class TestGauge {
 
     @Test
     void testUnwrap() {
-        long initialValue = 4L;
-        long incr = 2L;
-        AtomicLong value = new AtomicLong(initialValue);
-        Gauge g = meterRegistry.getOrCreate(Gauge.builder("a",
-                                                          value,
-                                                          v -> (double)v.get()));
-
-        io.micrometer.core.instrument.Gauge mGauge = g.unwrap(io.micrometer.core.instrument.Gauge.class);
-        assertThat("Initial value", mGauge.value(), is((double) initialValue));
-        value.addAndGet(incr);
-        assertThat("Updated value", mGauge.value(), is((double) initialValue + incr));
+        Counter c = meterRegistry.getOrCreate(Counter.builder("c4"));
+        io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);
+        assertThat("Initial value", c.count(), is(0L));
+        mCounter.increment();
+        assertThat("Updated value", c.count(), is(1L));
     }
 }

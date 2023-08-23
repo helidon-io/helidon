@@ -17,4 +17,4 @@
 /**
  * Micrometer wrapper for Helidon metrics API.
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics.providers.micrometer;

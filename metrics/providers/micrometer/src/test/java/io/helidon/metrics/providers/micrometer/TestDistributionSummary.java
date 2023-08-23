@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics.providers.micrometer;
 
-import io.helidon.metrics.api.Counter;
+import java.util.List;
+
+import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
@@ -25,9 +27,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.sameInstance;
 
-class TestCounter {
+class TestDistributionSummary {
 
     private static MeterRegistry meterRegistry;
 
@@ -38,10 +39,22 @@ class TestCounter {
 
     @Test
     void testUnwrap() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c4"));
-        io.micrometer.core.instrument.Counter mCounter = c.unwrap(io.micrometer.core.instrument.Counter.class);
-        assertThat("Initial value", c.count(), is(0L));
-        mCounter.increment();
-        assertThat("Updated value", c.count(), is(1L));
+        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder("a"));
+        List.of(1D, 3D, 5D)
+                .forEach(summary::record);
+        io.micrometer.core.instrument.DistributionSummary mSummary =
+                summary.unwrap(io.micrometer.core.instrument.DistributionSummary.class);
+
+        mSummary.record(7D);
+
+        assertThat("Mean", summary.mean(), is(4D));
+        assertThat("Min", summary.max(), is(7D));
+        assertThat("Count", summary.count(), is(4L));
+        assertThat("Total", summary.totalAmount(), is(16D));
+
+        assertThat("Mean (Micrometer)", mSummary.mean(), is(4D));
+        assertThat("Min (Micrometer)", mSummary.max(), is(7D));
+        assertThat("Count (Micrometer)", mSummary.count(), is(4L));
+        assertThat("Total (Micrometer)", mSummary.totalAmount(), is(16D));
     }
 }

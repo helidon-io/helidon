@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.micrometer.MicrometerPrometheusFormatter;
+import io.helidon.metrics.providers.micrometer.MicrometerPrometheusFormatter;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;

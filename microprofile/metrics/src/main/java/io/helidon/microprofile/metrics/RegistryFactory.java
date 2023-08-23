@@ -26,7 +26,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.config.Config;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -61,7 +60,6 @@ class RegistryFactory {
      */
     private RegistryFactory(MetricsConfig metricsConfig, Registry appRegistry, Registry vendorRegistry) {
         this.metricsConfig = metricsConfig;
-        MetricFactory.create(Metrics.globalRegistry());
         registries.put(Registry.APPLICATION_SCOPE, appRegistry);
         registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
     }

@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.micrometer;
+package io.helidon.metrics.providers.micrometer;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
@@ -28,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-class TestDistributionSummary {
+class TestGauge {
 
     private static MeterRegistry meterRegistry;
 
@@ -39,22 +40,16 @@ class TestDistributionSummary {
 
     @Test
     void testUnwrap() {
-        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder("a"));
-        List.of(1D, 3D, 5D)
-                .forEach(summary::record);
-        io.micrometer.core.instrument.DistributionSummary mSummary =
-                summary.unwrap(io.micrometer.core.instrument.DistributionSummary.class);
+        long initialValue = 4L;
+        long incr = 2L;
+        AtomicLong value = new AtomicLong(initialValue);
+        Gauge g = meterRegistry.getOrCreate(Gauge.builder("a",
+                                                          value,
+                                                          v -> (double)v.get()));
 
-        mSummary.record(7D);
-
-        assertThat("Mean", summary.mean(), is(4D));
-        assertThat("Min", summary.max(), is(7D));
-        assertThat("Count", summary.count(), is(4L));
-        assertThat("Total", summary.totalAmount(), is(16D));
-
-        assertThat("Mean (Micrometer)", mSummary.mean(), is(4D));
-        assertThat("Min (Micrometer)", mSummary.max(), is(7D));
-        assertThat("Count (Micrometer)", mSummary.count(), is(4L));
-        assertThat("Total (Micrometer)", mSummary.totalAmount(), is(16D));
+        io.micrometer.core.instrument.Gauge mGauge = g.unwrap(io.micrometer.core.instrument.Gauge.class);
+        assertThat("Initial value", mGauge.value(), is((double) initialValue));
+        value.addAndGet(incr);
+        assertThat("Updated value", mGauge.value(), is((double) initialValue + incr));
     }
 }
