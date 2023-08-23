@@ -263,7 +263,6 @@ class Http2HeadersTest {
         return Http2Headers.create(stream,
                                    dynamicTable,
                                    Http2HuffmanDecoder.create(),
-                                   null,
                                    new Http2FrameData(header, data));
     }
 }

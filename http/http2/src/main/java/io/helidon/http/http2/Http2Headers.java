@@ -137,9 +137,7 @@ public class Http2Headers {
             stream.priority(priority);
         }
 
-        WritableHeaders<?> writableHeaders = headers == null
-                ? WritableHeaders.create()
-                : WritableHeaders.create(headers.httpHeaders());
+        WritableHeaders<?> writableHeaders = WritableHeaders.create(headers.httpHeaders());
 
         BufferData[] buffers = new BufferData[frames.length];
         for (int i = 0; i < frames.length; i++) {
@@ -164,6 +162,23 @@ public class Http2Headers {
 
             lastIsPseudoHeader = readHeader(writableHeaders, pseudoHeaders, table, huffman, data, lastIsPseudoHeader);
         }
+    }
+
+    /**
+     * Create headers from HTTP request.
+     *
+     * @param stream  stream that owns these headers
+     * @param table   dynamic table for this connection
+     * @param huffman huffman decoder
+     * @param frames  frames of the headers
+     * @return new headers parsed from the frames
+     * @throws Http2Exception in case of protocol errors
+     */
+    public static Http2Headers create(Http2Stream stream,
+                                      DynamicTable table,
+                                      Http2HuffmanDecoder huffman,
+                                      Http2FrameData... frames) {
+        return create(stream, table, huffman, Http2Headers.create(WritableHeaders.create()), frames);
     }
 
     /**

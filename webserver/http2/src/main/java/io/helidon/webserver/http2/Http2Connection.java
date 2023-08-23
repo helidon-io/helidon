@@ -95,6 +95,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final Http2Settings serverSettings;
     private final boolean sendErrorDetails;
     private final ConnectionFlowControl flowControl;
+    private final WritableHeaders<?> connectionHeaders;
 
     // initial client settings, until we receive real ones
     private Http2Settings clientSettings = Http2Settings.builder()
@@ -106,10 +107,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private HttpPrologue upgradePrologue;
     private Http2Headers upgradeHeaders;
     private State state = State.WRITE_SERVER_SETTINGS;
-    private Http2Headers connectionHeaders;
     private int continuationExpectedStreamId;
     private int lastStreamId;
     private long maxClientConcurrentStreams;
+    private boolean initConnectionHeaders;
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -140,6 +141,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .maxFrameSize(http2Config.maxFrameSize())
                 .build();
         this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.connectionHeaders = WritableHeaders.create();
+        this.initConnectionHeaders = true;
     }
 
     private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
@@ -592,12 +595,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         boolean endOfStream;
         Http2Headers headers;
         Http2ServerStream stream = streamContext.stream();
-        if (connectionHeaders == null) {
-            WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        if (initConnectionHeaders) {
             ctx.remotePeer().tlsCertificates()
                     .flatMap(TlsUtils::parseCn)
-                    .ifPresent(cn -> writableHeaders.add(X_HELIDON_CN, cn));
-            connectionHeaders = Http2Headers.create(writableHeaders);
+                    .ifPresent(cn -> connectionHeaders.add(X_HELIDON_CN, cn));
+            initConnectionHeaders = false;
         }
 
         if (frameHeader.type() == Http2FrameType.CONTINUATION) {
@@ -605,7 +607,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             headers = Http2Headers.create(stream,
                                           requestDynamicTable,
                                           requestHuffman,
-                                          connectionHeaders,
+                                          Http2Headers.create(connectionHeaders),
                                           streamContext.contData());
             endOfStream = streamContext.contHeader().flags(Http2FrameTypes.HEADERS).endOfStream();
             streamContext.clearContinuations();
@@ -615,7 +617,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             headers = Http2Headers.create(stream,
                                           requestDynamicTable,
                                           requestHuffman,
-                                          connectionHeaders,
+                                          Http2Headers.create(connectionHeaders),
                                           new Http2FrameData(frameHeader, inProgressFrame()));
         }
 
