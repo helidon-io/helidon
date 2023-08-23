@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.testing;
+package io.helidon.metrics.provider.tests;
 
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +24,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -42,7 +43,9 @@ class TestDeletions {
 
     @BeforeAll
     static void setup() {
-        reg = Metrics.createMeterRegistry(MetricsConfig.create());
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        reg = Metrics.createMeterRegistry(metricsConfig);
+        SystemTagsManager.instance(metricsConfig);
     }
 
     @BeforeEach

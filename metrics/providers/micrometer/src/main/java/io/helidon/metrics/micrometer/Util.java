@@ -16,12 +16,9 @@
 package io.helidon.metrics.micrometer;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-
-import io.micrometer.core.instrument.Tag;
+import java.util.Set;
 
 class Util {
 
@@ -38,10 +35,6 @@ class Util {
         return result;
     }
 
-    static double[] doubleArray(Optional<Iterable<Double>> iter) {
-        return iter.map(Util::doubleArray).orElse(null);
-    }
-
     static <T> List<T> list(Iterable<T> iterable) {
         List<T> result = new ArrayList<>();
         iterable.forEach(result::add);
@@ -50,60 +43,9 @@ class Util {
 
     static Iterable<Double> iterable(double[] items) {
         return items == null
-                ? null
-                : () -> new Iterator<>() {
-
-                    private int slot;
-
-                    @Override
-                    public boolean hasNext() {
-                        return slot < items.length;
-                    }
-
-                    @Override
-                    public Double next() {
-                        if (!hasNext()) {
-                            throw new NoSuchElementException();
-                        }
-                        return items[slot++];
-                    }
-                };
+                ? Set.of()
+                : Arrays.stream(items)
+                        .boxed()
+                        .toList();
     }
-
-    static Iterable<io.helidon.metrics.api.Tag> neutralTags(Iterable<Tag> tags) {
-        return () -> new Iterator<>() {
-
-            private final Iterator<Tag> tagsIter = tags.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return tagsIter.hasNext();
-            }
-
-            @Override
-            public io.helidon.metrics.api.Tag next() {
-                Tag next = tagsIter.next();
-                return io.helidon.metrics.api.Tag.create(next.getKey(), next.getValue());
-            }
-        };
-    }
-
-    static Iterable<Tag> tags(Iterable<io.helidon.metrics.api.Tag> tags) {
-        return () -> new Iterator<>() {
-
-            private final Iterator<io.helidon.metrics.api.Tag> tagsIter = tags.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return tagsIter.hasNext();
-            }
-
-            @Override
-            public Tag next() {
-                io.helidon.metrics.api.Tag next = tagsIter.next();
-                return Tag.of(next.key(), next.value());
-            }
-        };
-    }
-
 }

@@ -16,6 +16,7 @@
 package io.helidon.metrics.micrometer;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.StringJoiner;
@@ -25,7 +26,6 @@ import io.helidon.metrics.api.Bucket;
 
 import io.micrometer.core.instrument.distribution.CountAtBucket;
 import io.micrometer.core.instrument.distribution.HistogramSnapshot;
-import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 
 class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
 
@@ -80,25 +80,10 @@ class MHistogramSnapshot implements io.helidon.metrics.api.HistogramSnapshot {
     }
 
     @Override
-    public Iterable<io.helidon.metrics.api.ValueAtPercentile> percentileValues() {
-        return () -> new Iterator<>() {
-
-            private final ValueAtPercentile[] values = delegate.percentileValues();
-            private int slot;
-
-            @Override
-            public boolean hasNext() {
-                return slot < values.length;
-            }
-
-            @Override
-            public io.helidon.metrics.api.ValueAtPercentile next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                return MValueAtPercentile.create(values[slot++]);
-            }
-        };
+    public Iterable<? extends io.helidon.metrics.api.ValueAtPercentile> percentileValues() {
+        return Arrays.stream(delegate.percentileValues())
+                .map(MValueAtPercentile::create)
+                .toList();
     }
 
     @Override

@@ -17,7 +17,7 @@
 /**
  * Shared unit tests and support for metrics implementations.
  */
-module helidon.metrics.testing {
+module io.helidon.metrics.provider.tests {
 
     requires io.helidon.common.config;
     requires io.helidon.metrics.api;

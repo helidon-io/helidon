@@ -99,7 +99,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 .onMeterRemoved(this::recordRemove);
         List<io.helidon.metrics.api.Tag> globalTags = metricsConfig.globalTags();
         if (!globalTags.isEmpty()) {
-            delegate.config().meterFilter(MeterFilter.commonTags(Util.tags(globalTags)));
+            delegate.config().meterFilter(MeterFilter.commonTags(MTag.tags(globalTags)));
         }
     }
 
@@ -249,7 +249,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                     Iterable<io.helidon.metrics.api.Tag> tags) {
 
         Search search = delegate().find(name)
-                .tags(Util.tags(tags));
+                .tags(MTag.tags(tags));
         Meter match = search.meter();
 
         if (match == null) {
@@ -289,12 +289,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter.Id id, String scope) {
-        return internalRemove(id.name(), id.tags(), scope);
+        return internalRemove(id.name(), id.tags(), Optional.ofNullable(scope));
     }
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<io.helidon.metrics.api.Tag> tags, String scope) {
-        return internalRemove(name, tags, scope);
+        return internalRemove(name, tags, Optional.ofNullable(scope));
     }
 
     @Override
@@ -379,21 +379,20 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                   Iterable<io.helidon.metrics.api.Tag> tags) {
         return internalRemove(name,
                               tags,
-                              metricsConfig.scoping().defaultValue()
-                                      .orElse(null));
+                              SystemTagsManager.instance().effectiveScope(Optional.empty()));
     }
 
     private Optional<io.helidon.metrics.api.Meter> internalRemove(String name,
                                                                   Iterable<io.helidon.metrics.api.Tag> tags,
-                                                                  String scope) {
+                                                                  Optional<String> scope) {
         List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
 
-        SystemTagsManager.instance()
-                .assignScope(scope,
-                             (tag, s) -> tagList.add(io.helidon.metrics.api.Tag.create(tag, s)));
+        scope.ifPresent(validScope -> SystemTagsManager.instance()
+                .assignScope(validScope,
+                             (tag, s) -> tagList.add(io.helidon.metrics.api.Tag.create(tag, s))));
 
         Meter nativeMeter = delegate.find(name)
-                .tags(Util.tags(tags))
+                .tags(MTag.tags(tags))
                 .meter();
 
         lock.lock();

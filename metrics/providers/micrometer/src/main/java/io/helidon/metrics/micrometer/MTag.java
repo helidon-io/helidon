@@ -15,12 +15,12 @@
  */
 package io.helidon.metrics.micrometer;
 
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
 import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
 
 class MTag implements io.helidon.metrics.api.Tag {
 
@@ -38,42 +38,15 @@ class MTag implements io.helidon.metrics.api.Tag {
      * @return Helidon tags
      */
     static Iterable<io.helidon.metrics.api.Tag> neutralTags(Iterable<Tag> tags) {
-        return () -> new Iterator<>() {
-
-            private final Iterator<Tag> iter = tags.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return iter.hasNext();
-            }
-
-            @Override
-            public io.helidon.metrics.api.Tag next() {
-                return MTag.create(iter.next());
-            }
-        };
-    }
-
-    static Tags mTags(Iterable<io.helidon.metrics.api.Tag> tags) {
-        return Tags.of(tags(tags));
+        List<io.helidon.metrics.api.Tag> result = new ArrayList<>();
+        tags.forEach(mmTag -> result.add(MTag.create(mmTag)));
+        return result;
     }
 
     static Iterable<Tag> tags(Iterable<io.helidon.metrics.api.Tag> tags) {
-        return () -> new Iterator<>() {
-
-            private final Iterator<io.helidon.metrics.api.Tag> iter = tags.iterator();
-
-            @Override
-            public boolean hasNext() {
-                return iter.hasNext();
-            }
-
-            @Override
-            public Tag next() {
-                io.helidon.metrics.api.Tag next = iter.next();
-                return Tag.of(next.key(), next.value());
-            }
-        };
+        List<Tag> result = new ArrayList<>();
+        tags.forEach(neutralTag -> result.add(Tag.of(neutralTag.key(), neutralTag.value())));
+        return result;
     }
 
     /**

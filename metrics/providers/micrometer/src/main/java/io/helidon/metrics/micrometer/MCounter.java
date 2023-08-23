@@ -15,9 +15,6 @@
  */
 package io.helidon.metrics.micrometer;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 

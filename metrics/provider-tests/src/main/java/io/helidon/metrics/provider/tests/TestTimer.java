@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.testing;
+package io.helidon.metrics.provider.tests;
 
 import java.time.Duration;
 import java.util.concurrent.Callable;

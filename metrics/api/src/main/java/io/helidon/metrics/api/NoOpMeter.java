@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.io.PrintStream;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -615,12 +616,13 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public Iterable<Double> percentiles() {
-                return Util.iterable(percentiles);
+                return Arrays.stream(percentiles)
+                        .boxed().toList();
             }
 
             @Override
             public Iterable<Duration> buckets() {
-                return Util.iterable(buckets);
+                return List.of(buckets);
             }
 
             @Override

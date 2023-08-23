@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.testing;
+package io.helidon.metrics.provider.tests;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -71,7 +72,7 @@ class TestDistributionSummary {
                                                          .percentiles(0.5, 0.9, 0.99, 0.999));
         HistogramSnapshot snapshot = summary.snapshot();
 
-        List<ValueAtPercentile> vaps = Util.list(snapshot.percentileValues());
+        List<ValueAtPercentile> vaps = list(snapshot.percentileValues());
 
         assertThat("Values at percentile",
                    vaps,
@@ -90,7 +91,7 @@ class TestDistributionSummary {
 
         HistogramSnapshot snapshot = summary.snapshot();
 
-        List<Bucket> cabs = Util.list(snapshot.histogramCounts());
+        List<Bucket> cabs = list(snapshot.histogramCounts());
 
         assertThat("Counts at buckets",
                    cabs,
@@ -106,6 +107,19 @@ class TestDistributionSummary {
         List.of(1D, 3D, 5D, 7D)
                 .forEach(summary::record);
         return summary;
+    }
+
+    /**
+     * Creates a new {@link java.util.List} from an {@link java.lang.Iterable}.
+     *
+     * @param iterable iterable to convert
+     * @param <T>      type of the items
+     * @return new list containing the elements reported by the iterable
+     */
+    private static <T> List<T> list(Iterable<? extends T> iterable) {
+        List<T> result = new ArrayList<>();
+        iterable.forEach(result::add);
+        return result;
     }
 
     private record Vap(double percentile, double value) implements ValueAtPercentile {

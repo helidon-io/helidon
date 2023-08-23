@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -114,24 +113,9 @@ class SystemTagsManagerImpl implements SystemTagsManager {
      * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
      */
     static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
-        return () -> new Iterator<>() {
-
-            private boolean hasNext = scopeTagName != null && !scopeTagName.isBlank() && scope != null;
-
-            @Override
-            public boolean hasNext() {
-                return hasNext;
-            }
-
-            @Override
-            public T next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                hasNext = false;
-                return factory.apply(scopeTagName, scope);
-            }
-        };
+        return scopeTagName != null && !scopeTagName.isBlank() && scope != null
+                ? List.of(factory.apply(scopeTagName, scope))
+                : List.of();
     }
 
     @Override

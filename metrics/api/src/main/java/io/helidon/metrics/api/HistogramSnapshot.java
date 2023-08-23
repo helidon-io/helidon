@@ -86,7 +86,7 @@ public interface HistogramSnapshot extends Wrapper {
      *
      * @return pairs of percentile and the histogram value at that percentile
      */
-    Iterable<ValueAtPercentile> percentileValues();
+    Iterable<? extends ValueAtPercentile> percentileValues();
 
     /**
      * Returns information about each of the configured buckets for the histogram.

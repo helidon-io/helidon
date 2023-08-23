@@ -74,15 +74,16 @@ public interface MetricsProgrammaticConfig {
      */
     class Instance {
 
-        private static final LazyValue<MetricsProgrammaticConfig> INSTANCE = LazyValue.create(() ->
-                                                                                                      HelidonServiceLoader.builder(
-                                                                                                                      ServiceLoader.load(
-                                                                                                                              MetricsProgrammaticConfig.class))
-                                                                                                              .addService(new BasicMetricsProgrammaticConfig(),
-                                                                                                                          Double.MIN_VALUE)
-                                                                                                              .build()
-                                                                                                              .asList()
-                                                                                                              .get(0));
+        private static final LazyValue<MetricsProgrammaticConfig> INSTANCE =
+                LazyValue.create(() ->
+                                         HelidonServiceLoader.builder(
+                                                         ServiceLoader.load(
+                                                                 MetricsProgrammaticConfig.class))
+                                                 .addService(new BasicMetricsProgrammaticConfig(),
+                                                             Double.MIN_VALUE)
+                                                 .build()
+                                                 .asList()
+                                                 .get(0));
 
         private Instance() {
         }

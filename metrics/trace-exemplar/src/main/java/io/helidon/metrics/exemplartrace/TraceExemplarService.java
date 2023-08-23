@@ -23,6 +23,13 @@ import io.helidon.tracing.SpanContext;
  * Service provider for {@link io.helidon.metrics.api.spi.ExemplarService}.
  */
 public class TraceExemplarService implements ExemplarService {
+
+    /**
+     * Creates a new instance for service loading.
+     */
+    public TraceExemplarService() {
+    }
+
     @Override
     public String label() {
         return Contexts.context()

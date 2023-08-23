@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.micrometer;
 
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -228,25 +227,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
         @Override
         public Iterable<io.helidon.metrics.api.Tag> tags() {
-            return new Iterable<>() {
-
-                private final Iterator<Tag> iter = delegate.getTags().iterator();
-
-                @Override
-                public Iterator<io.helidon.metrics.api.Tag> iterator() {
-                    return new Iterator<>() {
-                        @Override
-                        public boolean hasNext() {
-                            return iter.hasNext();
-                        }
-
-                        @Override
-                        public io.helidon.metrics.api.Tag next() {
-                            return MTag.create(iter.next());
-                        }
-                    };
-                }
-            };
+            return MTag.neutralTags(delegate.getTags());
         }
 
         @Override

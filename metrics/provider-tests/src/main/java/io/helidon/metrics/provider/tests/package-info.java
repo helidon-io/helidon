@@ -17,4 +17,4 @@
 /**
  * Shared unit tests and supporting code for unit tests of implementations of the metrics API.
  */
-package io.helidon.metrics.testing;
+package io.helidon.metrics.provider.tests;

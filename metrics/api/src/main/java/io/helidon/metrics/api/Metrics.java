@@ -15,8 +15,8 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -181,36 +181,6 @@ public interface Metrics {
     }
 
     /**
-     * Provides an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} over an array of tags.
-     *
-     * @param tags tags array to convert
-     * @return iterator over the tags
-     */
-    static Iterable<Tag> tags(Tag... tags) {
-        return () -> new Iterator<>() {
-
-            private int slot = 0;
-
-            @Override
-            public boolean hasNext() {
-                return slot < tags.length;
-            }
-
-            @Override
-            public Tag next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                Tag result = MetricsFactoryManager.getInstance()
-                        .tagCreate(tags[slot].key(),
-                                   tags[slot].value());
-                slot++;
-                return result;
-            }
-        };
-    }
-
-    /**
      * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} by interpreting the provided strings as
      * tag name/tag value pairs.
      *
@@ -221,24 +191,10 @@ public interface Metrics {
         if (keyValuePairs.length % 2 != 0) {
             throw new IllegalArgumentException("Must pass an even number of strings so keys and values are evenly matched");
         }
-        return () -> new Iterator<>() {
-
-            private int slot;
-
-            @Override
-            public boolean hasNext() {
-                return slot < keyValuePairs.length / 2;
-            }
-
-            @Override
-            public Tag next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                Tag result = Tag.create(keyValuePairs[slot * 2], keyValuePairs[slot * 2 + 1]);
-                slot++;
-                return result;
-            }
-        };
+        List<Tag> result = new ArrayList<>();
+        for (int slot = 0; slot < keyValuePairs.length / 2; slot++) {
+            result.add(Tag.create(keyValuePairs[slot * 2], keyValuePairs[slot * 2 + 1]));
+        }
+        return result;
     }
 }

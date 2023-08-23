@@ -15,6 +15,6 @@
  */
 
 /**
- * Metrics
+ * Metrics.
  */
 package io.helidon.metrics;

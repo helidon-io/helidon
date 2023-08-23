@@ -15,37 +15,9 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
 record NoOpTag(String key, String value) implements Tag, NoOpWrapper {
 
     static Tag create(String key, String value) {
         return new NoOpTag(key, value);
-    }
-
-    static Iterable<Tag> tags(String... keysAndValues) {
-        if (keysAndValues.length % 2 != 0) {
-            throw new IllegalArgumentException("String array of keys and values must balance (have an even length");
-        }
-        return () -> new Iterator<>() {
-
-            private int slot;
-
-            @Override
-            public boolean hasNext() {
-                return slot < keysAndValues.length / 2;
-            }
-
-            @Override
-            public Tag next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                Tag result = Tag.create(keysAndValues[2 * slot], keysAndValues[2 * slot + 1]);
-                slot++;
-                return result;
-            }
-        };
     }
 }
