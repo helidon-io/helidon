@@ -294,7 +294,7 @@ public class Proxy {
      * @param uri the uri
      * @return true if it is in no hosts, otherwise false
      */
-    private boolean isNoHosts(InetSocketAddress uri) {
+    public boolean isNoHosts(InetSocketAddress uri) {
         return noProxy.apply(uri);
     }
 

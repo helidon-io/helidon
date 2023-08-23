@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -157,7 +158,13 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                     + request.headers().get(Http.HeaderNames.HOST).value()
                     + " HTTP/1.1\r\n");
         } else {
-            String schemeHostPort = clientConfig.relativeUris() ? "" : uri.scheme() + "://" + uri.host() + ":" + uri.port();
+            // When proxy is set, ensure that the request uses absolute URI because of Section 5.1.2 Request-URI in
+            // https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html which states: "The absoluteURI form is REQUIRED when the
+            // request is being made to a proxy."
+            InetSocketAddress uriAddress = new InetSocketAddress(uri.host(), uri.port());
+            String schemeHostPort = proxy == Proxy.noProxy() || proxy.isNoHosts(uriAddress) || clientConfig.relativeUris()
+                    ? ""                                                      // relative URI
+                    : uri.scheme() + "://" + uri.host() + ":" + uri.port();   // absolute URI
             nonEntityData.writeAscii(request.method().text()
                     + " "
                     + schemeHostPort

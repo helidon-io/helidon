@@ -188,7 +188,8 @@ class HttpClientConfigSupport {
             }
 
             if (target.proxy().isEmpty()) {
-                target.proxy(Proxy.create());
+                // Defaults to NoProxy type if Proxy is not set
+                target.proxy(Proxy.noProxy());
             }
         }
     }
