@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -51,11 +53,12 @@ import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.SecretsClient;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
-import com.oracle.bmc.secrets.model.SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
+import com.oracle.bmc.secrets.responses.GetSecretBundleResponse;
 import com.oracle.bmc.vault.Vaults;
 import com.oracle.bmc.vault.VaultsClient;
 import com.oracle.bmc.vault.model.SecretSummary;
+import com.oracle.bmc.vault.model.SecretSummary.LifecycleState;
 import com.oracle.bmc.vault.requests.ListSecretsRequest;
 
 import static io.helidon.integrations.oci.sdk.runtime.OciExtension.ociAuthenticationProvider;
@@ -72,7 +75,7 @@ import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/vault/package-summary.html">Vault</a> APIs.
  */
 public final class SecretBundleConfigSource
-    extends AbstractConfigSource implements NodeConfigSource, PollableSource<Instant> {
+    extends AbstractConfigSource implements NodeConfigSource, PollableSource<SecretBundleConfigSource.Stamp> {
 
 
     /*
@@ -97,7 +100,7 @@ public final class SecretBundleConfigSource
 
     private final Supplier<? extends Optional<NodeContent>> loader;
 
-    private volatile Instant closestSecretExpirationInstant;
+    private final Supplier<? extends Stamp> stamper;
 
 
     /*
@@ -109,19 +112,19 @@ public final class SecretBundleConfigSource
         super(b);
         Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
         Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
-        this.closestSecretExpirationInstant = now();
         String compartmentOcid = b.compartmentOcid;
         String vaultOcid = b.vaultOcid;
         if (compartmentOcid == null || vaultOcid == null) {
-            // (It is not immediately clear why the OCI Java SDK requires a Compartment OCID, since a Vault OCID is
-            // sufficient to uniquely identify any Vault.)
             this.loader = this::absentNodeContent;
+            this.stamper = Stamp::new;
         } else {
             ListSecretsRequest listSecretsRequest = ListSecretsRequest.builder()
                 .compartmentId(compartmentOcid)
+                .lifecycleState(LifecycleState.Active)
                 .vaultId(vaultOcid)
                 .build();
             this.loader = () -> this.load(vaultsSupplier, secretsSupplier, listSecretsRequest);
+            this.stamper = () -> toStamp(secretSummaries(vaultsSupplier, listSecretsRequest), secretsSupplier);
         }
     }
 
@@ -131,10 +134,21 @@ public final class SecretBundleConfigSource
      */
 
 
+    /**
+     * Returns {@code true} if the values in this {@link SecretBundleConfigSource} have been modified.
+     *
+     * @param lastKnownStamp a {@link Stamp}
+     *
+     * @return {@code true} if modified
+     */
     @Deprecated // For use by the Helidon Config subsystem only.
     @Override // PollableSource
-    public boolean isModified(Instant pollInstant) {
-        return isModified(pollInstant, this.closestSecretExpirationInstant); // volatile read
+    public boolean isModified(Stamp lastKnownStamp) {
+        Stamp stamp = this.stamper.get();
+        if (!stamp.eTags().equals(lastKnownStamp.eTags())) {
+            return true;
+        }
+        return stamp.earliestExpiration().isBefore(lastKnownStamp.earliestExpiration());
     }
 
     @Deprecated // For use by the Helidon Config subsystem only.
@@ -166,41 +180,26 @@ public final class SecretBundleConfigSource
             return this.absentNodeContent();
         }
         ConcurrentMap<String, ValueNode> valueNodes = new ConcurrentHashMap<>();
+        Set<String> eTags = ConcurrentHashMap.newKeySet();
         Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
         Base64.Decoder decoder = Base64.getDecoder();
         Secrets secrets = secretsSupplier.get();
-        Instant closestSecretExpirationInstant = this.closestSecretExpirationInstant; // volatile read
         for (SecretSummary ss : secretSummaries) {
             tasks.add(task(valueNodes::put,
+                           eTags::add,
                            ss.getSecretName(),
-                           r -> secrets.getSecretBundle(r).getSecretBundle().getSecretBundleContent(),
+                           secrets::getSecretBundle,
                            ss.getId(),
                            decoder));
-            java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
-            // If d is null, which is permitted by the OCI Vaults API, you could interpret it as meaning "this
-            // secret never ever expires, so never poll it for changes ever again". (This is sort of like if its
-            // expiration time were set to the end of time.)
-            //
-            // Or you could interpret it as the much more common "this secret never had its expiration time set,
-            // probably by mistake, or because it's a temporary scratch secret, or any of a zillion other possible
-            // common human explanations, so we'd better check each time we poll to see if the secret is still
-            // there; i.e. we should pretend it is continually expiring". (This is sort of like if its expiration
-            // time were set to the beginning of time.)
-            //
-            // We opt for the latter interpretation.
-            Instant secretExpirationInstant = d == null ? null : d.toInstant();
-            if (secretExpirationInstant != null && secretExpirationInstant.isBefore(closestSecretExpirationInstant)) {
-                closestSecretExpirationInstant = secretExpirationInstant;
-            }
         }
-        this.closestSecretExpirationInstant = closestSecretExpirationInstant; // volatile write
         completeTasks(tasks, secrets);
-        ObjectNode.Builder onb = ObjectNode.builder();
+        ObjectNode.Builder objectNodeBuilder = ObjectNode.builder();
         for (Entry<String, ValueNode> e : valueNodes.entrySet()) {
-            onb.addValue(e.getKey(), e.getValue());
+            objectNodeBuilder.addValue(e.getKey(), e.getValue());
         }
         return Optional.of(NodeContent.builder()
-                           .node(onb.build())
+                           .node(objectNodeBuilder.build())
+                           .stamp(toStamp(secretSummaries, eTags))
                            .build());
     }
 
@@ -209,6 +208,60 @@ public final class SecretBundleConfigSource
      * Static methods.
      */
 
+
+    private static Stamp toStamp(Collection<? extends SecretSummary> secretSummaries,
+                                 Supplier<? extends Secrets> secretsSupplier) {
+        if (secretSummaries.isEmpty()) {
+            return new Stamp();
+        }
+        Set<String> eTags = ConcurrentHashMap.newKeySet();
+        Collection<Callable<Void>> tasks = new ArrayList<>(secretSummaries.size());
+        Secrets secrets = secretsSupplier.get();
+        for (SecretSummary ss : secretSummaries) {
+            if (ss.getLifecycleState() == LifecycleState.Active) {
+                tasks.add(() -> {
+                        GetSecretBundleResponse response = secrets.getSecretBundle(request(ss.getId()));
+                        eTags.add(response.getEtag());
+                        return null; // Callable<Void>; null is the only possible return value
+                    });
+            }
+        }
+        completeTasks(tasks, secrets);
+        return toStamp(secretSummaries, eTags);
+    }
+
+    static Stamp toStamp(Collection<? extends SecretSummary> secretSummaries, Set<? extends String> eTags) {
+        if (secretSummaries.isEmpty()) {
+            return new Stamp();
+        }
+        Instant earliestExpiration = null;
+        for (SecretSummary ss : secretSummaries) {
+            if (ss.getLifecycleState() == LifecycleState.Active) {
+                java.util.Date d = ss.getTimeOfCurrentVersionExpiry();
+                if (d == null) {
+                    d = ss.getTimeOfDeletion();
+                }
+                // If d is null, which is permitted by the OCI Vaults API, you could interpret it as meaning "this
+                // secret never ever expires, so never poll it for changes ever again". (This is sort of like if its
+                // expiration time were set to the end of time.)
+                //
+                // Or you could interpret it as the much more common "this secret never had its expiration time set,
+                // probably by mistake, or because it's a temporary scratch secret, or any of a zillion other possible
+                // common human explanations, so we'd better check each time we poll to see if the secret is still
+                // there; i.e. we should pretend it is continually expiring". (This is sort of like if its expiration
+                // time were set to the beginning of time.)
+                //
+                // We opt for the latter interpretation.
+                if (d != null) {
+                    Instant i = d.toInstant();
+                    if (earliestExpiration == null || i.isBefore(earliestExpiration)) {
+                        earliestExpiration = i;
+                    }
+                }
+            }
+        }
+        return new Stamp(Set.copyOf(eTags), earliestExpiration == null ? now() : earliestExpiration);
+    }
 
     /**
      * Creates and returns a new {@link Builder} for {@linkplain Builder#build() building} {@link
@@ -289,8 +342,10 @@ public final class SecretBundleConfigSource
         }
     }
 
-    static boolean isModified(Instant pollInstant, Instant closestSecretExpirationInstant) {
-        return closestSecretExpirationInstant.isBefore(pollInstant);
+    static boolean isModified(Stamp pollStamp, Stamp stamp) {
+        return
+            !pollStamp.eTags().equals(stamp.eTags())
+            || stamp.earliestExpiration().isBefore(pollStamp.earliestExpiration());
     }
 
     private static GetSecretBundleRequest request(String secretId) {
@@ -317,20 +372,33 @@ public final class SecretBundleConfigSource
     }
 
     static Callable<Void> task(BiConsumer<? super String, ? super ValueNode> valueNodes,
+                               Consumer<? super String> eTags,
                                String secretName,
-                               Function<? super GetSecretBundleRequest, ? extends SecretBundleContentDetails> f,
+                               Function<? super GetSecretBundleRequest, ? extends GetSecretBundleResponse> f,
                                String secretId,
                                Base64.Decoder base64Decoder) {
         return () -> {
-            valueNodes.accept(secretName, valueNode(f, secretId, base64Decoder));
-            return null;
+            valueNodes.accept(secretName,
+                              valueNode(request -> secretBundleContentDetails(request, f, eTags),
+                                        secretId,
+                                        base64Decoder));
+            return null; // Callable<Void>; null is the only possible return value
         };
     }
 
-    private static ValueNode valueNode(Function<? super GetSecretBundleRequest, ? extends SecretBundleContentDetails> f,
+    private static Base64SecretBundleContentDetails
+        secretBundleContentDetails(GetSecretBundleRequest request,
+                                   Function<? super GetSecretBundleRequest, ? extends GetSecretBundleResponse> f,
+                                   Consumer<? super String> eTags) {
+        GetSecretBundleResponse response = f.apply(request);
+        eTags.accept(response.getEtag());
+        return (Base64SecretBundleContentDetails) response.getSecretBundle().getSecretBundleContent();
+    }
+
+    private static ValueNode valueNode(Function<? super GetSecretBundleRequest, ? extends Base64SecretBundleContentDetails> f,
                                        String secretId,
                                        Base64.Decoder base64Decoder) {
-        return valueNode((Base64SecretBundleContentDetails) f.apply(request(secretId)), base64Decoder);
+        return valueNode(f.apply(request(secretId)), base64Decoder);
     }
 
     private static ValueNode valueNode(Base64SecretBundleContentDetails details, Base64.Decoder base64Decoder) {
@@ -525,6 +593,36 @@ public final class SecretBundleConfigSource
         public Builder vaultsSupplier(Supplier<? extends Vaults> vaultsSupplier) {
             this.vaultsSupplier = Objects.requireNonNull(vaultsSupplier, "vaultsSupplier");
             return this;
+        }
+
+    }
+
+    /**
+     * A pairing of a {@link Set} of entity tags with an {@link Instant} identifying the earliest expiration
+     * of a Secret indirectly identified by one of those tags.
+     *
+     * @param eTags a {@link Set} of entity tags
+     *
+     * @param earliestExpiration an {@link Instant} identifying the earliest expiration of a Secret indirectly
+     * identified by one of the supplied tags
+     */
+    public static record Stamp(Set<?> eTags, Instant earliestExpiration) {
+
+        /**
+         * Creates a new {@link Stamp}.
+         */
+        public Stamp() {
+            this(Set.of(), now());
+        }
+
+        /**
+         * Creates a new {@link Stamp}.
+         *
+         * @exception NullPointerException if any argument is {@code null}
+         */
+        public Stamp {
+            eTags = Set.copyOf(Objects.requireNonNull(eTags, "eTags"));
+            Objects.requireNonNull(earliestExpiration);
         }
 
     }

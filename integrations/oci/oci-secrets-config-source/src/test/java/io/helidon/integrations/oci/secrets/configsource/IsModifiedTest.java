@@ -16,6 +16,9 @@
 package io.helidon.integrations.oci.secrets.configsource;
 
 import java.time.Instant;
+import java.util.Set;
+
+import io.helidon.integrations.oci.secrets.configsource.SecretBundleConfigSource.Stamp;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,10 +39,15 @@ class IsModifiedTest {
         Instant earlier = now0.minusSeconds(500); // arbitrary amount
         assertThat(earlier.isBefore(now0), is(true));
 
+        Stamp s0 = new Stamp(Set.of(), now0);
+        Stamp s1 = new Stamp(Set.of(), now1);
+        Stamp laterStamp = new Stamp(Set.of(), later);
+        Stamp earlierStamp = new Stamp(Set.of(), earlier);
+
         // Test that isModified properly encapsulates java.time behavior.
-        assertThat(isModified(now0, later), is(false));
-        assertThat(isModified(now0, now1), is(false));
-        assertThat(isModified(now0, earlier), is(true));
+        assertThat(isModified(s0, laterStamp), is(false));
+        assertThat(isModified(s0, s1), is(false));
+        assertThat(isModified(s0, earlierStamp), is(true));
     }
 
 }

@@ -92,8 +92,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
 
     /**
-     * Creates and returns a non-{@code null} {@link ConfigSource} that sources its values from an Oracle Cloud
-     * Infrastructure (OCI) <a
+     * Creates and returns a non-{@code null} {@link SecretBundleConfigSource} that sources its values from an Oracle
+     * Cloud Infrastructure (OCI) <a
      * href="https://docs.oracle.com/en-us/iaas/Content/KeyManagement/Concepts/keyoverview.htm">Vault</a>.
      *
      * @param type one of the {@linkplain #supported() supported types}; not actually used
