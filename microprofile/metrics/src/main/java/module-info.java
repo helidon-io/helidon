@@ -56,4 +56,5 @@ module io.helidon.microprofile.metrics {
     provides io.helidon.metrics.spi.MetricsProgrammaticSettings
             with io.helidon.microprofile.metrics.MpMetricsProgrammaticSettings;
 
+    uses io.helidon.metrics.spi.ExemplarService;
 }

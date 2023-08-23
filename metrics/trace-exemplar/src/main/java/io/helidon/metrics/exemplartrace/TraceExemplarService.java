@@ -16,11 +16,11 @@
 package io.helidon.metrics.exemplartrace;
 
 import io.helidon.common.context.Contexts;
-import io.helidon.metrics.api.spi.ExemplarService;
+import io.helidon.metrics.spi.ExemplarService;
 import io.helidon.tracing.SpanContext;
 
 /**
- * Service provider for {@link io.helidon.metrics.api.spi.ExemplarService}.
+ * Service provider for {@link io.helidon.metrics.spi.ExemplarService}.
  */
 public class TraceExemplarService implements ExemplarService {
 

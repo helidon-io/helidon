@@ -26,6 +26,6 @@ module io.helidon.metrics.traceexemplar {
 
     requires transitive io.helidon.metrics;
 
-    provides io.helidon.metrics.api.spi.ExemplarService
+    provides io.helidon.metrics.spi.ExemplarService
             with io.helidon.metrics.exemplartrace.TraceExemplarService;
 }

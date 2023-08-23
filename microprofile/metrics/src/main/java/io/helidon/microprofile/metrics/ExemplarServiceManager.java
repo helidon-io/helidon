@@ -23,11 +23,11 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.metrics.api.spi.ExemplarService;
+import io.helidon.metrics.spi.ExemplarService;
 
 
 /**
- * Loads the {@link io.helidon.metrics.api.spi.ExemplarService} instance (if any) with the most urgent priority.
+ * Loads the {@link io.helidon.metrics.spi.ExemplarService} instance (if any) with the most urgent priority.
  */
 class ExemplarServiceManager {
 

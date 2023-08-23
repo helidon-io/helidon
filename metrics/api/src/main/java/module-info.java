@@ -17,7 +17,7 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.metrics.api.MetricsProgrammaticConfig;
-import io.helidon.metrics.api.spi.ExemplarService;
+import io.helidon.metrics.spi.ExemplarService;
 import io.helidon.metrics.api.MetricsFactory;
 
 /**
@@ -38,7 +38,6 @@ import io.helidon.metrics.api.MetricsFactory;
     requires static io.helidon.config.metadata;
 
     exports io.helidon.metrics.api;
-    exports io.helidon.metrics.api.spi;
     exports io.helidon.metrics.spi;
 
     uses ExemplarService;
