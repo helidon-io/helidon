@@ -91,8 +91,8 @@ public interface MeterRegistry extends Wrapper {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered counter; empty if not found
      */
-    default Optional<Counter> getCounter(String name, Iterable<Tag> tags) {
-        return get(Counter.class, name, tags);
+    default Optional<Counter> counter(String name, Iterable<Tag> tags) {
+        return meter(Counter.class, name, tags);
     }
 
     /**
@@ -102,8 +102,8 @@ public interface MeterRegistry extends Wrapper {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered distribution summary; empty if not found
      */
-    default Optional<DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
-        return get(DistributionSummary.class, name, tags);
+    default Optional<DistributionSummary> summary(String name, Iterable<Tag> tags) {
+        return meter(DistributionSummary.class, name, tags);
     }
 
     /**
@@ -113,8 +113,8 @@ public interface MeterRegistry extends Wrapper {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered gauge; empty if not found
      */
-    default Optional<Gauge> getGauge(String name, Iterable<Tag> tags) {
-        return get(Gauge.class, name, tags);
+    default Optional<Gauge> gauge(String name, Iterable<Tag> tags) {
+        return meter(Gauge.class, name, tags);
     }
 
     /**
@@ -124,8 +124,8 @@ public interface MeterRegistry extends Wrapper {
      * @param tags tags to match
      * @return {@link java.util.Optional} of the previously-registered timer; empty if not found
      */
-    default Optional<Timer> getTimer(String name, Iterable<Tag> tags) {
-        return get(Timer.class, name, tags);
+    default Optional<Timer> timer(String name, Iterable<Tag> tags) {
+        return meter(Timer.class, name, tags);
     }
 
     /**
@@ -141,7 +141,7 @@ public interface MeterRegistry extends Wrapper {
      * @param <M>    type of the meter to find
      * @return {@link java.util.Optional} of the previously-regsitered meter; empty if not found
      */
-    <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags);
+    <M extends Meter> Optional<M> meter(Class<M> mClass, String name, Iterable<Tag> tags);
 
     /**
      * Removes a previously-registered meter.

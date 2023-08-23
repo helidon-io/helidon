@@ -76,7 +76,7 @@ public interface Metrics {
      * @return {@link java.util.Optional} of the previously-registered counter; empty if not found
      */
     static Optional<Counter> getCounter(String name, Iterable<Tag> tags) {
-        return globalRegistry().get(Counter.class, name, tags);
+        return globalRegistry().meter(Counter.class, name, tags);
     }
 
     /**
@@ -97,7 +97,7 @@ public interface Metrics {
      * @return {@link java.util.Optional} of the previously-registered distribution summary; empty if not found
      */
     static Optional<DistributionSummary> getSummary(String name, Iterable<Tag> tags) {
-        return globalRegistry().get(DistributionSummary.class, name, tags);
+        return globalRegistry().meter(DistributionSummary.class, name, tags);
     }
 
     /**
@@ -118,7 +118,7 @@ public interface Metrics {
      * @return {@link java.util.Optional} of the previously-registered gauge; empty if not found
      */
     static Optional<Gauge> getGauge(String name, Iterable<Tag> tags) {
-        return globalRegistry().get(Gauge.class, name, tags);
+        return globalRegistry().meter(Gauge.class, name, tags);
     }
 
     /**
@@ -139,7 +139,7 @@ public interface Metrics {
      * @return {@link java.util.Optional} of the previously-registered timer; empty if not found
      */
     static Optional<Timer> getTimer(String name, Iterable<Tag> tags) {
-        return globalRegistry().get(Timer.class, name, tags);
+        return globalRegistry().meter(Timer.class, name, tags);
     }
 
     /**
@@ -166,7 +166,7 @@ public interface Metrics {
      * @return {@link java.util.Optional} of the previously-regsitered meter; empty if not found
      */
     static <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
-        return globalRegistry().get(mClass, name, tags);
+        return globalRegistry().meter(mClass, name, tags);
     }
 
     /**

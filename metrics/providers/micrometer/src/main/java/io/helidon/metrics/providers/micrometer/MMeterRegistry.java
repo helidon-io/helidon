@@ -244,9 +244,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public <M extends io.helidon.metrics.api.Meter> Optional<M> get(Class<M> mClass,
-                                                                    String name,
-                                                                    Iterable<io.helidon.metrics.api.Tag> tags) {
+    public <M extends io.helidon.metrics.api.Meter> Optional<M> meter(Class<M> mClass,
+                                                                      String name,
+                                                                      Iterable<io.helidon.metrics.api.Tag> tags) {
 
         Search search = delegate().find(name)
                 .tags(MTag.tags(tags));

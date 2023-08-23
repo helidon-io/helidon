@@ -74,7 +74,7 @@ class MicrostreamMetricsTest {
     }
 
     private Gauge findFirstGauge(String name) {
-        return Metrics.globalRegistry().getGauge(name, Set.of()).orElse(null);
+        return Metrics.globalRegistry().gauge(name, Set.of()).orElse(null);
     }
 
 }

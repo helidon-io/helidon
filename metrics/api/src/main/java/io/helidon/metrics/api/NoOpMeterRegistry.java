@@ -76,7 +76,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public <M extends Meter> Optional<M> get(Class<M> mClass, String name, Iterable<Tag> tags) {
+    public <M extends Meter> Optional<M> meter(Class<M> mClass, String name, Iterable<Tag> tags) {
         return Optional.empty();
     }
 

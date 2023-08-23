@@ -60,19 +60,19 @@ class TestDeletions {
         Counter counter2 = reg.getOrCreate(Counter.builder("b")
                                                    .tags(List.of(Tag.create("myTag", "b"))));
 
-        Optional<Counter> counter1Again = reg.getCounter("a", List.of(Tag.create("myTag", "a")));
+        Optional<Counter> counter1Again = reg.counter("a", List.of(Tag.create("myTag", "a")));
         assertThat("Counter before removal", counter1Again, OptionalMatcher.optionalValue(is(sameInstance(counter1))));
         Optional<Meter> del1 = reg.remove("a", List.of(Tag.create("myTag", "a")));
 
         assertThat("Deleted meter", del1, OptionalMatcher.optionalValue(sameInstance(counter1)));
         assertThat("Check for deleted meter",
-                   reg.getCounter("a",
-                                  List.of(Tag.create("myTag", "a"))),
+                   reg.counter("a",
+                               List.of(Tag.create("myTag", "a"))),
                    OptionalMatcher.optionalEmpty());
 
         assertThat("Check for undeleted meter",
-                   reg.getCounter("b",
-                                  List.of(Tag.create("myTag", "b"))),
+                   reg.counter("b",
+                               List.of(Tag.create("myTag", "b"))),
                    OptionalMatcher.optionalValue(sameInstance(counter2)));
     }
 
@@ -83,19 +83,19 @@ class TestDeletions {
         Counter counter2 = reg.getOrCreate(Counter.builder("b")
                                                    .tags(List.of(Tag.create("myTag", "b"))));
 
-        Optional<Counter> counter1Again = reg.getCounter("a", List.of(Tag.create("myTag", "a")));
+        Optional<Counter> counter1Again = reg.counter("a", List.of(Tag.create("myTag", "a")));
         assertThat("Counter before removal", counter1Again, OptionalMatcher.optionalValue(is(sameInstance(counter1))));
         Optional<Meter> del1 = reg.remove(counter1);
 
         assertThat("Deleted meter", del1, OptionalMatcher.optionalValue(sameInstance(counter1)));
         assertThat("Check for deleted meter",
-                   reg.getCounter("a",
-                                  List.of(Tag.create("myTag", "a"))),
+                   reg.counter("a",
+                               List.of(Tag.create("myTag", "a"))),
                    OptionalMatcher.optionalEmpty());
 
         assertThat("Check for undeleted meter",
-                   reg.getCounter("b",
-                                  List.of(Tag.create("myTag", "b"))),
+                   reg.counter("b",
+                               List.of(Tag.create("myTag", "b"))),
                    OptionalMatcher.optionalValue(sameInstance(counter2)));
     }
 
@@ -106,19 +106,19 @@ class TestDeletions {
         Counter counter2 = reg.getOrCreate(Counter.builder("b")
                                                    .tags(List.of(Tag.create("myTag", "b"))));
 
-        Optional<Counter> counter1Again = reg.getCounter("a", List.of(Tag.create("myTag", "a")));
+        Optional<Counter> counter1Again = reg.counter("a", List.of(Tag.create("myTag", "a")));
         assertThat("Counter before removal", counter1Again, OptionalMatcher.optionalValue(is(sameInstance(counter1))));
         Optional<Meter> del1 = reg.remove(counter1.id());
 
         assertThat("Deleted meter", del1, OptionalMatcher.optionalValue(sameInstance(counter1)));
         assertThat("Check for deleted meter",
-                   reg.getCounter("a",
-                                  List.of(Tag.create("myTag", "a"))),
+                   reg.counter("a",
+                               List.of(Tag.create("myTag", "a"))),
                    OptionalMatcher.optionalEmpty());
 
         assertThat("Check for undeleted meter",
-                   reg.getCounter("b",
-                                  List.of(Tag.create("myTag", "b"))),
+                   reg.counter("b",
+                               List.of(Tag.create("myTag", "b"))),
                    OptionalMatcher.optionalValue(sameInstance(counter2)));
     }
 }
