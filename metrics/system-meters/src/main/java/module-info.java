@@ -23,7 +23,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Feature(value = "System meters",
          description = "Built-in system meters",
          in = {HelidonFlavor.MP, HelidonFlavor.SE},
-         path = {"Metrics", "Systemmeters"}
+         path = {"Metrics", "System Meters"}
 )
 module io.helidon.metrics.systemmeters {
     requires io.helidon.common.features.api;
