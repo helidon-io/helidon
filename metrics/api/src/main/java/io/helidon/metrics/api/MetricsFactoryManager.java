@@ -29,7 +29,7 @@ import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 /**
- * Provides {@link io.helidon.metrics.api.spi.MetricFactory} instances using a highest-weight implementation of
+ * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
  * {@link io.helidon.metrics.spi.MetricsFactoryProvider}, defaulting to a no-op implementation if no other is available.
  * <p>
  * The {@link #getInstance()} and {@link #getInstance(Config)} methods update and use the most-recently used
@@ -87,10 +87,7 @@ class MetricsFactoryManager {
     static MetricsFactory getInstance(Config rootConfig) {
         return access(() -> {
             MetricsFactoryManager.rootConfig = rootConfig;
-            metricsConfig = MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY));
-            metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
-            applyProviders(metricsFactory.globalRegistry(), rootConfig);
-            return metricsFactory;
+            return completeGetInstance(MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY)), rootConfig);
         });
     }
 
@@ -105,10 +102,7 @@ class MetricsFactoryManager {
     static MetricsFactory getInstance(MetricsConfig metricsConfig) {
         return access(() -> {
             rootConfig = Config.empty();
-            MetricsFactoryManager.metricsConfig = metricsConfig;
-            metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
-            applyProviders(metricsFactory.globalRegistry(), rootConfig);
-            return metricsFactory;
+            return completeGetInstance(metricsConfig, rootConfig);
         });
     }
 
@@ -122,15 +116,6 @@ class MetricsFactoryManager {
     static MetricsFactory getInstance() {
         return access(() -> metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
                                                                            () -> getInstance(GlobalConfig.config())));
-
-        // TODO remove comment once using the preceding line proves out
-        //                                                       () -> {
-        //                                                           MetricsFactory result = METRICS_FACTORY_PROVIDER.get()
-        //                                                                   .create(ensureMetricsConfig());
-        //                                                           applyProviders(result.globalRegistry(),
-        //                                                                          rootConfig);
-        //                                                           return result;
-        //                                                       }));
     }
 
     /**
@@ -143,6 +128,14 @@ class MetricsFactoryManager {
      */
     static MetricsFactory create(MetricsConfig metricsConfig) {
         return METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
+    }
+
+    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config rootConfig) {
+        MetricsFactoryManager.metricsConfig = metricsConfig;
+        SystemTagsManager.instance(metricsConfig);
+        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
+        applyProviders(metricsFactory.globalRegistry(), rootConfig);
+        return metricsFactory;
     }
 
     private static void applyProviders(MeterRegistry meterRegistry, Config rootConfig) {
