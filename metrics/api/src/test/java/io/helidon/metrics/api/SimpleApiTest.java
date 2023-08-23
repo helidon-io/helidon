@@ -15,9 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -25,14 +22,10 @@ import io.helidon.common.testing.junit5.OptionalMatcher;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
 
 public class SimpleApiTest {
 
@@ -47,12 +40,12 @@ public class SimpleApiTest {
         MeterRegistry registry = Metrics.globalRegistry();
         assertThat("Global registry", registry, notNullValue());
         counter1 = Metrics.getOrCreate(Counter.builder("counter1")
-                                                       .description(COUNTER_1_DESC));
+                                               .description(COUNTER_1_DESC));
         counter2 = Metrics.getOrCreate(Counter.builder("counter2"));
 
         timer1 = Metrics.getOrCreate(Timer.builder("timer1")
-                                                   .tags(Metrics.tags("t1", "v1",
-                                                                      "t2", "v2")));
+                                             .tags(Metrics.tags("t1", "v1",
+                                                                "t2", "v2")));
     }
 
     @Test

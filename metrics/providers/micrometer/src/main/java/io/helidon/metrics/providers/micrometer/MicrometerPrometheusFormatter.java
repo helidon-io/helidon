@@ -54,6 +54,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     private final Iterable<String> meterNameSelection;
     private final MediaType resultMediaType;
     private final MeterRegistry meterRegistry;
+
     private MicrometerPrometheusFormatter(Builder builder) {
         scopeTagName = builder.scopeTagName;
         scopeSelection = builder.scopeSelection;

@@ -17,7 +17,6 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -45,7 +44,7 @@ class TestGauge {
         AtomicLong value = new AtomicLong(initialValue);
         Gauge g = meterRegistry.getOrCreate(Gauge.builder("a",
                                                           value,
-                                                          v -> (double)v.get()));
+                                                          v -> (double) v.get()));
 
         io.micrometer.core.instrument.Gauge mGauge = g.unwrap(io.micrometer.core.instrument.Gauge.class);
         assertThat("Initial value", mGauge.value(), is((double) initialValue));

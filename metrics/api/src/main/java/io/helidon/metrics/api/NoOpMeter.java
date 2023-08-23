@@ -92,6 +92,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
     static class Id implements Meter.Id {
         private final String name;
         private final List<Tag> tags = new ArrayList<>(); // must be ordered by tag name for consistency
+
         private Id(String name, Iterable<Tag> tags) {
             this.name = name;
             tags.forEach(this.tags::add);

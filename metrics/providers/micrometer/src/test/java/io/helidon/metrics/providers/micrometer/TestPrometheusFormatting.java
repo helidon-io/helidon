@@ -144,7 +144,6 @@ class TestPrometheusFormatting {
         Timer e = meterRegistry.getOrCreate(Timer.builder("t3-1"));
         e.record(2, TimeUnit.SECONDS);
 
-
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
                 .scopeTagName(SCOPE_TAG_NAME)
                 .scopeSelection(Set.of("app"))

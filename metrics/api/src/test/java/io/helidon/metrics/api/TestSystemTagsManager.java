@@ -82,7 +82,7 @@ class TestSystemTagsManager {
         SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
         Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
-                                                                                                METRIC_TAG_VALUE));
+                                                                                         METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
         mgr.allTags(meterId, "myScope").forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
@@ -97,7 +97,6 @@ class TestSystemTagsManager {
         Config mConfig = Config.just(ConfigSources.create(APP_ONLY_TAGS_SETTINGS)).get("metrics");
         MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
         SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
-
 
         Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
                                                                                          METRIC_TAG_VALUE));

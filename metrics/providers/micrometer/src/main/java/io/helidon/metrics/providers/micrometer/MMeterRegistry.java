@@ -355,7 +355,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         // If there is a usable scope value, add a tag to the builder if configuration has a scope tag name.
         effectiveScope.ifPresent(realScope -> SystemTagsManager.instance()
-                        .assignScope(realScope, builderTagSetter));
+                .assignScope(realScope, builderTagSetter));
 
         lock.lock();
         try {

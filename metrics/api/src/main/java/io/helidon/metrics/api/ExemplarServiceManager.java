@@ -30,26 +30,17 @@ import io.helidon.metrics.api.spi.ExemplarService;
  */
 class ExemplarServiceManager {
 
-    private static final System.Logger LOGGER = System.getLogger(ExemplarServiceManager.class.getName());
-
-    private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
-
-    private static final boolean IS_ACTIVE = !EXEMPLAR_SERVICES.isEmpty();
-
     static final String INACTIVE_LABEL = "";
-
+    private static final System.Logger LOGGER = System.getLogger(ExemplarServiceManager.class.getName());
+    private static final List<ExemplarService> EXEMPLAR_SERVICES = collectExemplarServices();
+    private static final boolean IS_ACTIVE = !EXEMPLAR_SERVICES.isEmpty();
     private static final Supplier<String> EXEMPLAR_SUPPLIER = () -> EXEMPLAR_SERVICES.stream()
-                        .map(ExemplarService::label)
-                        .filter(Predicate.not(String::isBlank))
-                        .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
-                        .toString();
+            .map(ExemplarService::label)
+            .filter(Predicate.not(String::isBlank))
+            .collect(ExemplarServiceManager::labelsStringJoiner, StringJoiner::add, StringJoiner::merge)
+            .toString();
 
     private ExemplarServiceManager() {
-    }
-
-    private static StringJoiner labelsStringJoiner() {
-        // A StringJoiner that suppresses the prefix and suffix if no strings were added
-        return new StringJoiner(",", "{", "}").setEmptyValue("");
     }
 
     /**
@@ -62,16 +53,20 @@ class ExemplarServiceManager {
     }
 
     /**
-     *
      * @return whether exemplar handling is active or not
      */
     static boolean isActive() {
         return IS_ACTIVE;
     }
 
+    private static StringJoiner labelsStringJoiner() {
+        // A StringJoiner that suppresses the prefix and suffix if no strings were added
+        return new StringJoiner(",", "{", "}").setEmptyValue("");
+    }
+
     private static List<ExemplarService> collectExemplarServices() {
         List<ExemplarService> exemplarServices =
-            HelidonServiceLoader.create(ServiceLoader.load(ExemplarService.class)).asList();
+                HelidonServiceLoader.create(ServiceLoader.load(ExemplarService.class)).asList();
         if (!exemplarServices.isEmpty()) {
             LOGGER.log(Level.INFO, "Using metrics ExemplarServices " + exemplarServices.toString());
         }

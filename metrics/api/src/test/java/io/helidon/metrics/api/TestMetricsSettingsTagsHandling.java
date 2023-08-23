@@ -27,7 +27,6 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-
 class TestMetricsSettingsTagsHandling {
 
     @Test
@@ -42,8 +41,8 @@ class TestMetricsSettingsTagsHandling {
         var pairs = toMap(MetricsConfigBlueprint.createGlobalTags("a=11,b=12,c=13"));
         assertThat("Result", pairs.entrySet(), hasSize(3));
         assertThat("Tags", pairs, allOf(hasEntry("a", "11"),
-                                               hasEntry("b", "12"),
-                                               hasEntry("c", "13")));
+                                        hasEntry("b", "12"),
+                                        hasEntry("c", "13")));
     }
 
     @Test
@@ -51,8 +50,8 @@ class TestMetricsSettingsTagsHandling {
         var pairs = toMap(MetricsConfigBlueprint.createGlobalTags("d=r\\=3,e=4,f=0\\,1,g=hi"));
         assertThat("Result", pairs.entrySet(), hasSize(4));
         assertThat("Tags", pairs, allOf(hasEntry("e", "4"),
-                                       hasEntry("f", "0,1"),
-                                       hasEntry("g", "hi")));
+                                        hasEntry("f", "0,1"),
+                                        hasEntry("g", "hi")));
     }
 
     @Test

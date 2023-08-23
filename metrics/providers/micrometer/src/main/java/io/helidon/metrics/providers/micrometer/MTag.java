@@ -30,7 +30,6 @@ class MTag implements io.helidon.metrics.api.Tag {
         this.delegate = delegate;
     }
 
-
     /**
      * Adapts an {@link java.lang.Iterable} of Micrometer tag to an iterable of Helidon tag.
      *

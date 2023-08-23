@@ -45,11 +45,137 @@ import io.helidon.metrics.spi.MetersProvider;
 public class SystemMetersProvider implements MetersProvider {
 
     private static final String BYTES = "bytes";
-    private static final String SECONDS  = "seconds";
-    private static final String NONE  = "";
+    private static final String SECONDS = "seconds";
+    private static final String NONE = "";
 
     private static final String SCOPE = Meter.Scope.BASE;
-
+    private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
+            .withName("memory.usedHeap")
+            .withDescription("Displays the amount of used heap memory in bytes.")
+            .withUnit(BYTES)
+            .build();
+    private static final Metadata MEMORY_COMMITTED_HEAP = Metadata.builder()
+            .withName("memory.committedHeap")
+            .withDescription(
+                    "Displays the amount of memory in bytes that is "
+                            + "committed for the Java virtual "
+                            + "machine to use. This amount of memory is "
+                            + "guaranteed for the Java virtual "
+                            + "machine to use.")
+            .withUnit(BYTES)
+            .build();
+    private static final Metadata MEMORY_MAX_HEAP = Metadata.builder()
+            .withName("memory.maxHeap")
+            .withDescription(
+                    "Displays the maximum amount of heap memory in bytes that can"
+                            + " be used for "
+                            + "memory management. This attribute displays -1 if "
+                            + "the maximum heap "
+                            + "memory size is undefined. This amount of memory is "
+                            + "not guaranteed to be "
+                            + "available for memory management if it is greater "
+                            + "than the amount of "
+                            + "committed memory. The Java virtual machine may fail"
+                            + " to allocate memory "
+                            + "even if the amount of used memory does not exceed "
+                            + "this maximum size.")
+            .withUnit(BYTES)
+            .build();
+    private static final Metadata JVM_UPTIME = Metadata.builder()
+            .withName("jvm.uptime")
+            .withDescription(
+                    "Displays the start time of the Java virtual machine in "
+                            + "milliseconds. This "
+                            + "attribute displays the approximate time when the Java "
+                            + "virtual machine "
+                            + "started.")
+            .withUnit(SECONDS)
+            .build();
+    private static final Metadata THREAD_COUNT = Metadata.builder()
+            .withName("thread.count")
+            .withDescription("Displays the current number of live threads including both "
+                                     + "daemon and nondaemon threads")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata THREAD_DAEMON_COUNT = Metadata.builder()
+            .withName("thread.daemon.count")
+            .withDescription("Displays the current number of live daemon threads.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata THREAD_MAX_COUNT = Metadata.builder()
+            .withName("thread.max.count")
+            .withDescription("Displays the peak live thread count since the Java "
+                                     + "virtual machine started or "
+                                     + "peak was reset. This includes daemon and "
+                                     + "non-daemon threads.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata CL_LOADED_COUNT = Metadata.builder()
+            .withName("classloader.loadedClasses.count")
+            .withDescription("Displays the number of classes that are currently loaded in "
+                                     + "the Java virtual machine.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata CL_LOADED_TOTAL = Metadata.builder()
+            .withName("classloader.loadedClasses.total")
+            .withDescription("Displays the total number of classes that have been loaded "
+                                     + "since the Java virtual machine has started execution.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata CL_UNLOADED_COUNT = Metadata.builder()
+            .withName("classloader.unloadedClasses.total")
+            .withDescription("Displays the total number of classes unloaded since the Java "
+                                     + "virtual machine has started execution.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata OS_AVAILABLE_CPU = Metadata.builder()
+            .withName("cpu.availableProcessors")
+            .withDescription("Displays the number of processors available to the Java "
+                                     + "virtual machine. This "
+                                     + "value may change during a particular invocation of"
+                                     + " the virtual machine.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata OS_LOAD_AVERAGE = Metadata.builder()
+            .withName("cpu.systemLoadAverage")
+            .withDescription("Displays the system load average for the last minute. The "
+                                     + "system load average "
+                                     + "is the sum of the number of runnable entities "
+                                     + "queued to the available "
+                                     + "processors and the number of runnable entities "
+                                     + "running on the available "
+                                     + "processors averaged over a period of time. The way "
+                                     + "in which the load average "
+                                     + "is calculated is operating system specific but is "
+                                     + "typically a damped timedependent "
+                                     + "average. If the load average is not available, a "
+                                     + "negative value is "
+                                     + "displayed. This attribute is designed to provide a "
+                                     + "hint about the system load "
+                                     + "and may be queried frequently. The load average may"
+                                     + " be unavailable on some "
+                                     + "platforms where it is expensive to implement this "
+                                     + "method.")
+            .withUnit(NONE)
+            .build();
+    private static final Metadata GC_TIME = Metadata.builder()
+            .withName("gc.time")
+            .withDescription(
+                    "Displays the approximate accumulated collection elapsed time in milliseconds. "
+                            + "This attribute displays -1 if the collection elapsed time is undefined for this "
+                            + "collector. The Java virtual machine implementation may use a high resolution "
+                            + "timer to measure the elapsed time. This attribute may display the same value "
+                            + "even if the collection count has been incremented if the collection elapsed "
+                            + "time is very short.")
+            .withUnit("seconds")
+            .build();
+    private static final Metadata GC_COUNT = Metadata.builder()
+            .withName("gc.total")
+            .withDescription(
+                    "Displays the total number of collections that have occurred. This attribute lists "
+                            + "-1 if the collection count is undefined for this collector.")
+            .withUnit("")
+            .build();
     private MetricsConfig metricsConfig;
 
     /**
@@ -110,7 +236,7 @@ public class SystemMetersProvider implements MetersProvider {
             registerGauge(result,
                           GC_TIME,
                           gcBean,
-                                      bean -> bean.getCollectionTime() / 1000.0D,
+                          bean -> bean.getCollectionTime() / 1000.0D,
                           Tag.create("name", poolName));
         }
         return result;
@@ -144,161 +270,19 @@ public class SystemMetersProvider implements MetersProvider {
         }
     }
 
-    private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
-            .withName("memory.usedHeap")
-            .withDescription("Displays the amount of used heap memory in bytes.")
-            .withUnit(BYTES)
-            .build();
-
-    private static final Metadata MEMORY_COMMITTED_HEAP = Metadata.builder()
-            .withName("memory.committedHeap")
-            .withDescription(
-                    "Displays the amount of memory in bytes that is "
-                            + "committed for the Java virtual "
-                            + "machine to use. This amount of memory is "
-                            + "guaranteed for the Java virtual "
-                            + "machine to use.")
-            .withUnit(BYTES)
-            .build();
-
-    private static final Metadata MEMORY_MAX_HEAP = Metadata.builder()
-            .withName("memory.maxHeap")
-            .withDescription(
-                    "Displays the maximum amount of heap memory in bytes that can"
-                            + " be used for "
-                            + "memory management. This attribute displays -1 if "
-                            + "the maximum heap "
-                            + "memory size is undefined. This amount of memory is "
-                            + "not guaranteed to be "
-                            + "available for memory management if it is greater "
-                            + "than the amount of "
-                            + "committed memory. The Java virtual machine may fail"
-                            + " to allocate memory "
-                            + "even if the amount of used memory does not exceed "
-                            + "this maximum size.")
-            .withUnit(BYTES)
-            .build();
-
-    private static final Metadata JVM_UPTIME = Metadata.builder()
-            .withName("jvm.uptime")
-            .withDescription(
-                    "Displays the start time of the Java virtual machine in "
-                            + "milliseconds. This "
-                            + "attribute displays the approximate time when the Java "
-                            + "virtual machine "
-                            + "started.")
-            .withUnit(SECONDS)
-            .build();
-
-    private static final Metadata THREAD_COUNT = Metadata.builder()
-            .withName("thread.count")
-            .withDescription("Displays the current number of live threads including both "
-                                     + "daemon and nondaemon threads")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata THREAD_DAEMON_COUNT = Metadata.builder()
-            .withName("thread.daemon.count")
-            .withDescription("Displays the current number of live daemon threads.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata THREAD_MAX_COUNT = Metadata.builder()
-            .withName("thread.max.count")
-            .withDescription("Displays the peak live thread count since the Java "
-                                     + "virtual machine started or "
-                                     + "peak was reset. This includes daemon and "
-                                     + "non-daemon threads.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata CL_LOADED_COUNT = Metadata.builder()
-            .withName("classloader.loadedClasses.count")
-            .withDescription("Displays the number of classes that are currently loaded in "
-                                     + "the Java virtual machine.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata CL_LOADED_TOTAL = Metadata.builder()
-            .withName("classloader.loadedClasses.total")
-            .withDescription("Displays the total number of classes that have been loaded "
-                                     + "since the Java virtual machine has started execution.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata CL_UNLOADED_COUNT = Metadata.builder()
-            .withName("classloader.unloadedClasses.total")
-            .withDescription("Displays the total number of classes unloaded since the Java "
-                                     + "virtual machine has started execution.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata OS_AVAILABLE_CPU = Metadata.builder()
-            .withName("cpu.availableProcessors")
-            .withDescription("Displays the number of processors available to the Java "
-                                     + "virtual machine. This "
-                                     + "value may change during a particular invocation of"
-                                     + " the virtual machine.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata OS_LOAD_AVERAGE = Metadata.builder()
-            .withName("cpu.systemLoadAverage")
-            .withDescription("Displays the system load average for the last minute. The "
-                                     + "system load average "
-                                     + "is the sum of the number of runnable entities "
-                                     + "queued to the available "
-                                     + "processors and the number of runnable entities "
-                                     + "running on the available "
-                                     + "processors averaged over a period of time. The way "
-                                     + "in which the load average "
-                                     + "is calculated is operating system specific but is "
-                                     + "typically a damped timedependent "
-                                     + "average. If the load average is not available, a "
-                                     + "negative value is "
-                                     + "displayed. This attribute is designed to provide a "
-                                     + "hint about the system load "
-                                     + "and may be queried frequently. The load average may"
-                                     + " be unavailable on some "
-                                     + "platforms where it is expensive to implement this "
-                                     + "method.")
-            .withUnit(NONE)
-            .build();
-
-    private static final Metadata GC_TIME = Metadata.builder()
-            .withName("gc.time")
-            .withDescription(
-                    "Displays the approximate accumulated collection elapsed time in milliseconds. "
-                            + "This attribute displays -1 if the collection elapsed time is undefined for this "
-                            + "collector. The Java virtual machine implementation may use a high resolution "
-                            + "timer to measure the elapsed time. This attribute may display the same value "
-                            + "even if the collection count has been incremented if the collection elapsed "
-                            + "time is very short.")
-            .withUnit("seconds")
-            .build();
-
-    private static final Metadata GC_COUNT = Metadata.builder()
-            .withName("gc.total")
-            .withDescription(
-                    "Displays the total number of collections that have occurred. This attribute lists "
-                            + "-1 if the collection count is undefined for this collector.")
-            .withUnit("")
-            .build();
-
     private static class Metadata {
-
-        static Builder builder() {
-            return new Builder();
-        }
 
         private final String name;
         private final String description;
         private final String baseUnit;
-
         private Metadata(Builder builder) {
             name = builder.name;
             description = builder.description;
             baseUnit = builder.baseUnit;
+        }
+
+        static Builder builder() {
+            return new Builder();
         }
 
         private static class Builder implements io.helidon.common.Builder<Builder, SystemMetersProvider.Metadata> {
