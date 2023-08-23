@@ -15,11 +15,6 @@ db:
     type: "query"
     statementName: "health-check"
   services:
-    tracing:
-      # would trace all statement names that start with select-
-      - statement-names: ["select-.*"]
-      # would trace all delete statements
-      - statement-types: ["DELETE"]
     metrics:
       - type: TIMER
         errors: false

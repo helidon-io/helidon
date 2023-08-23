@@ -456,7 +456,7 @@ curl -s -X GET http://localhost:8080/health
                                     <value>io.helidon.webserver.observe.health.HealthObserveProvider</value>
                                 </list>
                                 <list key="MainTest-static-imports" if="${flavor} == 'se'">
-                                    <value>org.hamcrest.Matchers.containsString</value>
+                                    <value>org.hamcrest.CoreMatchers.containsString</value>
                                 </list>
                                 <list key="Main-java-imports" if="${flavor} == 'se'">
                                     <value>java.time.Duration</value>
@@ -465,7 +465,7 @@ curl -s -X GET http://localhost:8080/health
                                     <value><![CDATA[    private static long serverStartTime;]]></value>
                                 </list>
                                 <list key="Main-main" if="${flavor} == 'se'">
-                                    <value><![CDATA[        serverStartTime = System.currentTimeMillis();]]></value>
+                                    <value><![CDATA[serverStartTime = System.currentTimeMillis();]]></value>
                                 </list>
                                 <list key="Main-content" if="${flavor} == 'se'">
                                     <value><![CDATA[
