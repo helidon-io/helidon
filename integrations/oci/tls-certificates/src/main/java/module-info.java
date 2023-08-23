@@ -28,17 +28,22 @@ module io.helidon.integrations.oci.tls.certificates {
     requires io.helidon.common.pki;
     requires io.helidon.common.tls;
     requires io.helidon.config;
+    requires io.helidon.faulttolerance;
     requires io.helidon.integrations.oci.sdk.runtime;
     requires io.helidon.inject.api;
     requires io.helidon.inject.runtime;
+    requires io.helidon.scheduling;
 
     requires oci.java.sdk.common;
     requires oci.java.sdk.certificates;
     requires oci.java.sdk.keymanagement;
 
     uses io.helidon.common.tls.spi.TlsManagerProvider;
+    uses io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
+    uses io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
     exports io.helidon.integrations.oci.tls.certificates;
+    exports io.helidon.integrations.oci.tls.certificates.spi;
 
     provides io.helidon.common.tls.spi.TlsManagerProvider
             with io.helidon.integrations.oci.tls.certificates.DefaultOciCertificatesTlsManagerProvider;

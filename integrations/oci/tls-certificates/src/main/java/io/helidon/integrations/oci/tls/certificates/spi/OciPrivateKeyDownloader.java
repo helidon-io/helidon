@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.tls.certificates;
+package io.helidon.integrations.oci.tls.certificates.spi;
 
 import java.net.URI;
 import java.security.PrivateKey;
@@ -22,7 +22,7 @@ import java.security.PrivateKey;
 import io.helidon.inject.api.Contract;
 
 /**
- * The contract use for downloading private keys from OCI.
+ * The contract used for downloading private keys from OCI.
  */
 @Contract
 public interface OciPrivateKeyDownloader {

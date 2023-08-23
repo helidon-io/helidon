@@ -75,8 +75,28 @@
             <artifactId>helidon-common-tls</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-key-util</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.fault-tolerance</groupId>
+            <artifactId>helidon-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-yaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.scheduling</groupId>
+            <artifactId>helidon-scheduling</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.inject.configdriven</groupId>
+            <artifactId>helidon-inject-configdriven-runtime</artifactId>
         </dependency>
 
         <!-- needed to actually use OCI SDK -->
@@ -101,6 +121,24 @@
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- TODO: review if these are really needed -->
+        <dependency>
+            <groupId>io.helidon.microprofile.cdi</groupId>
+            <artifactId>helidon-microprofile-cdi</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -145,6 +183,19 @@
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
+                        <VAULT_CRYPTO_ENDPOINT>http://localhost:8081</VAULT_CRYPTO_ENDPOINT>
+                        <CA_OCID>ca-ocid</CA_OCID>
+                        <SERVER_CERT_OCID>server-cert-ocid</SERVER_CERT_OCID>
+                        <SERVER_KEY_OCID>server-key-ocid</SERVER_KEY_OCID>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

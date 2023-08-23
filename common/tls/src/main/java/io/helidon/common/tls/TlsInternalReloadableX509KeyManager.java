@@ -24,13 +24,12 @@ import java.util.Objects;
 
 import javax.net.ssl.X509KeyManager;
 
-class ReloadableX509KeyManager implements X509KeyManager, TlsReloadableComponent {
-
-    private static final System.Logger LOGGER = System.getLogger(ReloadableX509KeyManager.class.getName());
+class TlsInternalReloadableX509KeyManager extends TlsReloadableX509KeyManager {
+    private static final System.Logger LOGGER = System.getLogger(TlsInternalReloadableX509KeyManager.class.getName());
 
     private volatile X509KeyManager keyManager;
 
-    ReloadableX509KeyManager(X509KeyManager keyManager) {
+    TlsInternalReloadableX509KeyManager(X509KeyManager keyManager) {
         this.keyManager = keyManager;
     }
 
@@ -66,17 +65,23 @@ class ReloadableX509KeyManager implements X509KeyManager, TlsReloadableComponent
 
     @Override
     public void reload(Tls tls) {
-        Objects.requireNonNull(tls.originalKeyManager(), "Cannot unset key manager");
+        X509KeyManager keyManager = tls.keyManager();
+        Objects.requireNonNull(keyManager, "Cannot unset key manager");
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
         }
-        this.keyManager = tls.originalKeyManager();
+        keyManager(keyManager);
+    }
+
+    @Override
+    public void keyManager(X509KeyManager keyManager) {
+        this.keyManager = Objects.requireNonNull(keyManager);
     }
 
     static class NotReloadableKeyManager implements TlsReloadableComponent {
         @Override
         public void reload(Tls tls) {
-            if (tls.originalKeyManager() != null) {
+            if (tls.keyManager() != null) {
                 throw new UnsupportedOperationException("Cannot reload key manager if one was not set during server start");
             }
         }

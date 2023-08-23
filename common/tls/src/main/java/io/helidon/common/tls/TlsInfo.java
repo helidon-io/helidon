@@ -34,18 +34,18 @@ public interface TlsInfo {
     List<TlsReloadableComponent> reloadableComponents();
 
     /**
-     * Provides the original trust manager.
+     * Provides the trust manager.
      *
-     * @return the original trust manager
+     * @return the trust manager
      */
-    X509TrustManager originalTrustManager();
+    X509TrustManager trustManager();
 
     /**
-     * Provides the original key manager.
+     * Provides the key manager.
      *
-     * @return original key manager
+     * @return key manager
      */
-    X509KeyManager originalKeyManager();
+    X509KeyManager keyManager();
 
     /**
      * Returns {@code true} if this info was explicitly configured.
@@ -54,6 +54,22 @@ public interface TlsInfo {
      */
     default boolean explicitContext() {
         return true;
+    }
+
+    /**
+     * Creates a {@link TlsInfo} from the provided arguments.
+     *
+     * @param explicitContext       flag indicating whether the information was explicitly configured
+     * @param reloadableComponents  the list of reloadable components
+     * @param trustManager          the trust manager
+     * @param keyManager            the key manager
+     * @return tls info
+     */
+    static TlsInfo create(boolean explicitContext,
+                          List<TlsReloadableComponent> reloadableComponents,
+                          X509TrustManager trustManager,
+                          X509KeyManager keyManager) {
+        return new TlsInternalInfo(explicitContext, reloadableComponents, trustManager, keyManager);
     }
 
 }

@@ -30,6 +30,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
+import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
 
 import com.oracle.bmc.keymanagement.KmsCryptoClient;
 import com.oracle.bmc.keymanagement.model.ExportKeyDetails;
@@ -37,6 +38,9 @@ import com.oracle.bmc.keymanagement.requests.ExportKeyRequest;
 import com.oracle.bmc.keymanagement.responses.ExportKeyResponse;
 import jakarta.inject.Singleton;
 
+/**
+ * Implementation of the {@link OciPrivateKeyDownloader} that will use OCI's KMS to export a key.
+ */
 @Singleton
 class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
     private final PrivateKey wrappingPrivateKey;
@@ -66,8 +70,7 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
                     client.exportKey(ExportKeyRequest.builder()
                                              .exportKeyDetails(ExportKeyDetails.builder()
                                                                        .keyId(keyOcid)
-                                                                       .publicKey(
-                                                                               wrappingPublicKeyPem)
+                                                                       .publicKey(wrappingPublicKeyPem)
                                                                        .algorithm(ExportKeyDetails.Algorithm.RsaOaepAesSha256)
                                                                        .build())
                                              .build());
@@ -93,6 +96,7 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
 
     Key unwrapRSA(byte[] in, byte[] keyBytes) throws Exception {
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        // TODO: research why this one - CIPHER_INTEGRITY from spotbugs
         Cipher c = Cipher.getInstance("AESWrapPad");
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(in, "RSA", Cipher.PRIVATE_KEY);

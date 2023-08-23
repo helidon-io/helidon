@@ -18,6 +18,8 @@ package io.helidon.examples.microprofile.oci.tls.certificates;
 
 import java.security.Security;
 
+import io.helidon.logging.common.LogConfig;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class Main {
@@ -28,6 +30,9 @@ public class Main {
         // https://stackoverflow.com/a/23859386/626826
         // https://bugs.openjdk.org/browse/JDK-7038158
         Security.addProvider(new BouncyCastleProvider());
+
+        LogConfig.configureRuntime();
+
     }
 
 }

@@ -16,47 +16,68 @@
 
 package io.helidon.common.tls;
 
-import java.util.function.Consumer;
+import java.util.List;
+
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.config.NamedService;
+import io.helidon.inject.api.Contract;
 
 /**
- * Implementors of this contract are responsible for managing the {@link Tls} instance lifecycle. When the instance changes, it
- * is then responsible to notify all registered consumers to accept the new Tls instance.
+ * Implementors of this contract are responsible for managing the {@link javax.net.ssl.SSLContext} instance lifecycle, as well
+ * as the {@link TlsReloadableComponent} instances. When the context changes, it then has the responsible to notify all
+ * registered {@link TlsReloadableComponent}s to accept the new {@link Tls} having the reloaded context.
+ * <p>
+ * How context changes are observed is based upon the implementation of the manager.
  */
-// TODO: ok to remove RuntimeType.Api<>?
-public interface TlsManager extends NamedService /*, RuntimeType.Api<TlsManagerConfig>*/ {
-
-    // TODO: the point of this is whether we should exposed a "force reload now" type of behavior for all tls managers.
-//    /**
-//     * The implementation should trigger an attempt to reload the underlying {@link Tls} instance by the manager implementation.
-//     * A return value of {@code true} then indicates that the reload was successful and subsequently the next {@link #tls()}
-//     * invocation will return the newly created {@link Tls} instance.
-//     *
-//     * @return {@code true} if the implementation was able to reload a new Tls instance, {@code false} otherwise.
-//     */
-//    boolean reload();
+@Contract
+public interface TlsManager extends NamedService {
 
     /**
-     * The implementation should maintain a registry of consumers that are interested in knowing when the {@link Tls} changes
-     *
-     * @param tlsConsumer the consumer to be called when the tls instance changes
+     * Always called before any other method on this type. Typically, the implementation will use {@link Tls#prototype()} to then
+     * determine whether {@link TlsConfig#enabled()} is {@code true}. If the configuration indicates that Tls is disabled then
+     * typically the manager was no responsibilities to manage the context. Note that the passed Tls instance is still in early
+     * lifecycle creation at this point.
+
+     * @param tls the tls instance - this instance must expose a {@link Tls#prototype()}
      */
-    void register(Consumer<Tls> tlsConsumer);
+    void init(Tls tls);
 
     /**
-     * The current {@link Tls} (re)loaded and/or created instance. The instance depends upon the nature of the implementation
-     * and how the manager sourced that instance.
+     * This method will multiplex the call to all {@link TlsReloadableComponent}s that are being managed by this manager.
      *
-     * @return the current tls instance
+     * @param tls the tls instance that is being asked to be reloaded
+     * @see Tls#reload(Tls)
      */
-    Tls tls();
+    void reload(Tls tls);
 
     /**
-     * Called when the underlying Tls instance has changed.
+     * Provides the ability to decorate the configuration for the {@link TlsConfig} as it is being built.
      *
-     * @param tls the new tls instance
+     * @param target the builder
      */
-    void tls(Tls tls);
+    void decorate(TlsConfig.BuilderBase<?, ?> target);
+
+    /**
+     * The actual key manager. This instance is not reloadable in nature.
+     *
+     * @return key manager instance
+     */
+    X509KeyManager keyManager();
+
+    /**
+     * The actual trust manager. This instance is not reloadable in nature.
+     *
+     * @return trust manager instance
+     */
+    X509TrustManager trustManager();
+
+    /**
+     * Provides the list of the reloadable tls components.
+     *
+     * @return the list of the reloadable tls components
+     */
+    List<TlsReloadableComponent> reloadableComponents();
 
 }

@@ -16,31 +16,36 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.SecureRandom;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.util.ArrayList;
+import java.security.cert.CertificateException;
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.tls.ConfiguredTlsManager;
 import io.helidon.common.tls.Tls;
-import io.helidon.common.tls.TlsConfig;
+import io.helidon.common.tls.TlsReloadableX509KeyManager;
+import io.helidon.common.tls.TlsReloadableX509TrustManager;
 import io.helidon.config.Config;
+import io.helidon.faulttolerance.Async;
 import io.helidon.inject.api.InjectionServices;
-import io.helidon.integrations.oci.sdk.runtime.OciExtension;
+import io.helidon.inject.api.Services;
+import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
+import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
 
-import com.oracle.bmc.certificates.CertificatesClient;
-import com.oracle.bmc.certificates.requests.GetCertificateAuthorityBundleRequest;
-import com.oracle.bmc.certificates.requests.GetCertificateBundleRequest;
-import com.oracle.bmc.certificates.responses.GetCertificateAuthorityBundleResponse;
-import com.oracle.bmc.certificates.responses.GetCertificateBundleResponse;
 import jakarta.inject.Provider;
 
 /**
@@ -50,36 +55,85 @@ import jakarta.inject.Provider;
  */
 class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements OciCertificatesTlsManager {
     static final String TYPE = "oci-certificates-tls-manager";
-
+    private static final System.Logger LOGGER = System.getLogger(DefaultOciCertificatesTlsManager.class.getName());
     private final OciCertificatesTlsManagerConfig cfg;
-    private final Provider<OciPrivateKeyDownloader> pkDownloader;
+
+    // these will only be non-null when enabled
+    private Provider<OciPrivateKeyDownloader> pkDownloader;
+    private Provider<OciCertificatesDownloader> certDownloader;
+    private ScheduledExecutorService asyncExecutor;
+    private Async async;
+    private Tls tls;
 
     DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg,
-                                     Config config,
+                                     io.helidon.common.config.Config config,
                                      String name) {
-        super(config, name, TYPE);
+        super(name, TYPE, config, null, null);
         this.cfg = Objects.requireNonNull(cfg);
-        this.pkDownloader = InjectionServices.realizedServices().lookupFirst(OciPrivateKeyDownloader.class);
-        tls(load());
+
+        // if config changes then will do a reload
+        if (config instanceof Config watchableConfig) {
+            watchableConfig.onChange(this::config);
+        }
     }
 
-    @Override
+    @Override // TlsManager
+    public void init(Tls tls) {
+        this.tls = tls;
+
+        // this will establish whether we are enabled or not
+        super.init(tls);
+
+        // if we are enabled then we will setup the ssl context, but first we will need to download it
+        if (tls.enabled()) {
+            try {
+                Services services = InjectionServices.realizedServices();
+                this.pkDownloader = services.lookupFirst(OciPrivateKeyDownloader.class);
+                this.certDownloader = services.lookupFirst(OciCertificatesDownloader.class);
+                this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
+                this.async = Async.builder().executor(asyncExecutor).build();
+
+                // the initial loading of the tls
+                maybeReload();
+
+                // now schedule for reload checking
+                String taskIntervalDescription =
+                        io.helidon.scheduling.Scheduling.cronBuilder()
+                                .executor(asyncExecutor)
+                                .expression(cfg.schedule())
+                                .task(inv -> maybeReload())
+                                .build()
+                                .description();
+                LOGGER.log(System.Logger.Level.DEBUG, () ->
+                        OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to initialize", e);
+            }
+        }
+    }
+
+    @Override // RuntimeType
     public OciCertificatesTlsManagerConfig prototype() {
         return cfg;
     }
 
-    private Tls load() {
-        TlsConfig.Builder tlsConfigBuilder = TlsConfig.builder()
-                .manager(this);
-        loadSSLContext(tlsConfigBuilder);
-        return tlsConfigBuilder.build();
+    @Override // ConfiguredTlsManager
+    protected void maybeReload() {
+        if (!enabled()) {
+            return;
+        }
+
+        loadContext();
     }
 
-    private void loadSSLContext(TlsConfig.Builder builder) {
+    void loadContext() {
         try {
-            Certificate[] certificates = loadCert(cfg.certOcid());
-            Certificate ca = loadCACert();
-            PrivateKey key = pkDownloader.get().loadKey(cfg.keyOcid(), cfg.vaultCryptoEndpoint());
+            // download all of our security collateral from OCI
+            OciCertificatesDownloader cd = certDownloader.get();
+            OciPrivateKeyDownloader pd = pkDownloader.get();
+            Certificate[] certificates = cd.loadCertificates(cfg.certOcid());
+            Certificate ca = cd.loadCACertificate(cfg.caOcid());
+            PrivateKey key = pd.loadKey(cfg.keyOcid(), cfg.vaultCryptoEndpoint());
 
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
@@ -87,7 +141,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             keyStore.setKeyEntry("server-cert-chain", key, cfg.keyPassword().get(), certificates);
             keyStore.setCertificateEntry("trust-ca", ca);
 
-            SSLContext context = SSLContext.getInstance("TLS");
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
@@ -95,63 +148,49 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             tmf.init(keyStore);
 
             // Uncomment to debug downloaded context
-            //saveToFile(keyStore, type + ".jks");
+            // saveToFile(keyStore, type + ".jks");
 
-            context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), SecureRandom.getInstance("DEFAULT"));
-            builder.sslContext(context);
-            // TODO: presumably we have to get all of these into the builder?  How?
-//            builder.tlsInfo(new TlsInternalInfo(boolean explicitContext,
-    //            List<TlsReloadableComponent> reloadableComponents,
-    //            X509TrustManager originalTrustManager,
-    //            X509KeyManager originalKeyManager) {
-//            builder.sslParameters(???)
-        } catch (Exception e) {
-            throw new RuntimeException("Error when loading mTls context from OCI", e);
-        }
-    }
-
-    private Certificate[] loadCert(String certOcid) throws Exception {
-        try (CertificatesClient client = CertificatesClient.builder()
-                .build(OciExtension.ociAuthenticationProvider().get())) {
-            GetCertificateBundleResponse res =
-                    client.getCertificateBundle(GetCertificateBundleRequest.builder()
-                                                        .certificateId(certOcid)
-                                                        .build());
-
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            ByteArrayInputStream chainIs = new ByteArrayInputStream(res.getCertificateBundle().getCertChainPem().getBytes());
-            ByteArrayInputStream certIs = new ByteArrayInputStream(res.getCertificateBundle().getCertificatePem().getBytes());
-            Certificate cert = cf.generateCertificate(certIs);
-            ArrayList<Certificate> chain = new ArrayList<>();
-            chain.add(cert);
-            chain.addAll(cf.generateCertificates(chainIs));
-            return chain.toArray(new Certificate[0]);
-        }
-    }
-
-    private Certificate loadCACert() throws Exception {
-        GetCertificateAuthorityBundleResponse res;
-        try (CertificatesClient client = CertificatesClient.builder()
-                .build(OciExtension.ociAuthenticationProvider().get())) {
-            res = client.getCertificateAuthorityBundle(GetCertificateAuthorityBundleRequest.builder()
-                                                               .certificateAuthorityId(cfg.caOcid())
-                                                               .build());
-
-            CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            byte[] pemBytes = res.getCertificateAuthorityBundle().getCertificatePem().getBytes();
-            try (ByteArrayInputStream pemStream = new ByteArrayInputStream(pemBytes)) {
-                return cf.generateCertificate(pemStream);
+            Optional<X509KeyManager> keyManager = Arrays.stream(kmf.getKeyManagers())
+                    .filter(m -> m instanceof X509KeyManager)
+                    .map(X509KeyManager.class::cast)
+                    .findFirst();
+            if (keyManager.isEmpty()) {
+                throw new RuntimeException("Unable to find X.509 key manager in download");
             }
+
+            Optional<X509TrustManager> trustManager = Arrays.stream(tmf.getTrustManagers())
+                    .filter(m -> m instanceof X509TrustManager)
+                    .map(X509TrustManager.class::cast)
+                    .findFirst();
+            if (trustManager.isEmpty()) {
+                throw new RuntimeException("Unable to find X.509 trust manager in download");
+            }
+
+            // establish the new context
+            // context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), secureRandom);
+            TlsReloadableX509KeyManager rkm = (TlsReloadableX509KeyManager)
+                    tls.prototype().tlsInfo().orElseThrow().keyManager();
+            TlsReloadableX509TrustManager rtm = (TlsReloadableX509TrustManager)
+                    tls.prototype().tlsInfo().orElseThrow().trustManager();
+            rkm.keyManager(keyManager.get());
+            rtm.trustManager(trustManager.get());
+        } catch (RuntimeException
+                 | KeyStoreException
+                 | NoSuchAlgorithmException
+                 | IOException
+                 | CertificateException
+                 | UnrecoverableKeyException e) {
+            throw new RuntimeException("Error while loading context from OCI", e);
         }
     }
 
-//    private void saveToFile(KeyStore ks, String fileName) {
-//        try {
-//            FileOutputStream fos = new FileOutputStream(fileName);
-//            ks.store(fos, new char[0]);
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
+    //    private void saveToFile(KeyStore ks, String fileName) {
+    //        try {
+    //            FileOutputStream fos = new FileOutputStream(fileName);
+    //            ks.store(fos, new char[0]);
+    //        } catch (Exception e) {
+    //            throw new RuntimeException(e);
+    //        }
+    //    }
 
 }

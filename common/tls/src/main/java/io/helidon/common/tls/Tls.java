@@ -32,9 +32,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -61,35 +59,17 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      */
     public static final String ENDPOINT_IDENTIFICATION_NONE = "NONE";
 
-    private final SSLContext sslContext;
-    private final SSLParameters sslParameters;
-    private final SSLSocketFactory sslSocketFactory;
-    private final SSLServerSocketFactory sslServerSocketFactory;
-    private final List<TlsReloadableComponent> reloadableComponents;
-    private final X509TrustManager originalTrustManager;
-    private final X509KeyManager originalKeyManager;
     private final TlsConfig tlsConfig;
+    private final SSLParameters sslParameters;
 
     private Tls(TlsConfig config) {
-        // at this time, the TlsConfigInterceptor should have created SSL parameters, and an SSL context
-        this(config, config.sslContext().orElseThrow(), config.sslParameters().orElseThrow(), config.tlsInfo());
-    }
-
-    private Tls(TlsConfig config,
-                SSLContext sslContext,
-                SSLParameters sslParameters,
-                TlsInfo tlsInfo) {
+        // at this time, the TlsConfigInterceptor should have created SSL parameters; the SSL context is the responsibility
+        // of the manager to provide
         this.tlsConfig = Objects.requireNonNull(config);
-        this.sslContext = sslContext;
-        this.sslParameters = sslParameters;
-        this.sslSocketFactory = sslContext.getSocketFactory();
-        this.sslServerSocketFactory = sslContext.getServerSocketFactory();
-        this.reloadableComponents = List.copyOf(tlsInfo.reloadableComponents());
-        this.originalTrustManager = tlsInfo.originalTrustManager();
-        this.originalKeyManager = tlsInfo.originalKeyManager();
+        this.sslParameters = config.sslParameters().orElseThrow();
 
-        // have the manager know about this instance as the last step
-        config.manager().tls(this);
+        TlsManager tlsManager = config.manager();
+        tlsManager.init(this);
     }
 
     /**
@@ -118,7 +98,8 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      * @return a new TLS instance
      */
     public static Tls create(TlsConfig tlsConfig) {
-        if (tlsConfig.tlsInfo().explicitContext()) {
+        TlsInfo tlsInfo = tlsConfig.tlsInfo().orElse(null);
+        if (tlsInfo != null && tlsInfo.explicitContext()) {
             return new ExplicitContextTlsConfig(tlsConfig);
         }
         return new TlsConfigImpl(tlsConfig);
@@ -147,14 +128,14 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      * @return SSL Engine
      */
     public final SSLEngine newEngine() {
-        SSLEngine sslEngine = sslContext.createSSLEngine();
+        SSLEngine sslEngine = sslContext().createSSLEngine();
         sslEngine.setSSLParameters(sslParameters);
         return sslEngine;
     }
 
     @Override
     public int hashCode() {
-        return 31 * Objects.hash(sslContext) + hashCode(sslParameters);
+        return 31 * Objects.hash(sslContext()) + hashCode(sslParameters());
     }
 
     @Override
@@ -166,7 +147,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
             return false;
         }
 
-        return sslContext.equals(tlsConfig.sslContext) && equals(sslParameters, tlsConfig.sslParameters);
+        return sslContext().equals(tlsConfig.sslContext()) && equals(sslParameters(), tlsConfig.sslParameters());
     }
 
     /**
@@ -176,7 +157,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      */
     public SSLServerSocket createServerSocket() {
         try {
-            SSLServerSocket socket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
+            SSLServerSocket socket = (SSLServerSocket) sslContext().getServerSocketFactory().createServerSocket();
             socket.setSSLParameters(sslParameters);
             return socket;
         } catch (IOException e) {
@@ -192,7 +173,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      */
     public SSLSocket createSocket(String alpnProtocol) {
         try {
-            SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket();
+            SSLSocket socket = (SSLSocket) sslContext().getSocketFactory().createSocket();
             sslParameters.setApplicationProtocols(new String[] {alpnProtocol});
             socket.setSSLParameters(sslParameters);
             return socket;
@@ -211,7 +192,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      */
     public SSLSocket createSocket(List<String> alpnProtocols, Socket socket, InetSocketAddress address) {
         try {
-            SSLSocket sslSocket = (SSLSocket) sslSocketFactory
+            SSLSocket sslSocket = (SSLSocket) sslContext().getSocketFactory()
                     .createSocket(socket, address.getHostName(), address.getPort(), true);
             sslParameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
             sslSocket.setSSLParameters(sslParameters);
@@ -222,12 +203,12 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
     }
 
     /**
-     * SSL context based on the configured values.
+     * Provides the SSL context.
      *
      * @return SSL context
      */
     public SSLContext sslContext() {
-        return sslContext;
+        return tlsConfig.sslContext().orElseThrow();
     }
 
     /**
@@ -248,26 +229,28 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
         return tlsConfig.manager();
     }
 
-//    @Override // TlsReloadableComponent iface multiplexer
+    /**
+     * Reload reloadable {@link TlsReloadableComponent}s with the new configuration.
+     *
+     * @param tls new TLS configuration
+     */
     public void reload(Tls tls) {
-        for (TlsReloadableComponent reloadableComponent : reloadableComponents) {
-            reloadableComponent.reload(tls);
-        }
+        manager().reload(tls);
     }
 
     @Override
     public List<TlsReloadableComponent> reloadableComponents() {
-        return List.copyOf(reloadableComponents);
+        return manager().reloadableComponents();
     }
 
     @Override
-    public X509TrustManager originalTrustManager() {
-        return originalTrustManager;
+    public X509TrustManager trustManager() {
+        return manager().trustManager();
     }
 
     @Override
-    public X509KeyManager originalKeyManager() {
-        return originalKeyManager;
+    public X509KeyManager keyManager() {
+        return manager().keyManager();
     }
 
     /**

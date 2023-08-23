@@ -35,6 +35,9 @@ import io.helidon.config.metadata.ConfiguredOption;
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
 @Configured
 interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
+    /**
+     * The default protocol is set to {@code TLS}.
+     */
     String DEFAULT_PROTOCOL = "TLS";
 
     @Prototype.FactoryMethod
@@ -58,7 +61,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return SSL context to use
      */
-    // TODO: should this be changed to Supplier<SSLContext>?
     Optional<SSLContext> sslContext();
 
     /**
@@ -67,7 +69,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return private key to use
      */
-    // TODO: should this be changed to Supplier<SSLContext>?
     @ConfiguredOption
     Optional<PrivateKey> privateKey();
 
@@ -79,7 +80,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     @Prototype.Singular
     @ConfiguredOption(key = "private-key")
     // same config node as privateKey
-    // TODO: should this be changed to Supplier<SSLContext>?
     List<X509Certificate> privateKeyCertChain();
 
     /**
@@ -89,7 +89,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      */
     @Prototype.Singular
     @ConfiguredOption
-    // TODO: should this be changed to Supplier<SSLContext>?
     List<X509Certificate> trust();
 
     /**
@@ -182,6 +181,11 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     @ConfiguredOption(Tls.ENDPOINT_IDENTIFICATION_HTTPS)
     String endpointIdentificationAlgorithm();
 
+    /**
+     * Flag indicating whether Tls is enabled.
+     *
+     * @return enabled flag
+     */
     @ConfiguredOption("true")
     boolean enabled();
 
@@ -278,6 +282,6 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * @return internal information
      */
     @ConfiguredOption(builderMethod = false, configured = false)
-    TlsInfo tlsInfo();
+    Optional<TlsInfo> tlsInfo();
 
 }

@@ -16,42 +16,29 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
-import java.util.Map;
-import java.util.ServiceLoader;
+import io.helidon.microprofile.server.Server;
 
-import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.tls.TlsManager;
-import io.helidon.common.tls.spi.TlsManagerProvider;
-import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
-
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 
 class OciCertificatesTlsManagerTest {
 
-    // TODO:
-    @Disabled
     @Test
     void tlsManager() {
-        Config config = Config.create(ConfigSources.create(
-                Map.of("oci-certificates-tls-manager.schedule", "123",
-                       "oci-certificates-tls-manager.vault-crypto-endpoint", "http://localhost",
-                       "oci-certificates-tls-manager.ca-ocid", "caOcid",
-                       "oci-certificates-tls-manager.cert-ocid", "certOcid",
-                       "oci-certificates-tls-manager.key-ocid", "keyOcid",
-                       "oci-certificates-tls-manager.key-password", "keyPassword"
-                )));
-        TlsManagerProvider provider = HelidonServiceLoader.builder(ServiceLoader.load(TlsManagerProvider.class))
-                .build()
-                .asList()
-                .iterator()
-                .next();
-        TlsManager tlsManager = provider.create(config.get(provider.configKey()), "@default");
-        assertThat(tlsManager, notNullValue());
+        assertThat(TestOciCertificatesDownloader.callCount, equalTo(0));
+        assertThat(TestOciPrivateKeyDownloader.callCount, equalTo(0));
+
+        Server server = startServer();
+
+        assertThat(TestOciCertificatesDownloader.callCount, greaterThan(0));
+        assertThat(TestOciPrivateKeyDownloader.callCount, greaterThan(0));
+    }
+
+    static Server startServer() {
+        return Server.create().start();
     }
 
 }

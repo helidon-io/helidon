@@ -24,17 +24,17 @@ import javax.net.ssl.X509TrustManager;
 class TlsInternalInfo implements TlsInfo {
     private final boolean explicitContext;
     private final List<TlsReloadableComponent> reloadableComponents;
-    private final X509TrustManager originalTrustManager;
-    private final X509KeyManager originalKeyManager;
+    private final X509TrustManager trustManager;
+    private final X509KeyManager keyManager;
 
     TlsInternalInfo(boolean explicitContext,
                     List<TlsReloadableComponent> reloadableComponents,
-                    X509TrustManager originalTrustManager,
-                    X509KeyManager originalKeyManager) {
+                    X509TrustManager trustManager,
+                    X509KeyManager keyManager) {
         this.explicitContext = explicitContext;
         this.reloadableComponents = reloadableComponents;
-        this.originalTrustManager = originalTrustManager;
-        this.originalKeyManager = originalKeyManager;
+        this.trustManager = trustManager;
+        this.keyManager = keyManager;
     }
 
     @Override
@@ -43,13 +43,13 @@ class TlsInternalInfo implements TlsInfo {
     }
 
     @Override
-    public X509TrustManager originalTrustManager() {
-        return originalTrustManager;
+    public X509TrustManager trustManager() {
+        return trustManager;
     }
 
     @Override
-    public X509KeyManager originalKeyManager() {
-        return originalKeyManager;
+    public X509KeyManager keyManager() {
+        return keyManager;
     }
 
     @Override

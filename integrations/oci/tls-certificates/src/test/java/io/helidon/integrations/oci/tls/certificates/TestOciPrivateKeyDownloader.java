@@ -18,9 +18,12 @@ package io.helidon.integrations.oci.tls.certificates;
 
 import java.net.URI;
 import java.security.PrivateKey;
+import java.util.Objects;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.common.pki.Keys;
+import io.helidon.config.Config;
 
 import jakarta.inject.Singleton;
 
@@ -28,10 +31,21 @@ import jakarta.inject.Singleton;
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
 class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
 
+    static int callCount;
+
     @Override
     public PrivateKey loadKey(String keyOcid,
                               URI vaultCryptoEndpoint) {
-        return super.loadKey(keyOcid, vaultCryptoEndpoint);
+        callCount++;
+
+        //        return super.loadKey(keyOcid, vaultCryptoEndpoint);
+        Objects.requireNonNull(keyOcid);
+        Objects.requireNonNull(vaultCryptoEndpoint);
+
+        Keys keys = Keys.builder()
+                .config(Config.create().get("test-keys"))
+                .build();
+        return keys.privateKey().orElseThrow();
     }
 
 }
