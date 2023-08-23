@@ -63,7 +63,7 @@ class ExecutorServiceMetricsObserver implements ExecutorServiceSupplierObserver 
     /**
      * Creates a new instance of the observer.
      */
-    public ExecutorServiceMetricsObserver() {
+    ExecutorServiceMetricsObserver() {
     }
 
     @Override
