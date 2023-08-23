@@ -47,7 +47,7 @@ class RegistryFactory {
                                                                            Gauge.class,
                                                                            Histogram.class,
                                                                            Timer.class);
-    private static final AtomicReference<RegistryFactory> registryFactory = new AtomicReference<>();
+    private static final AtomicReference<RegistryFactory> REGISTRY_FACTORY = new AtomicReference<>();
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private final MetricsConfig metricsConfig;
@@ -101,8 +101,8 @@ class RegistryFactory {
      * @return registry factory singleton
      */
     static RegistryFactory getInstance() {
-        registryFactory.compareAndSet(null, create());
-        return registryFactory.get();
+        REGISTRY_FACTORY.compareAndSet(null, create());
+        return REGISTRY_FACTORY.get();
     }
 
     /**
