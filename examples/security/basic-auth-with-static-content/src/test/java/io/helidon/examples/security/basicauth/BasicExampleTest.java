@@ -20,12 +20,13 @@ import java.net.URI;
 import java.util.Set;
 
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.security.EndpointConfig;
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
-import io.helidon.security.Security;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
 
@@ -141,8 +142,8 @@ public abstract class BasicExampleTest {
         // here we call the endpoint
         return client.get()
                 .uri(uri)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, username)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, username)
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
                 .request();
     }
 

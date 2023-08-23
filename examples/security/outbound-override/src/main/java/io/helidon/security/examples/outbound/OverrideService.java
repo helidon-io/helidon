@@ -15,8 +15,8 @@
  */
 package io.helidon.security.examples.outbound;
 
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.SecurityContext;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
@@ -48,8 +48,8 @@ class OverrideService implements HttpService {
                 .orElseThrow(() -> new RuntimeException("WebServer not found in context"));
 
         String result = client.get("http://localhost:" + server.port("backend") + "/hello")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "anotherPassword")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jill")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "anotherPassword")
                 .requestEntity(String.class);
 
         res.send("You are: " + context.userName() + ", backend service returned: " + result + "\n");

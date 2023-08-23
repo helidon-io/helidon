@@ -17,10 +17,10 @@
 package io.helidon.webclient.tests;
 
 import io.helidon.http.Http;
+import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,8 +38,8 @@ class ContextCheckTest extends TestParent {
         Http1Client webClient = createNewClient();
         try (Http1ClientResponse r = webClient.get()
                 .path("/contextCheck")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
             assertThat(r.status().code(), is(Http.Status.OK_200.code()));
         }

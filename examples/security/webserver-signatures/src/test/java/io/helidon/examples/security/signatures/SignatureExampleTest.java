@@ -19,21 +19,21 @@ package io.helidon.examples.security.signatures;
 import java.net.URI;
 import java.util.Set;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.security.Security;
+import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
-import io.helidon.security.Security;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD;
-import static io.helidon.security.providers.httpauth.HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_SECRET;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -66,8 +66,8 @@ public abstract class SignatureExampleTest {
 
     private void test(String uri, Set<String> expectedRoles, Set<String> invalidRoles, String service) {
         try (Http1ClientResponse response = client.get(uri)
-                .property(EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(PROPERTY_OUTBOUND_ID, "jack")
+                .property(PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
             assertThat(response.status().code(), is(200));
