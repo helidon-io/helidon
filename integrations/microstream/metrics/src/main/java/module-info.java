@@ -24,7 +24,6 @@ module io.helidon.integrations.microstream.metrics {
     requires transitive io.helidon.common;
     requires transitive io.helidon.config;
     requires transitive io.helidon.metrics.api;
-    requires transitive io.helidon.metrics.serviceapi;
     requires transitive microstream.storage.embedded;
 
     exports io.helidon.integrations.microstream.metrics;
