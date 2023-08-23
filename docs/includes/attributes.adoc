@@ -23,7 +23,7 @@ ifndef::attributes-included[]
 // functional attributes
 :imagesdir: {rootdir}/images
 
-:helidon-version: 3.0.0-SNAPSHOT
+:helidon-version: 4.0.0-SNAPSHOT
 :helidon-version-is-release: false
 
 ifeval::["{helidon-version-is-release}" != "true"]
@@ -35,7 +35,7 @@ ifeval::["{helidon-version-is-release}" == "true"]
 endif::[]
 
 // versions
-:version-plugin-helidon: 3.0.0-M3
+:version-plugin-helidon: 4.0.0-SNAPSHOT
 
 :version-lib-microprofile-api: 5.0
 
@@ -79,9 +79,9 @@ endif::[]
 :version-lib-micrometer: 1.6.6
 :version-lib-smallrye-open-api: 2.1.16
 
-:jdk-version: 17
+:jdk-version: 21
 
-:jdk-doc-url: https://docs.oracle.com/en/java/javase/17
+:jdk-doc-url: https://docs.oracle.com/en/java/javase/21
 :jdk-javadoc-url: {jdk-doc-url}/docs/api
 
 :helidon-maven-plugin-doc-url: https://github.com/oracle/helidon-build-tools/blob/{version-plugin-helidon}/maven-plugins/helidon-maven-plugin/README.md
