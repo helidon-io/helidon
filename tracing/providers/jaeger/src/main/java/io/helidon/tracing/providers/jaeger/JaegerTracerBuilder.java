@@ -46,7 +46,9 @@ import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SpanProcessor;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
@@ -151,8 +153,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
+    static final int DEFAULT_SCHEDULE_DELAY_MILLIS = 30_000;
     static final int DEFAULT_HTTP_PORT = 14250;
-    static final long DEFAULT_SCHEDULE_DELAY_MILLIS = 30_000;
     static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
     static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
 
@@ -172,9 +174,11 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private byte[] trustedCertificates;
     private String path;
     private Duration exporterTimeout = Duration.ofSeconds(10);
-    private Duration scheduleDelayMillis = Duration.ofMillis(DEFAULT_SCHEDULE_DELAY_MILLIS);
+    private Duration scheduleDelay = Duration.ofMillis(DEFAULT_SCHEDULE_DELAY_MILLIS);
     private int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
     private int maxExportBatchSize = DEFAULT_MAX_EXPORT_BATCH_SIZE;
+    private SpanProcessorType spanProcessorType = SpanProcessorType.BATCH;
+
 
     /**
      * Default constructor, does not modify any state.
@@ -301,8 +305,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("global").asBoolean().ifPresent(this::registerGlobal);
 
-        config.get("exporter-timeout-millis").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
-        config.get("schedule-delay-millis").asInt().ifPresent(it -> scheduleDelayMillis(Duration.ofMillis(it)));
+        config.get("span-processor-type").asString().ifPresent(this::spanProcessorType);
+        config.get("exporter-timeout").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
+        config.get("schedule-delay").asInt().ifPresent(it -> scheduleDelay(Duration.ofMillis(it)));
         config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
         config.get("max-export-batch-size").asInt().ifPresent(this::maxExportBatchSize);
 
@@ -346,14 +351,26 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     }
 
     /**
+     * Span Processor type used.
+     *
+     * @param spanProcessorType to use
+     * @return updated builder
+     */
+    @ConfiguredOption(key = "span-processor-type", value = "batch")
+    public JaegerTracerBuilder spanProcessorType(String spanProcessorType) {
+        this.spanProcessorType = SpanProcessorType.valueOf(spanProcessorType.toUpperCase());
+        return this;
+    }
+
+    /**
      * Schedule Delay of exporter requests.
      *
      * @param scheduleDelayMillis timeout to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "schedule-delay-millis", value = "5000")
-    public JaegerTracerBuilder scheduleDelayMillis(Duration scheduleDelayMillis) {
-        this.scheduleDelayMillis = scheduleDelayMillis;
+    @ConfiguredOption(key = "schedule-delay", value = "5000")
+    public JaegerTracerBuilder scheduleDelay(Duration scheduleDelayMillis) {
+        this.scheduleDelay = scheduleDelayMillis;
         return this;
     }
 
@@ -387,7 +404,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param exporterTimeout timeout to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "exporter-timeout-millis", value = "10000")
+    @ConfiguredOption(key = "exporter-timeout", value = "10000")
     public JaegerTracerBuilder exporterTimeout(Duration exporterTimeout) {
         this.exporterTimeout = exporterTimeout;
         return this;
@@ -492,12 +509,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             Resource serviceName = Resource.create(Attributes.of(ResourceAttributes.SERVICE_NAME, this.serviceName));
             OpenTelemetry ot = OpenTelemetrySdk.builder()
                     .setTracerProvider(SdkTracerProvider.builder()
-                                               .addSpanProcessor(BatchSpanProcessor.builder(exporter)
-                                                       .setScheduleDelay(scheduleDelayMillis)
-                                                       .setMaxQueueSize(maxQueueSize)
-                                                       .setMaxExportBatchSize(maxExportBatchSize)
-                                                       .setExporterTimeout(exporterTimeout)
-                                                       .build())
+                                               .addSpanProcessor(spanProcessor(exporter))
                                                .setSampler(sampler)
                                                .setResource(serviceName)
                                                .build())
@@ -566,6 +578,18 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 .toList();
     }
 
+    private SpanProcessor spanProcessor(SpanExporter exporter) {
+        return switch (spanProcessorType) {
+            case BATCH -> BatchSpanProcessor.builder(exporter)
+                    .setScheduleDelay(scheduleDelay)
+                    .setMaxQueueSize(maxQueueSize)
+                    .setMaxExportBatchSize(maxExportBatchSize)
+                    .setExporterTimeout(exporterTimeout)
+                    .build();
+            case SIMPLE -> SimpleSpanProcessor.create(exporter);
+        };
+    }
+
     private static TextMapPropagator mapFormatToPropagator(PropagationFormat propagationFormat) {
         return switch (propagationFormat) {
             case B3 -> B3Propagator.injectingMultiHeaders();
@@ -630,5 +654,19 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
          * The W3C trace context propagation format.
          */
         W3C
+    }
+
+    /**
+     * Span Processor type. Batch is default for production.
+     */
+    public enum SpanProcessorType {
+        /**
+         * Simple Span Processor.
+         */
+        SIMPLE,
+        /**
+         * Batch Span Processor.
+         */
+        BATCH
     }
 }
