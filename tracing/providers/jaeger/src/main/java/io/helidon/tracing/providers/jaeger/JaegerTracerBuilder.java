@@ -564,6 +564,26 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return samplerType;
     }
 
+    SpanProcessorType spanProcessorType() {
+        return spanProcessorType;
+    }
+
+    Duration exporterTimeout() {
+        return exporterTimeout;
+    }
+
+    Duration scheduleDelay() {
+        return scheduleDelay;
+    }
+
+    int maxQueueSize() {
+        return maxQueueSize;
+    }
+
+    int maxExportBatchSize() {
+        return maxExportBatchSize;
+    }
+
     Number samplerParam() {
         return samplerParam;
     }

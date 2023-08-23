@@ -16,6 +16,7 @@
 
 package io.helidon.tracing.providers.jaeger;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +74,12 @@ class JaegerTracerBuilderTest {
         assertThat("Path", jBuilder.path(), nullValue());
         assertThat("Enabled", jBuilder.isEnabled(), is(true));
         assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.CONSTANT));
+        assertThat("Span Processor type", jBuilder.spanProcessorType(), is(JaegerTracerBuilder.SpanProcessorType.BATCH));
         assertThat("Sampler param", jBuilder.samplerParam(), is(Integer.valueOf(1)));
+        assertThat("Exporter timeout", jBuilder.exporterTimeout(), is(Duration.ofSeconds(10)));
+        assertThat("Schedule delay", jBuilder.scheduleDelay(), is(Duration.ofSeconds(30)));
+        assertThat("Max Queue Size", jBuilder.maxQueueSize(), is(2048));
+        assertThat("Max Export Batch Size", jBuilder.maxExportBatchSize(), is(512));
     }
 
     @Test
@@ -102,6 +108,7 @@ class JaegerTracerBuilderTest {
         assertThat("Port", jBuilder.port(), is(14240));
         assertThat("Path", jBuilder.path(), is("/api/traces/mine"));
         assertThat("Sampler type", jBuilder.samplerType(), is(JaegerTracerBuilder.SamplerType.RATIO));
+        assertThat("Span Processor type", jBuilder.spanProcessorType(), is(JaegerTracerBuilder.SpanProcessorType.SIMPLE));
         assertThat("Sampler param", jBuilder.samplerParam(), is(0.5));
         assertThat("Tags", jBuilder.tags(), is(Map.of(
                 "tag1", "tag1-value",
