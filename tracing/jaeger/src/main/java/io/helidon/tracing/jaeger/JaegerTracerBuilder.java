@@ -362,7 +362,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      */
     @ConfiguredOption(key = "span-processor-type", value = "batch")
     public JaegerTracerBuilder spanProcessorType(String spanProcessorType) {
-        this.spanProcessorType = SpanProcessorType.valueOf(spanProcessorType);
+        this.spanProcessorType = SpanProcessorType.valueOf(spanProcessorType.toUpperCase());
         return this;
     }
 
@@ -588,6 +588,26 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     boolean isEnabled() {
         return enabled;
+    }
+
+    SpanProcessorType spanProcessorType() {
+        return spanProcessorType;
+    }
+
+    Duration exporterTimeout() {
+        return exporterTimeout;
+    }
+
+    Duration scheduleDelay() {
+        return scheduleDelay;
+    }
+
+    int maxQueueSize() {
+        return maxQueueSize;
+    }
+
+    int maxExportBatchSize() {
+        return maxExportBatchSize;
     }
 
     List<TextMapPropagator> createPropagators() {

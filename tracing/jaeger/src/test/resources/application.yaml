@@ -36,6 +36,7 @@ tracing:
     sampler-type: "ratio"
     sampler-param: 0.5
     propagation: ["jaeger", "b3_single", "w3c"]
+    span-processor-type: simple
     tags:
       tag1: "tag1-value"  # JAEGER_TAGS
       tag2: "tag2-value"  # JAEGER_TAGS
