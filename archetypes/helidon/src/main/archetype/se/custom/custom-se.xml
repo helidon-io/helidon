@@ -33,9 +33,6 @@
     <output>
         <file source="files/src/main/resources/WEB/index.html" target="src/main/resources/WEB/index.html" if="${media} contains 'multipart'"/>
         <model>
-            <list key="readme-exercise-the-application">
-                <value file="files/README.md"/>
-            </list>
             <list key="native-sections" if="${docker}">
                 <value file="files/README.md.native.mustache"
                        if="${docker.native-image} &amp;&amp; !(${db})"

@@ -436,6 +436,7 @@ curl -s -X GET http://localhost:8080/health
                                 <list key="Observe-feature-builder" if="${flavor} == 'se'">
                                     <value><![CDATA[
                         .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                            .details(true)
                             .useSystemServices(true)
                             .addCheck(() -> HealthCheckResponse.builder()
                                     .status(HealthCheckResponse.Status.UP)
@@ -454,6 +455,9 @@ curl -s -X GET http://localhost:8080/health
                                     <value>io.helidon.webserver.observe.health.HealthFeature</value>
                                     <value>io.helidon.webserver.observe.health.HealthObserveProvider</value>
                                 </list>
+                                <list key="MainTest-static-imports" if="${flavor} == 'se'">
+                                    <value>org.hamcrest.Matchers.containsString</value>
+                                </list>
                                 <list key="Main-java-imports" if="${flavor} == 'se'">
                                     <value>java.time.Duration</value>
                                 </list>
@@ -470,6 +474,17 @@ curl -s -X GET http://localhost:8080/health
     }
 ]]></value>
                                 </list>
+                                <list key="Abstract-test" if="${flavor} == 'se'">
+                                    <value><![CDATA[
+    @Test
+    void testHealth() {
+        try (Http1ClientResponse response = client.get("/observe/health").request()) {
+            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.as(String.class), containsString("status\":\"UP"));
+        }
+    }
+]]></value>
+                                </list>
                                 <list key="readme-sections" if="${flavor} == 'se'">
                                     <value><![CDATA[
 ## Try health
@@ -483,8 +498,8 @@ Note the port number reported by the application.
 Probe the health endpoints:
 
 ```bash
-curl -X GET http://localhost:PORT/health/
-curl -X GET http://localhost:PORT/health/ready
+curl -X GET http://localhost:PORT/observe/health/
+curl -X GET http://localhost:PORT/observe/health/ready
 ```
 
 ]]></value>
