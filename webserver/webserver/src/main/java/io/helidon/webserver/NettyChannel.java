@@ -75,14 +75,11 @@ class NettyChannel {
      * Request to flush all pending messages via this ChannelOutboundInvoker from Netty's event loop thread.
      */
     void flush() {
-        writeFuture = writeFuture.thenApply(f -> {
-            if (channel.eventLoop().inEventLoop()) {
-                channel.flush();
-            } else {
-                channel.eventLoop().execute(channel::flush);
-            }
-            return f;
-        });
+        if (channel.eventLoop().inEventLoop()) {
+            channel.flush();
+        } else {
+            channel.eventLoop().execute(channel::flush);
+        }
     }
 
     /**
