@@ -15,8 +15,6 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.Map;
-
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 

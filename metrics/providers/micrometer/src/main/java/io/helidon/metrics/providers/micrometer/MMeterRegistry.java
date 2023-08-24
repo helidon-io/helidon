@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -505,7 +504,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                     });
 
             scopeToSet.ifPresent(helidonMeter::scope);
-            scopeToSet.or(() -> null)
+            scopeToSet.or(Optional::empty)
                     .ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
                             .add(helidonMeter));
         }
