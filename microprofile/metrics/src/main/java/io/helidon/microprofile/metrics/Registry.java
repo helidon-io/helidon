@@ -39,7 +39,7 @@ class Registry extends AbstractRegistry {
      * @param metricsConfig Registry settings to use in creating the registry.
      * @return The newly created registry.
      */
-    public static Registry create(String scope, MetricsConfig metricsConfig) {
+    static Registry create(String scope, MetricsConfig metricsConfig) {
         return new Registry(scope, metricsConfig);
     }
 

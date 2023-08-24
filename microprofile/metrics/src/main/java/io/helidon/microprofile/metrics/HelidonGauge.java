@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 
@@ -50,6 +51,11 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
      */
 
     private final io.helidon.metrics.api.Gauge delegate;
+
+    protected HelidonGauge(String scope, Metadata metadata, io.helidon.metrics.api.Gauge delegate) {
+        super(scope, metadata);
+        this.delegate = delegate;
+    }
 
     static <T, N extends Number> FunctionBased<N, T> create(String scope,
                                                             Metadata metadata,
@@ -94,6 +100,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                       tags);
 
     }
+
     static <N extends Number> SupplierBased<N> create(MeterRegistry meterRegistry,
                                                       String scope,
                                                       Metadata metadata,
@@ -103,10 +110,10 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                    metadata,
                                    supplier,
                                    meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge
-                                           .builder(metadata.getName(), supplier)
-                                           .baseUnit(metadata.getUnit())
-                                           .description(metadata.getDescription())
-                                           .tags(allTags(scope, tags))));
+                                                                     .builder(metadata.getName(), supplier)
+                                                                     .baseUnit(metadata.getUnit())
+                                                                     .description(metadata.getDescription())
+                                                                     .tags(allTags(scope, tags))));
     }
 
     static <T> DoubleFunctionBased<T> create(String scope,
@@ -142,14 +149,47 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
 
     }
 
-    protected HelidonGauge(String scope, Metadata metadata, io.helidon.metrics.api.Gauge delegate) {
-        super(scope, metadata);
-        this.delegate = delegate;
+    static HelidonGauge<Double> create(String scope,
+                                       Metadata metadata,
+                                       io.helidon.metrics.api.Gauge delegate) {
+        return new HelidonGauge.DelegateBased(scope,
+                                              metadata,
+                                              delegate);
+    }
+
+    static HelidonGauge<Long> create(String scope,
+                                       Metadata metadata,
+                                       io.helidon.metrics.api.FunctionalCounter delegate) {
+        return new HelidonGauge.FunctionalCounterBased(scope,
+                                              metadata,
+                                              delegate);
     }
 
     @Override
     public io.helidon.metrics.api.Gauge delegate() {
         return delegate;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
+            return false;
+        }
+        HelidonGauge<?> that = (HelidonGauge<?>) o;
+        return getValue().equals(that.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), getValue());
+    }
+
+    @Override
+    protected String toStringDetails() {
+        return ", value='" + getValue() + '\'';
     }
 
     static class FunctionBased<N extends Number, T> extends HelidonGauge<N> {
@@ -212,25 +252,31 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    static class DelegateBased extends HelidonGauge<Double> {
+
+        private DelegateBased(String scope, Metadata metadata, io.helidon.metrics.api.Gauge delegate) {
+            super(scope, metadata, delegate);
+
         }
-        if (o == null || getClass() != o.getClass() || !super.equals(o)) {
-            return false;
+
+        @Override
+        public Double getValue() {
+            return delegate().value();
         }
-        HelidonGauge<?> that = (HelidonGauge<?>) o;
-        return getValue().equals(that.getValue());
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), getValue());
-    }
+    static class FunctionalCounterBased extends HelidonGauge<Long> {
 
-    @Override
-    protected String toStringDetails() {
-        return ", value='" + getValue() + '\'';
+        private final FunctionalCounter functionalCounter;
+
+        private FunctionalCounterBased(String scope, Metadata metadata, io.helidon.metrics.api.FunctionalCounter delegate) {
+            super(scope, metadata, null);
+            functionalCounter = delegate;
+        }
+
+        @Override
+        public Long getValue() {
+            return functionalCounter.count();
+        }
     }
 }

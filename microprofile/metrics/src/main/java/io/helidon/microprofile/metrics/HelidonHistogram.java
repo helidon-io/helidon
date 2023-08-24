@@ -32,7 +32,7 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Implementation of {@link Histogram}.
  */
-final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMetric {
+final class HelidonHistogram extends MetricImpl<DistributionSummary> implements Histogram, SnapshotMetric {
     private final DistributionSummary delegate;
 
     private HelidonHistogram(String scope, Metadata metadata, DistributionSummary delegate) {
@@ -45,12 +45,20 @@ final class HelidonHistogram extends MetricImpl implements Histogram, SnapshotMe
     }
 
     static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
+        return create(scope,
+                      metadata,
+                      meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
+                                                        .description(metadata.getDescription())
+                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                        .tags(allTags(scope, tags))));
+    }
+
+    static HelidonHistogram create(String scope,
+                                   Metadata metadata,
+                                   io.helidon.metrics.api.DistributionSummary delegate) {
         return new HelidonHistogram(scope,
                                     metadata,
-                                    meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
-                                            .description(metadata.getDescription())
-                                            .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                            .tags(allTags(scope, tags))));
+                                    delegate);
     }
 
     @Override

@@ -35,6 +35,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -105,7 +106,6 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
         this.meterRegistry = builder.meterRegistry();
         this.metricsConfig = builder.metricsConfig();
-        SystemTagsManager.create(metricsConfig);
     }
 
     /**
@@ -406,7 +406,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         public MetricsFeature build() {
             if (meterRegistry == null) {
                 meterRegistry = LazyValue.create(() -> MetricsFactory.getInstance()
-                        .createMeterRegistry(metricsSettingsBuilder.build()));
+                        .globalRegistry());
             }
             return new MetricsFeature(this);
         }

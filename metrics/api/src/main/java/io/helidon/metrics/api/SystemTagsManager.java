@@ -17,7 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
@@ -56,33 +56,30 @@ public interface SystemTagsManager {
     }
 
     /**
-     * Returns a single iterator over the explicit tags in the meter ID plus any global and app tags.
+     * Returns a scope tag so long as the candidate scope or configured default scope are present and the scope tag name
+     * is configured.
      *
-     * @param meterId meter ID possibly containing explicit tag settings
-     * @param scope   the registry scope
-     * @return iterator over all tags, explicit and global and app
+     * @param candidateScope candidate scope value
+     * @return {@link io.helidon.metrics.api.Tag} representing the scope if suitable; empty otherwise
      */
-    Iterable<Tag> allTags(Meter.Id meterId, String scope);
+    Optional<Tag> scopeTag(Optional<String> candidateScope);
 
     /**
-     * Returns a single iterator over the explicit tags in the provided {@link io.helidon.metrics.api.Meter.Id}, plus
-     * any global and app tags <em>without</em> scope.
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting the tag representing the scope,
+     * if any appears in the provided tags.
      *
-     * @param meterId meter ID
-     * @return iterator over all tags, explicit and global and app, without a tag for scope
+     * @param tags tags to filter
+     * @return tags without the scope tag
      */
-    Iterable<Tag> allTags(Meter.Id meterId);
+    Iterable<Tag> withoutScopeTag(Iterable<Tag> tags);
 
     /**
-     * Returns a single iterator over the explicit tags in the provided {@link java.lang.Iterable}, plus any global
-     * and app tags, plus a tag for the specified scope (if the system tags manager has been initialized
-     * with a scope tag name).
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} representing the any system tags
+     * configured for display (for example, an app tag or global tags set through configuration).
      *
-     * @param explicitTags iterable over the key/value pairs for tags
-     * @param scope        scope value
-     * @return iterator over all tags, explicit and global and app
+     * @return system tags
      */
-    Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope);
+    Iterable<Tag> displayTags();
 
     /**
      * Invokes the specified consumer with the scope tag name setting from the configuration (if present) and the
@@ -91,7 +88,7 @@ public interface SystemTagsManager {
      * @param scope    scope value to use
      * @param consumer uses the tag and scope in some appropriate way
      */
-    void assignScope(String scope, BiConsumer<String, String> consumer);
+    void assignScope(String scope, BiFunction<String, String, ?> consumer);
 
     /**
      * Returns the effective scope, given the provided candidate scope combined with any default scope value in the

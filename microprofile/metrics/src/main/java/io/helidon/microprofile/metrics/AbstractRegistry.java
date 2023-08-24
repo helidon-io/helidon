@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -41,8 +42,8 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Common behavior for any category (e.g., full-featured or no-op) metrics registry.
  * <p>
- *     This class provides the bookkeeping for tracking the metrics which are created and registered along with their
- *     IDs and metadata. Concrete subclasses create new instances of the various types of metrics (counter, timer, etc.).
+ * This class provides the bookkeeping for tracking the metrics which are created and registered along with their
+ * IDs and metadata. Concrete subclasses create new instances of the various types of metrics (counter, timer, etc.).
  * </p>
  */
 abstract class AbstractRegistry implements MetricRegistry {
@@ -57,7 +58,7 @@ abstract class AbstractRegistry implements MetricRegistry {
     /**
      * Create a registry of a certain type.
      *
-     * @param scope Registry type.
+     * @param scope         Registry type.
      * @param metricsConfig registry settings which influence this registry
      * @param metricFactory metric factory to use in creating new metrics
      */
@@ -79,28 +80,6 @@ abstract class AbstractRegistry implements MetricRegistry {
         return (metric instanceof HelidonMetric)
                 && ((HelidonMetric<?>) metric).isDeleted();
     }
-
-    // TODO remove once verified
-//    @Override
-//    public Optional<MetricInstance> find(String name) {
-//        return Optional.ofNullable(metricStore.untaggedOrFirstMetricInstance(name));
-//    }
-
-    // TODO remove once verified
-//    @Override
-//    public List<MetricInstance> list(String metricName) {
-//        return metricStore.metricsWithIDs(metricName);
-//    }
-//
-//    @Override
-//    public List<MetricID> metricIdsByName(String name) {
-//        return metricStore.metricIDs(name);
-//    }
-//
-//    @Override
-//    public Optional<MetricsForMetadata> metricsByName(String name) {
-//        return Optional.ofNullable(metricStore.metadataWithIDs(name));
-//    }
 
     @Override
     public Counter counter(String name) {
@@ -162,7 +141,7 @@ abstract class AbstractRegistry implements MetricRegistry {
         return getMetric(metricID, Histogram.class);
     }
 
-   @Override
+    @Override
     public Timer timer(String name) {
         return timer(name, NO_TAGS);
     }
@@ -339,22 +318,60 @@ abstract class AbstractRegistry implements MetricRegistry {
         return asType.cast(metricStore.metric(metricID));
     }
 
+    Counter counter(io.helidon.metrics.api.Counter delegate, Metadata metadata, Tag... tags) {
+        return metricStore.getOrRegisterMetric(() -> HelidonCounter.create(scope, metadata, delegate),
+                                               metadata,
+                                               Counter.class,
+                                               tags);
+    }
+
+    Gauge<?> gauge(io.helidon.metrics.api.Gauge delegate, Metadata metadata, Tag... tags) {
+        return metricStore.getOrRegisterMetric(() -> HelidonGauge.create(scope,
+                                                                         metadata,
+                                                                         delegate),
+                                               metadata,
+                                               Gauge.class,
+                                               tags);
+    }
+
+    Gauge<?> gauge(io.helidon.metrics.api.FunctionalCounter delegate, Metadata metadata, Tag... tags) {
+        return metricStore.getOrRegisterMetric(() -> HelidonGauge.create(scope,
+                                                                         metadata,
+                                                                         delegate),
+                                               metadata,
+                                               Gauge.class,
+                                               tags);
+    }
+
+    Histogram histogram(io.helidon.metrics.api.DistributionSummary delegate, Metadata metadata, Tag... tags) {
+        return metricStore.getOrRegisterMetric(() -> HelidonHistogram.create(scope, metadata, delegate),
+                                               metadata,
+                                               Histogram.class,
+                                               tags);
+    }
+
+    Timer timer(io.helidon.metrics.api.Timer delegate, MeterRegistry meterRegistry, Metadata metadata, Tag... tags) {
+        return metricStore.getOrRegisterMetric(() -> HelidonTimer.create(meterRegistry, scope, metadata, delegate),
+                                               metadata,
+                                               Timer.class,
+                                               tags);
+    }
+
     /**
      * Update the registry settings for this registry.
      *
      * @param metricsConfig new settings to use going forward
      */
-    public void update(MetricsConfig metricsConfig) {
+    void update(MetricsConfig metricsConfig) {
         metricStore.update(metricsConfig);
     }
-
 
     /**
      * Returns type of this registry.
      *
      * @return The type.
      */
-    public String scope() {
+    String scope() {
         return scope;
     }
 
@@ -368,7 +385,7 @@ abstract class AbstractRegistry implements MetricRegistry {
      *
      * @return Outcome of test.
      */
-    public boolean empty() {
+    boolean empty() {
         return metricStore.metrics().isEmpty();
     }
 
@@ -382,11 +399,12 @@ abstract class AbstractRegistry implements MetricRegistry {
      *
      * @return Stream of {@link Map.Entry}
      */
-    public Stream<MetricInstance> stream() {
+    Stream<MetricInstance> stream() {
         return metricStore.stream();
     }
 
     // -- Package private -----------------------------------------------------
+
     /**
      * Returns a list of metric IDs given a metric name.
      *
@@ -404,36 +422,27 @@ abstract class AbstractRegistry implements MetricRegistry {
      * Creates a gauge instance according to the provided metadata such that retrievals of the gauge value trigger an
      * invocation of the provided function, passing the indicated object.
      * <p>
-     *     This default implementation uses a capturing lambda for retrieving the value. Concrete subclasses can override this
-     *     implementation if capturing lambda behavior might become a performance issue.
+     * This default implementation uses a capturing lambda for retrieving the value. Concrete subclasses can override this
+     * implementation if capturing lambda behavior might become a performance issue.
      * </p>
      *
      * @param metadata metadata to use in creating the gauge
-     * @param object object to pass to the value-returning function
-     * @param func gauge-value-returning function
-     * @param <T> Java type of the function parameter (and the object to pass to it)
-     * @param <R> specific {@code Number} subtype the gauge reports
+     * @param object   object to pass to the value-returning function
+     * @param func     gauge-value-returning function
+     * @param <T>      Java type of the function parameter (and the object to pass to it)
+     * @param <R>      specific {@code Number} subtype the gauge reports
      * @return new gauge
      */
     protected <T, R extends Number> Gauge<R> createGauge(Metadata metadata, T object, Function<T, R> func) {
         return createGauge(metadata, () -> func.apply(object));
     }
-// TODO remove commented once verified
-//    /**
-//     * Returns a reference to the underlying metric store that is capable of creating a functional counter.
-//     *
-//     * @return the metric store
-//     */
-//    protected FunctionalCounterRegistry metricStore() {
-//        return metricStore;
-//    }
 
     /**
      * Creates a gauge instance according to the specified supplier which returns the gauge value.
      *
      * @param metadata metadata to use in creating the gauge
      * @param supplier gauge-value-returning supplier
-     * @param <R> specific {@code Number} subtype the supplier returns
+     * @param <R>      specific {@code Number} subtype the supplier returns
      * @return new gauge
      */
     protected abstract <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> supplier);
@@ -442,30 +451,11 @@ abstract class AbstractRegistry implements MetricRegistry {
      * Removes the specified metric from the actual meter registry (not just the Helidon data structures).
      *
      * @param metricId metric ID of the metric to remove
-     * @param metric the metric being removed
+     * @param metric   the metric being removed
      */
     protected abstract void doRemove(MetricID metricId, HelidonMetric<?> metric);
 
     // -- Private methods -----------------------------------------------------
-
-//    /**
-//     * Infers the specific subtype of {@link Metric} from a provided metric instance.
-//     *
-//     * @param metric the metric for which to derive the metric type
-//     * @return the specific subtype of {@code Metric} of the provided metric instance
-//     */
-//    protected static Class<? extends Metric> deriveType(Metric metric) {
-//        /*
-//         * A metric could be passed as a lambda, in which case neither
-//         * MetricType.from() nor, for example, Counter.class.isAssignableFrom,
-//         * works. Check each specific metric class using instanceof.
-//         */
-//        return (RegistryFactory.METRIC_TYPES).stream()
-//                .filter(clazz -> clazz.isInstance(metric))
-//                .findFirst()
-//                .orElseThrow(() -> new IllegalArgumentException("Cannot map metric of type " + metric.getClass().getName()
-//                + " to one of " + RegistryFactory.METRIC_TYPES));
-//    }
 
     /**
      * For testing.
@@ -479,9 +469,9 @@ abstract class AbstractRegistry implements MetricRegistry {
     /**
      * Gauge factories based on either functions or suppliers.
      * <p>
-     *     Metrics implementations (such as the no-op implementation of the full-featured one) implement
-     *     these interfaces so as to allow the {@link AbstractRegistry} to simply implement the MicroProfile
-     *     methods for registering gauges.
+     * Metrics implementations (such as the no-op implementation of the full-featured one) implement
+     * these interfaces so as to allow the {@link AbstractRegistry} to simply implement the MicroProfile
+     * methods for registering gauges.
      * </p>
      */
     public interface GaugeFactory {
@@ -496,9 +486,9 @@ abstract class AbstractRegistry implements MetricRegistry {
              * Creates a gauge implemention with the specified metadata which invokes the provided supplier to fetch the gauge
              * value.
              *
-             * @param metadata metadata to use in defining the gauge
+             * @param metadata      metadata to use in defining the gauge
              * @param valueSupplier {@code Supplier} of the gauge value
-             * @param <R> specific {@code Number} subtype the gauge reports
+             * @param <R>           specific {@code Number} subtype the gauge reports
              * @return new gauge implementation
              */
             <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> valueSupplier);
@@ -513,11 +503,11 @@ abstract class AbstractRegistry implements MetricRegistry {
              * Creates a gauge implementation with the specified metadata which invokes the provided function passing the given
              * object.
              *
-             * @param metadata metadata to use in defining the gauge
-             * @param object object to be passed to the function which provides the gauge value
+             * @param metadata      metadata to use in defining the gauge
+             * @param object        object to be passed to the function which provides the gauge value
              * @param valueFunction function which provides the gauge value
-             * @param <T> type of object passed to the function
-             * @param <R> specific {@code Number} subtype the gauge reports
+             * @param <T>           type of object passed to the function
+             * @param <R>           specific {@code Number} subtype the gauge reports
              * @return new gauge implementation
              */
             <T, R extends Number> Gauge<R> createGauge(Metadata metadata, T object, Function<T, R> valueFunction);

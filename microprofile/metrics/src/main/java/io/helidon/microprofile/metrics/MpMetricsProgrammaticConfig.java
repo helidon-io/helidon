@@ -17,7 +17,8 @@ package io.helidon.microprofile.metrics;
 
 import java.util.Optional;
 
-import io.helidon.metrics.api.MetricsProgrammaticConfig;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
  * MP implementation of metrics programmatic settings.
@@ -26,7 +27,6 @@ public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     /**
      * Creates a new instance (explicit for style checking and service loading).
-     *
      */
     public MpMetricsProgrammaticConfig() {
     }
@@ -40,4 +40,15 @@ public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
     public Optional<String> appTagName() {
         return Optional.of("mp_app");
     }
+
+    @Override
+    public Optional<String> scopeDefaultValue() {
+        return Optional.of(Meter.Scope.DEFAULT);
+    }
+
+    @Override
+    public Optional<Boolean> scopeTagEnabled() {
+        return Optional.of(true);
+    }
+
 }

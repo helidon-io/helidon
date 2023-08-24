@@ -16,8 +16,11 @@
 
 package io.helidon.microprofile.metrics;
 
+import java.lang.System.Logger.Level;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -25,20 +28,37 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.config.Config;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
+import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * Micrometer-specific implementation of a registry factory.
- *
- * // this class is not immutable, as we may need to update registries with configuration post creation
- * // see Github issue #360
+ * Micrometer-specific implementation of a registry factory, created automatically whenever a new
+ * {@link io.helidon.metrics.api.MeterRegistry} is created by a metrics provider.
+ * <p>
+ * Note: Formerly, an instance of this class could be updated with new configuration information after it had been initialized
+ * as described in Github issue #360. This version, though, is instantiated once per new meter registry, with the intent that
+ * only
+ * one meter registry will every be created in a production server.
+ * </p>
+ * <p>The {@link #getInstance(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig)} method creates a new
+ * instance and saves it for retrieval via {@link #getInstance()}. The
+ * {@link #create(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig)} method creates a new instance
+ * but does not record it internally.
+ * </p>
  */
 class RegistryFactory {
 
@@ -47,50 +67,27 @@ class RegistryFactory {
                                                                            Histogram.class,
                                                                            Timer.class);
     private static final AtomicReference<RegistryFactory> REGISTRY_FACTORY = new AtomicReference<>();
+    private static final System.Logger LOGGER = System.getLogger(RegistryFactory.class.getName());
+    private final MeterRegistry meterRegistry;
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private final MetricsConfig metricsConfig;
 
-    /**
-     * Create a new instance.
-     *
-     * @param metricsConfig  metrics setting to use in preparing the registry factory
-     * @param appRegistry    application registry to provide from the factory
-     * @param vendorRegistry vendor registry to provide from the factory
-     */
-    private RegistryFactory(MetricsConfig metricsConfig, Registry appRegistry, Registry vendorRegistry) {
+    private RegistryFactory(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        this.meterRegistry = meterRegistry;
         this.metricsConfig = metricsConfig;
-        registries.put(Registry.APPLICATION_SCOPE, appRegistry);
-        registries.put(Registry.VENDOR_SCOPE, vendorRegistry);
+        meterRegistry
+                .onMeterAdded(this::registerMetricForExistingMeter)
+                .onMeterRemoved(this::removeMetricForMeter);
     }
 
-    private RegistryFactory(MetricsConfig metricsConfig) {
-        this(metricsConfig,
-             Registry.create(Registry.APPLICATION_SCOPE, metricsConfig),
-             Registry.create(Registry.VENDOR_SCOPE, metricsConfig));
+    static RegistryFactory create(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        return new RegistryFactory(meterRegistry, metricsConfig);
     }
 
-    /**
-     * Create a new factory with default configuration.
-     *
-     * @return a new registry factory
-     */
-    static RegistryFactory create() {
-        return RegistryFactory.create(MetricsConfig.create());
-    }
-
-    /**
-     * Create a new factory with provided configuration.
-     *
-     * @param config configuration to use
-     * @return a new registry factory
-     */
-    static RegistryFactory create(Config config) {
-        return RegistryFactory.create(MetricsConfig.create(config.get(MetricsConfig.METRICS_CONFIG_KEY)));
-    }
-
-    static RegistryFactory create(MetricsConfig metricsConfig) {
-        return new RegistryFactory(metricsConfig);
+    static RegistryFactory getInstance(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        REGISTRY_FACTORY.set(create(meterRegistry, metricsConfig));
+        return REGISTRY_FACTORY.get();
     }
 
     /**
@@ -99,8 +96,12 @@ class RegistryFactory {
      * @return registry factory singleton
      */
     static RegistryFactory getInstance() {
-        REGISTRY_FACTORY.compareAndSet(null, create());
-        return REGISTRY_FACTORY.get();
+        RegistryFactory result = REGISTRY_FACTORY.get();
+        if (result == null) {
+            throw new IllegalStateException("Attempt to retrieve current " + RegistryFactory.class.getName()
+                                                    + " before it has been initialized");
+        }
+        return result;
     }
 
     /**
@@ -140,5 +141,64 @@ class RegistryFactory {
             metricsSettingsAccess.unlock();
         }
     }
+
+    private void registerMetricForExistingMeter(Meter delegate) {
+        String scope = delegate.scope().orElse(null);
+        if (scope == null) {
+            LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + delegate);
+        }
+        Registry registry = getRegistry(scope);
+
+        MetadataBuilder builder = new MetadataBuilder()
+                .withName(delegate.id().name());
+        delegate.description().ifPresent(builder::withDescription);
+        delegate.baseUnit().ifPresent(builder::withUnit);
+        Metadata metadata = builder.build();
+
+        List<Tag> tagsList = new ArrayList<>();
+        SystemTagsManager
+                .instance()
+                .withoutScopeTag(delegate.id().tags())
+                .forEach(tag -> tagsList.add(new Tag(tag.key(), tag.value())));
+
+        Tag[] tags = tagsList.toArray(new Tag[0]);
+
+        if (delegate instanceof io.helidon.metrics.api.Counter counter) {
+            registry.counter(counter, metadata, tags);
+        } else if (delegate instanceof DistributionSummary summary) {
+            registry.histogram(summary, metadata, tags);
+        } else if (delegate instanceof FunctionalCounter fCounter) {
+            registry.gauge(fCounter, metadata, tags);
+        } else if (delegate instanceof io.helidon.metrics.api.Gauge gauge) {
+            registry.gauge(gauge, metadata, tags);
+        } else if (delegate instanceof io.helidon.metrics.api.Timer timer) {
+            registry.timer(timer, meterRegistry, metadata, tags);
+        } else {
+            LOGGER.log(Level.INFO,
+                       "Cannot convert pre-registered base meter into the BASE metric registry: unrecognized meter "
+                               + "type " + delegate.getClass()
+                               .getName());
+        }
+    }
+
+    private void removeMetricForMeter(Meter meter) {
+        String scope = meter.scope().orElse(null);
+        if (scope == null) {
+            LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + meter);
+        }
+        getRegistry(scope).remove(new MetricID(meter.id().name(),
+                                               tags(meter.id().tags())));
+    }
+
+    private Tag[] tags(Iterable<io.helidon.metrics.api.Tag> tags) {
+        List<Tag> result = new ArrayList<>();
+        SystemTagsManager
+                .instance()
+                .withoutScopeTag(tags)
+                .forEach(tag -> result.add(new Tag(tag.key(), tag.value())));
+
+        return result.toArray(new Tag[0]);
+    }
+
 }
 

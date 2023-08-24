@@ -16,7 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.metrics.api.MetricsProgrammaticConfig;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.metrics.spi.ExemplarService;
 import io.helidon.metrics.api.MetricsFactory;
 
@@ -46,4 +46,5 @@ import io.helidon.metrics.api.MetricsFactory;
     uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
     uses MetricsFactory;
     uses io.helidon.metrics.spi.MetersProvider;
+    uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 }

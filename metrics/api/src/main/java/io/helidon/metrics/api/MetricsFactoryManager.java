@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.concurrent.Callable;
@@ -25,8 +26,10 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
+import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
  * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
@@ -59,15 +62,21 @@ class MetricsFactoryManager {
                            result.getClass().getName());
                 return result;
             });
+
+    /**
+     * List of config overrides that can change the {@link io.helidon.metrics.api.MetricsConfig} that is read from config sources
+     * if there are specific requirements in a given runtime (e.g., MP) for certain settings.
+     */
+    private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
+            LazyValue.create(() ->
+                                     HelidonServiceLoader.create(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                                             .asList());
+
     private static final ReentrantLock LOCK = new ReentrantLock();
     /**
      * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getInstance} method.
      */
     private static MetricsFactory metricsFactory;
-    /**
-     * The {@link io.helidon.metrics.api.MetricsConfig} used to create {@link #metricsFactory}.
-     */
-    private static MetricsConfig metricsConfig;
     /**
      * The root {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
      */
@@ -87,6 +96,7 @@ class MetricsFactoryManager {
     static MetricsFactory getInstance(Config rootConfig) {
         return access(() -> {
             MetricsFactoryManager.rootConfig = rootConfig;
+
             return completeGetInstance(MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY)), rootConfig);
         });
     }
@@ -131,35 +141,37 @@ class MetricsFactoryManager {
     }
 
     private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config rootConfig) {
-        MetricsFactoryManager.metricsConfig = metricsConfig;
+
+        metricsConfig = applyOverrides(metricsConfig);
+
         SystemTagsManager.instance(metricsConfig);
         metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
-        applyProviders(metricsFactory.globalRegistry(), rootConfig);
+        MeterRegistry globalRegistryFromFactory = metricsFactory.globalRegistry();
+
+        notifyListenersOfCreate(globalRegistryFromFactory, metricsConfig);
+
+        applyMeterProviders(globalRegistryFromFactory, rootConfig);
         return metricsFactory;
     }
 
-    private static void applyProviders(MeterRegistry meterRegistry, Config rootConfig) {
+    private static MetricsConfig applyOverrides(MetricsConfig metricsConfig) {
+        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
+        METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
+        return metricsConfigBuilder.build();
+    }
+
+    private static void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
+                .forEach(listener -> listener.onCreate(meterRegistry, metricsConfig));
+    }
+
+    private static void applyMeterProviders(MeterRegistry meterRegistry, Config rootConfig) {
         HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
                 .stream()
                 .map(provider -> provider.meters(rootConfig))
                 .map(Iterable::spliterator)
                 .flatMap(split -> StreamSupport.stream(split, false))
-                // Use raw Meter.Builder below because getOrCreate is generic-typed and here we don't know or really care about
-                // the actual type of the builder.
                 .forEach(b -> meterRegistry.getOrCreate((Meter.Builder) b));
-    }
-
-    private static MetricsConfig ensureMetricsConfig() {
-        metricsConfig = Objects.requireNonNullElseGet(metricsConfig,
-                                                      () -> MetricsConfig
-                                                              .create(ensureRootConfig()
-                                                                              .get(MetricsConfig.METRICS_CONFIG_KEY)));
-        return metricsConfig;
-    }
-
-    private static Config ensureRootConfig() {
-        rootConfig = Objects.requireNonNullElseGet(rootConfig, GlobalConfig::config);
-        return rootConfig;
     }
 
     private static <T> T access(Callable<T> c) {

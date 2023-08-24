@@ -79,6 +79,13 @@ public interface MetricsFactory {
     MeterRegistry globalRegistry();
 
     /**
+     * Returns the {@link io.helidon.metrics.api.MetricsConfig} instance used to initialize the metrics factory.
+     *
+     * @return metrics config used to create the metrics factory
+     */
+    MetricsConfig.Builder metricsConfig();
+
+    /**
      * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config.
      *
      * @param metricsConfig metrics configuration which influences the new registry

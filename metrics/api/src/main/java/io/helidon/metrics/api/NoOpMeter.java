@@ -44,7 +44,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
     private final String scope;
 
     private NoOpMeter(NoOpMeter.Builder<?, ?> builder) {
-        this(new NoOpMeter.Id(builder.name, builder.tags.values()),
+        this(new NoOpMeter.Id(builder.name, builder.tags),
              builder.unit,
              builder.description,
              builder.type,
@@ -57,6 +57,12 @@ class NoOpMeter implements Meter, NoOpWrapper {
         this.description = Objects.requireNonNullElse(description, "");
         this.type = type;
         this.scope = scope;
+    }
+
+    static Map<String, String> tagsMap(Iterable<Tag> tags) {
+        var result = new TreeMap<String, String>();
+        tags.forEach(tag -> result.put(tag.key(), tag.value()));
+        return result;
     }
 
     @Override
@@ -93,13 +99,13 @@ class NoOpMeter implements Meter, NoOpWrapper {
         private final String name;
         private final List<Tag> tags = new ArrayList<>(); // must be ordered by tag name for consistency
 
-        private Id(String name, Iterable<Tag> tags) {
+        private Id(String name, Map<String, String> tags) {
             this.name = name;
-            tags.forEach(this.tags::add);
+            tags.forEach((k, v) -> this.tags.add(Tag.create(k, v)));
             this.tags.sort(Comparator.comparing(Tag::key));
         }
 
-        static Id create(String name, Iterable<Tag> tags) {
+        static Id create(String name, Map<String, String> tags) {
             return new Id(name, tags);
         }
 
@@ -142,7 +148,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
     abstract static class Builder<B extends Builder<B, M>, M extends Meter> {
 
         private final String name;
-        private final Map<String, Tag> tags = new TreeMap<>(); // tree map for ordering by tag name
+        private final Map<String, String> tags = new TreeMap<>(); // tree map for ordering by tag name
         private final Type type;
         private String description;
         private String unit;
@@ -156,12 +162,12 @@ class NoOpMeter implements Meter, NoOpWrapper {
         abstract M build();
 
         public B tags(Iterable<Tag> tags) {
-            tags.forEach(tag -> this.tags.put(tag.key(), tag));
+            tags.forEach(tag -> this.tags.put(tag.key(), tag.value()));
             return identity();
         }
 
-        public B tag(String key, String value) {
-            tags.put(key, Tag.create(key, value));
+        public B addTag(Tag tag) {
+            tags.put(tag.key(), tag.value());
             return identity();
         }
 
@@ -188,8 +194,8 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return name;
         }
 
-        public Iterable<Tag> tags() {
-            return tags.values();
+        public Map<String, String> tags() {
+            return new TreeMap<>(tags);
         }
 
         public Optional<String> baseUnit() {

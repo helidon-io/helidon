@@ -42,12 +42,20 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
     }
 
     static HelidonCounter create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
+        return create(scope,
+                      metadata,
+                      meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
+                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                        .description(metadata.getDescription())
+                                                        .tags(allTags(scope, tags))));
+    }
+
+    static HelidonCounter create(String scope,
+                                 Metadata metadata,
+                                 io.helidon.metrics.api.Counter delegate) {
         return new HelidonCounter(scope,
                                   metadata,
-                                  meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
-                                          .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                          .description(metadata.getDescription())
-                                          .tags(allTags(scope, tags))));
+                                  delegate);
     }
 
     @Override

@@ -218,6 +218,12 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         }
 
         @Override
+        protected Builder delegateTag(String key, String value) {
+            delegate().tag(key, value);
+            return identity();
+        }
+
+        @Override
         protected Builder delegateDescription(String description) {
             delegate().description(description);
             return identity();

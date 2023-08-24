@@ -156,6 +156,13 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         }
 
         @Override
+        protected Builder delegateTag(String key, String value) {
+            delegate().tag(key, value);
+            return identity();
+        }
+
+
+        @Override
         protected Builder delegateDescription(String description) {
             delegate().description(description);
             return identity();

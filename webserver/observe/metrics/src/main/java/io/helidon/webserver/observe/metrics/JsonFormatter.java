@@ -132,7 +132,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
         meterRegistry.meters(scopeSelection).forEach(meter -> {
             String name = meter.id().name();
-            if (meterRegistry.isMeterEnabled(name, meter.id().tags(), meter.scope())
+            if (meterRegistry.isMeterEnabled(name, meter.id().tagsMap(), meter.scope())
                     && matchesName(name)) {
 
                 Map<String, MetricOutputBuilder> meterOutputBuilderMapToUpdate =
@@ -177,7 +177,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
         meterRegistry.meters(scopeSelection).forEach(meter -> {
                 String name = meter.id().name();
-                if (meterRegistry.isMeterEnabled(name, meter.id().tags(), meter.scope())
+                if (meterRegistry.isMeterEnabled(name, meter.id().tagsMap(), meter.scope())
                         && matchesName(name)) {
 
                     Map<String, JsonObjectBuilder> metadataOutputBuilderWithinParent =

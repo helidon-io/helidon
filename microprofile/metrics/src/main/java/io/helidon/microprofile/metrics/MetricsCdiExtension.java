@@ -200,7 +200,15 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     private static MetricsFeature createMetricsService(Config helidonConfig) {
+
+        // Initialize the metrics factory instance and, along with it, the system tags manager.
+        MetricsFactory metricsFactory = MetricsFactory.getInstance(helidonConfig);
+
+        Contexts.globalContext().register(metricsFactory);
+
         MetricsFeature.Builder builder = MetricsFeature.builder()
+                .meterRegistry(metricsFactory.globalRegistry())
+                .metricsConfig(metricsFactory.metricsConfig())
                 .webContext("/metrics")
                 .config(helidonConfig);
 
@@ -502,15 +510,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         return result;
     }
 
-//    private Set<Class<? extends Annotation>> metricsAnnotationClasses(Annotated annotated) {
-//        return annotated
-//                .getAnnotations()
-//                .stream()
-//                .map(Annotation::annotationType)
-//                .filter(METRIC_ANNOTATIONS::containsKey)
-//                .collect(Collectors.toSet());
-//    }
-
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.
      *
@@ -721,9 +720,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
         }
 
-        // Initialize the metrics factory (which sets up the global MeterRegistry and the SystemTagsManager) early.
         Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsConfig.METRICS_CONFIG_KEY);
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
 
         HttpRules defaultRouting = super.registerService(adv, bm, server);
         MetricsFeature metricsSupport = serviceSupport();
@@ -748,9 +745,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                         vendorMetricsAdded.add(routeName);
                     }
                 });
-
-        // metrics factory is available in global
-        Contexts.globalContext().register(metricsFactory);
 
         return defaultRouting;
     }

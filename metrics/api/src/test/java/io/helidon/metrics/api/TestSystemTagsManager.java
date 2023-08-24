@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 import org.junit.jupiter.api.Test;
 

@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.microprofile.metrics;
 
-import java.util.Optional;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 
 /**
- * Implementation to provide default (no-op) programmatic metrics settings.
+ * Manages the creation of registry factories.
  */
-class BasicMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
+public class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
 
     @Override
-    public Optional<String> scopeTagName() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<String> appTagName() {
-        return Optional.empty();
+    public void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        RegistryFactory.getInstance(meterRegistry, metricsConfig);
     }
 }

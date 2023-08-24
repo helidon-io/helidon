@@ -17,7 +17,9 @@ package io.helidon.metrics.api;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -56,6 +58,13 @@ public interface MeterRegistry extends Wrapper {
     Iterable<String> scopes();
 
     /**
+     * Clears all registered meters from the meter registry.
+     */
+    default void clear() {
+        meters().forEach(this::remove);
+    }
+
+    /**
      * Returns whether the specified meter is enabled or not, based on whether the meter registry as a whole is enabled and also
      * whether the config settings for filtering include and exclude indicate the specific meter is enabled.
      *
@@ -64,7 +73,7 @@ public interface MeterRegistry extends Wrapper {
      * @param scope scope, if present, of the meter to check
      * @return true if the meter (and its meter registry) are enabled; false otherwise
      */
-    boolean isMeterEnabled(String name, Iterable<Tag> tags, Optional<String> scope);
+    boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope);
 
     /**
      * Returns the default {@link io.helidon.metrics.api.Clock} in use by the registry.
@@ -194,4 +203,20 @@ public interface MeterRegistry extends Wrapper {
      * @return true if the meter has been deleted; false if it is still active
      */
     boolean isDeleted(Meter meter);
+
+    /**
+     * Enroll a listener to be notified when a {@link io.helidon.metrics.api.Meter} is added.
+     *
+     * @param listener listener to invoke upon each meter registration
+     * @return the meter registry
+     */
+    MeterRegistry onMeterAdded(Consumer<Meter> listener);
+
+    /**
+     * Enroll a listener to be notified when a {@link io.helidon.metrics.api.Meter} is removed.
+     *
+     * @param listener listener to invoke upon each meter removal
+     * @return the meter registry
+     */
+    MeterRegistry onMeterRemoved(Consumer<Meter> listener);
 }

@@ -17,15 +17,23 @@ package io.helidon.metrics.api;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
  * Captures and makes available for output any system tag settings to be applied when metric IDs are output.
@@ -40,6 +48,11 @@ import java.util.function.Predicate;
  */
 class SystemTagsManagerImpl implements SystemTagsManager {
 
+    private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
+            LazyValue.create(() ->
+                                     HelidonServiceLoader.create(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                                             .asList());
+
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
     private final List<Tag> systemTags;
@@ -52,8 +65,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         // Add a tag for the app name if there is an appName setting in config AND we have a setting
         // from somewhere for the tag name to use for recording the app name.
 
-        MetricsProgrammaticConfig.instance()
-                .appTagName()
+        metricsConfig.appTagName()
                 .filter(Predicate.not(String::isBlank))
                 .ifPresent(tagNameToUse ->
                                    metricsConfig.appName()
@@ -62,12 +74,9 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
         systemTags = List.copyOf(result);
 
-        // Set the scope tag, if appropriate. Prefer a setting from the programmatic config, then look at the
-        // user-settable config.
+        // Set the scope tag, if appropriate.
         if (metricsConfig.scoping().tagEnabled()) {
-            MetricsProgrammaticConfig.instance()
-                    .scopeTagName()
-                    .or(metricsConfig.scoping()::tagName)
+            metricsConfig.scoping().tagName()
                     .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
         }
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
@@ -76,7 +85,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     // for testing
     private SystemTagsManagerImpl() {
         systemTags = List.of();
-        scopeTagName = "_testScope_";
+        scopeTagName = "_unset_";
     }
 
     /**
@@ -102,6 +111,34 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return new SystemTagsManagerImpl(metricsConfig);
     }
 
+    @Override
+    public Optional<Tag> scopeTag(Optional<String> candidateScope) {
+        return scopeTagName == null
+                ? Optional.empty()
+                : effectiveScope(candidateScope)
+                        .map(sc -> Tag.create(scopeTagName,
+                                              sc));
+    }
+
+    @Override
+    public Iterable<Tag> withoutScopeTag(Iterable<Tag> tags) {
+        if (scopeTagName == null) {
+            return tags;
+        }
+        List<Tag> result = new ArrayList<>();
+        tags.forEach(tag -> {
+            if (!scopeTagName.equals(tag.key())) {
+                result.add(tag);
+            }
+        });
+        return result;
+    }
+
+    @Override
+    public Iterable<Tag> displayTags() {
+        return List.copyOf(systemTags);
+    }
+
     /**
      * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
      * is active: the scope tag name is non-null and non-blank.
@@ -120,6 +157,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> allTags(Meter.Id meterId, String scope) {
+        checkForReservedTagNames(meterId.tagsMap().keySet());
         return new MultiIterable<>(meterId.tags(),
                                    systemTags,
                                    scopeIterable(scope, Tag::create));
@@ -127,19 +165,23 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Override
     public Iterable<Tag> allTags(Meter.Id meterId) {
+        checkForReservedTagNames(meterId.tagsMap().keySet());
         return new MultiIterable<>(meterId.tags(),
                                    systemTags);
     }
 
     @Override
     public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
+        var tagNames = new ArrayList<String>();
+        explicitTags.forEach(entry -> tagNames.add(entry.getKey()));
+        checkForReservedTagNames(tagNames);
         return new MultiIterable<>(explicitTags, scopeIterable(scope, AbstractMap.SimpleEntry::new));
     }
 
     @Override
-    public void assignScope(String validScope, BiConsumer<String, String> tagSetter) {
+    public void assignScope(String validScope, BiFunction<String, String, ?> tagSetter) {
         if (scopeTagName != null) {
-            tagSetter.accept(scopeTagName, validScope);
+            tagSetter.apply(scopeTagName, validScope);
         }
     }
 
@@ -153,6 +195,14 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     @Override
     public Optional<String> scopeTagName() {
         return Optional.ofNullable(scopeTagName);
+    }
+
+    private static void checkForReservedTagNames(Collection<String> tagNames) {
+        Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
+        reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
+        if (!reservedTagNamesUsed.isEmpty()) {
+            throw new IllegalArgumentException("Program-specified tag names include reserved names: " + reservedTagNamesUsed);
+        }
     }
 
     private <T> Iterable<T> scopeIterable(String scope, BiFunction<String, String, T> factory) {

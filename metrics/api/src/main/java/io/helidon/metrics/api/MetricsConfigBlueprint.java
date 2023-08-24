@@ -146,12 +146,20 @@ interface MetricsConfigBlueprint {
     List<Tag> globalTags();
 
     /**
-     * Application tag value added to each meter ID.
+     * Value for the application tag to be added to each meter ID.
      *
      * @return application tag value
      */
     @ConfiguredOption
     Optional<String> appName();
+
+    /**
+     * Name for the application tag to be added to each meter ID.
+     *
+     * @return application tag name
+     */
+    @ConfiguredOption
+    Optional<String> appTagName();
 
     /**
      * Settings related to scoping management.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.metrics.spi;
 
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -23,6 +23,8 @@ import java.util.stream.Stream;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.ScopingConfig;
 
 /**
  * Programmatic (rather than user-configurable) settings that govern certain metrics behavior.
@@ -44,18 +46,40 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
-     * Returns the name to use for a tag, added to each meter's identity, conveying its scope in output.
+     * Whether to add a tag with the scope value to each meter's ID.
+     *
+     * @return whether to add the scope tag
+     */
+    default Optional<Boolean> scopeTagEnabled() {
+        return Optional.empty();
+    }
+
+    /**
+     * Default tag value to use for the scope tag if none is specified when the meter ID is created.
+     *
+     * @return default scope tag value
+     */
+    default Optional<String> scopeDefaultValue() {
+        return Optional.empty();
+    }
+
+    /**
+     * Name to use for a tag, added to each meter's identity, conveying its scope in output.
      *
      * @return the scope tag name
      */
-    Optional<String> scopeTagName();
+    default Optional<String> scopeTagName() {
+        return Optional.empty();
+    }
 
     /**
-     * Returns the name to use for a tag, added to each meter's identity, conveying the application it belongs to.
+     * Name to use for a tag, added to each meter's identity, conveying the application it belongs to.
      *
      * @return the app tag name
      */
-    Optional<String> appTagName();
+    default Optional<String> appTagName() {
+        return Optional.empty();
+    }
 
     /**
      * Returns the reserved tag names (for scope and app).
@@ -70,6 +94,41 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
+     * Augments an existing {@link io.helidon.metrics.api.MetricsConfig.Builder}, presumably from actual config,
+     * with overrides provided by this programmatic config instance.
+     *
+     * @param builder original metrics configuration builder
+     * @return metrics config with any overrides applied
+     */
+    default MetricsConfig.Builder apply(MetricsConfig.Builder builder) {
+
+        ScopingConfig.Builder scopingBuilder = builder
+                .scoping()
+                .map(ScopingConfig::builder)
+                .orElseGet(ScopingConfig::builder);
+
+        scopeTagEnabled().ifPresent(scopingBuilder::tagEnabled);
+        scopeDefaultValue().ifPresent(scopingBuilder::defaultValue);
+        scopeTagName().ifPresent(scopingBuilder::tagName);
+
+        appTagName().ifPresent(builder::appTagName);
+
+        return builder
+                .scoping(scopingBuilder);
+    }
+
+    /**
+     * Creates a new {@link io.helidon.metrics.api.MetricsConfig} instance by applying overrides from this programmatic
+     * config instance.
+     *
+     * @param metricsConfig original metrics configuration
+     * @return new metrics configuration with overrides applied
+     */
+    default MetricsConfig apply(MetricsConfig metricsConfig) {
+        return apply(MetricsConfig.builder(metricsConfig)).build();
+    }
+
+    /**
      * Internal use class to hold a reference to the singleton.
      */
     class Instance {
@@ -79,7 +138,7 @@ public interface MetricsProgrammaticConfig {
                                          HelidonServiceLoader.builder(
                                                          ServiceLoader.load(
                                                                  MetricsProgrammaticConfig.class))
-                                                 .addService(new BasicMetricsProgrammaticConfig(),
+                                                 .addService(new MetricsProgrammaticConfig() {},
                                                              Double.MIN_VALUE)
                                                  .build()
                                                  .asList()

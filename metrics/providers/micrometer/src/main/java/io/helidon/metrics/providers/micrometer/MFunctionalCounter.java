@@ -81,6 +81,12 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         }
 
         @Override
+        protected Builder<T> delegateTag(String key, String value) {
+            delegate().tag(key, value);
+            return identity();
+        }
+
+        @Override
         protected Builder<T> delegateDescription(String description) {
             delegate().description(description);
             return identity();

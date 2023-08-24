@@ -15,22 +15,25 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.api.Tag;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -74,17 +77,23 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
     private final MeterRegistry delegate;
+
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new ArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new ArrayList<>();
+
     /**
      * Helidon API clock to be returned by the {@link #clock} method.
      */
     private final Clock clock;
     private final MetricsConfig metricsConfig;
+
+    private final ScopingConfig scopingConfig;
     /**
      * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
      * for example, to return to the developer's code the proper Helidon wrapper meter during searches that return the same
      * Micrometer meters, rather than creating new Helidon wrapper meters each time.
      */
-    private final ConcurrentHashMap<Meter, MMeter<?>> meters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Meter, MMeter> meters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Set<io.helidon.metrics.api.Meter>> scopeMembership = new ConcurrentHashMap<>();
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -94,6 +103,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.delegate = delegate;
         this.clock = clock;
         this.metricsConfig = metricsConfig;
+        scopingConfig = this.metricsConfig.scoping();
         delegate.config()
                 .onMeterAdded(this::recordAdd)
                 .onMeterRemoved(this::recordRemove);
@@ -182,7 +192,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     // TODO enhance after adding back the filtering config
     @Override
-    public boolean isMeterEnabled(String name, Iterable<Tag> tags, Optional<String> scope) {
+    public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
         return metricsConfig.enabled();
     }
 
@@ -213,19 +223,19 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 return (HM) MetricsFactory.getInstance().noOpMeter(builder);
             }
             if (builder instanceof MCounter.Builder cBuilder) {
-                helidonMeter = registerAndPostProcess(cBuilder, cBuilder.delegate()::tag, cBuilder.delegate()::register);
+                helidonMeter = registerAndPostProcess(cBuilder, cBuilder::addTag, cBuilder.delegate()::register);
             }
             if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
-                helidonMeter = registerAndPostProcess(fcBuilder, fcBuilder.delegate()::tag, fcBuilder.delegate()::register);
+                helidonMeter = registerAndPostProcess(fcBuilder, fcBuilder::addTag, fcBuilder.delegate()::register);
             }
             if (builder instanceof MDistributionSummary.Builder sBuilder) {
-                helidonMeter = registerAndPostProcess(sBuilder, sBuilder.delegate()::tag, sBuilder.delegate()::register);
+                helidonMeter = registerAndPostProcess(sBuilder, sBuilder::addTag, sBuilder.delegate()::register);
             }
             if (builder instanceof MGauge.Builder<?> gBuilder) {
-                helidonMeter = registerAndPostProcess(gBuilder, gBuilder.delegate()::tag, gBuilder.delegate()::register);
+                helidonMeter = registerAndPostProcess(gBuilder, gBuilder::addTag, gBuilder.delegate()::register);
             }
             if (builder instanceof MTimer.Builder tBuilder) {
-                helidonMeter = registerAndPostProcess(tBuilder, tBuilder.delegate()::tag, tBuilder.delegate()::register);
+                helidonMeter = registerAndPostProcess(tBuilder, tBuilder::addTag, tBuilder.delegate()::register);
             }
 
             if (helidonMeter != null) {
@@ -325,6 +335,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return meters();
     }
 
+    @Override
+    public io.helidon.metrics.api.MeterRegistry onMeterAdded(Consumer<io.helidon.metrics.api.Meter> listener) {
+        onAddListeners.add(listener);
+        return this;
+    }
+
+    @Override
+    public io.helidon.metrics.api.MeterRegistry onMeterRemoved(Consumer<io.helidon.metrics.api.Meter> listener) {
+        onRemoveListeners.add(listener);
+        return this;
+    }
+
     private static MMeterRegistry create(MeterRegistry delegate,
                                          Clock neutralClock,
                                          MetricsConfig metricsConfig) {
@@ -346,7 +368,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private <M extends Meter, HB extends MMeter.Builder<?, M, HB, HM>, HM extends MMeter<M>> HM registerAndPostProcess(
             HB mBuilder,
-            BiConsumer<String, String> builderTagSetter,
+            BiFunction<String, String, ?> builderTagSetter,
             Function<MeterRegistry, M> registration) {
 
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
@@ -369,6 +391,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             // If scope tagging is NOT on then the callback cannot do those updates so we need to do them here.
             HM helidonMeter = (HM) meters.get(meter);
             updateScope(meter, helidonMeter, effectiveScope);
+            onAddListeners.forEach(listener -> listener.accept(helidonMeter));
             return helidonMeter;
         } finally {
             lock.unlock();
@@ -401,6 +424,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             if (nativeMeter != null) {
                 MMeter<?> result = meters.get(nativeMeter);
                 delegate.remove(nativeMeter);
+                onRemoveListeners.forEach(listener -> listener.accept(result));
                 return Optional.of(result);
             }
             return Optional.empty();
@@ -458,12 +482,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         Optional<String> scopeToSet = reliableScope
                 .or(() ->
-                            metricsConfig.scoping()
+                            scopingConfig
                                     .tagName()
                                     .map(scopeTagName -> meter.getId().getTag(scopeTagName))
                                     .filter(scopeTagValue -> !scopeTagValue.isBlank()))
-                .or(() ->
-                            metricsConfig.scoping().defaultValue());
+                .or(scopingConfig::defaultValue);
 
         if (reliableScope.isPresent()) {
             // The callback might have already added the meter to the wrong scope membership: it would have used the tagging
@@ -481,8 +504,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                     });
 
             scopeToSet.ifPresent(helidonMeter::scope);
-            scopeToSet.ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
-                    .add(helidonMeter));
+            scopeToSet.or(() -> null)
+                    .ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
+                            .add(helidonMeter));
         }
     }
 

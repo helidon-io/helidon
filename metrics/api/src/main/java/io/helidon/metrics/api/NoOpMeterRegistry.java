@@ -17,8 +17,10 @@ package io.helidon.metrics.api;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -62,7 +64,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public Optional<Meter> remove(String name, Iterable<Tag> tags) {
-        return remove(NoOpMeter.Id.create(name, tags));
+        return Optional.empty();
     }
 
     @Override
@@ -86,7 +88,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
-    public boolean isMeterEnabled(String name, Iterable<Tag> tags, Optional<String> scope) {
+    public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
         return true;
     }
 
@@ -103,6 +105,16 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
                               builder);
     }
 
+    @Override
+    public MeterRegistry onMeterAdded(Consumer<Meter> listener) {
+        return this;
+    }
+
+    @Override
+    public MeterRegistry onMeterRemoved(Consumer<Meter> listener) {
+        return this;
+    }
+
     private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
         return Optional.empty();
     }
@@ -110,7 +122,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {
         NoOpMeter.Builder<?, ?> noOpBuilder = (NoOpMeter.Builder<?, ?>) builder;
         // The following cast will always succeed if we create the meter by invoking the builder,
-        // it will success if we retrieved a previously-registered meter of a compatible type,
+        // it will succeed if we retrieved a previously-registered meter of a compatible type,
         // and it will (correctly) fail if we found a previously-registered meter of an incompatible
         // type compared to what the caller requested.
         return (M) noOpBuilder.build();

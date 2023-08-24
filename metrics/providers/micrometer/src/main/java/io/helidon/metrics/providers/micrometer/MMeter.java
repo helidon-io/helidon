@@ -15,10 +15,11 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.StringJoiner;
+import java.util.TreeMap;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
@@ -134,7 +135,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         private final String name;
         private final B delegate;
 
-        private Iterable<io.helidon.metrics.api.Tag> tags = Set.of();
+        private final Map<String, String> tags = new TreeMap<>();
 
         private String scope;
         private String description;
@@ -146,8 +147,14 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         public HB tags(Iterable<io.helidon.metrics.api.Tag> tags) {
-            this.tags = tags;
+            this.tags.clear();
+            tags.forEach(tag -> this.tags.put(tag.key(), tag.value()));
             return delegateTags(MTag.tags(tags));
+        }
+
+        public HB addTag(String key, String value) {
+            tags.put(key, value);
+            return delegateTag(key, value);
         }
 
         public HB description(String description) {
@@ -173,8 +180,8 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return name;
         }
 
-        public Iterable<io.helidon.metrics.api.Tag> tags() {
-            return tags;
+        public Map<String, String> tagsMap() {
+            return new TreeMap<>(tags);
         }
 
         public Optional<String> scope() {
@@ -194,6 +201,8 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         protected abstract HB delegateTags(Iterable<Tag> tags);
+
+        protected abstract HB delegateTag(String key, String value);
 
         protected abstract HB delegateDescription(String description);
 
@@ -222,7 +231,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
         @Override
         public String toString() {
-            return String.format("ID[name=%s,tags=[%s]]", delegate.getName(), delegate.getTags());
+            return String.format("ID[name=%s,tagsMap=[%s]]", delegate.getName(), delegate.getTags());
         }
 
         @Override

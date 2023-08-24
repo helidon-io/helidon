@@ -42,8 +42,10 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 class MicrometerMetricsFactory implements MetricsFactory {
 
     private final LazyValue<MeterRegistry> globalMeterRegistry;
+    private final MetricsConfig.Builder metricsConfigBuilder;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
+        this.metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
         globalMeterRegistry = LazyValue.create(() -> {
             ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
             return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig);
@@ -67,6 +69,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry.get();
+    }
+
+    @Override
+    public MetricsConfig.Builder metricsConfig() {
+        return metricsConfigBuilder;
     }
 
     @Override

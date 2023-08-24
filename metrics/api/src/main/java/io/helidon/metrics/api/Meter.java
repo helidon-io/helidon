@@ -124,6 +124,14 @@ public interface Meter extends Wrapper {
         B tags(Iterable<Tag> tags);
 
         /**
+         * Adds a single tag to the builder's collection.
+         *
+         * @param tag the tag to add
+         * @return updated builder
+         */
+        B addTag(Tag tag);
+
+        /**
          * Sets the description.
          *
          * @param description meter description
@@ -159,7 +167,7 @@ public interface Meter extends Wrapper {
          *
          * @return tags
          */
-        Iterable<Tag> tags();
+        Map<String, String> tags();
 
         /**
          * Returns the description the builder will use.

@@ -34,7 +34,7 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Implementation of {@link Timer}.
  */
-final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
+final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implements Timer, SnapshotMetric {
 
     private final io.helidon.metrics.api.Timer delegate;
     private final MeterRegistry meterRegistry;
@@ -53,12 +53,22 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
     }
 
     static HelidonTimer create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
+        return create(meterRegistry,
+                      scope,
+                      metadata,
+                      meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
+                                                        .description(metadata.getDescription())
+                                                        .tags(allTags(scope, tags))));
+    }
+
+    static HelidonTimer create(MeterRegistry meterRegistry,
+                               String scope,
+                               Metadata metadata,
+                               io.helidon.metrics.api.Timer delegate) {
         return new HelidonTimer(meterRegistry,
                                 scope,
                                 metadata,
-                                meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
-                                        .description(metadata.getDescription())
-                                        .tags(allTags(scope, tags))));
+                                delegate);
     }
 
     @Override
@@ -106,25 +116,6 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         return delegate;
     }
 
-    private final class ContextImpl implements Context {
-        private final io.helidon.metrics.api.Timer.Sample delegate;
-
-        private ContextImpl(io.helidon.metrics.api.Timer.Sample delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public long stop() {
-            return delegate.stop(HelidonTimer.this.delegate);
-        }
-
-        @Override
-        public void close() {
-            stop();
-        }
-    }
-
-
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -148,5 +139,23 @@ final class HelidonTimer extends MetricImpl implements Timer, SnapshotMetric {
         sb.append(", count='").append(getCount()).append('\'');
         sb.append(", elapsedTime='").append(getElapsedTime()).append('\'');
         return sb.toString();
+    }
+
+    private final class ContextImpl implements Context {
+        private final io.helidon.metrics.api.Timer.Sample delegate;
+
+        private ContextImpl(io.helidon.metrics.api.Timer.Sample delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public long stop() {
+            return delegate.stop(HelidonTimer.this.delegate);
+        }
+
+        @Override
+        public void close() {
+            stop();
+        }
     }
 }

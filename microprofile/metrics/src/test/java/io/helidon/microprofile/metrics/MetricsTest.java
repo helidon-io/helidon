@@ -31,6 +31,7 @@ import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
@@ -145,8 +146,6 @@ public class MetricsTest extends MetricsBaseTest {
                 .scopeTagName("mp_scope")
                 .build();
         Optional<Object> outputOpt = formatter.format();
-//        String promData =
-//                prometheusData(new MetricID(GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME), (HelidonMetric<?>) gauge, true).trim();
 
         assertThat("Output", outputOpt, OptionalMatcher.optionalPresent());
         assertThat("Output", outputOpt.get(), is(instanceOf(String.class)));

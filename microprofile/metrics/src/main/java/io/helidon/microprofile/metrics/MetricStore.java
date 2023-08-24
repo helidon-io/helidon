@@ -39,8 +39,9 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.MetricsProgrammaticConfig;
+import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -58,9 +59,9 @@ import org.eclipse.microprofile.metrics.Timer;
 /**
  * Abstracts the multiple data stores used for holding metrics information and the various ways of accessing and updating them.
  * <p>
- *     Between the required MicroProfile {@link MetricRegistry} API and useful or efficient ways to deal with metadata,
- *     metrics, and metric IDs, there is a bewildering set of method signatures that can update or query the data structures
- *     holding all this information. That, plus the type generality, makes for quite the class here.
+ * Between the required MicroProfile {@link MetricRegistry} API and useful or efficient ways to deal with metadata,
+ * metrics, and metric IDs, there is a bewildering set of method signatures that can update or query the data structures
+ * holding all this information. That, plus the type generality, makes for quite the class here.
  * </p>
  */
 class MetricStore {
@@ -72,11 +73,20 @@ class MetricStore {
     private final Map<String, Metadata> allMetadata = new ConcurrentHashMap<>(); // metric name -> metadata
     private final Map<String, Set<String>> tagNameSets = new HashMap<>(); // metric name -> tag names
     private final Map<String, Class<? extends Metric>> metricTypes = new HashMap<>(); // metric name -> base type of the metric
-
-    private volatile MetricsConfig metricsConfig;
     private final MetricFactory metricFactory;
     private final String scope;
     private final BiConsumer<MetricID, HelidonMetric<?>> doRemove;
+    private volatile MetricsConfig metricsConfig;
+
+    private MetricStore(MetricsConfig metricsConfig,
+                        MetricFactory metricFactory,
+                        String scope,
+                        BiConsumer<MetricID, HelidonMetric<?>> doRemove) {
+        this.metricsConfig = metricsConfig;
+        this.metricFactory = metricFactory;
+        this.scope = scope;
+        this.doRemove = doRemove;
+    }
 
     static MetricStore create(MetricsConfig metricsConfig,
                               MetricFactory metricFactory,
@@ -89,14 +99,10 @@ class MetricStore {
 
     }
 
-    private MetricStore(MetricsConfig metricsConfig,
-                        MetricFactory metricFactory,
-                        String scope,
-                        BiConsumer<MetricID, HelidonMetric<?>> doRemove) {
-        this.metricsConfig = metricsConfig;
-        this.metricFactory = metricFactory;
-        this.scope = scope;
-        this.doRemove = doRemove;
+    static Tag[] tags(Iterable<Map.Entry<String, String>> entries) {
+        List<Tag> result = new ArrayList<>();
+        entries.forEach(entry -> result.add(new Tag(entry.getKey(), entry.getValue())));
+        return result.toArray(new Tag[0]);
     }
 
     void update(MetricsConfig metricsConfig) {
@@ -120,7 +126,17 @@ class MetricStore {
                                    tags);
     }
 
-    <U extends Metric> U getOrRegisterMetric(Metadata newMetadata, Class<U> clazz, Tag... tags) {
+    <U extends Metric, M extends Meter> U getOrRegisterMetric(Metadata newMetadata, Class<U> clazz, Tag... tags) {
+        return getOrRegisterMetric(() -> createEnabledAwareMetric(clazz, newMetadata, tags),
+                                   newMetadata,
+                                   clazz,
+                                   tags);
+    }
+
+    <U extends Metric> U getOrRegisterMetric(Supplier<HelidonMetric<?>> metricFactory,
+                                             Metadata newMetadata,
+                                             Class<U> clazz,
+                                             Tag... tags) {
         Class<? extends Metric> newBaseType = baseMetricClass(clazz);
         return writeAccess(() -> {
             enforceConsistentType(newMetadata.getName(), clazz);
@@ -132,7 +148,7 @@ class MetricStore {
             if (metric == null) {
                 getConsistentMetadataLocked(newMetadata);
                 metric = registerMetricLocked(newMetricID,
-                                              createEnabledAwareMetric(clazz, newMetadata, tags));
+                                              metricFactory.get());
                 return clazz.cast(metric);
             }
             ensureConsistentMetricTypes(metric, newBaseType, () -> newMetricID);
@@ -205,122 +221,6 @@ class MetricStore {
                                   (Metadata metadata) -> metricFactory.gauge(scope,
                                                                              metadata,
                                                                              valueSupplier));
-    }
-
-    /**
-     * If tag names are already associated with the metric name, throws an exception if the existing and proposed tag name sets
-     * are inconsistent; if there are no tag names stored for this name, store the proposed ones.
-     *
-     * @param metricName metrics name
-     * @param tagNames tag names to validate
-     * @return the {@link Set} of tag names
-     * @throws java.lang.IllegalArgumentException if tag names have been registered for this name which are inconsistent with
-     * the proposed tag names
-     */
-    private Set<String> checkOrStoreTagNames(String metricName, Set<String> tagNames) {
-
-        Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
-        reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
-        if (!reservedTagNamesUsed.isEmpty()) {
-            throw new IllegalArgumentException("Program-specified tag names include reserved names: " + reservedTagNamesUsed);
-        }
-        Set<String> currentTagNames = tagNameSets.get(metricName);
-        if (currentTagNames == null) {
-            return tagNameSets.put(metricName, tagNames);
-        }
-        enforceConsistentTagNames(metricName, currentTagNames, tagNames);
-        return tagNames;
-    }
-
-    private static void enforceConsistentTagNames(String metricName, Set<String> existingTagNames, Set<String> newTagNames) {
-        if (!existingTagNames.equals(newTagNames)) {
-            throw new IllegalArgumentException(String.format(
-                    "New tag names %s for metric %s conflict with existing tag names %s",
-                    newTagNames,
-                    metricName,
-                    existingTagNames));
-        }
-    }
-
-    /**
-     * If metadata is already associated with the metadata name, throws an exception if the existing and proposed metadata are
-     * inconsistent; if there is no existing metadata stored for this name, stores it.
-     *
-     * @param candidateMetadata proposed metadata
-     * @return the metadata
-     * @throws java.lang.IllegalArgumentException if metadata has been registered for this name which is inconsistent with
-     * the proposed metadata
-     */
-    private Metadata checkOrStoreMetadata(Metadata candidateMetadata) {
-        Metadata currentMetadata = allMetadata.get(candidateMetadata.getName());
-        if (currentMetadata == null) {
-            return allMetadata.put(candidateMetadata.getName(), candidateMetadata);
-        }
-        enforceConsistentMetadata(currentMetadata, candidateMetadata);
-        return candidateMetadata;
-    }
-
-    private static void enforceConsistentMetadata(Metadata existingMetadata, Metadata newMetadata) {
-        if (!metadataMatches(existingMetadata, newMetadata)) {
-            throw new IllegalArgumentException("New metadata conflicts with existing metadata with the same name; existing: "
-                                                       + existingMetadata + ", new: "
-                                                       + newMetadata);
-        }
-    }
-
-    private static <T extends Metadata, U extends Metadata> boolean metadataMatches(T a, U b) {
-        if (a == b) {
-            return true;
-        }
-        if (a == null || b == null) {
-            return false;
-        }
-        // Try to merge description and units.
-        return a.getName().equals(b.getName())
-                && Objects.equals(a.getDescription(), b.getDescription())
-                && Objects.equals(a.getUnit(), b.getUnit());
-    }
-
-    private void enforceConsistentType(String metricName, Class<? extends Metric> newType) {
-        Class<? extends Metric> metricType = metricTypes.get(metricName);
-        if (metricType != null) {
-            if (!metricType.isAssignableFrom(newType)) {
-                throw new IllegalArgumentException(String.format(
-                        "Attempt to register metric %s of type %s but the name is already associated with a metric of type %s",
-                        metricName,
-                        newType.getName(),
-                        metricType.getName()));
-            }
-        }
-    }
-
-    private static Class<? extends Metric> baseMetricClass(Class<?> clazz) {
-
-        for (Class<? extends Metric> baseClass : RegistryFactory.METRIC_TYPES) {
-            if (baseClass.isAssignableFrom(clazz)) {
-                return baseClass;
-            }
-        }
-        throw new IllegalArgumentException("Unable to map metric type "
-                                                   + clazz.getName()
-                                                   + " to one of "
-                                                   + RegistryFactory.METRIC_TYPES);
-    }
-
-    private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<HelidonMetric<?>> metricFinder,
-                                                           Supplier<Metadata> metadataFinder,
-                                                           Supplier<MetricID> metricIDSupplier,
-                                                           Function<Metadata, Gauge<R>> gaugeFactory) {
-        return writeAccess(() -> {
-            Metadata metadata = metadataFinder.get();
-            enforceConsistentType(metadata.getName(), Gauge.class);
-            HelidonMetric<?> metric = metricFinder.get();
-            if (metric == null) {
-                metric = registerMetricLocked(metricIDSupplier.get(),
-                                              createEnabledAwareGauge(metadata, gaugeFactory));
-            }
-            return (Gauge<R>) metric;
-        });
     }
 
     boolean remove(MetricID metricID) {
@@ -484,10 +384,123 @@ class MetricStore {
                             tags(SystemTagsManager.instance().allTags(metricId.getTags().entrySet(), scope)));
     }
 
-    static Tag[] tags(Iterable<Map.Entry<String, String>> entries) {
-        List<Tag> result = new ArrayList<>();
-        entries.forEach(entry -> result.add(new Tag(entry.getKey(), entry.getValue())));
-        return result.toArray(new Tag[0]);
+    private static void enforceConsistentTagNames(String metricName, Set<String> existingTagNames, Set<String> newTagNames) {
+        if (!existingTagNames.equals(newTagNames)) {
+            throw new IllegalArgumentException(String.format(
+                    "New tag names %s for metric %s conflict with existing tag names %s",
+                    newTagNames,
+                    metricName,
+                    existingTagNames));
+        }
+    }
+
+    private static void enforceConsistentMetadata(Metadata existingMetadata, Metadata newMetadata) {
+        if (!metadataMatches(existingMetadata, newMetadata)) {
+            throw new IllegalArgumentException("New metadata conflicts with existing metadata with the same name; existing: "
+                                                       + existingMetadata + ", new: "
+                                                       + newMetadata);
+        }
+    }
+
+    private static <T extends Metadata, U extends Metadata> boolean metadataMatches(T a, U b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null || b == null) {
+            return false;
+        }
+        // Try to merge description and units.
+        return a.getName().equals(b.getName())
+                && Objects.equals(a.getDescription(), b.getDescription())
+                && Objects.equals(a.getUnit(), b.getUnit());
+    }
+
+    private static Class<? extends Metric> baseMetricClass(Class<?> clazz) {
+
+        for (Class<? extends Metric> baseClass : RegistryFactory.METRIC_TYPES) {
+            if (baseClass.isAssignableFrom(clazz)) {
+                return baseClass;
+            }
+        }
+        throw new IllegalArgumentException("Unable to map metric type "
+                                                   + clazz.getName()
+                                                   + " to one of "
+                                                   + RegistryFactory.METRIC_TYPES);
+    }
+
+    private static boolean tagsMatch(Tag[] tags, Map<String, String> tagMap) {
+        Map<String, String> newTags = new TreeMap<>();
+        for (Tag tag : tags) {
+            newTags.put(tag.getTagName(), tag.getTagValue());
+        }
+        return newTags.equals(tagMap);
+    }
+
+    /**
+     * If tag names are already associated with the metric name, throws an exception if the existing and proposed tag name sets
+     * are inconsistent; if there are no tag names stored for this name, store the proposed ones.
+     *
+     * @param metricName metrics name
+     * @param tagNames   tag names to validate
+     * @return the {@link Set} of tag names
+     * @throws java.lang.IllegalArgumentException if tag names have been registered for this name which are inconsistent with
+     *                                            the proposed tag names
+     */
+    private Set<String> checkOrStoreTagNames(String metricName, Set<String> tagNames) {
+
+        Set<String> currentTagNames = tagNameSets.get(metricName);
+        if (currentTagNames == null) {
+            return tagNameSets.put(metricName, tagNames);
+        }
+        enforceConsistentTagNames(metricName, currentTagNames, tagNames);
+        return tagNames;
+    }
+
+    /**
+     * If metadata is already associated with the metadata name, throws an exception if the existing and proposed metadata are
+     * inconsistent; if there is no existing metadata stored for this name, stores it.
+     *
+     * @param candidateMetadata proposed metadata
+     * @return the metadata
+     * @throws java.lang.IllegalArgumentException if metadata has been registered for this name which is inconsistent with
+     *                                            the proposed metadata
+     */
+    private Metadata checkOrStoreMetadata(Metadata candidateMetadata) {
+        Metadata currentMetadata = allMetadata.get(candidateMetadata.getName());
+        if (currentMetadata == null) {
+            return allMetadata.put(candidateMetadata.getName(), candidateMetadata);
+        }
+        enforceConsistentMetadata(currentMetadata, candidateMetadata);
+        return candidateMetadata;
+    }
+
+    private void enforceConsistentType(String metricName, Class<? extends Metric> newType) {
+        Class<? extends Metric> metricType = metricTypes.get(metricName);
+        if (metricType != null) {
+            if (!metricType.isAssignableFrom(newType)) {
+                throw new IllegalArgumentException(String.format(
+                        "Attempt to register metric %s of type %s but the name is already associated with a metric of type %s",
+                        metricName,
+                        newType.getName(),
+                        metricType.getName()));
+            }
+        }
+    }
+
+    private <R extends Number> Gauge<R> getOrRegisterGauge(Supplier<HelidonMetric<?>> metricFinder,
+                                                           Supplier<Metadata> metadataFinder,
+                                                           Supplier<MetricID> metricIDSupplier,
+                                                           Function<Metadata, Gauge<R>> gaugeFactory) {
+        return writeAccess(() -> {
+            Metadata metadata = metadataFinder.get();
+            enforceConsistentType(metadata.getName(), Gauge.class);
+            HelidonMetric<?> metric = metricFinder.get();
+            if (metric == null) {
+                metric = registerMetricLocked(metricIDSupplier.get(),
+                                              createEnabledAwareGauge(metadata, gaugeFactory));
+            }
+            return (Gauge<R>) metric;
+        });
     }
 
     private void removeLocked(Map.Entry<MetricID, HelidonMetric<?>> entry) {
@@ -508,18 +521,18 @@ class MetricStore {
             checkOrStoreTagNames(newMetricID.getName(),
                                  newMetricID.getTags().keySet());
             if (metric == null) {
-                    Metadata metadata = metadataFactory.get();
-                    if (metadata == null) {
-                        metadata = registerMetadataLocked(metricName);
-                    }
-                    metric = registerMetricLocked(newMetricID,
-                                                  createEnabledAwareMetric(clazz, metadata, tags));
+                Metadata metadata = metadataFactory.get();
+                if (metadata == null) {
+                    metadata = registerMetadataLocked(metricName);
+                }
+                metric = registerMetricLocked(newMetricID,
+                                              createEnabledAwareMetric(clazz, metadata, tags));
             } else {
                 ensureConsistentMetricTypes(metric, newBaseType, metricIDFactory);
                 Metadata existingMetadata = metadataFactory.get();
                 if (existingMetadata == null) {
                     throw new IllegalStateException("Could not find existing metadata under name "
-                    + metricName + " for existing metric " + metricIDFactory.get());
+                                                            + metricName + " for existing metric " + metricIDFactory.get());
                 }
             }
             return clazz.cast(metric);
@@ -569,9 +582,9 @@ class MetricStore {
 
     private Metadata registerMetadataLocked(String metricName) {
         return registerMetadataLocked(Metadata.builder()
-                .withName(metricName)
-                .withUnit(MetricUnits.NONE)
-                .build());
+                                              .withName(metricName)
+                                              .withUnit(MetricUnits.NONE)
+                                              .build());
     }
 
     private Metadata registerMetadataLocked(Metadata metadata) {
@@ -612,7 +625,7 @@ class MetricStore {
     }
 
     private <R extends Number> HelidonMetric<?> createEnabledAwareGauge(Metadata metadata,
-                                                                     Function<Metadata, Gauge<R>> gaugeFactory) {
+                                                                        Function<Metadata, Gauge<R>> gaugeFactory) {
         return (HelidonMetric<?>) (gaugeFactory.apply(metadata));
     }
 
@@ -635,13 +648,5 @@ class MetricStore {
         } finally {
             lock.unlock();
         }
-    }
-
-    private static boolean tagsMatch(Tag[] tags, Map<String, String> tagMap) {
-        Map<String, String> newTags = new TreeMap<>();
-        for (Tag tag : tags) {
-            newTags.put(tag.getTagName(), tag.getTagValue());
-        }
-        return newTags.equals(tagMap);
     }
 }

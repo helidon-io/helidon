@@ -40,6 +40,7 @@ class NoOpMetricsFactory implements MetricsFactory {
         }
     };
     private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
+    private final MetricsConfig.Builder metricsConfig = MetricsConfig.builder();
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();
@@ -48,6 +49,11 @@ class NoOpMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry globalRegistry() {
         return meterRegistry;
+    }
+
+    @Override
+    public MetricsConfig.Builder metricsConfig() {
+        return metricsConfig;
     }
 
     @Override
