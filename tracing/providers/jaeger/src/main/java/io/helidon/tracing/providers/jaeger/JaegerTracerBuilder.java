@@ -305,8 +305,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("global").asBoolean().ifPresent(this::registerGlobal);
 
-        config.get("span-processor-type").asString().ifPresent(this::spanProcessorType);
-        config.get("exporter-timeout").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
+        config.get("span-processor-type").asString()
+                .ifPresent(it -> spanProcessorType(SpanProcessorType.valueOf(it.toUpperCase())));        config.get("exporter-timeout").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
         config.get("schedule-delay").asInt().ifPresent(it -> scheduleDelay(Duration.ofMillis(it)));
         config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
         config.get("max-export-batch-size").asInt().ifPresent(this::maxExportBatchSize);
@@ -357,8 +357,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @return updated builder
      */
     @ConfiguredOption(key = "span-processor-type", value = "batch")
-    public JaegerTracerBuilder spanProcessorType(String spanProcessorType) {
-        this.spanProcessorType = SpanProcessorType.valueOf(spanProcessorType.toUpperCase());
+    public JaegerTracerBuilder spanProcessorType(SpanProcessorType spanProcessorType) {
+        this.spanProcessorType = spanProcessorType;
         return this;
     }
 
