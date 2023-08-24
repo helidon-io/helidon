@@ -18,6 +18,9 @@ package io.helidon.webserver;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
@@ -39,6 +42,7 @@ import org.testng.annotations.Test;
 import static io.helidon.webserver.BackpressureStrategy.AUTO_FLUSH;
 import static io.helidon.webserver.BackpressureStrategy.LINEAR;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
@@ -131,7 +135,7 @@ public class WaterMarkedBackpressureIT {
         }
     }
 
-    @Test
+    @Test(invocationCount = 10)
     void autoFlush() {
         AtomicLong receivedSize = new AtomicLong(0);
 
@@ -139,7 +143,7 @@ public class WaterMarkedBackpressureIT {
         try {
             webServer = WebServer.builder()
                     .host("localhost")
-                    .backpressureBufferSize(500)
+                    .backpressureBufferSize(200)
                     .backpressureStrategy(AUTO_FLUSH)
                     .routing(Routing.builder().get("/", (req, res) -> {
                         res.send(Multi.range(0, 150)
@@ -157,6 +161,8 @@ public class WaterMarkedBackpressureIT {
                     .start()
                     .await(TIMEOUT);
 
+            List<String> receivedData = new ArrayList<>(100);
+
             WebClient.builder()
                     .baseUri("http://localhost:" + webServer.port())
                     .build()
@@ -169,6 +175,7 @@ public class WaterMarkedBackpressureIT {
                         receivedSize.addAndGet(bytes.length);
                         String data = new String(bytes);
                         chunk.release();
+                        receivedData.add(data);
                         return !data.equals("00100");
                     })
                     .ignoreElements()
@@ -178,6 +185,8 @@ public class WaterMarkedBackpressureIT {
                     })
                     .await(TIMEOUT);
 
+            assertThat(receivedData, contains(Multi.range(0, 101)
+                    .map(l -> String.format("%05d", l)).collectList().await().toArray(String[]::new)));
 
             // Stochastic test as watermarking depends on Netty's flush callbacks
             assertThat(receivedSize.get(), greaterThan(499L));

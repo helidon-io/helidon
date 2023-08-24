@@ -21,16 +21,19 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 import io.helidon.common.http.Http;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.client.WebTarget;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -42,7 +45,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class AutoFlushTest {
 
     private static File file;
-    private static final int FILE_SIZE = 6000000;
+    private static byte[] sha256;
+    private static final int FILE_SIZE = 40 * 1024 * 1024;
+    private static final int BUFFER_SIZE = 8 * 1024;
 
     @Inject
     private WebTarget target;
@@ -61,25 +66,37 @@ class AutoFlushTest {
     }
 
     @BeforeAll
-    static void createTempFile() throws IOException {
-        file = File.createTempFile("zero", ".bin");
+    static void createTempFile() throws IOException, NoSuchAlgorithmException {
+        file = File.createTempFile("file", ".bin");
         file.deleteOnExit();
-        byte[] zero = new byte[10 * 1000];
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         try (FileOutputStream fos = new FileOutputStream(file)) {
-            for (int i = 0; i < FILE_SIZE / zero.length; i++) {
-                fos.write(zero);
+            byte[] bytes = new byte[BUFFER_SIZE];
+            for (int i = 0; i < FILE_SIZE / BUFFER_SIZE; i++) {
+                Arrays.fill(bytes, (byte) (i % 10 + '0'));
+                fos.write(bytes);
+                messageDigest.update(bytes);
             }
         }
+        sha256 = messageDigest.digest();
     }
 
     @Test
-    void testAutoFlush() {
+    void testAutoFlush() throws NoSuchAlgorithmException {
         try (Response resp = target.path("auto-flush")
                 .request()
                 .get()) {
             assertThat(resp.getStatus(), is(200));
             assertThat(resp.getHeaderString(Http.Header.CONTENT_LENGTH), is(String.valueOf(FILE_SIZE)));
-            assertThat(resp.readEntity(byte[].class).length, is(FILE_SIZE));
+
+            byte[] file = resp.readEntity(byte[].class);
+            assertThat(file.length, is(FILE_SIZE));
+            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+            for (int i = 0; i < FILE_SIZE / BUFFER_SIZE; i++) {
+                messageDigest.update(file, i * BUFFER_SIZE, BUFFER_SIZE);
+            }
+            byte[] newSha256 = messageDigest.digest();
+            assertThat(sha256, is(newSha256));
         }
     }
 }
