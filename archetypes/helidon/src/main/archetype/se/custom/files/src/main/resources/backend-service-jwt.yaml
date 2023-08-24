@@ -1,0 +1,13 @@
+
+security:
+  providers:
+    - jwt:
+        atn-token:
+          jwk.resource.resource-path: "verifying-jwk.json"
+          jwt-audience: "http://example.helidon.io"
+  web-server:
+    defaults:
+      authenticate: true
+    paths:
+      - path: "/hello"
+        methods: ["get"]

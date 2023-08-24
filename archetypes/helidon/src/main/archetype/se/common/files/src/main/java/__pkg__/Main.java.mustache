@@ -1,0 +1,73 @@
+package {{package}};
+
+{{#Main-java-imports}}
+import {{.}};
+{{/Main-java-imports}}
+
+{{#Main-helidon-imports}}
+import {{.}};
+{{/Main-helidon-imports}}
+
+{{#Main-other-imports}}
+import {{.}};
+{{/Main-other-imports}}
+
+{{#Main-static-imports}}
+import {{.}};
+{{/Main-static-imports}}
+
+/**
+ * The application main class.
+ */
+public final class Main {
+
+{{#Main-fields}}
+{{.}}
+{{/Main-fields}}
+
+    /**
+     * Cannot be instantiated.
+     */
+    private Main() {
+    }
+
+    /**
+     * Application main entry point.
+     * @param args command line arguments.
+     */
+    public static void main(final String[] args) {
+         // load logging configuration
+        LogConfig.configureRuntime();
+
+        {{#Main-main}}
+        {{.}}
+        {{/Main-main}}
+
+        Config config = Config.create();
+
+        WebServer server = WebServer.builder()
+                .config(config.get("server"))
+                .routing(r -> routing(r, config))
+                .build()
+                .start();
+
+        System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
+    }
+
+    /**
+     * Updates HTTP Routing.
+     */
+    static void routing(HttpRouting.Builder routing, Config config) {
+        {{#Main-routing}}
+        {{.}}
+        {{/Main-routing}}
+
+        routing{{#Main-routing-builder}}
+               {{.}}{{#last}}; {{/last}}
+               {{/Main-routing-builder}}
+    }
+
+{{#Main-content}}
+{{.}}
+{{/Main-content}}
+}

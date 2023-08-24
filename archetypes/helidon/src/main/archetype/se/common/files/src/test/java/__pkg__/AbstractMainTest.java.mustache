@@ -1,0 +1,35 @@
+package {{package}};
+
+{{#MainTest-java-imports}}
+import {{.}};
+{{/MainTest-java-imports}}
+
+{{#MainTest-helidon-imports}}
+import {{.}};
+{{/MainTest-helidon-imports}}
+
+{{#MainTest-other-imports}}
+import {{.}};
+{{/MainTest-other-imports}}
+
+{{#MainTest-static-imports}}
+import static {{.}};
+{{/MainTest-static-imports}}
+
+abstract class AbstractMainTest {
+    private final Http1Client client;
+
+    protected AbstractMainTest(Http1Client client) {
+        this.client = client;
+    }
+
+    @SetUpRoute
+    static void routing(HttpRouting.Builder builder) {
+        Main.routing(builder, Config.create());
+    }
+
+    {{#Abstract-tests}}
+    {{.}}
+    {{/Abstract-tests}}
+
+}

@@ -20,4 +20,4 @@ Probe the health endpoints:
 ```bash
 curl -X GET http://localhost:PORT/health/
 curl -X GET http://localhost:PORT/health/ready
-
+```
