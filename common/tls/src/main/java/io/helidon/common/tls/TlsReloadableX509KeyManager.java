@@ -16,44 +16,82 @@
 
 package io.helidon.common.tls;
 
+import java.net.Socket;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.Objects;
+
 import javax.net.ssl.X509KeyManager;
 
-/**
- * A {@link javax.net.ssl.KeyManager} that is both a {@link javax.net.ssl.X509KeyManager} as well as a
- * {@link TlsReloadableComponent}.
- */
-public abstract class TlsReloadableX509KeyManager implements X509KeyManager, TlsReloadableComponent {
+class TlsReloadableX509KeyManager implements X509KeyManager, TlsReloadableComponent {
+    private static final System.Logger LOGGER = System.getLogger(TlsReloadableX509KeyManager.class.getName());
 
-    /**
-     * Default constructor.
-     */
-    protected TlsReloadableX509KeyManager() {
+    private volatile X509KeyManager keyManager;
+
+    private TlsReloadableX509KeyManager(X509KeyManager keyManager) {
+        this.keyManager = keyManager;
     }
 
-    /**
-     * Creates a new reloadable key manager.
-     *
-     * @param keyManager the underlying key manager (which can initially be null)
-     * @return a reloadable key manager
-     */
-    public static TlsReloadableX509KeyManager create(X509KeyManager keyManager) {
-        return new TlsInternalReloadableX509KeyManager(keyManager);
+    @Override
+    public String[] getClientAliases(String s, Principal[] principals) {
+        return keyManager.getClientAliases(s, principals);
     }
 
-    /**
-     * Creates a new reloadable key manager.
-     *
-     * @return a reloadable key manager
-     */
-    public static TlsReloadableX509KeyManager create() {
-        return new TlsInternalReloadableX509KeyManager(null);
+    @Override
+    public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+        return keyManager.chooseClientAlias(strings, principals, socket);
     }
 
-    /**
-     * Establishes a new key manager delegate.
-     *
-     * @param keyManager the new key manager
-     */
-    public abstract void keyManager(X509KeyManager keyManager);
+    @Override
+    public String[] getServerAliases(String s, Principal[] principals) {
+        return keyManager.getServerAliases(s, principals);
+    }
 
+    @Override
+    public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+        return keyManager.chooseServerAlias(s, principals, socket);
+    }
+
+    @Override
+    public X509Certificate[] getCertificateChain(String s) {
+        return keyManager.getCertificateChain(s);
+    }
+
+    @Override
+    public PrivateKey getPrivateKey(String s) {
+        return keyManager.getPrivateKey(s);
+    }
+
+    @Override
+    public void reload(Tls tls) {
+        tls.manager().keyManager().ifPresent(this::keyManager);
+    }
+
+    void keyManager(X509KeyManager keyManager) {
+        Objects.requireNonNull(keyManager, "Cannot unset key manager");
+        assertValid(keyManager);
+        LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
+        this.keyManager = keyManager;
+    }
+
+    static TlsReloadableX509KeyManager create(X509KeyManager keyManager) {
+        assertValid(keyManager);
+        return new TlsReloadableX509KeyManager(keyManager);
+    }
+
+    static void assertValid(X509KeyManager keyManager) {
+        if (keyManager instanceof TlsReloadableX509KeyManager) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    static class NotReloadableKeyManager implements TlsReloadableComponent {
+        @Override
+        public void reload(Tls tls) {
+            if (tls.manager().keyManager().isPresent()) {
+                throw new UnsupportedOperationException("Cannot reload key manager if one was not set during server start");
+            }
+        }
+    }
 }

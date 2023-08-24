@@ -96,7 +96,6 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
 
     Key unwrapRSA(byte[] in, byte[] keyBytes) throws Exception {
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
-        // TODO: research why this one - CIPHER_INTEGRITY from spotbugs
         Cipher c = Cipher.getInstance("AESWrapPad");
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(in, "RSA", Cipher.PRIVATE_KEY);

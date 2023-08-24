@@ -33,8 +33,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
@@ -43,8 +41,7 @@ import io.helidon.common.config.Config;
  * TLS configuration - common for server and client.
  */
 @RuntimeType.PrototypedBy(TlsConfig.class)
-public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
-        permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
+public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
 
     /**
      * HTTPS endpoint identification algorithm, verifies certificate cn against host name.
@@ -98,8 +95,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      * @return a new TLS instance
      */
     public static Tls create(TlsConfig tlsConfig) {
-        TlsInfo tlsInfo = tlsConfig.tlsInfo().orElse(null);
-        if (tlsInfo != null && tlsInfo.explicitContext()) {
+        if (tlsConfig.explicitContext()) {
             return new ExplicitContextTlsConfig(tlsConfig);
         }
         return new TlsConfigImpl(tlsConfig);
@@ -236,21 +232,6 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig>, TlsInfo
      */
     public void reload(Tls tls) {
         manager().reload(tls);
-    }
-
-    @Override
-    public List<TlsReloadableComponent> reloadableComponents() {
-        return manager().reloadableComponents();
-    }
-
-    @Override
-    public X509TrustManager trustManager() {
-        return manager().trustManager();
-    }
-
-    @Override
-    public X509KeyManager keyManager() {
-        return manager().keyManager();
     }
 
     /**

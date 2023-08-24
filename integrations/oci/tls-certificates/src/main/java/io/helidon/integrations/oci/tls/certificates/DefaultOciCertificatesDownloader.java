@@ -33,7 +33,7 @@ import com.oracle.bmc.certificates.responses.GetCertificateAuthorityBundleRespon
 import com.oracle.bmc.certificates.responses.GetCertificateBundleResponse;
 import jakarta.inject.Singleton;
 
-import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader.*;
+import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader.create;
 
 /**
  * Implementation of the {@link OciCertificatesDownloader} that will use OCI's Certificates Service to download certs.

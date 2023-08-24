@@ -24,7 +24,7 @@ class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.Builder
     public void decorate(TlsConfig.BuilderBase<?, ?> target) {
         TlsManager theManager = target.manager().orElse(null);
         if (theManager == null) {
-            theManager = new ConfiguredTlsManager(target);
+            theManager = new ConfiguredTlsManager();
             target.manager(theManager);
         }
 

@@ -56,8 +56,7 @@ public interface OciCertificatesTlsManager extends TlsManager, RuntimeType.Api<O
      * @return a configured instance
      */
     static OciCertificatesTlsManager create(OciCertificatesTlsManagerConfig cfg) {
-//        throw new DefaultOciCertificatesTlsManager(cfg, null, null);
-        throw new UnsupportedOperationException();
+        return new DefaultOciCertificatesTlsManager(cfg);
     }
 
     /**

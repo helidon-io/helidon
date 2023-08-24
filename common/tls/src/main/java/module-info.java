@@ -27,7 +27,7 @@ module io.helidon.common.tls {
     requires io.helidon.common.pki;
 
     uses io.helidon.common.tls.spi.TlsManagerProvider;
-    
+
     exports io.helidon.common.tls;
     exports io.helidon.common.tls.spi;
 }

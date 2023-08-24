@@ -38,7 +38,7 @@ server:
             ca-ocid: ${CA_OCID}
             cert-ocid: ${SERVER_CERT_OCID}
             key-ocid: ${SERVER_KEY_OCID}
-            # TODO: this will actually come from the OCI Vault config source
+            # TODO: this should actually come from the OCI Vault config source
             key-password: password
 #            client:
 #              cert-ocid: ${CLIENT_CERT_OCID}

@@ -16,7 +16,7 @@
 
 package io.helidon.common.tls;
 
-import java.util.List;
+import java.util.Optional;
 
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
@@ -60,24 +60,17 @@ public interface TlsManager extends NamedService {
     void decorate(TlsConfig.BuilderBase<?, ?> target);
 
     /**
-     * The actual key manager. This instance is not reloadable in nature.
+     * The key manager in use.
      *
-     * @return key manager instance
+     * @return key manager
      */
-    X509KeyManager keyManager();
+    Optional<X509KeyManager> keyManager();
 
     /**
-     * The actual trust manager. This instance is not reloadable in nature.
+     * The trust manager in use.
      *
-     * @return trust manager instance
+     * @return trust manager
      */
-    X509TrustManager trustManager();
-
-    /**
-     * Provides the list of the reloadable tls components.
-     *
-     * @return the list of the reloadable tls components
-     */
-    List<TlsReloadableComponent> reloadableComponents();
+    Optional<X509TrustManager> trustManager();
 
 }

@@ -38,8 +38,6 @@ import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.tls.ConfiguredTlsManager;
 import io.helidon.common.tls.Tls;
-import io.helidon.common.tls.TlsReloadableX509KeyManager;
-import io.helidon.common.tls.TlsReloadableX509TrustManager;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.Async;
 import io.helidon.inject.api.InjectionServices;
@@ -67,12 +65,15 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     private Provider<OciCertificatesDownloader> certDownloader;
     private ScheduledExecutorService asyncExecutor;
     private Async async;
-    private Tls tls;
+
+    DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg) {
+        this(cfg, "@default", null);
+    }
 
     DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg,
-                                     io.helidon.common.config.Config config,
-                                     String name) {
-        super(name, TYPE, config, null, null);
+                                     String name,
+                                     io.helidon.common.config.Config config) {
+        super(name, TYPE);
         this.cfg = Objects.requireNonNull(cfg);
 
         // if config changes then will do a reload
@@ -83,8 +84,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
     @Override // TlsManager
     public void init(Tls tls) {
-        this.tls = tls;
-
         // this will establish whether we are enabled or not
         super.init(tls);
 
@@ -132,6 +131,22 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
         }
     }
 
+    /**
+     * Sets the backing (possibly updated) configuration for this manager. This will trigger a reload.
+     *
+     * @param config the new config
+     */
+    void config(io.helidon.common.config.Config config) {
+        Objects.requireNonNull(config);
+        maybeReload();
+    }
+
+    /**
+     * Will download new certificates, and if those are determined to be changed will affect the reload of the new key and trust
+     * managers.
+     *
+     * @return true if a reload occurred
+     */
     boolean loadContext() {
         try {
             // download all of our security collateral from OCI
@@ -178,12 +193,8 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
             // establish the new context
             // context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), secureRandom);
-            TlsReloadableX509KeyManager rkm = (TlsReloadableX509KeyManager)
-                    tls.prototype().tlsInfo().orElseThrow().keyManager();
-            TlsReloadableX509TrustManager rtm = (TlsReloadableX509TrustManager)
-                    tls.prototype().tlsInfo().orElseThrow().trustManager();
-            rkm.keyManager(keyManager.get());
-            rtm.trustManager(trustManager.get());
+            keyManager(keyManager.get());
+            trustManager(trustManager.get());
 
             return true;
         } catch (RuntimeException

@@ -16,46 +16,65 @@
 
 package io.helidon.common.tls;
 
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 import javax.net.ssl.X509TrustManager;
 
-/**
- * A {@link javax.net.ssl.TrustManager} that is both a {@link javax.net.ssl.X509TrustManager} as well as a
- * {@link TlsReloadableComponent}.
- */
-public abstract class TlsReloadableX509TrustManager implements X509TrustManager, TlsReloadableComponent {
+class TlsReloadableX509TrustManager implements X509TrustManager, TlsReloadableComponent {
+    private static final System.Logger LOGGER = System.getLogger(TlsReloadableX509TrustManager.class.getName());
 
-    /**
-     * Default constructor.
-     */
-    protected TlsReloadableX509TrustManager() {
+    private volatile X509TrustManager trustManager;
+
+    private TlsReloadableX509TrustManager(X509TrustManager trustManager) {
+        this.trustManager = trustManager;
     }
 
-    /**
-     * Creates a new reloadable trust manager.
-     *
-     * @param trustManager the underlying trust manager
-     * @return a reloadable trust manager
-     */
-    public static TlsReloadableX509TrustManager create(X509TrustManager trustManager) {
-        return new TlsInternalReloadableX509TrustManager(Objects.requireNonNull(trustManager));
+    @Override
+    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        trustManager.checkClientTrusted(chain, authType);
     }
 
-    /**
-     * Creates a new reloadable trust manager.
-     *
-     * @return a reloadable trust manager
-     */
-    public static TlsReloadableX509TrustManager create() {
-        return new TlsInternalReloadableX509TrustManager(null);
+    @Override
+    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        trustManager.checkServerTrusted(chain, authType);
     }
 
-    /**
-     * Establishes a new trust manager delegate.
-     *
-     * @param trustManager the new trust manager
-     */
-    public abstract void trustManager(X509TrustManager trustManager);
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+        return trustManager.getAcceptedIssuers();
+    }
 
+    @Override
+    public void reload(Tls tls) {
+        tls.manager().trustManager().ifPresent(this::trustManager);
+    }
+
+    void trustManager(X509TrustManager trustManager) {
+        Objects.requireNonNull(trustManager, "Cannot unset trust store");
+        assertValid(trustManager);
+        LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
+        this.trustManager = trustManager;
+    }
+
+    static TlsReloadableX509TrustManager create(X509TrustManager trustManager) {
+        assertValid(trustManager);
+        return new TlsReloadableX509TrustManager(trustManager);
+    }
+
+    static void assertValid(X509TrustManager keyManager) {
+        if (keyManager instanceof TlsReloadableX509TrustManager) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    static class NotReloadableTrustManager implements TlsReloadableComponent {
+        @Override
+        public void reload(Tls tls) {
+            if (tls.manager().trustManager().isPresent()) {
+                throw new UnsupportedOperationException("Cannot set trust manager if one was not set during server start");
+            }
+        }
+    }
 }

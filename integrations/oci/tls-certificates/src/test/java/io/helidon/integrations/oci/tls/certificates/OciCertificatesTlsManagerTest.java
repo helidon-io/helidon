@@ -16,18 +16,28 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
+import io.helidon.config.Config;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
 class OciCertificatesTlsManagerTest {
 
     @Test
-    void tlsManager() {
+    void creation() {
+        OciCertificatesTlsManagerConfig cfg = OciCertificatesTlsManagerConfig
+                .create(Config.create().get("server.sockets.0.tls.manager.oci-certificates-tls-manager"));
+        OciCertificatesTlsManager tlsManager = OciCertificatesTlsManager.create(cfg);
+        assertThat(tlsManager, notNullValue());
+    }
+
+    @Test
+    void serverRuntime() {
         assertThat(TestOciCertificatesDownloader.callCount, equalTo(0));
         assertThat(TestOciPrivateKeyDownloader.callCount, equalTo(0));
 

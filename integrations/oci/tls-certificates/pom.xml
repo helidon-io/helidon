@@ -30,6 +30,10 @@
     <artifactId>helidon-integrations-oci-tls-certificates</artifactId>
     <name>Helidon Integrations OCI Certificates Service</name>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.oracle.oci.sdk</groupId>
