@@ -450,10 +450,9 @@ abstract class AbstractRegistry implements MetricRegistry {
     /**
      * Removes the specified metric from the actual meter registry (not just the Helidon data structures).
      *
-     * @param metricId metric ID of the metric to remove
      * @param metric   the metric being removed
      */
-    protected abstract void doRemove(MetricID metricId, HelidonMetric<?> metric);
+    protected abstract void doRemove(HelidonMetric<?> metric);
 
     // -- Private methods -----------------------------------------------------
 

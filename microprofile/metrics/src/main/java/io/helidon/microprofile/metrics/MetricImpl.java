@@ -72,7 +72,7 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
      * @return iterable ot Helidon tags
      */
     protected static Iterable<io.helidon.metrics.api.Tag> allTags(String scope, Tag[] tags) {
-        return toHelidonTags(SystemTagsManager.instance().allTags(iterableEntries(tags), scope));
+        return toHelidonTags(SystemTagsManager.instance().withScopeTag(iterableEntries(tags), scope));
     }
 
     /**

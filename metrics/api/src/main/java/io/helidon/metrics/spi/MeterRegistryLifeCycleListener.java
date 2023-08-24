@@ -27,6 +27,7 @@ public interface MeterRegistryLifeCycleListener {
      * Receives notification when a new {@link io.helidon.metrics.api.MeterRegistry} is created.
      *
      * @param meterRegistry the new meter registry
+     * @param metricsConfig the metrics config
      */
     void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig);
 }

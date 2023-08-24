@@ -76,7 +76,7 @@ class Registry extends AbstractRegistry {
     }
 
     @Override
-    protected void doRemove(MetricID metricId, HelidonMetric<?> metric) {
+    protected void doRemove(HelidonMetric<?> metric) {
         Metrics.globalRegistry().remove(metric.delegate());
     }
 }

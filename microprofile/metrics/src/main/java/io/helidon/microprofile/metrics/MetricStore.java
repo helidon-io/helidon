@@ -34,6 +34,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -75,13 +76,13 @@ class MetricStore {
     private final Map<String, Class<? extends Metric>> metricTypes = new HashMap<>(); // metric name -> base type of the metric
     private final MetricFactory metricFactory;
     private final String scope;
-    private final BiConsumer<MetricID, HelidonMetric<?>> doRemove;
+    private final Consumer<HelidonMetric<?>> doRemove;
     private volatile MetricsConfig metricsConfig;
 
     private MetricStore(MetricsConfig metricsConfig,
                         MetricFactory metricFactory,
                         String scope,
-                        BiConsumer<MetricID, HelidonMetric<?>> doRemove) {
+                        Consumer<HelidonMetric<?>> doRemove) {
         this.metricsConfig = metricsConfig;
         this.metricFactory = metricFactory;
         this.scope = scope;
@@ -91,7 +92,7 @@ class MetricStore {
     static MetricStore create(MetricsConfig metricsConfig,
                               MetricFactory metricFactory,
                               String scope,
-                              BiConsumer<MetricID, HelidonMetric<?>> doRemove) {
+                              Consumer<HelidonMetric<?>> doRemove) {
         return new MetricStore(metricsConfig,
                                metricFactory,
                                scope,
@@ -240,8 +241,7 @@ class MetricStore {
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                 }
-                doRemove.accept(metricIdWithAllTags(metricID, scope),
-                                doomedMetric);
+                doRemove.accept(doomedMetric);
                 return doomedMetric != null;
             }
         });
@@ -259,8 +259,7 @@ class MetricStore {
                 if (doomedMetric != null) {
                     doomedMetric.markAsDeleted();
                     result |= allMetrics.remove(metricID) != null;
-                    doRemove.accept(metricIdWithAllTags(metricID, scope),
-                                    doomedMetric);
+                    doRemove.accept(doomedMetric);
                 }
             }
             allMetricIDsByName.remove(name);
@@ -377,11 +376,6 @@ class MetricStore {
                 .stream()
                 .filter(entry -> metricsConfig.isMeterEnabled(entry.getKey().getName(), scope))
                 .map(it -> new MetricInstance(it.getKey(), it.getValue()));
-    }
-
-    MetricID metricIdWithAllTags(MetricID metricId, String scope) {
-        return new MetricID(metricId.getName(),
-                            tags(SystemTagsManager.instance().allTags(metricId.getTags().entrySet(), scope)));
     }
 
     private static void enforceConsistentTagNames(String metricName, Set<String> existingTagNames, Set<String> newTagNames) {

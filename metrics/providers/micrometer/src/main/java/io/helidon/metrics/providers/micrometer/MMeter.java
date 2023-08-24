@@ -152,9 +152,9 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return delegateTags(MTag.tags(tags));
         }
 
-        public HB addTag(String key, String value) {
-            tags.put(key, value);
-            return delegateTag(key, value);
+        public HB addTag(io.helidon.metrics.api.Tag tag) {
+            tags.put(tag.key(), tag.value());
+            return delegateTag(tag.key(), tag.value());
         }
 
         public HB description(String description) {
@@ -194,6 +194,11 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
         public Optional<String> baseUnit() {
             return Optional.ofNullable(baseUnit);
+        }
+
+
+        public Map<String, String> tags() {
+            return new TreeMap<>(tags);
         }
 
         protected B delegate() {

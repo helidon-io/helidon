@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,9 +25,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import io.helidon.common.HelidonServiceLoader;
@@ -111,6 +111,22 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return new SystemTagsManagerImpl(metricsConfig);
     }
 
+    /**
+     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
+     * is active: the scope tag name is non-null and non-blank.
+     *
+     * @param scopeTagName scope tag name
+     * @param scope        scope value
+     * @param factory      factory method to accept the scope tag and the scope and return an instance of the implied type
+     * @param <T>          type to which the scope tag and scope are converted
+     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
+     */
+    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
+        return scopeTagName != null && !scopeTagName.isBlank() && scope != null
+                ? List.of(factory.apply(scopeTagName, scope))
+                : List.of();
+    }
+
     @Override
     public Optional<Tag> scopeTag(Optional<String> candidateScope) {
         return scopeTagName == null
@@ -135,53 +151,25 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
+    public Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope) {
+        if (scopeTagName == null) {
+            return tags;
+        }
+        Map<String, String> result = new TreeMap<>();
+        tags.forEach((tag -> result.put(tag.getKey(), tag.getValue())));
+        result.put(scopeTagName, scope);
+        return result.entrySet();
+    }
+
+    @Override
     public Iterable<Tag> displayTags() {
         return List.copyOf(systemTags);
     }
 
-    /**
-     * Returns an {@link java.lang.Iterable} of the implied type representing the provided scope <em>if</em> scope tagging
-     * is active: the scope tag name is non-null and non-blank.
-     *
-     * @param scopeTagName scope tag name
-     * @param scope        scope value
-     * @param factory      factory method to accept the scope tag and the scope and return an instance of the implied type
-     * @param <T>          type to which the scope tag and scope are converted
-     * @return iterable of the scope if the scope tag name is non-null and non-blank; an empty iterable otherwise
-     */
-    static <T> Iterable<T> scopeIterable(String scopeTagName, String scope, BiFunction<String, String, T> factory) {
-        return scopeTagName != null && !scopeTagName.isBlank() && scope != null
-                ? List.of(factory.apply(scopeTagName, scope))
-                : List.of();
-    }
-
     @Override
-    public Iterable<Tag> allTags(Meter.Id meterId, String scope) {
-        checkForReservedTagNames(meterId.tagsMap().keySet());
-        return new MultiIterable<>(meterId.tags(),
-                                   systemTags,
-                                   scopeIterable(scope, Tag::create));
-    }
-
-    @Override
-    public Iterable<Tag> allTags(Meter.Id meterId) {
-        checkForReservedTagNames(meterId.tagsMap().keySet());
-        return new MultiIterable<>(meterId.tags(),
-                                   systemTags);
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> allTags(Iterable<Map.Entry<String, String>> explicitTags, String scope) {
-        var tagNames = new ArrayList<String>();
-        explicitTags.forEach(entry -> tagNames.add(entry.getKey()));
-        checkForReservedTagNames(tagNames);
-        return new MultiIterable<>(explicitTags, scopeIterable(scope, AbstractMap.SimpleEntry::new));
-    }
-
-    @Override
-    public void assignScope(String validScope, BiFunction<String, String, ?> tagSetter) {
+    public void assignScope(String validScope, Function<Tag, ?> tagSetter) {
         if (scopeTagName != null) {
-            tagSetter.apply(scopeTagName, validScope);
+            tagSetter.apply(Tag.create(scopeTagName, validScope));
         }
     }
 
@@ -197,16 +185,13 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return Optional.ofNullable(scopeTagName);
     }
 
-    private static void checkForReservedTagNames(Collection<String> tagNames) {
+    @Override
+    public void checkForReservedTagNames(Collection<String> tagNames) {
         Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
         reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
         if (!reservedTagNamesUsed.isEmpty()) {
             throw new IllegalArgumentException("Program-specified tag names include reserved names: " + reservedTagNamesUsed);
         }
-    }
-
-    private <T> Iterable<T> scopeIterable(String scope, BiFunction<String, String, T> factory) {
-        return scopeIterable(scopeTagName, scope, factory);
     }
 
     static class MultiIterable<T> implements Iterable<T> {

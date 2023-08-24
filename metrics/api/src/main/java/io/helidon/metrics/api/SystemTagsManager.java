@@ -15,9 +15,11 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
@@ -65,6 +67,15 @@ public interface SystemTagsManager {
     Optional<Tag> scopeTag(Optional<String> candidateScope);
 
     /**
+     * Augments map entries (tag names and values) with, possibly, one more for the scope (if configured that way).
+     *
+     * @param tags original tags
+     * @param scope the scope value
+     * @return augmented iterable including, if appropriate, a scope tag entry
+     */
+    Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope);
+
+    /**
      * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting the tag representing the scope,
      * if any appears in the provided tags.
      *
@@ -82,13 +93,20 @@ public interface SystemTagsManager {
     Iterable<Tag> displayTags();
 
     /**
+     * Scans the provided tag names and throws an exception if any is a reserved tag name.
+     *
+     * @param tagNames tag names
+     */
+    void checkForReservedTagNames(Collection<String> tagNames);
+
+    /**
      * Invokes the specified consumer with the scope tag name setting from the configuration (if present) and the
      * provided scope value. This method is most useful to assign a tag to a meter if configuration implies that.
      *
      * @param scope    scope value to use
      * @param consumer uses the tag and scope in some appropriate way
      */
-    void assignScope(String scope, BiFunction<String, String, ?> consumer);
+    void assignScope(String scope, Function<Tag, ?> consumer);
 
     /**
      * Returns the effective scope, given the provided candidate scope combined with any default scope value in the

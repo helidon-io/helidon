@@ -34,6 +34,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
+import io.helidon.metrics.api.Tag;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -368,7 +369,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private <M extends Meter, HB extends MMeter.Builder<?, M, HB, HM>, HM extends MMeter<M>> HM registerAndPostProcess(
             HB mBuilder,
-            BiFunction<String, String, ?> builderTagSetter,
+            Function<Tag, ?> builderTagSetter,
             Function<MeterRegistry, M> registration) {
 
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
@@ -411,8 +412,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
 
         scope.ifPresent(validScope -> SystemTagsManager.instance()
-                .assignScope(validScope,
-                             (tag, s) -> tagList.add(io.helidon.metrics.api.Tag.create(tag, s))));
+                .assignScope(validScope, tag -> tagList.add(io.helidon.metrics.api.Tag.create(tag.key(),
+                                                                                              tag.value()))));
 
         Meter nativeMeter = delegate.find(name)
                 .tags(MTag.tags(tags))
