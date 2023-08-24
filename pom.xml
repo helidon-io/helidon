@@ -232,6 +232,7 @@
                         <target>${version.java}</target>
                         <release>${version.java}</release>
                         <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                        <proc>full</proc>
                         <compilerArgs>
                             <arg>-Xlint:unchecked</arg>
                             <!--
