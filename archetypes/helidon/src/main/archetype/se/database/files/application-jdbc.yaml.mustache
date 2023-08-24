@@ -14,22 +14,6 @@ db:
   health-check:
     type: "query"
     statementName: "health-check"
-  services:
-    metrics:
-      - type: TIMER
-        errors: false
-        statement-names: ["select-.*"]
-        description: "Timer for successful selects"
-      - type: COUNTER
-        errors: false
-        statement-types: ["DELETE", "UPDATE", "INSERT", "DML"]
-        name-format: "db.counter.%s.success"
-        description: "Counter of successful DML statements"
-      - type: COUNTER
-        statement-types: ["DELETE", "UPDATE", "INSERT", "DML"]
-        success: false
-        name-format: "db.counter.%s.error"
-        description: "Counter of failed DML statements"
   statements:
     # Health check query statement for MySQL and H2 databases
 #    health-check: "SELECT 0"
