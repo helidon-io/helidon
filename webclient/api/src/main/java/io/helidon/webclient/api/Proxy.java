@@ -299,6 +299,21 @@ public class Proxy {
     }
 
     /**
+     * Verifies whether the specified Uri is using system proxy.
+     *
+     * @param uri the uri
+     * @return true if the uri resource will be proxied
+     */
+    public boolean isUsingSystemProxy(String uri) {
+        if (systemProxySelector != null) {
+            List<java.net.Proxy> proxies = systemProxySelector
+                    .select(URI.create(uri));
+            return !proxies.isEmpty() && !proxies.get(0).equals(java.net.Proxy.NO_PROXY);
+        }
+        return false;
+    }
+
+    /**
      * Creates an Optional with the InetSocketAddress of the server proxy for the specified uri.
      *
      * @param uri the uri
