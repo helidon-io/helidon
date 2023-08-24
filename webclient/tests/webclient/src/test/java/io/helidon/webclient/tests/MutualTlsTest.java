@@ -16,7 +16,6 @@
 package io.helidon.webclient.tests;
 
 import java.io.UncheckedIOException;
-import java.security.Principal;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Http;
@@ -31,6 +30,8 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
+
+import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
@@ -181,15 +182,10 @@ public class MutualTlsTest {
 
     private static void mTlsRouting(HttpRouting.Builder routing) {
         routing.get("/", (req, res) -> {
-            String cn = req.remotePeer()
-                    .tlsPrincipal()
-                    .map(Principal::getName)
-                    .flatMap(CertificateHelper::clientCertificateName)
-                    .orElse("Unknown CN");
 
             // close to avoid re-using cached connections on the client side
             res.header(Http.Headers.CONNECTION_CLOSE);
-            res.send("Hello " + cn + "!");
+            res.send("Hello " + req.headers().value(X_HELIDON_CN).orElse("Unknown CN") + "!");
         });
     }
 

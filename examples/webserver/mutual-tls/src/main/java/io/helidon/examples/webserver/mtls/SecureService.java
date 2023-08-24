@@ -15,25 +15,19 @@
  */
 package io.helidon.examples.webserver.mtls;
 
-import java.security.Principal;
-
 import io.helidon.http.Http;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+
+import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
 
 class SecureService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         rules.any((req, res) -> {
-            String cn = req.remotePeer()
-                    .tlsPrincipal()
-                    .map(Principal::getName)
-                    .flatMap(CertificateHelper::clientCertificateName)
-                    .orElse("Unknown CN");
-
             // close to avoid re-using cached connections on the client side
             res.header(Http.Headers.CONNECTION_CLOSE);
-            res.send("Hello " + cn + "!");
+            res.send("Hello " + req.headers().get(X_HELIDON_CN).value() + "!");
         });
     }
 }
