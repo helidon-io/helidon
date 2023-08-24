@@ -34,12 +34,6 @@
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.helidon.microprofile.bundles</groupId>
-                    <artifactId>helidon-microprofile-3.1</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile.reactive-streams</groupId>
