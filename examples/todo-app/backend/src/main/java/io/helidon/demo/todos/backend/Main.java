@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public final class Main {
                         // (see src/main/resources/application.yaml)
                         classpath("application.yaml")))
                  // support for passwords in configuration
-//                .addFilter(SecureConfigFilter.fromConfig())
+                //.addFilter(SecureConfigFilter.fromConfig())
                 .build();
     }
 }
