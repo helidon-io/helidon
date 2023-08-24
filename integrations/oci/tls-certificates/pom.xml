@@ -188,6 +188,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
+                        <oci.real.usage>false</oci.real.usage>
                         <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                         <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
                         <VAULT_CRYPTO_ENDPOINT>http://localhost:8081</VAULT_CRYPTO_ENDPOINT>

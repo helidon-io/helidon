@@ -33,6 +33,8 @@ import com.oracle.bmc.certificates.responses.GetCertificateAuthorityBundleRespon
 import com.oracle.bmc.certificates.responses.GetCertificateBundleResponse;
 import jakarta.inject.Singleton;
 
+import static io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader.*;
+
 /**
  * Implementation of the {@link OciCertificatesDownloader} that will use OCI's Certificates Service to download certs.
  */
@@ -40,9 +42,9 @@ import jakarta.inject.Singleton;
 class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
 
     @Override
-    public Certificate[] loadCertificates(String certOcid) {
+    public Certificates loadCertificates(String certOcid) {
         try {
-            return loadCert(certOcid);
+            return loadCerts(certOcid);
         } catch (Exception e) {
             throw new RuntimeException("Failed to load certificate ocid: " + certOcid, e);
         }
@@ -57,19 +59,19 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    static Certificate[] loadCert(String certOcid) throws Exception {
+    static Certificates loadCerts(String certOcid) throws Exception {
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(OciExtension.ociAuthenticationProvider().get())) {
             GetCertificateBundleResponse res =
                     client.getCertificateBundle(GetCertificateBundleRequest.builder()
                                                         .certificateId(certOcid)
                                                         .build());
-
+            String version = res.getEtag();
             ByteArrayInputStream chainIs = new ByteArrayInputStream(res.getCertificateBundle().getCertChainPem()
                                                                             .getBytes(StandardCharsets.US_ASCII));
             ByteArrayInputStream certIs = new ByteArrayInputStream(res.getCertificateBundle().getCertificatePem()
                                                                            .getBytes(StandardCharsets.US_ASCII));
-            return toCertificates(chainIs, certIs);
+            return create(version, toCertificates(chainIs, certIs));
         }
     }
 

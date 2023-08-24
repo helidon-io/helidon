@@ -65,17 +65,14 @@ class TlsInternalReloadableX509KeyManager extends TlsReloadableX509KeyManager {
 
     @Override
     public void reload(Tls tls) {
-        X509KeyManager keyManager = tls.keyManager();
-        Objects.requireNonNull(keyManager, "Cannot unset key manager");
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
-        }
-        keyManager(keyManager);
+        keyManager(tls.keyManager());
     }
 
     @Override
     public void keyManager(X509KeyManager keyManager) {
-        this.keyManager = Objects.requireNonNull(keyManager);
+        Objects.requireNonNull(keyManager, "Cannot unset key manager");
+        LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
+        this.keyManager = keyManager;
     }
 
     static class NotReloadableKeyManager implements TlsReloadableComponent {

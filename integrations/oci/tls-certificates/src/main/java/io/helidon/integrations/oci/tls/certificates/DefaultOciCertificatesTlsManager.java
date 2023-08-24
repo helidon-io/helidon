@@ -29,6 +29,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
@@ -53,10 +54,13 @@ import jakarta.inject.Provider;
  *
  * @see DefaultOciCertificatesTlsManagerProvider
  */
+// consider adding metrics around this in the future (number of calls to check for download, number of new downloads, etc.)
 class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements OciCertificatesTlsManager {
     static final String TYPE = "oci-certificates-tls-manager";
     private static final System.Logger LOGGER = System.getLogger(DefaultOciCertificatesTlsManager.class.getName());
+
     private final OciCertificatesTlsManagerConfig cfg;
+    private final AtomicReference<String> lastVersionDownloaded = new AtomicReference<>("");
 
     // these will only be non-null when enabled
     private Provider<OciPrivateKeyDownloader> pkDownloader;
@@ -123,22 +127,28 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             return;
         }
 
-        loadContext();
+        if (loadContext()) {
+            LOGGER.log(System.Logger.Level.DEBUG, "Certificates were downloaded and dynamically updated");
+        }
     }
 
-    void loadContext() {
+    boolean loadContext() {
         try {
             // download all of our security collateral from OCI
             OciCertificatesDownloader cd = certDownloader.get();
-            OciPrivateKeyDownloader pd = pkDownloader.get();
-            Certificate[] certificates = cd.loadCertificates(cfg.certOcid());
+            OciCertificatesDownloader.Certificates certificates = cd.loadCertificates(cfg.certOcid());
+            if (lastVersionDownloaded.get().equals(certificates.version())) {
+                return false;
+            }
             Certificate ca = cd.loadCACertificate(cfg.caOcid());
+
+            OciPrivateKeyDownloader pd = pkDownloader.get();
             PrivateKey key = pd.loadKey(cfg.keyOcid(), cfg.vaultCryptoEndpoint());
 
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
 
-            keyStore.setKeyEntry("server-cert-chain", key, cfg.keyPassword().get(), certificates);
+            keyStore.setKeyEntry("server-cert-chain", key, cfg.keyPassword().get(), certificates.certificates());
             keyStore.setCertificateEntry("trust-ca", ca);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -174,6 +184,8 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                     tls.prototype().tlsInfo().orElseThrow().trustManager();
             rkm.keyManager(keyManager.get());
             rtm.trustManager(trustManager.get());
+
+            return true;
         } catch (RuntimeException
                  | KeyStoreException
                  | NoSuchAlgorithmException

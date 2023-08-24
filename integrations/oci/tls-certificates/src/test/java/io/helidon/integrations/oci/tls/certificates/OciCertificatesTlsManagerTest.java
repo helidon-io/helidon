@@ -33,8 +33,17 @@ class OciCertificatesTlsManagerTest {
 
         Server server = startServer();
 
-        assertThat(TestOciCertificatesDownloader.callCount, greaterThan(0));
-        assertThat(TestOciPrivateKeyDownloader.callCount, greaterThan(0));
+        int certDownloadCountBaseline = TestOciCertificatesDownloader.callCount;
+        int pkDownloadCountBaseLine = TestOciPrivateKeyDownloader.callCount;
+        try {
+            assertThat(certDownloadCountBaseline, greaterThan(0));
+            assertThat(pkDownloadCountBaseLine, greaterThan(0));
+
+            // how to get from Server to our OciTlsManager??
+            // we need to call maybeReload() to ensure that certificates only change when the version changes - TBD how
+        } finally {
+            server.stop();
+        }
     }
 
     static Server startServer() {

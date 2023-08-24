@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-/**
- * TLS configuration for client and server.
- */
-module io.helidon.common.tls {
-    requires static io.helidon.builder.api;
-    requires static io.helidon.config.metadata;
-    requires static io.helidon.inject.api;
+package io.helidon.integrations.oci.tls.certificates;
 
-    requires io.helidon.common;
-    requires io.helidon.common.config;
-    requires io.helidon.common.pki;
-
-    uses io.helidon.common.tls.spi.TlsManagerProvider;
-    
-    exports io.helidon.common.tls;
-    exports io.helidon.common.tls.spi;
+class OciTestUtils {
+    static boolean ociRealUsage() {
+        return Boolean.getBoolean("oci.real.usage");
+    }
 }

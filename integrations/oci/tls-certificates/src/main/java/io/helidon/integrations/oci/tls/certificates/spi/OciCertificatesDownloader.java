@@ -17,6 +17,7 @@
 package io.helidon.integrations.oci.tls.certificates.spi;
 
 import java.security.cert.Certificate;
+import java.util.Objects;
 
 import io.helidon.inject.api.Contract;
 
@@ -32,8 +33,9 @@ public interface OciCertificatesDownloader {
      * @param certOcid the cert ocid
      * @return the downloaded certificate chain
      * @throws RuntimeException if there is any errors loading the key
+     * @see #create(String, Certificate[])
      */
-    Certificate[] loadCertificates(String certOcid);
+    Certificates loadCertificates(String certOcid);
 
     /**
      * The implementation will download the CA certificate identified by the given ocid from the OCI Certificates Services.
@@ -43,5 +45,54 @@ public interface OciCertificatesDownloader {
      * @throws RuntimeException if there is any errors loading the key
      */
     Certificate loadCACertificate(String caCertOcid);
+
+    /**
+     * Creates a Certificates instance given its version and array of certificates. The version is used to identify change - the
+     * format of the string is immaterial. Only when it changes it will signify the need for reloading.
+     *
+     * @param version       the version
+     * @param certificates  the certificates
+     * @return a certificates wrapper
+     */
+    static Certificates create(String version,
+                               Certificate[] certificates) {
+        if (Objects.requireNonNull(version).isBlank()) {
+            throw new IllegalArgumentException();
+        }
+
+        return new Certificates(version, Objects.requireNonNull(certificates));
+    }
+
+    /**
+     * Represents the certificate chain as well as the version identifier of the downloaded certificates.
+     */
+    class Certificates {
+        private final String version;
+        private final Certificate[] certificates;
+
+        private Certificates(String version,
+                             Certificate[] certificates) {
+            this.version = version;
+            this.certificates = certificates;
+        }
+
+        /**
+         * The version identifier.
+         *
+         * @return version
+         */
+        public String version() {
+            return version;
+        }
+
+        /**
+         * The certificates.
+         *
+         * @return certificates
+         */
+        public Certificate[] certificates() {
+            return certificates;
+        }
+    }
 
 }

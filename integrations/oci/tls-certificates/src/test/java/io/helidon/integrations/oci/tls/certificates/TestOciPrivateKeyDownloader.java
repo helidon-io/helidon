@@ -38,14 +38,17 @@ class TestOciPrivateKeyDownloader extends DefaultOciPrivateKeyDownloader {
                               URI vaultCryptoEndpoint) {
         callCount++;
 
-        //        return super.loadKey(keyOcid, vaultCryptoEndpoint);
-        Objects.requireNonNull(keyOcid);
-        Objects.requireNonNull(vaultCryptoEndpoint);
+        if (OciTestUtils.ociRealUsage()) {
+            return super.loadKey(keyOcid, vaultCryptoEndpoint);
+        } else {
+            Objects.requireNonNull(keyOcid);
+            Objects.requireNonNull(vaultCryptoEndpoint);
 
-        Keys keys = Keys.builder()
-                .config(Config.create().get("test-keys"))
-                .build();
-        return keys.privateKey().orElseThrow();
+            Keys keys = Keys.builder()
+                    .config(Config.create().get("test-keys"))
+                    .build();
+            return keys.privateKey().orElseThrow();
+        }
     }
 
 }

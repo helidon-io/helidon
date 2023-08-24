@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import io.helidon.config.spi.OverrideSource;
 import com.xebialabs.restito.server.StubServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.xebialabs.restito.builder.stub.StubHttp.whenHttp;
@@ -110,7 +109,7 @@ public class UrlOverrideSourceServerMockTest {
         waitForAssert(() -> config.get("aaa.bbb.url").asString().get(), is("URL1"));
     }
 
-    @Disabled // TODO: intermittent failures on MacOS
+//    @Disabled // intermittent failures on MacOS
     @Test
     public void testMultipleMatchingWildcards() throws MalformedURLException, InterruptedException {
 

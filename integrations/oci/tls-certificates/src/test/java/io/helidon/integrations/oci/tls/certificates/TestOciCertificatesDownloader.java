@@ -22,26 +22,35 @@ import java.util.Objects;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
+import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
 import jakarta.inject.Singleton;
 
 @Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 1)
 class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
+    static String version = "1";
 
     static int callCount;
 
+    void version(String version) {
+        TestOciCertificatesDownloader.version = version;
+    }
+
     @Override
-    public Certificate[] loadCertificates(String certOcid) {
+    public Certificates loadCertificates(String certOcid) {
         callCount++;
 
-//        return super.loadCertificates(certOcid);
-        Objects.requireNonNull(certOcid);
-        try (InputStream certIs =
-                TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
-            return new Certificate[] {toCertificate(certIs)};
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (OciTestUtils.ociRealUsage()) {
+            return super.loadCertificates(certOcid);
+        } else {
+            Objects.requireNonNull(certOcid);
+            try (InputStream certIs =
+                    TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
+                return OciCertificatesDownloader.create(version, new Certificate[] {toCertificate(certIs)});
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -49,13 +58,16 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
     public Certificate loadCACertificate(String caCertOcid) {
         callCount++;
 
-//        return super.loadCACertificate(caCertOcid);
-        Objects.requireNonNull(caCertOcid);
-        try (InputStream caCertIs =
-                TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/ca.pem")) {
-            return toCertificate(caCertIs);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (OciTestUtils.ociRealUsage()) {
+            return super.loadCACertificate(caCertOcid);
+        } else {
+            Objects.requireNonNull(caCertOcid);
+            try (InputStream caCertIs =
+                    TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/ca.pem")) {
+                return toCertificate(caCertIs);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

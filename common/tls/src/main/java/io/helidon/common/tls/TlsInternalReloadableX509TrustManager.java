@@ -48,17 +48,14 @@ class TlsInternalReloadableX509TrustManager extends TlsReloadableX509TrustManage
 
     @Override
     public void reload(Tls tls) {
-        X509TrustManager trustManager = tls.trustManager();
-        Objects.requireNonNull(trustManager, "Cannot unset trust store");
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
-        }
-        trustManager(trustManager);
+        trustManager(tls.trustManager());
     }
 
     @Override
     public void trustManager(X509TrustManager trustManager) {
-        this.trustManager = Objects.requireNonNull(trustManager);
+        Objects.requireNonNull(trustManager, "Cannot unset trust store");
+        LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
+        this.trustManager = trustManager;
     }
 
     static class NotReloadableTrustManager implements TlsReloadableComponent {
