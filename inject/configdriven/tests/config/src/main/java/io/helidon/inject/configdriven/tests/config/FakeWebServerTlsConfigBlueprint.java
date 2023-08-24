@@ -24,6 +24,7 @@ import java.util.Set;
 
 import javax.net.ssl.SSLContext;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
 import io.helidon.config.metadata.Configured;
@@ -56,7 +57,7 @@ interface FakeWebServerTlsConfigBlueprint {
     // TODO: had to make this Optional - we might need something like 'ExternalConfigBean' for this case ?
     Optional<SSLContext> sslContext();
 
-    @Prototype.Singular("cipher")
+    @Option.Singular("cipher")
     @ConfiguredOption(key = "cipher")
         //    Set<String> cipherSuite();
     List<String> cipherSuite();

@@ -99,6 +99,10 @@ record FactoryMethods(Optional<FactoryMethod> createTargetType,
                     // this may be part of annotation processing where type info is not available
                     // our assumption is that the type is code generated and is a correct builder, if this assumption
                     // is not correct, we will need to improve this "algorithm" (please file an issue if that happens)
+                    if (builderCandidate.fqName().endsWith(".Builder")) {
+                        // this is already a builder
+                        continue;
+                    }
                     TypeName builderTypeName = TypeName.builder(builderCandidate)
                             .className("Builder")
                             .enclosingNames(List.of(builderCandidate.className()))

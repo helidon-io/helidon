@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.metadata.Configured;
@@ -102,6 +103,6 @@ interface HttpConfigBaseBlueprint {
      * @return map of client properties
      */
     @ConfiguredOption
-    @Prototype.Singular("property")
+    @Option.Singular("property")
     Map<String, String> properties();
 }

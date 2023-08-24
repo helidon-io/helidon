@@ -18,6 +18,7 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -49,7 +50,7 @@ interface FakeKeystoreConfigBlueprint {
     char[] keyPassphrase();
 
     @ConfiguredOption(key = "cert.alias")
-    @Prototype.Singular("certAlias")
+    @Option.Singular("certAlias")
     List<String> certAliases();
 
     @ConfiguredOption(key = "cert-chain.alias")

@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -64,7 +65,7 @@ interface FakeServerConfigBlueprint extends FakeSocketConfigBlueprint {
      *
      * @return a map of all the configured server sockets, never null
      */
-    @Prototype.Singular("socket") // note that singular names cannot clash
+    @Option.Singular("socket") // note that singular names cannot clash
     @ConfiguredOption(key = "sockets")
     Map<String, FakeSocketConfig> sockets();
 

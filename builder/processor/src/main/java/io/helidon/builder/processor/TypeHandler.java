@@ -22,7 +22,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import io.helidon.common.processor.classmodel.ClassModel;
 import io.helidon.common.processor.classmodel.Field;
 import io.helidon.common.processor.classmodel.InnerClass;
 import io.helidon.common.processor.classmodel.Javadoc;
@@ -37,9 +36,9 @@ import static io.helidon.builder.processor.Types.DURATION_TYPE;
 import static io.helidon.builder.processor.Types.LINKED_HASH_MAP_TYPE;
 import static io.helidon.builder.processor.Types.LINKED_HASH_SET_TYPE;
 import static io.helidon.builder.processor.Types.STRING_TYPE;
+import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 class TypeHandler {
-    static final String UNCONFIGURED = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
     private final String name;
     private final String getterName;
     private final String setterName;
@@ -73,11 +72,8 @@ class TypeHandler {
         return new TypeHandler(name, getterName, setterName, returnType);
     }
 
-    static AccessModifier setterAccessModifier(PrototypeProperty.ConfiguredOption configured) {
-        if (configured.builderMethod()) {
-            return AccessModifier.PUBLIC;
-        }
-        return AccessModifier.PROTECTED;
+    static AccessModifier setterAccessModifier(AnnotationDataOption configured) {
+        return configured.accessModifier();
     }
 
     static TypeName toWildcard(TypeName typeName) {
@@ -120,13 +116,13 @@ class TypeHandler {
 
     String generateBuilderGetter(boolean required, boolean hasDefault) {
         if (builderGetterOptional(required, hasDefault)) {
-            return ClassModel.TYPE_TOKEN + "java.util.Optional" + ClassModel.TYPE_TOKEN + ".ofNullable(" + name + ")";
+            return TYPE_TOKEN + "java.util.Optional" + TYPE_TOKEN + ".ofNullable(" + name + ")";
         } else {
             return name;
         }
     }
 
-    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured,
+    Field.Builder fieldDeclaration(AnnotationDataOption configured,
                                    boolean isBuilder,
                                    boolean alwaysFinal) {
         Field.Builder builder = Field.builder()
@@ -141,7 +137,7 @@ class TypeHandler {
         }
 
         if (isBuilder && configured.hasDefault()) {
-            builder.defaultValue(configured.defaultValue());
+            builder.defaultValueContent(configured.defaultValue());
         }
 
         return builder;
@@ -153,7 +149,7 @@ class TypeHandler {
             return "\"" + defaultValue + "\"";
         }
         if (DURATION_TYPE.equals(typeName)) {
-            return ClassModel.TYPE_TOKEN + "java.time.Duration" + ClassModel.TYPE_TOKEN + ".parse(\"" + defaultValue + "\")";
+            return TYPE_TOKEN + "java.time.Duration" + TYPE_TOKEN + ".parse(\"" + defaultValue + "\")";
         }
         if (CHAR_ARRAY_TYPE.equals(typeName)) {
             return "\"" + defaultValue + "\".toCharArray()";
@@ -168,7 +164,58 @@ class TypeHandler {
             return defaultValue;
         }
         // should be an enum
-        return ClassModel.TYPE_TOKEN + typeName.genericTypeName().fqName() + ClassModel.TYPE_TOKEN + "." + defaultValue;
+        return TYPE_TOKEN + typeName.genericTypeName().fqName() + TYPE_TOKEN + "." + defaultValue;
+    }
+
+    String toDefaultValue(List<String> defaultValues,
+                          List<Integer> defaultInts,
+                          List<Long> defaultLongs,
+                          List<Double> defaultDoubles,
+                          List<Boolean> defaultBooleans,
+                          String defaultCode,
+                          AnnotationDataOption.DefaultMethod defaultMethod) {
+        if (defaultCode != null) {
+            return defaultCode;
+        }
+        if (defaultMethod != null) {
+            // must return the correct type
+            return toDefaultFromMethod(defaultMethod);
+        }
+
+        return toDefaultValue(defaultValues,
+                              defaultInts,
+                              defaultLongs,
+                              defaultDoubles,
+                              defaultBooleans);
+    }
+
+    String toDefaultValue(List<String> defaultValues,
+                          List<Integer> defaultInts,
+                          List<Long> defaultLongs,
+                          List<Double> defaultDoubles,
+                          List<Boolean> defaultBooleans) {
+        if (defaultValues != null) {
+            String string = singleDefault(defaultValues);
+            return toDefaultValue(string);
+        }
+        if (defaultInts != null) {
+            return String.valueOf(singleDefault(defaultInts));
+        }
+        if (defaultLongs != null) {
+            return singleDefault(defaultLongs) + "L";
+        }
+        if (defaultDoubles != null) {
+            return String.valueOf(singleDefault(defaultDoubles));
+        }
+        if (defaultBooleans != null) {
+            return String.valueOf(singleDefault(defaultBooleans));
+        }
+
+        return null;
+    }
+
+    protected String toDefaultFromMethod(AnnotationDataOption.DefaultMethod defaultMethod) {
+        return TYPE_TOKEN + defaultMethod.type().fqName() + TYPE_TOKEN + "." + defaultMethod.method() + "()";
     }
 
     TypeName declaredType() {
@@ -192,14 +239,28 @@ class TypeHandler {
     }
 
     void generateFromConfig(Method.Builder method,
-                            PrototypeProperty.ConfiguredOption configured,
+                            AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
         method.add(configGet(configured));
-        generateFromConfig(method, factoryMethods);
-        method.addLine(".ifPresent(this::" + setterName() + ");");
+        String fqName = actualType().fqName();
+
+        if (fqName.endsWith(".Builder")) {
+            // this is a special case - we have a builder field
+            if (configured.hasDefault()) {
+                method.addLine(".as(Config.class).ifPresent(" + name() + "::config);");
+            } else {
+                // a bit dirty hack - we expect builder() method to exist on the class that owns the builder
+                int lastDot = fqName.lastIndexOf('.');
+                String builderMethod = fqName.substring(0, lastDot) + ".builder()";
+                method.addLine(".map(" + builderMethod + "::config).ifPresent(this::" + setterName() + ");");
+            }
+        } else {
+            generateFromConfig(method, factoryMethods);
+            method.addLine(".ifPresent(this::" + setterName() + ");");
+        }
     }
 
-    String configGet(PrototypeProperty.ConfiguredOption configured) {
+    String configGet(AnnotationDataOption configured) {
         return "config.get(\"" + configured.configKey() + "\")";
     }
 
@@ -238,8 +299,7 @@ class TypeHandler {
     }
 
     void setters(InnerClass.Builder classBuilder,
-                 PrototypeProperty.ConfiguredOption configured,
-                 PrototypeProperty.Singular singular,
+                 AnnotationDataOption configured,
                  FactoryMethods factoryMethod,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
@@ -260,10 +320,59 @@ class TypeHandler {
             factorySetterConsumer(classBuilder, configured, returnType, blueprintJavadoc, factoryMethod.builder().get());
             factorySetterSupplier(classBuilder, configured, returnType, blueprintJavadoc);
         }
+
+        String fqName = actualType().fqName();
+        if (fqName.endsWith(".Builder")) {
+            // this is a special case - we have a builder field, we want to generate consumer (special, same instance)
+            setterConsumer(classBuilder, configured, returnType, blueprintJavadoc);
+        }
+    }
+
+    void setterConsumer(InnerClass.Builder classBuilder,
+                        AnnotationDataOption configured,
+                        TypeName returnType,
+                        Javadoc blueprintJavadoc) {
+        String argumentName = "consumer";
+
+        List<String> paramLines = new ArrayList<>();
+        paramLines.add("consumer of builder for");
+        paramLines.addAll(blueprintJavadoc.returnDescription());
+
+        TypeName argumentType = TypeName.builder()
+                .type(Consumer.class)
+                .addTypeArgument(actualType())
+                .build();
+        Method.Builder builder = Method.builder()
+                .name(setterName())
+                .returnType(returnType, "updated builder instance")
+                .description(blueprintJavadoc.content())
+                .addJavadocTag("see", "#" + getterName() + "()")
+                .addParameter(param -> param.name(argumentName)
+                        .type(argumentType)
+                        .description(paramLines))
+                .accessModifier(setterAccessModifier(configured))
+                .typeName(Objects.class)
+                .addLine(".requireNonNull(" + argumentName + ");")
+                .add("var builder = ");
+
+        if (configured.hasDefault()) {
+            builder.addLine("this." + name() + ";");
+        } else {
+            String fqName = actualType().fqName();
+            // a bit dirty hack - we expect builder() method to exist on the class that owns the builder
+            int lastDot = fqName.lastIndexOf('.');
+            String builderMethod = fqName.substring(0, lastDot) + ".builder()";
+            builder.addLine(builderMethod + ";");
+        }
+
+        builder.addLine("consumer.accept(builder);")
+                .addLine("this." + name() + "(builder);")
+                .addLine("return self();");
+        classBuilder.addMethod(builder);
     }
 
     protected void charArraySetter(InnerClass.Builder classBuilder,
-                                   PrototypeProperty.ConfiguredOption configured,
+                                   AnnotationDataOption configured,
                                    TypeName returnType,
                                    Javadoc blueprintJavadoc) {
         classBuilder.addMethod(builder -> builder.name(setterName())
@@ -300,7 +409,7 @@ class TypeHandler {
     }
 
     protected void declaredSetter(InnerClass.Builder classBuilder,
-                                  PrototypeProperty.ConfiguredOption configured,
+                                  AnnotationDataOption configured,
                                   TypeName returnType,
                                   Javadoc blueprintJavadoc) {
         Method.Builder builder = Method.builder()
@@ -320,8 +429,19 @@ class TypeHandler {
         classBuilder.addMethod(builder);
     }
 
+    private <T> T singleDefault(List<T> defaultValues) {
+        if (defaultValues.isEmpty()) {
+            throw new IllegalArgumentException("Default values configured for " + name() + " are empty, one value is expected.");
+        }
+        if (defaultValues.size() > 1) {
+            throw new IllegalArgumentException("Default values configured for " + name() + " contain more than one value,"
+                                                       + " exactly one value is expected.");
+        }
+        return defaultValues.get(0);
+    }
+
     private void factorySetterConsumer(InnerClass.Builder classBuilder,
-                                       PrototypeProperty.ConfiguredOption configured,
+                                       AnnotationDataOption configured,
                                        TypeName returnType,
                                        Javadoc blueprintJavadoc,
                                        FactoryMethods.FactoryMethod factoryMethod) {
@@ -363,7 +483,7 @@ class TypeHandler {
     }
 
     private void factorySetterSupplier(InnerClass.Builder classBuilder,
-                                       PrototypeProperty.ConfiguredOption configured,
+                                       AnnotationDataOption configured,
                                        TypeName returnType,
                                        Javadoc blueprintJavadoc) {
         TypeName supplierType = actualType();
@@ -400,7 +520,7 @@ class TypeHandler {
     }
 
     private void factorySetter(InnerClass.Builder classBuilder,
-                               PrototypeProperty.ConfiguredOption configured,
+                               AnnotationDataOption configured,
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {

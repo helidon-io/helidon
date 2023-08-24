@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -106,7 +107,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      * @return throwable classes to skip retries
      * @see #applyOn()
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Class<? extends Throwable>> skipOn();
 
     /**
@@ -115,7 +116,7 @@ interface RetryConfigBlueprint extends Prototype.Factory<Retry> {
      * @return throwable classes to trigger retries
      * @see #skipOn()
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Class<? extends Throwable>> applyOn();
 
     /**

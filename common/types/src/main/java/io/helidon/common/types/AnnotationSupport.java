@@ -404,6 +404,33 @@ final class AnnotationSupport {
         return Optional.of(List.of(asClass(typeName, property, value)));
     }
 
+    static Optional<TypeName> asTypeName(TypeName typeName, Map<String, Object> values, String property) {
+        Object value = values.get(property);
+        if (value == null) {
+            return Optional.empty();
+        }
+        return Optional.of(asTypeName(typeName, property, value));
+    }
+
+    static Optional<List<TypeName>> asTypeNames(TypeName typeName, Map<String, Object> values, String property) {
+        Object value = values.get(property);
+        if (value == null) {
+            return Optional.empty();
+        }
+
+        // already a list
+        if (value instanceof List<?> list) {
+            List<TypeName> result = new ArrayList<>();
+            for (Object o : list) {
+                result.add(asTypeName(typeName, property, o));
+            }
+            return Optional.of(List.copyOf(result));
+        }
+
+        // a single value
+        return Optional.of(List.of(asTypeName(typeName, property, value)));
+    }
+
     static Optional<Annotation> asAnnotation(TypeName typeName, Map<String, Object> values, String property) {
         Object value = values.get(property);
         if (value == null) {
@@ -605,6 +632,19 @@ final class AnnotationSupport {
         throw new IllegalArgumentException(typeName.fqName() + " property " + property
                                                    + " of type " + value.getClass().getName()
                                                    + " cannot be converted to Class");
+    }
+
+    private static TypeName asTypeName(TypeName typeName, String property, Object value) {
+        if (value instanceof Class<?> theClass) {
+            return TypeName.create(theClass);
+        }
+        if (value instanceof String str) {
+            return TypeName.create(str);
+        }
+
+        throw new IllegalArgumentException(typeName.fqName() + " property " + property
+                                                   + " of type " + value.getClass().getName()
+                                                   + " cannot be converted to TypeName");
     }
 
     private static Annotation asAnnotation(TypeName typeName, String property, Object value) {

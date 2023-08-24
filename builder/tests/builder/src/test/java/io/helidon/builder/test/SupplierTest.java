@@ -40,9 +40,9 @@ class SupplierTest {
     private static final String KEY = "string-supplier";
     private static final String KEY_OPTIONAL = "optional-supplier";
     private static final String ORIGINAL_VALUE = "value";
-    public static final char[] ORIGINAL_VALUE_CHARS = ORIGINAL_VALUE.toCharArray();
+    private static final char[] ORIGINAL_VALUE_CHARS = ORIGINAL_VALUE.toCharArray();
     private static final String NEW_VALUE = "new-value";
-    public static final char[] NEW_VALUE_CHARS = NEW_VALUE.toCharArray();
+    private static final char[] NEW_VALUE_CHARS = NEW_VALUE.toCharArray();
 
     @Test
     void testChangeString() {

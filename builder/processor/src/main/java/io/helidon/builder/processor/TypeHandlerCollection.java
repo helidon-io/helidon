@@ -16,11 +16,11 @@
 
 package io.helidon.builder.processor;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.common.processor.GeneratorTools;
 import io.helidon.common.processor.classmodel.Field;
@@ -53,7 +53,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
+    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
         Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
         if (isBuilder && !configured.hasDefault()) {
             builder.defaultValue("new " + TYPE_TOKEN + collectionImplType.fqName() + TYPE_TOKEN + "<>()");
@@ -62,17 +62,42 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    String toDefaultValue(String defaultValue) {
-        String defaults = Stream.of(defaultValue.split(","))
-                .map(super::toDefaultValue)
-                .collect(Collectors.joining(", "));
+    String toDefaultValue(List<String> defaultValues,
+                          List<Integer> defaultInts,
+                          List<Long> defaultLongs,
+                          List<Double> defaultDoubles,
+                          List<Boolean> defaultBooleans) {
 
-        return collectionType.fqName() + ".of(" + defaults + ")";
+        if (defaultValues != null) {
+            String defaults = defaultValues.stream()
+                    .map(super::toDefaultValue)
+                    .collect(Collectors.joining(", "));
+            return collectionType.fqName() + ".of(" + defaults + ")";
+        }
+
+        if (defaultInts != null) {
+            return defaultCollection(defaultInts);
+        }
+        if (defaultLongs != null) {
+            String defaults = defaultLongs.stream()
+                    .map(String::valueOf)
+                    .map(it -> it + "L")
+                    .collect(Collectors.joining(", "));
+            return collectionType.fqName() + ".of(" + defaults + ")";
+        }
+        if (defaultDoubles != null) {
+            return defaultCollection(defaultDoubles);
+        }
+        if (defaultBooleans != null) {
+            return defaultCollection(defaultBooleans);
+        }
+
+        return null;
     }
 
     @Override
     void generateFromConfig(Method.Builder method,
-                            PrototypeProperty.ConfiguredOption configured,
+                            AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
         if (configured.provider()) {
             return;
@@ -110,8 +135,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
     @Override
     void setters(InnerClass.Builder classBuilder,
-                 PrototypeProperty.ConfiguredOption configured,
-                 PrototypeProperty.Singular singular,
+                 AnnotationDataOption configured,
                  FactoryMethods factoryMethods,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
@@ -129,8 +153,8 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             factorySetter(classBuilder, configured, returnType, blueprintJavadoc, factoryMethods.createTargetType().get());
         }
 
-        if (singular.hasSingular()) {
-            singularSetter(classBuilder, configured, returnType, blueprintJavadoc, singular);
+        if (configured.singular()) {
+            singularSetter(classBuilder, configured, returnType, blueprintJavadoc, configured.singularName());
         }
 
         if (factoryMethods.builder().isPresent()) {
@@ -139,13 +163,19 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                   returnType,
                                   blueprintJavadoc,
                                   factoryMethods,
-                                  factoryMethods.builder().get(),
-                                  singular);
+                                  factoryMethods.builder().get());
         }
     }
 
+    private String defaultCollection(List<?> list) {
+        String defaults = list.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(", "));
+        return collectionType.fqName() + ".of(" + defaults + ")";
+    }
+
     private void discoverServicesSetter(InnerClass.Builder classBuilder,
-                                        PrototypeProperty.ConfiguredOption configured,
+                                        AnnotationDataOption configured,
                                         TypeName returnType,
                                         Javadoc blueprintJavadoc) {
         classBuilder.addMethod(builder -> builder.name(setterName() + "DiscoverServices")
@@ -161,12 +191,11 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     private void factorySetterConsumer(InnerClass.Builder classBuilder,
-                                       PrototypeProperty.ConfiguredOption configured,
+                                       AnnotationDataOption configured,
                                        TypeName returnType,
                                        Javadoc blueprintJavadoc,
                                        FactoryMethods factoryMethods,
-                                       FactoryMethods.FactoryMethod factoryMethod,
-                                       PrototypeProperty.Singular singular) {
+                                       FactoryMethods.FactoryMethod factoryMethod) {
         // if there is a factory method for the return type, we also have setters for the type (probably config object)
         TypeName builderType;
         if (factoryMethod.factoryMethodReturnType().className().equals("Builder")) {
@@ -203,8 +232,8 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             builder.addLine("this." + name() + "(builder.build());")
                     .addLine("return self();");
             classBuilder.addMethod(builder);
-        } else if (singular.hasSingular()) {
-            String singularName = singular.singularName();
+        } else if (configured.singular()) {
+            String singularName = configured.singularName();
             String methodName = "add" + GeneratorTools.capitalize(singularName);
             builder.name(methodName)
                     .addLine("this." + name() + ".add(builder.build());")
@@ -213,11 +242,10 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         }
     }
 
-    private void singularSetter(InnerClass.Builder classBuilder, PrototypeProperty.ConfiguredOption configured,
+    private void singularSetter(InnerClass.Builder classBuilder, AnnotationDataOption configured,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc,
-                                PrototypeProperty.Singular singular) {
-        String singularName = singular.singularName();
+                                String singularName) {
         String methodName = "add" + GeneratorTools.capitalize(singularName);
 
         Method.Builder builder = Method.builder()
@@ -237,7 +265,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     private void factorySetter(InnerClass.Builder classBuilder,
-                               PrototypeProperty.ConfiguredOption configured,
+                               AnnotationDataOption configured,
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {
@@ -262,7 +290,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     private void declaredSetters(InnerClass.Builder classBuilder,
-                                 PrototypeProperty.ConfiguredOption configured,
+                                 AnnotationDataOption configured,
                                  TypeName returnType,
                                  Javadoc blueprintJavadoc) {
         // we cannot call super. as collections are always final

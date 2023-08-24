@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -84,7 +85,7 @@ interface TypeNameBlueprint {
      *
      * @return enclosing classes simple names
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> enclosingNames();
 
     /**
@@ -108,7 +109,7 @@ interface TypeNameBlueprint {
      *
      * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
      */
-    @Prototype.Redundant
+    @Option.Redundant
     @ConfiguredOption("false")
     boolean generic();
 
@@ -118,7 +119,7 @@ interface TypeNameBlueprint {
      * @return used to represent a wildcard (e.g., "? extends SomeType")
      */
     @ConfiguredOption("false")
-    @Prototype.Redundant
+    @Option.Redundant
     boolean wildcard();
 
     /**
@@ -126,8 +127,8 @@ interface TypeNameBlueprint {
      *
      * @return the type arguments of this type, if this type supports generics/parameterized type
      */
-    @Prototype.Singular
-    @Prototype.Redundant
+    @Option.Singular
+    @Option.Redundant
     List<TypeName> typeArguments();
 
     /**

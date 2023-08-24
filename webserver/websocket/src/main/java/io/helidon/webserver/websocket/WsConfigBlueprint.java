@@ -18,6 +18,7 @@ package io.helidon.webserver.websocket;
 
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -35,7 +36,7 @@ interface WsConfigBlueprint extends ProtocolConfig {
      * @return origins
      */
     @ConfiguredOption
-    @Prototype.Singular
+    @Option.Singular
     Set<String> origins();
 
     /**

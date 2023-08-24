@@ -19,6 +19,7 @@ package io.helidon.inject.api;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
@@ -98,7 +99,7 @@ interface ElementInfoBlueprint {
      *
      * @return the annotations on this element
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Annotation> annotations();
 
     /**
@@ -106,7 +107,7 @@ interface ElementInfoBlueprint {
      *
      * @return the qualifier type annotations on this element
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Qualifier> qualifiers();
 
 }

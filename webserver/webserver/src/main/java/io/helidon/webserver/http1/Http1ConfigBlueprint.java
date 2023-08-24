@@ -18,6 +18,7 @@ package io.helidon.webserver.http1;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -132,7 +133,7 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      *
      * @return send event listeners
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Http1ConnectionListener> sendListeners();
 
     /**
@@ -140,7 +141,7 @@ interface Http1ConfigBlueprint extends ProtocolConfig {
      *
      * @return receive event listeners
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Http1ConnectionListener> receiveListeners();
 
     /**

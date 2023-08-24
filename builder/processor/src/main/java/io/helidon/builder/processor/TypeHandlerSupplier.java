@@ -36,7 +36,7 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
+    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
         Field.Builder builder = Field.builder()
                 .type(declaredType())
                 .name(name())
@@ -57,7 +57,7 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    void generateFromConfig(Method.Builder method, PrototypeProperty.ConfiguredOption configured, FactoryMethods factoryMethods) {
+    void generateFromConfig(Method.Builder method, AnnotationDataOption configured, FactoryMethods factoryMethods) {
         if (configured.provider()) {
             return;
         }
@@ -93,8 +93,7 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
 
     @Override
     void setters(InnerClass.Builder classBuilder,
-                 PrototypeProperty.ConfiguredOption configured,
-                 PrototypeProperty.Singular singular,
+                 AnnotationDataOption configured,
                  FactoryMethods factoryMethod,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
@@ -188,7 +187,7 @@ class TypeHandlerSupplier extends TypeHandler.OneTypeHandler {
     }
 
     protected void declaredSetter(InnerClass.Builder classBuilder,
-                                  PrototypeProperty.ConfiguredOption configured,
+                                  AnnotationDataOption configured,
                                   TypeName returnType,
                                   Javadoc blueprintJavadoc) {
         classBuilder.addMethod(method -> method.name(setterName())

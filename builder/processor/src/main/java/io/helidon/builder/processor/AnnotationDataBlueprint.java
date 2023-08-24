@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package io.helidon.builder.test.testsubjects;
+package io.helidon.builder.processor;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 
-import io.helidon.builder.api.Option;
-import io.helidon.builder.api.Prototype;
-import io.helidon.common.config.Config;
+import io.helidon.common.types.TypeName;
 
-@Prototype.Blueprint
-@Prototype.Configured
-interface ConfigOptionalMethodBlueprint {
-    @Option.Default("default-value")
-    @Option.Configured
-    String key();
-
-    Optional<Config> config();
+record AnnotationDataBlueprint(
+        boolean prototypePublic,
+        boolean builderPublic,
+        boolean createFromConfigPublic,
+        boolean createEmptyPublic,
+        boolean isFactory,
+        Set<TypeName> extendsList,
+        String javadoc,
+        List<TypeName> typeArguments) {
 }

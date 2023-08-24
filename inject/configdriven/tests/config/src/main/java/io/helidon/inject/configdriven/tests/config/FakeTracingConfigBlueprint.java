@@ -18,6 +18,7 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 
@@ -32,7 +33,7 @@ import io.helidon.config.metadata.Configured;
 interface FakeTracingConfigBlueprint extends FakeTraceableConfigBlueprint {
 
     // Builder::addComponent(String component); Impl::getComponent(String component);
-    @Prototype.Singular
+    @Option.Singular
     Map<String, FakeComponentTracingConfig> components();
 
 }

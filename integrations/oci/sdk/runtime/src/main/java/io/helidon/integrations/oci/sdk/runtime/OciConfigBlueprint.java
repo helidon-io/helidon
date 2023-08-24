@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -240,7 +241,7 @@ interface OciConfigBlueprint {
      */
     // See https://github.com/helidon-io/helidon/issues/6908
     @ConfiguredOption(key = "auth.private-key")
-    @Prototype.Confidential
+    @Option.Confidential
     Optional<char[]> authPrivateKey();
 
     /**
@@ -255,7 +256,7 @@ interface OciConfigBlueprint {
      */
     // See https://github.com/helidon-io/helidon/issues/6908
     @ConfiguredOption(key = "auth.passphrase")
-    @Prototype.Confidential
+    @Option.Confidential
     Optional<char[]> authPassphrase();
 
     /**

@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Context;
 import io.helidon.config.ConfigException;
@@ -52,7 +53,7 @@ interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Fa
      * @return map of listener configurations, except for the default one
      */
     @ConfiguredOption
-    @Prototype.Singular
+    @Option.Singular
     Map<String, ListenerConfig> sockets();
 
     /**

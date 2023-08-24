@@ -212,7 +212,7 @@ final class GenerateAbstractBuilder {
 
     private static void builderMethods(InnerClass.Builder classBuilder, TypeContext typeContext) {
         List<PrototypeProperty> properties = typeContext.propertyData().properties();
-        TypeContext.ConfiguredData configured = typeContext.configuredData();
+        AnnotationDataConfigured configured = typeContext.configuredData();
 
         if (configured.configured() || hasConfig(properties)) {
             createConfigMethod(classBuilder, typeContext, configured, properties);
@@ -225,7 +225,7 @@ final class GenerateAbstractBuilder {
                 // this is never done here, config must be defined as a standalone method
                 continue;
             }
-            child.setters(classBuilder, returnType, child.configuredOption().description());
+            child.setters(classBuilder, returnType, child.configuredOption().javadoc());
         }
         // then getters
         /*
@@ -254,8 +254,8 @@ final class GenerateAbstractBuilder {
                     .name(getterName)
                     .returnType(child.builderGetterType())
                     .addLine("return " + child.builderGetter() + ";");
-            if (child.configuredOption().description() != null) {
-                method.description(child.configuredOption().description().content())
+            if (child.configuredOption().javadoc() != null) {
+                method.description(child.configuredOption().javadoc().content())
                         .returnType(child.builderGetterType(), "the " + toHumanReadable(child.name()));
             }
             classBuilder.addMethod(method);
@@ -278,7 +278,7 @@ final class GenerateAbstractBuilder {
     }
 
     private static void createConfigMethod(InnerClass.Builder classBuilder, TypeContext typeContext,
-                                           TypeContext.ConfiguredData configured,
+                                           AnnotationDataConfigured configured,
                                            List<PrototypeProperty> properties) {
         /*
         public BUILDER config(Config config) {
@@ -316,7 +316,7 @@ final class GenerateAbstractBuilder {
 
         if (configured.configured()) {
             for (PrototypeProperty child : properties) {
-                if (!child.configuredOption().notConfigured() && !child.configuredOption().provider()) {
+                if (child.configuredOption().configured() && !child.configuredOption().provider()) {
                     child.typeHandler().generateFromConfig(builder,
                                                            child.configuredOption(),
                                                            child.factoryMethods());
@@ -421,7 +421,7 @@ final class GenerateAbstractBuilder {
             if (isBuilder && child.configuredOption().hasAllowedValues()) {
                 String allowedValues = child.configuredOption().allowedValues()
                         .stream()
-                        .map(PrototypeProperty.AllowedValue::value)
+                        .map(AnnotationDataOption.AllowedValue::value)
                         .map(it -> "\"" + it + "\"")
                         .collect(Collectors.joining(", "));
                 // private static final Set<String> PROPERTY_ALLOWED_VALUES = Set.of("a", "b", "c");
@@ -438,7 +438,7 @@ final class GenerateAbstractBuilder {
             if (isBuilder && child.configuredOption().provider()) {
                 classBuilder.addField(builder -> builder.type(boolean.class)
                         .name(child.name() + "DiscoverServices")
-                        .defaultValue(String.valueOf(child.configuredOption().providerOption().defaultDiscoverServices())));
+                        .defaultValue(String.valueOf(child.configuredOption().providerDiscoverServices())));
             }
         }
     }
@@ -464,19 +464,19 @@ final class GenerateAbstractBuilder {
                 preBuildBuilder.addLine("this.config = config == null ? Config.empty() : config;");
             }
             for (PrototypeProperty property : typeContext.propertyData().properties()) {
-                PrototypeProperty.ConfiguredOption configuredOption = property.configuredOption();
+                AnnotationDataOption configuredOption = property.configuredOption();
                 if (configuredOption.provider()) {
-                    PrototypeProperty.ProviderOption providerOption = configuredOption.providerOption();
-                    boolean defaultDiscoverServices = providerOption.defaultDiscoverServices();
+                    boolean defaultDiscoverServices = configuredOption.providerDiscoverServices();
 
                     // using a code block, so we can reuse the same variable names for multiple providers
                     preBuildBuilder.addLine("{");
+                    TypeName providerType = configuredOption.providerType();
                     preBuildBuilder.add("var serviceLoader = ")
                             .typeName("io.helidon.common.HelidonServiceLoader")
                             .add(".create(")
                             .typeName("java.util.ServiceLoader")
                             .add(".load(")
-                            .typeName(providerOption.serviceProviderInterface().fqName())
+                            .typeName(providerType.fqName())
                             .addLine(".class));");
                     if (configured) {
                         TypeName typeName = property.typeHandler().declaredType();
@@ -486,7 +486,7 @@ final class GenerateAbstractBuilder {
                                     .add("(discoverServices(config.get(\"")
                                     .add(configuredOption.configKey())
                                     .add("\"), serviceLoader, ")
-                                    .typeName(providerOption.serviceProviderInterface())
+                                    .typeName(providerType)
                                     .add(".class, ")
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
@@ -497,7 +497,7 @@ final class GenerateAbstractBuilder {
                             preBuildBuilder.add("discoverService(config.get(\"")
                                     .add(configuredOption.configKey())
                                     .add("\"), serviceLoader, ")
-                                    .typeName(providerOption.serviceProviderInterface())
+                                    .typeName(providerType)
                                     .add(".class, ")
                                     .typeName(property.typeHandler().actualType())
                                     .add(".class, ")
@@ -912,7 +912,7 @@ final class GenerateAbstractBuilder {
         char[] nameChars = name.toCharArray();
         for (char nameChar : nameChars) {
             if (Character.isUpperCase(nameChar)) {
-                if (result.length() != 0) {
+                if (!result.isEmpty()) {
                     result.append(' ');
                 }
                 result.append(Character.toLowerCase(nameChar));

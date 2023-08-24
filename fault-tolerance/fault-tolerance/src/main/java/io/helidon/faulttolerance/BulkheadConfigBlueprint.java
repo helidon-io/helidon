@@ -19,6 +19,7 @@ package io.helidon.faulttolerance;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -68,7 +69,7 @@ interface BulkheadConfigBlueprint extends Prototype.Factory<Bulkhead> {
      *
      * @return queue listeners
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Bulkhead.QueueListener> queueListeners();
 
     /**

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.common.socket.SocketOptions;
@@ -112,7 +113,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return default headers
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Http.Header> headers();
 
     /**
@@ -161,7 +162,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return list of explicitly added media supports
      */
-    @Prototype.Singular
+    @Option.Singular
     List<MediaSupport> mediaSupports();
 
     /**
@@ -169,7 +170,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return services to use with this web client
      */
-    @Prototype.Singular
+    @Option.Singular
     @ConfiguredOption(provider = true, providerType = WebClientServiceProvider.class)
     List<WebClientService> services();
 

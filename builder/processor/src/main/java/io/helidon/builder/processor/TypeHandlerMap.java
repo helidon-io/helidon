@@ -56,7 +56,7 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     @Override
-    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
+    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
         Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
         if (isBuilder && !configured.hasDefault()) {
             builder.defaultValue("new " + ClassModel.TYPE_TOKEN + implTypeName.fqName() + ClassModel.TYPE_TOKEN + "<>()");
@@ -65,18 +65,28 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     @Override
-    String toDefaultValue(String defaultValue) {
-        // each two values form a key and a value
-        String[] defaults = defaultValue.split(",");
-        if (defaults.length % 2 != 0) {
-            throw new IllegalArgumentException("Default value for a map does not have even number of entries:" + defaultValue);
+    String toDefaultValue(List<String> defaultValues,
+                          List<Integer> defaultInts,
+                          List<Long> defaultLongs,
+                          List<Double> defaultDoubles,
+                          List<Boolean> defaultBooleans) {
+
+        if (defaultValues != null) {
+            if (defaultValues.size() % 2 != 0) {
+                throw new IllegalArgumentException("Default value for a map does not have even number of entries:"
+                                                           + defaultValues);
+            }
+
+            String[] defaults = new String[defaultValues.size()];
+            for (int i = 1; i < defaultValues.size(); i = i + 2) {
+                defaults[i - 1] = "\"" + defaultValues.get(i - 1) + "\"";
+                defaults[i] = super.toDefaultValue(defaultValues.get(i));
+            }
+
+            return "java.util.Map.of(" + String.join(", ", defaults) + ")";
         }
 
-        for (int i = 1; i < defaults.length; i = i + 2) {
-            defaults[i] = super.toDefaultValue(defaultValue);
-        }
-
-        return "java.util.Map.of(" + String.join(", ", defaults) + ")";
+        return null;
     }
 
     @Override
@@ -86,7 +96,7 @@ class TypeHandlerMap extends TypeHandler {
 
     @Override
     void generateFromConfig(Method.Builder method,
-                            PrototypeProperty.ConfiguredOption configured,
+                            AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
         method.addLine("config.get(\"" + configured.configKey() + "\").asNodeList().ifPresent(nodes -> nodes.forEach"
                                + "(node -> "
@@ -106,8 +116,7 @@ class TypeHandlerMap extends TypeHandler {
     @SuppressWarnings("checkstyle:MethodLength") // will be shorter when we switch to class model
     @Override
     void setters(InnerClass.Builder classBuilder,
-                 PrototypeProperty.ConfiguredOption configured,
-                 PrototypeProperty.Singular singular,
+                 AnnotationDataOption configured,
                  FactoryMethods factoryMethod,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
@@ -142,12 +151,12 @@ class TypeHandlerMap extends TypeHandler {
 
         TypeName keyType = declaredType().typeArguments().get(0);
 
-        if (singular.hasSingular() && isCollection(actualType())) {
+        if (configured.singular() && isCollection(actualType())) {
             // value is a collection as well, we need to generate `add` methods for adding a single value, and adding
             // collection values
             // builder.addValue(String key, String value)
             // builder.addValues(String key, Set<String> values)
-            String singularName = singular.singularName();
+            String singularName = configured.singularName();
             setterAddValueToCollection(classBuilder,
                                        configured,
                                        singularName,
@@ -163,9 +172,9 @@ class TypeHandlerMap extends TypeHandler {
                                         returnType,
                                         blueprintJavadoc);
         }
-        if (singular.hasSingular()) {
+        if (configured.singular()) {
             // Builder putValue(String key, String value)
-            String singularName = singular.singularName();
+            String singularName = configured.singularName();
             String methodName = "put" + GeneratorTools.capitalize(singularName);
 
             Method.Builder method = Method.builder()
@@ -321,7 +330,7 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     private void setterAddValueToCollection(InnerClass.Builder classBuilder,
-                                            PrototypeProperty.ConfiguredOption configured,
+                                            AnnotationDataOption configured,
                                             String singularName,
                                             TypeName keyType,
                                             TypeName valueType,
@@ -360,7 +369,7 @@ class TypeHandlerMap extends TypeHandler {
     }
 
     private void setterAddValuesToCollection(InnerClass.Builder classBuilder,
-                                                        PrototypeProperty.ConfiguredOption configured,
+                                                        AnnotationDataOption configured,
                                                         String methodName,
                                                         TypeName keyType,
                                                         TypeName returnType,
@@ -397,7 +406,7 @@ class TypeHandlerMap extends TypeHandler {
                 .addLine("return self();"));
     }
 
-    private void declaredSetterAdd(InnerClass.Builder classBuilder, PrototypeProperty.ConfiguredOption configured,
+    private void declaredSetterAdd(InnerClass.Builder classBuilder, AnnotationDataOption configured,
                                    TypeName returnType,
                                    Javadoc blueprintJavadoc) {
         // declared type - add content
@@ -418,7 +427,7 @@ class TypeHandlerMap extends TypeHandler {
 
     @Override
     protected void declaredSetter(InnerClass.Builder classBuilder,
-                                PrototypeProperty.ConfiguredOption configured,
+                                AnnotationDataOption configured,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc) {
         // declared type (such as Map<String, String>) - replace content

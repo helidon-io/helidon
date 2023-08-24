@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.http.encoding;
-
-import java.util.List;
+package io.helidon.builder.test.testsubjects;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.encoding.spi.ContentEncodingProvider;
 
+/**
+ * Blueprint with a builder as an option.
+ */
 @Prototype.Blueprint
-@Configured
-interface ContentEncodingContextConfigBlueprint extends Prototype.Factory<ContentEncodingContext> {
+@Prototype.Configured
+interface BuilderOptionBlueprint {
     /**
-     * List of content encodings that should be used.
-     * Encodings configured here have priority over encodings discovered through service loader.
+     * This value is either explicitly configured, or uses config to get the supplier.
+     * If config source with change support is changed, the supplier should provide the latest value from configuration.
      *
-     * @return list of content encodings to be used (such as {@code gzip,deflate})
+     * @return supplier with latest value
      */
-    @Option.Singular
-    @ConfiguredOption(provider = true,
-                      providerType = ContentEncodingProvider.class)
-    List<ContentEncoding> contentEncodings();
+    @Option.Configured
+    @Option.DefaultCode("SupplierBean.builder()")
+    SupplierBean.Builder beanBuilder();
 }

@@ -19,34 +19,52 @@ package io.helidon.builder.test.testsubjects;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface WithProviderBlueprint {
-    @ConfiguredOption(provider = true, providerType = SomeProvider.class)
+    @Option.Configured
+    @Option.Provider(SomeProvider.class)
     SomeProvider.SomeService oneDiscover();
-    @ConfiguredOption(provider = true, providerType = SomeProvider.class, providerDiscoverServices = false)
+
+    @Option.Configured
+    @Option.Provider(value = SomeProvider.class, discoverServices = false)
     SomeProvider.SomeService oneNotDiscover();
-    @ConfiguredOption(provider = true, providerType = SomeProvider.class)
+
+    @Option.Configured
+    @Option.Provider(SomeProvider.class)
     Optional<SomeProvider.SomeService> optionalDiscover();
-    @ConfiguredOption(provider = true, providerType = SomeProvider.class, providerDiscoverServices = false)
+
+    @Option.Configured
+    @Option.Provider(value = SomeProvider.class, discoverServices = false)
     Optional<SomeProvider.SomeService> optionalNotDiscover();
-    @ConfiguredOption(provider = true, providerType = SomeProvider.class)
+
+    @Option.Configured
+    @Option.Provider(SomeProvider.class)
     List<SomeProvider.SomeService> listDiscover();
-    @ConfiguredOption(provider = true, providerType = SomeProvider.class, providerDiscoverServices = false)
+
+    @Option.Configured
+    @Option.Provider(value = SomeProvider.class, discoverServices = false)
     List<SomeProvider.SomeService> listNotDiscover();
+
     /*
     The following should always be empty, as there are no implementations
      */
-    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class)
+    @Option.Configured
+    @Option.Provider(ProviderNoImpls.class)
     Optional<ProviderNoImpls.SomeService> optionalNoImplDiscover();
-    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class, providerDiscoverServices = false)
+
+    @Option.Configured
+    @Option.Provider(value = ProviderNoImpls.class, discoverServices = false)
     Optional<ProviderNoImpls.SomeService> optionalNoImplNotDiscover();
-    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class)
+
+    @Option.Configured
+    @Option.Provider(ProviderNoImpls.class)
     List<ProviderNoImpls.SomeService> listNoImplDiscover();
-    @ConfiguredOption(provider = true, providerType = ProviderNoImpls.class, providerDiscoverServices = false)
+
+    @Option.Configured
+    @Option.Provider(value = ProviderNoImpls.class, discoverServices = false)
     List<ProviderNoImpls.SomeService> listNoImplNotDiscover();
 }

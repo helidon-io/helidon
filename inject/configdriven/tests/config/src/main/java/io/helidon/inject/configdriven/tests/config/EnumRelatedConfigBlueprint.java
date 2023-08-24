@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 
@@ -32,13 +33,13 @@ public interface EnumRelatedConfigBlueprint {
 
     Optional<FakeClientAuth> optionalClientAuth();
 
-    @Prototype.Singular
+    @Option.Singular
     List<InlinedEnum> list();
 
-    @Prototype.Singular
+    @Option.Singular
     Set<InlinedEnum> set();
 
-    @Prototype.Singular
+    @Option.Singular
     Map<String, InlinedEnum> map();
 
     enum InlinedEnum {

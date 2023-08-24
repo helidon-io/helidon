@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
@@ -41,7 +42,7 @@ interface ServiceInfoBlueprint extends ServiceInfoBasicsBlueprint, ServiceInfoBa
      * @see ExternalContracts
      * @return the service external contracts implemented
      */
-    @Prototype.Singular("externalContractImplemented")
+    @Option.Singular("externalContractImplemented")
     Set<TypeName> externalContractsImplemented();
 
     /**

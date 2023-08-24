@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * A pickle. Demonstrates the use of enumerated types, optionals, and validation on builders.
@@ -34,7 +34,7 @@ interface PickleBlueprint {
      *
      * @return the type of pickle
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     PickleType type();
 
     /**

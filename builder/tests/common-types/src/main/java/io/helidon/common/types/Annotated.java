@@ -19,7 +19,7 @@ package io.helidon.common.types;
 import java.util.List;
 import java.util.Optional;
 
-import io.helidon.builder.api.Prototype;
+import io.helidon.builder.api.Option;
 
 /**
  * Annotated elements provide annotations and their values.
@@ -31,7 +31,7 @@ public interface Annotated {
      *
      * @return the list of annotations on this element
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Annotation> annotations();
 
     /**

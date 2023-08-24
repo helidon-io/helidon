@@ -19,6 +19,7 @@ package io.helidon.http.media;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -35,7 +36,7 @@ interface MediaContextConfigBlueprint extends Prototype.Factory<MediaContext> {
      *
      * @return media supports
      */
-    @Prototype.Singular
+    @Option.Singular
     @ConfiguredOption(provider = true,
                       providerType = MediaSupportProvider.class)
     List<MediaSupport> mediaSupports();

@@ -250,8 +250,8 @@ public class BlueprintProcessor extends AbstractProcessor {
     private void generatePrototypeWithBuilder(TypeElement builderInterface,
                                               TypeContext typeContext) throws IOException {
 
-        TypeContext.BlueprintData blueprintDef = typeContext.blueprintData();
-        TypeContext.ConfiguredData configuredData = typeContext.configuredData();
+        AnnotationDataBlueprint blueprintDef = typeContext.blueprintData();
+        AnnotationDataConfigured configuredData = typeContext.configuredData();
         TypeContext.PropertyData propertyData = typeContext.propertyData();
         TypeContext.TypeInformation typeInformation = typeContext.typeInfo();
         CustomMethods customMethods = typeContext.customMethods();

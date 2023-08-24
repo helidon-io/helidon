@@ -18,6 +18,7 @@ package io.helidon.webserver.http1;
 
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 
@@ -32,7 +33,7 @@ interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1
      *
      * @return map of protocol name to upgrader
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, Http1Upgrader> upgraders();
 
     /**

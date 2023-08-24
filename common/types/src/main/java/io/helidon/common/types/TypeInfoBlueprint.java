@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -58,7 +59,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the elements that make up the type that are relevant for processing
      */
-    @Prototype.Singular
+    @Option.Singular
     List<TypedElementInfo> elementInfo();
 
     /**
@@ -67,8 +68,8 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the elements that still make up the type, but are otherwise deemed irrelevant for processing
      */
-    @Prototype.Singular
-    @Prototype.Redundant
+    @Option.Singular
+    @Option.Redundant
     List<TypedElementInfo> otherElementInfo();
 
     /**
@@ -78,8 +79,8 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return all referenced types
      */
-    @Prototype.Singular
-    @Prototype.Redundant
+    @Option.Singular
+    @Option.Redundant
     Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations();
 
     /**
@@ -87,8 +88,8 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return type names to its associated defining module name
      */
-    @Prototype.Singular
-    @Prototype.Redundant
+    @Option.Singular
+    @Option.Redundant
     Map<TypeName, String> referencedModuleNames();
 
     /**
@@ -103,8 +104,8 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the interface type info
      */
-    @Prototype.Singular
-    @Prototype.Redundant
+    @Option.Singular
+    @Option.Redundant
     List<TypeInfo> interfaceTypeInfo();
 
     /**
@@ -113,7 +114,7 @@ interface TypeInfoBlueprint extends Annotated {
      * @return element modifiers
      * @see io.helidon.common.types.TypeValues#MODIFIER_PUBLIC and other constants prefixed with {@code MODIFIER}
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<String> modifiers();
 
     /**

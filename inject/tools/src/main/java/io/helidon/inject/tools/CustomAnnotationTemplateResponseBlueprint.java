@@ -18,6 +18,7 @@ package io.helidon.inject.tools;
 
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -40,7 +41,7 @@ interface CustomAnnotationTemplateResponseBlueprint {
      *
      * @return map of generated type name to body of the source to be generated
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<TypeName, String> generatedSourceCode();
 
     /**
@@ -48,6 +49,6 @@ interface CustomAnnotationTemplateResponseBlueprint {
      *
      * @return map of generated type name (which is really just a directory path under resources) to the resource to be generated
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<TypedElementInfo, String> generatedResources();
 }

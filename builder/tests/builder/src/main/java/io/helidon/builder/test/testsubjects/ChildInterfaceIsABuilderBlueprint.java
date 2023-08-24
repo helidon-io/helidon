@@ -18,8 +18,8 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates builder usages when the parent in a plain old interface (and not a target of the builder annotation), while this
@@ -37,29 +37,29 @@ interface ChildInterfaceIsABuilderBlueprint extends ParentInterfaceNotABuilder {
     long childLevel();
 
     /**
-     * Used for testing {@link io.helidon.config.metadata.ConfiguredOption} default values.
+     * Used for testing {@link io.helidon.builder.api.Option.DefaultBoolean} default values.
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("true")
+    @Option.DefaultBoolean(true)
     boolean isChildLevel();
 
     /**
-     * Used for testing {@link io.helidon.config.metadata.ConfiguredOption} default values.
+     * Used for testing {@link io.helidon.builder.api.Option.Default} default values.
      *
      * @return ignored, here for testing purposes only
      */
     @Override
-    @ConfiguredOption("override")
+    @Option.Default("override")
     Optional<char[]> maybeOverrideMe();
 
     /**
-     * Used for testing {@link io.helidon.config.metadata.ConfiguredOption} default values.
+     * Used for testing {@link io.helidon.builder.api.Option.Default} default values.
      *
      * @return ignored, here for testing purposes only
      */
     @Override
-    @ConfiguredOption("override2")
+    @Option.Default("override2")
     char[] overrideMe();
 
 }

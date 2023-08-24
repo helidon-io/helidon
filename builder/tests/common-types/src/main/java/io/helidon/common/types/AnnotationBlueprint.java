@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -73,7 +74,7 @@ interface AnnotationBlueprint {
      *
      * @return key-value pairs of all the properties present
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, Object> values();
 
     /**
