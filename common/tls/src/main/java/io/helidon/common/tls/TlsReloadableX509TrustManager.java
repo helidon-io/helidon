@@ -59,12 +59,15 @@ class TlsReloadableX509TrustManager implements X509TrustManager, TlsReloadableCo
     }
 
     static TlsReloadableX509TrustManager create(X509TrustManager trustManager) {
+        if (trustManager instanceof TlsReloadableX509TrustManager) {
+            return (TlsReloadableX509TrustManager) trustManager;
+        }
         assertValid(trustManager);
         return new TlsReloadableX509TrustManager(trustManager);
     }
 
-    static void assertValid(X509TrustManager keyManager) {
-        if (keyManager instanceof TlsReloadableX509TrustManager) {
+    static void assertValid(X509TrustManager trustManager) {
+        if (trustManager instanceof TlsReloadableX509TrustManager) {
             throw new IllegalArgumentException();
         }
     }

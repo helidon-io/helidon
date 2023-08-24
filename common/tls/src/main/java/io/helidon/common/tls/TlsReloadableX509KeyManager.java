@@ -76,6 +76,9 @@ class TlsReloadableX509KeyManager implements X509KeyManager, TlsReloadableCompon
     }
 
     static TlsReloadableX509KeyManager create(X509KeyManager keyManager) {
+        if (keyManager instanceof TlsReloadableX509KeyManager) {
+            return (TlsReloadableX509KeyManager) keyManager;
+        }
         assertValid(keyManager);
         return new TlsReloadableX509KeyManager(keyManager);
     }
