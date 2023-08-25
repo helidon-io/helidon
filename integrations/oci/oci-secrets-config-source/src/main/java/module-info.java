@@ -32,8 +32,8 @@ module io.helidon.integrations.oci.secrets.configsource {
     requires transitive io.helidon.config;
     requires io.helidon.integrations.oci.sdk.runtime;
     requires oci.java.sdk.common;
-    requires oci.java.sdk.secrets;
-    requires oci.java.sdk.vault;
+    requires transitive oci.java.sdk.secrets;
+    requires transitive oci.java.sdk.vault;
 
     provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.integrations.oci.secrets.configsource.OciSecretsConfigSourceProvider;
 
