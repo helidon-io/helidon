@@ -17,10 +17,8 @@
 package io.helidon.microprofile.metrics;
 
 import java.lang.System.Logger.Level;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -28,21 +26,14 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.metrics.api.DistributionSummary;
-import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Histogram;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetadataBuilder;
 import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
 /**
@@ -112,7 +103,7 @@ class RegistryFactory {
      */
     Registry getRegistry(String scope) {
         return accessMetricsSettings(() -> registries.computeIfAbsent(scope, s ->
-                Registry.create(s, metricsConfig)));
+                Registry.create(s, meterRegistry)));
     }
 
     void start() {
@@ -147,38 +138,7 @@ class RegistryFactory {
         if (scope == null) {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + delegate);
         }
-        Registry registry = getRegistry(scope);
-
-        MetadataBuilder builder = new MetadataBuilder()
-                .withName(delegate.id().name());
-        delegate.description().ifPresent(builder::withDescription);
-        delegate.baseUnit().ifPresent(builder::withUnit);
-        Metadata metadata = builder.build();
-
-        List<Tag> tagsList = new ArrayList<>();
-        SystemTagsManager
-                .instance()
-                .withoutScopeTag(delegate.id().tags())
-                .forEach(tag -> tagsList.add(new Tag(tag.key(), tag.value())));
-
-        Tag[] tags = tagsList.toArray(new Tag[0]);
-
-        if (delegate instanceof io.helidon.metrics.api.Counter counter) {
-            registry.counter(counter, metadata, tags);
-        } else if (delegate instanceof DistributionSummary summary) {
-            registry.histogram(summary, metadata, tags);
-        } else if (delegate instanceof FunctionalCounter fCounter) {
-            registry.gauge(fCounter, metadata, tags);
-        } else if (delegate instanceof io.helidon.metrics.api.Gauge gauge) {
-            registry.gauge(gauge, metadata, tags);
-        } else if (delegate instanceof io.helidon.metrics.api.Timer timer) {
-            registry.timer(timer, meterRegistry, metadata, tags);
-        } else {
-            LOGGER.log(Level.INFO,
-                       "Cannot convert pre-registered base meter into the BASE metric registry: unrecognized meter "
-                               + "type " + delegate.getClass()
-                               .getName());
-        }
+        getRegistry(scope).recordAdd(delegate);
     }
 
     private void removeMetricForMeter(Meter meter) {
@@ -186,19 +146,7 @@ class RegistryFactory {
         if (scope == null) {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + meter);
         }
-        getRegistry(scope).remove(new MetricID(meter.id().name(),
-                                               tags(meter.id().tags())));
+        getRegistry(scope).recordRemove(meter);
     }
-
-    private Tag[] tags(Iterable<io.helidon.metrics.api.Tag> tags) {
-        List<Tag> result = new ArrayList<>();
-        SystemTagsManager
-                .instance()
-                .withoutScopeTag(tags)
-                .forEach(tag -> result.add(new Tag(tag.key(), tag.value())));
-
-        return result.toArray(new Tag[0]);
-    }
-
 }
 

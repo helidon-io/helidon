@@ -84,6 +84,11 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
     }
 
     @Override
+    public Class<io.helidon.metrics.api.Counter> delegateType() {
+        return io.helidon.metrics.api.Counter.class;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

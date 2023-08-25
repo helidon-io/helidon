@@ -186,12 +186,10 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
-    public void checkForReservedTagNames(Collection<String> tagNames) {
+    public Collection<String> reservedTagNamesUsed(Collection<String> tagNames) {
         Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
         reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
-        if (!reservedTagNamesUsed.isEmpty()) {
-            throw new IllegalArgumentException("Program-specified tag names include reserved names: " + reservedTagNamesUsed);
-        }
+        return reservedTagNamesUsed;
     }
 
     static class MultiIterable<T> implements Iterable<T> {

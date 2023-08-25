@@ -25,6 +25,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 
 /**
@@ -38,8 +39,11 @@ public class MetricsBaseTest {
     @Inject
     private MetricRegistry metricRegistry;
 
-    @BeforeAll
+    @AfterAll
     static void prep() {
+        io.micrometer.core.instrument.MeterRegistry micrometerGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
+        System.err.println("In prep, Micrometer GR contains " + micrometerGlobal.getMeters());
+        micrometerGlobal.getMeters().forEach(micrometerGlobal::remove);
         Metrics.globalRegistry().clear();
     }
 

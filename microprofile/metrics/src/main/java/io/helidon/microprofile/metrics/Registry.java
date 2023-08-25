@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,68 +15,585 @@
  */
 package io.helidon.microprofile.metrics;
 
-import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
-import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.common.Errors;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.SystemTagsManager;
 
+import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
+import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetadataBuilder;
+import org.eclipse.microprofile.metrics.Metric;
+import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
+import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.Tag;
+import org.eclipse.microprofile.metrics.Timer;
 
 /**
- * Metrics registry.
+ * Implementation of {@link org.eclipse.microprofile.metrics.MetricRegistry} which layers on top of the Helidon neutral
+ * metrics API (and, therefore, whatever runtime implementation of that API is available).
  */
-class Registry extends AbstractRegistry {
+class Registry implements MetricRegistry {
 
-    /**
-     * Create a registry of a certain scope.
-     *
-     * @param scope Registry scope.
-     * @param metricsConfig Registry settings to use in creating the registry.
-     * @return The newly created registry.
-     */
-    static Registry create(String scope, MetricsConfig metricsConfig) {
-        return new Registry(scope, metricsConfig);
+    private static final System.Logger LOGGER = System.getLogger(Registry.class.getName());
+    private static final Tag[] NO_TAGS = new Tag[0];
+    private final MeterRegistry meterRegistry;
+    private final String scope;
+
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Map<MetricID, HelidonMetric<?>> metricsById = new HashMap<>();
+    private final Map<Meter, HelidonMetric<?>> metricsByDelegate = new HashMap<>();
+    private final Map<String, InfoPerName> infoByName = new HashMap<>();
+
+    private Registry(String scope, MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        this.scope = scope;
     }
 
-    /**
-     * Creates a new instance.
-     *
-     * @param scope registry scope for the new registry
-     * @param metricsConfig registry settings to influence the created registry
-     */
-    protected Registry(String scope, MetricsConfig metricsConfig) {
-        super(scope, metricsConfig, MetricFactory.create(Metrics.globalRegistry()));
-    }
-
-    @Override
-    protected <R extends Number> Gauge<R> createGauge(Metadata metadata, Supplier<R> supplier) {
-        return HelidonGauge.create(scope(), metadata, supplier);
+    static Registry create(String scope, MeterRegistry meterRegistry) {
+        return new Registry(scope, meterRegistry);
     }
 
     @Override
-    protected <T, R extends Number> Gauge<R> createGauge(Metadata metadata,
-                                                              T object,
-                                                              Function<T, R> func) {
-        return HelidonGauge.create(scope(), metadata, object, func);
+    public Counter counter(String name) {
+        return counter(name, NO_TAGS);
     }
 
     @Override
-    public Stream<MetricInstance> stream() {
-        return super.stream();
+    public Counter counter(String name, Tag... tags) {
+        return counter(metadata(name),
+                       tags);
     }
 
     @Override
-    protected List<MetricID> metricIDsForName(String metricName) {
-        return super.metricIDsForName(metricName);
+    public Counter counter(MetricID metricID) {
+        return counter(metadata(metricID),
+                       metricID.getTagsAsArray());
+
     }
 
     @Override
-    protected void doRemove(HelidonMetric<?> metric) {
-        Metrics.globalRegistry().remove(metric.delegate());
+    public Counter counter(Metadata metadata) {
+        return counter(metadata, NO_TAGS);
+    }
+
+    @Override
+    public Counter counter(Metadata metadata, Tag... tags) {
+        return HelidonCounter.create(meterRegistry, scope, metadata, tags);
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
+        return gauge(metadata(name), object, func, tags);
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
+        return gauge(metadata(metricID), object, func, metricID.getTagsAsArray());
+    }
+
+    @Override
+    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
+        return HelidonGauge.create(meterRegistry, scope, metadata, object, func);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
+        return gauge(metadata(name), supplier, tags);
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
+        return gauge(metadata(metricID), supplier, metricID.getTagsAsArray());
+    }
+
+    @Override
+    public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
+        return HelidonGauge.create(meterRegistry, scope, metadata, supplier, tags);
+    }
+
+    @Override
+    public Histogram histogram(String name) {
+        return histogram(metadata(name),
+                         NO_TAGS);
+    }
+
+    @Override
+    public Histogram histogram(String name, Tag... tags) {
+        return histogram(metadata(name),
+                         tags);
+    }
+
+    @Override
+    public Histogram histogram(MetricID metricID) {
+        return histogram(metadata(metricID),
+                         metricID.getTagsAsArray());
+    }
+
+    @Override
+    public Histogram histogram(Metadata metadata) {
+        return histogram(metadata, NO_TAGS);
+    }
+
+    @Override
+    public Histogram histogram(Metadata metadata, Tag... tags) {
+        return HelidonHistogram.create(meterRegistry, scope, metadata, tags);
+    }
+
+    @Override
+    public Timer timer(String name) {
+        return timer(metadata(name));
+    }
+
+    @Override
+    public Timer timer(String name, Tag... tags) {
+        return timer(metadata(name), tags);
+    }
+
+    @Override
+    public Timer timer(MetricID metricID) {
+        return timer(metadata(metricID.getName()), metricID.getTagsAsArray());
+    }
+
+    @Override
+    public Timer timer(Metadata metadata) {
+        return timer(metadata, NO_TAGS);
+    }
+
+    @Override
+    public Timer timer(Metadata metadata, Tag... tags) {
+        return HelidonTimer.create(meterRegistry, scope, metadata, tags);
+    }
+
+    @Override
+    public Metric getMetric(MetricID metricID) {
+        return metricsById.get(metricID);
+    }
+
+    @Override
+    public <T extends Metric> T getMetric(MetricID metricID, Class<T> asType) {
+        return asType.cast(getMetric(metricID));
+    }
+
+    @Override
+    public Counter getCounter(MetricID metricID) {
+        return getMetric(metricID, Counter.class);
+    }
+
+    @Override
+    public Gauge<?> getGauge(MetricID metricID) {
+        return getMetric(metricID, Gauge.class);
+    }
+
+    @Override
+    public Histogram getHistogram(MetricID metricID) {
+        return getMetric(metricID, Histogram.class);
+    }
+
+    @Override
+    public Timer getTimer(MetricID metricID) {
+        return getMetric(metricID, Timer.class);
+    }
+
+    @Override
+    public Metadata getMetadata(String name) {
+        InfoPerName info = infoByName.get(name);
+        return info == null ? null : info.metadata;
+    }
+
+    @Override
+    public boolean remove(String name) {
+        lock.lock();
+        try {
+            return removeMatchingWithResult((id, metric) -> id.getName().equals(name));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public boolean remove(MetricID metricID) {
+        lock.lock();
+        try {
+            return removeViaDelegate(metricID);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void removeMatching(MetricFilter filter) {
+        removeMatchingWithResult(filter);
+    }
+
+    @Override
+    public SortedSet<String> getNames() {
+        return new TreeSet<>(infoByName.keySet());
+    }
+
+    @Override
+    public SortedSet<MetricID> getMetricIDs() {
+        return new TreeSet<>(metricsById.keySet());
+    }
+
+    @Override
+    public SortedMap<MetricID, Gauge> getGauges() {
+        return getMetrics(Gauge.class, MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, Gauge> getGauges(MetricFilter filter) {
+        return getMetrics(Gauge.class, filter);
+    }
+
+    @Override
+    public SortedMap<MetricID, Counter> getCounters() {
+        return getMetrics(Counter.class, MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, Counter> getCounters(MetricFilter filter) {
+        return getMetrics(Counter.class, filter);
+    }
+
+    @Override
+    public SortedMap<MetricID, Histogram> getHistograms() {
+        return getMetrics(Histogram.class, MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, Histogram> getHistograms(MetricFilter filter) {
+        return getMetrics(Histogram.class, filter);
+    }
+
+    @Override
+    public SortedMap<MetricID, Timer> getTimers() {
+        return getMetrics(Timer.class, MetricFilter.ALL);
+    }
+
+    @Override
+    public SortedMap<MetricID, Timer> getTimers(MetricFilter filter) {
+        return getMetrics(Timer.class, filter);
+    }
+
+    @Override
+    public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
+        lock.lock();
+        try {
+            return metricsById.entrySet()
+                    .stream()
+                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                    .collect(TreeMap::new,
+                             (map, entry) -> map.put(entry.getKey(), entry.getValue()),
+                             TreeMap::putAll);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
+        lock.lock();
+        try {
+            return metricsById.entrySet()
+                    .stream()
+                    .filter(entry -> ofType.isInstance(entry.getKey()))
+                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                    .collect(TreeMap::new,
+                             (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()),
+                             TreeMap::putAll);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Map<MetricID, Metric> getMetrics() {
+        return Map.copyOf(metricsById);
+    }
+
+    @Override
+    public Map<String, Metadata> getMetadata() {
+        var result = new HashMap<String, Metadata>();
+        infoByName.forEach((key, value) -> result.put(key, value.metadata()));
+        return result;
+    }
+
+    @Override
+    public String getScope() {
+        return scope;
+    }
+
+    HelidonMetric<?> recordAdd(Meter meter) {
+
+        String name = meter.id().name();
+
+        // Do some validation before we accept the registration.
+
+        Errors.Collector collector = Errors.collector();
+
+        MetricID newMetricID = metricIDWithoutScope(collector, meter.id());
+
+        InfoPerName existingInfo = infoByName.get(name);
+        if (existingInfo != null) {
+            existingInfo.validate(collector, newMetricID, meter);
+        }
+
+        HelidonMetric<?> existingMetric = metricsById.get(newMetricID);
+        if (existingMetric != null) {
+
+            // This is a bit odd. We've been notified that a new meter was created by the neutral metrics implementation,
+            // but we seem to already have the corresponding metric in place. Validate the new meter against the
+            // existing metric anyway but report a warning about the duplicate registration attempt.
+
+            collector.warn(String.format("unexpected attempted re-registration of metric %s by meter %s", newMetricID, meter));
+            validateMetric(collector, newMetricID, existingMetric, meter);
+        }
+
+        if (collector.hasFatal()) {
+            throw new IllegalArgumentException("Attempt to register a meter incompatible with previously-registered metrics: "
+                                                       + collector.collect());
+        }
+
+        Metadata newMetadata = existingInfo == null ? metadata(meter) : null;
+
+        HelidonMetric<?> newMetric = metric(collector,
+                                            existingInfo == null ? newMetadata : existingInfo.metadata,
+                                            meter);
+
+        updateDataStructures(newMetricID, newMetadata, newMetric, meter);
+
+        collector.collect().log(LOGGER);
+
+        return newMetric;
+    }
+
+    void recordRemove(Meter meter) {
+
+        Errors.Collector collector = Errors.collector();
+
+        HelidonMetric<?> metric = metricsByDelegate.get(meter);
+        if (metric == null) {
+            collector.warn(meter, "Unable to find corresponding metric to remove upon removal of meter");
+        } else {
+            lock.lock();
+            try {
+                String metricName = meter.id().name();
+                MetricID metricID = metricIDWithoutScope(collector, meter.id());
+
+                InfoPerName info = infoByName.get(metricName);
+                if (info == null) {
+                    collector.warn(String.format("Unable to locate info for name %s",
+                                                 metricName));
+                } else {
+                    if (info.remove(metricID)) {
+                        infoByName.remove(metricName);
+                    }
+                }
+
+                if (metricsById.remove(metricID) == null) {
+                    collector.warn("could not find metric by ID " + metricID);
+                }
+
+                if (metricsByDelegate.remove(meter) == null) {
+                    collector.warn("could not find metric by meter");
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    private static Metadata metadata(String name) {
+        return Metadata.builder()
+                .withName(name)
+                .build();
+    }
+
+    private static Metadata metadata(MetricID metricId) {
+        return metadata(metricId.getName());
+    }
+
+    private static void validateMetric(Errors.Collector collector,
+                                       MetricID metricID,
+                                       HelidonMetric<?> existingMetric,
+                                       Meter meter) {
+
+        if (!existingMetric.delegateType().isInstance(meter)) {
+            collector.fatal(String.format("existing metric %s is compatible with type %s but new meter is %s",
+                                          metricID,
+                                          existingMetric.delegateType(),
+                                          meter.getClass().getName()));
+        }
+    }
+
+    private static Metadata metadata(Meter meter) {
+
+        MetadataBuilder builder = Metadata.builder()
+                .withName(meter.id().name());
+        meter.baseUnit().ifPresent(builder::withUnit);
+        meter.description().ifPresent(builder::withDescription);
+
+        return builder.build();
+    }
+
+    private static Map<String, String> tagsWithoutScope(Iterable<io.helidon.metrics.api.Tag> tags) {
+        Map<String, String> result = new TreeMap<>();
+
+        SystemTagsManager
+                .instance()
+                .withoutScopeTag(tags)
+                .forEach(t -> result.put(t.key(), t.value()));
+
+        return result;
+    }
+
+    private static Tag[] tags(Map<String, String> tags) {
+        var result = new ArrayList<Tag>();
+        tags.forEach((key, value) -> result.add(new Tag(key, value)));
+        return result.toArray(new Tag[0]);
+    }
+
+    private boolean removeMatchingWithResult(MetricFilter filter) {
+        boolean result = false;
+        lock.lock();
+        try {
+            for (Map.Entry<MetricID, Metric> entry : getMetrics(filter).entrySet()) {
+                result |= remove(entry.getKey());
+            }
+            return result;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void updateDataStructures(MetricID newMetricID,
+                                      Metadata newMetadata,
+                                      HelidonMetric<?> newMetric,
+                                      Meter meter) {
+        lock.lock();
+        try {
+            InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
+                                                          name -> InfoPerName.create(newMetadata, newMetricID));
+            info.add(newMetricID);
+            metricsById.put(newMetricID, newMetric);
+            metricsByDelegate.put(meter, newMetric);
+
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private boolean removeViaDelegate(MetricID metricId) {
+        lock.lock();
+        try {
+            return meterRegistry.remove(metricsById.get(metricId).delegate())
+                    .isPresent();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private HelidonMetric<?> metric(Errors.Collector collector, Metadata metadata, Meter meter) {
+        if (meter instanceof io.helidon.metrics.api.Counter counter) {
+            return HelidonCounter.create(scope, metadata, counter);
+        }
+        if (meter instanceof DistributionSummary summary) {
+            return HelidonHistogram.create(scope, metadata, summary);
+        }
+        if (meter instanceof FunctionalCounter fCounter) {
+            return HelidonGauge.create(scope, metadata, fCounter);
+        }
+        if (meter instanceof io.helidon.metrics.api.Gauge gauge) {
+            return HelidonGauge.create(scope, metadata, gauge);
+        }
+        if (meter instanceof io.helidon.metrics.api.Timer timer) {
+            return HelidonTimer.create(meterRegistry, scope, metadata, timer);
+        }
+        collector.warn(String.format("Unrecognized type for new meter %s; unable to create MP metric for it",
+                                     meter));
+        return null;
+    }
+
+    private MetricID metricIDWithoutScope(Errors.Collector collector, Meter.Id meterId) {
+        Map<String, String> tagsWithoutScope = tagsWithoutScope(meterId.tags());
+
+        Collection<String> reservedTagNamesUsed = SystemTagsManager
+                .instance()
+                .reservedTagNamesUsed(tagsWithoutScope.keySet());
+
+        if (!reservedTagNamesUsed.isEmpty()) {
+            collector.fatal(reservedTagNamesUsed, "illegal use of reserved tag names");
+        }
+        return new MetricID(meterId.name(), tags(tagsWithoutScope));
+    }
+
+    record InfoPerName(Metadata metadata, Set<MetricID> metricIDs, Set<String> tagNames) {
+
+        static InfoPerName create(Metadata metadata, MetricID metricID) {
+            InfoPerName result = new InfoPerName(metadata, new HashSet<>(), metricID.getTags().keySet());
+            result.add(metricID);
+            return result;
+        }
+
+        void add(MetricID metricID) {
+            metricIDs.add(metricID);
+        }
+
+        boolean remove(MetricID metricID) {
+            metricIDs.remove(metricID);
+            return metricIDs.isEmpty();
+        }
+
+        void validate(Errors.Collector collector, MetricID metricID, Meter meter) {
+            validateMetadata(collector, metadata, meter);
+            validateTagNames(collector, metricID);
+        }
+
+        private void validateMetadata(Errors.Collector collector, Metadata existingMetadata, Meter meter) {
+            meter.description() // new description is present
+                    .filter(Predicate.not(String::isBlank)) // and is non-blank
+                    .filter(d -> !d.equals(existingMetadata.description()
+                                                   .orElse(d))) // and differs from existing description if any
+                    .ifPresent(d -> collector.fatal(String.format("metadata description: old='%s', proposed='%s'",
+                                                                  existingMetadata.getDescription(),
+                                                                  d)));
+
+            meter.baseUnit() // new unit is present
+                    .filter(Predicate.not(String::isBlank)) // and is non-blank
+                    .filter(u -> !u.equals(existingMetadata.unit().orElse(u)))// and differs from existing unit if any
+                    .ifPresent(u -> collector.fatal(String.format("metadataunit: old='%s', proposed='%s'",
+                                                                  existingMetadata.getUnit(),
+                                                                  u)));
+        }
+
+        private void validateTagNames(Errors.Collector collector, MetricID metricID) {
+            Set<String> newTagNames = metricID.getTags().keySet();
+            if (!tagNames.equals(newTagNames)) {
+                collector.fatal(String.format("new tag names %s are inconsistent with existing tag names %s",
+                                              metricID.getTags().keySet(),
+                                              tagNames));
+            }
+        }
     }
 }

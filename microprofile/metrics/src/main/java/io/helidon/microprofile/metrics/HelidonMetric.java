@@ -84,4 +84,9 @@ interface HelidonMetric<M extends Meter> extends Metric {
      * @return the delegate
      */
     M delegate();
+
+    /**
+     * Returns the type of the delegate meter.
+     */
+    Class<M> delegateType();
 }

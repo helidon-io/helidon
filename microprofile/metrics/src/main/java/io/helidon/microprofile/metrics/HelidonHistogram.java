@@ -124,4 +124,9 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
         }
         return sb.toString();
     }
+
+    @Override
+    public Class<DistributionSummary> delegateType() {
+        return DistributionSummary.class;
+    }
 }

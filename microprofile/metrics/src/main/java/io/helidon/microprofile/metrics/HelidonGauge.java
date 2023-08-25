@@ -192,6 +192,11 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
         return ", value='" + getValue() + '\'';
     }
 
+    @Override
+    public Class<io.helidon.metrics.api.Gauge> delegateType() {
+        return io.helidon.metrics.api.Gauge.class;
+    }
+
     static class FunctionBased<N extends Number, T> extends HelidonGauge<N> {
 
         private final T target;

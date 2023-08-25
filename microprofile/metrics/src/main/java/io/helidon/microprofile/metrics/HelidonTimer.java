@@ -141,6 +141,11 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
         return sb.toString();
     }
 
+    @Override
+    public Class<io.helidon.metrics.api.Timer> delegateType() {
+        return io.helidon.metrics.api.Timer.class;
+    }
+
     private final class ContextImpl implements Context {
         private final io.helidon.metrics.api.Timer.Sample delegate;
 

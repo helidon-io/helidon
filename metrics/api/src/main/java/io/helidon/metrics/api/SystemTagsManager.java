@@ -95,8 +95,9 @@ public interface SystemTagsManager {
      * Scans the provided tag names and throws an exception if any is a reserved tag name.
      *
      * @param tagNames tag names
+     * @return reserved tag names present in the provided tag names
      */
-    void checkForReservedTagNames(Collection<String> tagNames);
+    Collection<String> reservedTagNamesUsed(Collection<String> tagNames);
 
     /**
      * Invokes the specified consumer with the scope tag name setting from the configuration (if present) and the
