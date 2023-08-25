@@ -119,7 +119,7 @@ public final class SecretBundleConfigSource
         this.es = newCachedThreadPool();
         // Helidon Config has no defined lifecycle so the best we can do is forcibly close the ExecutorService on VM
         // exit.
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> this.es.shutdownNow()));
+        Runtime.getRuntime().addShutdownHook(new Thread(this.es::shutdownNow));
         Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
         Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
         String compartmentOcid = b.compartmentOcid;
