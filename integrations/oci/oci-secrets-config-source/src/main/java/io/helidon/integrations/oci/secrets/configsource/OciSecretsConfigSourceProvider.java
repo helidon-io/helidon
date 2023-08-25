@@ -114,7 +114,10 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      */
     @Deprecated // For use by the Helidon Config subsystem only.
     @Override // ConfigSourceProvider
-    public SecretBundleConfigSource create(String type, Config metaConfig) {
+    public ConfigSource create(String type, Config metaConfig) {
+        if (metaConfig.get("lazy").asBoolean().orElse(Boolean.FALSE)) {
+            return SecretBundleLazyConfigSource.builder().config(metaConfig).build();
+        }
         return SecretBundleConfigSource.builder().config(metaConfig).build();
     }
 
