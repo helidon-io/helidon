@@ -36,7 +36,6 @@
 /**
  * @typedef {Object} GoogleAccount
  * @property {GoogleId} id
- * @property
  */
 
 /**
@@ -106,7 +105,7 @@ class TodoClient {
   }
 
   /**
-   *
+   * Batch requests.
    * @param {Todo[]} items
    * @param {function(Todo):boolean} filter
    * @param {function(Todo, number): Promise<Todo>} fn
@@ -224,6 +223,9 @@ class App {
     google.accounts.id.prompt();
   }
 
+  /**
+   * Init the application.
+   */
   init(access_token) {
     this.client = new TodoClient(access_token);
     this.token = JSON.parse(atob(access_token.split(".")[1]));
