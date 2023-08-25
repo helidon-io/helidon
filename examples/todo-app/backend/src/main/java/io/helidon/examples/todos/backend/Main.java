@@ -76,7 +76,7 @@ public final class Main {
                         // (see src/main/resources/application.yaml)
                         classpath("application.yaml")))
                  // support for passwords in configuration
-//                .addFilter(SecureConfigFilter.fromConfig())
+                //.addFilter(SecureConfigFilter.fromConfig())
                 .build();
     }
 }

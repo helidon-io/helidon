@@ -41,7 +41,6 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.opentracing.Traced;
@@ -57,9 +56,6 @@ public class JaxRsBackendResource {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    /**
-     * The database service facade.
-     */
     private final DbService backendService;
     private final Tracer tracer;
 
@@ -78,22 +74,16 @@ public class JaxRsBackendResource {
      * Retrieve all TODO entries.
      *
      * @param context security context to map the user
-     * @param headers HTTP headers
      * @return the response with the retrieved entries as entity
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Traced(operationName = "jaxrs:list")
-    public Response list(@Context final SecurityContext context,
-                         @Context final HttpHeaders headers) {
-
+    public Response list(@Context SecurityContext context) {
         JsonArrayBuilder builder = JSON.createArrayBuilder();
         backendService.list(tracer.activeSpan().context(), getUserId(context))
                       .forEach(data -> builder.add(data.forRest()));
-
-        Response response = Response.ok(builder.build()).build();
-
-        return response;
+        return Response.ok(builder.build()).build();
     }
 
     /**
@@ -105,9 +95,7 @@ public class JaxRsBackendResource {
     @GET
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response get(@PathParam("id") final String id,
-                        @Context final SecurityContext context) {
-
+    public Response get(@PathParam("id") String id, @Context SecurityContext context) {
         return backendService
                 .get(tracer.activeSpan().context(), id, getUserId(context))
                 .map(Todo::forRest)
@@ -125,9 +113,7 @@ public class JaxRsBackendResource {
     @DELETE
     @Path("/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response delete(@PathParam("id") final String id,
-                           @Context final SecurityContext context) {
-
+    public Response delete(@PathParam("id") String id, @Context SecurityContext context) {
         return backendService
                 .delete(tracer.activeSpan().context(), id, getUserId(context))
                 .map(Todo::forRest)
@@ -145,9 +131,7 @@ public class JaxRsBackendResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response createIt(final JsonObject jsonObject,
-                             @Context final SecurityContext context) {
-
+    public Response createIt(JsonObject jsonObject, @Context SecurityContext context) {
         String newId = UUID.randomUUID().toString();
         String userId = getUserId(context);
         Todo newBackend = Todo.newTodoFromRest(jsonObject, userId, newId);
@@ -168,13 +152,9 @@ public class JaxRsBackendResource {
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(@PathParam("id") final String id,
-                           final JsonObject jsonObject,
-                           final @Context SecurityContext context) {
-
+    public Response update(@PathParam("id") String id, JsonObject jsonObject, @Context SecurityContext context) {
         return backendService
-                .update(tracer.activeSpan().context(),
-                        Todo.fromRest(jsonObject, getUserId(context), id))
+                .update(tracer.activeSpan().context(), Todo.fromRest(jsonObject, getUserId(context), id))
                 .map(Todo::forRest)
                 .map(Response::ok)
                 .orElse(Response.status(Response.Status.NOT_FOUND))
@@ -186,7 +166,7 @@ public class JaxRsBackendResource {
      * @param context the security context
      * @return user id found in the context or {@code <ANONYMOUS>} otherwise
      */
-    private String getUserId(final SecurityContext context) {
+    private String getUserId(SecurityContext context) {
         return context.user()
                 .map(Subject::principal)
                 .map(Principal::id)

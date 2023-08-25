@@ -1,0 +1,91 @@
+<!--
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Helidon TodoMVC</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="spacer"></div>
+        <div id="user-info">
+            <div>
+                <button class="sign-out">
+                    <span class="material-symbols-outlined">logout</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <div class="wrap">
+        <div class="column">
+            <section class="todoapp">
+                <header class="header">
+                    <h1>todos</h1>
+                    <div class="row">
+                        <input id="toggle-all" class="checkbox toggle-all" type="checkbox" aria-label="mark all as completed">
+                        <input class="new-todo" aria-label="new-todo" placeholder="What needs to be done?" autofocus>
+                    </div>
+                </header>
+                <section class="main">
+                    <ul class="todo-list"></ul>
+                </section>
+                <footer class="footer"></footer>
+            </section>
+        </div>
+        <footer class="info">
+            <p>Helidon implementation of <a href="http://todomvc.com">TodoMVC</a></p>
+        </footer>
+    </div>
+    <script id="todo-template" type="text/x-handlebars-template">
+        {{#this}}
+			<li {{#if completed}}class="completed"{{/if}} data-id="{{id}}">
+				<div class="row">
+                    <input type="checkbox" class="checkbox toggle" {{#if completed}}checked{{/if}}>
+					<label class="view">{{title}}</label>
+				    <input class="edit" value="{{title}}">
+					<div class="actions">
+                        <button class="update">edit</button>
+                        <button class="delete">delete</button>
+					</div>
+				</div>
+			</li>
+		{{/this}}
+    </script>
+    <script id="footer-template" type="text/x-handlebars-template">
+        <span class="todo-count"><strong>{{activeTodoCount}}</strong> {{activeTodoWord}} left</span>
+        <ul class="filters">
+            <li>
+                <a {{#eq filter 'all'}}class="selected"{{/eq}} href="#/all">All</a>
+            </li>
+            <li>
+                <a {{#eq filter 'active'}}class="selected"{{/eq}}href="#/active">Active</a>
+            </li>
+            <li>
+                <a {{#eq filter 'completed'}}class="selected"{{/eq}}href="#/completed">Completed</a>
+            </li>
+        </ul>
+        {{#if completedTodos}}<button class="clear-completed">Clear completed</button>{{/if}}
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0/handlebars.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Director/1.2.2/director.min.js"></script>
+    <script src="js/app.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,12 +18,16 @@ env: docker
 webserver:
   port: 8080
 
+cors:
+  allow-origins: ["https://cdnjs.cloudflare.com", "https://raw.githubusercontent.com"]
+  allow-methods: ["GET"]
+
 tracing:
   service: "todo:front"
-  host: "zipkin"
+  port: 9411
 
 services:
-  backend.endpoint: "http://helidon-examples-todo-backend:8854"
+  backend.endpoint: "http://localhost:8854"
 
 security:
   config:
@@ -41,15 +45,15 @@ security:
         client-id: "1048216952820-6a6ke9vrbjlhngbc0al0dkj9qs9tqbk2.apps.googleusercontent.com"
         outbound:
           - name: "backend"
-            hosts: [ "localhost", "helidon-examples-todo-backend" ]
+            hosts: [ "localhost" ]
     - abac:
     - http-signatures:
         outbound:
-        - name: "backend"
-          hosts: ["localhost", "helidon-examples-todo-backend"]
-          signature:
-            key-id: "frontend"
-            hmac.secret: "${CLEAR=frontend2backend}"
+          - name: "backend"
+            hosts: [ "localhost" ]
+            signature:
+              key-id: "frontend"
+              hmac.secret: "${CLEAR=frontend2backend}"
   web-server:
     paths:
       - path: "/api/{+}"

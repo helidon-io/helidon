@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+# Copyright (c) 2021, 2023 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-env: dev
 
-tracing:
-  host: "localhost"
+webserver:
+  port: 0
 
-cassandra:
-  servers:
-    - host: localhost
+security:
+  providers:
+    - http-basic-auth:
+        realm: "helidon"
+        users:
+          - login: "john"
+            password: "password"
+  web-server:
+    paths:
+      - path: "/api/{+}"
+        authenticate: true
