@@ -68,12 +68,8 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId>
+            <artifactId>helidon-microprofile-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.microprofile</groupId>
@@ -84,13 +80,24 @@
             <artifactId>helidon-security-providers-google-login</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-http-sign</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.security.providers</groupId>
+            <artifactId>helidon-security-providers-abac</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tracing</groupId>
             <artifactId>helidon-microprofile-tracing</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing-zipkin</artifactId>
-            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
         </dependency>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
@@ -104,11 +111,6 @@
         <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-microprofile-tests-junit5</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.config</groupId>
-            <artifactId>helidon-config-mp</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

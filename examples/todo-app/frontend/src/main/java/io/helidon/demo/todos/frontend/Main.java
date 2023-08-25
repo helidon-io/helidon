@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.demo.todos.frontend;
 
+import java.time.Duration;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import io.helidon.common.LogConfig;
+import io.helidon.common.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.FileSystemWatcher;
 import io.helidon.media.jsonp.JsonpSupport;
@@ -34,15 +34,10 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.accesslog.AccessLogSupport;
 import io.helidon.webserver.staticcontent.StaticContentSupport;
 
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import org.glassfish.jersey.logging.LoggingFeature;
-
 import static io.helidon.config.ConfigSources.classpath;
 import static io.helidon.config.ConfigSources.environmentVariables;
 import static io.helidon.config.ConfigSources.file;
 import static io.helidon.config.PollingStrategies.regular;
-import static java.time.Duration.ofSeconds;
 
 /**
  * Main class to start the service.
@@ -70,32 +65,20 @@ public final class Main {
         // load logging configuration
         LogConfig.configureRuntime();
 
-        // needed for default connection of Jersey client
-        // to allow our headers to be set
-        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-
         Config config = buildConfig();
 
-        // build a client (Jersey)
-        // and apply security and tracing features on it
-        Client client = ClientBuilder.newClient();
-        client.register(new LoggingFeature(Logger.getGlobal(), Level.FINE, LoggingFeature.Verbosity.PAYLOAD_ANY, 8192));
-
-        BackendServiceClient bsc = new BackendServiceClient(client, config);
+        Security security = Security.create(config.get("security"));
 
         // create a web server
-        WebServer server = WebServer.builder(createRouting(
-                    Security.create(config.get("security")),
-                    config,
-                    bsc))
+        WebServer server = WebServer.builder()
+                .addRouting(createRouting(security, config))
                 .config(config.get("webserver"))
                 .addMediaSupport(JsonpSupport.create())
                 .tracer(registerTracer(config))
                 .build();
 
         // start the web server
-        server.start()
-                .whenComplete(Main::started);
+        server.start().whenComplete(Main::started);
     }
 
     /**
@@ -103,7 +86,7 @@ public final class Main {
      * @param config the configuration root
      * @return the created {@code Tracer}
      */
-    private static Tracer registerTracer(final Config config) {
+    private static Tracer registerTracer(Config config) {
         return TracerBuilder.create(config.get("tracing")).build();
     }
 
@@ -111,25 +94,25 @@ public final class Main {
      * Create the web server routing and register all handlers.
      * @param security the security features
      * @param config the configuration root
-     * @param bsc the backend service client to use
      * @return the created {@code Routing}
      */
-    private static Routing createRouting(final Security security,
-                                         final Config config,
-                                         final BackendServiceClient bsc) {
-
+    private static Routing createRouting(Security security, Config config) {
         return Routing.builder()
                 .register(AccessLogSupport.create())
                 // register metrics features (on "/metrics")
                 .register(MetricsSupport.create())
                 // register security features
                 .register(WebSecurity.create(security, config.get("security")))
+                // redirect POST / to GET /
+                .post("/", (req, res) -> {
+                    res.addHeader(Http.Header.LOCATION, "/");
+                    res.status(Http.Status.SEE_OTHER_303);
+                    res.send();
+                })
                 // register static content support (on "/")
                 .register(StaticContentSupport.builder("/WEB").welcomeFileName("index.html"))
                 // register API handler (on "/api") - this path is secured (see application.yaml)
-                .register("/api", new TodosHandler(bsc))
-                // and a simple environment handler to see where we are
-                .register("/env", new EnvHandler(config))
+                .register("/api", new TodoService(new BackendServiceClient(config)))
                 .build();
     }
 
@@ -140,9 +123,7 @@ public final class Main {
      * @param webServer the {@code WebServer} instance
      * @param throwable if non {@code null}, indicate a server startup error
      */
-    private static void started(final WebServer webServer,
-                                final Throwable throwable) {
-
+    private static void started(WebServer webServer, Throwable throwable) {
         if (throwable == null) {
             System.out.println("WEB server is up! http://localhost:" + webServer.port());
         } else {
@@ -167,8 +148,7 @@ public final class Main {
                         // expected in k8s runtime
                         // to configure testing/production values
                         file("prod.yaml")
-                                .pollingStrategy(regular(
-                                        ofSeconds(POLLING_INTERVAL)))
+                                .pollingStrategy(regular(Duration.ofSeconds(POLLING_INTERVAL)))
                                 .optional(),
                         // in jar file
                         // (see src/main/resources/application.yaml)
