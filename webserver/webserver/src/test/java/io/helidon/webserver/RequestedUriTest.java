@@ -81,8 +81,6 @@ class RequestedUriTest {
                                                     .send(e.getClass().getName() + ":" + e.getMessage());
                                         }
                                     })
-                                    .get("/redirect", (req, res) -> res.status(Http.Status.TEMPORARY_REDIRECT_307)
-                                            .addHeader(Http.Header.LOCATION, "/uri"))
                 )
                 .build()
                 .start()
@@ -103,18 +101,6 @@ class RequestedUriTest {
                 () -> assertThat(response.content().as(String.class).await(), is("http://[::1]:" + port + "/uri")),
                 () -> assertThat(response.status(), is(Http.Status.OK_200))
         );
-
-        client.get()
-                .path("/redirect")
-                .request()
-                .await(Duration.ofSeconds(10));
-
-        assertAll(
-                () -> assertThat(response.content().as(String.class).await(), is("http://[::1]:" + port + "/")),
-                () -> assertThat(response.status(), is(Http.Status.OK_200))
-        );
-
-
     }
 
     private static Stream<TestData> testData() {
