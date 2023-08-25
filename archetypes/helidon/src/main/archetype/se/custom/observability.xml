@@ -52,6 +52,10 @@
                     <value key="groupId">io.helidon.metrics</value>
                     <value key="artifactId">helidon-metrics</value>
                 </map>
+                <map if="${metrics}">
+                    <value key="groupId">io.helidon.metrics</value>
+                    <value key="artifactId">helidon-metrics-api</value>
+                </map>
                 <map if="${tracing}">
                     <value key="groupId">io.helidon.webserver</value>
                     <value key="artifactId">helidon-webserver-tracing</value>
@@ -69,7 +73,6 @@
                 <value>io.helidon.webserver.observe.health.HealthObserveProvider</value>
             </list>
             <list key="Main-helidon-imports" if="${metrics}">
-                <value>io.helidon.metrics.api.MetricsSettings</value>
                 <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
                 <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
             </list>

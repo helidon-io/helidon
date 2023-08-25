@@ -127,42 +127,26 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
-                                    <list key="Main-other-imports" if="${flavor} == 'se'">
-                                        <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
-                                    </list>
                                     <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                        <value>io.helidon.metrics.api.MetricsSettings</value>
-                                        <value>io.helidon.metrics.api.Registry</value>
-                                        <value>io.helidon.metrics.api.RegistryFactory</value>
-                                        <value>io.helidon.metrics.api.RegistrySettings</value>
+                                        <value>io.helidon.metrics.api.Metrics</value>
+                                        <value>io.helidon.metrics.api.MeterRegistry</value>
                                         <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
                                         <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
                                     </list>
                                     <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
-        MetricsSettings.Builder metricsSettingsBuilder =
-                MetricsSettings.builder()
-                        .registrySettings(Registry.APPLICATION_SCOPE, RegistrySettings.create());
-        MetricsFeature metrics = MetricsFeature.builder()
-                .metricsSettings(metricsSettingsBuilder)
-                .build();
-        MetricRegistry appRegistry = RegistryFactory.getInstance(metricsSettingsBuilder.build())
-                .getRegistry(MetricRegistry.APPLICATION_SCOPE);
+        MeterRegistry appRegistry = Metrics.globalRegistry();
 
         MetricsService metricsService = new MetricsService(config, appRegistry);
 ]]></value>
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                        <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserveProvider.create(metrics)))]]></value>
+                                        <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserveProvider.create(MetricsFeature.create())))]]></value>
                                         <value><![CDATA[.register("/metrics-greet", metricsService)]]></value>
                                     </list>
                                     <list key="MetricsService-imports" if="${flavor} == 'se'">
-                                        <value>io.helidon.metrics.api.Registry</value>
-                                        <value>io.helidon.metrics.api.RegistryFactory</value>
-                                        <value>org.eclipse.microprofile.metrics.Counter</value>
-                                        <value>org.eclipse.microprofile.metrics.Metadata</value>
-                                        <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
-                                        <value>org.eclipse.microprofile.metrics.MetricUnits</value>
+                                        <value>io.helidon.metrics.api.MeterRegistry</value>
+                                        <value>io.helidon.metrics.api.Counter</value>
                                     </list>
                                     <list key="MetricsService-fields" if="${flavor} == 'se'">
                                         <value><![CDATA[
@@ -172,19 +156,16 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="MetricsService-constructor" if="${flavor} == 'se'">
                                         <value><![CDATA[
-        Metadata metadata = Metadata.builder()
-                .withName(PERSONALIZED_GETS_COUNTER_NAME)
-                .withDescription("Counts the number of HTTP responses to /{name} query")
-                .withUnit(MetricUnits.NONE)
-                .build();
-        this.personalizedGetCounter = appRegistry.counter(metadata);
+        this.personalizedGetCounter = appRegistry.getOrCreate(
+                Counter.builder(PERSONALIZED_GETS_COUNTER_NAME)
+                       .description("Counts the number of HTTP responses to /{name} query"));
 ]]></value>
                                     </list>
                                     <list key="MetricsService-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
         .get("/{name}",
                 (req, resp) -> {
-                        personalizedGetCounter.inc();
+                        personalizedGetCounter.increment();
                         resp.next();
                     })]]></value>
                                     </list>
@@ -197,11 +178,11 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                 .request();
         assertThat(response.status().code(), is(200));
 
-        response = client.get("/observe/metrics/application").request();
+        response = client.get("/observe/metrics").request();
 
         String output = response.as(String.class);
 
-        String expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total{h_scope=\"application\",} 1.0";
+        String expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total 1.0";
         assertThat("Unable to find expected counter result " + expected + "; output is " + output,
                 output, containsString(expected));
         response.close();
