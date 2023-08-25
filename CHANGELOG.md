@@ -11,6 +11,112 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.0.0-M2]
+
+
+This is the second Milestone build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental.
+
+The big news in Helidon 4.0.0 is the introduction of Helidon Nima -- a ground up webserver implementation based on JDK Project Loom virtual threads. With Helidon 4 you get the high throughput of a reactive server with the simplicity of thread-per-request style programming.
+
+Java 21 is required to use Helidon 4.0.0-M2.
+
+Any easy way to get started with Helidon 4.0.0-M2 is using the helidon CLI
+
+helidon init --version 4.0.0-M2
+
+Notable Changes
+
+* Java 21 is required for 4.0.0-M2
+* Finish integration of Níma WebServer into Helidon 4. This means that the `nima` Java package has been assimilated into the base Helidon packages. 
+* Numerous enhancements to WebServer and WebClient to achieve feature parity with Helidon 3
+
+The above is work-in-progress. There are still some gaps, and APIs are subject to change. 
+
+### CHANGES
+
+- WebSocket: Added support for WS endpoints in application scope [7340](https://github.com/helidon-io/helidon/pull/7340)
+- WebServer: Support Http.Header.X_HELIDON_CN [7345](https://github.com/helidon-io/helidon/pull/7345)
+- WebServer: Resource limits [7302](https://github.com/helidon-io/helidon/pull/7302)
+- WebServer: Media Context and streaming [7396](https://github.com/helidon-io/helidon/pull/7396)
+- WebServer: Http2Connection should ignore a max concurrent streams setting of zero from the client [7346](https://github.com/helidon-io/helidon/pull/7346)
+- WebServer: Additional HTTP status codes. [7408](https://github.com/helidon-io/helidon/pull/7408)
+- WebServer: Add configuration support for EXECUTOR_SHUTDOWN_MILLIS [6955](https://github.com/helidon-io/helidon/pull/6955)
+- WebClient: include proxy setting for relative uris  4.x [7425](https://github.com/helidon-io/helidon/pull/7425)
+- WebClient: Webclient redesign [7255](https://github.com/helidon-io/helidon/pull/7255)
+- WebClient: WebClient Follow Up [7341](https://github.com/helidon-io/helidon/pull/7341)
+- WebClient: Support for proxy config properties in client and request [7190](https://github.com/helidon-io/helidon/pull/7190)
+- WebClient: Output stream redirect support [7366](https://github.com/helidon-io/helidon/pull/7366)
+- WebClient: HTTP Proxy TODOs [7287](https://github.com/helidon-io/helidon/pull/7287)
+- WebClient: Fixed ClientUri to extract query params when created from a URI [7297](https://github.com/helidon-io/helidon/pull/7297)
+- WebClient: Create a different config setting for inbound and outbound HTTP1 header [7362](https://github.com/helidon-io/helidon/pull/7362)
+- WebClient: ConcurrentModificationException in Http2ClientConnection.writeWindowsUpdate [7395](https://github.com/helidon-io/helidon/pull/7395)
+- WebClient: Change default to SYSTEM proxy in WebClient [7292](https://github.com/helidon-io/helidon/pull/7292)
+- WebClient: Cached connection close detection [7398](https://github.com/helidon-io/helidon/pull/7398)
+- WebClient: 7301 WebClient - Local connection cache switch [7353](https://github.com/helidon-io/helidon/pull/7353)
+- Uplevel Nima [7361](https://github.com/helidon-io/helidon/pull/7361)
+- Tracing: Refactor to Tracing providers [7264](https://github.com/helidon-io/helidon/pull/7264)
+- Serialization: Make sure JEP-290 is enforced in Níma [7334](https://github.com/helidon-io/helidon/pull/7334)
+- Security: Unified constants for configuring outbound id and secret. [7415](https://github.com/helidon-io/helidon/pull/7415)
+- Security: Tenant now uses WebClientSecurity module [7394](https://github.com/helidon-io/helidon/pull/7394)
+- Security: Make check for audience claim in access token optional in OIDC provider [6959](https://github.com/helidon-io/helidon/pull/6959)
+- OCI: Global Config Source [7352](https://github.com/helidon-io/helidon/pull/7352)
+- OCI: Follow-up items for OCI Global Config [7387](https://github.com/helidon-io/helidon/pull/7387)
+- OCI: Enables OIDC integration tests and fixes a couple of problems in WebClient [7390](https://github.com/helidon-io/helidon/pull/7390)
+- OCI: Adds OciSecretsConfigSourceProvider.java [7391](https://github.com/helidon-io/helidon/pull/7391)
+- Media: Header and Media type API consistency [7351](https://github.com/helidon-io/helidon/pull/7351)
+- Inject: LoomServer parallel listener start [7200](https://github.com/helidon-io/helidon/pull/7200)
+- Inject: Interceptor creator now uses TypeName (and related changes) [7420](https://github.com/helidon-io/helidon/pull/7420)
+- gRPC: Support creating routes from standard gRPC  bindable services [7384](https://github.com/helidon-io/helidon/pull/7384)
+- gRPC: Fix gRPC to calculate the correct class name for method request and response types [7228](https://github.com/helidon-io/helidon/pull/7228)
+- DBClient: Issue #7187 - Blocking DBClient Part 2 [7231](https://github.com/helidon-io/helidon/pull/7231)
+- DBClient: #7230 - JDBC type specific setters based on EclipseLink [7246](https://github.com/helidon-io/helidon/pull/7246)
+- Config: Use common config [7336](https://github.com/helidon-io/helidon/pull/7336)
+- Common: Using SE flavor instead of Nima [7338](https://github.com/helidon-io/helidon/pull/7338)
+- Common: Remove public constructors from production types. [7335](https://github.com/helidon-io/helidon/pull/7335)
+- Common: Remove non-virtual executor support [7324](https://github.com/helidon-io/helidon/pull/7324)
+- Common: Remove VirtualExecutorUtil.java [7263](https://github.com/helidon-io/helidon/pull/7263)
+- Common: Encode all characters that should be encoded in URI, including % itself. [7314](https://github.com/helidon-io/helidon/pull/7314)
+- Builders: Support Supplier<X> in builder setters for types that have a builder. [7284](https://github.com/helidon-io/helidon/pull/7284)
+- Builders: Supplier in builder [7402](https://github.com/helidon-io/helidon/pull/7402)
+- Builders: Provider support in builders [7365](https://github.com/helidon-io/helidon/pull/7365)
+- Builders: Prototype builder update [7281](https://github.com/helidon-io/helidon/pull/7281)
+- Builders: Fix references to interceptor. Now using decorator for builders. [7405](https://github.com/helidon-io/helidon/pull/7405)
+- Builders: Class model and builder generation reworked [7256](https://github.com/helidon-io/helidon/pull/7256)
+- Builders: Allowed values are now checked when validating a builder. [7400](https://github.com/helidon-io/helidon/pull/7400)
+- Tests: TCK Tracking: Jakarta EE 10 Core Profile #6799 [6885](https://github.com/helidon-io/helidon/pull/6885)
+- Tests: Make OciMetricsDataTest.beforeEach public [7333](https://github.com/helidon-io/helidon/pull/7333)
+- Tests: Fix tests disabled during WebClient redesign #7286 [7299](https://github.com/helidon-io/helidon/pull/7299)
+- Tests: Fix intermittently failing test. [7379](https://github.com/helidon-io/helidon/pull/7379)
+- Test: Helidon Arquillian module should only depend on MP core [7440](https://github.com/helidon-io/helidon/pull/7440)
+- Examples: Enable disabled pokemon jpa/hibernate example test [7436](https://github.com/helidon-io/helidon/pull/7436)
+- Examples: Archetype: remove unused file [7253](https://github.com/helidon-io/helidon/pull/7253)
+- Examples: Archetype: Feature parity with 3.x + renaming from `nima` to `se` [7409](https://github.com/helidon-io/helidon/pull/7409)
+- Examples: Archetype : generate module-info file [7232](https://github.com/helidon-io/helidon/pull/7232)
+- Examples: Add app.yaml to quickstart [7217](https://github.com/helidon-io/helidon/pull/7217)
+- Docs: javadocs: update external cross reference links and offline package-lists [7401](https://github.com/helidon-io/helidon/pull/7401)
+- Docs: Update prereqs in Helidon Injection README [7326](https://github.com/helidon-io/helidon/pull/7326)
+- Docs: Update development guidelines to include naming rules for builder types. [7148](https://github.com/helidon-io/helidon/pull/7148)
+- Docs: PR replaces previous Nima removal PR [7347](https://github.com/helidon-io/helidon/pull/7347)
+- Docs: Fix openapi links [7431](https://github.com/helidon-io/helidon/pull/7431)
+- Docs: Add white paper to README.MD [7378](https://github.com/helidon-io/helidon/pull/7378)
+- Dependencies: upgrade microprofile-openapi-api to 3.1.1 and add direct dependency [7453](https://github.com/helidon-io/helidon/pull/7453)
+- Dependencies: Upgrade to OCI SDK 3.12.1 (#7163) [7211](https://github.com/helidon-io/helidon/pull/7211)
+- Dependencies: Upgrade okio and oci-sdk [7262](https://github.com/helidon-io/helidon/pull/7262)
+- Dependencies: Upgrade microprofile-health to 4.0.1 and microprofile-lra-api to 2.0 [7454](https://github.com/helidon-io/helidon/pull/7454)
+- Dependencies: Upgrade microprofile config to 3.0.3 [7434](https://github.com/helidon-io/helidon/pull/7434)
+- Dependencies: Upgrade grpc-java to 1.57.1 and remove repackaging of io.grpc [7304](https://github.com/helidon-io/helidon/pull/7304)
+- Dependencies: Upgrade eclipselink to 4.0.2 [7435](https://github.com/helidon-io/helidon/pull/7435)
+- Dependencies: Upgrade Jersey to 3.1.3 [7258](https://github.com/helidon-io/helidon/pull/7258)
+- Dependencies: JMS bumpup 3.0 -> 3.1 [7380](https://github.com/helidon-io/helidon/pull/7380)
+- Dependencies: Force upgrade of bytebuddy to 1.14.6 to support Java 21. [7438](https://github.com/helidon-io/helidon/pull/7438)
+- Build: remove license headers in archetype generated files [7236](https://github.com/helidon-io/helidon/pull/7236)
+- Build: Use Helidon copyright module for generated code [7192](https://github.com/helidon-io/helidon/pull/7192)
+- Build: Java 21 [7222](https://github.com/helidon-io/helidon/pull/7222)
+- Build: Integrate build tools 4.0.0-M1 [7330](https://github.com/helidon-io/helidon/pull/7330)
+- Build: Address maven 3.9.2 plugin issues [7214](https://github.com/helidon-io/helidon/pull/7214)
+- Build: Add -proc:full to javac to explicitly enable annotation processing [7452](https://github.com/helidon-io/helidon/pull/7452)
+
+
 ## [4.0.0-M1]
 
 This is the first Milestone build of Helidon 4.0.0 and is intended as a preview release only. Do not use this release in production. It is suitable only for experimentation. APIs are subject to change. Documentation is incomplete. And some functionality is experimental and not fully tested.
@@ -564,6 +670,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
 
+[4.0.0-M2]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA6...4.0.0-M2
 [4.0.0-M1]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA6...4.0.0-M1
 [4.0.0-ALPHA6]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA5...4.0.0-ALPHA6
 [4.0.0-ALPHA5]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA4...4.0.0-ALPHA5
