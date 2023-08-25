@@ -35,7 +35,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
