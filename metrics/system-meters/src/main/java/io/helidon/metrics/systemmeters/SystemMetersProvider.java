@@ -203,9 +203,9 @@ public class SystemMetersProvider implements MetersProvider {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
-        registerFunctionalCounter(result, MEMORY_USED_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getUsed);
-        registerFunctionalCounter(result, MEMORY_COMMITTED_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getCommitted);
-        registerFunctionalCounter(result, MEMORY_MAX_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getMax);
+        registerFunctionalCounter(result, MEMORY_USED_HEAP, memoryBean, mb -> mb.getHeapMemoryUsage().getUsed());
+        registerFunctionalCounter(result, MEMORY_COMMITTED_HEAP, memoryBean, mb -> mb.getHeapMemoryUsage().getCommitted());
+        registerFunctionalCounter(result, MEMORY_MAX_HEAP, memoryBean, mb -> mb.getHeapMemoryUsage().getMax());
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         registerFunctionalCounter(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
