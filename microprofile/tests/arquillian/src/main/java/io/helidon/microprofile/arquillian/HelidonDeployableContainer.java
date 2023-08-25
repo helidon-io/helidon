@@ -53,6 +53,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import io.helidon.config.mp.MpConfigSources;
 
+import jakarta.enterprise.inject.ResolutionException;
 import jakarta.enterprise.inject.se.SeContainer;
 import jakarta.enterprise.inject.spi.CDI;
 import jakarta.enterprise.inject.spi.DefinitionException;
@@ -583,9 +584,10 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
                     new BaseRegistryTypeLiteral()).get();
             Objects.requireNonNull(metricRegistry);
             metricRegistry.removeMatching((m, v) -> true);
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | ResolutionException e) {
             // this may be a negative CDI test (e.g. when CDI is intended not to start)
             // in such cases, CDI will not be available
+            // It can also be that metrics are not used at all in some tests, so we don't want to fail.
             LOGGER.log(Level.DEBUG, "Unable to cleanup base metrics", e);
         }
     }
