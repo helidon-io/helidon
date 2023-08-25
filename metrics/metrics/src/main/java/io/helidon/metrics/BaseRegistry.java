@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
@@ -221,9 +220,9 @@ final class BaseRegistry extends Registry {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
-        register(result, MEMORY_USED_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getUsed);
-        register(result, MEMORY_COMMITTED_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getCommitted);
-        register(result, MEMORY_MAX_HEAP, memoryBean.getHeapMemoryUsage(), MemoryUsage::getMax);
+        register(result, MEMORY_USED_HEAP, memoryBean, (mb) -> mb.getHeapMemoryUsage().getUsed());
+        register(result, MEMORY_COMMITTED_HEAP, memoryBean, (mb) -> mb.getHeapMemoryUsage().getCommitted());
+        register(result, MEMORY_MAX_HEAP, memoryBean, (mb) -> mb.getHeapMemoryUsage().getMax());
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         register(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
