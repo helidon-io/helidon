@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,6 +179,17 @@ public class MpConfigTest {
 
         MpConfig.toHelidonConfig(config);
         assertThat(TestMapperProvider.getCreationCount(), is(1));
+    }
+
+    @Test
+    public void testSeConfigAsMap() {
+        Config mpConfig = ConfigProviderResolver.instance().getBuilder()
+                .withSources(MpConfigSources.create(Map.of(
+                        "client.headers.0.name", "foo"
+                )))
+                .build();
+        Map<String, String> map = MpConfig.toHelidonConfig(mpConfig).get("client").asMap().orElse(Map.of());
+        assertThat(map.get("client.headers.0.name"), is("foo"));
     }
 
     // Github issue #2206
