@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.security.providers.common;
 
 import java.util.Optional;
@@ -30,14 +31,15 @@ import java.util.function.Supplier;
  */
 class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
     /**
+     * An implementation that does no caching.
+     */
+    static final EvictableCache<?, ?> NO_CACHE = new EvictableCache<>() { };
+
+    /**
      * Number of threads in the scheduled thread pool to evict records.
      */
     private static final int EVICT_THREAD_COUNT = 1;
     private static final ScheduledThreadPoolExecutor EXECUTOR;
-    /**
-     * An implementation that does no caching.
-     */
-    static final EvictableCache<?, ?> NO_CACHE = new EvictableCache() { };
 
     static {
         ThreadFactory jf = new ThreadFactory() {
@@ -79,7 +81,7 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
     @Override
     public Optional<V> remove(K key) {
         CacheRecord<K, V> removed = cacheMap.remove(key);
-        if (null == removed) {
+        if (removed == null) {
             return Optional.empty();
         }
 
@@ -88,7 +90,10 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
 
     @Override
     public Optional<V> get(K key) {
-        return getRecord(key).flatMap(this::validate).map(CacheRecord::getValue);
+        return getRecord(key)
+                .flatMap(this::validate)
+                .map(this::accessed)
+                .map(CacheRecord::getValue);
     }
 
     @Override
@@ -113,7 +118,7 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
 
     void evict() {
         cacheMap.forEachKey(evictParallelismThreshold, key -> cacheMap.compute(key, (key1, cacheRecord) -> {
-            if ((null == cacheRecord) || evictor.apply(cacheRecord.getKey(), cacheRecord.getValue())) {
+            if ((cacheRecord == null) || evictor.apply(cacheRecord.getKey(), cacheRecord.getValue())) {
                 return null;
             } else {
                 if (cacheRecord.isValid(cacheTimeoutNanos, overallTimeoutNanos)) {
@@ -123,6 +128,11 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
                 }
             }
         }));
+    }
+
+    private CacheRecord<K, V> accessed(CacheRecord<K, V> record) {
+        record.accessed();
+        return record;
     }
 
     private Optional<CacheRecord<K, V>> validate(CacheRecord<K, V> record) {
@@ -135,9 +145,8 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
 
     private Optional<V> doComputeValue(K key, Supplier<Optional<V>> valueSupplier) {
         CacheRecord<K, V> record = cacheMap.compute(key, (s, cacheRecord) -> {
-            if ((null != cacheRecord) && cacheRecord.isValid(cacheTimeoutNanos, overallTimeoutNanos)) {
-                cacheRecord.accessed();
-                return cacheRecord;
+            if ((cacheRecord != null) && cacheRecord.isValid(cacheTimeoutNanos, overallTimeoutNanos)) {
+                return accessed(cacheRecord);
             }
 
             if (cacheMap.size() >= cacheMaxSize) {
@@ -149,7 +158,7 @@ class EvictableCacheImpl<K, V> implements EvictableCache<K, V> {
                     .orElse(null);
         });
 
-        if (null == record) {
+        if (record == null) {
             return Optional.empty();
         } else {
             return Optional.of(record.value);
