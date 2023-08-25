@@ -94,6 +94,11 @@
             <artifactId>org.eclipse.persistence.jpa</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.integrations.jdbc</groupId>
+            <artifactId>helidon-integrations-jdbc</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

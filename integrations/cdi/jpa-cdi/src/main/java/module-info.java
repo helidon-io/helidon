@@ -60,5 +60,6 @@ module io.helidon.integrations.cdi.jpa {
     exports io.helidon.integrations.cdi.jpa;
     exports io.helidon.integrations.cdi.jpa.jaxb;
 
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.cdi.jpa.JpaExtension;
+    provides jakarta.enterprise.inject.spi.Extension with
+        io.helidon.integrations.cdi.jpa.JpaExtension, io.helidon.integrations.cdi.jpa.PersistenceExtension;
 }
