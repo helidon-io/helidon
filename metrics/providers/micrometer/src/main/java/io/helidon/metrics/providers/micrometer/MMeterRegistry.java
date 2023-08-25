@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.lang.System.Logger.Level;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -216,12 +217,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         try {
 
-            // It really would be nice to use switch with instanceof pattern variables as above, but checkstyle outright
-            // fails (not even issuing a false report we can make it ignore, just failing with an exception).
-            io.helidon.metrics.api.Meter helidonMeter = null;
             if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
                 return (HM) MetricsFactory.getInstance().noOpMeter(builder);
             }
+
+            io.helidon.metrics.api.Meter helidonMeter = null;
+
             if (builder instanceof MCounter.Builder cBuilder) {
                 helidonMeter = registerAndPostProcess(cBuilder, cBuilder::addTag, cBuilder.delegate()::register);
             }
@@ -244,6 +245,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 throw new IllegalArgumentException(String.format("Unexpected builder type %s, expected one of %s",
                                                                  builder.getClass().getName(),
                                                                  List.of(MCounter.Builder.class.getName(),
+                                                                         MFunctionalCounter.Builder.class.getName(),
                                                                          MDistributionSummary.Builder.class.getName(),
                                                                          MGauge.Builder.class.getName(),
                                                                          MTimer.Builder.class.getName())));
@@ -267,9 +269,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
         io.helidon.metrics.api.Meter neutralMeter = meters.get(match);
         if (neutralMeter == null) {
-            LOGGER.log(System.Logger.Level.WARNING, String.format("Found no Helidon counterpart for Micrometer meter %s %s",
-                                                                  name,
-                                                                  Util.list(tags)));
+            LOGGER.log(Level.WARNING, String.format("Found no Helidon counterpart for Micrometer meter %s %s",
+                                                    name,
+                                                    Util.list(tags)));
             return Optional.empty();
         }
         if (mClass.isInstance(neutralMeter)) {
@@ -383,19 +385,40 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         try {
             M meter = registration.apply(delegate());
 
-            // The on-register callback from Micrometer has created an entry in the meters map.
-            //
-            // If scope tagging is turned on then the callback has also updated our wrapper meter's scope setting and added our
-            // wrapper meter to the correct scope membership.
-            //
-            // If scope tagging is NOT on then the callback cannot do those updates so we need to do them here.
-            HM helidonMeter = (HM) meters.get(meter);
+            HM helidonMeter = findOrWrap(meter);
+
             updateScope(meter, helidonMeter, effectiveScope);
-            onAddListeners.forEach(listener -> listener.accept(helidonMeter));
+            for (Consumer<io.helidon.metrics.api.Meter> listener : onAddListeners) {
+                listener.accept(helidonMeter);
+            }
             return helidonMeter;
         } finally {
             lock.unlock();
         }
+    }
+
+    private <HM extends io.helidon.metrics.api.Meter> HM findOrWrap(Meter meter) {
+        // The on-register callback from Micrometer to us should have created an entry in our meters map. But if, for
+        // some reason, Micrometer found a pre-existing meter in its registry (even though we think we're creating it anew
+        // from our side), then Micrometer will not have called us aback about a meter registration. In that case,
+        // create a wrapper of the correct type around the existing meter.
+        //
+        // If scope tagging is turned on then the callback has also updated our wrapper meter's scope setting and added our
+        // wrapper meter to the correct scope membership.
+        //
+        // If scope tagging is NOT on then the callback cannot do those updates so we need to do them here.
+
+        io.helidon.metrics.api.Meter result = meters.get(meter);
+        if (result == null) {
+            LOGGER.log(Level.WARNING, String.format(
+                    """
+                            Adding a meter did not trigger notification of its addition from Micrometer,
+                            probably because it was already present in the Micrometer registry;
+                            instead will wrap existing Micrometer meter %s""",
+                    meter));
+            result = recordAdd(meter);
+        }
+        return (HM) result;
     }
 
     private Optional<io.helidon.metrics.api.Meter> internalRemove(String name,
@@ -433,7 +456,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private void recordAdd(Meter addedMeter) {
+    private <HM extends MMeter<?>> HM recordAdd(Meter addedMeter) {
 
         // Here (and other places) a switch with instanceof pattern variables (see above) would be nice;
         // checkstyle fails with that.
@@ -450,15 +473,17 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             helidonMeter = MFunctionalCounter.create(functionCounter);
         }
         if (helidonMeter == null) {
-            LOGGER.log(System.Logger.Level.DEBUG,
+            LOGGER.log(Level.DEBUG,
                        String.format("Addition of meter %s which is of an unsupported type; ignored", addedMeter));
-            return;
-        }
-        lock.lock();
-        try {
-            meters.put(addedMeter, helidonMeter);
-        } finally {
-            lock.unlock();
+            return null;
+        } else {
+            lock.lock();
+            try {
+                meters.put(addedMeter, helidonMeter);
+                return (HM) helidonMeter;
+            } finally {
+                lock.unlock();
+            }
         }
     }
 
@@ -513,7 +538,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private void recordRemove(Meter removedMeter) {
         MMeter<?> removedHelidonMeter = meters.remove(removedMeter);
         if (removedHelidonMeter == null) {
-            LOGGER.log(System.Logger.Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
+            LOGGER.log(Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
         } else {
             recordRemove(removedHelidonMeter);
         }

@@ -30,6 +30,10 @@
     <name>Helidon Metrics Providers Micrometer</name>
     <description>Micrometer implementation of the Helidon metrics API</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.metrics</groupId>
