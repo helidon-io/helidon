@@ -1,0 +1,427 @@
+/*
+ * Copyright (c) 2023 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+html,
+body {
+    margin: 0 auto;
+    padding: 0;
+    font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    line-height: 1.4em;
+    background: #f5f5f5;
+    color: #4d4d4d;
+    min-width: 600px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 300;
+}
+
+input {
+    font-family: inherit;
+    font-weight: inherit;
+    color: inherit;
+    border: 0;
+}
+
+button {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 100%;
+    vertical-align: baseline;
+    font-family: inherit;
+    font-weight: inherit;
+    color: inherit;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:focus {
+    outline: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    padding: 0 20px 0 20px;
+    height: 80px;
+}
+
+.spacer {
+    flex-grow: 1;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wrap {
+    display: none;
+}
+
+.todoapp {
+    width: 550px;
+    background: #fff;
+    margin: 130px 0 40px 0;
+    position: relative;
+    box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2),
+    0 25px 50px 0 rgba(0, 0, 0, 0.1);
+}
+
+.todoapp input::-webkit-input-placeholder {
+    font-style: italic;
+    font-weight: 300;
+    color: #e6e6e6;
+}
+
+.todoapp input::-moz-placeholder {
+    font-style: italic;
+    font-weight: 300;
+    color: #e6e6e6;
+}
+
+.todoapp h1 {
+    position: absolute;
+    top: -155px;
+    width: 100%;
+    font-size: 100px;
+    font-weight: 100;
+    text-align: center;
+    color: rgba(175, 47, 47, 0.15);
+    text-rendering: optimizeLegibility;
+}
+
+.new-todo {
+    position: relative;
+    margin: 0;
+    width: 100%;
+    font-size: 24px;
+    font-family: inherit;
+    font-weight: inherit;
+    line-height: 1.4em;
+    color: inherit;
+    padding: 6px;
+    border: 1px solid #999;
+    box-shadow: inset 0 -1px 5px 0 rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.new-todo {
+    padding: 16px 16px 16px 60px;
+    border: none;
+    background: rgba(0, 0, 0, 0.003);
+    box-shadow: inset 0 -2px 1px rgba(0, 0, 0, 0.03);
+}
+
+.main {
+    position: relative;
+    z-index: 2;
+    border-top: 1px solid #e6e6e6;
+}
+
+.checkbox {
+    border: none; /* Mobile Safari */
+    appearance: none;
+    opacity: 0.25;
+    -webkit-appearance: none;
+    margin: 10px;
+}
+
+.checkbox:after {
+    font-family: 'Material Symbols Outlined';
+    font-size: 25px;
+    transition: opacity 0.2s ease-out;
+    cursor: pointer;
+}
+
+.checkbox:hover {
+    opacity: 0.5;
+}
+
+.checkbox:active {
+    opacity: 0.75;
+}
+
+.toggle-all:after {
+    content: "\e877";
+}
+
+.todo-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.todo-list li {
+    position: relative;
+    font-size: 24px;
+    border-bottom: 1px solid #ededed;
+}
+
+.todo-list li:last-child {
+    border-bottom: none;
+}
+
+.todo-list .view, .todo-list .edit {
+    flex-grow: 1;
+    padding: 15px 15px 15px 60px;
+    line-height: 1.2;
+    font-size: 24px;
+}
+
+.todo-list li.editing {
+    padding: 0;
+}
+
+.todo-list li.editing .edit {
+    display: block;
+}
+
+.todo-list li.editing .view {
+    display: none;
+}
+
+.todo-list li .toggle {
+    margin: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.toggle:after {
+    content: "\ef4a";
+}
+
+.toggle:checked:after {
+    content: "\e86c";
+}
+
+.todo-list li label {
+    word-break: break-all;
+    padding: 15px 15px 15px 60px;
+    display: block;
+    line-height: 1.2;
+    transition: color 0.4s;
+}
+
+.todo-list li.completed label {
+    color: #d9d9d9;
+    text-decoration: line-through;
+}
+
+.todo-list li .actions {
+    display: flex;
+    align-items: center;
+    margin: 10px;
+}
+
+.todo-list li .actions button {
+    margin: 5px;
+    opacity: 0.25;
+    font-size: 0;
+    cursor: pointer;
+    transition: opacity 0.2s ease-out;
+}
+
+.todo-list li .actions button:hover {
+    opacity: 0.5;
+}
+
+.todo-list li .actions button:active {
+    opacity: 0.75;
+}
+
+.todo-list li .actions button:before {
+    font-family: 'Material Symbols Outlined';
+    font-size: 25px;
+}
+
+.todo-list li .actions .update:before {
+    content: '\e3c9'
+}
+
+.todo-list li.editing .actions .update:before {
+    content: '\e5ca' !important;
+}
+
+.todo-list li .actions .delete:before {
+    content: '\e872'
+}
+
+.todo-list li .edit {
+    display: none;
+}
+
+.todo-list li.editing:last-child {
+    margin-bottom: -1px;
+}
+
+.footer {
+    color: #777;
+    padding: 10px 15px;
+    height: 20px;
+    text-align: center;
+    border-top: 1px solid #e6e6e6;
+}
+
+.footer:before {
+    content: '';
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 50px;
+    overflow: hidden;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2),
+    0 8px 0 -3px #f6f6f6,
+    0 9px 1px -3px rgba(0, 0, 0, 0.2),
+    0 16px 0 -6px #f6f6f6,
+    0 17px 2px -6px rgba(0, 0, 0, 0.2);
+}
+
+.todo-count {
+    float: left;
+    text-align: left;
+}
+
+.todo-count strong {
+    font-weight: 300;
+}
+
+.filters {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    position: absolute;
+    right: 0;
+    left: 0;
+}
+
+.filters li {
+    display: inline;
+}
+
+.filters li a {
+    color: inherit;
+    margin: 3px;
+    padding: 3px 7px;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+}
+
+.filters li a:hover {
+    border-color: rgba(175, 47, 47, 0.1);
+}
+
+.filters li a.selected {
+    border-color: rgba(175, 47, 47, 0.2);
+}
+
+.clear-completed, html .clear-completed:active {
+    float: right;
+    position: relative;
+    line-height: 20px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.clear-completed:hover {
+    text-decoration: underline;
+}
+
+.info {
+    margin: 0;
+    color: #bfbfbf;
+    font-size: 14px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+.info p {
+    line-height: 1;
+}
+
+.info a {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 400;
+}
+
+.info a:hover {
+    text-decoration: underline;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    .toggle-all, .todo-list li .toggle {
+        background: none;
+    }
+
+    .todo-list li .toggle {
+        height: 40px;
+    }
+}
+
+@media (max-width: 430px) {
+    .footer {
+        height: 50px;
+    }
+
+    .filters {
+        bottom: 10px;
+    }
+}
+
+#user-info {
+    display:none;
+}
+
+#user-info > div {
+    display:flex;
+}
+
+#user-info .sign-out {
+    margin-right: 10px;
+    background: white;
+    padding: 5px;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    transition: background-color .218s, border-color .218s;
+}
+
+#user-info .sign-out:hover {
+    border-color: #d2e3fc;
+    background-color: rgba(66,133,244,.04);
+}
+#user-info .sign-out:active {
+    background-color: rgba(66,133,244,.1);
+}
