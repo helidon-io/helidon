@@ -22,7 +22,6 @@ import io.helidon.common.http.Http.ResponseStatus.Family;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
 import io.helidon.media.jsonp.JsonpSupport;
-import io.helidon.security.Security;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
