@@ -110,7 +110,8 @@ public final class GoogleTokenProvider implements AuthenticationProvider, Outbou
                 NetHttpTransport transport = transportBuilder.build();
 
                 // thread safe according to documentation
-                this.verifier = new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
+                this.verifier = (GoogleIdTokenVerifier) new GoogleIdTokenVerifier.Builder(transport, jsonFactory)
+                        .setHttpTransportFactory(() -> transport)
                         .setAudience(Set.of(clientId))
                         .build();
             } catch (Exception e) {
