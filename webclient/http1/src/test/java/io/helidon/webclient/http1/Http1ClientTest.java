@@ -48,6 +48,7 @@ import io.helidon.http.media.MediaContextConfig;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.Proxy;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -78,6 +79,17 @@ class Http1ClientTest {
             .sendExpectContinue(false)
             .build();
     private static final int dummyPort = 1234;
+    private static final String TARGET_HOST = "www.oracle.com";
+    private static final String TARGET_URI_PATH = "/test";
+    public static final String PROXY_HOST = "http://www-proxy-hqdc.us.oracle.com";
+    public static final String PROXY_PORT = "80";
+
+    private enum RelativeUrisValue {
+        TRUE, FALSE, DEFAULT
+    }
+    private enum ProxyConfiguration {
+        UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
+    }
 
     @Test
     void testMaxHeaderSizeFail() {
@@ -218,17 +230,39 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("relativeUris")
-    void testRelativeUris(boolean relativeUris, boolean outputStream, String requestUri, String expectedUriStart) {
-        Http1Client client = Http1Client.builder().relativeUris(relativeUris).build();
-        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
-        Http1ClientRequest request = client.put(requestUri);
-        request.connection(connection);
-        HttpClientResponse response;
-        if (outputStream) {
-            response = getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"});
-        } else {
-            response = request.submit("Sending Something");
+    void testRelativeUris(ProxyConfiguration proxyConfig, RelativeUrisValue relativeUris, boolean outputStream, String requestUri, String expectedUriStart) {
+        Proxy proxy = null;
+        switch (proxyConfig) {
+        case UNSET -> {} // proxy is already initialized to null which is the goal of this condition, so no-op
+        case NO_PROXY -> proxy = Proxy.noProxy();
+            case HTTP -> proxy = createHttpProxyBuilder().build();
+            case HTTP_SET_NO_PROXY_HOST -> proxy = createHttpProxyBuilder().addNoProxy(TARGET_HOST).build();
+            case SYSTEM_UNSET -> proxy = Proxy.create();
+            case SYSTEM_SET_PROXY -> {
+                proxy = Proxy.create();
+                System.setProperty("http.proxyHost", PROXY_HOST);
+                System.setProperty("http.proxyPort", PROXY_PORT);
+            }
+            case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
+                proxy = Proxy.create();
+                System.setProperty("http.proxyHost", PROXY_HOST);
+                System.setProperty("http.proxyPort", PROXY_PORT);
+                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|10.*.*.*|*.example.com|etc|" + TARGET_HOST);
+            }
         }
+
+        Http1Client client;
+        switch (relativeUris) {
+            case TRUE -> client = Http1Client.builder().relativeUris(true).build();
+            case FALSE -> client = Http1Client.builder().relativeUris(false).build();
+            default -> client = Http1Client.create();   // Don't set relativeUris and accept whatever is the default
+        }
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection();
+        Http1ClientRequest request = proxy != null ? client.put(requestUri).proxy(proxy) : client.put(requestUri);
+        request.connection(connection);
+        HttpClientResponse response = outputStream
+                ? getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"})
+                : request.submit("Sending Something");
 
         assertThat(response.status(), is(Http.Status.OK_200));
         StringTokenizer st = new StringTokenizer(connection.getPrologue(), " ");
@@ -236,6 +270,19 @@ class Http1ClientTest {
         st.nextToken();
         // Validate URI part
         assertThat(st.nextToken(), startsWith(expectedUriStart));
+
+        // Clear proxy system properties that were set
+        switch (proxyConfig) {
+            case SYSTEM_SET_PROXY -> {
+                System.clearProperty("http.proxyHost");
+                System.clearProperty("http.proxyPort");
+            }
+            case SYSTEM_SET_PROXY_AND_NON_PROXY_HOST -> {
+                System.clearProperty("http.proxyHost");
+                System.clearProperty("http.proxyPort");
+                System.clearProperty("http.nonProxyHosts");
+            }
+        }
     }
 
     @ParameterizedTest
@@ -392,26 +439,82 @@ class Http1ClientTest {
         return response;
     }
 
+    private static Proxy.Builder createHttpProxyBuilder() {
+        return Proxy.builder()
+                .type(Proxy.ProxyType.HTTP)
+                .host(PROXY_HOST)
+                .port(Integer.parseInt(PROXY_PORT));
+    }
+
     private static Stream<Arguments> relativeUris() {
+        // Request type
+        boolean isOutputStream = true;
+        boolean isEntity = !isOutputStream;
+
         return Stream.of(
                 // OutputStream (chunk request)
-                arguments(false, true, "http://www.dummy.com/test", "http://www.dummy.com:80/"),
-                arguments(false, true, "http://www.dummy.com:1111/test", "http://www.dummy.com:1111/"),
-                arguments(false, true, "https://www.dummy.com/test", "https://www.dummy.com:443/"),
-                arguments(false, true, "https://www.dummy.com:1111/test", "https://www.dummy.com:1111/"),
-                arguments(true, true, "http://www.dummy.com/test", "/test"),
-                arguments(true, true, "http://www.dummy.com:1111/test", "/test"),
-                arguments(true, true, "https://www.dummy.com/test", "/test"),
-                arguments(true, true, "https://www.dummy.com:1111/test", "/test"),
+                // Expects absolute URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isOutputStream,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, "https://" + TARGET_HOST + ":443/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isOutputStream,
+                          "http://" + TARGET_HOST + ":1111/test", TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + ":1111/test", "http://" + TARGET_HOST + ":1111/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                // Expects relative URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isOutputStream,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP_SET_NO_PROXY_HOST, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_UNSET, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY_AND_NON_PROXY_HOST, RelativeUrisValue.FALSE, isOutputStream,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
                 // non-OutputStream (single entity request)
-                arguments(false, false, "http://www.dummy.com/test", "http://www.dummy.com:80/"),
-                arguments(false, false, "http://www.dummy.com:1111/test", "http://www.dummy.com:1111/"),
-                arguments(false, false, "https://www.dummy.com/test", "https://www.dummy.com:443/"),
-                arguments(false, false, "https://www.dummy.com:1111/test", "https://www.dummy.com:1111/"),
-                arguments(true, false, "http://www.dummy.com/test", "/test"),
-                arguments(true, false, "http://www.dummy.com:1111/test", "/test"),
-                arguments(true, false, "https://www.dummy.com/test", "/test"),
-                arguments(true, false, "https://www.dummy.com:1111/test", "/test"));
+                // Expects absolute URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isEntity,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, "https://" + TARGET_HOST + ":443/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isEntity,
+                          "http://" + TARGET_HOST + ":1111/test", TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + ":1111/test", "http://" + TARGET_HOST + ":1111/"),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, "http://" + TARGET_HOST + ":80/"),
+                // Expects relative URI
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP, RelativeUrisValue.TRUE, isEntity,
+                          "https://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.HTTP_SET_NO_PROXY_HOST, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.NO_PROXY, RelativeUrisValue.DEFAULT, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_UNSET, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH),
+                arguments(ProxyConfiguration.SYSTEM_SET_PROXY_AND_NON_PROXY_HOST, RelativeUrisValue.FALSE, isEntity,
+                          "http://" + TARGET_HOST + TARGET_URI_PATH, TARGET_URI_PATH)
+        );
     }
 
     private static Stream<Arguments> headerValues() {

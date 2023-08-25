@@ -179,8 +179,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      *
      * @return relative URIs flag
      */
-    // TODO Set the default value to false when proxy is implemented and see Http1CallChainBase.prologue for other changes
-    @ConfiguredOption("true")
+    @ConfiguredOption("false")
     boolean relativeUris();
 
     /**
