@@ -138,7 +138,7 @@ class RegistryFactory {
         if (scope == null) {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + delegate);
         }
-        getRegistry(scope).recordAdd(delegate);
+        getRegistry(scope).onMeterAdded(delegate);
     }
 
     private void removeMetricForMeter(Meter meter) {
@@ -146,7 +146,7 @@ class RegistryFactory {
         if (scope == null) {
             LOGGER.log(Level.WARNING, "Attempt to register an existing meter with no scope: " + meter);
         }
-        getRegistry(scope).recordRemove(meter);
+        getRegistry(scope).onMeterRemoved(meter);
     }
 }
 

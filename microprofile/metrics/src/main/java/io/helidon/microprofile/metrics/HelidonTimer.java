@@ -23,10 +23,10 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.SnapshotMetric;
 
 import org.eclipse.microprofile.metrics.Metadata;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Snapshot;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
@@ -48,16 +48,13 @@ final class HelidonTimer extends MetricImpl<io.helidon.metrics.api.Timer> implem
         this.meterRegistry = meterRegistry;
     }
 
-    static HelidonTimer create(String scope, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry(), scope, metadata, tags);
-    }
-
     static HelidonTimer create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
         return create(meterRegistry,
                       scope,
                       metadata,
                       meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
                                                         .description(metadata.getDescription())
+                                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
                                                         .tags(allTags(scope, tags))));
     }
 

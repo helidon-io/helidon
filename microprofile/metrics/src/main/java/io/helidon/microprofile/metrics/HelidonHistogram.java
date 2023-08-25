@@ -21,7 +21,6 @@ import java.util.Objects;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.LabeledSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.SnapshotMetric;
 
 import org.eclipse.microprofile.metrics.Histogram;
@@ -38,10 +37,6 @@ final class HelidonHistogram extends MetricImpl<DistributionSummary> implements 
     private HelidonHistogram(String scope, Metadata metadata, DistributionSummary delegate) {
         super(scope, metadata);
         this.delegate = delegate;
-    }
-
-    static HelidonHistogram create(String type, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry(), type, metadata, tags);
     }
 
     static HelidonHistogram create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {

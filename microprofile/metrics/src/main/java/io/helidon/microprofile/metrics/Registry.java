@@ -344,7 +344,7 @@ class Registry implements MetricRegistry {
         return scope;
     }
 
-    HelidonMetric<?> recordAdd(Meter meter) {
+    HelidonMetric<?> onMeterAdded(Meter meter) {
 
         String name = meter.id().name();
 
@@ -388,7 +388,7 @@ class Registry implements MetricRegistry {
         return newMetric;
     }
 
-    void recordRemove(Meter meter) {
+    void onMeterRemoved(Meter meter) {
 
         Errors.Collector collector = Errors.collector();
 

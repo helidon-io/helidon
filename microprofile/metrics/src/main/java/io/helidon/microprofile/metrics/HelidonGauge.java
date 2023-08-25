@@ -23,7 +23,6 @@ import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 
 import org.eclipse.microprofile.metrics.Gauge;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -57,19 +56,6 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
         this.delegate = delegate;
     }
 
-    static <T, N extends Number> FunctionBased<N, T> create(String scope,
-                                                            Metadata metadata,
-                                                            T target,
-                                                            Function<T, N> function,
-                                                            Tag... tags) {
-        return create(Metrics.globalRegistry(),
-                      scope,
-                      metadata,
-                      target,
-                      function,
-                      tags);
-    }
-
     static <T, N extends Number> FunctionBased<N, T> create(MeterRegistry meterRegistry,
                                                             String scope,
                                                             Metadata metadata,
@@ -89,18 +75,6 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                                      .baseUnit(sanitizeUnit(metadata.getUnit()))));
     }
 
-    static <N extends Number> SupplierBased<N> create(String scope,
-                                                      Metadata metadata,
-                                                      Supplier<N> supplier,
-                                                      Tag... tags) {
-        return create(Metrics.globalRegistry(),
-                      scope,
-                      metadata,
-                      supplier,
-                      tags);
-
-    }
-
     static <N extends Number> SupplierBased<N> create(MeterRegistry meterRegistry,
                                                       String scope,
                                                       Metadata metadata,
@@ -114,19 +88,6 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                                      .baseUnit(metadata.getUnit())
                                                                      .description(metadata.getDescription())
                                                                      .tags(allTags(scope, tags))));
-    }
-
-    static <T> DoubleFunctionBased<T> create(String scope,
-                                             Metadata metadata,
-                                             T target,
-                                             ToDoubleFunction<T> fn,
-                                             Tag... tags) {
-        return create(Metrics.globalRegistry(),
-                      scope,
-                      metadata,
-                      target,
-                      fn,
-                      tags);
     }
 
     static <T> DoubleFunctionBased<T> create(MeterRegistry meterRegistry,

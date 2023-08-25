@@ -19,7 +19,6 @@ package io.helidon.microprofile.metrics;
 import java.util.Objects;
 
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.SampledMetric;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -35,10 +34,6 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
     private HelidonCounter(String scope, Metadata metadata, io.helidon.metrics.api.Counter delegate) {
         super(scope, metadata);
         this.delegate = delegate;
-    }
-
-    static HelidonCounter create(String scope, Metadata metadata, Tag... tags) {
-        return create(Metrics.globalRegistry(), scope, metadata, tags);
     }
 
     static HelidonCounter create(MeterRegistry meterRegistry, String scope, Metadata metadata, Tag... tags) {
