@@ -29,4 +29,5 @@ module io.helidon.webserver.testing.junit5.http2 {
 
     provides io.helidon.webserver.testing.junit5.spi.ServerJunitExtension
             with io.helidon.webserver.testing.junit5.http2.Http2ServerExtension;
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,17 @@
  * Support for YAML configuration sources.
  */
 module io.helidon.config.yaml.mp {
-    requires org.yaml.snakeyaml;
-    requires microprofile.config.api;
 
     requires io.helidon.config.mp;
-    requires transitive io.helidon.config;
     requires io.helidon.config.yaml;
+    requires microprofile.config.api;
+    requires org.yaml.snakeyaml;
+
+    requires transitive io.helidon.config;
 
     exports io.helidon.config.yaml.mp;
 
     provides io.helidon.config.mp.spi.MpConfigSourceProvider with io.helidon.config.yaml.mp.YamlConfigSourceProvider;
     provides io.helidon.config.mp.spi.MpMetaConfigProvider with io.helidon.config.yaml.mp.YamlMetaConfigProvider;
+	
 }

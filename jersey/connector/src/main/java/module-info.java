@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import io.helidon.jersey.connector.HelidonConnectorProvider;
 
 /**
  * A {@link org.glassfish.jersey.client.spi.Connector} that utilizes the Helidon HTTP Client to send
  * and receive HTTP request and responses.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.jersey.connector {
 
     requires io.helidon.config;
@@ -31,5 +31,8 @@ module io.helidon.jersey.connector {
     requires transitive jersey.client;
 
     exports io.helidon.jersey.connector;
-    provides org.glassfish.jersey.client.spi.ConnectorProvider with HelidonConnectorProvider;
+
+    provides org.glassfish.jersey.client.spi.ConnectorProvider
+            with io.helidon.jersey.connector.HelidonConnectorProvider;
+
 }

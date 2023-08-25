@@ -18,10 +18,12 @@
  * Helidon Injection Config-Driven ConfiguredBy API Module.
  */
 module io.helidon.inject.configdriven.api {
+
+    requires io.helidon.common.config;
+    requires io.helidon.inject.api;
+
     requires static jakarta.inject;
 
-    requires io.helidon.inject.api;
-    requires io.helidon.common.config;
-
     exports io.helidon.inject.configdriven.api;
+
 }

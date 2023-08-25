@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import org.glassfish.jersey.internal.spi.AutoDiscoverable;
 
 /**
  * Tracing integration with jersey (JAX-RS) client.
@@ -26,6 +25,7 @@ import org.glassfish.jersey.internal.spi.AutoDiscoverable;
         in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Tracing", "Integration", "JerseyClient"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.jersey.client {
 
     requires io.helidon.common.context;
@@ -44,9 +44,11 @@ module io.helidon.tracing.jersey.client {
     exports io.helidon.tracing.jersey.client;
 
     // needed to propagate tracing context from server to client
-    exports io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey,io.helidon.microprofile.tracing;
+    exports io.helidon.tracing.jersey.client.internal to io.helidon.tracing.jersey, io.helidon.microprofile.tracing;
 
     uses io.helidon.tracing.spi.TracerProvider;
 
-    provides AutoDiscoverable with io.helidon.tracing.jersey.client.ClientTracingAutoDiscoverable;
+    provides org.glassfish.jersey.internal.spi.AutoDiscoverable
+            with io.helidon.tracing.jersey.client.ClientTracingAutoDiscoverable;
+
 }

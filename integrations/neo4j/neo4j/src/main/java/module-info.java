@@ -27,6 +27,7 @@ import io.helidon.common.features.api.Preview;
          in = HelidonFlavor.SE,
          path = "Neo4j"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.neo4j {
 
     requires java.logging;
@@ -38,4 +39,5 @@ module io.helidon.integrations.neo4j {
     requires transitive org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j;
+
 }

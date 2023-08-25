@@ -17,10 +17,6 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
-import io.helidon.dbclient.DbMapperProviderImpl;
-import io.helidon.dbclient.spi.DbClientProvider;
-import io.helidon.dbclient.spi.DbClientServiceProvider;
-import io.helidon.dbclient.spi.DbMapperProvider;
 
 /**
  * Helidon Database Client.
@@ -34,22 +30,24 @@ import io.helidon.dbclient.spi.DbMapperProvider;
          path = "DbClient"
 )
 module io.helidon.dbclient {
-    requires static io.helidon.common.features.api;
 
     requires java.logging;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.config;
-    requires transitive io.helidon.common.mapper;
     requires java.sql;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common.mapper;
+    requires transitive io.helidon.common;
 
     exports io.helidon.dbclient;
     exports io.helidon.dbclient.spi;
 
-    uses DbClientProvider;
-    uses DbClientServiceProvider;
-    uses DbMapperProvider;
+    uses io.helidon.dbclient.spi.DbClientProvider;
+    uses io.helidon.dbclient.spi.DbClientServiceProvider;
+    uses io.helidon.dbclient.spi.DbMapperProvider;
 
-    provides io.helidon.common.mapper.spi.MapperProvider with DbMapperProviderImpl;
+    provides io.helidon.common.mapper.spi.MapperProvider with io.helidon.dbclient.DbMapperProviderImpl;
 
 }

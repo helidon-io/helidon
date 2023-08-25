@@ -29,6 +29,7 @@ import io.helidon.common.features.api.Preview;
         path = {"Messaging", "JMS"}
 )
 @Aot(false)
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging.connectors.jms {
 
     requires io.helidon.common.configurable;
@@ -52,4 +53,5 @@ module io.helidon.messaging.connectors.jms {
     requires transitive microprofile.reactive.streams.operators.api;
 
     exports io.helidon.messaging.connectors.jms;
+
 }

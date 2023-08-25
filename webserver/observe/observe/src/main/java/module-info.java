@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Helidon WebServer Observability Support.
@@ -30,5 +29,6 @@ module io.helidon.webserver.observe {
     exports io.helidon.webserver.observe;
     exports io.helidon.webserver.observe.spi;
 
-    uses ObserveProvider;
+    uses io.helidon.webserver.observe.spi.ObserveProvider;
+
 }

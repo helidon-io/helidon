@@ -18,13 +18,16 @@
  * Coordinator client for coordinators using Narayana like API.
  */
 module io.helidon.lra.coordinator.client.narayana {
+
+    requires io.helidon.faulttolerance;
+    requires io.helidon.webclient;
     requires microprofile.config.api;
     requires microprofile.lra.api;
-    requires io.helidon.microprofile.config;
+
     requires transitive io.helidon.lra.coordinator.client;
-    requires io.helidon.webclient;
-    requires io.helidon.faulttolerance;
+    requires transitive io.helidon.microprofile.config;
 
     provides io.helidon.lra.coordinator.client.CoordinatorClient
             with io.helidon.lra.coordinator.client.narayana.NarayanaClient;
+
 }

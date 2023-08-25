@@ -16,11 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webclient.http1.Http1ClientSpiProvider;
-import io.helidon.webclient.http1.Http1ProtocolConfigProvider;
-import io.helidon.webclient.spi.HttpClientSpiProvider;
-import io.helidon.webclient.spi.ProtocolConfigProvider;
-import io.helidon.webclient.spi.SourceHandlerProvider;
 
 /**
  * Helidon WebClient HTTP/1.1 Support.
@@ -41,10 +36,11 @@ module io.helidon.webclient.http1 {
 
     exports io.helidon.webclient.http1;
 
-    provides HttpClientSpiProvider
-            with Http1ClientSpiProvider;
-    provides ProtocolConfigProvider
-            with Http1ProtocolConfigProvider;
+    provides io.helidon.webclient.spi.HttpClientSpiProvider
+            with io.helidon.webclient.http1.Http1ClientSpiProvider;
+    provides io.helidon.webclient.spi.ProtocolConfigProvider
+            with io.helidon.webclient.http1.Http1ProtocolConfigProvider;
 
-    uses SourceHandlerProvider;
+    uses io.helidon.webclient.spi.SourceHandlerProvider;
+
 }

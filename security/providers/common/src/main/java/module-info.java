@@ -28,4 +28,5 @@ module io.helidon.security.providers.common {
 
     exports io.helidon.security.providers.common;
     exports io.helidon.security.providers.common.spi;
+
 }

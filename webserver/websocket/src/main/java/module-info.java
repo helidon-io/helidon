@@ -16,10 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.webserver.spi.ProtocolConfigProvider;
-import io.helidon.webserver.websocket.WsProtocolConfigProvider;
-import io.helidon.webserver.websocket.WsUpgradeProvider;
 
 /**
  * Helidon WebServer WebSocket Support.
@@ -44,8 +40,9 @@ module io.helidon.webserver.websocket {
 
     exports io.helidon.webserver.websocket;
 
-    provides Http1UpgradeProvider
-            with WsUpgradeProvider;
-    provides ProtocolConfigProvider
-            with WsProtocolConfigProvider;
+    provides io.helidon.webserver.http1.spi.Http1UpgradeProvider
+            with io.helidon.webserver.websocket.WsUpgradeProvider;
+    provides io.helidon.webserver.spi.ProtocolConfigProvider
+            with io.helidon.webserver.websocket.WsProtocolConfigProvider;
+
 }

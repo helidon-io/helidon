@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
-import io.helidon.http.processor.HttpEndpointCreator;
-import io.helidon.http.processor.HttpMethodCreator;
 
 /**
  * Annotation processor that generates HTTP Endpoints.
  */
 module io.helidon.http.processor {
+
     requires io.helidon.inject.api;
-    requires io.helidon.inject.tools;
     requires io.helidon.inject.processor;
+    requires io.helidon.inject.tools;
     requires java.compiler;
 
     exports io.helidon.http.processor;
 
-    provides CustomAnnotationTemplateCreator
-            with HttpEndpointCreator, HttpMethodCreator;
+    provides io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator
+            with io.helidon.http.processor.HttpEndpointCreator, io.helidon.http.processor.HttpMethodCreator;
+	
 }

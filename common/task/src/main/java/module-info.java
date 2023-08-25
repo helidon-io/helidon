@@ -18,5 +18,7 @@
  * Common task module.
  */
 module io.helidon.common.task {
+
     exports io.helidon.common.task;
+
 }

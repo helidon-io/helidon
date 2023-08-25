@@ -36,4 +36,5 @@ module io.helidon.webserver.tracing {
     requires transitive io.helidon.config;
 
     exports io.helidon.webserver.tracing;
+
 }

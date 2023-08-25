@@ -18,14 +18,16 @@
  * Aggregator module for microprofile full bundle.
  */
 module io.helidon.microprofile.bundle {
-    requires transitive io.helidon.microprofile.bundle.core;
 
-    requires transitive io.helidon.microprofile.health;
-    requires transitive io.helidon.microprofile.metrics;
-    requires transitive io.helidon.microprofile.faulttolerance;
-    requires transitive io.helidon.microprofile.jwt.auth;
-    requires transitive io.helidon.microprofile.restclient;
-    requires transitive io.helidon.microprofile.openapi;
-    requires transitive jakarta.json.bind;
     requires io.helidon.health.checks;
+
+    requires transitive io.helidon.microprofile.bundle.core;
+    requires transitive io.helidon.microprofile.faulttolerance;
+    requires transitive io.helidon.microprofile.health;
+    requires transitive io.helidon.microprofile.jwt.auth;
+    requires transitive io.helidon.microprofile.metrics;
+    requires transitive io.helidon.microprofile.openapi;
+    requires transitive io.helidon.microprofile.restclient;
+    requires transitive jakarta.json.bind;
+
 }

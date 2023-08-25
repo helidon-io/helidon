@@ -39,4 +39,5 @@ module io.helidon.webclient.security {
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
             with io.helidon.webclient.security.WebClientSecurityProvider;
+
 }

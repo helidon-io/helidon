@@ -23,8 +23,9 @@
  * @see
  * io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension
  */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.datasource.ucp.cdi {
+
     requires com.oracle.database.ucp;
     requires java.desktop; // For java.beans
     requires java.naming; // PoolDataSourceImpl implements javax.naming.Referenceable
@@ -39,4 +40,5 @@ module io.helidon.integrations.datasource.ucp.cdi {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.datasource.ucp.cdi.UCPBackedDataSourceExtension;
+
 }

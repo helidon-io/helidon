@@ -33,4 +33,5 @@ module io.helidon.lra.coordinator {
     requires microprofile.lra.api;
 
     requires transitive io.helidon.webserver;
+
 }

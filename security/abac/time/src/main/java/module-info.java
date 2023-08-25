@@ -36,5 +36,7 @@ module io.helidon.security.abac.time {
 
     exports io.helidon.security.abac.time;
 
-    provides io.helidon.security.providers.abac.spi.AbacValidatorService with io.helidon.security.abac.time.TimeValidatorService;
+    provides io.helidon.security.providers.abac.spi.AbacValidatorService
+            with io.helidon.security.abac.time.TimeValidatorService;
+
 }

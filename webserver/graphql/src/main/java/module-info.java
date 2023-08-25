@@ -46,4 +46,5 @@ module io.helidon.webserver.graphql {
     requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.graphql;
+
 }

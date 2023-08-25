@@ -42,4 +42,5 @@ module io.helidon.security.providers.jwt {
     exports io.helidon.security.providers.jwt;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.jwt.JwtProviderService;
+
 }

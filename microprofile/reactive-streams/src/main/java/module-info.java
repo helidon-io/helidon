@@ -29,6 +29,7 @@ import io.helidon.common.features.api.Preview;
         in = HelidonFlavor.MP,
         path = "Reactive"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.reactive {
 
     requires io.helidon.common.mapper;
@@ -45,4 +46,5 @@ module io.helidon.microprofile.reactive {
 
     provides org.eclipse.microprofile.reactive.streams.operators.spi.ReactiveStreamsEngine
             with io.helidon.microprofile.reactive.HelidonReactiveStreamsEngine;
+
 }

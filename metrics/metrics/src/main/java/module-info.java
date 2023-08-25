@@ -25,6 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE,
         path = {"grpc", "Metrics"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.metrics {
 
     requires io.helidon.common.media.type;
@@ -50,4 +51,5 @@ module io.helidon.metrics {
     provides io.helidon.metrics.api.spi.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
     provides io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver
             with io.helidon.metrics.ExecutorServiceMetricsObserver;
+	
 }

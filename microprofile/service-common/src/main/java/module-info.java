@@ -34,4 +34,5 @@ module io.helidon.microprofile.servicecommon {
     opens io.helidon.microprofile.servicecommon to weld.core.impl, io.helidon.microprofile.cdi;
 
     exports io.helidon.microprofile.servicecommon;
+
 }

@@ -29,6 +29,7 @@ import io.helidon.microprofile.telemetry.TelemetryCdiExtension;
         in = HelidonFlavor.MP,
         path = "Telemetry"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.telemetry {
 
     requires io.helidon.common.context;

@@ -40,4 +40,5 @@ module io.helidon.security.providers.config.vault {
 
     provides io.helidon.security.spi.SecurityProviderService
             with io.helidon.security.providers.config.vault.ConfigVaultProviderService;
+
 }

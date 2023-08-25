@@ -21,8 +21,8 @@ module io.helidon.security.abac.policy.el {
 
     requires io.helidon.security.util;
     requires java.desktop;
-    // expected to be provided by the actual EL implementation
 
+    // expected to be provided by the actual EL implementation
     requires static jakarta.el;
 
     requires transitive io.helidon.common;
@@ -32,5 +32,7 @@ module io.helidon.security.abac.policy.el {
 
     exports io.helidon.security.abac.policy.el;
 
-    provides io.helidon.security.abac.policy.spi.PolicyExecutorService with io.helidon.security.abac.policy.el.JavaxElPolicyExecutorService;
+    provides io.helidon.security.abac.policy.spi.PolicyExecutorService
+            with io.helidon.security.abac.policy.el.JavaxElPolicyExecutorService;
+
 }

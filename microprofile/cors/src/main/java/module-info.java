@@ -47,4 +47,5 @@ module io.helidon.microprofile.cors {
             with io.helidon.microprofile.cors.CrossOriginAutoDiscoverable;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.cors.CorsCdiExtension;
+
 }

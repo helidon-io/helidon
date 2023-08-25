@@ -20,6 +20,7 @@ import io.helidon.logging.slf4j.Slf4jProvider;
  * Helidon Slf4j MDC module.
  */
 module io.helidon.logging.slf4j {
+
     requires org.slf4j;
 
     requires transitive io.helidon.common.context;
@@ -30,4 +31,5 @@ module io.helidon.logging.slf4j {
     provides io.helidon.logging.common.spi.LoggingProvider with Slf4jProvider;
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.slf4j.Slf4jMdcPropagator;
     provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.slf4j.Slf4jMdcProvider;
+
 }

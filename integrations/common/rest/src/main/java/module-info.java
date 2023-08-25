@@ -24,6 +24,7 @@
  * @see io.helidon.integrations.common.rest.ApiResponse
  */
 module io.helidon.integrations.common.rest {
+
     requires io.helidon.common.context;
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
@@ -36,4 +37,5 @@ module io.helidon.integrations.common.rest {
     requires transitive jakarta.json;
 
     exports io.helidon.integrations.common.rest;
+
 }

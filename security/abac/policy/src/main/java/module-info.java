@@ -29,5 +29,8 @@ module io.helidon.security.abac.policy {
     exports io.helidon.security.abac.policy.spi;
 
     uses io.helidon.security.abac.policy.spi.PolicyExecutorService;
-    provides io.helidon.security.providers.abac.spi.AbacValidatorService with io.helidon.security.abac.policy.PolicyValidatorService;
+
+    provides io.helidon.security.providers.abac.spi.AbacValidatorService
+            with io.helidon.security.abac.policy.PolicyValidatorService;
+	
 }

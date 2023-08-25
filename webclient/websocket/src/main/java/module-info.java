@@ -16,9 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webclient.spi.ClientProtocolProvider;
-import io.helidon.webclient.websocket.WsProtocolConfigProvider;
-import io.helidon.webclient.websocket.WsProtocolProvider;
 
 /**
  * Helidon WebClient WebSocket Support.
@@ -38,8 +35,9 @@ module io.helidon.webclient.websocket {
 
     exports io.helidon.webclient.websocket;
 
-    provides ClientProtocolProvider
-            with WsProtocolProvider;
+    provides io.helidon.webclient.spi.ClientProtocolProvider
+            with io.helidon.webclient.websocket.WsProtocolProvider;
     provides io.helidon.webclient.spi.ProtocolConfigProvider
-            with WsProtocolConfigProvider;
+            with io.helidon.webclient.websocket.WsProtocolConfigProvider;
+
 }

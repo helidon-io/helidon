@@ -28,4 +28,5 @@ module io.helidon.microprofile.tests.junit5 {
     requires transitive jakarta.ws.rs;
 
     exports io.helidon.microprofile.tests.junit5;
+
 }

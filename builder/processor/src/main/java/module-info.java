@@ -29,4 +29,5 @@ module io.helidon.builder.processor {
 
     provides javax.annotation.processing.Processor
             with io.helidon.builder.processor.BlueprintProcessor;
+	
 }

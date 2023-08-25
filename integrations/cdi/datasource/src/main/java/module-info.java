@@ -21,12 +21,14 @@
  * @see
  * io.helidon.integrations.datasource.cdi.AbstractDataSourceExtension
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.datasource.cdi {
-    requires java.sql;
-    requires microprofile.config.api;
 
     requires transitive jakarta.cdi;
     requires transitive jakarta.inject;
+    requires transitive java.sql;
+    requires transitive microprofile.config.api;
 
     exports io.helidon.integrations.datasource.cdi;
+
 }

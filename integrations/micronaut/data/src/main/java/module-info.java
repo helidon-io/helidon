@@ -27,16 +27,20 @@ import io.helidon.common.features.api.Preview;
         in = HelidonFlavor.MP,
         path = {"CDI", "Micronaut", "Data"}
 )
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.micronaut.data {
 
     requires io.micronaut.inject;
     requires jakarta.annotation;
-    requires jakarta.cdi;
     requires java.sql;
 
     requires static io.helidon.common.features.api;
 
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.data.MicronautDataCdiExtension;
+    requires transitive jakarta.cdi;
+
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.integrations.micronaut.cdi.data.MicronautDataCdiExtension;
 
     exports io.helidon.integrations.micronaut.cdi.data;
+
 }

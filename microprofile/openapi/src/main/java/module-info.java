@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 
 /**
  * CDI extension for MicroProfile OpenAPI implementation.
@@ -28,6 +27,7 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
         in = HelidonFlavor.MP,
         path = "Open API"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.openapi {
 
     requires io.helidon.microprofile.server;
@@ -50,5 +50,7 @@ module io.helidon.microprofile.openapi {
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.openapi to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides jakarta.enterprise.inject.spi.Extension with OpenApiCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.openapi.OpenApiCdiExtension;
+
 }

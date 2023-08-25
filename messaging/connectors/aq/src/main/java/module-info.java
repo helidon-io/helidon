@@ -48,4 +48,5 @@ module io.helidon.messaging.connectors.aq {
     requires transitive java.sql;
 
     exports io.helidon.messaging.connectors.aq;
+
 }

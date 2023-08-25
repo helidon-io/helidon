@@ -19,9 +19,11 @@
  */
 module io.helidon.graphql.server {
 
-    requires transitive com.graphqljava;
-    requires io.helidon.common;
     requires io.helidon.common.config;
+    requires io.helidon.common;
+
+    requires transitive com.graphqljava;
 
     exports io.helidon.graphql.server;
+
 }

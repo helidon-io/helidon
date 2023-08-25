@@ -33,6 +33,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"JPA", "Hibernate"}
 )
 @Aot(description = "Experimental support, tested on limited use cases")
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.hibernate {
     requires jakarta.cdi;
     requires jakarta.inject;
@@ -47,4 +48,5 @@ module io.helidon.integrations.cdi.hibernate {
 
     provides org.hibernate.engine.transaction.jta.platform.spi.JtaPlatformProvider
             with io.helidon.integrations.cdi.hibernate.CDISEJtaPlatformProvider;
+
 }

@@ -17,10 +17,7 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
-import io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
-import io.helidon.webserver.grpc.GrpcProtocolConfigProvider;
-import io.helidon.webserver.grpc.GrpcProtocolProvider;
-import io.helidon.webserver.spi.ProtocolConfigProvider;
+
 
 /**
  * Helidon WebServer gRPC Support.
@@ -31,6 +28,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
          in = HelidonFlavor.SE,
          path = {"WebServer", "GRPC"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.webserver.grpc {
 
     requires grpc.protobuf.lite;
@@ -48,8 +46,9 @@ module io.helidon.webserver.grpc {
 
     exports io.helidon.webserver.grpc;
 
-    provides Http2SubProtocolProvider
-            with GrpcProtocolProvider;
-    provides ProtocolConfigProvider
-            with GrpcProtocolConfigProvider;
+    provides io.helidon.webserver.http2.spi.Http2SubProtocolProvider
+            with io.helidon.webserver.grpc.GrpcProtocolProvider;
+    provides io.helidon.webserver.spi.ProtocolConfigProvider
+            with io.helidon.webserver.grpc.GrpcProtocolConfigProvider;
+
 }

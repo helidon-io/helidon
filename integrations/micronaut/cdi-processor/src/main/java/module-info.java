@@ -17,7 +17,9 @@
 /**
  * Micronaut integration with CDI - annotation processor for Micronaut.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.micronaut.cdi.processor {
+
     requires jakarta.inject;
 
     requires transitive io.micronaut.core;
@@ -27,4 +29,5 @@ module io.helidon.integrations.micronaut.cdi.processor {
             io.helidon.integrations.micronaut.cdi.processor.ApplicationScopedTransformer,
             io.helidon.integrations.micronaut.cdi.processor.RequestScopedTransformer,
             io.helidon.integrations.micronaut.cdi.processor.DependentTransformer;
+
 }

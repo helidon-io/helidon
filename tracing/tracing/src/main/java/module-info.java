@@ -40,4 +40,5 @@ module io.helidon.tracing {
     exports io.helidon.tracing.spi;
 
     uses io.helidon.tracing.spi.TracerProvider;
+
 }

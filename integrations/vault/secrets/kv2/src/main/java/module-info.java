@@ -46,4 +46,5 @@ module io.helidon.integrations.vault.secrets.kv {
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
             with io.helidon.integrations.vault.secrets.kv2.Kv2EngineProvider;
+
 }

@@ -17,6 +17,7 @@
 /**
  * Prometheus support.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.metrics.prometheus {
 
     requires transitive io.helidon.servicecommon;
@@ -25,4 +26,5 @@ module io.helidon.metrics.prometheus {
     requires transitive simpleclient;
 
     exports io.helidon.metrics.prometheus;
+
 }

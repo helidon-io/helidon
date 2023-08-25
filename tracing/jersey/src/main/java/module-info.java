@@ -26,18 +26,20 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Tracing", "Integration", "Jersey"}
 )
 module io.helidon.tracing.jersey {
+
+    requires io.helidon.common.context;
+    requires io.helidon.common;
+    requires io.helidon.jersey.common;
+    requires io.helidon.tracing.config;
+    requires jakarta.annotation;
+    requires jersey.server;
+
     requires static io.helidon.common.features.api;
 
-    requires jakarta.annotation;
-
-    requires transitive jakarta.ws.rs;
-    requires jersey.server;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-    requires io.helidon.jersey.common;
     requires transitive io.helidon.tracing.jersey.client;
     requires transitive io.helidon.tracing;
-    requires io.helidon.tracing.config;
+    requires transitive jakarta.ws.rs;
 
     exports io.helidon.tracing.jersey;
+	
 }

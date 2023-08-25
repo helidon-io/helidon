@@ -29,6 +29,7 @@ import io.helidon.common.features.api.Preview;
         in = HelidonFlavor.MP,
         path = "LRA"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.lra {
 
     requires io.helidon.common.reactive;
@@ -52,4 +53,5 @@ module io.helidon.microprofile.lra {
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.lra.LraCdiExtension;
     provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.lra.LraAutoDiscoverable;
+
 }

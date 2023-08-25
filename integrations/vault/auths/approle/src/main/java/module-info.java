@@ -26,13 +26,15 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Auth", "AppRole"}
 )
 module io.helidon.integrations.vault.auths.approle {
+
+    requires io.helidon.http;
+    requires io.helidon.integrations.common.rest;
+    requires io.helidon.integrations.vault.auths.common;
+    requires io.helidon.webclient;
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.integrations.vault.auths.common;
-    requires io.helidon.integrations.common.rest;
-    requires io.helidon.http;
-    requires io.helidon.webclient;
 
     exports io.helidon.integrations.vault.auths.approle;
 
@@ -44,4 +46,5 @@ module io.helidon.integrations.vault.auths.approle {
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
             with io.helidon.integrations.vault.auths.approle.AppRoleAuthProvider;
+
 }

@@ -17,6 +17,7 @@
 /**
  * MicroProfile Reactive Messaging Metrics.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.messaging.metrics {
 
     requires jakarta.cdi;
@@ -26,4 +27,5 @@ module io.helidon.microprofile.messaging.metrics {
     requires transitive io.helidon.microprofile.messaging;
     requires transitive io.helidon.microprofile.metrics;
     requires transitive microprofile.reactive.messaging.api;
+
 }

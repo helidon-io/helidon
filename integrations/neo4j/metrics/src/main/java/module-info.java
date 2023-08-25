@@ -27,15 +27,18 @@ import io.helidon.common.features.api.Preview;
         in = {HelidonFlavor.MP, HelidonFlavor.SE},
         path = {"Neo4j", "Metrics"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.neo4j.metrics {
 
-    requires io.helidon.common;
     requires io.helidon.integrations.neo4j;
     requires io.helidon.metrics;
     requires microprofile.metrics.api;
-    requires org.neo4j.driver;
+
+    requires transitive io.helidon.common;
+    requires transitive org.neo4j.driver;
 
     requires static io.helidon.common.features.api;
 
     exports io.helidon.integrations.neo4j.metrics;
+
 }

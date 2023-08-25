@@ -18,6 +18,9 @@
  * The class model generator.
  */
 module io.helidon.common.processor.classmodel {
+
     requires io.helidon.common.types;
+
     exports io.helidon.common.processor.classmodel;
+
 }

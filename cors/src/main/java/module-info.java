@@ -18,6 +18,7 @@
  * CORS configuration and types.
  */
 module io.helidon.cors {
+	
     requires java.logging;
     requires io.helidon.http;
     requires io.helidon.common.config;
@@ -25,4 +26,5 @@ module io.helidon.cors {
     requires static io.helidon.config.metadata;
 
     exports io.helidon.cors;
+	
 }

@@ -40,4 +40,5 @@ module io.helidon.security.providers.header {
     exports io.helidon.security.providers.header;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.header.HeaderAtnService;
+
 }

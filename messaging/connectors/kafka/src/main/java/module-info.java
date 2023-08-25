@@ -27,6 +27,7 @@ import io.helidon.common.features.api.Preview;
         in = {HelidonFlavor.SE, HelidonFlavor.MP},
         path = {"Messaging", "Kafka"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging.connectors.kafka {
 
     requires io.helidon.common.configurable;
@@ -34,8 +35,7 @@ module io.helidon.messaging.connectors.kafka {
     requires io.helidon.common.reactive;
     requires io.helidon.config.mp;
     requires io.helidon.messaging;
-    // To allow KerberosLoginSubstitution
-    requires java.security.jgss;
+    requires java.security.jgss;// To allow KerberosLoginSubstitution
     requires java.security.sasl;
     requires microprofile.config.api;
     requires org.reactivestreams;
@@ -52,4 +52,5 @@ module io.helidon.messaging.connectors.kafka {
     requires transitive org.slf4j;
 
     exports io.helidon.messaging.connectors.kafka;
+
 }

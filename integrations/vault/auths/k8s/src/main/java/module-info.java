@@ -26,13 +26,15 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Auth", "k8s"}
 )
 module io.helidon.integrations.vault.auths.k8s {
+
+    requires io.helidon.http;
+    requires io.helidon.integrations.vault.auths.common;
+    requires io.helidon.webclient;
+
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.integrations.vault;
     requires transitive io.helidon.integrations.common.rest;
-    requires io.helidon.integrations.vault.auths.common;
-    requires io.helidon.http;
-    requires io.helidon.webclient;
+    requires transitive io.helidon.integrations.vault;
 
     exports io.helidon.integrations.vault.auths.k8s;
 
@@ -44,4 +46,6 @@ module io.helidon.integrations.vault.auths.k8s {
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
             with io.helidon.integrations.vault.auths.k8s.K8sAuthProvider;
+	
+
 }

@@ -17,6 +17,7 @@
 /**
  * Open tracing support for Helidon tracing.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.opentracing {
 
     requires io.opentracing.noop;
@@ -36,4 +37,5 @@ module io.helidon.tracing.providers.opentracing {
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentracing.OpenTracingTracerProvider;
+
 }

@@ -36,4 +36,5 @@ module io.helidon.websocket {
     requires transitive io.helidon.http;
 
     exports io.helidon.websocket;
+
 }

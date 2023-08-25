@@ -37,4 +37,5 @@ module io.helidon.openapi {
     uses io.helidon.openapi.OpenApiUiFactory;
 
     provides io.helidon.openapi.OpenApiUiFactory with OpenApiUiNoOpFactory;
+
 }

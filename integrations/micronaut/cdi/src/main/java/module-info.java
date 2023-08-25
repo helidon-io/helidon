@@ -17,21 +17,24 @@
 /**
  * Integration of Micronaut into CDI.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.micronaut.cdi {
+
     requires io.helidon.common;
-    requires io.micronaut.aop;
-    requires jakarta.annotation;
-    requires jakarta.cdi;
     requires jakarta.inject;
     requires java.logging;
     requires microprofile.config.api;
 
+    requires transitive io.micronaut.aop;
     requires transitive io.micronaut.core;
     requires transitive io.micronaut.inject;
+    requires transitive jakarta.annotation;
+    requires transitive jakarta.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micronaut.cdi.MicronautCdiExtension;
 
     uses io.micronaut.inject.BeanDefinitionReference;
 
     exports io.helidon.integrations.micronaut.cdi;
+
 }

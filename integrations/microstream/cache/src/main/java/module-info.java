@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,13 @@
 /**
  * Provides support for Microstream-Cache features integration.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.microstream.cache {
-    exports io.helidon.integrations.microstream.cache;
 
     requires transitive cache.api;
-    requires transitive microstream.cache;
     requires transitive io.helidon.integrations.microstream;
+    requires transitive microstream.cache;
+
+    exports io.helidon.integrations.microstream.cache;
+
 }

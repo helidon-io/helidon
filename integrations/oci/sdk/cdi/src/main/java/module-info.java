@@ -40,4 +40,5 @@ module io.helidon.integrations.oci.sdk.cdi {
         with io.helidon.integrations.oci.sdk.cdi.OciExtension;
 
     opens io.helidon.integrations.oci.sdk.cdi to weld.core.impl;
+	
 }

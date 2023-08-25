@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.webserver.observe.config.ConfigObserveProvider;
-import io.helidon.webserver.observe.spi.ObserveProvider;
 
 /**
  * Helidon WebServer Observability Config Support.
@@ -30,5 +28,7 @@ module io.helidon.webserver.observe.config {
 
     exports io.helidon.webserver.observe.config;
 
-    provides ObserveProvider with ConfigObserveProvider;
+    provides io.helidon.webserver.observe.spi.ObserveProvider
+            with io.helidon.webserver.observe.config.ConfigObserveProvider;
+
 }

@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.dbclient.mongodb.MongoDbClientProvider;
-import io.helidon.dbclient.spi.DbClientProvider;
 
 /**
  * Helidon Database Client MongoDB.
@@ -28,16 +26,19 @@ import io.helidon.dbclient.spi.DbClientProvider;
         path = {"DbClient", "mongo"}
 )
 module io.helidon.dbclient.mongodb {
-    requires static io.helidon.common.features.api;
 
     requires java.sql;
-
-    requires transitive jakarta.json;
-    requires org.mongodb.driver.core;
     requires org.mongodb.bson;
-    requires transitive io.helidon.dbclient;
+    requires org.mongodb.driver.core;
     requires org.mongodb.driver.sync.client;
 
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.dbclient;
+    requires transitive jakarta.json;
+
     exports io.helidon.dbclient.mongodb;
-    provides DbClientProvider with MongoDbClientProvider;
+
+    provides io.helidon.dbclient.spi.DbClientProvider with io.helidon.dbclient.mongodb.MongoDbClientProvider;
+
 }

@@ -23,7 +23,9 @@
  * SE implementations using the <a
  * href="http://narayana.io/">Narayana</a> engine.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.jta.weld {
+
     requires jakarta.cdi;
     requires jakarta.transaction;
     requires java.logging;
@@ -36,4 +38,5 @@ module io.helidon.integrations.jta.weld {
 
     provides org.jboss.weld.bootstrap.api.Service
             with io.helidon.integrations.jta.weld.NarayanaTransactionServices;
+	
 }

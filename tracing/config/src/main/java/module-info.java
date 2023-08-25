@@ -26,4 +26,5 @@ module io.helidon.tracing.config {
     requires transitive io.helidon.common;
 
     exports io.helidon.tracing.config;
+
 }

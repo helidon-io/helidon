@@ -17,6 +17,7 @@
 /**
  * Integrating with OCI Metrics Using CDI.
  */
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.oci.metrics.cdi {
 
     requires io.helidon.config.mp;
@@ -25,9 +26,14 @@ module io.helidon.integrations.oci.metrics.cdi {
     requires io.helidon.microprofile.server;
     requires oci.java.sdk.monitoring;
 
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.oci.metrics.cdi.OciMetricsCdiExtension;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
+
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.integrations.oci.metrics.cdi.OciMetricsCdiExtension;
 
     opens io.helidon.integrations.oci.metrics.cdi to weld.core.impl, io.helidon.microprofile.cdi;
 
     exports io.helidon.integrations.oci.metrics.cdi;
+	
 }

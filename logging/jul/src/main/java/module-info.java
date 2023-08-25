@@ -30,4 +30,5 @@ module io.helidon.logging.jul {
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.jul.JulMdcPropagator;
     provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.jul.JulMdcProvider;
     provides io.helidon.logging.common.spi.LoggingProvider with io.helidon.logging.jul.JulProvider;
+
 }

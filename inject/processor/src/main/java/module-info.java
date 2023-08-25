@@ -18,15 +18,15 @@
  * Injection Annotation Processor module.
  */
 module io.helidon.inject.processor {
-    requires transitive java.compiler;
 
-    requires io.helidon.common;
-    requires io.helidon.common.processor;
-    requires transitive io.helidon.inject.tools;
-    requires io.helidon.builder.api;
-
-    exports io.helidon.inject.processor;
     exports io.helidon.inject.processor.spi;
+    exports io.helidon.inject.processor;
+    requires io.helidon.builder.api;
+    requires io.helidon.common.processor;
+    requires io.helidon.common;
+
+    requires transitive io.helidon.inject.tools;
+    requires transitive java.compiler;
 
     uses io.helidon.inject.processor.spi.InjectionAnnotationProcessorObserver;
     uses io.helidon.inject.tools.spi.InterceptorCreator;
@@ -36,4 +36,5 @@ module io.helidon.inject.processor {
             io.helidon.inject.processor.CustomAnnotationProcessor,
             io.helidon.inject.processor.UnsupportedConstructsProcessor,
             io.helidon.inject.processor.InjectionAnnotationProcessor;
+
 }

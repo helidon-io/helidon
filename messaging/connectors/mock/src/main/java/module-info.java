@@ -17,6 +17,7 @@
 /**
  * Microprofile messaging MockConnector.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module helidon.messaging.mock {
 
     requires hamcrest.all;
@@ -32,4 +33,5 @@ module helidon.messaging.mock {
     requires transitive microprofile.reactive.streams.operators.api;
 
     exports io.helidon.messaging.connectors.mock;
+
 }

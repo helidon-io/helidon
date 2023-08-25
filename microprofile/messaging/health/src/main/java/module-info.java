@@ -17,6 +17,7 @@
 /**
  * MicroProfile Reactive Messaging Health check.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.messaging.health {
 
     requires jakarta.inject;
@@ -29,4 +30,5 @@ module io.helidon.microprofile.messaging.health {
     requires transitive org.reactivestreams;
 
     exports io.helidon.microprofile.messaging.health;
+
 }

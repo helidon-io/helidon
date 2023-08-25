@@ -17,6 +17,7 @@
  * Extension for Graal VM native image to correctly build Helidon applications.
  */
 module io.helidon.graal.nativeimage {
+	
     requires io.github.classgraph;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
@@ -29,4 +30,5 @@ module io.helidon.graal.nativeimage {
     requires transitive org.graalvm.sdk;
 
     exports io.helidon.integrations.graal.nativeimage.extension;
+	
 }

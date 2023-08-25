@@ -34,4 +34,5 @@ module io.helidon.scheduling {
     requires static io.helidon.common.features.api;
 
     exports io.helidon.scheduling;
+
 }

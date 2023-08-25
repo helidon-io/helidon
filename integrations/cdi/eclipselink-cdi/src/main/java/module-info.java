@@ -50,4 +50,5 @@ module io.helidon.integrations.cdi.eclipselink {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.cdi.eclipselink.CDISEPlatformExtension;
+
 }

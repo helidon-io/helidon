@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.webclient.dns.resolver.first.FirstDnsResolverProvider;
-import io.helidon.webclient.spi.DnsResolverProvider;
 
 /**
  * Helidon WebClient DNS Resolver First Support.
@@ -27,6 +25,7 @@ module io.helidon.webclient.dns.resolver.first {
 
     exports io.helidon.webclient.dns.resolver.first;
 
-    provides DnsResolverProvider
-            with FirstDnsResolverProvider;
+    provides io.helidon.webclient.spi.DnsResolverProvider
+            with io.helidon.webclient.dns.resolver.first.FirstDnsResolverProvider;
+
 }

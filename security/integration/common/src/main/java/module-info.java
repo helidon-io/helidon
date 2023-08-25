@@ -27,4 +27,5 @@ module io.helidon.security.integration.common {
     requires transitive io.helidon.tracing;
 
     exports io.helidon.security.integration.common;
+
 }

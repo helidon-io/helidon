@@ -36,4 +36,5 @@ module io.helidon.webserver.cors {
     requires transitive io.helidon.cors;
 
     exports io.helidon.webserver.cors;
+
 }

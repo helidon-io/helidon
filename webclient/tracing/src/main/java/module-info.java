@@ -40,4 +40,5 @@ module io.helidon.webclient.tracing {
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
             with io.helidon.webclient.tracing.WebClientTracingProvider;
+
 }

@@ -52,4 +52,5 @@ module io.helidon.security.providers.oidc {
 
     uses io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
     uses io.helidon.security.providers.oidc.common.spi.TenantIdProvider;
+
 }

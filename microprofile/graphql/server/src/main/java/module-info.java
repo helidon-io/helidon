@@ -17,7 +17,6 @@
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 
 /**
  * GraphQL microprofile server module.
@@ -52,7 +51,8 @@ module io.helidon.microprofile.graphql.server {
     exports io.helidon.microprofile.graphql.server;
 
     provides jakarta.enterprise.inject.spi.Extension with
-            GraphQlCdiExtension;
+            io.helidon.microprofile.graphql.server.GraphQlCdiExtension;
 
     opens io.helidon.microprofile.graphql.server to weld.core.impl;
+	
 }

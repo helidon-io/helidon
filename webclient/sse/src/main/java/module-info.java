@@ -32,4 +32,5 @@ module io.helidon.webclient.sse {
     provides SourceHandlerProvider with SseSourceHandlerProvider;
 
     exports io.helidon.webclient.sse;
+
 }

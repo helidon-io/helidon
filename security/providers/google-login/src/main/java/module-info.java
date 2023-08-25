@@ -47,4 +47,5 @@ module io.helidon.security.providers.google.login {
     exports io.helidon.security.providers.google.login;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.google.login.GoogleTokenService;
+
 }

@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-import io.helidon.jersey.client.JerseyClientBuilderListener;
 
 /**
  * Jersey client.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.jersey.client {
-    requires transitive jakarta.ws.rs;
-    requires transitive jersey.common;
-    requires transitive jersey.client;
-    requires jakarta.inject;
-    requires jakarta.annotation;
+
     requires io.helidon.common.context;
+    requires jakarta.annotation;
+    requires jakarta.inject;
+
+    requires transitive jakarta.ws.rs;
+    requires transitive jersey.client;
+    requires transitive jersey.common;
 
     exports io.helidon.jersey.client;
 
     provides org.glassfish.jersey.client.spi.ClientBuilderListener
-            with JerseyClientBuilderListener;
+            with io.helidon.jersey.client.JerseyClientBuilderListener;
+
 }

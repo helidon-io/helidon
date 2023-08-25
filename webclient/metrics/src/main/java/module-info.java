@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webclient.metrics.WebClientMetricsProvider;
-import io.helidon.webclient.spi.WebClientServiceProvider;
 
 /**
  * Helidon WebClient Metrics Support.
@@ -36,6 +34,7 @@ module io.helidon.webclient.metrics {
 
     requires transitive io.helidon.common.config;
 
-    provides WebClientServiceProvider
-            with WebClientMetricsProvider;
+    provides io.helidon.webclient.spi.WebClientServiceProvider
+            with io.helidon.webclient.metrics.WebClientMetricsProvider;
+
 }

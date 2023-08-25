@@ -16,8 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.jsonb.JsonbMediaSupportProvider;
-import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
  * JSON-B media support.
@@ -28,13 +26,15 @@ import io.helidon.http.media.spi.MediaSupportProvider;
         path = {"Media", "JSON-B"}
 )
 module io.helidon.http.media.jsonb {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.http.media;
-    requires jakarta.json;
     requires jakarta.json.bind;
+    requires jakarta.json;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.http.media.jsonb;
 
-    provides MediaSupportProvider with JsonbMediaSupportProvider;
+    provides io.helidon.http.media.spi.MediaSupportProvider with io.helidon.http.media.jsonb.JsonbMediaSupportProvider;
+
 }

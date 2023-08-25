@@ -40,5 +40,7 @@ module io.helidon.security.providers.httpsign {
 
     exports io.helidon.security.providers.httpsign;
 
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.httpsign.HttpSignService;
+    provides io.helidon.security.spi.SecurityProviderService
+            with io.helidon.security.providers.httpsign.HttpSignService;
+
 }

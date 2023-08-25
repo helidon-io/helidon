@@ -29,6 +29,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "REST Client"
 )
 @Aot(description = "Does not support execution of default methods on interfaces.")
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.restclient {
 
     requires io.helidon.common.context;
@@ -48,4 +49,5 @@ module io.helidon.microprofile.restclient {
             with io.helidon.microprofile.restclient.MpRestClientListener;
     provides org.glassfish.jersey.internal.spi.ForcedAutoDiscoverable
             with  io.helidon.microprofile.restclient.HelidonRequestHeaderAutoDiscoverable;
+
 }

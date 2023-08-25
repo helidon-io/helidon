@@ -57,4 +57,5 @@ module io.helidon.microprofile.health {
     provides org.eclipse.microprofile.health.spi.HealthCheckResponseProvider
             with io.helidon.microprofile.health.HealthCheckResponseProviderImpl;
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.health.HealthCdiExtension;
+
 }

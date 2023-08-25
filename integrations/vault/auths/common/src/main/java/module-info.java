@@ -18,14 +18,18 @@
  * Common classes for Vault integration.
  */
 module io.helidon.integrations.vault.auths.common {
+
     requires io.helidon.http;
+    requires io.helidon.webclient;
     requires jakarta.json;
+
     requires transitive io.helidon.integrations.common.rest;
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.webclient;
 
     exports io.helidon.integrations.vault.auths.common;
 
     provides io.helidon.integrations.vault.spi.VaultAuth with
             io.helidon.integrations.vault.auths.common.NoVaultAuth;
+
+
 }

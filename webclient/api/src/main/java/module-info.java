@@ -16,11 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webclient.spi.DnsResolverProvider;
-import io.helidon.webclient.spi.HttpClientSpiProvider;
-import io.helidon.webclient.spi.ProtocolConfigProvider;
-import io.helidon.webclient.spi.SourceHandlerProvider;
-import io.helidon.webclient.spi.WebClientServiceProvider;
+
 
 /**
  * Helidon WebClient API.
@@ -54,9 +50,10 @@ module io.helidon.webclient.api {
     exports io.helidon.webclient.api;
     exports io.helidon.webclient.spi;
 
-    uses DnsResolverProvider;
-    uses SourceHandlerProvider;
-    uses WebClientServiceProvider;
-    uses ProtocolConfigProvider;
-    uses HttpClientSpiProvider;
+    uses io.helidon.webclient.spi.DnsResolverProvider;
+    uses io.helidon.webclient.spi.SourceHandlerProvider;
+    uses io.helidon.webclient.spi.WebClientServiceProvider;
+    uses io.helidon.webclient.spi.ProtocolConfigProvider;
+    uses io.helidon.webclient.spi.HttpClientSpiProvider;
+	
 }

@@ -29,10 +29,10 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Aot(false)
 module io.helidon.security.providers.idcs.mapper {
 
-    requires  io.helidon.common;
-    requires  io.helidon.security.providers.common;
     requires io.helidon.common.context;
+    requires io.helidon.common;
     requires io.helidon.security.integration.common;
+    requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
 
     requires static io.helidon.common.features.api;
@@ -48,4 +48,5 @@ module io.helidon.security.providers.idcs.mapper {
     exports io.helidon.security.providers.idcs.mapper;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderService;
+
 }

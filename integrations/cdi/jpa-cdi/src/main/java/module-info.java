@@ -32,7 +32,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.MP,
         path = "JPA"
 )
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.cdi.jpa {
   
     requires jakarta.xml.bind;

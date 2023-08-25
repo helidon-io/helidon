@@ -17,6 +17,7 @@
 /**
  * Open telemetry support for Helidon tracing.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.tracing.providers.opentelemetry {
 
     requires io.helidon.common.config;
@@ -34,4 +35,5 @@ module io.helidon.tracing.providers.opentelemetry {
 
     provides io.helidon.tracing.spi.TracerProvider
             with io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracerProvider;
+
 }

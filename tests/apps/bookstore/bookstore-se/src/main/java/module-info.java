@@ -18,23 +18,24 @@
  * Helidon SE Bookstore test application
  */
 module io.helidon.tests.apps.bookstore.se {
-    requires java.logging;
-    requires jakarta.json;
 
-    requires io.helidon.webserver;
+    requires io.helidon.common.pki;
     requires io.helidon.config.yaml;
     requires io.helidon.config;
-    requires io.helidon.health;
     requires io.helidon.health.checks;
-    requires io.helidon.webserver.observe.metrics;
-    requires io.helidon.webserver.observe.health;
-    requires io.helidon.http.media.jsonp;
+    requires io.helidon.health;
     requires io.helidon.http.media.jackson;
     requires io.helidon.http.media.jsonb;
-    requires io.helidon.tests.apps.bookstore.common;
+    requires io.helidon.http.media.jsonp;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;
-    requires io.helidon.common.pki;
+    requires io.helidon.tests.apps.bookstore.common;
+    requires io.helidon.webserver.observe.health;
+    requires io.helidon.webserver.observe.metrics;
+    requires io.helidon.webserver;
+    requires jakarta.json;
+    requires java.logging;
 
     exports io.helidon.tests.apps.bookstore.se;
+	
 }

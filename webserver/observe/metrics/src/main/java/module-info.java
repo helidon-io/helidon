@@ -16,8 +16,7 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webserver.observe.metrics.MetricsObserveProvider;
-import io.helidon.webserver.observe.spi.ObserveProvider;
+
 
 /**
  * Helidon WebServer Observability Metrics Support.
@@ -42,5 +41,7 @@ module io.helidon.webserver.observe.metrics {
 
     exports io.helidon.webserver.observe.metrics;
 
-    provides ObserveProvider with MetricsObserveProvider;
+    provides io.helidon.webserver.observe.spi.ObserveProvider
+            with io.helidon.webserver.observe.metrics.MetricsObserveProvider;
+
 }

@@ -28,6 +28,7 @@ import io.helidon.common.features.api.Preview;
         path = "Micrometer"
 )
 module io.helidon.integrations.micrometer.cdi {
+
     requires io.helidon.common;
     requires io.helidon.config.mp;
     requires io.helidon.config;
@@ -49,4 +50,5 @@ module io.helidon.integrations.micrometer.cdi {
     opens io.helidon.integrations.micrometer.cdi to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.integrations.micrometer.cdi.MicrometerCdiExtension;
+
 }

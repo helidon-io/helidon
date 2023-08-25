@@ -20,6 +20,7 @@
  * @see io.helidon.webserver.testing.junit5.ServerTest
  * @see io.helidon.webserver.testing.junit5.RoutingTest
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.webserver.testing.junit5 {
 
     requires io.helidon.logging.common;
@@ -43,4 +44,5 @@ module io.helidon.webserver.testing.junit5 {
             with io.helidon.webserver.testing.junit5.Http1DirectJunitExtension;
 
     opens io.helidon.webserver.testing.junit5 to org.junit.platform.commons;
+
 }

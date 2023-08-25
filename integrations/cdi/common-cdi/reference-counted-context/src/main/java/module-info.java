@@ -23,6 +23,7 @@
 @Deprecated(forRemoval = true, since = "3.0.3")
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.cdi.referencecountedcontext {
+
     requires io.helidon.integrations.cdi.delegates;
     requires transitive jakarta.cdi;
 
@@ -30,4 +31,5 @@ module io.helidon.integrations.cdi.referencecountedcontext {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.cdi.referencecountedcontext.ReferenceCountedExtension;
+
 }

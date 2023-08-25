@@ -38,5 +38,8 @@ module io.helidon.security.providers.abac {
     exports io.helidon.security.providers.abac.spi;
 
     uses io.helidon.security.providers.abac.spi.AbacValidatorService;
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.abac.AbacProviderService;
+
+    provides io.helidon.security.spi.SecurityProviderService
+            with io.helidon.security.providers.abac.AbacProviderService;
+
 }

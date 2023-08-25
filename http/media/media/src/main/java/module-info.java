@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.http.media.spi.MediaSupportProvider;
 
 /**
  * Helidon Media Support.
@@ -28,18 +27,21 @@ import io.helidon.http.media.spi.MediaSupportProvider;
          path = "Media"
 )
 module io.helidon.http.media {
-    requires static io.helidon.common.features.api;
-    requires static io.helidon.builder.api;
-    requires static io.helidon.config.metadata;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.http;
-    requires transitive io.helidon.common.media.type;
     requires io.helidon.common.buffers;
     requires io.helidon.common.uri;
+
+    requires static io.helidon.builder.api;
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.http;
 
     exports io.helidon.http.media;
     exports io.helidon.http.media.spi;
 
-    uses MediaSupportProvider;
+    uses io.helidon.http.media.spi.MediaSupportProvider;
+
 }

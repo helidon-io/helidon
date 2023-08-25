@@ -17,7 +17,6 @@
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.api.Preview;
-import io.helidon.microprofile.scheduling.SchedulingCdiExtension;
 
 /**
  * CDI Scheduling implementation.
@@ -44,5 +43,6 @@ module io.helidon.microprofile.scheduling {
     exports io.helidon.microprofile.scheduling;
     opens io.helidon.microprofile.scheduling;
 
-    provides jakarta.enterprise.inject.spi.Extension with SchedulingCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.scheduling.SchedulingCdiExtension;
+
 }

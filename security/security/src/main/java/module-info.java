@@ -54,4 +54,5 @@ module io.helidon.security {
     opens io.helidon.security to weld.core.impl, io.helidon.microprofile.cdi;
 
     uses io.helidon.security.spi.SecurityProviderService;
+
 }

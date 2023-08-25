@@ -33,4 +33,5 @@ module io.helidon.webserver.staticcontent {
     requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.staticcontent;
+
 }

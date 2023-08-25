@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.MP,
         path = "Config"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.config {
 
     requires io.helidon.common;
@@ -46,4 +47,5 @@ module io.helidon.microprofile.config {
     opens io.helidon.microprofile.config to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.config.ConfigCdiExtension;
+
 }

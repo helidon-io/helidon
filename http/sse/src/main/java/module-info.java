@@ -18,10 +18,13 @@
  * HTTP SSE common package. Shares types between webclient and webserver modules.
  */
 module io.helidon.http.sse {
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.media.type;
+
     requires io.helidon.http.media;
     requires io.helidon.http;
 
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common;
+
     exports io.helidon.http.sse;
+
 }

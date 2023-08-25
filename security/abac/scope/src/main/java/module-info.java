@@ -35,5 +35,7 @@ module io.helidon.security.abac.scope {
 
     exports io.helidon.security.abac.scope;
 
-    provides io.helidon.security.providers.abac.spi.AbacValidatorService with io.helidon.security.abac.scope.ScopeValidatorService;
+    provides io.helidon.security.providers.abac.spi.AbacValidatorService
+            with io.helidon.security.abac.scope.ScopeValidatorService;
+
 }

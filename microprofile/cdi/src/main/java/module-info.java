@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.MP,
         path = "CDI"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.cdi {
 
     requires io.helidon.common.context;
@@ -55,11 +56,16 @@ module io.helidon.microprofile.cdi {
 
     uses jakarta.enterprise.inject.spi.Extension;
 
-    provides io.helidon.spi.HelidonStartupProvider with io.helidon.microprofile.cdi.CdiStartupProvider;
-    provides jakarta.enterprise.inject.se.SeContainerInitializer with io.helidon.microprofile.cdi.HelidonContainerInitializer;
-    provides jakarta.enterprise.inject.spi.CDIProvider with io.helidon.microprofile.cdi.HelidonCdiProvider;
+    provides io.helidon.spi.HelidonStartupProvider
+            with io.helidon.microprofile.cdi.CdiStartupProvider;
+    provides jakarta.enterprise.inject.se.SeContainerInitializer
+            with io.helidon.microprofile.cdi.HelidonContainerInitializer;
+    provides jakarta.enterprise.inject.spi.CDIProvider
+            with io.helidon.microprofile.cdi.HelidonCdiProvider;
 
-    provides org.jboss.weld.bootstrap.api.Service with io.helidon.microprofile.cdi.ExecutorServices;
+    provides org.jboss.weld.bootstrap.api.Service
+            with io.helidon.microprofile.cdi.ExecutorServices;
 
     opens io.helidon.microprofile.cdi to weld.core.impl;
+	
 }

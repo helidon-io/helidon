@@ -29,6 +29,7 @@ import io.helidon.common.features.api.Preview;
         in = HelidonFlavor.MP,
         path = "Messaging"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.messaging {
 
     requires io.helidon.common.reactive;
@@ -53,4 +54,5 @@ module io.helidon.microprofile.messaging {
     opens io.helidon.microprofile.messaging to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.messaging.MessagingCdiExtension;
+
 }

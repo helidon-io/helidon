@@ -43,4 +43,5 @@ module io.helidon.security.providers.httpauth {
                 io.helidon.security.providers.httpauth.HttpDigestAuthService;
 
     uses io.helidon.security.providers.httpauth.spi.UserStoreService;
+
 }

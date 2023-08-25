@@ -32,4 +32,5 @@ module io.helidon.tracing.tracerresolver {
 
     provides io.helidon.tracing.providers.opentracing.spi.OpenTracingProvider
             with io.helidon.tracing.tracerresolver.TracerResolverProvider;
+
 }

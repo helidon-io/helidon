@@ -22,8 +22,9 @@
  * @see
  * io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension
  */
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.datasource.hikaricp.cdi {
+
     requires com.zaxxer.hikari;
     requires jakarta.annotation;
     requires microprofile.config.api;
@@ -39,4 +40,5 @@ module io.helidon.integrations.datasource.hikaricp.cdi {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.datasource.hikaricp.cdi.HikariCPBackedDataSourceExtension;
+
 }

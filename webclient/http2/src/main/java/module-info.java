@@ -36,4 +36,5 @@ module io.helidon.webclient.http2 {
     requires transitive io.helidon.webclient;
 
     exports io.helidon.webclient.http2;
+
 }

@@ -41,4 +41,5 @@ module io.helidon.microprofile.accesslog {
     opens io.helidon.microprofile.accesslog to weld.core.impl, io.helidon.microprofile.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.accesslog.AccessLogCdiExtension;
+	
 }

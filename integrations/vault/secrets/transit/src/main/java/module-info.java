@@ -28,13 +28,14 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Secrets", "Transit"}
 )
 module io.helidon.integrations.vault.secrets.transit {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.http;
+    requires io.helidon.integrations.common.rest;
     requires jakarta.json;
 
-    requires io.helidon.integrations.common.rest;
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.http;
     requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.transit;
@@ -47,4 +48,5 @@ module io.helidon.integrations.vault.secrets.transit {
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
             with io.helidon.integrations.vault.secrets.transit.TransitEngineProvider;
+
 }

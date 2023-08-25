@@ -37,8 +37,11 @@ module io.helidon.security.abac.role {
 
     exports io.helidon.security.abac.role;
 
-    provides io.helidon.security.providers.common.spi.AnnotationAnalyzer with io.helidon.security.abac.role.RoleAnnotationAnalyzer;
-    provides io.helidon.security.providers.abac.spi.AbacValidatorService with io.helidon.security.abac.role.RoleValidatorService;
+    provides io.helidon.security.providers.common.spi.AnnotationAnalyzer
+            with io.helidon.security.abac.role.RoleAnnotationAnalyzer;
+    provides io.helidon.security.providers.abac.spi.AbacValidatorService
+            with io.helidon.security.abac.role.RoleValidatorService;
 
     uses io.helidon.security.providers.common.spi.AnnotationAnalyzer;
+
 }

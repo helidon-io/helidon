@@ -29,4 +29,5 @@ module io.helidon.microprofile.oidc {
     exports io.helidon.microprofile.oidc;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.oidc.OidcCdiExtension;
+	
 }

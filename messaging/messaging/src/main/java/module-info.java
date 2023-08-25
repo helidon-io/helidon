@@ -27,7 +27,9 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "Messaging"
 )
 @Aot(description = "Experimental support in native image")
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging {
+
     requires io.helidon.common.configurable;
     requires io.helidon.common.context;
     requires io.helidon.config.mp;
@@ -43,4 +45,5 @@ module io.helidon.messaging {
     requires transitive org.reactivestreams;
 
     exports io.helidon.messaging;
+
 }

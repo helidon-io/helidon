@@ -33,6 +33,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.integrations.jta.cdi {
+
     requires jakarta.annotation;
     requires jakarta.cdi;
     requires jakarta.inject;
@@ -47,4 +48,5 @@ module io.helidon.integrations.jta.cdi {
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.jta.cdi.NarayanaExtension;
+
 }

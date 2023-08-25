@@ -28,4 +28,5 @@ module io.helidon.security.jwt {
 
     exports io.helidon.security.jwt;
     exports io.helidon.security.jwt.jwk;
+
 }

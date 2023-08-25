@@ -26,12 +26,13 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Secrets", "Cubbyhole"}
 )
 module io.helidon.integrations.vault.secrets.cubbyhole {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.integrations.common.rest;
     requires java.logging;
 
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.integrations.common.rest;
     requires transitive io.helidon.security;
 
     exports io.helidon.integrations.vault.secrets.cubbyhole;
@@ -47,4 +48,5 @@ module io.helidon.integrations.vault.secrets.cubbyhole {
     // Implementation of service to support secrets in Helidon Security
     provides io.helidon.security.spi.SecurityProviderService
             with io.helidon.integrations.vault.secrets.cubbyhole.CubbyholeSecurityService;
+
 }

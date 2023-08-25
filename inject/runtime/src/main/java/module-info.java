@@ -14,31 +14,32 @@
  * limitations under the License.
  */
 
-import io.helidon.inject.runtime.DefaultInjectionServicesProvider;
-import io.helidon.inject.spi.InjectionServicesProvider;
 
 /**
  * The Injection Runtime Services module.
  */
 module io.helidon.inject.runtime {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
+
     requires io.helidon.builder.api;
-    // required for compilation of generated types
-    requires transitive io.helidon.common.types;
-    requires io.helidon.common;
     requires io.helidon.common.config;
-    requires transitive io.helidon.inject.api;
-    requires static io.helidon.config.metadata;
+    requires io.helidon.common;
     requires io.helidon;
+
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
+    requires static jakarta.inject;
+
+    requires transitive io.helidon.common.types;// required for compilation of generated types
+    requires transitive io.helidon.inject.api;
 
     exports io.helidon.inject.runtime;
 
-    provides InjectionServicesProvider
-            with DefaultInjectionServicesProvider;
+    provides io.helidon.inject.spi.InjectionServicesProvider
+            with io.helidon.inject.runtime.DefaultInjectionServicesProvider;
     provides io.helidon.spi.HelidonStartupProvider
             with io.helidon.inject.runtime.HelidonInjectionStartupProvider;
 
     uses io.helidon.inject.api.ModuleComponent;
     uses io.helidon.inject.api.Application;
+
 }

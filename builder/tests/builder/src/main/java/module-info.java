@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import io.helidon.builder.test.testsubjects.ProviderNoImpls;
-import io.helidon.builder.test.testsubjects.SomeProvider;
-import io.helidon.builder.test.testsubjects.SomeServiceProvider1;
-import io.helidon.builder.test.testsubjects.SomeServiceProvider2;
 
 /**
  * Helidon Builder Test module.
@@ -33,8 +29,10 @@ module io.helidon.builder.test.builder {
 
     exports io.helidon.builder.test.testsubjects;
 
-    uses SomeProvider;
-    uses ProviderNoImpls;
+    uses io.helidon.builder.test.testsubjects.SomeProvider;
+    uses io.helidon.builder.test.testsubjects.ProviderNoImpls;
 
-    provides SomeProvider with SomeServiceProvider1, SomeServiceProvider2;
+    provides io.helidon.builder.test.testsubjects.SomeProvider 
+		with io.helidon.builder.test.testsubjects.SomeServiceProvider1, 
+			io.helidon.builder.test.testsubjects.SomeServiceProvider2;
 }

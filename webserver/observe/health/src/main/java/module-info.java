@@ -44,4 +44,5 @@ module io.helidon.webserver.observe.health {
     provides ObserveProvider with HealthObserveProvider;
 
     uses HealthCheckProvider;
+	
 }
