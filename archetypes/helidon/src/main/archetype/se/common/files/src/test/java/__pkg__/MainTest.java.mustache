@@ -1,11 +1,11 @@
 package {{package}};
 
-import io.helidon.webserver.testing.junit5.DirectClient;
-import io.helidon.webserver.testing.junit5.RoutingTest;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.testing.junit5.ServerTest;
 
-@RoutingTest
+@ServerTest
 class MainTest extends AbstractMainTest {
-    MainTest(DirectClient client) {
+    MainTest(Http1Client client) {
         super(client);
     }
 }

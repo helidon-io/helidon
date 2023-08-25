@@ -32,7 +32,7 @@ class MetricsService implements HttpService {
 {{/MetricsService-fields}}
 
 
-    MetricsService(Config config) {
+    MetricsService(Config config, MetricRegistry appRegistry) {
         {{#MetricsService-constructor}}
         {{.}}
         {{/MetricsService-constructor}}

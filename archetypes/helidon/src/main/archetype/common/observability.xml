@@ -36,14 +36,6 @@
                                 name="MicroProfile"
                                 description="Expose metrics using the MicroProfile API">
                             <output>
-                                <templates engine="mustache" transformations="mustache,packaged" if="${flavor} == 'se'">
-                                    <directory>files</directory>
-                                    <includes>
-                                        <include>src/*/java/**/HttpStatusMetricService.java.mustache</include>
-                                        <include>src/*/java/**/StatusService.java.mustache</include>
-                                        <include>src/*/java/**/StatusTest.java.mustache</include>
-                                    </includes>
-                                </templates>
                                 <model>
                                     <list key="readme-sections" if="${flavor} == 'mp'">
                                         <value><![CDATA[
@@ -135,8 +127,86 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     @Inject
     private MetricRegistry registry;]]></value>
                                     </list>
+                                    <list key="Main-other-imports" if="${flavor} == 'se'">
+                                        <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
+                                    </list>
+                                    <list key="Main-helidon-imports" if="${flavor} == 'se'">
+                                        <value>io.helidon.metrics.api.MetricsSettings</value>
+                                        <value>io.helidon.metrics.api.Registry</value>
+                                        <value>io.helidon.metrics.api.RegistryFactory</value>
+                                        <value>io.helidon.metrics.api.RegistrySettings</value>
+                                        <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
+                                        <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
+                                    </list>
+                                    <list key="Main-routing" if="${flavor} == 'se'">
+                                        <value><![CDATA[
+        MetricsSettings.Builder metricsSettingsBuilder =
+                MetricsSettings.builder()
+                        .registrySettings(Registry.APPLICATION_SCOPE, RegistrySettings.create());
+        MetricsFeature metrics = MetricsFeature.builder()
+                .metricsSettings(metricsSettingsBuilder)
+                .build();
+        MetricRegistry appRegistry = RegistryFactory.getInstance(metricsSettingsBuilder.build())
+                .getRegistry(MetricRegistry.APPLICATION_SCOPE);
+
+        MetricsService metricsService = new MetricsService(config, appRegistry);
+]]></value>
+                                    </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
-                                        <value><![CDATA[.register(HttpStatusMetricService.create())]]></value>
+                                        <value><![CDATA[.addFeature(ObserveFeature.create(MetricsObserveProvider.create(metrics)))]]></value>
+                                        <value><![CDATA[.register("/metrics-greet", metricsService)]]></value>
+                                    </list>
+                                    <list key="MetricsService-imports" if="${flavor} == 'se'">
+                                        <value>io.helidon.metrics.api.Registry</value>
+                                        <value>io.helidon.metrics.api.RegistryFactory</value>
+                                        <value>org.eclipse.microprofile.metrics.Counter</value>
+                                        <value>org.eclipse.microprofile.metrics.Metadata</value>
+                                        <value>org.eclipse.microprofile.metrics.MetricRegistry</value>
+                                        <value>org.eclipse.microprofile.metrics.MetricUnits</value>
+                                    </list>
+                                    <list key="MetricsService-fields" if="${flavor} == 'se'">
+                                        <value><![CDATA[
+    static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
+
+    private final Counter personalizedGetCounter;]]></value>
+                                    </list>
+                                    <list key="MetricsService-constructor" if="${flavor} == 'se'">
+                                        <value><![CDATA[
+        Metadata metadata = Metadata.builder()
+                .withName(PERSONALIZED_GETS_COUNTER_NAME)
+                .withDescription("Counts the number of HTTP responses to /{name} query")
+                .withUnit(MetricUnits.NONE)
+                .build();
+        this.personalizedGetCounter = appRegistry.counter(metadata);
+]]></value>
+                                    </list>
+                                    <list key="MetricsService-routing" if="${flavor} == 'se'">
+                                        <value><![CDATA[
+        .get("/{name}",
+                (req, resp) -> {
+                        personalizedGetCounter.inc();
+                        resp.next();
+                    })]]></value>
+                                    </list>
+                                    <list key="Abstract-tests" if="${flavor} == 'se'">
+                                        <value><![CDATA[
+    @Test
+    void testMicroprofileMetrics() {
+        Http1ClientResponse response = client.get()
+                .path("/metrics-greet/Joe")
+                .request();
+        assertThat(response.status().code(), is(200));
+
+        response = client.get("/observe/metrics/application").request();
+
+        String output = response.as(String.class);
+
+        String expected = MetricsService.PERSONALIZED_GETS_COUNTER_NAME + "_total{h_scope=\"application\",} 1.0";
+        assertThat("Unable to find expected counter result " + expected + "; output is " + output,
+                output, containsString(expected));
+        response.close();
+    }
+]]></value>
                                     </list>
                                     <list key="modules">
                                         <value if="${flavor} == 'mp'">io.helidon.microprofile.metrics</value>
@@ -317,11 +387,11 @@ allRequests_total 0.0
     }
 ]]></value>
                                     </list>
-                                    <list key="Main-routing">
+                                    <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[MetricsService metricsService = new MetricsService(config);
 ]]></value>
                                     </list>
-                                    <list key="Main-routing-builder">
+                                    <list key="Main-routing-builder" if="${flavor} == 'se'">
                                         <value><![CDATA[.register("/metrics-greet", metricsService)
 .addFeature(metricsService.micrometerFeature())]]></value>
                                     </list>
@@ -434,10 +504,9 @@ curl -s -X GET http://localhost:8080/health
                                     </map>
                                 </list>
                                 <list key="Observe-feature-builder" if="${flavor} == 'se'">
-                                    <value><![CDATA[
-                        .addProvider(HealthObserveProvider.create(HealthFeature.builder()
+                                    <value><![CDATA[.addProvider(HealthObserveProvider.create(HealthFeature.builder()
                             .details(true)
-                            .useSystemServices(true)
+                            .useSystemServices(false)
                             .addCheck(() -> HealthCheckResponse.builder()
                                     .status(HealthCheckResponse.Status.UP)
                                     .detail("time", System.currentTimeMillis())
@@ -446,8 +515,7 @@ curl -s -X GET http://localhost:8080/health
                                     .status(isStarted())
                                     .detail("time", System.currentTimeMillis())
                                     .build(), HealthCheckType.STARTUP)
-                            .build()))
-]]></value>
+                            .build()))]]></value>
                                 </list>
                                 <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                     <value>io.helidon.health.HealthCheckResponse</value>
@@ -498,8 +566,8 @@ Note the port number reported by the application.
 Probe the health endpoints:
 
 ```bash
-curl -X GET http://localhost:PORT/observe/health/
-curl -X GET http://localhost:PORT/observe/health/ready
+curl -X GET http://localhost:8080/observe/health/
+curl -X GET http://localhost:8080/observe/health/ready
 ```
 
 ]]></value>

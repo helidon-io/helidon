@@ -66,7 +66,7 @@ java -jar target/{{artifactId}}.jar
 Note the port number that it displays. For example:
 
 ```
-WEB server is up! http://localhost:PORT/simple-greet
+WEB server is up! http://localhost:8080/simple-greet
 ```
 
 Then run the client, passing the port number. It will connect
