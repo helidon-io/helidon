@@ -48,10 +48,10 @@ class TlsReloadableX509TrustManager implements X509TrustManager, TlsReloadableCo
 
     @Override
     public void reload(Tls tls) {
-        tls.manager().trustManager().ifPresent(this::trustManager);
+        tls.trustManager().ifPresent(this::reload);
     }
 
-    void trustManager(X509TrustManager trustManager) {
+    void reload(X509TrustManager trustManager) {
         Objects.requireNonNull(trustManager, "Cannot unset trust store");
         assertValid(trustManager);
         LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
@@ -72,12 +72,21 @@ class TlsReloadableX509TrustManager implements X509TrustManager, TlsReloadableCo
         }
     }
 
-    static class NotReloadableTrustManager implements TlsReloadableComponent {
+    static class NotReloadableTrustManager extends TlsReloadableX509TrustManager {
+        NotReloadableTrustManager() {
+            super(null);
+        }
+
         @Override
         public void reload(Tls tls) {
-            if (tls.manager().trustManager().isPresent()) {
+            if (tls.trustManager().isPresent()) {
                 throw new UnsupportedOperationException("Cannot set trust manager if one was not set during server start");
             }
+        }
+
+        @Override
+        void reload(X509TrustManager trustManager) {
+            throw new UnsupportedOperationException("Cannot set trust manager if one was not set during server start");
         }
     }
 }

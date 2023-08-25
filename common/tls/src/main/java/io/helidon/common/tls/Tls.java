@@ -20,19 +20,21 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
@@ -41,7 +43,7 @@ import io.helidon.common.config.Config;
  * TLS configuration - common for server and client.
  */
 @RuntimeType.PrototypedBy(TlsConfig.class)
-public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits Tls.ExplicitContextTlsConfig, Tls.TlsConfigImpl {
+public class Tls implements RuntimeType.Api<TlsConfig> {
 
     /**
      * HTTPS endpoint identification algorithm, verifies certificate cn against host name.
@@ -56,17 +58,33 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      */
     public static final String ENDPOINT_IDENTIFICATION_NONE = "NONE";
 
-    private final TlsConfig tlsConfig;
+    private final SSLContext sslContext;
     private final SSLParameters sslParameters;
+    private final SSLSocketFactory sslSocketFactory;
+    private final SSLServerSocketFactory sslServerSocketFactory;
+    private final boolean enabled;
+    private final TlsConfig tlsConfig;
+    private final TlsManager tlsManager;
 
     private Tls(TlsConfig config) {
-        // at this time, the TlsConfigInterceptor should have created SSL parameters; the SSL context is the responsibility
+        // at this time, the TlsConfigDecorator should have created SSL parameters; the SSL context is the responsibility
         // of the manager to provide
         this.tlsConfig = Objects.requireNonNull(config);
         this.sslParameters = config.sslParameters().orElseThrow();
+        this.enabled = config.enabled();
 
-        TlsManager tlsManager = config.manager();
-        tlsManager.init(this);
+        if (config.enabled()) {
+            this.tlsManager = config.manager();
+            this.tlsManager.init(config);
+            this.sslContext = tlsManager.sslContext();
+            this.sslSocketFactory = sslContext.getSocketFactory();
+            this.sslServerSocketFactory = sslContext.getServerSocketFactory();
+        } else {
+            this.sslContext = null;
+            this.sslSocketFactory = null;
+            this.sslServerSocketFactory = null;
+            this.tlsManager = null;
+        }
     }
 
     /**
@@ -95,10 +113,7 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return a new TLS instance
      */
     public static Tls create(TlsConfig tlsConfig) {
-        if (tlsConfig.explicitContext()) {
-            return new ExplicitContextTlsConfig(tlsConfig);
-        }
-        return new TlsConfigImpl(tlsConfig);
+        return new Tls(tlsConfig);
     }
 
     /**
@@ -124,14 +139,18 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return SSL Engine
      */
     public final SSLEngine newEngine() {
-        SSLEngine sslEngine = sslContext().createSSLEngine();
+        checkEnabled();
+        SSLEngine sslEngine = sslContext.createSSLEngine();
         sslEngine.setSSLParameters(sslParameters);
         return sslEngine;
     }
 
     @Override
     public int hashCode() {
-        return 31 * Objects.hash(sslContext()) + hashCode(sslParameters());
+        if (enabled) {
+            return 31 * Objects.hash(sslContext()) + hashCode(sslParameters());
+        }
+        return Objects.hash(Tls.class);
     }
 
     @Override
@@ -139,11 +158,14 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Tls tlsConfig)) {
+        if (!(o instanceof Tls other)) {
             return false;
         }
+        if (!enabled() && !other.enabled()) {
+            return true;
+        }
 
-        return sslContext().equals(tlsConfig.sslContext()) && equals(sslParameters(), tlsConfig.sslParameters());
+        return sslContext().equals(other.sslContext()) && equals(sslParameters(), other.sslParameters());
     }
 
     /**
@@ -152,8 +174,9 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return a new server socket ready for TLS communication
      */
     public SSLServerSocket createServerSocket() {
+        checkEnabled();
         try {
-            SSLServerSocket socket = (SSLServerSocket) sslContext().getServerSocketFactory().createServerSocket();
+            SSLServerSocket socket = (SSLServerSocket) sslServerSocketFactory.createServerSocket();
             socket.setSSLParameters(sslParameters);
             return socket;
         } catch (IOException e) {
@@ -168,8 +191,9 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return a new socket ready for TLS communication
      */
     public SSLSocket createSocket(String alpnProtocol) {
+        checkEnabled();
         try {
-            SSLSocket socket = (SSLSocket) sslContext().getSocketFactory().createSocket();
+            SSLSocket socket = (SSLSocket) sslSocketFactory.createSocket();
             sslParameters.setApplicationProtocols(new String[] {alpnProtocol});
             socket.setSSLParameters(sslParameters);
             return socket;
@@ -187,8 +211,9 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return a new socket ready for TLS communication
      */
     public SSLSocket createSocket(List<String> alpnProtocols, Socket socket, InetSocketAddress address) {
+        checkEnabled();
         try {
-            SSLSocket sslSocket = (SSLSocket) sslContext().getSocketFactory()
+            SSLSocket sslSocket = (SSLSocket) sslSocketFactory
                     .createSocket(socket, address.getHostName(), address.getPort(), true);
             sslParameters.setApplicationProtocols(alpnProtocols.toArray(new String[0]));
             sslSocket.setSSLParameters(sslParameters);
@@ -204,7 +229,8 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return SSL context
      */
     public SSLContext sslContext() {
-        return tlsConfig.sslContext().orElseThrow();
+        checkEnabled();
+        return sslContext;
     }
 
     /**
@@ -217,21 +243,14 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
     }
 
     /**
-     * The manager for this Tls instance.
-     *
-     * @return the tls manager for this instance
-     */
-    public TlsManager manager() {
-        return tlsConfig.manager();
-    }
-
-    /**
      * Reload reloadable {@link TlsReloadableComponent}s with the new configuration.
      *
      * @param tls new TLS configuration
      */
     public void reload(Tls tls) {
-        manager().reload(tls);
+        if (enabled) {
+            tlsManager.reload(tls);
+        }
     }
 
     /**
@@ -240,7 +259,21 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
      * @return whether TLS is enabled
      */
     public boolean enabled() {
-        return tlsConfig.enabled();
+        return enabled;
+    }
+
+    Optional<X509KeyManager> keyManager() {
+        return tlsManager.keyManager();
+    }
+
+    Optional<X509TrustManager> trustManager() {
+        return tlsManager.trustManager();
+    }
+
+    private void checkEnabled() {
+        if (sslContext == null) {
+            throw new IllegalStateException("TLS config is disabled, SSL related methods cannot be called.");
+        }
     }
 
     private static int hashCode(SSLParameters first) {
@@ -274,116 +307,4 @@ public abstract sealed class Tls implements RuntimeType.Api<TlsConfig> permits T
                 && first.getServerNames().equals(second.getServerNames())
                 && first.getSNIMatchers().equals(second.getSNIMatchers());
     }
-
-    static final class TlsConfigImpl extends Tls {
-        private final String protocol;
-        private final String provider;
-        private final Duration sessionTimeout;
-        private final int sessionCacheSize;
-        private final String secureRandomAlgorithm;
-        private final String secureRandomProvider;
-        private final String internalKeystoreType;
-        private final String internalKeystoreProvider;
-
-        /*
-         Private key related options
-         */
-        private final PrivateKey privateKey;
-        private final List<X509Certificate> privateKeyCertChain;
-        private final String kmfAlgorithm;
-        private final String kmfProvider;
-
-        /*
-         Trust related options
-         */
-        private final List<X509Certificate> trustCertificates;
-        private final String tmfAlgorithm;
-        private final String tmfProvider;
-        private final boolean trustAll;
-
-        TlsConfigImpl(TlsConfig config) {
-            super(config);
-
-            this.protocol = config.protocol();
-            this.provider = config.provider().orElse(null);
-            this.sessionTimeout = config.sessionTimeout();
-            this.sessionCacheSize = config.sessionCacheSize();
-            this.secureRandomAlgorithm = config.secureRandomAlgorithm().orElse(null);
-            this.secureRandomProvider = config.secureRandomProvider().orElse(null);
-            this.internalKeystoreType = config.internalKeystoreType().orElse(null);
-            this.internalKeystoreProvider = config.internalKeystoreProvider().orElse(null);
-            this.privateKey = config.privateKey().orElse(null);
-            this.privateKeyCertChain = config.privateKeyCertChain();
-            this.kmfAlgorithm = config.keyManagerFactoryAlgorithm().orElse(null);
-            this.kmfProvider = config.keyManagerFactoryProvider().orElse(null);
-            this.trustCertificates = config.trust();
-            this.tmfAlgorithm = config.trustManagerFactoryAlgorithm().orElse(null);
-            this.tmfProvider = config.trustManagerFactoryProvider().orElse(null);
-            this.trustAll = config.trustAll();
-        }
-
-        @Override
-        public int hashCode() {
-            return 31 * Tls.hashCode(super.sslParameters())
-                    + Objects.hash(protocol,
-                                   provider,
-                                   sessionTimeout,
-                                   sessionCacheSize,
-                                   secureRandomAlgorithm,
-                                   secureRandomProvider,
-                                   internalKeystoreType,
-                                   internalKeystoreProvider,
-                                   privateKey,
-                                   privateKeyCertChain,
-                                   kmfAlgorithm,
-                                   kmfProvider,
-                                   trustCertificates,
-                                   tmfAlgorithm,
-                                   tmfProvider,
-                                   trustAll);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-
-            if (!(o instanceof Tls)) {
-                return false;
-            }
-
-            if (super.equals(o)) {
-                return true;
-            }
-
-            if (!(o instanceof TlsConfigImpl tlsConfig)) {
-                return false;
-            }
-
-            return sessionCacheSize == tlsConfig.sessionCacheSize
-                    && trustAll == tlsConfig.trustAll
-                    && Objects.equals(protocol, tlsConfig.protocol)
-                    && Objects.equals(provider, tlsConfig.provider)
-                    && Objects.equals(sessionTimeout, tlsConfig.sessionTimeout)
-                    && Objects.equals(secureRandomAlgorithm, tlsConfig.secureRandomAlgorithm)
-                    && Objects.equals(secureRandomProvider, tlsConfig.secureRandomProvider)
-                    && Objects.equals(internalKeystoreType, tlsConfig.internalKeystoreType)
-                    && Objects.equals(internalKeystoreProvider, tlsConfig.internalKeystoreProvider)
-                    && Objects.equals(privateKey, tlsConfig.privateKey)
-                    && Objects.equals(privateKeyCertChain, tlsConfig.privateKeyCertChain)
-                    && Objects.equals(kmfAlgorithm, tlsConfig.kmfAlgorithm)
-                    && Objects.equals(kmfProvider, tlsConfig.kmfProvider)
-                    && Objects.equals(trustCertificates, tlsConfig.trustCertificates)
-                    && Objects.equals(tmfAlgorithm, tlsConfig.tmfAlgorithm)
-                    && Objects.equals(tmfProvider, tlsConfig.tmfProvider);
-        }
-    }
-
-    static final class ExplicitContextTlsConfig extends Tls {
-        private ExplicitContextTlsConfig(TlsConfig config) {
-            super(config);
-        }
-    }
-
 }

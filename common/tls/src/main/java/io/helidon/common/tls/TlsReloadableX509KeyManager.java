@@ -65,10 +65,10 @@ class TlsReloadableX509KeyManager implements X509KeyManager, TlsReloadableCompon
 
     @Override
     public void reload(Tls tls) {
-        tls.manager().keyManager().ifPresent(this::keyManager);
+        tls.keyManager().ifPresent(this::reload);
     }
 
-    void keyManager(X509KeyManager keyManager) {
+    void reload(X509KeyManager keyManager) {
         Objects.requireNonNull(keyManager, "Cannot unset key manager");
         assertValid(keyManager);
         LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509KeyManager");
@@ -89,12 +89,21 @@ class TlsReloadableX509KeyManager implements X509KeyManager, TlsReloadableCompon
         }
     }
 
-    static class NotReloadableKeyManager implements TlsReloadableComponent {
+    static class NotReloadableKeyManager extends TlsReloadableX509KeyManager {
+        NotReloadableKeyManager() {
+            super(null);
+        }
+
         @Override
         public void reload(Tls tls) {
-            if (tls.manager().keyManager().isPresent()) {
+            if (tls.keyManager().isPresent()) {
                 throw new UnsupportedOperationException("Cannot reload key manager if one was not set during server start");
             }
+        }
+
+        @Override
+        void reload(X509KeyManager keyManager) {
+            throw new UnsupportedOperationException("Cannot reload key manager if one was not set during server start");
         }
     }
 }

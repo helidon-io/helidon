@@ -16,14 +16,11 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
-import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
@@ -37,7 +34,7 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.tls.ConfiguredTlsManager;
-import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsConfig;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.Async;
 import io.helidon.inject.api.InjectionServices;
@@ -65,6 +62,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     private Provider<OciCertificatesDownloader> certDownloader;
     private ScheduledExecutorService asyncExecutor;
     private Async async;
+    private TlsConfig tlsConfig;
 
     DefaultOciCertificatesTlsManager(OciCertificatesTlsManagerConfig cfg) {
         this(cfg, "@default", null);
@@ -83,35 +81,30 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     }
 
     @Override // TlsManager
-    public void init(Tls tls) {
-        // this will establish whether we are enabled or not
-        super.init(tls);
+    public void init(TlsConfig tls) {
+        this.tlsConfig = tls;
+        try {
+            Services services = InjectionServices.realizedServices();
+            this.pkDownloader = services.lookupFirst(OciPrivateKeyDownloader.class);
+            this.certDownloader = services.lookupFirst(OciCertificatesDownloader.class);
+            this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
+            this.async = Async.builder().executor(asyncExecutor).build();
 
-        // if we are enabled then we will setup the ssl context, but first we will need to download it
-        if (tls.enabled()) {
-            try {
-                Services services = InjectionServices.realizedServices();
-                this.pkDownloader = services.lookupFirst(OciPrivateKeyDownloader.class);
-                this.certDownloader = services.lookupFirst(OciCertificatesDownloader.class);
-                this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
-                this.async = Async.builder().executor(asyncExecutor).build();
+            // the initial loading of the tls
+            loadContext(true);
 
-                // the initial loading of the tls
-                maybeReload();
-
-                // now schedule for reload checking
-                String taskIntervalDescription =
-                        io.helidon.scheduling.Scheduling.cronBuilder()
-                                .executor(asyncExecutor)
-                                .expression(cfg.schedule())
-                                .task(inv -> maybeReload())
-                                .build()
-                                .description();
-                LOGGER.log(System.Logger.Level.DEBUG, () ->
-                        OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
-            } catch (Exception e) {
-                throw new RuntimeException("Unable to initialize", e);
-            }
+            // now schedule for reload checking
+            String taskIntervalDescription =
+                    io.helidon.scheduling.Scheduling.cronBuilder()
+                            .executor(asyncExecutor)
+                            .expression(cfg.schedule())
+                            .task(inv -> maybeReload())
+                            .build()
+                            .description();
+            LOGGER.log(System.Logger.Level.DEBUG, () ->
+                    OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
+        } catch (Exception e) {
+            throw new RuntimeException("Unable to initialize", e);
         }
     }
 
@@ -120,13 +113,9 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
         return cfg;
     }
 
-    @Override // ConfiguredTlsManager
-    protected void maybeReload() {
-        if (!enabled()) {
-            return;
-        }
-
-        if (loadContext()) {
+    // ConfiguredTlsManager
+    private void maybeReload() {
+        if (loadContext(false)) {
             LOGGER.log(System.Logger.Level.DEBUG, "Certificates were downloaded and dynamically updated");
         }
     }
@@ -147,7 +136,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
      *
      * @return true if a reload occurred
      */
-    boolean loadContext() {
+    boolean loadContext(boolean initialLoad) {
         try {
             // download all of our security collateral from OCI
             OciCertificatesDownloader cd = certDownloader.get();
@@ -160,16 +149,14 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             OciPrivateKeyDownloader pd = pkDownloader.get();
             PrivateKey key = pd.loadKey(cfg.keyOcid(), cfg.vaultCryptoEndpoint());
 
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(null, null);
 
-            keyStore.setKeyEntry("server-cert-chain", key, cfg.keyPassword().get(), certificates.certificates());
+            SecureRandom secureRandom = secureRandom(tlsConfig);
+
+            KeyManagerFactory kmf = buildKmf(tlsConfig, secureRandom, key, certificates.certificates());
+
+            TrustManagerFactory tmf = tmf(tlsConfig);
+            KeyStore keyStore = internalKeystore(tlsConfig);
             keyStore.setCertificateEntry("trust-ca", ca);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-
-            kmf.init(keyStore, cfg.keyPassword().get());
             tmf.init(keyStore);
 
             // Uncomment to debug downloaded context
@@ -191,19 +178,14 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                 throw new RuntimeException("Unable to find X.509 trust manager in download");
             }
 
-            // establish the new context
-            // context.init(kmf.getKeyManagers(), tmf.getTrustManagers(), secureRandom);
-            keyManager(keyManager.get());
-            trustManager(trustManager.get());
-
+            if (initialLoad) {
+                initSslContext(tlsConfig, secureRandom, kmf.getKeyManagers(), tmf.getTrustManagers());
+            } else {
+                reload(keyManager, trustManager);
+            }
             return true;
-        } catch (RuntimeException
-                 | KeyStoreException
-                 | NoSuchAlgorithmException
-                 | IOException
-                 | CertificateException
-                 | UnrecoverableKeyException e) {
-            throw new RuntimeException("Error while loading context from OCI", e);
+        } catch (KeyStoreException e) {
+            throw new IllegalStateException("Error while loading context from OCI", e);
         }
     }
 

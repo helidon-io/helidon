@@ -16,19 +16,51 @@
 
 package io.helidon.common.tls;
 
+import javax.net.ssl.SSLParameters;
+
 import io.helidon.builder.api.Prototype;
 
 class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.BuilderBase<?, ?>> {
 
     @Override
     public void decorate(TlsConfig.BuilderBase<?, ?> target) {
+        sslParameters(target);
         TlsManager theManager = target.manager().orElse(null);
         if (theManager == null) {
             theManager = new ConfiguredTlsManager();
             target.manager(theManager);
         }
+    }
 
-        theManager.decorate(target);
+    static void sslParameters(TlsConfig.BuilderBase<?, ?> target) {
+        if (target.sslParameters().isPresent()) {
+            return;
+        }
+        SSLParameters parameters = new SSLParameters();
+
+        if (!target.applicationProtocols().isEmpty()) {
+            parameters.setApplicationProtocols(target.applicationProtocols().toArray(new String[0]));
+        }
+        if (!target.enabledProtocols().isEmpty()) {
+            parameters.setProtocols(target.enabledProtocols().toArray(new String[0]));
+        }
+        if (!target.enabledCipherSuites().isEmpty()) {
+            parameters.setCipherSuites(target.enabledCipherSuites().toArray(new String[0]));
+        }
+        if (Tls.ENDPOINT_IDENTIFICATION_NONE.equals(target.endpointIdentificationAlgorithm())) {
+            parameters.setEndpointIdentificationAlgorithm("");
+        } else {
+            parameters.setEndpointIdentificationAlgorithm(target.endpointIdentificationAlgorithm());
+        }
+
+        switch (target.clientAuth()) {
+        case REQUIRED -> parameters.setNeedClientAuth(true);
+        case OPTIONAL -> parameters.setWantClientAuth(true);
+        default -> {
+        }
+        }
+
+        target.sslParameters(parameters);
     }
 
 }

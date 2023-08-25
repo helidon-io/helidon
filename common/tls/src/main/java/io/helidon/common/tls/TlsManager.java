@@ -18,6 +18,7 @@ package io.helidon.common.tls;
 
 import java.util.Optional;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
@@ -35,29 +36,28 @@ import io.helidon.inject.api.Contract;
 public interface TlsManager extends NamedService {
 
     /**
-     * Always called before any other method on this type. Typically, the implementation will use {@link Tls#prototype()} to then
-     * determine whether {@link TlsConfig#enabled()} is {@code true}. If the configuration indicates that Tls is disabled then
-     * typically the manager was no responsibilities to manage the context. Note that the passed Tls instance is still in early
-     * lifecycle creation at this point.
+     * Always called before any other method on this type. This method is only called when TLS is enabled.
+     * In case the TLS is disabled, none of the methods on this type can be called.
 
-     * @param tls the tls instance - this instance must expose a {@link Tls#prototype()}
+     * @param tls TLS configuration
      */
-    void init(Tls tls);
+    void init(TlsConfig tls);
 
     /**
      * This method will multiplex the call to all {@link TlsReloadableComponent}s that are being managed by this manager.
      *
-     * @param tls the tls instance that is being asked to be reloaded
+     * @param tls the new tls instance
      * @see Tls#reload(Tls)
      */
     void reload(Tls tls);
 
     /**
-     * Provides the ability to decorate the configuration for the {@link TlsConfig} as it is being built.
+     * SSL context created by this manager.
+     * This method is called only after {@link #init(TlsConfig)} and only if {@link TlsConfig#enabled()} is {@code true}.
      *
-     * @param target the builder
+     * @return the SSL context to use
      */
-    void decorate(TlsConfig.BuilderBase<?, ?> target);
+    SSLContext sslContext();
 
     /**
      * The key manager in use.
