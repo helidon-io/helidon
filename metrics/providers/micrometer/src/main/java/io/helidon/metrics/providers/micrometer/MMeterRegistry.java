@@ -106,8 +106,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.metricsConfig = metricsConfig;
         scopingConfig = this.metricsConfig.scoping();
         delegate.config()
-                .onMeterAdded(this::recordAdd)
-                .onMeterRemoved(this::recordRemove);
+                .onMeterAdded(this::onMeterAdded)
+                .onMeterRemoved(this::onMeterRemoved);
         List<io.helidon.metrics.api.Tag> globalTags = metricsConfig.globalTags();
         if (!globalTags.isEmpty()) {
             delegate.config().meterFilter(MeterFilter.commonTags(MTag.tags(globalTags)));
@@ -416,7 +416,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                             probably because it was already present in the Micrometer registry;
                             instead will wrap existing Micrometer meter %s""",
                     meter));
-            result = recordAdd(meter);
+            result = onMeterAdded(meter);
         }
         return (HM) result;
     }
@@ -456,7 +456,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private <HM extends MMeter<?>> HM recordAdd(Meter addedMeter) {
+    private <HM extends MMeter<?>> HM onMeterAdded(Meter addedMeter) {
 
         // Here (and other places) a switch with instanceof pattern variables (see above) would be nice;
         // checkstyle fails with that.
@@ -535,7 +535,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private void recordRemove(Meter removedMeter) {
+    private void onMeterRemoved(Meter removedMeter) {
         MMeter<?> removedHelidonMeter = meters.remove(removedMeter);
         if (removedHelidonMeter == null) {
             LOGGER.log(Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
