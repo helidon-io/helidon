@@ -48,11 +48,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-microprofile-metrics</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.microprofile.openapi</groupId>
             <artifactId>helidon-microprofile-openapi</artifactId>
             <scope>test</scope>

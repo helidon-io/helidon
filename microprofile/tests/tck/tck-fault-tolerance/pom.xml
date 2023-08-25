@@ -36,6 +36,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.microprofile.metrics</groupId>
+            <artifactId>helidon-microprofile-metrics</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>
@@ -45,11 +51,6 @@
             <groupId>io.helidon.microprofile</groupId>
             <artifactId>helidon-microprofile-fault-tolerance</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.microprofile.metrics</groupId>
-            <artifactId>helidon-microprofile-metrics</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
