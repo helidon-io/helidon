@@ -18,6 +18,7 @@ package io.helidon.integrations.oci.secrets.configsource;
 import java.util.Set;
 
 import io.helidon.common.Weight;
+import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.ConfigSourceProvider;
@@ -92,8 +93,8 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
 
 
     /**
-     * Creates and returns a non-{@code null} {@link SecretBundleConfigSource} that sources its values from an Oracle
-     * Cloud Infrastructure (OCI) <a
+     * Creates and returns a non-{@code null} {@link AbstractConfigSource} implementation that sources its values from
+     * an Oracle Cloud Infrastructure (OCI) <a
      * href="https://docs.oracle.com/en-us/iaas/Content/KeyManagement/Concepts/keyoverview.htm">Vault</a>.
      *
      * @param type one of the {@linkplain #supported() supported types}; not actually used
@@ -101,24 +102,24 @@ public final class OciSecretsConfigSourceProvider implements ConfigSourceProvide
      * @param metaConfig a {@link Config} serving as meta-configuration for this provider; must not be {@code null} when
      * {@code type} is {@linkplain #supports(String) supported}
      *
-     * @return a non-{@code null} {@link SecretBundleConfigSource}
+     * @return a non-{@code null} {@link AbstractConfigSource} implementation
      *
      * @exception NullPointerException if {@code type} is {@linkplain #supports(String) supported} and {@code
      * metaConfig} is {@code null}
      *
      * @see #supported()
      *
-     * @see SecretBundleConfigSource
+     * @see AbstractConfigSource
      *
      * @deprecated For use by the Helidon Config subsystem only.
      */
     @Deprecated // For use by the Helidon Config subsystem only.
     @Override // ConfigSourceProvider
-    public ConfigSource create(String type, Config metaConfig) {
+    public AbstractConfigSource create(String type, Config metaConfig) {
         if (metaConfig.get("lazy").asBoolean().orElse(Boolean.FALSE)) {
             return SecretBundleLazyConfigSource.builder().config(metaConfig).build();
         }
-        return SecretBundleConfigSource.builder().config(metaConfig).build();
+        return SecretBundleNodeConfigSource.builder().config(metaConfig).build();
     }
 
     /**
