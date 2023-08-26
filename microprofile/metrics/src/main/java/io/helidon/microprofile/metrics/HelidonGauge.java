@@ -70,6 +70,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                                                                   target,
                                                                                                   t -> function.apply(t)
                                                                                                           .doubleValue())
+                                                                     .scope(scope)
                                                                      .description(metadata.getDescription())
                                                                      .tags(allTags(scope, tags))
                                                                      .baseUnit(sanitizeUnit(metadata.getUnit()))));
@@ -85,6 +86,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                    supplier,
                                    meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge
                                                                      .builder(metadata.getName(), supplier)
+                                                                     .scope(scope)
                                                                      .baseUnit(metadata.getUnit())
                                                                      .description(metadata.getDescription())
                                                                      .tags(allTags(scope, tags))));
@@ -104,6 +106,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                                                            .builder(metadata.getName(),
                                                                                     target,
                                                                                     fn)
+                                                                           .scope(scope)
                                                                            .description(metadata.getDescription())
                                                                            .baseUnit(metadata.getUnit())
                                                                            .tags(allTags(scope, tags))));

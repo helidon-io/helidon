@@ -15,11 +15,14 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -29,6 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.Errors;
 import io.helidon.metrics.api.DistributionSummary;
@@ -46,6 +50,7 @@ import org.eclipse.microprofile.metrics.Metric;
 import org.eclipse.microprofile.metrics.MetricFilter;
 import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.MetricRegistry;
+import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.Tag;
 import org.eclipse.microprofile.metrics.Timer;
 
@@ -74,6 +79,24 @@ class Registry implements MetricRegistry {
         return new Registry(scope, meterRegistry);
     }
 
+    protected static String sanitizeUnit(String unit) {
+        return unit != null && !unit.equals(MetricUnits.NONE)
+                ? unit
+                : null;
+    }
+
+    /**
+     * Returns an iterable of Helidon {@link io.helidon.metrics.api.Tag} including global tags, any app tag, and a scope
+     * tag (if metrics is so configured to add a scope tag).
+     *
+     * @param scope scope of the meter
+     * @param tags  explicitly-defined tags from the application code
+     * @return iterable ot Helidon tags
+     */
+    protected static Iterable<io.helidon.metrics.api.Tag> allTags(String scope, Tag[] tags) {
+        return toHelidonTags(SystemTagsManager.instance().withScopeTag(iterableEntries(tags), scope));
+    }
+
     @Override
     public Counter counter(String name) {
         return counter(name, NO_TAGS);
@@ -81,15 +104,14 @@ class Registry implements MetricRegistry {
 
     @Override
     public Counter counter(String name, Tag... tags) {
-        return counter(metadata(name),
-                       tags);
+        return Objects.requireNonNullElseGet(getCounter(new MetricID(name, tags)),
+                                             () -> createCounter(metadata(name), tags));
     }
 
     @Override
     public Counter counter(MetricID metricID) {
-        return counter(metadata(metricID),
-                       metricID.getTagsAsArray());
-
+        return Objects.requireNonNullElseGet(getCounter(metricID),
+                                             () -> createCounter(metadata(metricID), metricID.getTagsAsArray()));
     }
 
     @Override
@@ -99,55 +121,68 @@ class Registry implements MetricRegistry {
 
     @Override
     public Counter counter(Metadata metadata, Tag... tags) {
-        return HelidonCounter.create(meterRegistry, scope, metadata, tags);
+        return Objects.requireNonNullElseGet(getCounter(metricID(metadata, tags)),
+                                             () -> createCounter(metadata, tags));
     }
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
-        return gauge(metadata(name), object, func, tags);
+        return Objects.requireNonNullElseGet(getGauge(new MetricID(name, tags)),
+                                             () -> createGauge(metadata(name), object, func, tags));
     }
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
-        return gauge(metadata(metricID), object, func, metricID.getTagsAsArray());
+        return Objects.requireNonNullElseGet(getGauge(metricID),
+                                             () -> createGauge(
+                                                     metadata(metricID),
+                                                     object,
+                                                     func,
+                                                     metricID.getTagsAsArray()));
     }
 
     @Override
     public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
-        return HelidonGauge.create(meterRegistry, scope, metadata, object, func);
+        return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
+                                             () -> createGauge(metadata, object, func));
     }
 
     @Override
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
-        return gauge(metadata(name), supplier, tags);
+        return Objects.requireNonNullElseGet(getGauge(new MetricID(name, tags)),
+                                             () -> createGauge(metadata(name), supplier, tags));
     }
 
     @Override
     public <T extends Number> Gauge<T> gauge(MetricID metricID, Supplier<T> supplier) {
-        return gauge(metadata(metricID), supplier, metricID.getTagsAsArray());
+        return Objects.requireNonNullElseGet(getGauge(metricID),
+                                             () -> createGauge(metadata(metricID),
+                                                               supplier,
+                                                               metricID.getTagsAsArray()));
     }
 
     @Override
     public <T extends Number> Gauge<T> gauge(Metadata metadata, Supplier<T> supplier, Tag... tags) {
-        return HelidonGauge.create(meterRegistry, scope, metadata, supplier, tags);
+        return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
+                                             () -> createGauge(metadata, supplier, tags));
     }
 
     @Override
     public Histogram histogram(String name) {
-        return histogram(metadata(name),
-                         NO_TAGS);
+        return histogram(metadata(name), NO_TAGS);
     }
 
     @Override
     public Histogram histogram(String name, Tag... tags) {
-        return histogram(metadata(name),
-                         tags);
+        return Objects.requireNonNullElseGet(getHistogram(new MetricID(name, tags)),
+                                             () -> createHistogram(metadata(name), tags));
     }
 
     @Override
     public Histogram histogram(MetricID metricID) {
-        return histogram(metadata(metricID),
-                         metricID.getTagsAsArray());
+        return Objects.requireNonNullElseGet(getHistogram(metricID),
+                                             () -> createHistogram(metadata(metricID),
+                                                                           metricID.getTagsAsArray()));
     }
 
     @Override
@@ -157,32 +192,39 @@ class Registry implements MetricRegistry {
 
     @Override
     public Histogram histogram(Metadata metadata, Tag... tags) {
-        return HelidonHistogram.create(meterRegistry, scope, metadata, tags);
+        return Objects.requireNonNullElseGet(getHistogram(metricID(metadata, tags)),
+                                             () -> createHistogram(metadata, tags));
     }
 
     @Override
     public Timer timer(String name) {
-        return timer(metadata(name));
+        return Objects.requireNonNullElseGet(getTimer(new MetricID(name)),
+                                             () -> createTimer(metadata(name), NO_TAGS));
     }
 
     @Override
     public Timer timer(String name, Tag... tags) {
-        return timer(metadata(name), tags);
+        return Objects.requireNonNullElseGet(getTimer(new MetricID(name, tags)),
+                                             () -> createTimer(metadata(name), tags));
     }
 
     @Override
     public Timer timer(MetricID metricID) {
-        return timer(metadata(metricID.getName()), metricID.getTagsAsArray());
+        return Objects.requireNonNullElseGet(getTimer(metricID),
+                                             () -> createTimer(metadata(metricID),
+                                                                       metricID.getTagsAsArray()));
     }
 
     @Override
     public Timer timer(Metadata metadata) {
-        return timer(metadata, NO_TAGS);
+        return Objects.requireNonNullElseGet(getTimer(metricID(metadata)),
+                                             () -> createTimer(metadata, NO_TAGS));
     }
 
     @Override
     public Timer timer(Metadata metadata, Tag... tags) {
-        return HelidonTimer.create(meterRegistry, scope, metadata, tags);
+        return Objects.requireNonNullElseGet(getTimer(metricID(metadata, tags)),
+                                             () -> createTimer(metadata, tags));
     }
 
     @Override
@@ -201,7 +243,7 @@ class Registry implements MetricRegistry {
     }
 
     @Override
-    public Gauge<?> getGauge(MetricID metricID) {
+    public Gauge getGauge(MetricID metricID) {
         return getMetric(metricID, Gauge.class);
     }
 
@@ -300,12 +342,8 @@ class Registry implements MetricRegistry {
     public SortedMap<MetricID, Metric> getMetrics(MetricFilter filter) {
         lock.lock();
         try {
-            return metricsById.entrySet()
-                    .stream()
-                    .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new,
-                             (map, entry) -> map.put(entry.getKey(), entry.getValue()),
-                             TreeMap::putAll);
+            return metricsById.entrySet().stream().filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
+                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), entry.getValue()), TreeMap::putAll);
         } finally {
             lock.unlock();
         }
@@ -315,13 +353,9 @@ class Registry implements MetricRegistry {
     public <T extends Metric> SortedMap<MetricID, T> getMetrics(Class<T> ofType, MetricFilter filter) {
         lock.lock();
         try {
-            return metricsById.entrySet()
-                    .stream()
-                    .filter(entry -> ofType.isInstance(entry.getKey()))
+            return metricsById.entrySet().stream().filter(entry -> ofType.isInstance(entry.getValue()))
                     .filter(entry -> filter.matches(entry.getKey(), entry.getValue()))
-                    .collect(TreeMap::new,
-                             (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()),
-                             TreeMap::putAll);
+                    .collect(TreeMap::new, (map, entry) -> map.put(entry.getKey(), (T) entry.getValue()), TreeMap::putAll);
         } finally {
             lock.unlock();
         }
@@ -354,38 +388,51 @@ class Registry implements MetricRegistry {
 
         MetricID newMetricID = metricIDWithoutScope(collector, meter.id());
 
-        InfoPerName existingInfo = infoByName.get(name);
-        if (existingInfo != null) {
-            existingInfo.validate(collector, newMetricID, meter);
+        lock.lock();
+
+        try {
+            InfoPerName existingInfo = infoByName.get(name);
+            if (existingInfo != null) {
+                existingInfo.validate(collector, newMetricID, meter);
+            }
+
+            HelidonMetric<?> existingMetric = metricsById.get(newMetricID);
+            if (existingMetric != null) {
+
+                // This is a bit odd. We've been notified that a new meter was created by the neutral metrics implementation,
+                // but we seem to already have the corresponding metric in place. Validate the new meter against the
+                // existing metric anyway but report a warning about the duplicate registration attempt.
+
+                collector.warn(String.format("unexpected attempted re-registration of metric %s by meter %s",
+                                             newMetricID,
+                                             meter));
+                validateMetric(collector, newMetricID, existingMetric, meter);
+            }
+
+            if (collector.hasFatal()) {
+                throw new IllegalArgumentException("Attempt to register a meter incompatible with previously-registered "
+                                                           + "metrics: " + collector.collect());
+            }
+
+            Metadata newMetadata = existingInfo == null ? metadata(meter) : null;
+
+            HelidonMetric<?> newMetric = metric(collector, existingInfo == null ? newMetadata : existingInfo.metadata, meter);
+
+            // Now update the data structures.
+            InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
+                                                          n -> InfoPerName.create(newMetadata, newMetricID));
+
+            // Inside info, metric IDs are stored in a set, so adding the first ID again does no harm.
+            info.add(newMetricID);
+            metricsById.put(newMetricID, newMetric);
+            metricsByDelegate.put(meter, newMetric);
+
+            collector.collect().log(LOGGER);
+
+            return newMetric;
+        } finally {
+            lock.unlock();
         }
-
-        HelidonMetric<?> existingMetric = metricsById.get(newMetricID);
-        if (existingMetric != null) {
-
-            // This is a bit odd. We've been notified that a new meter was created by the neutral metrics implementation,
-            // but we seem to already have the corresponding metric in place. Validate the new meter against the
-            // existing metric anyway but report a warning about the duplicate registration attempt.
-
-            collector.warn(String.format("unexpected attempted re-registration of metric %s by meter %s", newMetricID, meter));
-            validateMetric(collector, newMetricID, existingMetric, meter);
-        }
-
-        if (collector.hasFatal()) {
-            throw new IllegalArgumentException("Attempt to register a meter incompatible with previously-registered metrics: "
-                                                       + collector.collect());
-        }
-
-        Metadata newMetadata = existingInfo == null ? metadata(meter) : null;
-
-        HelidonMetric<?> newMetric = metric(collector,
-                                            existingInfo == null ? newMetadata : existingInfo.metadata,
-                                            meter);
-
-        updateDataStructures(newMetricID, newMetadata, newMetric, meter);
-
-        collector.collect().log(LOGGER);
-
-        return newMetric;
     }
 
     void onMeterRemoved(Meter meter) {
@@ -403,8 +450,7 @@ class Registry implements MetricRegistry {
 
                 InfoPerName info = infoByName.get(metricName);
                 if (info == null) {
-                    collector.warn(String.format("Unable to locate info for name %s",
-                                                 metricName));
+                    collector.warn(String.format("Unable to locate info for name %s", metricName));
                 } else {
                     if (info.remove(metricID)) {
                         infoByName.remove(metricName);
@@ -424,10 +470,32 @@ class Registry implements MetricRegistry {
         }
     }
 
+    /**
+     * Converts an iterable of map entries (representing tag names and values) into an iterable of Helidon tags.
+     *
+     * @param entriesIterable iterable of map entries
+     * @return iterable of {@link io.helidon.metrics.api.Tag}
+     */
+    private static Iterable<io.helidon.metrics.api.Tag> toHelidonTags(Iterable<Map.Entry<String, String>> entriesIterable) {
+        List<io.helidon.metrics.api.Tag> result = new ArrayList<>();
+        entriesIterable.forEach(entry -> result.add(io.helidon.metrics.api.Tag.create(entry.getKey(), entry.getValue())));
+        return result;
+    }
+
+    private static Iterable<Map.Entry<String, String>> iterableEntries(Tag... tags) {
+        List<Map.Entry<String, String>> result = new ArrayList<>();
+        for (Tag tag : tags) {
+            result.add(new AbstractMap.SimpleEntry<>(tag.getTagName(), tag.getTagValue()));
+        }
+        return result;
+    }
+
+    private static MetricID metricID(Metadata metadata, Tag... tags) {
+        return new MetricID(metadata.getName(), tags);
+    }
+
     private static Metadata metadata(String name) {
-        return Metadata.builder()
-                .withName(name)
-                .build();
+        return Metadata.builder().withName(name).build();
     }
 
     private static Metadata metadata(MetricID metricId) {
@@ -449,8 +517,7 @@ class Registry implements MetricRegistry {
 
     private static Metadata metadata(Meter meter) {
 
-        MetadataBuilder builder = Metadata.builder()
-                .withName(meter.id().name());
+        MetadataBuilder builder = Metadata.builder().withName(meter.id().name());
         meter.baseUnit().ifPresent(builder::withUnit);
         meter.description().ifPresent(builder::withDescription);
 
@@ -460,10 +527,7 @@ class Registry implements MetricRegistry {
     private static Map<String, String> tagsWithoutScope(Iterable<io.helidon.metrics.api.Tag> tags) {
         Map<String, String> result = new TreeMap<>();
 
-        SystemTagsManager
-                .instance()
-                .withoutScopeTag(tags)
-                .forEach(t -> result.put(t.key(), t.value()));
+        SystemTagsManager.instance().withoutScopeTag(tags).forEach(t -> result.put(t.key(), t.value()));
 
         return result;
     }
@@ -472,6 +536,70 @@ class Registry implements MetricRegistry {
         var result = new ArrayList<Tag>();
         tags.forEach((key, value) -> result.add(new Tag(key, value)));
         return result.toArray(new Tag[0]);
+    }
+
+    private HelidonCounter createCounter(Metadata metadata, Tag... tags) {
+        io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
+                                                                                  .scope(scope)
+                                                                                  .description(metadata.getDescription())
+                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                                  .tags(allTags(scope, tags)));
+        return (HelidonCounter) metricsByDelegate.get(delegate);
+    }
+
+    private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {
+        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                                                               object,
+                                                                                                               t -> func.apply(t)
+                                                                                                                       .doubleValue())
+                                                                                  .scope(scope)
+                                                                                  .description(metadata.getDescription())
+                                                                                  .tags(allTags(scope, tags))
+                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit())));
+
+        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
+    }
+
+    private <N extends Number> HelidonGauge<N> createGauge(Metadata metadata, Supplier<N> supplier, Tag... tags) {
+        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                                                               supplier)
+                                                                                  .scope(scope)
+                                                                                  .description(metadata.getDescription())
+                                                                                  .tags(allTags(scope, tags))
+                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit())));
+
+        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
+    }
+
+    private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
+        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                                                               target,
+                                                                                                               fn)
+                                                                                  .scope(scope)
+                                                                                  .description(metadata.getDescription())
+                                                                                  .tags(allTags(scope, tags))
+                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit())));
+
+        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
+    }
+
+    private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
+        DistributionSummary delegate = meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
+                                                                         .scope(scope)
+                                                                         .description(metadata.getDescription())
+                                                                         .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                         .tags(allTags(scope, tags)));
+
+        return (HelidonHistogram) metricsByDelegate.get(delegate);
+    }
+
+    private HelidonTimer createTimer(Metadata metadata, Tag... tags) {
+        io.helidon.metrics.api.Timer delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
+                                                                                  .scope(scope)
+                                                                                  .description(metadata.getDescription())
+                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                                                                  .tags(allTags(scope, tags)));
+        return (HelidonTimer)metricsByDelegate.get(delegate);
     }
 
     private boolean removeMatchingWithResult(MetricFilter filter) {
@@ -487,28 +615,10 @@ class Registry implements MetricRegistry {
         }
     }
 
-    private void updateDataStructures(MetricID newMetricID,
-                                      Metadata newMetadata,
-                                      HelidonMetric<?> newMetric,
-                                      Meter meter) {
-        lock.lock();
-        try {
-            InfoPerName info = infoByName.computeIfAbsent(newMetricID.getName(),
-                                                          name -> InfoPerName.create(newMetadata, newMetricID));
-            info.add(newMetricID);
-            metricsById.put(newMetricID, newMetric);
-            metricsByDelegate.put(meter, newMetric);
-
-        } finally {
-            lock.unlock();
-        }
-    }
-
     private boolean removeViaDelegate(MetricID metricId) {
         lock.lock();
         try {
-            return meterRegistry.remove(metricsById.get(metricId).delegate())
-                    .isPresent();
+            return meterRegistry.remove(metricsById.get(metricId).delegate()).isPresent();
         } finally {
             lock.unlock();
         }
@@ -530,17 +640,14 @@ class Registry implements MetricRegistry {
         if (meter instanceof io.helidon.metrics.api.Timer timer) {
             return HelidonTimer.create(meterRegistry, scope, metadata, timer);
         }
-        collector.warn(String.format("Unrecognized type for new meter %s; unable to create MP metric for it",
-                                     meter));
+        collector.warn(String.format("Unrecognized type for new meter %s; unable to create MP metric for it", meter));
         return null;
     }
 
     private MetricID metricIDWithoutScope(Errors.Collector collector, Meter.Id meterId) {
         Map<String, String> tagsWithoutScope = tagsWithoutScope(meterId.tags());
 
-        Collection<String> reservedTagNamesUsed = SystemTagsManager
-                .instance()
-                .reservedTagNamesUsed(tagsWithoutScope.keySet());
+        Collection<String> reservedTagNamesUsed = SystemTagsManager.instance().reservedTagNamesUsed(tagsWithoutScope.keySet());
 
         if (!reservedTagNamesUsed.isEmpty()) {
             collector.fatal(reservedTagNamesUsed, "illegal use of reserved tag names");
@@ -548,13 +655,25 @@ class Registry implements MetricRegistry {
         return new MetricID(meterId.name(), tags(tagsWithoutScope));
     }
 
-    record InfoPerName(Metadata metadata, Set<MetricID> metricIDs, Set<String> tagNames) {
+    static class InfoPerName {
+
+        private final Metadata metadata;
+        private final Set<MetricID> metricIDs = new HashSet<>();
+        private final Set<String> tagNames = new HashSet<>();
+
+        private InfoPerName(Metadata metadata, MetricID metricID) {
+            this.metadata = metadata;
+
+            /*
+             Use the first metric ID presented to initialize the list of tag names for this name.
+             */
+            tagNames.addAll(metricID.getTags().keySet());
+        }
 
         static InfoPerName create(Metadata metadata, MetricID metricID) {
-            InfoPerName result = new InfoPerName(metadata, new HashSet<>(), metricID.getTags().keySet());
-            result.add(metricID);
-            return result;
+            return new InfoPerName(metadata, metricID);
         }
+
 
         void add(MetricID metricID) {
             metricIDs.add(metricID);
@@ -563,6 +682,10 @@ class Registry implements MetricRegistry {
         boolean remove(MetricID metricID) {
             metricIDs.remove(metricID);
             return metricIDs.isEmpty();
+        }
+
+        Metadata metadata() {
+            return metadata;
         }
 
         void validate(Errors.Collector collector, MetricID metricID, Meter meter) {

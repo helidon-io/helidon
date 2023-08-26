@@ -19,7 +19,6 @@ import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
@@ -275,6 +274,7 @@ public class SystemMetersProvider implements MetersProvider {
         private final String name;
         private final String description;
         private final String baseUnit;
+
         private Metadata(Builder builder) {
             name = builder.name;
             description = builder.description;

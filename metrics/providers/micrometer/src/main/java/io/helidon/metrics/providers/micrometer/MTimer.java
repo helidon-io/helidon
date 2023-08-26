@@ -38,12 +38,20 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         super(delegate);
     }
 
+    private MTimer(Timer delegate, Optional<String> scope) {
+        super(delegate, scope);
+    }
+
     static MTimer create(Timer timer) {
         return new MTimer(timer);
     }
 
     static io.helidon.metrics.api.Timer.Builder builder(String name) {
         return new Builder(name);
+    }
+
+    static MTimer create(Timer delegate, Optional<String> scope) {
+        return new MTimer(delegate, scope);
     }
 
     static Sample start() {

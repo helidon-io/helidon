@@ -38,6 +38,9 @@ class SimpleMeterRegistryTests {
 
     @BeforeAll
     static void prep() {
+        io.micrometer.core.instrument.Metrics.globalRegistry
+                .getMeters()
+                .forEach(io.micrometer.core.instrument.Metrics.globalRegistry::remove);
         meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
     }
 

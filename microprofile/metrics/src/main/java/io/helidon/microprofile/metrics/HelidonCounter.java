@@ -40,6 +40,7 @@ class HelidonCounter extends MetricImpl<io.helidon.metrics.api.Counter> implemen
         return create(scope,
                       metadata,
                       meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
+                                                        .scope(scope)
                                                         .baseUnit(sanitizeUnit(metadata.getUnit()))
                                                         .description(metadata.getDescription())
                                                         .tags(allTags(scope, tags))));

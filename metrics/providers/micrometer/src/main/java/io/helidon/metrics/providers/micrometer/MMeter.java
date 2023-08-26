@@ -15,14 +15,20 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.FunctionCounter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 
 /**
  * Adapter to Micrometer meter for Helidon metrics.
@@ -39,6 +45,10 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     protected MMeter(M delegate, Builder<?, ?, ?, ?> builder) {
         this(delegate, builder.scope);
+    }
+
+    protected MMeter(M delegate, Optional<String> scope) {
+        this(delegate, scope.orElse(null));
     }
 
     protected MMeter(M delegate) {
@@ -122,6 +132,25 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
                 .add("scope='" + (scope == null ? "" : scope) + "'");
     }
 
+    static <M extends Meter, HM extends MMeter<M>> HM create(Meter meter, Optional<String> scope) {
+        if (meter instanceof Counter counter) {
+            return (HM) MCounter.create(counter, scope);
+        }
+        if (meter instanceof DistributionSummary summary) {
+            return (HM) MDistributionSummary.create(summary, scope);
+        }
+        if (meter instanceof Gauge gauge) {
+            return (HM) MGauge.create(gauge, scope);
+        }
+        if (meter instanceof FunctionCounter fCounter) {
+            return (HM) MFunctionalCounter.create(fCounter, scope);
+        }
+        if (meter instanceof Timer timer) {
+            return (HM) MTimer.create(timer, scope);
+        }
+        return null;
+    }
+
     /**
      * Builder for a wrapping meter around a Micrometer meter.
      *
@@ -196,13 +225,16 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return Optional.ofNullable(baseUnit);
         }
 
-
         public Map<String, String> tags() {
             return new TreeMap<>(tags);
         }
 
         protected B delegate() {
             return delegate;
+        }
+
+        protected io.helidon.metrics.api.Meter.Id id() {
+            return PlainId.create(this);
         }
 
         protected abstract HB delegateTags(Iterable<Tag> tags);
@@ -259,6 +291,75 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         @Override
         public int hashCode() {
             return Objects.hash(delegate);
+        }
+    }
+
+    static class PlainId implements io.helidon.metrics.api.Meter.Id {
+
+        private final String name;
+        private final List<io.helidon.metrics.api.Tag> tags;
+
+        static PlainId create(MMeter.Builder<?, ?, ?, ?> builder) {
+            return new PlainId(builder);
+        }
+
+        static PlainId create(Meter meter) {
+            return new PlainId(meter);
+        }
+
+        private static io.helidon.metrics.api.Tag tag(io.micrometer.core.instrument.Tag tag) {
+            return io.helidon.metrics.api.Tag.create(tag.getKey(), tag.getValue());
+        }
+
+        private PlainId(Meter meter) {
+            name = meter.getId().getName();
+            tags = meter.getId()
+                    .getTags()
+                    .stream()
+                    .map(PlainId::tag)
+                    .toList();
+        }
+
+        private PlainId(MMeter.Builder<?, ?, ?, ?> builder) {
+            name = builder.name;
+            tags = builder.tags.entrySet()
+                    .stream()
+                    .map(entry -> io.helidon.metrics.api.Tag.create(entry.getKey(), entry.getValue()))
+                    .toList();
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public Iterable<io.helidon.metrics.api.Tag> tags() {
+            return tags;
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", PlainId.class.getSimpleName() + "[", "]")
+                    .add("name='" + name + "'")
+                    .add("tags=" + tags)
+                    .toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof PlainId plainId)) {
+                return false;
+            }
+            return Objects.equals(name, plainId.name) && Objects.equals(tags, plainId.tags);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, tags);
         }
     }
 }

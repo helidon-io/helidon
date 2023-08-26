@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -29,6 +30,10 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
 
     private <T> MGauge(Gauge delegate, Builder<T> builder) {
         super(delegate, builder);
+    }
+
+    private MGauge(Gauge delegate, Optional<String> scope) {
+        super(delegate, scope);
     }
 
     /**
@@ -56,10 +61,11 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
      * via a wrapper.
      *
      * @param gauge the Micrometer gauge
+     * @param scope scope to apply
      * @return new wrapper around the gauge
      */
-    static MGauge create(Gauge gauge) {
-        return new MGauge(gauge);
+    static MGauge create(Gauge gauge, Optional<String> scope) {
+        return new MGauge(gauge, scope);
     }
 
     @Override

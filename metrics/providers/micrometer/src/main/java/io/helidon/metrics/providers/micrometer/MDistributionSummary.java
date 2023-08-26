@@ -27,10 +27,9 @@ import static io.micrometer.core.instrument.distribution.DistributionStatisticCo
 
 class MDistributionSummary extends MMeter<DistributionSummary> implements io.helidon.metrics.api.DistributionSummary {
 
-    private MDistributionSummary(DistributionSummary delegate) {
-        super(delegate);
+    private MDistributionSummary(DistributionSummary delegate, Optional<String> scope) {
+        super(delegate, scope);
     }
-
     private MDistributionSummary(DistributionSummary delegate, Builder builder) {
         super(delegate, builder);
     }
@@ -54,10 +53,11 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
      * via a wrapper.
      *
      * @param summary the Micrometer summary
+     * @param scope scope to apply
      * @return new wrapper around the summary
      */
-    static MDistributionSummary create(DistributionSummary summary) {
-        return new MDistributionSummary(summary);
+    static MDistributionSummary create(DistributionSummary summary, Optional<String> scope) {
+        return new MDistributionSummary(summary, scope);
     }
 
     @Override

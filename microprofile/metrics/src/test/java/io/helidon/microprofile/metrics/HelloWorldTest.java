@@ -195,25 +195,27 @@ class HelloWorldTest {
         assertThat("Change in unsuccessful count", counter.getCount() - unsuccessfulBeforeRequest, is(1L));
     }
 
-    void testSyntheticTimer(long expectedSyntheticTimerCount) {
+    void testSyntheticTimer(long iterationsToRun) {
         Timer explicitTimer = registry.getTimer(new MetricID(MESSAGE_TIMER));
         assertThat("SimpleTimer from explicit @SimplyTimed", explicitTimer, is(notNullValue()));
         Timer syntheticTimer = getSyntheticTimer("messageWithArg", String.class);
         assertThat("SimpleTimer from @SyntheticRestRequest", syntheticTimer, is(notNullValue()));
-        IntStream.range(0, (int) expectedSyntheticTimerCount).forEach(
+        long explicitTimerStartCount = explicitTimer.getCount();
+        long syntheticTimerStartCount = syntheticTimer.getCount();
+        IntStream.range(0, (int) iterationsToRun).forEach(
                 i -> webTarget
                         .path("helloworld/withArg/Joe")
                         .request(MediaType.TEXT_PLAIN_TYPE)
                         .get(String.class));
 
         pause();
-        assertThatWithRetry("SimpleTimer from explicit @SimpleTimed count",
-                            explicitTimer::getCount,
-                            is(expectedSyntheticTimerCount));
+        assertThatWithRetry("Change in SimpleTimer from explicit @SimpleTimed count",
+                            () -> explicitTimer.getCount() - explicitTimerStartCount,
+                            is(iterationsToRun));
 
-        assertThatWithRetry("SimpleTimer from @SyntheticRestRequest count",
-                            syntheticTimer::getCount,
-                            is(expectedSyntheticTimerCount));
+        assertThatWithRetry("Change in SimpleTimer from @SyntheticRestRequest count",
+                            () -> syntheticTimer.getCount() - syntheticTimerStartCount,
+                            is(iterationsToRun));
     }
 
     Timer getSyntheticTimer(String methodName, Class<?>... paramTypes) {

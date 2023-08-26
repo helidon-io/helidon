@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.FunctionalCounter;
@@ -32,6 +33,10 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         super(delegate);
     }
 
+    private MFunctionalCounter(FunctionCounter delegate, Optional<String> scope) {
+        super(delegate, scope);
+    }
+
     /**
      * Creates a new builder for a wrapper around a to-be-created Micrometer function counter, typically if
      * the developer is creating a function counter using the Helidon API.
@@ -46,8 +51,8 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         return new Builder<>(name, stateObject, fn);
     }
 
-    static MFunctionalCounter create(FunctionCounter functionCounter) {
-        return new MFunctionalCounter(functionCounter);
+    static MFunctionalCounter create(FunctionCounter functionCounter, Optional<String> scope) {
+        return new MFunctionalCounter(functionCounter, scope);
     }
 
     @Override

@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Optional;
+
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tag;
 
@@ -24,8 +26,8 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
         super(delegate, builder);
     }
 
-    private MCounter(Counter delegate) {
-        super(delegate);
+    private MCounter(Counter delegate, Optional<String> scope) {
+        super(delegate, scope);
     }
 
     /**
@@ -45,10 +47,11 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
      * via a wrapper.
      *
      * @param counter the Micrometer counter
+     * @param scope scope to apply
      * @return new wrapper around the counter
      */
-    static MCounter create(Counter counter) {
-        return new MCounter(counter);
+    static MCounter create(Counter counter, Optional<String> scope) {
+        return new MCounter(counter, scope);
     }
 
     @Override
