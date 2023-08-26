@@ -105,14 +105,15 @@ public final class SecretBundleNodeConfigSource
         super(b);
         Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier(), "b.secretsSupplier()");
         Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
-        if (b.compartmentOcid == null || b.vaultOcid() == null) {
+        String vaultOcid = b.vaultOcid();
+        if (b.compartmentOcid == null || vaultOcid == null) {
             this.loader = this::absentNodeContent;
             this.stamper = Stamp::new;
         } else {
             ListSecretsRequest listSecretsRequest = ListSecretsRequest.builder()
                 .compartmentId(b.compartmentOcid)
                 .lifecycleState(LifecycleState.Active)
-                .vaultId(b.vaultOcid())
+                .vaultId(vaultOcid)
                 .build();
             this.loader = () -> this.load(vaultsSupplier, secretsSupplier, listSecretsRequest);
             this.stamper = () -> toStamp(secretSummaries(vaultsSupplier, listSecretsRequest), secretsSupplier);

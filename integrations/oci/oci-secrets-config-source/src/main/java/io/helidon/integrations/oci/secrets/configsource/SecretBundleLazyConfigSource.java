@@ -17,9 +17,11 @@ package io.helidon.integrations.oci.secrets.configsource;
 
 import java.lang.System.Logger;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.AbstractConfigSource;
@@ -28,9 +30,12 @@ import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.LazyConfigSource;
 
+import com.oracle.bmc.model.BmcException;
 import com.oracle.bmc.secrets.Secrets;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleByNameRequest;
+
+import static java.lang.System.Logger.Level.DEBUG;
 
 /**
  * An {@link AbstractConfigSource} and a {@link LazyConfigSource} implementation that sources its values from the Oracle
@@ -72,7 +77,7 @@ public final class SecretBundleLazyConfigSource
             this.nodeFunction = secretName -> Optional.empty();
         } else {
             LazyValue<? extends Secrets> secretsSupplier = LazyValue.create(b.secretsSupplier()::get);
-            this.nodeFunction = secretName -> node(secretsSupplier, vaultOcid, secretName);
+            this.nodeFunction = secretName -> node(b.acceptPattern, secretsSupplier, vaultOcid, secretName);
         }
     }
 
@@ -104,12 +109,38 @@ public final class SecretBundleLazyConfigSource
         return new Builder();
     }
 
-    private static Optional<ConfigNode> node(LazyValue<? extends Secrets> secretsSupplier, String vaultOcid, String secretName) {
+    private static Optional<ConfigNode> node(Pattern acceptPattern,
+                                             LazyValue<? extends Secrets> secretsSupplier,
+                                             String vaultOcid,
+                                             String secretName) {
+        if (!acceptPattern.matcher(secretName).matches()) {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, "Ignoring ConfigNode request for name "
+                           + secretName
+                           + " because it was not matched by "
+                           + acceptPattern);
+            }
+            return Optional.empty();
+        }
         Secrets s = secretsSupplier.get();
-        return node(() -> s.getSecretBundleByName(request(vaultOcid, secretName)).getSecretBundle().getSecretBundleContent());
+        return node(() -> secretBundleContentDetails(s, vaultOcid, secretName));
     }
 
-    private static Optional<ConfigNode> node(Supplier<?> secretBundleContentDetailsSupplier) {
+    private static Object secretBundleContentDetails(Secrets s, String vaultOcid, String secretName) {
+        try {
+            if (LOGGER.isLoggable(DEBUG)) {
+                LOGGER.log(DEBUG, "Getting SecretBundle with name " + secretName);
+            }
+            return s.getSecretBundleByName(request(vaultOcid, secretName)).getSecretBundle().getSecretBundleContent();
+        } catch (BmcException e) {
+            if (e.getStatusCode() == 404) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    static Optional<ConfigNode> node(Supplier<?> secretBundleContentDetailsSupplier) {
         Object secretBundleContentDetails = secretBundleContentDetailsSupplier.get();
         if (secretBundleContentDetails instanceof Base64SecretBundleContentDetails base64SecretBundleContentDetails) {
             return Optional.of(valueNode(base64SecretBundleContentDetails.getContent(), Base64.getDecoder()));
@@ -117,7 +148,7 @@ public final class SecretBundleLazyConfigSource
         return Optional.empty();
     }
 
-    private static GetSecretBundleByNameRequest request(String vaultOcid, String secretName) {
+    static GetSecretBundleByNameRequest request(String vaultOcid, String secretName) {
         return GetSecretBundleByNameRequest.builder()
             .vaultId(vaultOcid)
             .secretName(secretName)
@@ -138,12 +169,29 @@ public final class SecretBundleLazyConfigSource
 
 
         /*
+         * Static fields.
+         */
+
+
+        private static final Pattern ACCEPT_EVERYTHING_PATTERN = Pattern.compile("^.*$");
+
+
+        /*
+         * Instance fields.
+         */
+
+
+        private Pattern acceptPattern;
+
+
+        /*
          * Constructors.
          */
 
 
         private Builder() {
             super();
+            this.acceptPattern = ACCEPT_EVERYTHING_PATTERN;
         }
 
 
@@ -151,6 +199,21 @@ public final class SecretBundleLazyConfigSource
          * Instance methods.
          */
 
+
+        /**
+         * Sets the {@link Pattern} that will dictate which configuration property names are allowed to reach a {@link
+         * SecretBundleLazyConfigSource} instance.
+         *
+         * @param acceptPattern the {@link Pattern}
+         *
+         * @return this {@link Builder}
+         *
+         * @exception NullPointerException if {@code acceptPattern} is {@code null}
+         */
+        public Builder acceptPattern(Pattern acceptPattern) {
+            this.acceptPattern = Objects.requireNonNull(acceptPattern, "acceptPattern");
+            return this;
+        }
 
         /**
          * Creates and returns a new {@link SecretBundleLazyConfigSource} instance initialized from the state of this
@@ -169,7 +232,13 @@ public final class SecretBundleLazyConfigSource
          *
          * @return this {@link Builder}
          *
+         * @exception io.helidon.config.ConfigException if a {@code change-watcher} or {@code polling-strategy} is
+         * specified
+         *
          * @exception NullPointerException if {@code metaConfig} is {@code null}
+         *
+         * @exception java.util.regex.PatternSyntaxException if the {@code accept-pattern} key's value could not be
+         * {@linkplain Pattern#compile(String) compiled}
          */
         @Override // AbstractSecretBundleConfigSource.Builder<Builder, Void>
         public Builder config(Config metaConfig) {
@@ -180,6 +249,9 @@ public final class SecretBundleLazyConfigSource
                                                   + "Polling is not supported by "
                                                   + this.getClass().getName() + " instances");
                     });
+            metaConfig.get("accept-pattern")
+                .asString()
+                .ifPresent(s -> this.acceptPattern(Pattern.compile(s)));
             return super.config(metaConfig);
         }
 
