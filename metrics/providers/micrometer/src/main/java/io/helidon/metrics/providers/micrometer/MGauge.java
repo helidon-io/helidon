@@ -52,7 +52,7 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
     }
 
     static <N extends Number> MGauge.Builder<?> builder(String name, Supplier<N> supplier) {
-        return builder(name, supplier, s -> s.get().doubleValue());
+        return builder(name, (Supplier<? extends Number>) supplier);
     }
 
     /**
@@ -90,6 +90,7 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
             super(name, Gauge.builder(name, stateObject, fn));
             this.stateObject = stateObject;
             this.fn = fn;
+            delegate().strongReference(true);
         }
 
         @Override

@@ -548,14 +548,13 @@ class Registry implements MetricRegistry {
     }
 
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {
-        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                                               object,
-                                                                                                               t -> func.apply(t)
-                                                                                                                       .doubleValue())
-                                                                                  .scope(scope)
-                                                                                  .description(metadata.getDescription())
-                                                                                  .tags(allTags(scope, tags))
-                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit())));
+        io.helidon.metrics.api.Gauge delegate = meterRegistry.
+                getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                 (Supplier<? extends N>) () -> func.apply(object))
+                                    .scope(scope)
+                                    .description(metadata.getDescription())
+                                    .tags(allTags(scope, tags))
+                                    .baseUnit(sanitizeUnit(metadata.getUnit())));
 
         return (HelidonGauge<N>) metricsByDelegate.get(delegate);
     }
