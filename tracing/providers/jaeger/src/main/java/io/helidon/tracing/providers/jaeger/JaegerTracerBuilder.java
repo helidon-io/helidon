@@ -357,7 +357,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param spanProcessorType to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "span-processor-type", value = "batch")
+    @ConfiguredOption("batch")
     public JaegerTracerBuilder spanProcessorType(SpanProcessorType spanProcessorType) {
         this.spanProcessorType = spanProcessorType;
         return this;
@@ -369,7 +369,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param scheduleDelayMillis timeout to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "schedule-delay", value = "5000")
+    @ConfiguredOption("PT5S")
     public JaegerTracerBuilder scheduleDelay(Duration scheduleDelayMillis) {
         this.scheduleDelay = scheduleDelayMillis;
         return this;
@@ -381,7 +381,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param maxQueueSize to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "max-queue-size", value = "2048")
+    @ConfiguredOption("2048")
     public JaegerTracerBuilder maxQueueSize(int maxQueueSize) {
         this.maxQueueSize = maxQueueSize;
         return this;
@@ -393,7 +393,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param maxExportBatchSize to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "max-export-batch-size", value = "512")
+    @ConfiguredOption("512")
     public JaegerTracerBuilder maxExportBatchSize(int maxExportBatchSize) {
         this.maxExportBatchSize = maxExportBatchSize;
         return this;
@@ -405,7 +405,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
      * @param exporterTimeout timeout to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "exporter-timeout", value = "10000")
+    @ConfiguredOption("PT10S")
     public JaegerTracerBuilder exporterTimeout(Duration exporterTimeout) {
         this.exporterTimeout = exporterTimeout;
         return this;
