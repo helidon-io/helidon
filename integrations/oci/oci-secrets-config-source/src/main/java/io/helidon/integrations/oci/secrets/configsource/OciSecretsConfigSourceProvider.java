@@ -59,7 +59,7 @@ import io.helidon.config.spi.ConfigSourceProvider;
  *
  * @see ConfigSourceProvider
  */
-// @Weight(300D) // a higher weight than the default (100D)
+@Weight(300D) // a higher weight than the default (100D)
 public final class OciSecretsConfigSourceProvider implements ConfigSourceProvider {
 
 
