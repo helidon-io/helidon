@@ -56,7 +56,7 @@ public class DirectClient implements Http1Client {
     public DirectClient(HttpRouting routing) {
         this.routing = routing;
         this.httpClient = Http1Client.builder()
-                .baseUri(URI.create("unit://helidon-unit:65000"))
+                .baseUri(URI.create("http://helidon-unit:65000"))
                 .build();
         this.router = Router.builder().addRouting(routing).build();
         this.router.beforeStart();
