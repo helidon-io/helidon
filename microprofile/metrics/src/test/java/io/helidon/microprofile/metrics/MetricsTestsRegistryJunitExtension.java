@@ -17,13 +17,12 @@ package io.helidon.microprofile.metrics;
 
 import io.helidon.metrics.api.Metrics;
 
+import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class MetricsTestsRegistryJunitExtension implements Extension {
-
-    public MetricsTestsRegistryJunitExtension() {
-        clear();
-    }
+public class MetricsTestsRegistryJunitExtension implements Extension,
+                                                           BeforeAllCallback {
 
     static void clear() {
         // Clears out all Registry instances.
@@ -32,5 +31,10 @@ public class MetricsTestsRegistryJunitExtension implements Extension {
 
         // Removes meters one at a time, invoking the callbacks so downstream consumers also clear out.
         Metrics.globalRegistry().clear();
+    }
+
+    @Override
+    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+        clear();
     }
 }
