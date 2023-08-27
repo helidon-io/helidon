@@ -31,7 +31,6 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Http;
 import io.helidon.webclient.api.ClientConnection;
-import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
@@ -95,9 +94,9 @@ class WsClientImpl implements WsClient {
         UriInfo resolvedUri = upgradeRequest.resolvedUri();
         String scheme = resolvedUri.scheme();
         if ("ws".equals(scheme)) {
-            upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("http"));
+            upgradeRequest.uri(WsClientUri.create(resolvedUri).scheme("http"));
         } else if ("wss".equals(scheme)) {
-            upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("https"));
+            upgradeRequest.uri(WsClientUri.create(resolvedUri).scheme("https"));
         }
 
         upgradeRequest.headers(headers -> headers.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, resolvedUri

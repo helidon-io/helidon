@@ -145,7 +145,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public ClientUri resolvedUri() {
         // we do not want to update our own URI, as this method may be called multiple times
-        return resolveUri(ClientUri.create(this.clientUri));
+        return resolveUri(this.clientUri.copy());
     }
 
     @Override

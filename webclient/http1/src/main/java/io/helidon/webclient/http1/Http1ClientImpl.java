@@ -43,7 +43,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     @Override
     public Http1ClientRequest method(Http.Method method) {
         ClientUri clientUri = clientConfig.baseUri()
-                .map(ClientUri::create) // create from base config
+                .map(ClientUri::copy) // create from base config
                 .orElseGet(ClientUri::create); // create as empty
 
         clientConfig.baseFragment().ifPresent(clientUri::fragment);

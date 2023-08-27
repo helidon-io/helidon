@@ -29,33 +29,34 @@ import io.helidon.common.uri.UriQueryWriteable;
  * URI abstraction for WebClient.
  */
 public class ClientUri implements UriInfo {
-    private static final Set<String> SUPPORTED_SCHEMES = Set.of("http", "https");
+    private static final Set<String> DEFAULT_SUPPORTED_SCHEMES = Set.of("http", "https");
     private final UriInfo base;
     private final UriQueryWriteable query;
 
     private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
 
-    private ClientUri() {
+    protected ClientUri() {
         this.base = null;
         this.query = UriQueryWriteable.create();
         this.uriBuilder = UriInfo.builder();
     }
 
-    private ClientUri(ClientUri baseUri) {
+    protected ClientUri(ClientUri baseUri) {
         validateScheme(baseUri.scheme());
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
         this.query = UriQueryWriteable.create().from(baseUri.query());
+        validateScheme(baseUri.scheme());
     }
 
-    private ClientUri(UriInfo baseUri) {
-        validateScheme(baseUri.scheme());
+    protected ClientUri(UriInfo baseUri) {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(baseUri);
         this.skipUriEncoding = false;
         this.query = UriQueryWriteable.create().from(baseUri.query());
+        validateScheme(baseUri.scheme());
     }
 
     /**
@@ -95,6 +96,15 @@ public class ClientUri implements UriInfo {
      */
     public static ClientUri create(URI baseUri) {
         return create().resolve(baseUri);
+    }
+
+    /**
+     * Create copy of this client uri.
+     *
+     * @return copy of this client uri
+     */
+    public ClientUri copy() {
+        return ClientUri.create(this);
     }
 
     @Override
@@ -327,6 +337,10 @@ public class ClientUri implements UriInfo {
         return path;
     }
 
+    protected Set<String> supportedSchemes() {
+        return DEFAULT_SUPPORTED_SCHEMES;
+    }
+
     private String extractQuery(String path) {
         if (path != null) {
             int i = path.indexOf('?');
@@ -366,12 +380,12 @@ public class ClientUri implements UriInfo {
                 + resolvePath;
     }
 
-    private void validateScheme(String scheme){
-        if (!SUPPORTED_SCHEMES.contains(scheme)) {
+    private void validateScheme(String scheme) {
+        if (!supportedSchemes().contains(scheme)) {
             throw new IllegalArgumentException(
                     String.format("Not supported scheme %s, client supported schemes are: %s",
                                   scheme,
-                                  String.join(", ", SUPPORTED_SCHEMES)
+                                  String.join(", ", supportedSchemes())
                     )
             );
         }
