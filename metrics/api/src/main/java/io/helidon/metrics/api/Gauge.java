@@ -21,11 +21,13 @@ import java.util.function.ToDoubleFunction;
 /**
  * Measures a value that can increase or decrease and is updated by external logic, not by explicit invocations
  * of methods on this type.
+ *
+ * @param <N> subtype of {@link Number} which a specific gauge reports
  */
-public interface Gauge extends Meter {
+public interface Gauge<N extends Number> extends Meter {
 
     /**
-     * Creates a builder for creating a new gauge.
+     * Creates a builder for creating a new gauge based on applying a function to a state object.
      *
      * @param name        gauge name
      * @param stateObject state object which maintains the gauge value
@@ -33,20 +35,8 @@ public interface Gauge extends Meter {
      * @param <T>         type of the state object
      * @return new builder
      */
-    static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+    static <T> Builder<Double> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return MetricsFactory.getInstance().gaugeBuilder(name, stateObject, fn);
-    }
-
-    /**
-     * Creates a builder for a new gauge based on an instance of a subtype of {@link Number}.
-     *
-     * @param name   gauge name
-     * @param number {@code Number} which provides the gauge value
-     * @param <N>    subtype of {@code Number} which the gauge wraps
-     * @return new builder
-     */
-    static <N extends Number> Builder<?> builder(String name, N number) {
-        return MetricsFactory.getInstance().gaugeBuilder(name, number);
     }
 
     /**
@@ -57,7 +47,7 @@ public interface Gauge extends Meter {
      * @param <N>            subtype of {@code Number} which the supplier provides
      * @return new builder
      */
-    static <N extends Number> Builder<?> builder(String name, Supplier<N> numberSupplier) {
+    static <N extends Number> Builder<N> builder(String name, Supplier<N> numberSupplier) {
         return MetricsFactory.getInstance().gaugeBuilder(name, numberSupplier);
     }
 
@@ -70,27 +60,13 @@ public interface Gauge extends Meter {
      *
      * @return current value of the gauge
      */
-    double value();
+    N value();
 
     /**
      * Builder for a new gauge.
      *
-     * @param <T> type of the state object which exposes the gauge value.
+     * @param <N> specific subtype of {@code Number} for the gauge this builder will produce
      */
-    interface Builder<T> extends Meter.Builder<Builder<T>, Gauge> {
-
-        /**
-         * Returns the state object to be used in the resulting gauge.
-         *
-         * @return the state object
-         */
-        T stateObject();
-
-        /**
-         * Returns the function which, when applied to the state object, returns the gauge value.
-         *
-         * @return function which yields the gauge value
-         */
-        ToDoubleFunction<T> fn();
+    interface Builder<N extends Number> extends Meter.Builder<Builder<N>, Gauge<N>> {
     }
 }

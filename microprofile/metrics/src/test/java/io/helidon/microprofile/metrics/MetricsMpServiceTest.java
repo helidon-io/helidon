@@ -32,7 +32,7 @@ import org.junit.jupiter.api.AfterAll;
  */
 @HelidonTest
 @AddBean(HelloWorldResource.class)
-public class MetricsMpServiceTest {
+public class MetricsMpServiceTest extends BaseTest {
 
     @AfterAll
     public static void wrapupTest() {

@@ -35,7 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "false")
-public class HelloWorldRestEndpointSimpleTimerDisabledTest {
+public class HelloWorldRestEndpointSimpleTimerDisabledTest extends BaseTest {
 
     @BeforeAll
     static void init() {

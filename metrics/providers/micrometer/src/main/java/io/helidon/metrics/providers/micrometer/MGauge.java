@@ -22,13 +22,57 @@ import java.util.function.ToDoubleFunction;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Tag;
 
-class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
+/**
+ * Adapter of a {@linkplain io.micrometer.core.instrument.Gauge Micrometer gauge} to the Helidon metrics API
+ * {@link io.helidon.metrics.api.Gauge}.
+ * <p>
+ * The Helidon metrics API parameterizes its gauge type as {@code Gauge<N extends Number>} which is the type of
+ * value the gauge reports via its {@linkplain io.helidon.metrics.api.Gauge#value()} method. To register a gauge, the developer
+ * can pass us a supplier, the return value from which is parameterized with the subtype {@code N} of {@link Number}.
+ * </p>
+ * <p>
+ * On the other hand, Micrometer gauges are not parameterized; each reports a double value.
+ * Even though Micrometer permits callers to create a Micrometer gauge using a {@code Supplier<Number>},
+ * the Micrometer gauge {@linkplain io.micrometer.core.instrument.Gauge#value() value method} returns a {@code double}.
+ * </p>
+ * <p>
+ * As a result, given our parameterized API, we cannot effectively wrap Micrometer gauges. We do not have what we need to (easily)
+ * instantiate the correct subtype of {@code Number}, set its value based on
+ * the Micrometer delegate's {@code getValue()} {@code double} result, and return the correctly-typed and -assigned
+ * value from our {@code value()} method.
+ * </p>
+ * <p>
+ * Instead, we keep track ourselves of the function and target or supplier which report the gauge value.
+ * Then our {@code value()} implementation simply invokes the function on the target or invokes the supplier rather
+ * than delegating to the Micrometer gauge value() method (which would do exactly the same thing anyway).
+ * </p>
+ *
+ * @param <N> subtype of {@link Number} this gauge instance reports.
+ */
+abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge<N> {
+
+    /*
+     * The Helidon metrics API parameterizes its gauge type as Gauge<N extends Number> which is the type of
+     * value the gauge reports via its getValue() method. To register a gauge, the developer passes us a function-plus-target or
+     * a supplier with the return value from the function or supplier similarly parameterized with the subtype of Number.
+     *
+     * On the other hand, Micrometer gauges are not parameterized; each reports a double value.
+     *
+     * As a result, we do not have what we need to (easily) instantiate the correct subtype of Number, set its value based on
+     * the Micrometer delegate's value() result, and return the correctly-typed and -assigned value from our getValue() method.
+     *
+     * To work around this, we keep track ourselves of the function and target or supplier which report the gauge value.
+     * Then our getValue() implementation simply invokes the function on the target or the supplier rather than delegating to
+     * the Micrometer gauge value() method (which would do exactly the same thing anyway).
+     *
+     * This way the typing works out (with the expected unchecked cast).
+     */
 
     private MGauge(Gauge delegate) {
         super(delegate);
     }
 
-    private <T> MGauge(Gauge delegate, Builder<T> builder) {
+    private <N extends Number> MGauge(Gauge delegate, Builder<?, N> builder) {
         super(delegate, builder);
     }
 
@@ -43,16 +87,21 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
      * @param name name of the new gauge
      * @return new builder for a wrapper gauge
      */
-    static <T> MGauge.Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-        return new MGauge.Builder<>(name, stateObject, fn);
+    static <T> Builder<?, Double> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+        return new FunctionBased.Builder<>(name, stateObject, fn);
     }
 
-    static <N extends Number> MGauge.Builder<N> builder(String name, N number) {
-        return new MGauge.Builder<>(name, number, Number::doubleValue);
-    }
-
-    static <N extends Number> MGauge.Builder<?> builder(String name, Supplier<N> supplier) {
-        return builder(name, (Supplier<? extends Number>) supplier);
+    /**
+     * Creates a new builder for a wrapper around a Micrometer gauge based on a {@link Supplier} of a
+     * {@link java.lang.Number}.
+     *
+     * @param name     gauge name
+     * @param supplier supplier operation to provide a {@code Number}
+     * @param <N>      subtype of {@code Number} the gauge provides
+     * @return new builder for a wrapper gauge
+     */
+    static <N extends Number> SupplierBased.Builder<N> builder(String name, Supplier<N> supplier) {
+        return new SupplierBased.Builder<>(name, supplier);
     }
 
     /**
@@ -64,13 +113,13 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
      * @param scope scope to apply
      * @return new wrapper around the gauge
      */
-    static MGauge create(Gauge gauge, Optional<String> scope) {
-        return new MGauge(gauge, scope);
-    }
-
-    @Override
-    public double value() {
-        return delegate().value();
+    static MGauge<Double> create(Gauge gauge, Optional<String> scope) {
+        return new MGauge<>(gauge, scope) {
+            @Override
+            public Double value() {
+                return gauge.value();
+            }
+        };
     }
 
     @Override
@@ -80,56 +129,139 @@ class MGauge extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge {
                 .toString();
     }
 
-    static class Builder<T> extends MMeter.Builder<Gauge.Builder<T>, Gauge, MGauge.Builder<T>, MGauge>
-            implements io.helidon.metrics.api.Gauge.Builder<T> {
+    static abstract class Builder<HB extends Builder<HB, N>, N extends Number>
+            extends MMeter.Builder<Gauge.Builder<?>, Gauge, HB, MGauge<N>> implements io.helidon.metrics.api.Gauge.Builder<N> {
+
+        protected Builder(String name, Gauge.Builder<?> delegate) {
+            super(name, delegate);
+        }
+    }
+
+    static class SupplierBased<N extends Number> extends MGauge<N> {
+
+        private final Supplier<N> supplier;
+
+        private SupplierBased(Gauge gauge, Builder<N> builder) {
+            super(gauge, builder);
+            this.supplier = builder.supplier;
+        }
+
+        /**
+         * Returns the gauge value.
+         *
+         * <p>
+         * Note that we do not invoke the delegate. Delegate gauges from Micrometer only return
+         * double values, and supplier-based gauges can report any subtype of Number. So we just
+         * invoke the supplier ourselves rather than invoke Micrometer's delegate. We already know
+         * the correct subtype to return and that's baked into the supplier itself thanks to the
+         * parameterized type.
+         * </p>
+         *
+         * @return gauge value
+         */
+        @Override
+        public N value() {
+            return supplier.get();
+        }
+
+        static class Builder<N extends Number> extends MGauge.Builder<Builder<N>, N>
+                implements io.helidon.metrics.api.Gauge.Builder<N> {
+
+            private final Supplier<N> supplier;
+
+            private Builder(String name, Supplier<N> supplier) {
+                super(name, Gauge.builder(name, (Supplier<Number>) supplier));
+                this.supplier = supplier;
+            }
+
+            @Override
+            protected Builder<N> delegateTag(String key, String value) {
+                delegate().tag(key, value);
+                return identity();
+            }
+
+            @Override
+            protected Builder<N> delegateTags(Iterable<Tag> tags) {
+                delegate().tags(tags);
+                return identity();
+            }
+
+            @Override
+            protected Builder<N> delegateDescription(String description) {
+                delegate().description(description);
+                return identity();
+            }
+
+            @Override
+            protected Builder<N> delegateBaseUnit(String baseUnit) {
+                delegate().baseUnit(baseUnit);
+                return identity();
+            }
+
+            @Override
+            protected MGauge<N> build(Gauge gauge) {
+                return new SupplierBased<>(gauge, this);
+            }
+        }
+    }
+
+    static class FunctionBased<T> extends MGauge<Double> {
 
         private final T stateObject;
         private final ToDoubleFunction<T> fn;
 
-        private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-            super(name, Gauge.builder(name, stateObject, fn));
-            this.stateObject = stateObject;
-            this.fn = fn;
-            delegate().strongReference(true);
+        private FunctionBased(Gauge gauge, Builder<T> builder) {
+            super(gauge, builder);
+            stateObject = builder.stateObject;
+            fn = builder.fn;
         }
 
         @Override
-        protected Builder<T> delegateTags(Iterable<Tag> tags) {
-            delegate().tags(tags);
-            return identity();
+        public Double value() {
+            return fn.applyAsDouble(stateObject);
         }
 
-        @Override
-        protected Builder<T> delegateTag(String key, String value) {
-            delegate().tag(key, value);
-            return identity();
-        }
+        static class Builder<T> extends MGauge.Builder<Builder<T>, Double>
+                implements io.helidon.metrics.api.Gauge.Builder<Double> {
 
-        @Override
-        protected Builder<T> delegateDescription(String description) {
-            delegate().description(description);
-            return identity();
-        }
+            private final T stateObject;
+            private final ToDoubleFunction<T> fn;
 
-        @Override
-        protected Builder<T> delegateBaseUnit(String baseUnit) {
-            delegate().baseUnit(baseUnit);
-            return identity();
-        }
+            private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+                super(name, Gauge.builder(name, stateObject, fn));
+                this.stateObject = stateObject;
+                this.fn = fn;
+                delegate().strongReference(true);
+            }
 
-        @Override
-        public T stateObject() {
-            return stateObject;
-        }
+            @Override
+            protected Builder<T> delegateTags(Iterable<Tag> tags) {
+                delegate().tags(tags);
+                return identity();
+            }
 
-        @Override
-        public ToDoubleFunction<T> fn() {
-            return fn;
-        }
+            @Override
+            protected Builder<T> delegateTag(String key, String value) {
+                delegate().tag(key, value);
+                return identity();
+            }
 
-        @Override
-        protected MGauge build(Gauge meter) {
-            return new MGauge(meter, this);
+            @Override
+            protected Builder<T> delegateDescription(String description) {
+                delegate().description(description);
+                return identity();
+            }
+
+            @Override
+            protected Builder<T> delegateBaseUnit(String baseUnit) {
+                delegate().baseUnit(baseUnit);
+                return identity();
+            }
+
+            @Override
+            protected MGauge build(Gauge meter) {
+                return new FunctionBased<>(meter, this);
+            }
         }
     }
 }

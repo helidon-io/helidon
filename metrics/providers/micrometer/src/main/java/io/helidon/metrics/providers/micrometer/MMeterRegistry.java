@@ -69,7 +69,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
  * </p>
  * <p>
  * This is a little convoluted, but this approach allows us to automatically create Helidon meters around every Micrometer
- * meter, <em>even those which the developer registers directly with Micrometer!</em> That way, queries of the registry
+ * meter, <em>even those which the developer registers directly with Micrometer.</em> That way, queries of the registry
  * using the Helidon API return the same Helidon meter wrapper instance around a given Micrometer meter, regardless of which
  * API the developer used to register the meter: ours or Micrometer's.
  * </p>
@@ -227,22 +227,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
             if (builder instanceof MCounter.Builder cBuilder) {
                 helidonMeter = getOrCreate(cBuilder, cBuilder::addTag, cBuilder.delegate()::register);
-            }
-            if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
+            } else if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
                 helidonMeter = getOrCreate(fcBuilder, fcBuilder::addTag, fcBuilder.delegate()::register);
-            }
-            if (builder instanceof MDistributionSummary.Builder sBuilder) {
+            } else if (builder instanceof MDistributionSummary.Builder sBuilder) {
                 helidonMeter = getOrCreate(sBuilder, sBuilder::addTag, sBuilder.delegate()::register);
-            }
-            if (builder instanceof MGauge.Builder<?> gBuilder) {
-                helidonMeter = getOrCreate(gBuilder, gBuilder::addTag, gBuilder.delegate()::register);
-            }
-            if (builder instanceof MTimer.Builder tBuilder) {
+            } else if (builder instanceof MGauge.Builder gBuilder) {
+                helidonMeter = getOrCreate(gBuilder, gBuilder::addTag, ((MGauge.Builder<?, ?>) gBuilder).delegate()::register);
+            } else if (builder instanceof MTimer.Builder tBuilder) {
                 helidonMeter = getOrCreate(tBuilder, tBuilder::addTag, tBuilder.delegate()::register);
-            }
-
-            if (helidonMeter != null) {
-                return (HM) helidonMeter;
             } else {
                 throw new IllegalArgumentException(String.format("Unexpected builder type %s, expected one of %s",
                                                                  builder.getClass().getName(),
@@ -252,6 +244,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                          MGauge.Builder.class.getName(),
                                                                          MTimer.Builder.class.getName())));
             }
+            return (HM) helidonMeter;
         } finally {
             lock.unlock();
         }
@@ -349,6 +342,20 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     public io.helidon.metrics.api.MeterRegistry onMeterRemoved(Consumer<io.helidon.metrics.api.Meter> listener) {
         onRemoveListeners.add(listener);
         return this;
+    }
+
+    void erase() {
+        lock.lock();
+
+        try {
+            buildersByMeterId.clear();
+            meters.clear();
+            onAddListeners.clear();
+            onRemoveListeners.clear();
+            scopeMembership.clear();
+        } finally {
+            lock.unlock();
+        }
     }
 
     private static MMeterRegistry create(MeterRegistry delegate,
@@ -529,13 +536,20 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
             scope.ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
                     .add(mMeter));
-            onAddListeners.forEach(listener -> listener.accept(mMeter));
+
+            onAddListeners.forEach(listener -> {
+                try {
+                    listener.accept(mMeter);
+                } catch (Exception ex) {
+                    LOGGER.log(Level.ERROR, "Error invoking on-add callback listener " + listener, ex);
+                    // Continue on with the next listener.
+                }
+            });
 
         } finally {
             lock.unlock();
         }
     }
-
 
     private void onMeterRemoved(Meter removedMeter) {
         MMeter<?> removedHelidonMeter = meters.remove(removedMeter);

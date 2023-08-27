@@ -31,49 +31,13 @@ import org.eclipse.microprofile.metrics.Tag;
 /**
  * Gauge implementation.
  */
-abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metrics.api.Gauge> implements Gauge<N> {
-    /*
-     * The MicroProfile metrics API parameterizes its gauge type as Gauge<N extends Number> which is the type of
-     * value the gauge reports via its getValue() method. To register a gauge, the developer passes us a function-plus-target or
-     * a supplier with the return value from the function or supplier similarly parameterized with the subtype of Number.
-     *
-     * On the other hand, each Micrometer gauge is not parameterized and reports a double value.
-     *
-     * As a result, we do not have what we need to (easily) instantiate the correct subtype of Number, set its value based on
-     * the Micrometer delegate's value() result, and return the correctly-typed and -assigned value from our getValue() method.
-     *
-     * To work around this, we keep track ourselves of the function and target or supplier which report the gauge value.
-     * Then our getValue() implementation simply invokes the function on the target or the supplier rather than delegating to
-     * the Micrometer gauge value() method (which would do exactly the same thing anyway).
-     *
-     * This way the typing works out (with the expected unchecked cast).
-     */
+abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metrics.api.Gauge<N>> implements Gauge<N> {
 
-    private final io.helidon.metrics.api.Gauge delegate;
+    private final io.helidon.metrics.api.Gauge<N> delegate;
 
-    protected HelidonGauge(String scope, Metadata metadata, io.helidon.metrics.api.Gauge delegate) {
+    protected HelidonGauge(String scope, Metadata metadata, io.helidon.metrics.api.Gauge<N> delegate) {
         super(scope, metadata);
         this.delegate = delegate;
-    }
-
-    static <T, N extends Number> FunctionBased<N, T> create(MeterRegistry meterRegistry,
-                                                            String scope,
-                                                            Metadata metadata,
-                                                            T target,
-                                                            Function<T, N> function,
-                                                            Tag... tags) {
-        return new FunctionBased<>(scope,
-                                   metadata,
-                                   target,
-                                   function,
-                                   meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                                  target,
-                                                                                                  t -> function.apply(t)
-                                                                                                          .doubleValue())
-                                                                     .scope(scope)
-                                                                     .description(metadata.getDescription())
-                                                                     .tags(allTags(scope, tags))
-                                                                     .baseUnit(sanitizeUnit(metadata.getUnit()))));
     }
 
     static <N extends Number> SupplierBased<N> create(MeterRegistry meterRegistry,
@@ -113,24 +77,24 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
 
     }
 
-    static HelidonGauge<Double> create(String scope,
-                                       Metadata metadata,
-                                       io.helidon.metrics.api.Gauge delegate) {
-        return new HelidonGauge.DelegateBased(scope,
-                                              metadata,
-                                              delegate);
+    static <N extends Number> HelidonGauge<N> create(String scope,
+                                                     Metadata metadata,
+                                                     io.helidon.metrics.api.Gauge<N> delegate) {
+        return new HelidonGauge.DelegateBased<>(scope,
+                                                metadata,
+                                                delegate);
     }
 
     static HelidonGauge<Long> create(String scope,
-                                       Metadata metadata,
-                                       io.helidon.metrics.api.FunctionalCounter delegate) {
+                                     Metadata metadata,
+                                     io.helidon.metrics.api.FunctionalCounter delegate) {
         return new HelidonGauge.FunctionalCounterBased(scope,
-                                              metadata,
-                                              delegate);
+                                                       metadata,
+                                                       delegate);
     }
 
     @Override
-    public io.helidon.metrics.api.Gauge delegate() {
+    public io.helidon.metrics.api.Gauge<N> delegate() {
         return delegate;
     }
 
@@ -157,7 +121,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
     }
 
     @Override
-    public Class<io.helidon.metrics.api.Gauge> delegateType() {
+    public Class<?> delegateType() {
         return io.helidon.metrics.api.Gauge.class;
     }
 
@@ -170,7 +134,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                               Metadata metadata,
                               T target,
                               Function<T, N> function,
-                              io.helidon.metrics.api.Gauge delegate) {
+                              io.helidon.metrics.api.Gauge<N> delegate) {
             super(scope, metadata, delegate);
             this.target = target;
             this.function = function;
@@ -178,7 +142,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
 
         @Override
         public N getValue() {
-            return (N) function.apply(target);
+            return function.apply(target);
         }
     }
 
@@ -191,7 +155,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
                                       Metadata metadata,
                                       T target,
                                       ToDoubleFunction<T> fn,
-                                      io.helidon.metrics.api.Gauge delegate) {
+                                      io.helidon.metrics.api.Gauge<Double> delegate) {
             super(scope, metadata, delegate);
             this.target = target;
             this.fn = fn;
@@ -210,7 +174,7 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
         private SupplierBased(String scope,
                               Metadata metadata,
                               Supplier<N> supplier,
-                              io.helidon.metrics.api.Gauge delegate) {
+                              io.helidon.metrics.api.Gauge<N> delegate) {
             super(scope, metadata, delegate);
             this.supplier = supplier;
         }
@@ -221,15 +185,15 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
         }
     }
 
-    static class DelegateBased extends HelidonGauge<Double> {
+    static class DelegateBased<N extends Number> extends HelidonGauge<N> {
 
-        private DelegateBased(String scope, Metadata metadata, io.helidon.metrics.api.Gauge delegate) {
+        private DelegateBased(String scope, Metadata metadata, io.helidon.metrics.api.Gauge<N> delegate) {
             super(scope, metadata, delegate);
 
         }
 
         @Override
-        public Double getValue() {
+        public N getValue() {
             return delegate().value();
         }
     }

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 /**
  *
  */
-public class ReusabilityMpServiceTest {
+public class ReusabilityMpServiceTest extends BaseTest {
 
     static Server initServer(Class<?> resourceClass) {
         return Server.builder()

@@ -54,7 +54,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class BadGaugeTest {
+public class BadGaugeTest extends BaseTest {
     private static final String GAUGE_NAME = "BadGaugeTest.gauge";
     private static Config originalConfig;
     private static ConfigProviderResolver resolver;

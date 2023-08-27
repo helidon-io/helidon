@@ -470,6 +470,18 @@ class Registry implements MetricRegistry {
         }
     }
 
+    void clear() {
+        lock.lock();
+        try {
+            infoByName.clear();
+            meterRegistry.clear();
+            metricsByDelegate.clear();
+            metricsById.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
     /**
      * Converts an iterable of map entries (representing tag names and values) into an iterable of Helidon tags.
      *

@@ -29,7 +29,7 @@ import org.eclipse.microprofile.metrics.annotation.RegistryType;
  * Producer of each type of registry.
  *
  * We cannot use a lazy value for the registry factory, because the factory can be updated with new metrics settings after
- * the first use (to clear the app registry) using runtime (not build-time) config.
+ * the first use (to erase the app registry) using runtime (not build-time) config.
  */
 @ApplicationScoped
 final class RegistryProducer {

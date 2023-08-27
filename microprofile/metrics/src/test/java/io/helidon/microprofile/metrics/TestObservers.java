@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.not;
 
 @HelidonTest
 @AddExtension(TestObservers.TestExtension.class)
-public class TestObservers {
+public class TestObservers extends BaseTest {
 
     @Test
     void testDiscoveryObserver() {

@@ -30,7 +30,7 @@ interface HelidonMetric<M extends Meter> extends Metric {
     /**
      * Indicates if the specified metric is known to have been marked as deleted.
      * <p>
-     *     This check makes sense only for metrics which implement {@link HelidonMetric}, which all Helidon-provided metrics do.
+     * This check makes sense only for metrics which implement {@link HelidonMetric}, which all Helidon-provided metrics do.
      * </p>
      *
      * @param metric the metric to check
@@ -88,5 +88,5 @@ interface HelidonMetric<M extends Meter> extends Metric {
     /**
      * Returns the type of the delegate meter.
      */
-    Class<M> delegateType();
+    Class<?> delegateType();
 }

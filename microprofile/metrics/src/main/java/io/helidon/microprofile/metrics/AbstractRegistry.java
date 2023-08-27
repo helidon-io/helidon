@@ -172,21 +172,6 @@ abstract class AbstractRegistry implements MetricRegistry {
     }
 
     @Override
-    public <T, R extends Number> Gauge<R> gauge(String name, T object, Function<T, R> func, Tag... tags) {
-        return metricStore.getOrRegisterGauge(name, object, func, tags);
-    }
-
-    @Override
-    public <T, R extends Number> Gauge<R> gauge(MetricID metricID, T object, Function<T, R> func) {
-        return metricStore.getOrRegisterGauge(metricID, object, func);
-    }
-
-    @Override
-    public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
-        return metricStore.getOrRegisterGauge(metadata, object, func, tags);
-    }
-
-    @Override
     public <T extends Number> Gauge<T> gauge(String name, Supplier<T> supplier, Tag... tags) {
         return metricStore.getOrRegisterGauge(name, supplier, tags);
     }

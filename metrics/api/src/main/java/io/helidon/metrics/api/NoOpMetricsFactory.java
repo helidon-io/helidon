@@ -96,18 +96,13 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+    public <T> Gauge.Builder<Double> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
         return NoOpMeter.Gauge.builder(name, stateObject, fn);
     }
 
     @Override
-    public <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, N number) {
-        return NoOpMeter.Gauge.builder(name, number, Number::doubleValue);
-    }
-
-    @Override
-    public <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, Supplier<N> supplier) {
-        return NoOpMeter.Gauge.builder(name, supplier, s -> s.get().doubleValue());
+    public <N extends Number> Gauge.Builder<N> gaugeBuilder(String name, Supplier<N> supplier) {
+        return NoOpMeter.Gauge.builder(name, supplier);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,17 @@
  */
 package io.helidon.microprofile.metrics;
 
-import org.eclipse.microprofile.metrics.annotation.Counted;
+import io.helidon.metrics.api.Metrics;
 
-public class CountedConstructorTestBean extends BaseTest {
+import io.micrometer.core.instrument.MeterRegistry;
+import org.junit.jupiter.api.AfterAll;
 
-    static final String CONSTRUCTOR_COUNTER = "ctorCounted";
+class BaseTest {
 
-    private int count = 0;
+    @AfterAll
+    static void prep() {
+        RegistryFactory.getInstance().erase(); // clears out all Registry instances
+        Metrics.globalRegistry().unwrap(MeterRegistry.class).clear(); // Clears out the Micrometer registry
 
-    @Counted(name = CONSTRUCTOR_COUNTER)
-    public CountedConstructorTestBean() {
-
-    }
-
-    public void inc() {
-        count++;
     }
 }

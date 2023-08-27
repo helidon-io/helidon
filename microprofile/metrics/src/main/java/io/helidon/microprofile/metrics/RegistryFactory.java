@@ -113,13 +113,24 @@ class RegistryFactory {
     void stop() {
         /*
             Primarily for successive tests (e.g., in the TCK) which might share the same VM, delete each metric individually
-            (which will trickle down into the delegate meter registry) and also clear out the collection of registries.
+            (which will trickle down into the delegate meter registry) and also erase out the collection of registries.
          */
         registries.values()
                 .forEach(r -> r.getMetrics()
                         .forEach((id, m) -> r.remove(id)));
         registries.clear();
         PeriodicExecutor.stop();
+    }
+
+    /**
+     * Intended for use by test initializers to do a brute force clearout of each registry and
+     * the factory's collection of registries.
+     */
+    void erase() {
+        for (Registry r : registries.values()) {
+            r.clear();
+        }
+        registries.clear();
     }
 
     private <T> T accessMetricsSettings(Callable<T> callable) {

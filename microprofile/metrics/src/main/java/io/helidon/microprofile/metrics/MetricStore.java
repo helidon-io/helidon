@@ -153,17 +153,6 @@ class MetricStore {
         });
     }
 
-    <T, R extends Number> Gauge<R> getOrRegisterGauge(String name, T object, Function<T, R> func, Tag... tags) {
-        return getOrRegisterGauge(() -> getMetricLocked(name, tags),
-                                  () -> getConsistentMetadataLocked(name),
-                                  () -> new MetricID(name, tags),
-                                  (Metadata metadata) -> metricFactory.gauge(scope,
-                                                                             metadata,
-                                                                             object,
-                                                                             func,
-                                                                             tags));
-    }
-
     <R extends Number> Gauge<R> getOrRegisterGauge(String name, Supplier<R> valueSupplier, Tag... tags) {
         return getOrRegisterGauge(() -> getMetricLocked(name, tags),
                                   () -> getConsistentMetadataLocked(name),
@@ -171,20 +160,6 @@ class MetricStore {
                                   (Metadata metadata) -> metricFactory.gauge(scope,
                                                                              metadata,
                                                                              valueSupplier,
-                                                                             tags));
-    }
-
-    <T, R extends Number> Gauge<R> getOrRegisterGauge(Metadata newMetadata,
-                                                      T object,
-                                                      Function<T, R> valueFunction,
-                                                      Tag... tags) {
-        return getOrRegisterGauge(() -> getMetricLocked(newMetadata.getName(), tags),
-                                  () -> getConsistentMetadataLocked(newMetadata),
-                                  () -> new MetricID(newMetadata.getName(), tags),
-                                  (Metadata metadata) -> metricFactory.gauge(scope,
-                                                                             newMetadata,
-                                                                             object,
-                                                                             valueFunction,
                                                                              tags));
     }
 
@@ -199,16 +174,6 @@ class MetricStore {
                                                                              newMetadata,
                                                                              valueSupplier,
                                                                              tags));
-    }
-
-    <T, R extends Number> Gauge<R> getOrRegisterGauge(MetricID metricID, T object, Function<T, R> valueFunction) {
-        return getOrRegisterGauge(() -> allMetrics.get(metricID),
-                                  () -> allMetadata.get(metricID.getName()),
-                                  () -> metricID,
-                                  (Metadata metadata) -> metricFactory.gauge(scope,
-                                                                             metadata,
-                                                                             object,
-                                                                             valueFunction));
     }
 
     <R extends Number> Gauge<R> getOrRegisterGauge(MetricID metricID, Supplier<R> valueSupplier) {

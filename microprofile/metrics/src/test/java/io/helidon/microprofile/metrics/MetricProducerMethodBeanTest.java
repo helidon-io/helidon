@@ -45,7 +45,7 @@ import static org.hamcrest.Matchers.not;
 @Disabled
 @HelidonTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class MetricProducerMethodBeanTest {
+public class MetricProducerMethodBeanTest extends BaseTest {
 
     private final static String CALLS_METRIC = MetricRegistry.name(MetricProducerMethodBean.class, "calls");
 

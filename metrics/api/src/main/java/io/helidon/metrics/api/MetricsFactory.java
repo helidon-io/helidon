@@ -156,17 +156,7 @@ public interface MetricsFactory {
      * @param <T>         type of the state object
      * @return gauge builder
      */
-    <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
-
-    /**
-     * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a {@link Number} instance.
-     *
-     * @param name   name of the gauge
-     * @param number instance of a subtype of {@code Number} which provides the gauge value
-     * @param <N>    subtype of {@code Number} which is the type of the object that provides the gauge value
-     * @return new builder
-     */
-    <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, N number);
+    <T> Gauge.Builder<Double> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a supplier of a subtype of {@link Number}.
@@ -176,7 +166,7 @@ public interface MetricsFactory {
      * @param <N>      subtype of {@code Number} which the supplier providers
      * @return new builder
      */
-    <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, Supplier<N> supplier);
+    <N extends Number> Gauge.Builder<N> gaugeBuilder(String name, Supplier<N> supplier);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.Timer}.
@@ -250,9 +240,15 @@ public interface MetricsFactory {
         if (builder instanceof DistributionSummary.Builder sb) {
             return NoOpMeter.DistributionSummary.builder(sb.name()).build();
         }
-        if (builder instanceof Gauge.Builder gb) {
-            return NoOpMeter.Gauge.builder(gb.name(), gb.stateObject(), gb.fn()).build();
-        }
+        //        if (builder instanceof Gauge.FunctionBasedBuilder gb) {
+        //            return NoOpMeter.Gauge.builder(gb.name(), gb.stateObject(), gb.fn()).build();
+        //        }
+        //        if (builder instanceof Gauge.NumberBasedBuilder<?> nb) {
+        //            return NoOpMeter.Gauge.builder(nb.name(), nb.number());
+        //        }
+        //        if (builder instanceof Gauge.SupplierBased<? extends Number> sb) {
+        //            return NoOpMeter.Gauge.builder(sb.name(), sb.supplier());
+        //        }
         if (builder instanceof Timer.Builder tb) {
             return NoOpMeter.Timer.builder(tb.name()).build();
         }

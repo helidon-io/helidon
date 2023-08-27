@@ -61,11 +61,7 @@ class MetricFactory {
         return HelidonGauge.create(meterRegistry, scope, metadata, supplier, tags);
     }
 
-    <N extends Number, T> Gauge<N> gauge(String scope, Metadata metadata, T target, Function<T, N> fn, Tag... tags) {
-        return HelidonGauge.create(meterRegistry, scope, metadata, target, fn, tags);
-    }
-
-    <T> Gauge<Double> gauge(String scope, Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
-        return HelidonGauge.create(meterRegistry, scope, metadata, target, fn, tags);
+    <T> Gauge<Double> gauge(String scope, Metadata metadata, T stateObject, ToDoubleFunction<T> fn, Tag... tags) {
+        return HelidonGauge.create(meterRegistry, scope, metadata, stateObject, fn, tags);
     }
 }

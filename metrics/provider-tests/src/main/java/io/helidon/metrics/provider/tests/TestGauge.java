@@ -43,9 +43,8 @@ class TestGauge {
         long initial = 4L;
         long incr = 3L;
         Custom c = new Custom(initial);
-        Gauge g = meterRegistry.getOrCreate(Gauge.builder("a",
-                                                          c,
-                                                          Custom::value));
+        Gauge<Double> g = meterRegistry.getOrCreate(Gauge.builder("a",
+                                                                  c::value));
 
         assertThat("Gauge before update", g.value(), is((double) initial));
 
@@ -81,7 +80,7 @@ class TestGauge {
             value += delta;
         }
 
-        private long value() {
+        private double value() {
             return value;
         }
     }

@@ -32,20 +32,12 @@ import org.junit.jupiter.api.BeforeAll;
  * Class MetricsBaseTest.
  */
 @HelidonTest
-public class MetricsBaseTest {
+public class MetricsBaseTest extends BaseTest {
 
     private static final String METRIC_NAME_TEMPLATE = "%s.%s";
 
     @Inject
     private MetricRegistry metricRegistry;
-
-    @AfterAll
-    static void prep() {
-        io.micrometer.core.instrument.MeterRegistry micrometerGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
-        System.err.println("In prep, Micrometer GR contains " + micrometerGlobal.getMeters());
-        micrometerGlobal.getMeters().forEach(micrometerGlobal::remove);
-        Metrics.globalRegistry().clear();
-    }
 
     MetricRegistry getMetricRegistry() {
         return metricRegistry;

@@ -34,6 +34,11 @@ import java.util.function.ToDoubleFunction;
 
 /**
  * No-op implementation of the Helidon {@link io.helidon.metrics.api.Meter} interface.
+ *
+ * <p>
+ * It's a big class, but it's fairly nicely organized and it keeps the no-op meter implementations
+ * from cluttering up the containing directory as separate classes.
+ * </p>
  */
 class NoOpMeter implements Meter, NoOpWrapper {
 
@@ -440,45 +445,66 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
     }
 
-    static class Gauge extends NoOpMeter implements io.helidon.metrics.api.Gauge {
+    abstract static class Gauge<N extends Number> extends NoOpMeter implements io.helidon.metrics.api.Gauge<N> {
 
-        private <T> Gauge(Builder<T> builder) {
+        protected Gauge(NoOpMeter.Gauge.Builder<?, N> builder) {
             super(builder);
         }
 
-        static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-            return new Builder<>(name, stateObject, fn);
+        static <T> Builder.DoubleFunctionBased<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+            return new Builder.DoubleFunctionBased<>(name, stateObject, fn);
         }
 
-        @Override
-        public double value() {
-            return 0;
+        static <N extends Number> Builder.SupplierBased<N> builder(String name, Supplier<N> supplier) {
+            return new Builder.SupplierBased<>(name, supplier);
         }
 
-        static class Builder<T> extends NoOpMeter.Builder<Builder<T>, Gauge> implements io.helidon.metrics.api.Gauge.Builder<T> {
+        abstract static class Builder<B extends Builder<B, N>, N extends Number>
+                extends NoOpMeter.Builder<B, Gauge<N>> implements io.helidon.metrics.api.Gauge.Builder<N> {
 
-            private final T stateObject;
-            private final ToDoubleFunction<T> fn;
-
-            private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+            protected Builder(String name) {
                 super(name, Type.GAUGE);
-                this.stateObject = stateObject;
-                this.fn = fn;
             }
 
-            @Override
-            public Gauge build() {
-                return new Gauge(this);
+            static class DoubleFunctionBased<T> extends Builder<DoubleFunctionBased<T>, Double> {
+
+                private final T stateObject;
+                private final ToDoubleFunction<T> fn;
+
+                private DoubleFunctionBased(String name, T stateObject, ToDoubleFunction<T> fn) {
+                    super(name);
+                    this.stateObject = stateObject;
+                    this.fn = fn;
+                }
+
+                @Override
+                Gauge<Double> build() {
+                    return new Gauge<>(this) {
+                        @Override
+                        public Double value() {
+                            return fn.applyAsDouble(stateObject);
+                        }
+                    };
+                }
             }
 
-            @Override
-            public T stateObject() {
-                return stateObject;
-            }
+            static class SupplierBased<N extends Number> extends Builder<SupplierBased<N>, N> {
+                private final Supplier<N> supplier;
 
-            @Override
-            public ToDoubleFunction<T> fn() {
-                return fn;
+                private SupplierBased(String name, Supplier<N> supplier) {
+                    super(name);
+                    this.supplier = supplier;
+                }
+
+                @Override
+                Gauge<N> build() {
+                    return new Gauge<>(this) {
+                        @Override
+                        public N value() {
+                            return supplier.get();
+                        }
+                    };
+                }
             }
         }
     }
@@ -714,3 +740,4 @@ class NoOpMeter implements Meter, NoOpWrapper {
         }
     }
 }
+

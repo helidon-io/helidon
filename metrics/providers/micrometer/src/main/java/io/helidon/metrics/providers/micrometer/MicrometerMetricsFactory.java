@@ -123,18 +123,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public <T> Gauge.Builder<T> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
-        return MGauge.builder(name, stateObject, fn);
-    }
-
-    @Override
-    public <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, N number) {
-        return MGauge.builder(name, number);
-    }
-
-    @Override
-    public <N extends Number> Gauge.Builder<?> gaugeBuilder(String name, Supplier<N> supplier) {
+    public <N extends Number> Gauge.Builder<N> gaugeBuilder(String name, Supplier<N> supplier) {
         return MGauge.builder(name, supplier);
+    }
+
+    @Override
+    public <T> Gauge.Builder<Double> gaugeBuilder(String name, T stateObject, ToDoubleFunction<T> fn) {
+        return MGauge.builder(name, stateObject, fn);
     }
 
     @Override
