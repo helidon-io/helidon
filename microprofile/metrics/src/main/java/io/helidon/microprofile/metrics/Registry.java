@@ -445,6 +445,7 @@ class Registry implements MetricRegistry {
         } else {
             lock.lock();
             try {
+                metric.markAsDeleted();
                 String metricName = meter.id().name();
                 MetricID metricID = metricIDWithoutScope(collector, meter.id());
 
