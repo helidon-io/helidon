@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.Set;
 
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
@@ -28,6 +29,7 @@ import io.helidon.common.uri.UriQueryWriteable;
  * URI abstraction for WebClient.
  */
 public class ClientUri implements UriInfo {
+    private static final Set<String> SUPPORTED_SCHEMES = Set.of("http", "https");
     private final UriInfo base;
     private final UriQueryWriteable query;
 
@@ -41,6 +43,7 @@ public class ClientUri implements UriInfo {
     }
 
     private ClientUri(ClientUri baseUri) {
+        validateScheme(baseUri.scheme());
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
@@ -48,6 +51,7 @@ public class ClientUri implements UriInfo {
     }
 
     private ClientUri(UriInfo baseUri) {
+        validateScheme(baseUri.scheme());
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(baseUri);
         this.skipUriEncoding = false;
@@ -121,6 +125,7 @@ public class ClientUri implements UriInfo {
      * @return updated instance
      */
     public ClientUri scheme(String scheme) {
+        validateScheme(scheme);
         uriBuilder.scheme(scheme);
         return this;
     }
@@ -182,6 +187,7 @@ public class ClientUri implements UriInfo {
         }
 
         if (uri.getScheme() != null) {
+            validateScheme(uri.getScheme());
             uriBuilder.scheme(uri.getScheme());
         }
         if (uri.getHost() != null) {
@@ -358,5 +364,16 @@ public class ClientUri implements UriInfo {
         return path
                 + "/"
                 + resolvePath;
+    }
+
+    private void validateScheme(String scheme){
+        if (!SUPPORTED_SCHEMES.contains(scheme)) {
+            throw new IllegalArgumentException(
+                    String.format("Not supported scheme %s, client supported schemes are: %s",
+                                  scheme,
+                                  String.join(", ", SUPPORTED_SCHEMES)
+                    )
+            );
+        }
     }
 }

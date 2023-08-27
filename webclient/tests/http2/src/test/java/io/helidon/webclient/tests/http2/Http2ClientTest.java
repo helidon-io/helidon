@@ -39,7 +39,9 @@ import org.junit.jupiter.api.Test;
 import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
 class Http2ClientTest {
@@ -50,10 +52,12 @@ class Http2ClientTest {
     private final Http1Client http1Client;
     private final Supplier<Http2Client> tlsClient;
     private final Supplier<Http2Client> plainClient;
+    private final int tlsPort;
+    private final int plainPort;
 
     Http2ClientTest(WebServer server, Http1Client http1Client) {
-        int plainPort = server.port();
-        int tlsPort = server.port("https");
+        plainPort = server.port();
+        tlsPort = server.port("https");
         this.http1Client = http1Client;
         Tls insecureTls = Tls.builder()
                 // insecure setup, as we have self-signed certificate
@@ -103,6 +107,21 @@ class Http2ClientTest {
                 .request()) {
 
             assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        }
+    }
+
+    @Test
+    void testSchemeValidation() {
+        try (var r = Http2Client.builder()
+                .baseUri("test://localhost:" + plainPort + "/")
+                .shareConnectionCache(false)
+                .build()
+                .get("/")
+                .request()) {
+
+            fail("Should have failed because of invalid scheme.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), startsWith("Not supported scheme test"));
         }
     }
 
