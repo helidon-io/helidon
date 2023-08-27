@@ -81,12 +81,12 @@ public class WsClientUri extends ClientUri {
     }
 
     @Override
-    protected Set<String> supportedSchemes() {
-        return SUPPORTED_SCHEMES;
+    public WsClientUri copy() {
+        return WsClientUri.create(this);
     }
 
     @Override
-    public WsClientUri clone() {
-        return WsClientUri.create(this);
+    protected Set<String> supportedSchemes() {
+        return SUPPORTED_SCHEMES;
     }
 }
