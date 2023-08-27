@@ -106,6 +106,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                    </systemPropertyVariables>
+                </configuration>
                 <executions>
                     <execution>
                         <id>default-test</id>
@@ -116,6 +121,9 @@
                                 <exclude>**/TestDisabledMetrics.java</exclude>
                                 <exclude>**/TestConfigProcessing.java</exclude>
                             </excludes>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -129,6 +137,9 @@
                                 <include>**/HelloWorldAsyncResponseTest.java</include>
                                 <include>**/TestMetricsOnOwnSocket.java</include>
                             </includes>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -145,6 +156,9 @@
                                 <exclude>**/HelloWorldTest.java</exclude>
                                 <exclude>**/HelloWorldAsyncResponseWithRestRequestTest.java</exclude>
                             </excludes>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -159,6 +173,9 @@
                             <environmentVariables>
                                 <TAGS>topLevel</TAGS>
                             </environmentVariables>
+                            <systemPropertyVariables>
+                                <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
+                            </systemPropertyVariables>
                         </configuration>
                     </execution>
                 </executions>

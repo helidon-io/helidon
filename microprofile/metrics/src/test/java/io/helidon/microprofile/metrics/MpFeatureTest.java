@@ -32,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
-public class MpFeatureTest extends BaseTest {
+public class MpFeatureTest {
     
     @Inject
     private WebTarget webTarget;

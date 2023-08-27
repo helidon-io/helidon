@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
  * Class MetricsBaseTest.
  */
 @HelidonTest
-public class MetricsBaseTest extends BaseTest {
+public class MetricsBaseTest {
 
     private static final String METRIC_NAME_TEMPLATE = "%s.%s";
 

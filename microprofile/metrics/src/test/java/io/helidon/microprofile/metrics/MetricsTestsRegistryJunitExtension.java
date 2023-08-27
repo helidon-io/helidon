@@ -17,15 +17,20 @@ package io.helidon.microprofile.metrics;
 
 import io.helidon.metrics.api.Metrics;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.extension.Extension;
 
-class BaseTest {
+public class MetricsTestsRegistryJunitExtension implements Extension {
 
-    @AfterAll
-    static void prep() {
-        RegistryFactory.getInstance().erase(); // clears out all Registry instances
-        Metrics.globalRegistry().unwrap(MeterRegistry.class).clear(); // Clears out the Micrometer registry
+    public MetricsTestsRegistryJunitExtension() {
+        clear();
+    }
 
+    static void clear() {
+        // Clears out all Registry instances.
+
+        RegistryFactory.erase();
+
+        // Removes meters one at a time, invoking the callbacks so downstream consumers also clear out.
+        Metrics.globalRegistry().clear();
     }
 }

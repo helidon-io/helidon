@@ -35,7 +35,7 @@ import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 @HelidonTest
-class TestStereotypes extends BaseTest {
+class TestStereotypes {
 
     @Inject
     private MetricRegistry metricRegistry;

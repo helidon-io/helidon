@@ -17,7 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import org.eclipse.microprofile.metrics.annotation.Counted;
 
-public class CountedConstructorTestBean extends BaseTest {
+public class CountedConstructorTestBean {
 
     static final String CONSTRUCTOR_COUNTER = "ctorCounted";
 

@@ -54,7 +54,7 @@ import static org.hamcrest.Matchers.notNullValue;
                 + KEY_PERFORMANCE_INDICATORS_CONFIG_KEY
                 + ".extended",
         value = "true")
-public class HelloWorldAsyncResponseTest extends BaseTest {
+public class HelloWorldAsyncResponseTest {
 
     @Inject
     WebTarget webTarget;

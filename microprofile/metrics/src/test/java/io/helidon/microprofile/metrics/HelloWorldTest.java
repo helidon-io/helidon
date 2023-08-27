@@ -54,7 +54,7 @@ import static org.hamcrest.Matchers.notNullValue;
  */
 @HelidonTest
 @AddConfig(key = "metrics." + MetricsCdiExtension.REST_ENDPOINTS_METRIC_ENABLED_PROPERTY_NAME, value = "true")
-class HelloWorldTest extends BaseTest {
+class HelloWorldTest {
 
     @Inject
     WebTarget webTarget;

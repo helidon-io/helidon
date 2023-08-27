@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
@@ -89,8 +90,10 @@ class RegistryFactory {
     static RegistryFactory getInstance() {
         RegistryFactory result = REGISTRY_FACTORY.get();
         if (result == null) {
-            throw new IllegalStateException("Attempt to retrieve current " + RegistryFactory.class.getName()
-                                                    + " before it has been initialized");
+            LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
+                    + " before it has been initialized; using default Helidon meter registry and continuing");
+            result = new RegistryFactory(Metrics.globalRegistry(), MetricsConfig.create());
+            REGISTRY_FACTORY.set(result);
         }
         return result;
     }
@@ -126,11 +129,14 @@ class RegistryFactory {
      * Intended for use by test initializers to do a brute force clearout of each registry and
      * the factory's collection of registries.
      */
-    void erase() {
-        for (Registry r : registries.values()) {
-            r.clear();
+    static void erase() {
+        RegistryFactory rf = REGISTRY_FACTORY.get();
+        if (rf != null) {
+            for (Registry r : rf.registries.values()) {
+                r.clear();
+            }
+            rf.registries.clear();
         }
-        registries.clear();
     }
 
     private <T> T accessMetricsSettings(Callable<T> callable) {

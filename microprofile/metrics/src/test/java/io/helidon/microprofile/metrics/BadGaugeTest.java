@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
+import io.helidon.microprofile.tests.junit5.AddBean;
+import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -54,7 +56,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class BadGaugeTest extends BaseTest {
+public class BadGaugeTest {
     private static final String GAUGE_NAME = "BadGaugeTest.gauge";
     private static Config originalConfig;
     private static ConfigProviderResolver resolver;
@@ -84,6 +86,8 @@ public class BadGaugeTest extends BaseTest {
     @Disabled
     @Test
     void testBadBean() {
+        MetricsTestsRegistryJunitExtension.clear();
+
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertThat(initializer, is(notNullValue()));
         initializer.addBeanClasses(BadGaugedBean.class);
@@ -132,6 +136,7 @@ public class BadGaugeTest extends BaseTest {
     }
 
     private SeContainer startContainer(Annotation scope) {
+        MetricsTestsRegistryJunitExtension.clear();
         return SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addExtensions(MetricsCdiExtension.class, ServerCdiExtension.class, JaxRsCdiExtension.class)
