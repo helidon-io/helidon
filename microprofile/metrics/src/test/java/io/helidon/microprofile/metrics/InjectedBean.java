@@ -44,7 +44,7 @@ public class InjectedBean {
     MetricRegistry metrics;
 
     @Inject
-    @Metric(name = GaugedBean.INJECTABLE_GAUGE_NAME, absolute = true)
+    @Metric(name = GaugedBean.LOCAL_INJECTABLE_GAUGE_NAME, absolute = true)
     Gauge<Integer> gaugeForInjectionTest;
 
     public InjectedBean() {
