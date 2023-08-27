@@ -50,7 +50,6 @@ import io.helidon.tracing.config.TracingConfigUtil;
 /**
  * The basic abstract implementation of {@link ServerRequest}.
  */
-@SuppressWarnings("deprecation")
 abstract class Request implements ServerRequest {
 
     private static final String TRACING_CONTENT_READ_NAME = "content-read";
@@ -383,14 +382,17 @@ abstract class Request implements ServerRequest {
 
     private record Authority(String host, int port) {
         static Authority create(String hostHeader) {
-            int colon = hostHeader.indexOf(':');
-            if (colon == -1) {
-                // we do not know the protocol, and there is no port defined
-                return new Authority(hostHeader, -1);
+            // this may be an IPv6 address, such as [::1]:port, or [::1]
+            int colon = hostHeader.lastIndexOf(':');
+            int closingBrackets = hostHeader.lastIndexOf(']');
+            if (colon > closingBrackets) {
+                // there is a port
+                String hostString = hostHeader.substring(0, colon);
+                String portString = hostHeader.substring(colon + 1);
+                return new Authority(hostString, Integer.parseInt(portString));
             }
-            String hostString = hostHeader.substring(0, colon);
-            String portString = hostHeader.substring(colon + 1);
-            return new Authority(hostString, Integer.parseInt(portString));
+            // there is no port
+            return new Authority(hostHeader, -1);
         }
         static Authority create(String scheme, String hostHeader) {
             int colon = hostHeader.indexOf(':');
