@@ -16,13 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.net.URI;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
@@ -30,7 +23,6 @@ import io.helidon.common.http.UriInfo;
 import io.helidon.common.reactive.Multi;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
-
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
@@ -38,9 +30,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.FORWARDED;
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.HOST;
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.X_FORWARDED;
+import java.net.URI;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertAll;
