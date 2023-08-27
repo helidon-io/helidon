@@ -152,10 +152,12 @@ public class MetricsTest extends MetricsBaseTest {
 
         String promData = (String) outputOpt.get();
 
-        assertThat(promData, containsString("# TYPE application_gaugeForInjectionTest_seconds gauge"));
-        assertThat(promData, containsString("\n# HELP application_gaugeForInjectionTest_seconds"));
-        assertThat(promData, containsString("\napplication_gaugeForInjectionTest_seconds "
-                + (expectedValue * 60)));
+        // The @Gauge overrides the default units. Plus, the Prometheus output from Micrometer now includes the mp_scope tag and
+        // the value formatted as a double (that's Prometheus exposition format standard).
+        assertThat(promData, containsString("# TYPE gaugeForInjectionTest_minutes gauge"));
+        assertThat(promData, containsString("\n# HELP gaugeForInjectionTest_minutes"));
+        assertThat(promData, containsString("\ngaugeForInjectionTest_minutes{mp_scope=\"application\",} "
+                + (double) expectedValue));
     }
 
     @Test

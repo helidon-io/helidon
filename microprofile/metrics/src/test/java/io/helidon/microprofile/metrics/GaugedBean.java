@@ -46,7 +46,7 @@ public class GaugedBean {
         return measuredValue;
     }
 
-    @Gauge(unit = INJECTABLE_GAUGE_UNIT, name = LOCAL_INJECTABLE_GAUGE_NAME)
+    @Gauge(unit = INJECTABLE_GAUGE_UNIT, name = LOCAL_INJECTABLE_GAUGE_NAME, absolute = true)
     public int fetch() {
         return measuredValue;
     }
