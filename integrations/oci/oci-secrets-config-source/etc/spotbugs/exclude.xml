@@ -23,7 +23,7 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
 
     <Match>
-        <Class name="io.helidon.integrations.oci.secrets.configsource.SecretBundleConfigSource"/>
+        <Class name="io.helidon.integrations.oci.secrets.configsource.SecretBundleNodeConfigSource"/>
         <Method name="secretSummaries"/>
         <!-- Spotbugs is very, very confused by try-with-resources blocks. -->
         <Bug pattern="RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE"/>

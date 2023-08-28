@@ -19,7 +19,7 @@ import java.util.Base64;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.integrations.oci.secrets.configsource.SecretBundleConfigSource.valueNode;
+import static io.helidon.integrations.oci.secrets.configsource.AbstractSecretBundleConfigSource.valueNode;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
