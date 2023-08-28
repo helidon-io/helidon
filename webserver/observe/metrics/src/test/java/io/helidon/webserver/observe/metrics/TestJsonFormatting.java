@@ -47,8 +47,7 @@ class TestJsonFormatting {
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .scoping(ScopingConfig.builder()
                                  .tagName(SCOPE_TAG_NAME)
-                                 .defaultValue("application")
-                                 .tagEnabled(true))
+                                 .defaultValue("application"))
                 .build();
 
         MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
@@ -90,8 +89,7 @@ class TestJsonFormatting {
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .scoping(ScopingConfig.builder()
                                  .tagName(SCOPE_TAG_NAME)
-                                 .defaultValue("application")
-                                 .tagEnabled(true))
+                                 .defaultValue("application"))
                 .build();
 
         MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);

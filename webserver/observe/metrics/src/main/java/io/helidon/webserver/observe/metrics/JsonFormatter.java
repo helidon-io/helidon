@@ -41,6 +41,8 @@ import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -244,7 +246,7 @@ class JsonFormatter implements MeterRegistryFormatter {
     }
 
     private Iterable<Tag> sanitizeTags(Iterable<Tag> tags) {
-        if (!metricsConfig.scoping().tagEnabled() || metricsConfig.scoping().tagName().isEmpty()) {
+        if (metricsConfig.scoping().tagName().isEmpty()) {
             return tags;
         }
         String scopeTagName = metricsConfig.scoping().tagName().get();
@@ -451,18 +453,22 @@ class JsonFormatter implements MeterRegistryFormatter {
                 children.forEach(child -> {
                     Meter.Id childID = child.id();
 
-                    if (meter() instanceof DistributionSummary summary) {
-                        DistributionSummary typedChild = (DistributionSummary) child;
+                    if (meter() instanceof Counter typedChild) {
+                        sameNameBuilder.add(valueId("count", childID), typedChild.count());
+                    } else if (meter() instanceof DistributionSummary typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                         sameNameBuilder.add(valueId("max", childID), typedChild.snapshot().max());
                         sameNameBuilder.add(valueId("mean", childID), typedChild.snapshot().mean());
                         sameNameBuilder.add(valueId("total", childID), typedChild.totalAmount());
-                    } else if (meter() instanceof Timer timer) {
-                        Timer typedChild = (Timer) child;
+                    } else if (meter() instanceof Timer typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                         sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(TimeUnit.SECONDS));
                         sameNameBuilder.add(valueId("max", childID), typedChild.max(TimeUnit.SECONDS));
                         sameNameBuilder.add(valueId("mean", childID), typedChild.mean(TimeUnit.SECONDS));
+                    } else if (meter() instanceof FunctionalCounter typedChild) {
+                        sameNameBuilder.add(valueId("count", childID), typedChild.count());
+                    } else if (meter() instanceof Gauge typedChild) {
+                        MetricOutputBuilder.addNarrowed(sameNameBuilder, valueId("value", childID), typedChild.value());
                     } else {
                         throw new IllegalArgumentException("Unrecognized meter type "
                                                                    + meter().getClass().getName());
