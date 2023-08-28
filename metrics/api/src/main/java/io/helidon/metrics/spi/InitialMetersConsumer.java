@@ -31,7 +31,10 @@ public interface InitialMetersConsumer {
     /**
      * Invoked once as the metrics factory manager starts to communicate the active configuration.
      *
-     * @param config config used by the factory manager
+     * @param config config used by the metrics factory manager
+     * @param metricsConfig metrics configuration for the new metrics factory
+     * @param metricsFactory metric factory being created
+     * @param initialMeterBuilders builders for initial meters
      */
     void initialBuilders(Config config,
                          MetricsConfig metricsConfig,

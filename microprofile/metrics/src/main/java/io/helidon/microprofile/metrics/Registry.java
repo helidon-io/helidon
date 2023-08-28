@@ -586,7 +586,8 @@ class Registry implements MetricRegistry {
 
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {
         return (HelidonGauge<N>) createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                  (Supplier<? extends N>) () -> func.apply(object))
+                                                                                  (Supplier<? extends N>) () -> func
+                                                                                          .apply(object))
                                                      .scope(scope)
                                                      .description(metadata.getDescription())
                                                      .tags(allTags(scope, tags))

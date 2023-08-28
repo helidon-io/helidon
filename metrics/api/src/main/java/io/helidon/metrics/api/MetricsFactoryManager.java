@@ -70,7 +70,8 @@ class MetricsFactoryManager {
      */
     private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
             io.helidon.common.LazyValue.create(() ->
-                                                       HelidonServiceLoader.create(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                                                       HelidonServiceLoader
+                                                               .create(ServiceLoader.load(MetricsProgrammaticConfig.class))
                                                                .asList());
     /**
      * Consumers of initial meter builders. Typically the MP RegistryFactory when it is present.
@@ -130,15 +131,6 @@ class MetricsFactoryManager {
         return metricsFactory;
     }
 
-    private static void ensureInitialBuilderConsumersReady(final MetricsConfig metricsConfig) {
-        access(() -> {
-            if (!initialConsumersNotified) {
-                INITIAL_METER_CONSUMERS.get()
-                        .forEach(c -> c.initialBuilders(rootConfig, metricsConfig, metricsFactory, INITIAL_METER_BUILDERS.get()));
-            }
-        });
-    }
-
     /**
      * Creates a new {@link io.helidon.metrics.api.MetricsFactory} according to the specified
      * {@link io.helidon.metrics.api.MetricsConfig}, saving the metrics config as the current one, saving the
@@ -176,6 +168,15 @@ class MetricsFactoryManager {
      */
     static MetricsFactory create(MetricsConfig metricsConfig) {
         return METRICS_FACTORY_PROVIDER.get().create(metricsConfig);
+    }
+
+    private static void ensureInitialBuilderConsumersReady(final MetricsConfig metricsConfig) {
+        access(() -> {
+            if (!initialConsumersNotified) {
+                INITIAL_METER_CONSUMERS.get()
+                        .forEach(c -> c.initialBuilders(rootConfig, metricsConfig, metricsFactory, INITIAL_METER_BUILDERS.get()));
+            }
+        });
     }
 
     private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config rootConfig) {
