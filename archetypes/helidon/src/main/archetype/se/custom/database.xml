@@ -284,7 +284,11 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             </map>
                             <map if="${server} != 'mongodb'">
                                 <value key="groupId">io.helidon.dbclient</value>
-                                <value key="artifactId">helidon-dbclient-metrics-jdbc</value>
+                                <value key="artifactId">helidon-dbclient-hikari</value>
+                            </map>
+                            <map if="${server} != 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-metrics-hikari</value>
                             </map>
                             <map>
                                 <value key="groupId">io.helidon.dbclient</value>
@@ -354,6 +358,11 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <map if="${server} == 'mongodb'">
                                 <value key="groupId">io.helidon.dbclient</value>
                                 <value key="artifactId">helidon-dbclient-jdbc</value>
+                                <value key="scope">test</value>
+                            </map>
+                            <map if="${server} == 'mongodb'">
+                                <value key="groupId">io.helidon.dbclient</value>
+                                <value key="artifactId">helidon-dbclient-hikari</value>
                                 <value key="scope">test</value>
                             </map>
                         </list>
