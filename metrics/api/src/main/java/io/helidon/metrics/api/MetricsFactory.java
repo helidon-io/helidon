@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -70,6 +71,12 @@ public interface MetricsFactory {
     static MetricsFactory getInstance(Config rootConfig) {
         return MetricsFactoryManager.getInstance(rootConfig);
     }
+
+    /**
+     * Invoked shortly after creation so the factory knows about initial meter builders.
+     * @param builders initial builders
+     */
+    void initialMeterBuilders(Collection<Meter.Builder<?, ?>> builders);
 
     /**
      * Returns the global meter registry.

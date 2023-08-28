@@ -130,10 +130,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      *
      * @param meterRegistry existing Micrometer meter registry to wrap
      * @param metricsConfig metrics config
+     * @param initialMeterBuilders builders for initial meters
      * @return new wrapper around the specified Micrometer meter registry
      */
     static MMeterRegistry create(MeterRegistry meterRegistry,
-                                 MetricsConfig metricsConfig) {
+                                 MetricsConfig metricsConfig,
+                                 Collection<io.helidon.metrics.api.Meter.Builder<?, ?>> initialMeterBuilders) {
         // The caller passed a pre-existing meter registry, with its own clock, so wrap that clock
         // with a Helidon clock adapter (MClock).
         return new MMeterRegistry(ensurePrometheusRegistryIsPresent(meterRegistry, metricsConfig),
@@ -149,7 +151,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      * @param metricsConfig metrics config
      * @return new wrapper around a new Micrometer composite meter registry
      */
-    static MMeterRegistry create(MetricsConfig metricsConfig) {
+    static MMeterRegistry create(MetricsConfig metricsConfig,
+                                 Collection<io.helidon.metrics.api.Meter.Builder<?, ?>> initialMeterBuilders) {
         CompositeMeterRegistry delegate = new CompositeMeterRegistry();
         return create(ensurePrometheusRegistryIsPresent(delegate, metricsConfig),
                       MClock.create(delegate.config().clock()),
@@ -642,8 +645,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                   Meter.Id promId) {
         Map<String, String> promFormatToNeutralTagNames = new HashMap<>();
         originalNeutralTags.forEach(originalNeutralTag ->
-                                            promFormatToNeutralTagNames.put(MicrometerPrometheusFormatter.normalizeNameToPrometheus(
-                                                                                    originalNeutralTag.key()),
+                                            promFormatToNeutralTagNames.put(MicrometerPrometheusFormatter
+                                                                                    .normalizeNameToPrometheus(
+                                                                                            originalNeutralTag.key()),
                                                                             originalNeutralTag.key()));
 
         List<Tag> neutralTags = new ArrayList<>();
@@ -685,7 +689,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
         } finally {
             lock.unlock();
-            ;
         }
     }
 

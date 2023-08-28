@@ -17,7 +17,6 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Optional;
 
-import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 
 
@@ -77,7 +76,10 @@ class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements 
                 .toString();
     }
 
-    static class Builder extends MMeter.Builder<io.micrometer.core.instrument.Counter.Builder, io.micrometer.core.instrument.Counter, Builder, MCounter>
+    static class Builder extends
+                         MMeter.Builder<io.micrometer.core.instrument.Counter.Builder,
+                                 io.micrometer.core.instrument.Counter,
+                                 Builder, MCounter>
             implements io.helidon.metrics.api.Counter.Builder {
 
         private Builder(String name, io.micrometer.core.instrument.Counter.Builder delegate) {

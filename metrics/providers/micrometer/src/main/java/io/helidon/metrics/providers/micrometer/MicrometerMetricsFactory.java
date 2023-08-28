@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -26,6 +27,7 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.HistogramSnapshot;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -43,12 +45,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private final LazyValue<MeterRegistry> globalMeterRegistry;
     private final MetricsConfig.Builder metricsConfigBuilder;
+    private Collection<Meter.Builder<?, ?>> initialMeterBuilders;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
         this.metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
         globalMeterRegistry = LazyValue.create(() -> {
             ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
-            return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig);
+            return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig, initialMeterBuilders);
         });
     }
 
@@ -57,8 +60,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public void initialMeterBuilders(Collection<Meter.Builder<?, ?>> builders) {
+        this.initialMeterBuilders = builders;
+    }
+
+    @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return MMeterRegistry.create(metricsConfig);
+        return MMeterRegistry.create(metricsConfig, initialMeterBuilders);
     }
 
     @Override

@@ -59,9 +59,10 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         this.scope = scope;
     }
 
-    static <M extends io.micrometer.core.instrument.Meter, HM extends MMeter<M>> HM create(Meter.Id id,
-                                                                                           io.micrometer.core.instrument.Meter meter,
-                                                                                           Optional<String> scope) {
+    static <M extends io.micrometer.core.instrument.Meter,
+            HM extends MMeter<M>> HM create(Meter.Id id,
+                                            io.micrometer.core.instrument.Meter meter,
+                                            Optional<String> scope) {
         if (meter instanceof io.micrometer.core.instrument.Counter counter) {
             return (HM) MCounter.create(id, counter, scope);
         }

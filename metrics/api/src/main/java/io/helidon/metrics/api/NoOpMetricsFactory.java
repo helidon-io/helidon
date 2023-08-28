@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -44,6 +45,10 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();
+    }
+
+    @Override
+    public void initialMeterBuilders(Collection<Meter.Builder<?, ?>> builders) {
     }
 
     @Override

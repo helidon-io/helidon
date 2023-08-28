@@ -13,25 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.providers.micrometer;
+package io.helidon.microprofile.metrics;
 
+import java.util.Collection;
+
+import io.helidon.common.config.Config;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.spi.MetricsFactoryProvider;
+import io.helidon.metrics.spi.InitialMetersConsumer;
 
 /**
- * Provides the Micrometer meter registry to use as a delegate for the implementation of the Helidon metrics API.
+ * Saves initial meter builders for use by new registry factories.
  */
-public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
+public class InitialBuildersStore implements InitialMetersConsumer {
 
-    /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} based on Micrometer.
-     */
-    public MicrometerMetricsFactoryProvider() {
-    }
 
     @Override
-    public MetricsFactory create(MetricsConfig metricsConfig) {
-        return MicrometerMetricsFactory.create(metricsConfig);
+    public void initialBuilders(Config config,
+                                MetricsConfig metricsConfig,
+                                MetricsFactory metricsFactory,
+                                Collection<Meter.Builder<?, ?>> initialMeterBuilders) {
+
+        RegistryFactoryManager.initialBuilders(initialMeterBuilders);
     }
 }

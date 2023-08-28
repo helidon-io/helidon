@@ -15,7 +15,6 @@
  */
 package io.helidon.microprofile.metrics;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 

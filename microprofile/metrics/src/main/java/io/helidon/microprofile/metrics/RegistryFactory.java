@@ -46,10 +46,10 @@ import org.eclipse.microprofile.metrics.Timer;
  * only
  * one meter registry will every be created in a production server.
  * </p>
- * <p>The {@link #getInstance(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig)} method creates a new
- * instance and saves it for retrieval via {@link #getInstance()}. The
- * {@link #create(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig)} method creates a new instance
- * but does not record it internally.
+ * <p>The {@link #getInstance(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig, java.util.Collection)}
+ * method creates a new instance and saves it for retrieval via {@link #getInstance()}. The
+ * {@link #create(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig, java.util.Collection)}
+ * method creates a new instance but does not record it internally.
  * </p>
  */
 class RegistryFactory {
@@ -65,20 +65,29 @@ class RegistryFactory {
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
     private final MetricsConfig metricsConfig;
 
-    private RegistryFactory(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+    private Collection<Meter.Builder<?, ?>> initialBuilders;
+
+    private RegistryFactory(MeterRegistry meterRegistry,
+                            MetricsConfig metricsConfig,
+                            Collection<Meter.Builder<?, ?>> initialBuilders) {
         this.meterRegistry = meterRegistry;
         this.metricsConfig = metricsConfig;
+        this.initialBuilders = initialBuilders;
         meterRegistry
                 .onMeterAdded(this::registerMetricForExistingMeter)
                 .onMeterRemoved(this::removeMetricForMeter);
     }
 
-    static RegistryFactory create(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        return new RegistryFactory(meterRegistry, metricsConfig);
+    static RegistryFactory create(MeterRegistry meterRegistry,
+                                  MetricsConfig metricsConfig,
+                                  Collection<Meter.Builder<?, ?>> initialBuilders) {
+        return new RegistryFactory(meterRegistry, metricsConfig, initialBuilders);
     }
 
-    static RegistryFactory getInstance(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        REGISTRY_FACTORY.set(create(meterRegistry, metricsConfig));
+    static RegistryFactory getInstance(MeterRegistry meterRegistry,
+                                       MetricsConfig metricsConfig,
+                                       Collection<Meter.Builder<?, ?>> initialBuilders) {
+        REGISTRY_FACTORY.set(create(meterRegistry, metricsConfig, initialBuilders));
         return REGISTRY_FACTORY.get();
     }
 
@@ -92,10 +101,24 @@ class RegistryFactory {
         if (result == null) {
             LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
                     + " before it has been initialized; using default Helidon meter registry and continuing");
-            result = new RegistryFactory(Metrics.globalRegistry(), MetricsConfig.create());
+            result = new RegistryFactory(Metrics.globalRegistry(), MetricsConfig.create(), Set.of());
             REGISTRY_FACTORY.set(result);
         }
         return result;
+    }
+
+    /**
+     * Intended for use by test initializers to do a brute force clearout of each registry and
+     * the factory's collection of registries.
+     */
+    static void erase() {
+        RegistryFactory rf = REGISTRY_FACTORY.get();
+        if (rf != null) {
+            for (Registry r : rf.registries.values()) {
+                r.clear();
+            }
+            rf.registries.clear();
+        }
     }
 
     /**
@@ -125,20 +148,6 @@ class RegistryFactory {
         PeriodicExecutor.stop();
     }
 
-    /**
-     * Intended for use by test initializers to do a brute force clearout of each registry and
-     * the factory's collection of registries.
-     */
-    static void erase() {
-        RegistryFactory rf = REGISTRY_FACTORY.get();
-        if (rf != null) {
-            for (Registry r : rf.registries.values()) {
-                r.clear();
-            }
-            rf.registries.clear();
-        }
-    }
-
     private <T> T accessMetricsSettings(Callable<T> callable) {
         metricsSettingsAccess.lock();
         try {
@@ -165,5 +174,6 @@ class RegistryFactory {
         }
         getRegistry(scope).onMeterRemoved(meter);
     }
+
 }
 

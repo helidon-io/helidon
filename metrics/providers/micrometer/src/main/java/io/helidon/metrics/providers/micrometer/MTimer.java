@@ -178,7 +178,9 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         }
     }
 
-    static class Builder extends MMeter.Builder<io.micrometer.core.instrument.Timer.Builder, io.micrometer.core.instrument.Timer, MTimer.Builder, MTimer>
+    static class Builder extends
+                         MMeter.Builder<io.micrometer.core.instrument.Timer.Builder, io.micrometer.core.instrument.Timer,
+                                 MTimer.Builder, MTimer>
             implements io.helidon.metrics.api.Timer.Builder {
 
         private double[] percentiles;

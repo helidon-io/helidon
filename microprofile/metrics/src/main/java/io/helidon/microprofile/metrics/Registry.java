@@ -182,7 +182,7 @@ class Registry implements MetricRegistry {
     public Histogram histogram(MetricID metricID) {
         return Objects.requireNonNullElseGet(getHistogram(metricID),
                                              () -> createHistogram(metadata(metricID),
-                                                                           metricID.getTagsAsArray()));
+                                                                   metricID.getTagsAsArray()));
     }
 
     @Override
@@ -212,7 +212,7 @@ class Registry implements MetricRegistry {
     public Timer timer(MetricID metricID) {
         return Objects.requireNonNullElseGet(getTimer(metricID),
                                              () -> createTimer(metadata(metricID),
-                                                                       metricID.getTagsAsArray()));
+                                                               metricID.getTagsAsArray()));
     }
 
     @Override
@@ -471,6 +471,26 @@ class Registry implements MetricRegistry {
         }
     }
 
+    void onMeterBuilderProvided(Meter.Builder<?, ?> meterBuilder) {
+        /*
+         Invoked with a builder for a built-in meter.
+         */
+        if (meterBuilder instanceof io.helidon.metrics.api.Counter.Builder cBuilder) {
+            createCounter(cBuilder);
+        } else if (meterBuilder instanceof io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
+            createHistogram(sBuilder);
+        } else if (meterBuilder instanceof io.helidon.metrics.api.FunctionalCounter.Builder fcBuilder) {
+            createFunctionalCounter(fcBuilder);
+        } else if (meterBuilder instanceof io.helidon.metrics.api.Gauge.Builder gBuilder) {
+            createGauge(gBuilder);
+        } else if (meterBuilder instanceof io.helidon.metrics.api.Timer.Builder tBuilder) {
+            createTimer(tBuilder);
+        } else {
+            LOGGER.log(System.Logger.Level.WARNING,
+                       "Unrecognized builder type; ignoring " + meterBuilder.getClass().getName());
+        }
+    }
+
     void clear() {
         lock.lock();
         try {
@@ -552,66 +572,87 @@ class Registry implements MetricRegistry {
     }
 
     private HelidonCounter createCounter(Metadata metadata, Tag... tags) {
-        io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Counter.builder(metadata.getName())
-                                                                                  .scope(scope)
-                                                                                  .description(metadata.getDescription())
-                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                                                  .tags(allTags(scope, tags)));
+        return createCounter(io.helidon.metrics.api.Counter.builder(metadata.getName())
+                                     .scope(scope)
+                                     .description(metadata.getDescription())
+                                     .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                     .tags(allTags(scope, tags)));
+    }
+
+    private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
+        io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(counterBuilder);
         return (HelidonCounter) metricsByDelegate.get(delegate);
     }
 
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {
-        io.helidon.metrics.api.Gauge delegate = meterRegistry.
-                getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                 (Supplier<? extends N>) () -> func.apply(object))
-                                    .scope(scope)
-                                    .description(metadata.getDescription())
-                                    .tags(allTags(scope, tags))
-                                    .baseUnit(sanitizeUnit(metadata.getUnit())));
+        return (HelidonGauge<N>) createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                                  (Supplier<? extends N>) () -> func.apply(object))
+                                                     .scope(scope)
+                                                     .description(metadata.getDescription())
+                                                     .tags(allTags(scope, tags))
+                                                     .baseUnit(sanitizeUnit(metadata.getUnit())));
 
-        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
     }
 
     private <N extends Number> HelidonGauge<N> createGauge(Metadata metadata, Supplier<N> supplier, Tag... tags) {
-        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                                               supplier)
-                                                                                  .scope(scope)
-                                                                                  .description(metadata.getDescription())
-                                                                                  .tags(allTags(scope, tags))
-                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit())));
+        return createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                supplier)
+                                   .scope(scope)
+                                   .description(metadata.getDescription())
+                                   .tags(allTags(scope, tags))
+                                   .baseUnit(sanitizeUnit(metadata.getUnit())));
 
-        return (HelidonGauge<N>) metricsByDelegate.get(delegate);
     }
 
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
-        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                                               target,
-                                                                                                               fn)
-                                                                                  .scope(scope)
-                                                                                  .description(metadata.getDescription())
-                                                                                  .tags(allTags(scope, tags))
-                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit())));
+        return (HelidonGauge<N>) createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
+                                                                                  target,
+                                                                                  fn)
+                                                     .scope(scope)
+                                                     .description(metadata.getDescription())
+                                                     .tags(allTags(scope, tags))
+                                                     .baseUnit(sanitizeUnit(metadata.getUnit())));
 
+    }
+
+    private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
+        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(gBuilder);
         return (HelidonGauge<N>) metricsByDelegate.get(delegate);
     }
 
-    private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
-        DistributionSummary delegate = meterRegistry.getOrCreate(DistributionSummary.builder(metadata.getName())
-                                                                         .scope(scope)
-                                                                         .description(metadata.getDescription())
-                                                                         .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                                         .tags(allTags(scope, tags)));
+    private <T> HelidonGauge<Long> createFunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<T> fcBuilder) {
+        io.helidon.metrics.api.Gauge delegate = meterRegistry
+                .getOrCreate(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
+                                                                  () -> (long) fcBuilder.fn()
+                                                                          .applyAsDouble(fcBuilder.stateObject())));
+        return (HelidonGauge<Long>) metricsByDelegate.get(delegate);
+    }
 
+    private HelidonHistogram createHistogram(Metadata metadata, Tag... tags) {
+        return createHistogram(DistributionSummary.builder(metadata.getName())
+                                       .scope(scope)
+                                       .description(metadata.getDescription())
+                                       .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                       .tags(allTags(scope, tags)));
+
+    }
+
+    private HelidonHistogram createHistogram(io.helidon.metrics.api.DistributionSummary.Builder sBuilder) {
+        io.helidon.metrics.api.DistributionSummary delegate = meterRegistry.getOrCreate(sBuilder);
         return (HelidonHistogram) metricsByDelegate.get(delegate);
     }
 
     private HelidonTimer createTimer(Metadata metadata, Tag... tags) {
-        io.helidon.metrics.api.Timer delegate = meterRegistry.getOrCreate(io.helidon.metrics.api.Timer.builder(metadata.getName())
-                                                                                  .scope(scope)
-                                                                                  .description(metadata.getDescription())
-                                                                                  .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                                                                  .tags(allTags(scope, tags)));
-        return (HelidonTimer)metricsByDelegate.get(delegate);
+        return createTimer(io.helidon.metrics.api.Timer.builder(metadata.getName())
+                                   .scope(scope)
+                                   .description(metadata.getDescription())
+                                   .baseUnit(sanitizeUnit(metadata.getUnit()))
+                                   .tags(allTags(scope, tags)));
+    }
+
+    private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {
+        io.helidon.metrics.api.Timer delegate = meterRegistry.getOrCreate(tBuilder);
+        return (HelidonTimer) metricsByDelegate.get(delegate);
     }
 
     private boolean removeMatchingWithResult(MetricFilter filter) {
@@ -685,7 +726,6 @@ class Registry implements MetricRegistry {
         static InfoPerName create(Metadata metadata, MetricID metricID) {
             return new InfoPerName(metadata, metricID);
         }
-
 
         void add(MetricID metricID) {
             metricIDs.add(metricID);

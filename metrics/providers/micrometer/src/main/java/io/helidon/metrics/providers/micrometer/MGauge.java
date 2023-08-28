@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -67,10 +68,6 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
      *
      * This way the typing works out (with the expected unchecked cast).
      */
-
-    private MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate) {
-        super(id, delegate);
-    }
 
     private <N extends Number> MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate, Builder<?, N> builder) {
         super(id, delegate, builder);
@@ -129,7 +126,7 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
                 .toString();
     }
 
-    static abstract class Builder<HB extends Builder<HB, N>, N extends Number>
+    abstract static class Builder<HB extends Builder<HB, N>, N extends Number>
             extends MMeter.Builder<io.micrometer.core.instrument.Gauge.Builder<?>, io.micrometer.core.instrument.Gauge, HB, MGauge<N>> implements io.helidon.metrics.api.Gauge.Builder<N> {
 
         protected Builder(String name, io.micrometer.core.instrument.Gauge.Builder<?> delegate) {
@@ -162,6 +159,25 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         @Override
         public N value() {
             return supplier.get();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof SupplierBased<?> that)) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            return Objects.equals(supplier, that.supplier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), supplier);
         }
 
         static class Builder<N extends Number> extends MGauge.Builder<Builder<N>, N>
@@ -219,6 +235,25 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         @Override
         public Double value() {
             return fn.applyAsDouble(stateObject);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof FunctionBased<?> that)) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            return Objects.equals(stateObject, that.stateObject) && Objects.equals(fn, that.fn);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), stateObject, fn);
         }
 
         static class Builder<T> extends MGauge.Builder<Builder<T>, Double>

@@ -48,7 +48,7 @@ class TestScopeManagement {
         SystemTagsManager.instance(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.
-        // With no default scope set in the config used to init the MeterRegistry, only the counter will have a scope.
+        // With no default scope set in the config used to initialBuilders the MeterRegistry, only the counter will have a scope.
 
         Counter c1 = reg.getOrCreate(Counter.builder("c1")
                                              .scope("app"));

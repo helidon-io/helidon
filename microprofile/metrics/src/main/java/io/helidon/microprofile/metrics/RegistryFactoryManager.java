@@ -15,6 +15,9 @@
  */
 package io.helidon.microprofile.metrics;
 
+import java.util.Collection;
+
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
@@ -24,8 +27,19 @@ import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
  */
 public class RegistryFactoryManager implements MeterRegistryLifeCycleListener {
 
+    private static Collection<Meter.Builder<?, ?>> builders;
+
+    /**
+     * Sets the group of initial meter builders.
+     *
+     * @param initialBuilders initial builders
+     */
+    static void initialBuilders(Collection<Meter.Builder<?, ?>> initialBuilders) {
+        builders = initialBuilders;
+    }
+
     @Override
     public void onCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        RegistryFactory.getInstance(meterRegistry, metricsConfig);
+        RegistryFactory.getInstance(meterRegistry, metricsConfig, builders);
     }
 }

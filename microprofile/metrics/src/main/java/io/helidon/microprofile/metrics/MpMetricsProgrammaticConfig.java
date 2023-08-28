@@ -45,10 +45,4 @@ public class MpMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
     public Optional<String> scopeDefaultValue() {
         return Optional.of(Meter.Scope.DEFAULT);
     }
-
-    @Override
-    public Optional<Boolean> scopeTagEnabled() {
-        return Optional.of(true);
-    }
-
 }
