@@ -174,7 +174,7 @@
                         <option value="h2" name="H2" description="In-memory relational database">
                             <output>
                                 <model>
-                                    <value key="readme-description">Helidon MP application that uses the dbclient API with an in-memory H2 database.</value>
+                                    <value key="readme-description">Helidon MP application that uses JPA with an in-memory H2 database.</value>
                                     <value key="readme-native-docker">docker run -d -p 1521:1521 -p 81:81 -e H2_OPTIONS='-ifNotExists' --name=h2 oscarfonts/h2</value>
                                     <value key="readme-native-url">javax.sql.DataSource.test.dataSource.url=jdbc:h2:tcp://localhost:1521/test</value>
                                     <value key="integration-artifactId">h2</value>

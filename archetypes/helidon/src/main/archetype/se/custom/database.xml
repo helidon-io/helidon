@@ -198,8 +198,7 @@ For details on an Oracle Docker image, see https://github.com/oracle/docker-imag
                                     </list>
                                     <list key="Main-routing-builder">
                                         <value><![CDATA[.register("/db", new PokemonService(dbClient))
-                .addFeature(TracingFeature.create(tracer))
-                .addFeature(ObserveFeature.create())]]></value>
+                .addFeature(TracingFeature.create(tracer))]]></value>
                                     </list>
                                     <list key="application-yaml-entries">
                                         <value><![CDATA[
@@ -373,8 +372,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                             <value>io.helidon.tracing.TracerBuilder</value>
                         </list>
                         <list key="Main-routing-builder" if="${server} != 'mongodb'">
-                            <value><![CDATA[.addFeature(ObserveFeature.create(config))
-                .register("/db", new PokemonService(DbClient.create(config.get("db"))))]]></value>
+                            <value><![CDATA[.register("/db", new PokemonService(DbClient.create(config.get("db"))))]]></value>
                         </list>
                         <list key="application-yaml-entries" if="${server} != 'mongodb'">
                             <value file="../database/files/application-jdbc.yaml.mustache" template="mustache"/>

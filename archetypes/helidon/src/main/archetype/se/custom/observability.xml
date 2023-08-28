@@ -33,7 +33,7 @@
             <list key="Main-routing">
                 <value template="mustache"><![CDATA[
         ObserveFeature observe = ObserveFeature.builder()
-                                               .useSystemServices(true)
+                                               .useSystemServices(false)
                                                {{#Observe-feature-builder}}
                                                {{.}}
                                                {{/Observe-feature-builder}}
@@ -44,14 +44,6 @@
                 <value>.addFeature(observe)</value>
             </list>
             <list key="dependencies">
-                <map if="${health}">
-                    <value key="groupId">io.helidon.webserver.observe</value>
-                    <value key="artifactId">helidon-webserver-observe-health</value>
-                </map>
-                <map if="${health}">
-                    <value key="groupId">io.helidon.health</value>
-                    <value key="artifactId">helidon-health-checks</value>
-                </map>
                 <map if="${metrics}">
                     <value key="groupId">io.helidon.webserver.observe</value>
                     <value key="artifactId">helidon-webserver-observe-metrics</value>
@@ -106,27 +98,27 @@
             </list>
             <list key="Main-content" if="${tracing}">
                 <value><![CDATA[
-private static class TracedHandler implements Handler {
-    private final Tracer tracer;
-    private final String message;
+    private static class TracedHandler implements Handler {
+        private final Tracer tracer;
+        private final String message;
 
-    private TracedHandler(Tracer tracer, String message) {
-        this.tracer = tracer;
-        this.message = message;
-    }
+        private TracedHandler(Tracer tracer, String message) {
+            this.tracer = tracer;
+            this.message = message;
+        }
 
-    @Override
-    public void handle(ServerRequest req, ServerResponse res) {
-        Span span = tracer.spanBuilder("custom-span")
-                .start();
-        try {
-            span.addEvent("my nice log");
-            res.send(message);
-        } finally {
-            span.end();
+        @Override
+        public void handle(ServerRequest req, ServerResponse res) {
+            Span span = tracer.spanBuilder("custom-span")
+                    .start();
+            try {
+                span.addEvent("my nice log");
+                res.send(message);
+            } finally {
+                span.end();
+            }
         }
     }
-}
 ]]></value>
             </list>
             <list key="Abstract-tests">
