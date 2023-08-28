@@ -100,7 +100,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  *         <td>Path to be used.</td>
  *     </tr>
  *     <tr>
- *         <td>{@code exporter-timeout-millis}</td>
+ *         <td>{@code exporter-timeout}</td>
  *         <td>10 seconds</td>
  *         <td>Timeout of exporter</td>
  *     </tr>
@@ -153,7 +153,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
     static final boolean DEFAULT_ENABLED = true;
     static final String DEFAULT_HTTP_HOST = "localhost";
-    static final int DEFAULT_SCHEDULE_DELAY_MILLIS = 30_000;
+    static final int DEFAULT_SCHEDULE_DELAY = 30_000;
     static final int DEFAULT_HTTP_PORT = 14250;
     static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
     static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
@@ -174,7 +174,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private byte[] trustedCertificates;
     private String path;
     private Duration exporterTimeout = Duration.ofSeconds(10);
-    private Duration scheduleDelay = Duration.ofMillis(DEFAULT_SCHEDULE_DELAY_MILLIS);
+    private Duration scheduleDelay = Duration.ofMillis(DEFAULT_SCHEDULE_DELAY);
     private int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
     private int maxExportBatchSize = DEFAULT_MAX_EXPORT_BATCH_SIZE;
     private SpanProcessorType spanProcessorType = SpanProcessorType.BATCH;
