@@ -16,29 +16,31 @@
 
 package io.helidon.webserver;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Stream;
-
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.HttpRequest;
 import io.helidon.common.http.UriInfo;
 import io.helidon.common.reactive.Multi;
-
+import io.helidon.webclient.WebClient;
+import io.helidon.webclient.WebClientResponse;
 import io.opentracing.SpanContext;
 import io.opentracing.Tracer;
 import io.opentracing.util.GlobalTracer;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.FORWARDED;
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.HOST;
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.X_FORWARDED;
+import java.net.URI;
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -62,6 +64,41 @@ class RequestedUriTest {
         Request request = new TestRequest(bareRequest, webServer, new HashRequestHeaders(testData.headers()), testData.path());
 
         assertThat(testData.testDescription(), request.requestedUri(), is(testData.expectedUriInfo()));
+    }
+
+    @Test
+    void ipV6Test() {
+        WebServer server = WebServer.builder()
+                .routing(Routing.builder()
+                                    .get("/uri", (req, res) -> {
+                                        try {
+                                            res.send(req.requestedUri().toUri().toString());
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                            res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                                                    .send(e.getClass().getName() + ":" + e.getMessage());
+                                        }
+                                    })
+                )
+                .build()
+                .start()
+                .await();
+
+        int port = server.port();
+        WebClient client = WebClient.builder()
+                .followRedirects(true)
+                .baseUri("http://[::1]:" + port)
+                .build();
+
+        WebClientResponse response = client.get()
+                .path("/uri")
+                .request()
+                .await(Duration.ofSeconds(10));
+
+        assertAll(
+                () -> assertThat(response.content().as(String.class).await(), is("http://[::1]:" + port + "/uri")),
+                () -> assertThat(response.status(), is(Http.Status.OK_200))
+        );
     }
 
     private static Stream<TestData> testData() {
