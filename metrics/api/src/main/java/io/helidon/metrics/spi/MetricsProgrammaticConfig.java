@@ -46,15 +46,6 @@ public interface MetricsProgrammaticConfig {
     }
 
     /**
-     * Whether to add a tag with the scope value to each meter's ID.
-     *
-     * @return whether to add the scope tag
-     */
-    default Optional<Boolean> scopeTagEnabled() {
-        return Optional.empty();
-    }
-
-    /**
      * Default tag value to use for the scope tag if none is specified when the meter ID is created.
      *
      * @return default scope tag value
@@ -107,7 +98,6 @@ public interface MetricsProgrammaticConfig {
                 .map(ScopingConfig::builder)
                 .orElseGet(ScopingConfig::builder);
 
-        scopeTagEnabled().ifPresent(scopingBuilder::tagEnabled);
         scopeDefaultValue().ifPresent(scopingBuilder::defaultValue);
         scopeTagName().ifPresent(scopingBuilder::tagName);
 

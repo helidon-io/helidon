@@ -19,8 +19,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Tag;
+import io.helidon.metrics.api.Meter;
+
 
 /**
  * Adapter of a {@linkplain io.micrometer.core.instrument.Gauge Micrometer gauge} to the Helidon metrics API
@@ -49,7 +49,7 @@ import io.micrometer.core.instrument.Tag;
  *
  * @param <N> subtype of {@link Number} this gauge instance reports.
  */
-abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.helidon.metrics.api.Gauge<N> {
+abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instrument.Gauge> implements io.helidon.metrics.api.Gauge<N> {
 
     /*
      * The Helidon metrics API parameterizes its gauge type as Gauge<N extends Number> which is the type of
@@ -68,16 +68,16 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
      * This way the typing works out (with the expected unchecked cast).
      */
 
-    private MGauge(Gauge delegate) {
-        super(delegate);
+    private MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate) {
+        super(id, delegate);
     }
 
-    private <N extends Number> MGauge(Gauge delegate, Builder<?, N> builder) {
-        super(delegate, builder);
+    private <N extends Number> MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate, Builder<?, N> builder) {
+        super(id, delegate, builder);
     }
 
-    private MGauge(Gauge delegate, Optional<String> scope) {
-        super(delegate, scope);
+    private MGauge(Meter.Id id, io.micrometer.core.instrument.Gauge delegate, Optional<String> scope) {
+        super(id, delegate, scope);
     }
 
     /**
@@ -113,8 +113,8 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
      * @param scope scope to apply
      * @return new wrapper around the gauge
      */
-    static MGauge<Double> create(Gauge gauge, Optional<String> scope) {
-        return new MGauge<>(gauge, scope) {
+    static MGauge<Double> create(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Optional<String> scope) {
+        return new MGauge<>(id, gauge, scope) {
             @Override
             public Double value() {
                 return gauge.value();
@@ -130,9 +130,9 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
     }
 
     static abstract class Builder<HB extends Builder<HB, N>, N extends Number>
-            extends MMeter.Builder<Gauge.Builder<?>, Gauge, HB, MGauge<N>> implements io.helidon.metrics.api.Gauge.Builder<N> {
+            extends MMeter.Builder<io.micrometer.core.instrument.Gauge.Builder<?>, io.micrometer.core.instrument.Gauge, HB, MGauge<N>> implements io.helidon.metrics.api.Gauge.Builder<N> {
 
-        protected Builder(String name, Gauge.Builder<?> delegate) {
+        protected Builder(String name, io.micrometer.core.instrument.Gauge.Builder<?> delegate) {
             super(name, delegate);
         }
     }
@@ -141,8 +141,8 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
 
         private final Supplier<N> supplier;
 
-        private SupplierBased(Gauge gauge, Builder<N> builder) {
-            super(gauge, builder);
+        private SupplierBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<N> builder) {
+            super(id, gauge, builder);
             this.supplier = builder.supplier;
         }
 
@@ -170,7 +170,7 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
             private final Supplier<N> supplier;
 
             private Builder(String name, Supplier<N> supplier) {
-                super(name, Gauge.builder(name, (Supplier<Number>) supplier));
+                super(name, io.micrometer.core.instrument.Gauge.builder(name, (Supplier<Number>) supplier));
                 this.supplier = supplier;
             }
 
@@ -181,7 +181,7 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
             }
 
             @Override
-            protected Builder<N> delegateTags(Iterable<Tag> tags) {
+            protected Builder<N> delegateTags(Iterable<io.micrometer.core.instrument.Tag> tags) {
                 delegate().tags(tags);
                 return identity();
             }
@@ -199,8 +199,8 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
             }
 
             @Override
-            protected MGauge<N> build(Gauge gauge) {
-                return new SupplierBased<>(gauge, this);
+            protected MGauge<N> build(Meter.Id id, io.micrometer.core.instrument.Gauge gauge) {
+                return new SupplierBased<>(id, gauge, this);
             }
         }
     }
@@ -210,8 +210,8 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
         private final T stateObject;
         private final ToDoubleFunction<T> fn;
 
-        private FunctionBased(Gauge gauge, Builder<T> builder) {
-            super(gauge, builder);
+        private FunctionBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<T> builder) {
+            super(id, gauge, builder);
             stateObject = builder.stateObject;
             fn = builder.fn;
         }
@@ -228,14 +228,14 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
             private final ToDoubleFunction<T> fn;
 
             private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-                super(name, Gauge.builder(name, stateObject, fn));
+                super(name, io.micrometer.core.instrument.Gauge.builder(name, stateObject, fn));
                 this.stateObject = stateObject;
                 this.fn = fn;
                 delegate().strongReference(true);
             }
 
             @Override
-            protected Builder<T> delegateTags(Iterable<Tag> tags) {
+            protected Builder<T> delegateTags(Iterable<io.micrometer.core.instrument.Tag> tags) {
                 delegate().tags(tags);
                 return identity();
             }
@@ -259,8 +259,8 @@ abstract class MGauge<N extends Number> extends MMeter<Gauge> implements io.heli
             }
 
             @Override
-            protected MGauge build(Gauge meter) {
-                return new FunctionBased<>(meter, this);
+            protected MGauge<Double> build(Meter.Id id, io.micrometer.core.instrument.Gauge gauge) {
+                return new FunctionBased<>(id, gauge, this);
             }
         }
     }

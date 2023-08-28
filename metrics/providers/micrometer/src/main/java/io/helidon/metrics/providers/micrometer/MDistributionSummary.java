@@ -19,19 +19,21 @@ import java.util.Optional;
 
 import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.HistogramSnapshot;
-
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.Tag;
+import io.helidon.metrics.api.Meter;
 
 import static io.micrometer.core.instrument.distribution.DistributionStatisticConfig.DEFAULT;
 
-class MDistributionSummary extends MMeter<DistributionSummary> implements io.helidon.metrics.api.DistributionSummary {
+class MDistributionSummary extends MMeter<io.micrometer.core.instrument.DistributionSummary>
+        implements io.helidon.metrics.api.DistributionSummary {
 
-    private MDistributionSummary(DistributionSummary delegate, Optional<String> scope) {
-        super(delegate, scope);
+    private MDistributionSummary(Meter.Id id,
+                                 io.micrometer.core.instrument.DistributionSummary delegate,
+                                 Optional<String> scope) {
+        super(id, delegate, scope);
     }
-    private MDistributionSummary(DistributionSummary delegate, Builder builder) {
-        super(delegate, builder);
+
+    private MDistributionSummary(Meter.Id id, io.micrometer.core.instrument.DistributionSummary delegate, Builder builder) {
+        super(id, delegate, builder);
     }
 
     /**
@@ -53,11 +55,13 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
      * via a wrapper.
      *
      * @param summary the Micrometer summary
-     * @param scope scope to apply
+     * @param scope   scope to apply
      * @return new wrapper around the summary
      */
-    static MDistributionSummary create(DistributionSummary summary, Optional<String> scope) {
-        return new MDistributionSummary(summary, scope);
+    static MDistributionSummary create(Meter.Id id,
+                                       io.micrometer.core.instrument.DistributionSummary summary,
+                                       Optional<String> scope) {
+        return new MDistributionSummary(id, summary, scope);
     }
 
     @Override
@@ -98,7 +102,9 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         return MHistogramSnapshot.create(delegate().takeSnapshot());
     }
 
-    static class Builder extends MMeter.Builder<DistributionSummary.Builder, DistributionSummary, Builder, MDistributionSummary>
+    static class Builder extends
+                         MMeter.Builder<io.micrometer.core.instrument.DistributionSummary.Builder,
+                                 io.micrometer.core.instrument.DistributionSummary, Builder, MDistributionSummary>
             implements io.helidon.metrics.api.DistributionSummary.Builder {
 
         private Double scale;
@@ -109,7 +115,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         }
 
         private Builder(String name, DistributionStatisticsConfig config) {
-            super(name, DistributionSummary.builder(name)
+            super(name, io.micrometer.core.instrument.DistributionSummary.builder(name)
                     .publishPercentiles(config.percentiles()
                                                 .map(Util::doubleArray)
                                                 .orElse(DEFAULT.getPercentiles()))
@@ -123,8 +129,8 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         }
 
         @Override
-        protected MDistributionSummary build(DistributionSummary summary) {
-            return new MDistributionSummary(summary, this);
+        protected MDistributionSummary build(Meter.Id id, io.micrometer.core.instrument.DistributionSummary summary) {
+            return new MDistributionSummary(id, summary, this);
         }
 
         @Override
@@ -139,7 +145,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
                 io.helidon.metrics.api.DistributionStatisticsConfig.Builder distributionStatisticsConfigBuilder) {
             this.distributionStatisticsConfigBuilder = distributionStatisticsConfigBuilder;
             io.helidon.metrics.api.DistributionStatisticsConfig config = distributionStatisticsConfigBuilder.build();
-            DistributionSummary.Builder delegate = delegate();
+            io.micrometer.core.instrument.DistributionSummary.Builder delegate = delegate();
 
             config.percentiles().ifPresent(p -> delegate.publishPercentiles(Util.doubleArray(p)));
             config.buckets().ifPresent(slos -> delegate.serviceLevelObjectives(Util.doubleArray(slos)));
@@ -150,7 +156,7 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
         }
 
         @Override
-        protected Builder delegateTags(Iterable<Tag> tags) {
+        protected Builder delegateTags(Iterable<io.micrometer.core.instrument.Tag> tags) {
             delegate().tags(tags);
             return identity();
         }
@@ -160,7 +166,6 @@ class MDistributionSummary extends MMeter<DistributionSummary> implements io.hel
             delegate().tag(key, value);
             return identity();
         }
-
 
         @Override
         protected Builder delegateDescription(String description) {

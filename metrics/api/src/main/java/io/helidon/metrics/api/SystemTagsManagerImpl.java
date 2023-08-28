@@ -75,10 +75,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         systemTags = List.copyOf(result);
 
         // Set the scope tag, if appropriate.
-        if (metricsConfig.scoping().tagEnabled()) {
-            metricsConfig.scoping().tagName()
-                    .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
-        }
+        metricsConfig.scoping().tagName()
+                .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
     }
 

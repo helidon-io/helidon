@@ -23,44 +23,43 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.HistogramSnapshot;
+import io.helidon.metrics.api.Meter;
 
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Timer;
 
-class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
+class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.helidon.metrics.api.Timer {
 
-    private MTimer(Timer delegate, Builder builder) {
-        super(delegate, builder);
+    private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Builder builder) {
+        super(id, delegate, builder);
     }
 
-    private MTimer(Timer delegate) {
-        super(delegate);
+    private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate) {
+        super(id, delegate);
     }
 
-    private MTimer(Timer delegate, Optional<String> scope) {
-        super(delegate, scope);
+    private MTimer(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Optional<String> scope) {
+        super(id, delegate, scope);
     }
 
-    static MTimer create(Timer timer) {
-        return new MTimer(timer);
+    static MTimer create(Meter.Id id, io.micrometer.core.instrument.Timer timer) {
+        return new MTimer(id, timer);
     }
 
     static io.helidon.metrics.api.Timer.Builder builder(String name) {
         return new Builder(name);
     }
 
-    static MTimer create(Timer delegate, Optional<String> scope) {
-        return new MTimer(delegate, scope);
+    static MTimer create(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Optional<String> scope) {
+        return new MTimer(id, delegate, scope);
     }
 
     static Sample start() {
-        return Sample.create(Timer.start());
+        return Sample.create(io.micrometer.core.instrument.Timer.start());
     }
 
     static Sample start(io.helidon.metrics.api.MeterRegistry meterRegistry) {
         if (meterRegistry instanceof MMeterRegistry mMeterRegistry) {
-            return Sample.create(Timer.start(mMeterRegistry.delegate()));
+            return Sample.create(io.micrometer.core.instrument.Timer.start(mMeterRegistry.delegate()));
         }
         throw new IllegalArgumentException("Expected meter registry type " + MMeterRegistry.class.getName()
                                                    + " but was " + meterRegistry.getClass().getName());
@@ -69,7 +68,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
     static Sample start(io.helidon.metrics.api.Clock clock) {
         // This is a relatively infrequently-used method, so it is not overly costly
         // to create a new instance of Micrometer's Clock each invocation.
-        return Sample.create(Timer.start(new Clock() {
+        return Sample.create(io.micrometer.core.instrument.Timer.start(new Clock() {
             @Override
             public long wallTime() {
                 return clock.wallTime();
@@ -159,7 +158,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
 
     static class Sample implements io.helidon.metrics.api.Timer.Sample {
 
-        private final Timer.Sample delegate;
+        private final io.micrometer.core.instrument.Timer.Sample delegate;
 
         private Sample(io.micrometer.core.instrument.Timer.Sample delegate) {
             this.delegate = delegate;
@@ -179,7 +178,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         }
     }
 
-    static class Builder extends MMeter.Builder<Timer.Builder, Timer, MTimer.Builder, MTimer>
+    static class Builder extends MMeter.Builder<io.micrometer.core.instrument.Timer.Builder, io.micrometer.core.instrument.Timer, MTimer.Builder, MTimer>
             implements io.helidon.metrics.api.Timer.Builder {
 
         private double[] percentiles;
@@ -188,7 +187,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         private Duration max;
 
         private Builder(String name) {
-            super(name, Timer.builder(name));
+            super(name, io.micrometer.core.instrument.Timer.builder(name));
         }
 
         @Override
@@ -220,7 +219,7 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         }
 
         @Override
-        protected Builder delegateTags(Iterable<Tag> tags) {
+        protected Builder delegateTags(Iterable<io.micrometer.core.instrument.Tag> tags) {
             delegate().tags(tags);
             return identity();
         }
@@ -264,8 +263,8 @@ class MTimer extends MMeter<Timer> implements io.helidon.metrics.api.Timer {
         }
 
         @Override
-        protected MTimer build(Timer meter) {
-            return new MTimer(meter, this);
+        protected MTimer build(Meter.Id id, io.micrometer.core.instrument.Timer meter) {
+            return new MTimer(id, meter, this);
         }
     }
 }

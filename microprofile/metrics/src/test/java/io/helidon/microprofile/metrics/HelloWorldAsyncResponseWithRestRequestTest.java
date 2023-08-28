@@ -23,6 +23,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -67,7 +68,7 @@ class HelloWorldAsyncResponseWithRestRequestTest {
                 HelloWorldResource.class.getMethod("getAsync", AsyncResponse.class));
         Timer restRequestTimerForGetAsyncMethod = baseRegistry.getTimer(idForRestRequestTimer);
 
-        JsonObject restRequest = getRESTRequestJSON();
+        JsonObject restRequest = getRESTRequestJSON("");
 
         // Make sure count is 0 before invoking.
         long getAsyncCount = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(restRequest,
@@ -111,15 +112,18 @@ class HelloWorldAsyncResponseWithRestRequestTest {
 
         AtomicReference<JsonObject> nextRestRequest = new AtomicReference<>();
 
-        assertThatWithRetry("getAsync count value after invocation",
-                            () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(
-                                    // Set the reference using fresh metrics and get that newly-set JSON object, then
-                                    // extract the 'count' field cast as a number.
-                                            nextRestRequest.updateAndGet(old -> getRESTRequestJSON()),
-                                            "count",
-                                            false))
-                                    .longValue(),
-                            is(1L));
+        Stream.of("/base", "?scope=base")
+                .forEach(pathSuffix -> {
+                    assertThatWithRetry("getAsync count value after invocation",
+                                        () -> JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(
+                                                        // Set the reference using fresh metrics and get that newly-set JSON
+                                                        // object, then extract the 'count' field cast as a number.
+                                                        nextRestRequest.updateAndGet(old -> getRESTRequestJSON(pathSuffix)),
+                                                        "count",
+                                                        false))
+                                                .longValue(),
+                                        is(1L));
+                });
 
         // Reuse (no need to update the atomic reference again) the freshly-fetched metrics JSON.
         getAsyncTime = JsonNumber.class.cast(getRESTRequestValueForGetAsyncMethod(nextRestRequest.get(),
@@ -128,8 +132,8 @@ class HelloWorldAsyncResponseWithRestRequestTest {
         assertThat("getAsync elapsedTime value after invocation", getAsyncTime.longValue(), is(greaterThan(0L)));
     }
 
-    private JsonObject getRESTRequestJSON() {
-        Response metricsResponse = webTarget.path("/metrics/base")
+    private JsonObject getRESTRequestJSON(String pathSuffix) {
+        Response metricsResponse = webTarget.path(Util.path(pathSuffix))
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get();
 
@@ -148,7 +152,7 @@ class HelloWorldAsyncResponseWithRestRequestTest {
     }
 
     private String getRESTRequestProm() throws IOException {
-        Response metricsResponse = webTarget.path("/metrics/base")
+        Response metricsResponse = webTarget.path(Util.path("/base"))
                 .request(MediaType.TEXT_PLAIN)
                 .get();
 

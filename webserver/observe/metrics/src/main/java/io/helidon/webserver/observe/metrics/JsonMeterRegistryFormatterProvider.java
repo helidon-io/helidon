@@ -21,6 +21,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 
 /**
@@ -36,24 +37,27 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
 
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
+                                                      MetricsConfig metricsConfig,
                                                       MeterRegistry meterRegistry,
                                                       Optional<String> scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
         return mediaType.type().equals(MediaTypes.APPLICATION_JSON.type())
                 && mediaType.subtype().equals(MediaTypes.APPLICATION_JSON.subtype())
-                ? Optional.of(create(meterRegistry,
+                ? Optional.of(create(metricsConfig,
+                                     meterRegistry,
                                      scopeTagName,
                                      scopeSelection,
                                      nameSelection))
                 : Optional.empty();
     }
 
-    private JsonFormatter create(MeterRegistry meterRegistry,
+    private JsonFormatter create(MetricsConfig metricsConfig,
+                                 MeterRegistry meterRegistry,
                                  Optional<String> scopeTagName,
                                  Iterable<String> scopeSelection,
                                  Iterable<String> nameSelection) {
-        JsonFormatter.Builder builder = JsonFormatter.builder(meterRegistry)
+        JsonFormatter.Builder builder = JsonFormatter.builder(metricsConfig, meterRegistry)
                 .scopeSelection(scopeSelection)
                 .meterNameSelection(nameSelection);
         scopeTagName.ifPresent(builder::scopeTagName);

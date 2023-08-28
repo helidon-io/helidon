@@ -49,8 +49,7 @@ class TestPrometheusFormatting {
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder()
                 .scoping(ScopingConfig.builder()
                                  .tagName(SCOPE_TAG_NAME)
-                                 .defaultValue("app")
-                                 .tagEnabled(true));
+                                 .defaultValue("app"));
 
         MetricsConfig metricsConfig = metricsConfigBuilder.build();
         SystemTagsManager.create(metricsConfig);

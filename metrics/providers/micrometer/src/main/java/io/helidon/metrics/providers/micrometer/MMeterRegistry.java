@@ -96,8 +96,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      */
     private final Map<Meter, MMeter> meters = new HashMap<>();
 
-    private final Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> buildersByMeterId = new HashMap<>();
+    private final Map<String, Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>>> buildersByPromMeterId =
+            new HashMap<>();
     private final Map<String, Set<io.helidon.metrics.api.Meter>> scopeMembership = new HashMap<>();
+
+    private final Map<io.helidon.metrics.api.Meter.Id, MMeter<?>> metersById = new HashMap<>();
     private final ReentrantLock lock = new ReentrantLock();
 
     private MMeterRegistry(MeterRegistry delegate,
@@ -348,11 +351,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         lock.lock();
 
         try {
-            buildersByMeterId.clear();
+            buildersByPromMeterId.clear();
             meters.clear();
             onAddListeners.clear();
             onRemoveListeners.clear();
             scopeMembership.clear();
+            metersById.clear();
         } finally {
             lock.unlock();
         }
@@ -382,6 +386,13 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             Function<Tag, ?> builderTagSetter,
             Function<MeterRegistry, M> registration) {
 
+        io.helidon.metrics.api.Meter.Id id = mBuilder.id();
+
+        MMeter<?> foundMeter = metersById.get(id);
+        if (foundMeter != null) {
+            return (HM) foundMeter;
+        }
+
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
         Optional<String> effectiveScope = SystemTagsManager.instance()
                 .effectiveScope(mBuilder.scope());
@@ -392,12 +403,23 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         lock.lock();
         try {
-            io.helidon.metrics.api.Meter.Id id = mBuilder.id();
-            buildersByMeterId.put(id, mBuilder);
+            /*
+            We are about to ask Micrometer to create a new meter. Once it does so it calls back to our onMeterAdded method,
+            at which point we'll want to create a Helidon wrapper around that Micrometer meter using the builder passed to
+            ths method. Place the builder we'll use to trigger creation of the neutral meter into the data structure.
+            Because Micrometer might sanitize meter and tag names (which will be in the new meter's ID) we create a key
+            that's equally sanitized.
+             */
+            io.helidon.metrics.api.Meter.Id promFriendlyId = convertNeutralIdToProm(id.name(), id.tags());
+
+            Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> pendingBuildersInScope =
+                    buildersByPromMeterId.computeIfAbsent(effectiveScope.orElse(""),
+                                                          k -> new HashMap<>());
+            pendingBuildersInScope.put(promFriendlyId, mBuilder);
 
             M meter = registration.apply(delegate());
 
-            buildersByMeterId.remove(id);
+            pendingBuildersInScope.remove(promFriendlyId);
 
             HM result = (HM) meters.get(meter);
             if (result == null) {
@@ -409,8 +431,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
                 LOGGER.log(Level.WARNING,
                            "Unexpected discovery of unknown previously-created meter; creating wrapper for " + meter);
-                result = wrapMeter(meter, mBuilder.scope());
-                meters.put(meter, result);
+                result = wrapMeter(id, meter, mBuilder.scope());
+                recordNewMeter(id, result, meter, effectiveScope);
             }
 
             return result;
@@ -419,21 +441,24 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private <M extends Meter, HB extends MMeter.Builder<?, M, HB, HM>, HM extends MMeter<M>> HM wrapMeter(M addedMeter,
-                                                                                                          Optional<String> scope) {
+    private <M extends Meter,
+            HB extends MMeter.Builder<?, M, HB, HM>,
+            HM extends MMeter<M>> HM wrapMeter(io.helidon.metrics.api.Meter.Id id,
+                                               M addedMeter,
+                                               Optional<String> scope) {
 
         MMeter<?> helidonMeter = null;
         Optional<String> scopeToUse = chooseScope(addedMeter, scope);
         if (addedMeter instanceof Counter counter) {
-            helidonMeter = MCounter.create(counter, scopeToUse);
+            helidonMeter = MCounter.create(id, counter, scopeToUse);
         } else if (addedMeter instanceof DistributionSummary summary) {
-            helidonMeter = MDistributionSummary.create(summary, scopeToUse);
+            helidonMeter = MDistributionSummary.create(id, summary, scopeToUse);
         } else if (addedMeter instanceof Gauge gauge) {
-            helidonMeter = MGauge.create(gauge, scopeToUse);
+            helidonMeter = MGauge.create(id, gauge, scopeToUse);
         } else if (addedMeter instanceof Timer timer) {
-            helidonMeter = MTimer.create(timer, scopeToUse);
+            helidonMeter = MTimer.create(id, timer, scopeToUse);
         } else if (addedMeter instanceof FunctionCounter functionCounter) {
-            helidonMeter = MFunctionalCounter.create(functionCounter, scopeToUse);
+            helidonMeter = MFunctionalCounter.create(id, functionCounter, scopeToUse);
         }
         if (helidonMeter == null) {
             LOGGER.log(Level.DEBUG,
@@ -503,39 +528,73 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private <HM extends MMeter<M>, M extends Meter, B, HB extends MMeter.Builder<B, M, HB, HM>> void onMeterAdded(M addedMeter) {
         lock.lock();
         try {
-            // If we originated this callback by invoking the delegate registry, then there should be a builder
-            // waiting for us to use. If the meter was created in some othe way, then there will be no builder and
-            // we will create the MMeter from the meter.
+            /*
+            If we originated this callback by invoking the delegate registry, then there should be a builder
+            waiting for us to use. If the meter was created in some other way, then there will be no builder and
+            we will create the MMeter from the meter passed to us by Micrometer..
+             */
 
-            io.helidon.metrics.api.Meter.Id id = MMeter.PlainId.create(addedMeter);
-            MMeter.Builder<B, M, HB, HM> builder = (MMeter.Builder<B, M, HB, HM>) buildersByMeterId.get(id);
-            MMeter<M> mMeter;
+            Optional<String> scopeTagName = metricsConfig.scoping().tagName();
 
             /*
-             Figure out what scope to use: prefer what is in the builder (if we even have a builder), then use a scope from
+            Because Micrometer/Prometheus might alter meter and tag names, we would have stored the pending builder in the
+            data structure in Micrometer-friendly format. To try to find the builder we need to recreate that key from
+            the new meter.
+             */
+            io.helidon.metrics.api.Meter.Id neutralPromId = convertPromIdToNeutral(scopeTagName,
+                                                                                   addedMeter.getId().getName(),
+                                                                                   Set.of(),
+                                                                                   addedMeter.getId());
+
+            /*
+             Derive the scope value from just the added meter. Use it to look up any pending builder for this new meter.
+             */
+            Optional<String> scope = chooseScope(addedMeter, Optional.empty());
+
+            /*
+             See if there is any "pending builder" that we might have created and used to create this new meter.
+             */
+            Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> buildersInScope =
+                    buildersByPromMeterId.get(scope.orElse(""));
+            MMeter<M> mMeter;
+
+            MMeter.Builder<B, M, HB, HM> builder = null;
+            if (buildersInScope != null) {
+                builder = (MMeter.Builder<B, M, HB, HM>) buildersInScope.get(neutralPromId);
+            }
+
+            /*
+             Figure out the real scope: prefer what is in the builder (if we even have a builder), if none then use a scope from
              the tags in the added meter, and lastly use the default from configuration.
              */
-            Optional<String> scope = chooseScope(addedMeter, builder != null ? builder.scope() : Optional.empty());
+            scope = chooseScope(addedMeter, builder != null ? builder.scope() : Optional.empty());
+
+            io.helidon.metrics.api.Meter.Id id;
 
             if (builder == null) {
                 if (scope.isEmpty()) {
                     LOGGER.log(Level.DEBUG, "Processing meter creation with no scope from the meter or configuration: "
                             + addedMeter);
                 }
-                mMeter = MMeter.create(addedMeter, scope);
+                id = convertPromIdToNeutral(scopeTagName,
+                                            addedMeter.getId().getName(),
+                                            Set.of(), // no original tags to map Prom tags back to
+                                            addedMeter.getId());
+                mMeter = MMeter.create(id, addedMeter, scope);
             } else {
-                mMeter = builder.build(addedMeter);
+                id = builder.id();
+                scope.ifPresent(builder::scope);
+                mMeter = builder.build(id, addedMeter);
             }
 
-            meters.put(addedMeter, mMeter);
+            recordNewMeter(id, mMeter, addedMeter, scope);
 
             /*
-             Signal to getOrCreate that in face a new delegate meter was created (because we are in this method at all).
+             Signal to getOrCreate that in fact a new delegate meter was created (because we are in this method at all).
              */
-            buildersByMeterId.remove(id);
-
-            scope.ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
-                    .add(mMeter));
+            if (buildersInScope != null) {
+                buildersInScope.remove(neutralPromId);
+            }
 
             onAddListeners.forEach(listener -> {
                 try {
@@ -551,17 +610,88 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
+    private void recordNewMeter(io.helidon.metrics.api.Meter.Id id,
+                                MMeter<?> newNeutralMeter,
+                                Meter delegate,
+                                Optional<String> scope) {
+        meters.put(delegate, newNeutralMeter);
+        metersById.put(id, newNeutralMeter);
+        scope.ifPresent(s -> scopeMembership.computeIfAbsent(s, key -> new HashSet<>())
+                .add(newNeutralMeter));
+    }
+
+    /**
+     * Creates a neutral meter ID from a (possibly) Prometheus-formatted one from Micrometer.
+     * <p>
+     * Micrometer might have added tags, so we cannot assume the tags in the builder are all the tags we need.
+     * Scan through the tags from Micrometer, discarding the tag for scope (if relevant). Also convert tag names from
+     * Prometheus format back to the original as stored in the builder for just those original tags, though. And
+     * neutralize the meter name as well if the name from Micrometer matches the Prometheus-formatted version of the
+     * original name we provided.
+     * </p>
+     *
+     * @param scopeTagName        scope; empty if none specified or derivce
+     * @param originalNeutralName neutral meter
+     * @param originalNeutralTags tags from Micrometer/Prometheus
+     * @param promId              name from Micrometer/Prometheus
+     * @return neutral meter ID
+     */
+    private MMeter.PlainId convertPromIdToNeutral(Optional<String> scopeTagName,
+                                                  String originalNeutralName,
+                                                  Iterable<Tag> originalNeutralTags,
+                                                  Meter.Id promId) {
+        Map<String, String> promFormatToNeutralTagNames = new HashMap<>();
+        originalNeutralTags.forEach(originalNeutralTag ->
+                                            promFormatToNeutralTagNames.put(MicrometerPrometheusFormatter.normalizeNameToPrometheus(
+                                                                                    originalNeutralTag.key()),
+                                                                            originalNeutralTag.key()));
+
+        List<Tag> neutralTags = new ArrayList<>();
+
+        promId.getTags().forEach(promTag -> {
+            String neutralTagName = promFormatToNeutralTagNames.containsKey(promTag.getKey())
+                    ? promFormatToNeutralTagNames.get(promTag.getKey())
+                    : promTag.getKey();
+            neutralTags.add(Tag.create(neutralTagName, promTag.getValue()));
+        });
+
+        String promFormattedMeterName = MicrometerPrometheusFormatter.normalizeNameToPrometheus(originalNeutralName);
+        return MMeter.PlainId.create(promFormattedMeterName.equals(originalNeutralName)
+                                             ? originalNeutralName
+                                             : promId.getName(),
+                                     neutralTags);
+    }
+
+    private MMeter.PlainId convertNeutralIdToProm(String originalNeutralName,
+                                                  Iterable<Tag> originalNeutralTags) {
+        List<Tag> promFormatTags = new ArrayList<>();
+        originalNeutralTags.forEach(originalNeutralTag ->
+                                            promFormatTags.add(Tag.create(MicrometerPrometheusFormatter.normalizeNameToPrometheus(
+                                                                                  originalNeutralTag.key()),
+                                                                          originalNeutralTag.value())));
+        return MMeter.PlainId.create(MicrometerPrometheusFormatter.normalizeNameToPrometheus(originalNeutralName),
+                                     promFormatTags);
+    }
+
     private void onMeterRemoved(Meter removedMeter) {
-        MMeter<?> removedHelidonMeter = meters.remove(removedMeter);
-        if (removedHelidonMeter == null) {
-            LOGGER.log(Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
-        } else {
-            recordRemove(removedHelidonMeter);
+        lock.lock();
+
+        try {
+            MMeter<?> removedHelidonMeter = meters.remove(removedMeter);
+            if (removedHelidonMeter == null) {
+                LOGGER.log(Level.WARNING, "No matching neutral meter for implementation meter " + removedMeter);
+            } else {
+                recordRemove(removedHelidonMeter);
+            }
+        } finally {
+            lock.unlock();
+            ;
         }
     }
 
     private MMeter<?> recordRemove(MMeter<?> removedHelidonMeter) {
 
+        metersById.remove(removedHelidonMeter.id());
         removedHelidonMeter.markAsDeleted();
         removedHelidonMeter.scope().ifPresent(scope -> {
             Set<io.helidon.metrics.api.Meter> scopeMembers = scopeMembership.get(scope);

@@ -224,6 +224,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                 .build()
                 .stream()
                 .map(provider -> provider.formatter(mediaType,
+                                                    metricsConfig,
                                                     meterRegistry,
                                                     scopeTagName,
                                                     scopeSelection,
@@ -235,7 +236,9 @@ public class MetricsFeature extends HelidonFeatureSupport {
         if (formatter.isPresent()) {
             return formatter.get();
         }
-        throw new HttpException("Unsupported media type: " + mediaType, Http.Status.UNSUPPORTED_MEDIA_TYPE_415, true);
+        throw new HttpException("Unsupported media type for metrics formatting: " + mediaType,
+                                Http.Status.UNSUPPORTED_MEDIA_TYPE_415,
+                                true);
     }
 
 

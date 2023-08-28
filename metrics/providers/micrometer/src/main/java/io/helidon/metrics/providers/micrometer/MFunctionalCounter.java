@@ -19,22 +19,26 @@ import java.util.Optional;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.Meter;
 
 import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Tag;
 
-class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.metrics.api.FunctionalCounter {
+class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCounter>
+        implements io.helidon.metrics.api.FunctionalCounter {
 
-    private MFunctionalCounter(FunctionCounter delegate, MFunctionalCounter.Builder<?> builder) {
-        super(delegate, builder);
+    private MFunctionalCounter(Meter.Id id,
+                               io.micrometer.core.instrument.FunctionCounter delegate,
+                               MFunctionalCounter.Builder<?> builder) {
+        super(id, delegate, builder);
     }
 
-    private MFunctionalCounter(FunctionCounter delegate) {
-        super(delegate);
+    private MFunctionalCounter(Meter.Id id, io.micrometer.core.instrument.FunctionCounter delegate) {
+        super(id, delegate);
     }
 
-    private MFunctionalCounter(FunctionCounter delegate, Optional<String> scope) {
-        super(delegate, scope);
+    private MFunctionalCounter(Meter.Id id, io.micrometer.core.instrument.FunctionCounter delegate, Optional<String> scope) {
+        super(id, delegate, scope);
     }
 
     /**
@@ -51,8 +55,10 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         return new Builder<>(name, stateObject, fn);
     }
 
-    static MFunctionalCounter create(FunctionCounter functionCounter, Optional<String> scope) {
-        return new MFunctionalCounter(functionCounter, scope);
+    static MFunctionalCounter create(Meter.Id id,
+                                     io.micrometer.core.instrument.FunctionCounter functionCounter,
+                                     Optional<String> scope) {
+        return new MFunctionalCounter(id, functionCounter, scope);
     }
 
     @Override
@@ -67,7 +73,9 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
                 .toString();
     }
 
-    static class Builder<T> extends MMeter.Builder<FunctionCounter.Builder<T>, FunctionCounter, Builder<T>, MFunctionalCounter>
+    static class Builder<T> extends
+                            MMeter.Builder<io.micrometer.core.instrument.FunctionCounter.Builder<T>,
+                                    io.micrometer.core.instrument.FunctionCounter, Builder<T>, MFunctionalCounter>
             implements FunctionalCounter.Builder<T> {
 
         private final T stateObject;
@@ -114,8 +122,8 @@ class MFunctionalCounter extends MMeter<FunctionCounter> implements io.helidon.m
         }
 
         @Override
-        public MFunctionalCounter build(FunctionCounter functionCounter) {
-            return new MFunctionalCounter(functionCounter, this);
+        public MFunctionalCounter build(Meter.Id id, io.micrometer.core.instrument.FunctionCounter functionCounter) {
+            return new MFunctionalCounter(id, functionCounter, this);
         }
     }
 }

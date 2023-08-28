@@ -21,6 +21,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 
 /**
@@ -39,12 +40,14 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
 
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
+                                                      MetricsConfig metricsConfig,
                                                       MeterRegistry meterRegistry,
                                                       Optional<String> scopeTagName,
                                                       Iterable<String> scopeSelection,
                                                       Iterable<String> nameSelection) {
         return matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT)
-                ? Optional.of(create(meterRegistry,
+                ? Optional.of(create(metricsConfig,
+                                     meterRegistry,
                                      scopeTagName,
                                      scopeSelection,
                                      nameSelection))
@@ -55,7 +58,8 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
         return a.type().equals(b.type()) && a.subtype().equals(b.subtype());
     }
 
-    private static MicrometerPrometheusFormatter create(MeterRegistry meterRegistry,
+    private static MicrometerPrometheusFormatter create(MetricsConfig metricsConfig,
+                                                        MeterRegistry meterRegistry,
                                                         Optional<String> scopeTagName,
                                                         Iterable<String> scopeSelection,
                                                         Iterable<String> nameSelection) {

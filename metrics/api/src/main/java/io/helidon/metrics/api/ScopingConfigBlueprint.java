@@ -41,14 +41,6 @@ interface ScopingConfigBlueprint {
     Optional<String> defaultValue();
 
     /**
-     * Whether a meter's scope is recorded as a tag value in the meter's ID in the underlying implementation meter registry.
-     *
-     * @return if scopes are recorded as tags in the underlying implementation meter registry
-     */
-    @ConfiguredOption(value = "false")
-    Boolean tagEnabled();
-
-    /**
      * Tag name for storing meter scope values in the underlying implementation meter registry.
      *
      * @return tag name for storing scope values

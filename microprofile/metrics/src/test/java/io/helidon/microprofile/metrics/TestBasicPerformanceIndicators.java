@@ -16,6 +16,7 @@
 package io.helidon.microprofile.metrics;
 
 import io.helidon.http.Http;
+import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
@@ -30,6 +31,8 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 
 @HelidonTest
+@AddConfig(key = "metrics.scoping.tag-enabled", value = "true")
+@AddConfig(key = "metrics.scoping.tag-name", value = "mp-config")
 class TestBasicPerformanceIndicators {
 
     @Inject

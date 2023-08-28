@@ -75,27 +75,13 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     /**
-     * Returns the Prometheus-format meter name suffixes for the given meter type.
+     * Convert the meter or tag name to the format used by the Prometheus simple client.
      *
-     * @param meterType {@link io.micrometer.core.instrument.Meter.Type} of interest
-     * @return suffixes used in reporting the corresponding meter's value(s)
+     * @param name original name
+     * @return normalized name
      */
-    static Set<String> meterNameSuffixes(Meter.Type meterType) {
-        return switch (meterType) {
-            case COUNTER -> Set.of("_total");
-            case DISTRIBUTION_SUMMARY, LONG_TASK_TIMER, TIMER -> Set.of("_count", "_sum", "_max");
-            case GAUGE, OTHER -> Set.of();
-        };
-    }
-
-    /**
-     * Convert the meter name to the format used by the Prometheus simple client.
-     *
-     * @param meterName name of the meter
-     * @return normalized meter name
-     */
-    static String normalizeMeterName(String meterName) {
-        String result = meterName;
+    public static String normalizeNameToPrometheus(String name) {
+        String result = name;
 
         // Convert special characters to underscores.
         result = result.replaceAll("[-+.!?@#$%^&*`'\\s]+", "_");
@@ -109,6 +95,20 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
         result = result.replaceAll("[^A-Za-z0-9_]", "_");
 
         return result;
+    }
+
+    /**
+     * Returns the Prometheus-format meter name suffixes for the given meter type.
+     *
+     * @param meterType {@link io.micrometer.core.instrument.Meter.Type} of interest
+     * @return suffixes used in reporting the corresponding meter's value(s)
+     */
+    static Set<String> meterNameSuffixes(Meter.Type meterType) {
+        return switch (meterType) {
+            case COUNTER -> Set.of("_total");
+            case DISTRIBUTION_SUMMARY, LONG_TASK_TIMER, TIMER -> Set.of("_count", "_sum", "_max");
+            case GAUGE, OTHER -> Set.of();
+        };
     }
 
     /**
@@ -208,7 +208,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                         }
                     });
 
-            String normalizedMeterName = normalizeMeterName(meterName);
+            String normalizedMeterName = normalizeNameToPrometheus(meterName);
 
             allUnitsForMeterName
                     .forEach(units -> allSuffixesForMeterName

@@ -67,7 +67,7 @@ class TestJsonFormatting {
         d.record(3, TimeUnit.SECONDS);
 
 
-        JsonFormatter formatter = JsonFormatter.builder(meterRegistry)
+        JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
                 .scopeTagName(SCOPE_TAG_NAME)
                 .build();
 
@@ -105,7 +105,7 @@ class TestJsonFormatting {
         Timer d = meterRegistry.getOrCreate(Timer.builder("t2"));
         d.record(7, TimeUnit.SECONDS);
 
-        JsonFormatter formatter = JsonFormatter.builder(meterRegistry)
+        JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry)
                 .meterNameSelection(Set.of("c2"))
                 .build();
 

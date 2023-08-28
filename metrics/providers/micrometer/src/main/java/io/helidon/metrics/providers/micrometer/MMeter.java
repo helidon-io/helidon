@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,47 +23,65 @@ import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.DistributionSummary;
-import io.micrometer.core.instrument.FunctionCounter;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Meter;
-import io.micrometer.core.instrument.Tag;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.Tag;
+
 import io.micrometer.core.instrument.Timer;
 
 /**
  * Adapter to Micrometer meter for Helidon metrics.
  */
-class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
+class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
     private static final String DEFAULT_SCOPE = "application";
 
     private final M delegate;
-    private final io.helidon.metrics.api.Meter.Id id;
+    private final Meter.Id id;
 
     private String scope;
     private boolean isDeleted = false;
 
-    protected MMeter(M delegate, Builder<?, ?, ?, ?> builder) {
-        this(delegate, builder.scope);
+    protected MMeter(Meter.Id id, M delegate, Builder<?, ?, ?, ?> builder) {
+        this(id, delegate, builder.scope);
     }
 
-    protected MMeter(M delegate, Optional<String> scope) {
-        this(delegate, scope.orElse(null));
+    protected MMeter(Meter.Id id, M delegate, Optional<String> scope) {
+        this(id, delegate, scope.orElse(null));
     }
 
-    protected MMeter(M delegate) {
-        this(delegate, (String) null);
+    protected MMeter(Meter.Id id, M delegate) {
+        this(id, delegate, (String) null);
     }
 
-    private MMeter(M delegate, String scope) {
+    private MMeter(Meter.Id id, M delegate, String scope) {
         this.delegate = delegate;
-        id = Id.create(delegate.getId());
+        this.id = id;
         this.scope = scope;
     }
 
+    static <M extends io.micrometer.core.instrument.Meter, HM extends MMeter<M>> HM create(Meter.Id id,
+                                                                                           io.micrometer.core.instrument.Meter meter,
+                                                                                           Optional<String> scope) {
+        if (meter instanceof io.micrometer.core.instrument.Counter counter) {
+            return (HM) MCounter.create(id, counter, scope);
+        }
+        if (meter instanceof io.micrometer.core.instrument.DistributionSummary summary) {
+            return (HM) MDistributionSummary.create(id, summary, scope);
+        }
+        if (meter instanceof io.micrometer.core.instrument.Gauge gauge) {
+            return (HM) MGauge.create(id, gauge, scope);
+        }
+        if (meter instanceof io.micrometer.core.instrument.FunctionCounter fCounter) {
+            return (HM) MFunctionalCounter.create(id, fCounter, scope);
+        }
+        if (meter instanceof Timer timer) {
+            return (HM) MTimer.create(id, timer, scope);
+        }
+        return null;
+    }
+
     @Override
-    public io.helidon.metrics.api.Meter.Id id() {
+    public Meter.Id id() {
         return id;
     }
 
@@ -78,9 +97,9 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
     @Override
     public Type type() {
-        return io.helidon.metrics.api.Meter.Type.valueOf(delegate.getId()
-                                                                 .getType()
-                                                                 .name());
+        return Meter.Type.valueOf(delegate.getId()
+                                          .getType()
+                                          .name());
     }
 
     @Override
@@ -132,25 +151,6 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
                 .add("scope='" + (scope == null ? "" : scope) + "'");
     }
 
-    static <M extends Meter, HM extends MMeter<M>> HM create(Meter meter, Optional<String> scope) {
-        if (meter instanceof Counter counter) {
-            return (HM) MCounter.create(counter, scope);
-        }
-        if (meter instanceof DistributionSummary summary) {
-            return (HM) MDistributionSummary.create(summary, scope);
-        }
-        if (meter instanceof Gauge gauge) {
-            return (HM) MGauge.create(gauge, scope);
-        }
-        if (meter instanceof FunctionCounter fCounter) {
-            return (HM) MFunctionalCounter.create(fCounter, scope);
-        }
-        if (meter instanceof Timer timer) {
-            return (HM) MTimer.create(timer, scope);
-        }
-        return null;
-    }
-
     /**
      * Builder for a wrapping meter around a Micrometer meter.
      *
@@ -159,7 +159,8 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
      * @param <HB> type of the Helidon meter builder which wraps the Micrometer meter builder
      * @param <HM> type of the Helidon meter which wraps the Micrometer meter
      */
-    abstract static class Builder<B, M extends Meter, HB extends Builder<B, M, HB, HM>, HM extends MMeter<M>> {
+    abstract static class Builder<B, M extends io.micrometer.core.instrument.Meter, HB extends Builder<B, M, HB, HM>,
+            HM extends MMeter<M>> {
 
         private final String name;
         private final B delegate;
@@ -175,13 +176,13 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             this.delegate = delegate;
         }
 
-        public HB tags(Iterable<io.helidon.metrics.api.Tag> tags) {
+        public HB tags(Iterable<Tag> tags) {
             this.tags.clear();
             tags.forEach(tag -> this.tags.put(tag.key(), tag.value()));
             return delegateTags(MTag.tags(tags));
         }
 
-        public HB addTag(io.helidon.metrics.api.Tag tag) {
+        public HB addTag(Tag tag) {
             tags.put(tag.key(), tag.value());
             return delegateTag(tag.key(), tag.value());
         }
@@ -233,11 +234,11 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
             return delegate;
         }
 
-        protected io.helidon.metrics.api.Meter.Id id() {
+        protected Meter.Id id() {
             return PlainId.create(this);
         }
 
-        protected abstract HB delegateTags(Iterable<Tag> tags);
+        protected abstract HB delegateTags(Iterable<io.micrometer.core.instrument.Tag> tags);
 
         protected abstract HB delegateTag(String key, String value);
 
@@ -245,19 +246,19 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
 
         protected abstract HB delegateBaseUnit(String baseUnit);
 
-        protected abstract HM build(M meter);
+        protected abstract HM build(Meter.Id id, M meter);
 
     }
 
-    static class Id implements io.helidon.metrics.api.Meter.Id {
+    static class Id implements Meter.Id {
 
-        private final Meter.Id delegate;
+        private final io.micrometer.core.instrument.Meter.Id delegate;
 
-        private Id(Meter.Id delegate) {
+        private Id(io.micrometer.core.instrument.Meter.Id delegate) {
             this.delegate = delegate;
         }
 
-        static Id create(Meter.Id id) {
+        static Id create(io.micrometer.core.instrument.Meter.Id id) {
             return new Id(id);
         }
 
@@ -272,7 +273,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         @Override
-        public Iterable<io.helidon.metrics.api.Tag> tags() {
+        public Iterable<Tag> tags() {
             return MTag.neutralTags(delegate.getTags());
         }
 
@@ -294,38 +295,31 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
     }
 
-    static class PlainId implements io.helidon.metrics.api.Meter.Id {
+    static class PlainId implements Meter.Id {
 
         private final String name;
-        private final List<io.helidon.metrics.api.Tag> tags;
+        private final List<Tag> tags;
 
-        static PlainId create(MMeter.Builder<?, ?, ?, ?> builder) {
-            return new PlainId(builder);
-        }
-
-        static PlainId create(Meter meter) {
-            return new PlainId(meter);
-        }
-
-        private static io.helidon.metrics.api.Tag tag(io.micrometer.core.instrument.Tag tag) {
-            return io.helidon.metrics.api.Tag.create(tag.getKey(), tag.getValue());
-        }
-
-        private PlainId(Meter meter) {
-            name = meter.getId().getName();
-            tags = meter.getId()
-                    .getTags()
-                    .stream()
-                    .map(PlainId::tag)
-                    .toList();
+        private PlainId(String name, Iterable<Tag> neutralTags) {
+            this.name = name;
+            tags = new ArrayList<>();
+            neutralTags.forEach(tags::add);
         }
 
         private PlainId(MMeter.Builder<?, ?, ?, ?> builder) {
             name = builder.name;
             tags = builder.tags.entrySet()
                     .stream()
-                    .map(entry -> io.helidon.metrics.api.Tag.create(entry.getKey(), entry.getValue()))
+                    .map(entry -> Tag.create(entry.getKey(), entry.getValue()))
                     .toList();
+        }
+
+        static PlainId create(MMeter.Builder<?, ?, ?, ?> builder) {
+            return new PlainId(builder);
+        }
+
+        static PlainId create(String name, Iterable<Tag> promTags) {
+            return new PlainId(name, promTags);
         }
 
         @Override
@@ -334,7 +328,7 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         }
 
         @Override
-        public Iterable<io.helidon.metrics.api.Tag> tags() {
+        public Iterable<Tag> tags() {
             return tags;
         }
 
@@ -360,6 +354,10 @@ class MMeter<M extends Meter> implements io.helidon.metrics.api.Meter {
         @Override
         public int hashCode() {
             return Objects.hash(name, tags);
+        }
+
+        private static Tag tag(io.micrometer.core.instrument.Tag tag) {
+            return Tag.create(tag.getKey(), tag.getValue());
         }
     }
 }

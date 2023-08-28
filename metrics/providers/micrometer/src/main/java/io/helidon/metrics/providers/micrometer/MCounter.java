@@ -17,17 +17,18 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Optional;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Tag;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
 
-class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter {
 
-    private MCounter(Counter delegate, Builder builder) {
-        super(delegate, builder);
+class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements io.helidon.metrics.api.Counter {
+
+    private MCounter(Meter.Id id, io.micrometer.core.instrument.Counter delegate, Builder builder) {
+        super(id, delegate, builder);
     }
 
-    private MCounter(Counter delegate, Optional<String> scope) {
-        super(delegate, scope);
+    private MCounter(Meter.Id id, io.micrometer.core.instrument.Counter delegate, Optional<String> scope) {
+        super(id, delegate, scope);
     }
 
     /**
@@ -38,7 +39,7 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
      * @return new builder for a wrapper counter
      */
     static Builder builder(String name) {
-        return new Builder(name, Counter.builder(name));
+        return new Builder(name, io.micrometer.core.instrument.Counter.builder(name));
     }
 
     /**
@@ -50,8 +51,8 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
      * @param scope scope to apply
      * @return new wrapper around the counter
      */
-    static MCounter create(Counter counter, Optional<String> scope) {
-        return new MCounter(counter, scope);
+    static MCounter create(Meter.Id id, io.micrometer.core.instrument.Counter counter, Optional<String> scope) {
+        return new MCounter(id, counter, scope);
     }
 
     @Override
@@ -76,20 +77,20 @@ class MCounter extends MMeter<Counter> implements io.helidon.metrics.api.Counter
                 .toString();
     }
 
-    static class Builder extends MMeter.Builder<Counter.Builder, Counter, Builder, MCounter>
+    static class Builder extends MMeter.Builder<io.micrometer.core.instrument.Counter.Builder, io.micrometer.core.instrument.Counter, Builder, MCounter>
             implements io.helidon.metrics.api.Counter.Builder {
 
-        private Builder(String name, Counter.Builder delegate) {
+        private Builder(String name, io.micrometer.core.instrument.Counter.Builder delegate) {
             super(name, delegate);
         }
 
         @Override
-        public MCounter build(Counter counter) {
-            return new MCounter(counter, this);
+        public MCounter build(Meter.Id id, io.micrometer.core.instrument.Counter counter) {
+            return new MCounter(id, counter, this);
         }
 
         @Override
-        protected Builder delegateTags(Iterable<Tag> tags) {
+        protected Builder delegateTags(Iterable<io.micrometer.core.instrument.Tag> tags) {
             delegate().tags(tags);
             return identity();
         }

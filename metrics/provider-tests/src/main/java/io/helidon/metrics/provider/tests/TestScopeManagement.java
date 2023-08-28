@@ -42,8 +42,7 @@ class TestScopeManagement {
     @ValueSource(booleans = {true, false})
     void testExplicitScopeOnMetersWithNoDefaultScope(boolean scopeTagEnabled) {
         MetricsConfig metricsConfig = MetricsConfig.builder()
-                .scoping(ScopingConfig.builder()
-                                 .tagEnabled(scopeTagEnabled))
+                .scoping(ScopingConfig.builder())
                 .build();
         MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
         SystemTagsManager.instance(metricsConfig);
@@ -83,7 +82,6 @@ class TestScopeManagement {
     void testExplicitScopeOnMetersWithDefaultScope(boolean scopeTagEnabled) {
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .scoping(ScopingConfig.builder()
-                                 .tagEnabled(scopeTagEnabled)
                                  .defaultValue("def-scope"))
                 .build();
         MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);

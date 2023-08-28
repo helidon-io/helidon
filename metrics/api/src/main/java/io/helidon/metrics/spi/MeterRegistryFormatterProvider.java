@@ -20,6 +20,7 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
+import io.helidon.metrics.api.MetricsConfig;
 
 /**
  * Behavior for providers of meter registry formatters, which (if then can) furnish a formatter given a
@@ -36,6 +37,7 @@ public interface MeterRegistryFormatterProvider {
      * Returns, if possible, a {@link io.helidon.metrics.api.MeterRegistryFormatter} capable of preparing output according to
      * the specified {@link io.helidon.common.media.type.MediaType}.
      * @param mediaType media type of the desired output
+     * @param metricsConfig {@link io.helidon.metrics.api.MetricsConfig} to influence the formatting
      * @param meterRegistry {@link io.helidon.metrics.api.MeterRegistry} from which to gather data
      * @param scopeTagName tag name used to record scope
      * @param scopeSelection scope names to format; empty means no scope-based restriction
@@ -43,6 +45,7 @@ public interface MeterRegistryFormatterProvider {
      * @return compatible formatter; empty if none
      */
     Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
+                                               MetricsConfig metricsConfig,
                                                MeterRegistry meterRegistry,
                                                Optional<String> scopeTagName,
                                                Iterable<String> scopeSelection,
