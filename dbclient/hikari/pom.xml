@@ -41,11 +41,11 @@
         <dependency>
             <groupId>io.helidon.builder</groupId>
             <artifactId>helidon-builder-api</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
