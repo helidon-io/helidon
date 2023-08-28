@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package io.helidon.examples.todos.frontend;
 
 import io.helidon.http.Http;
 import io.helidon.metrics.api.RegistryFactory;
-import io.helidon.tracing.Span;
-import io.helidon.tracing.Tracer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Metadata;
@@ -33,79 +29,52 @@ import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
- * Handler of requests to process TODOs.
+ * TODO service.
  * <p>
- * A TODO is structured as follows:
+ * An entry is structured as follows:
  * <code>{ 'title': string, 'completed': boolean, 'id': string }</code>
  * <p>
  * The IDs are server generated on the initial POST operation (so they are not
  * included in that case).
  * <p>
  * Here is a summary of the operations:
- * <code>GET /api/todo</code>: Get all TODOs
- * <code>GET /api/todo/{id}</code>: Get a TODO
- * <code>POST /api/todo</code>: Create a new TODO, TODO with generated ID
- * is returned
- * <code>DELETE /api/todo/{id}</code>: Delete a TODO, deleted TODO is returned
- * <code>PUT /api/todo/{id}</code>: Update a TODO,  updated TODO is returned
+ * <code>GET /api/todo</code>: Get all entries
+ * <code>GET /api/todo/{id}</code>: Get an entry by ID
+ * <code>POST /api/todo</code>: Create a new entry, created entry is returned
+ * <code>DELETE /api/todo/{id}</code>: Delete an entry, deleted entry is returned
+ * <code>PUT /api/todo/{id}</code>: Update an entry,  updated entry is returned
  */
-public class TodosHandler implements HttpService {
+public final class TodoService implements HttpService {
 
-    /**
-     * The backend service client.
-     */
     private final BackendServiceClient bsc;
-
-    /**
-     * Create metric counter.
-     */
     private final Counter createCounter;
-
-    /**
-     * Update metric counter.
-     */
     private final Counter updateCounter;
-
-    /**
-     * Delete metric counter.
-     */
     private final Counter deleteCounter;
-
-    /**
-     * Tracer.
-     */
-    private final Tracer tracer;
 
     /**
      * Create a new {@code TodosHandler} instance.
      *
-     * @param bsc    the {@code BackendServiceClient} to use
-     * @param tracer tracer
+     * @param bsc the {@code BackendServiceClient} to use
      */
-    public TodosHandler(BackendServiceClient bsc, Tracer tracer) {
+    TodoService(BackendServiceClient bsc) {
         MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
-        this.tracer = tracer;
         this.bsc = bsc;
         this.createCounter = registry.counter("created");
         this.updateCounter = registry.counter("updates");
-        this.deleteCounter = registry.counter(counterMetadata("deletes", "Number of deleted todos"));
+        this.deleteCounter = registry.counter(Metadata.builder()
+                                                      .withName("deletes")
+                                                      .withDescription("Number of deleted todos")
+                                                      .withUnit(MetricUnits.NONE)
+                                                      .build());
     }
 
     @Override
     public void routing(HttpRules rules) {
-        rules.get("/todo/{id}", this::getSingle)
-             .delete("/todo/{id}", this::delete)
-             .put("/todo/{id}", this::update)
-             .get("/todo", this::getAll)
-             .post("/todo", this::create);
-    }
-
-    private Metadata counterMetadata(String name, String description) {
-        return Metadata.builder()
-                       .withName(name)
-                       .withDescription(description)
-                       .withUnit(MetricUnits.NONE)
-                       .build();
+        rules.get("/todo/{id}", this::get)
+                .delete("/todo/{id}", this::delete)
+                .put("/todo/{id}", this::update)
+                .get("/todo", this::list)
+                .post("/todo", this::create);
     }
 
     /**
@@ -115,10 +84,10 @@ public class TodosHandler implements HttpService {
      * @param res the server response
      */
     private void create(ServerRequest req, ServerResponse res) {
+        JsonObject jsonObject = bsc.create(req.content().as(JsonObject.class));
         createCounter.inc();
-        JsonObject json = req.content().as(JsonObject.class);
-        bsc.create(json)
-           .ifPresentOrElse(res::send, () -> res.status(Http.Status.INTERNAL_SERVER_ERROR_500));
+        res.status(Http.Status.CREATED_201);
+        res.send(jsonObject);
     }
 
     /**
@@ -127,19 +96,8 @@ public class TodosHandler implements HttpService {
      * @param req the server request
      * @param res the server response
      */
-    private void getAll(ServerRequest req, ServerResponse res) {
-        Span span = Span.current()
-                        .map(sp -> tracer.spanBuilder("getAll0").parent(sp.context()).start())
-                        .orElseGet(() -> tracer.spanBuilder("getAll").start());
-
-        try {
-            JsonArray todos = bsc.getAll(span.context());
-            res.send(todos);
-        } catch (Throwable th) {
-            span.end();
-            throw th;
-        }
-        span.end();
+    private void list(ServerRequest req, ServerResponse res) {
+        res.send(bsc.list());
     }
 
     /**
@@ -149,10 +107,10 @@ public class TodosHandler implements HttpService {
      * @param res the server response
      */
     private void update(ServerRequest req, ServerResponse res) {
-        updateCounter.inc();
-        JsonObject json = req.content().as(JsonObject.class);
         String id = req.path().pathParameters().value("id");
-        bsc.update(id, json, res);
+        JsonObject jsonObject = bsc.update(id, req.content().as(JsonObject.class));
+        updateCounter.inc();
+        res.send(jsonObject);
     }
 
     /**
@@ -162,10 +120,10 @@ public class TodosHandler implements HttpService {
      * @param res the server response
      */
     private void delete(ServerRequest req, ServerResponse res) {
-        deleteCounter.inc();
         String id = req.path().pathParameters().value("id");
-        bsc.deleteSingle(id)
-           .ifPresentOrElse(res::send, () -> res.status(Http.Status.NOT_FOUND_404));
+        JsonObject jsonObject = bsc.deleteSingle(id);
+        deleteCounter.inc();
+        res.send(jsonObject);
     }
 
     /**
@@ -174,9 +132,8 @@ public class TodosHandler implements HttpService {
      * @param req the server request
      * @param res the server response
      */
-    private void getSingle(ServerRequest req, ServerResponse res) {
+    private void get(ServerRequest req, ServerResponse res) {
         String id = req.path().pathParameters().value("id");
-        bsc.getSingle(id)
-           .ifPresentOrElse(res::send, () -> res.status(Http.Status.NOT_FOUND_404));
+        res.send(bsc.get(id));
     }
 }
