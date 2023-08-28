@@ -366,12 +366,12 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     /**
      * Schedule Delay of exporter requests.
      *
-     * @param scheduleDelayMillis timeout to use
+     * @param scheduleDelay timeout to use
      * @return updated builder
      */
     @ConfiguredOption("PT5S")
-    public JaegerTracerBuilder scheduleDelay(Duration scheduleDelayMillis) {
-        this.scheduleDelay = scheduleDelayMillis;
+    public JaegerTracerBuilder scheduleDelay(Duration scheduleDelay) {
+        this.scheduleDelay = scheduleDelay;
         return this;
     }
 
