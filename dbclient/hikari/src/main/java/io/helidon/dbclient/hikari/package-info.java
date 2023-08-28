@@ -13,25 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.jdbc;
-
-import io.helidon.dbclient.spi.DbClientProvider;
-
 /**
- * Provider for JDBC database implementation.
+ * Hikari JDBC connection pool.
  */
-public class JdbcClientProvider implements DbClientProvider {
-
-    // Name of this JDBC DB client provider and also JDBC database URL prefix.
-    private static final String JDBC_DB_NAME = "jdbc";
-
-    @Override
-    public String name() {
-        return JDBC_DB_NAME;
-    }
-
-    @Override
-    public JdbcClientBuilder builder() {
-        return new JdbcClientBuilder();
-    }
-}
+package io.helidon.dbclient.hikari;

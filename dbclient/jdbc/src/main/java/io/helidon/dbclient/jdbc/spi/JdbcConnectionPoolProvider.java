@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.dbclient.jdbc;
+package io.helidon.dbclient.jdbc.spi;
 
-import io.helidon.dbclient.spi.DbClientProvider;
+import io.helidon.common.config.ConfiguredProvider;
+import io.helidon.dbclient.jdbc.JdbcConnectionPool;
 
 /**
- * Provider for JDBC database implementation.
+ * {@link java.util.ServiceLoader} provider interface for JDBC connection pool.
+ * This interface serves as
  */
-public class JdbcClientProvider implements DbClientProvider {
-
-    // Name of this JDBC DB client provider and also JDBC database URL prefix.
-    private static final String JDBC_DB_NAME = "jdbc";
-
-    @Override
-    public String name() {
-        return JDBC_DB_NAME;
-    }
-
-    @Override
-    public JdbcClientBuilder builder() {
-        return new JdbcClientBuilder();
-    }
+public interface JdbcConnectionPoolProvider extends ConfiguredProvider<JdbcConnectionPool> {
 }

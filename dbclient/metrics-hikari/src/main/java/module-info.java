@@ -18,22 +18,25 @@ import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
 
 /**
- * Helidon Database Client Metrics.
+ * Hikari Connection Pool Metrics.
  */
-@Feature(value = "Metrics",
-        description = "Database client metrics support",
-        in = HelidonFlavor.SE,
-        path = {"DbClient", "Metrics"}
+@Feature(value = "Hikari Connection Pool Metrics",
+         description = "Hikari connection pool metrics support",
+         in = HelidonFlavor.SE,
+         path = {"DbClient", "Metrics-Hikari"}
 )
-module io.helidon.dbclient.metrics {
+module helidon.dbclient.metrics.hikari {
 
-    requires static io.helidon.common.features.api;
-    requires transitive io.helidon.dbclient;
-    requires io.helidon.metrics.api;
+    requires transitive io.helidon.common.features.api;
 
-    exports io.helidon.dbclient.metrics;
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.metrics.api;
+    requires transitive io.helidon.dbclient.jdbc;
+    requires transitive io.helidon.dbclient.hikari;
 
-    provides io.helidon.dbclient.spi.DbClientServiceProvider
-            with io.helidon.dbclient.metrics.DbClientMetricsProvider;
+    requires com.codahale.metrics;
+
+    provides io.helidon.dbclient.hikari.spi.HikariMetricsProvider
+            with io.helidon.dbclient.metrics.hikari.HikariMetricsExtensionProvider;
 
 }

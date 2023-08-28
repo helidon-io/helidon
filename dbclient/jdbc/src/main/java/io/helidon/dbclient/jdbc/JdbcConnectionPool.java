@@ -20,19 +20,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.config.Config;
-import io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider;
+import io.helidon.common.config.NamedService;
+import io.helidon.dbclient.DbClientException;
+import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 
 /**
  * JDBC connection pool.
  */
 @FunctionalInterface
-public interface JdbcConnectionPool {
+public interface JdbcConnectionPool extends NamedService {
+
+    /** Default JDBC connection pool {@link #dbType()} value. */
+    String DEFAULT_DB_TYPE = "jdbc";
 
     /**
      * Create a JDBC connection pool from provided configuration.
@@ -65,17 +67,13 @@ public interface JdbcConnectionPool {
      * @return a new instance configured from the provided config
      */
     static JdbcConnectionPool create(Config config) {
-        return JdbcConnectionPool.builder()
-                .config(config)
-                .build();
-    }
-
-    /**
-     * Create a fluent API builder for a JDBC Connection pool based on URL, username and password.
-     * @return a new builder
-     */
-    static Builder builder() {
-        return new Builder();
+        List<JdbcConnectionPoolProvider> poolProviders = HelidonServiceLoader
+                .create(ServiceLoader.load(JdbcConnectionPoolProvider.class))
+                .asList();
+        if (poolProviders.isEmpty()) {
+            throw new DbClientException("No JDBC connection pool provider is available");
+        }
+        return poolProviders.getFirst().create(config, config.name());
     }
 
     /**
@@ -88,73 +86,60 @@ public interface JdbcConnectionPool {
     Connection connection();
 
     /**
-     * The type of this database - if better details than {@value JdbcClientProvider#JDBC_DB_NAME} is
-     * available, return it. This could be "jdbc:mysql" etc.
+     * The type of this database. This could be {@code "jdbc:mysql"}, etc.
+     * Default value is just {@code "jdbc"} but implementing class should set something more specific.
      *
      * @return type of this database
      */
     default String dbType() {
-        return JdbcClientProvider.JDBC_DB_NAME;
+        return DEFAULT_DB_TYPE;
+    }
+
+    @Override
+    default String name() {
+        return "inlined";
+    }
+
+    @Override
+    default String type() {
+        return "inlined";
     }
 
     /**
-     * Fluent API builder for {@link JdbcConnectionPool}.
-     * The builder will produce a connection pool based on Hikari connection pool and will support
-     * {@link io.helidon.dbclient.jdbc.spi.HikariCpExtensionProvider} to enhance the Hikari pool.
+     * Base fluent API builder for {@link JdbcConnectionPool}.
+     * The builder will produce a connection pool based on connection pool provider available on the classpath.
+     *
+     * @param <B> Type of the builder
+     * @param <T> Type of the built instance
      */
-    final class Builder implements io.helidon.common.Builder<Builder, JdbcConnectionPool> {
+    abstract class BuilderBase<B extends BuilderBase<B, T>, T extends JdbcConnectionPool>
+            implements io.helidon.common.Builder<B, T> {
         /**
          * Database connection URL configuration key.
          */
-        static final String URL = "url";
+        protected static final String URL = "url";
         /**
          * Database connection username configuration key.
          */
-        static final String USERNAME = "username";
+        protected static final String USERNAME = "username";
         /**
          * Database connection user password configuration key.
          */
-        static final String PASSWORD = "password";
+        protected static final String PASSWORD = "password";
+
         /**
          * Database connection configuration key for Helidon specific
          * properties.
          */
-        static final String HELIDON_RESERVED_CONFIG_KEY = "helidon";
-
-        //jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
-        private static final Pattern URL_PATTERN = Pattern.compile("(\\w+:\\w+):.*");
+        protected static final String HELIDON_RESERVED_CONFIG_KEY = "helidon";
 
         private Properties properties = new Properties();
-
+        private String serviceName;
         private String url;
         private String username;
         private String password;
-        private Config extensionsConfig;
-        private final HelidonServiceLoader.Builder<HikariCpExtensionProvider> extensionLoader = HelidonServiceLoader
-                .builder(ServiceLoader.load(HikariCpExtensionProvider.class));
 
-        private Builder() {
-        }
-
-        @Override
-        public JdbcConnectionPool build() {
-            final Matcher matcher = URL_PATTERN.matcher(url);
-            String dbType = matcher.matches()
-                    ? matcher.group(1)
-                    : JdbcClientProvider.JDBC_DB_NAME;
-
-            return new HikariConnectionPool(this, dbType, extensions());
-        }
-
-        private List<HikariCpExtension> extensions() {
-            if (null == extensionsConfig) {
-                extensionsConfig = Config.empty();
-            }
-            return extensionLoader.build()
-                    .asList()
-                    .stream()
-                    .map(provider -> provider.extension(extensionsConfig.get(provider.configKey())))
-                    .collect(Collectors.toList());
+        protected BuilderBase() {
         }
 
         /**
@@ -163,7 +148,7 @@ public interface JdbcConnectionPool {
          * @param config configuration
          * @return updated builder
          */
-        public Builder config(Config config) {
+        public B config(Config config) {
             Map<String, String> poolConfig = config.detach().asMap().get();
             poolConfig.forEach((key, value) -> {
                 switch (key) {
@@ -173,13 +158,12 @@ public interface JdbcConnectionPool {
                     default -> {
                         if (!key.startsWith(HELIDON_RESERVED_CONFIG_KEY + ".")) {
                             // all other properties are sent to the pool
-                            properties.setProperty(key, value);
+                            properties().setProperty(key, value);
                         }
                     }
                 }
             });
-            this.extensionsConfig = config.get(HELIDON_RESERVED_CONFIG_KEY);
-            return this;
+            return identity();
         }
 
         /**
@@ -188,9 +172,9 @@ public interface JdbcConnectionPool {
          * @param url connection pool string to use
          * @return updated builder
          */
-        public Builder url(String url) {
+        public B url(String url) {
             this.url = url;
-            return this;
+            return identity();
         }
 
         /**
@@ -199,9 +183,9 @@ public interface JdbcConnectionPool {
          * @param username username to use
          * @return updated builder
          */
-        public Builder username(String username) {
+        public B username(String username) {
             this.username = username;
-            return this;
+            return identity();
         }
 
         /**
@@ -210,9 +194,9 @@ public interface JdbcConnectionPool {
          * @param password password to use
          * @return updated builder
          */
-        public Builder password(String password) {
+        public B password(String password) {
             this.password = password;
-            return this;
+            return identity();
         }
 
         /**
@@ -221,26 +205,68 @@ public interface JdbcConnectionPool {
          * @param properties properties to use
          * @return updated builder
          */
-        public Builder properties(Properties properties) {
+        public B properties(Properties properties) {
             this.properties = properties;
-            return this;
+            return identity();
         }
 
-        Properties properties() {
-            return properties;
+        /**
+         * Name of the connection pool.
+         * This value is returned as {@link io.helidon.common.config.NamedService#name()} value.
+         *
+         * @param serviceName service name
+         * @return updated builder
+         */
+        public B serviceName(String serviceName) {
+            this.serviceName = serviceName;
+            return identity();
         }
 
-        String url() {
+        /**
+         * Configured connection pool service name.
+         *
+         * @return service name
+         */
+        public String serviceName() {
+            return serviceName;
+        }
+
+        /**
+         * Configured connection pool URL string.
+         *
+         * @return URL {@link String}
+         */
+        public String url() {
             return url;
         }
 
-        String username() {
+        /**
+         * Configured connection pool username.
+         *
+         * @return username {@link String}
+         */
+        public String username() {
             return username;
         }
 
-        String password() {
+        /**
+         * Configured connection pool password.
+         *
+         * @return password {@link String}
+         */
+        public String password() {
             return password;
         }
+
+        /**
+         * Configured connection pool properties.
+         *
+         * @return connection pool properties
+         */
+        public Properties properties() {
+            return properties;
+        }
+
     }
 
 }
