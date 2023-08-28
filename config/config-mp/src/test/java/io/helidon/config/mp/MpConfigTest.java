@@ -188,8 +188,14 @@ public class MpConfigTest {
                         "client.headers.0.name", "foo"
                 )))
                 .build();
-        Map<String, String> map = MpConfig.toHelidonConfig(mpConfig).get("client").asMap().orElse(Map.of());
+        io.helidon.config.Config seConfig = MpConfig.toHelidonConfig(mpConfig);
+        Map<String, String> map;
+
+        map = seConfig.get("client").asMap().orElse(Map.of());
         assertThat(map.get("client.headers.0.name"), is("foo"));
+
+        map = seConfig.get("client").detach().asMap().orElse(Map.of());
+        assertThat(map.get("headers.0.name"), is("foo"));
     }
 
     // Github issue #2206

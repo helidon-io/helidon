@@ -260,8 +260,12 @@ class SeConfig implements Config {
                     continue;
                 }
                 if (propertyName.startsWith(stringKey + ".")) {
-                    String noPrefix = propertyName.substring(stringPrefix.length());
-
+                    String noPrefix;
+                    if (stringPrefix.isEmpty()) {
+                        noPrefix = propertyName;
+                    } else {
+                        noPrefix = propertyName.substring(stringPrefix.length() + 1);
+                    }
                     children.put(noPrefix, delegate.getValue(propertyName, String.class));
                 }
             }
