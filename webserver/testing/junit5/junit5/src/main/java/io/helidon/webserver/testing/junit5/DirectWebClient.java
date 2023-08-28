@@ -63,7 +63,6 @@ public class DirectWebClient implements WebClient {
                 .baseUri("unit://helidon-unit:65000")
                 .build();
         this.router = Router.builder().addRouting(routing).build();
-        this.router.beforeStart();
     }
 
     @Override
