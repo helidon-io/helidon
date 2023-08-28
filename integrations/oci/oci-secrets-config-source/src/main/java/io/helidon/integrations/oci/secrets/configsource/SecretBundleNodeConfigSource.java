@@ -37,11 +37,9 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
 import io.helidon.config.AbstractConfigSource;
 import io.helidon.config.AbstractConfigSourceBuilder;
 import io.helidon.config.Config;
-import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.config.spi.ConfigNode.ValueNode;
@@ -49,9 +47,7 @@ import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 
-import com.oracle.bmc.auth.BasicAuthenticationDetailsProvider;
 import com.oracle.bmc.secrets.Secrets;
-import com.oracle.bmc.secrets.SecretsClient;
 import com.oracle.bmc.secrets.model.Base64SecretBundleContentDetails;
 import com.oracle.bmc.secrets.requests.GetSecretBundleRequest;
 import com.oracle.bmc.secrets.responses.GetSecretBundleResponse;
@@ -61,9 +57,7 @@ import com.oracle.bmc.vault.model.SecretSummary;
 import com.oracle.bmc.vault.model.SecretSummary.LifecycleState;
 import com.oracle.bmc.vault.requests.ListSecretsRequest;
 
-import static io.helidon.integrations.oci.sdk.runtime.OciExtension.ociAuthenticationProvider;
 import static java.lang.System.Logger.Level.WARNING;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.Instant.now;
 import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
 
@@ -74,8 +68,9 @@ import static java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor;
  * Retrieval</a> and <a
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/vault/package-summary.html">Vault</a> APIs.
  */
-public final class SecretBundleConfigSource
-    extends AbstractConfigSource implements NodeConfigSource, PollableSource<SecretBundleConfigSource.Stamp> {
+public final class SecretBundleNodeConfigSource
+    extends AbstractSecretBundleConfigSource<SecretBundleNodeConfigSource.Builder>
+    implements NodeConfigSource, PollableSource<SecretBundleNodeConfigSource.Stamp> {
 
 
     /*
@@ -88,9 +83,7 @@ public final class SecretBundleConfigSource
 
     private static final String COMPARTMENT_OCID_PROPERTY_NAME = "compartment-ocid";
 
-    private static final Logger LOGGER = System.getLogger(SecretBundleConfigSource.class.getName());
-
-    private static final String VAULT_OCID_PROPERTY_NAME = "vault-ocid";
+    private static final Logger LOGGER = System.getLogger(SecretBundleNodeConfigSource.class.getName());
 
 
     /*
@@ -108,18 +101,17 @@ public final class SecretBundleConfigSource
      */
 
 
-    private SecretBundleConfigSource(Builder b) {
+    private SecretBundleNodeConfigSource(Builder b) {
         super(b);
-        Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier, "b.secretsSupplier");
+        Supplier<? extends Secrets> secretsSupplier = Objects.requireNonNull(b.secretsSupplier(), "b.secretsSupplier()");
         Supplier<? extends Vaults> vaultsSupplier = Objects.requireNonNull(b.vaultsSupplier, "b.vaultsSupplier");
-        String compartmentOcid = b.compartmentOcid;
-        String vaultOcid = b.vaultOcid;
-        if (compartmentOcid == null || vaultOcid == null) {
+        String vaultOcid = b.vaultOcid();
+        if (b.compartmentOcid == null || vaultOcid == null) {
             this.loader = this::absentNodeContent;
             this.stamper = Stamp::new;
         } else {
             ListSecretsRequest listSecretsRequest = ListSecretsRequest.builder()
-                .compartmentId(compartmentOcid)
+                .compartmentId(b.compartmentOcid)
                 .lifecycleState(LifecycleState.Active)
                 .vaultId(vaultOcid)
                 .build();
@@ -135,7 +127,7 @@ public final class SecretBundleConfigSource
 
 
     /**
-     * Returns {@code true} if the values in this {@link SecretBundleConfigSource} have been modified.
+     * Returns {@code true} if the values in this {@link SecretBundleNodeConfigSource} have been modified.
      *
      * @param lastKnownStamp a {@link Stamp}
      *
@@ -265,7 +257,7 @@ public final class SecretBundleConfigSource
 
     /**
      * Creates and returns a new {@link Builder} for {@linkplain Builder#build() building} {@link
-     * SecretBundleConfigSource} instances.
+     * SecretBundleNodeConfigSource} instances.
      *
      * @return a new {@link Builder}
      */
@@ -405,11 +397,6 @@ public final class SecretBundleConfigSource
         return valueNode(details.getContent(), base64Decoder);
     }
 
-    static ValueNode valueNode(String base64EncodedContent, Base64.Decoder base64Decoder) {
-        String decodedContent = new String(base64Decoder.decode(base64EncodedContent), UTF_8);
-        return ValueNode.create(decodedContent.intern());
-    }
-
 
     /*
      * Inner and nested classes.
@@ -417,11 +404,11 @@ public final class SecretBundleConfigSource
 
 
     /**
-     * An {@link AbstractConfigSourceBuilder} that {@linkplain #build() builds} {@link SecretBundleConfigSource}
+     * An {@link AbstractConfigSourceBuilder} that {@linkplain #build() builds} {@link SecretBundleNodeConfigSource}
      * instances.
      */
-    public static final class Builder extends AbstractConfigSourceBuilder<Builder, Void> {
-
+    // public static final class Builder extends AbstractConfigSourceBuilder<Builder, Void> {
+    public static final class Builder extends AbstractSecretBundleConfigSource.Builder<Builder> {
 
         /*
          * Instance fields.
@@ -429,10 +416,6 @@ public final class SecretBundleConfigSource
 
 
         private String compartmentOcid;
-
-        private Supplier<? extends Secrets> secretsSupplier;
-
-        private String vaultOcid;
 
         private Supplier<? extends Vaults> vaultsSupplier;
 
@@ -444,12 +427,8 @@ public final class SecretBundleConfigSource
 
         private Builder() {
             super();
-            Supplier<? extends BasicAuthenticationDetailsProvider> adpSupplier =
-                LazyValue.create(() -> (BasicAuthenticationDetailsProvider) ociAuthenticationProvider().get());
-            SecretsClient.Builder scb = SecretsClient.builder();
-            this.secretsSupplier = () -> scb.build(adpSupplier.get());
             VaultsClient.Builder vcb = VaultsClient.builder();
-            this.vaultsSupplier = () -> vcb.build(adpSupplier.get());
+            this.vaultsSupplier = () -> vcb.build(adpSupplier().get());
         }
 
 
@@ -459,18 +438,18 @@ public final class SecretBundleConfigSource
 
 
         /**
-         * Creates and returns a new {@link SecretBundleConfigSource} instance initialized from the state of this {@link
-         * Builder}.
+         * Creates and returns a new {@link SecretBundleNodeConfigSource} instance initialized from the state of this
+         * {@link Builder}.
          *
-         * @return a new {@link SecretBundleConfigSource}
+         * @return a new {@link SecretBundleNodeConfigSource}
          */
-        public SecretBundleConfigSource build() {
-            return new SecretBundleConfigSource(this);
+        public SecretBundleNodeConfigSource build() {
+            return new SecretBundleNodeConfigSource(this);
         }
 
         /**
          * Sets the (required) OCID of the OCI compartment housing the vault from which a {@link
-         * SecretBundleConfigSource} will retrieve values.
+         * SecretBundleNodeConfigSource} will retrieve values.
          *
          * @param compartmentOcid a valid OCID identifying an OCI compartment; must not be {@code null}
          *
@@ -494,13 +473,6 @@ public final class SecretBundleConfigSource
          */
         @Override // AbstractConfigSourceBuilder<Builder, Void>
         public Builder config(Config metaConfig) {
-            metaConfig.get("change-watcher")
-                .asNode()
-                .ifPresent(n -> {
-                        throw new ConfigException("Invalid meta-configuration key: change-watcher: "
-                                                  + "Change watching is not supported by "
-                                                  + this.getClass().getName() + " instances");
-                    });
             metaConfig.get("compartment-ocid")
                 .asString()
                 .filter(Predicate.not(String::isBlank))
@@ -510,18 +482,6 @@ public final class SecretBundleConfigSource
                                          LOGGER.log(WARNING,
                                                     "No meta-configuration value supplied for "
                                                     + metaConfig.key().toString() + "." + COMPARTMENT_OCID_PROPERTY_NAME
-                                                    + "); resulting ConfigSource will be empty");
-                                     }
-                                 });
-            metaConfig.get("vault-ocid")
-                .asString()
-                .filter(Predicate.not(String::isBlank))
-                .ifPresentOrElse(this::vaultOcid,
-                                 () -> {
-                                     if (LOGGER.isLoggable(WARNING)) {
-                                         LOGGER.log(WARNING,
-                                                    "No meta-configuration value supplied for "
-                                                    + metaConfig.key().toString() + "." + VAULT_OCID_PROPERTY_NAME
                                                     + "); resulting ConfigSource will be empty");
                                      }
                                  });
@@ -549,35 +509,6 @@ public final class SecretBundleConfigSource
          */
         public Builder pollingStrategy(PollingStrategy pollingStrategy) {
             return super.pollingStrategy(pollingStrategy);
-        }
-
-        /**
-         * Uses the supplied {@link Supplier} of {@link Secrets} instances, instead of the default one, for
-         * communicating with the OCI Secrets Retrieval API.
-         *
-         * @param secretsSupplier the non-default {@link Supplier} to use; must not be {@code null}
-         *
-         * @return this {@link Builder}
-         *
-         * @exception NullPointerException if {@code secretsSupplier} is {@code null}
-         */
-        public Builder secretsSupplier(Supplier<? extends Secrets> secretsSupplier) {
-            this.secretsSupplier = Objects.requireNonNull(secretsSupplier, "secretsSupplier");
-            return this;
-        }
-
-        /**
-         * Sets the (required) OCID of the OCI vault from which a {@link SecretBundleConfigSource} will retrieve values.
-         *
-         * @param vaultOcid a valid OCID identifying an OCI vault; must not be {@code null}
-         *
-         * @return this {@link Builder}
-         *
-         * @exception NullPointerException if {@code vaultId} is {@code null}
-         */
-        public Builder vaultOcid(String vaultOcid) {
-            this.vaultOcid = Objects.requireNonNull(vaultOcid, "vaultOcid");
-            return this;
         }
 
         /**

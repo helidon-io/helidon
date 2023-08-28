@@ -18,11 +18,11 @@ package io.helidon.integrations.oci.secrets.configsource;
 import java.time.Instant;
 import java.util.Set;
 
-import io.helidon.integrations.oci.secrets.configsource.SecretBundleConfigSource.Stamp;
+import io.helidon.integrations.oci.secrets.configsource.SecretBundleNodeConfigSource.Stamp;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.integrations.oci.secrets.configsource.SecretBundleConfigSource.isModified;
+import static io.helidon.integrations.oci.secrets.configsource.SecretBundleNodeConfigSource.isModified;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

@@ -17,5 +17,7 @@ sources:
   - type: 'system-properties' # for testing
   - type: 'oci-secrets'
     properties: # required
-        compartment-ocid: ${compartment-ocid}
-        vault-ocid: ${vault-ocid}
+        accept-pattern: '^FrancqueSecret$'
+        compartment-ocid: '${compartment-ocid}'
+        lazy: ${lazy}
+        vault-ocid: '${vault-ocid}'
