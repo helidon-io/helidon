@@ -35,6 +35,7 @@ module io.helidon.security.providers.google.login {
     requires io.helidon.security;
     requires google.api.client;
     requires com.google.api.client;
+    requires com.google.api.client.auth;
     requires com.google.api.client.json.gson;
     requires io.helidon.security.providers.common;
     requires io.helidon.security.util;
