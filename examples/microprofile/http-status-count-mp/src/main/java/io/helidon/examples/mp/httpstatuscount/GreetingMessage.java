@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,58 +18,39 @@ package io.helidon.examples.mp.httpstatuscount;
 /**
  * Greeting message.
  */
-public class Message {
-
+public class GreetingMessage {
     private String message;
 
-    private String greeting;
-
     /**
-     * Creates a new instance.
+     * Create a new GreetingMessage instance.
      */
-    public Message() {
+    public GreetingMessage() {
     }
 
     /**
-     * Creates a new instance with a preset message.
+     * Create a new GreetingMessage instance.
      *
-     * @param message initial message
+     * @param message message
      */
-    public Message(String message) {
+    public GreetingMessage(String message) {
         this.message = message;
     }
 
     /**
-     * Sets the message content.
+     * Gets the message value.
      *
-     * @param message the new message
+     * @return message value
+     */
+    public String getMessage() {
+        return message;
+    }
+
+    /**
+     * Sets the message value.
+     *
+     * @param message message value to set
      */
     public void setMessage(String message) {
         this.message = message;
-    }
-
-    /**
-     *
-     * @return the current message content
-     */
-    public String getMessage() {
-        return this.message;
-    }
-
-    /**
-     * Sets the greeting.
-     *
-     * @param greeting new greeting
-     */
-    public void setGreeting(String greeting) {
-        this.greeting = greeting;
-    }
-
-    /**
-     *
-     * @return the greeting
-     */
-    public String getGreeting() {
-        return this.greeting;
     }
 }

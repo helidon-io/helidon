@@ -55,13 +55,13 @@ public class SimpleGreetResource {
     /**
      * Return a worldly greeting message.
      *
-     * @return {@link Message}
+     * @return {@link GreetingMessage}
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Message getDefaultMessage() {
+    public GreetingMessage getDefaultMessage() {
         String msg = String.format("%s %s!", message, "World");
-        Message message = new Message();
+        GreetingMessage message = new GreetingMessage();
         message.setMessage(msg);
         return message;
     }

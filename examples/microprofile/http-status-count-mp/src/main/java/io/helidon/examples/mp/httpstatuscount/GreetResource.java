@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,11 +69,11 @@ public class GreetResource {
     /**
      * Return a worldly greeting message.
      *
-     * @return {@link Message}
+     * @return {@link GreetingMessage}
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Message getDefaultMessage() {
+    public GreetingMessage getDefaultMessage() {
         return createResponse("World");
     }
 
@@ -81,12 +81,12 @@ public class GreetResource {
      * Return a greeting message using the name that was provided.
      *
      * @param name the name to greet
-     * @return {@link Message}
+     * @return {@link GreetingMessage}
      */
     @Path("/{name}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Message getMessage(@PathParam("name") String name) {
+    public GreetingMessage getMessage(@PathParam("name") String name) {
         return createResponse(name);
     }
 
@@ -108,21 +108,20 @@ public class GreetResource {
             @APIResponse(name = "normal", responseCode = "204", description = "Greeting updated"),
             @APIResponse(name = "missing 'greeting'", responseCode = "400",
                     description = "JSON did not contain setting for 'greeting'")})
-    public Response updateGreeting(Message message) {
+    public Response updateGreeting(GreetingMessage message) {
 
-        if (message.getGreeting() == null || message.getGreeting().isEmpty()) {
-            Message error = new Message();
-            error.setMessage("No greeting provided");
+        if (message.getMessage() == null) {
+            GreetingMessage error = new GreetingMessage("No greeting provided");
             return Response.status(Response.Status.BAD_REQUEST).entity(error).build();
         }
 
-        greetingProvider.setMessage(message.getGreeting());
+        greetingProvider.setMessage(message.getMessage());
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
-    private Message createResponse(String who) {
+    private GreetingMessage createResponse(String who) {
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
 
-        return new Message(msg);
+        return new GreetingMessage(msg);
     }
 }
