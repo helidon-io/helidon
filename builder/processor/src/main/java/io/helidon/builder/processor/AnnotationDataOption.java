@@ -273,10 +273,12 @@ record AnnotationDataOption(Javadoc javadoc,
         validateNotNull = validateNotNull || required;
 
         if (javadoc == null) {
-            javadoc = Javadoc.builder()
+            javadoc = element.description()
+                    .map(Javadoc::parse)
+                    .orElseGet(() -> Javadoc.builder()
                     .addLine("Option " + handler.name())
                     .returnDescription(handler.name())
-                    .build();
+                    .build());
         }
 
         // default/is required only based on annotations

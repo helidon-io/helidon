@@ -448,7 +448,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (className == null) {
-                collector.fatal(getClass(), "Property \"class-name\" is required, but not set");
+                collector.fatal(getClass(), "Property \"className\" is required, but not set");
             }
             collector.collect().checkValid();
         }

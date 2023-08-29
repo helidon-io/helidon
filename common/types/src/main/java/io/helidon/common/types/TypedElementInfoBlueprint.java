@@ -22,7 +22,6 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * An annotation with defined values.
@@ -44,7 +43,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the type name of the element
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     TypeName typeName();
 
     /**
@@ -52,7 +51,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the name of the element
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String elementName();
 
     /**
@@ -61,7 +60,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      * @return the element kind
      * @see io.helidon.common.types.TypeInfo
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String elementTypeKind();
 
     /**

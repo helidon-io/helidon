@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * TypeName is similar to {@link java.lang.reflect.Type} in its most basic use case. The {@link #name()} returns the package +
@@ -54,7 +53,7 @@ interface TypeNameBlueprint {
      *
      * @return the package name, never null
      */
-    @ConfiguredOption("") // default value is empty package
+    @Option.Default("") // default value is empty package
     String packageName();
 
     /**
@@ -62,7 +61,7 @@ interface TypeNameBlueprint {
      *
      * @return the simple class name
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String className();
 
     /**
@@ -93,7 +92,7 @@ interface TypeNameBlueprint {
      *
      * @return true if this type represents a primitive type
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean primitive();
 
     /**
@@ -101,7 +100,7 @@ interface TypeNameBlueprint {
      *
      * @return true if this type represents a primitive array []
      */
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean array();
 
     /**
@@ -110,7 +109,7 @@ interface TypeNameBlueprint {
      * @return used to represent a generic (e.g., "Optional&lt;CB&gt;")
      */
     @Option.Redundant
-    @ConfiguredOption("false")
+    @Option.DefaultBoolean(false)
     boolean generic();
 
     /**
@@ -118,8 +117,8 @@ interface TypeNameBlueprint {
      *
      * @return used to represent a wildcard (e.g., "? extends SomeType")
      */
-    @ConfiguredOption("false")
     @Option.Redundant
+    @Option.DefaultBoolean(false)
     boolean wildcard();
 
     /**

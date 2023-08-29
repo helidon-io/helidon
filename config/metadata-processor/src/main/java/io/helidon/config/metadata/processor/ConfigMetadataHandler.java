@@ -52,8 +52,15 @@ import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 
+import io.helidon.common.processor.TypeInfoFactory;
+import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.processor.ConfiguredType.ConfiguredProperty;
 import io.helidon.config.metadata.processor.ConfiguredType.ProducerMethod;
+
+import static io.helidon.config.metadata.processor.UsedTypes.BLUEPRINT;
+import static io.helidon.config.metadata.processor.UsedTypes.CONFIGURED;
+import static io.helidon.config.metadata.processor.UsedTypes.META_CONFIGURED;
 
 /*
  * This class is separated so javac correctly reports possible errors.
@@ -65,17 +72,13 @@ class ConfigMetadataHandler {
     private static final String META_FILE = "META-INF/helidon/config-metadata.json";
     private static final Pattern JAVADOC_CODE = Pattern.compile("\\{@code (.*?)}");
     private static final Pattern JAVADOC_LINK = Pattern.compile("\\{@link (.*?)}");
-    private static final String ANNOTATIONS_PACKAGE = "io.helidon.config.metadata.";
-    private static final String UNCONFIGURED_OPTION = ANNOTATIONS_PACKAGE + "ConfiguredOption.UNCONFIGURED";
-    private static final String CONFIGURED_CLASS = ANNOTATIONS_PACKAGE + "Configured";
-    private static final String CONFIGURED_OPTION_CLASS = ANNOTATIONS_PACKAGE + "ConfiguredOption";
-    private static final String CONFIGURED_OPTIONS_CLASS = ANNOTATIONS_PACKAGE + "ConfiguredOptions";
+    private static final String UNCONFIGURED_OPTION = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
 
     // Newly created options as part of this processor run - these will be stored to META_FILE
-    // map of fully qualified class name to its configured type
-    private final Map<String, ConfiguredType> newOptions = new HashMap<>();
+    // map of type name to its configured type
+    private final Map<TypeName, ConfiguredType> newOptions = new HashMap<>();
     // map of module name to list of classes that belong to it
-    private final Map<String, List<String>> moduleTypes = new HashMap<>();
+    private final Map<String, List<TypeName>> moduleTypes = new HashMap<>();
     private final Set<Element> classesToHandle = new LinkedHashSet<>();
     /*
      * Compiler utilities for annotation processing
@@ -98,6 +101,7 @@ class ConfigMetadataHandler {
     private TypeMirror erasedIterableType;
     private TypeMirror erasedSetType;
     private TypeMirror erasedMapType;
+    private ProcessingEnvironment processingEnv;
 
     /**
      * Public constructor required for service loader.
@@ -143,6 +147,7 @@ class ConfigMetadataHandler {
 
     synchronized void init(ProcessingEnvironment processingEnv) {
         // get compiler utilities
+        processingEnv = processingEnv;
         messager = processingEnv.getMessager();
         filer = processingEnv.getFiler();
         typeUtils = processingEnv.getTypeUtils();
@@ -174,13 +179,12 @@ class ConfigMetadataHandler {
         erasedMapType = typeUtils.erasure(elementUtils.getTypeElement(Map.class.getName()).asType());
     }
 
-    boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    boolean process(RoundEnvironment roundEnv) {
         try {
             return doProcess(roundEnv);
         } catch (Exception e) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Failed to process config metadata annotation processor. "
                     + toMessage(e));
-            e.printStackTrace();
             return false;
         }
     }
@@ -267,36 +271,45 @@ class ConfigMetadataHandler {
      * This is a class annotated with @Configured
      */
     private void processClass(Element aClass) {
-        findAnnotation(aClass, CONFIGURED_CLASS)
-                .ifPresent(it -> processConfiguredAnnotation(aClass, it));
-    }
-
-    private Optional<AnnotationMirror> findAnnotation(Element annotatedElement, String annotationType) {
-        for (AnnotationMirror mirror : annotatedElement.getAnnotationMirrors()) {
-            if (mirror.getAnnotationType().asElement().toString().equals(annotationType)) {
-                return Optional.of(mirror);
+        if (aClass instanceof TypeElement typeElement) {
+            Optional<TypeInfo> typeInfo = TypeInfoFactory.create(processingEnv,
+                                                                 typeElement);
+            if (typeInfo.isEmpty()) {
+                // this type cannot be analyzed
+                return;
             }
+
+            MetadataHandler handler;
+
+            TypeInfo configuredType = typeInfo.get();
+            if (configuredType.hasAnnotation(META_CONFIGURED)) {
+                if (configuredType.hasAnnotation(BLUEPRINT)) {
+                    // old style - if using config meta annotation on class, expecting config meta annotations on options
+                    handler = new MetadataHandlerBlueprintConfig(configuredType);
+                } else {
+                    // this is not a blueprint, fallback to configured types (before builder API and processor)
+                    handler = new MetadataHandlerBlueprint(configuredType);
+                }
+            } else if (configuredType.hasAnnotation(CONFIGURED)) {
+                // only new style of annotations (we expect that if class annotation is changed to Prototype.Configured)
+                // all other annotations are migrated as well
+                handler = new MetadataHandlerConfig(configuredType);
+            } else {
+                throw new IllegalArgumentException("Requested to process type: " + aClass + ", but it does not have required "
+                                                           + "annotation");
+            }
+
+            handler.handle();
+
+            TypeName targetType = handler.targetType();
+            ConfiguredType configured = handler.configuredType();
+
+            newOptions.put(targetType, configured);
+            moduleTypes.computeIfAbsent(handler.moduleName(), it -> new ArrayList<>()).add(targetType);
         }
-        return Optional.empty();
     }
 
-    private void processConfiguredAnnotation(Element aClass, AnnotationMirror configuredAnnotation) {
-        ConfiguredAnnotation configured = ConfiguredAnnotation.create(configuredAnnotation);
-
-        TypeElement classElement = (TypeElement) aClass;
-
-        if (findAnnotation(aClass, "io.helidon.builder.api.Prototype.Blueprint").isPresent()) {
-            processAnnotatedInterface(classElement, configured);
-        } else {
-            processAnnotatedClass(classElement, configured);
-        }
-    }
-
-    private boolean isBuilder(TypeElement classElement) {
-        return typeUtils.isAssignable(typeUtils.erasure(classElement.asType()), typeUtils.erasure(builderType));
-    }
-
-    private void processAnnotatedInterface(TypeElement interfaceElement, ConfiguredAnnotation configured) {
+    private void processBlueprintMetaAnnotations(TypeInfo typeInfo, ConfiguredAnnotation configured) {
         String blueprintType = toDocumentedName(interfaceElement);
         String targetType = typeForBlueprint(interfaceElement, blueprintType);
         ConfiguredType type = new ConfiguredType(configured,
@@ -312,52 +325,6 @@ class ConfigMetadataHandler {
         addInterfaces(type, interfaceElement);
 
         processBlueprint(interfaceElement, type, blueprintType, targetType);
-    }
-
-    private void processAnnotatedClass(TypeElement classElement, ConfiguredAnnotation configured) {
-
-        String className = classElement.toString();
-        String targetClass = className;
-        boolean isBuilder = false;
-        if (!configured.ignoreBuildMethod() && isBuilder(classElement)) {
-            // this is a builder, we need the target type
-            BuilderTypeInfo foundBuilder = findBuilder(classElement);
-            isBuilder = foundBuilder.isBuilder;
-            if (isBuilder) {
-                targetClass = foundBuilder.targetClass;
-            }
-        }
-
-        /*
-          now we know whether this is
-          - a builder + known target class (result of builder() method)
-          - a standalone class (probably with public static create(Config) method)
-          - an interface/abstract class only used for inheritance
-         */
-
-        ConfiguredType type = new ConfiguredType(configured,
-                                                 className,
-                                                 targetClass,
-                                                 false);
-
-        newOptions.put(targetClass, type);
-        String module = elementUtils.getModuleOf(classElement).toString();
-        moduleTypes.computeIfAbsent(module, it -> new ArrayList<>()).add(targetClass);
-
-        /*
-         we also need to know all superclasses / interfaces that are configurable to allow merging
-         of these
-         */
-        addSuperClasses(type, classElement);
-        addInterfaces(type, classElement);
-
-        if (isBuilder) {
-            // builder
-            processBuilderType(classElement, type, className, targetClass);
-        } else {
-            // standalone class with create method(s), or interface/abstract class
-            processTargetType(classElement, type, className, type.standalone());
-        }
     }
 
     private String typeForBlueprint(TypeElement interfaceElement, String configObjectType) {
@@ -415,6 +382,16 @@ class ConfigMetadataHandler {
         return new BuilderTypeInfo();
     }
 
+    private void addInterfaces(ConfiguredType type, TypeInfo typeInfo) {
+        for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
+            if (interfaceInfo.hasAnnotation(META_CONFIGURED)) {
+                type.addInherited(interfaceInfo.typeName());
+            } else {
+                addSuperClasses(type, interfaceInfo);
+            }
+        }
+    }
+
     private void addInterfaces(ConfiguredType type, TypeElement classElement) {
         List<? extends TypeMirror> interfaces = classElement.getInterfaces();
         for (TypeMirror anInterface : interfaces) {
@@ -426,6 +403,29 @@ class ConfigMetadataHandler {
                 // check if there is a superclass annotated, add that
                 addSuperClasses(type, interfaceElement);
             }
+        }
+    }
+
+    private void addSuperClasses(ConfiguredType type, TypeInfo typeInfo) {
+        Optional<TypeInfo> foundSuperType = typeInfo.superTypeInfo();
+        if (foundSuperType.isEmpty()) {
+            return;
+        }
+        TypeInfo superClass = foundSuperType.get();
+
+        while (true) {
+            if (superClass.hasAnnotation(META_CONFIGURED)) {
+                // we only care about the first one. This one should reference its superclass/interfaces
+                // if they are configured as well
+                type.addInherited(superClass.typeName());
+                return;
+            }
+
+            foundSuperType = superClass.superTypeInfo();
+            if (foundSuperType.isEmpty()) {
+                return;
+            }
+            superClass = foundSuperType.get();
         }
     }
 

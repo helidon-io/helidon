@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * An annotation with defined values.
@@ -66,7 +65,7 @@ interface AnnotationBlueprint {
      *
      * @return the annotation type name
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     TypeName typeName();
 
     /**
@@ -496,6 +495,48 @@ interface AnnotationBlueprint {
      */
     default Optional<List<Class<?>>> classValues(String property) {
         return AnnotationSupport.asClasses(typeName(), values(), property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}".
+     * Alternative for {@link #classValue()}.
+     *
+     * @return value if present
+     */
+    default Optional<TypeName> typeValue() {
+        return typeValue(VALUE_PROPERTY);
+    }
+
+    /**
+     * Typed value of a named property.
+     * Alternative for {@link #classValue(String)}.
+     *
+     * @return value if present
+     */
+    default Optional<TypeName> typeValue(String property) {
+        return AnnotationSupport.asTypeName(typeName(), values(), property);
+    }
+
+    /**
+     * Typed value of the property "{@code value}" that is defined as an array.
+     * This will also work for a single values property.
+     * Alternative for {@link #classValues()}.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<TypeName>> typeValues() {
+        return typeValues(VALUE_PROPERTY);
+    }
+
+    /**
+     * Typed values of a property that is defined as an array.
+     * This will also work for a single values property.
+     * Alternative for {@link #classValues(String)}.
+     *
+     * @return list of defined values if present
+     */
+    default Optional<List<TypeName>> typeValues(String property) {
+        return AnnotationSupport.asTypeNames(typeName(), values(), property);
     }
 
     /**

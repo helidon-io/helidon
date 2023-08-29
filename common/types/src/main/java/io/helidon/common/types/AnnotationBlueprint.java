@@ -22,7 +22,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * An annotation with defined values.
@@ -66,7 +65,7 @@ interface AnnotationBlueprint {
      *
      * @return the annotation type name
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     TypeName typeName();
 
     /**

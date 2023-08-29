@@ -331,7 +331,7 @@ public interface Annotation extends AnnotationBlueprint, Prototype.Api, Comparab
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
-                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
             }
             collector.collect().checkValid();
         }

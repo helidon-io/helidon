@@ -23,7 +23,6 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Represents the model object for a type.
@@ -35,7 +34,7 @@ interface TypeInfoBlueprint extends Annotated {
      *
      * @return the type name
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     TypeName typeName();
 
     /**
@@ -51,7 +50,7 @@ interface TypeInfoBlueprint extends Annotated {
      * @return the type element kind.
      * @see io.helidon.common.types.TypeValues#KIND_CLASS and other constants on this class prefixed with {@code TYPE}
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String typeKind();
 
     /**
@@ -116,6 +115,13 @@ interface TypeInfoBlueprint extends Annotated {
      */
     @Option.Singular
     Set<String> modifiers();
+
+    /**
+     * Module of this type, if available.
+     *
+     * @return module name
+     */
+    Optional<String> module();
 
     /**
      * Uses {@link #referencedModuleNames()} to determine if the module name is known for the given type.

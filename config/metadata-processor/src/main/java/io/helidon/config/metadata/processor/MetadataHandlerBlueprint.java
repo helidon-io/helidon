@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-/**
- * Annotation processor generating JSON metadata for configuration.
+package io.helidon.config.metadata.processor;
+
+import io.helidon.common.types.TypeInfo;
+
+/*
+ * Takes care of blueprints annotated with builder API only.
  */
-module io.helidon.config.metadata.processor {
+class MetadataHandlerBlueprint implements MetadataHandler {
+    private final TypeInfo blueprintTypeInfo;
 
-    requires java.compiler;
-    requires io.helidon.common.types;
-    requires io.helidon.common.processor;
-
-    exports io.helidon.config.metadata.processor;
-
-    provides javax.annotation.processing.Processor with io.helidon.config.metadata.processor.ConfigMetadataProcessor;
-	
+    MetadataHandlerBlueprint(TypeInfo blueprintTypeInfo) {
+        this.blueprintTypeInfo = blueprintTypeInfo;
+    }
 }

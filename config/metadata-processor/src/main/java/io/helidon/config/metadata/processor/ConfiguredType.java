@@ -24,21 +24,23 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.TypeName;
+
 final class ConfiguredType {
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();
     private final List<ProducerMethod> producerMethods = new LinkedList<>();
     /*
      * The type that is built by a builder, or created using create method.
      */
-    private final String targetClass;
+    private final TypeName targetClass;
     /*
     The type we are processing that has @Configured annotation
      */
-    private final String annotatedClass;
-    private final List<String> inherited = new LinkedList<>();
+    private final TypeName annotatedClass;
+    private final List<TypeName> inherited = new LinkedList<>();
     private final ConfiguredAnnotation configured;
 
-    ConfiguredType(ConfiguredAnnotation configured, String annotatedClass, String targetClass, boolean typeDefinition) {
+    ConfiguredType(ConfiguredAnnotation configured, TypeName annotatedClass, TypeName targetClass, boolean typeDefinition) {
         this.annotatedClass = annotatedClass;
         this.targetClass = targetClass;
         this.configured = configured;
@@ -63,11 +65,11 @@ final class ConfiguredType {
     }
 
     String targetClass() {
-        return targetClass;
+        return targetClass.fqName();
     }
 
     String annotatedClass() {
-        return annotatedClass;
+        return annotatedClass.fqName();
     }
 
     boolean standalone() {
@@ -90,7 +92,9 @@ final class ConfiguredType {
         configured.description().ifPresent(it -> typeObject.add("description", it));
 
         if (!inherited.isEmpty()) {
-            typeObject.add("inherits", inherited);
+            typeObject.add("inherits", inherited.stream()
+                    .map(TypeName::fqName)
+                    .toList());
         }
 
         if (!configured.provides().isEmpty()) {
@@ -114,10 +118,10 @@ final class ConfiguredType {
 
     @Override
     public String toString() {
-        return targetClass;
+        return targetClass.fqName();
     }
 
-    void addInherited(String classOrIface) {
+    void addInherited(TypeName classOrIface) {
         inherited.add(classOrIface);
     }
 

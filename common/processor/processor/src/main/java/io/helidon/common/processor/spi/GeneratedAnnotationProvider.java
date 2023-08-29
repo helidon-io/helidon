@@ -25,7 +25,6 @@ import io.helidon.common.types.TypeName;
 public interface GeneratedAnnotationProvider {
     /**
      * Create a generated annotation.
-     * Current limitation - all values must be Strings, does not support any other annotation properties.
      *
      * @param generator type of the generator (annotation processor)
      * @param trigger type of the class that caused this type to be generated

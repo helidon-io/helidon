@@ -304,6 +304,10 @@ public final class TypeInfoFactory {
                     }
                 }
             });
+            ModuleElement module = processingEnv.getElementUtils().getModuleOf(typeElement);
+            if (module != null) {
+                builder.module(module.toString());
+            }
 
             return Optional.of(builder.build());
         } catch (Exception e) {
