@@ -41,7 +41,7 @@
     <name>Integration Tests: DB Client Application</name>
 
     <properties>
-        <version.lib.jandex-maven-plugin>1.0.6</version.lib.jandex-maven-plugin>
+        <version.lib.jandex-maven-plugin>1.2.3</version.lib.jandex-maven-plugin>
         <mainClass>io.helidon.tests.integration.dbclient.appl.ApplMain</mainClass>
     </properties>
 
