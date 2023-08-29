@@ -19,6 +19,7 @@ package io.helidon.integrations.oci.tls.certificates;
 import java.io.InputStream;
 import java.security.cert.Certificate;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -31,7 +32,8 @@ import jakarta.inject.Singleton;
 class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
     static String version = "1";
 
-    static int callCount;
+    static int callCount_loadCertificates;
+    static int callCount_loadCACertificate;
 
     void version(String version) {
         TestOciCertificatesDownloader.version = version;
@@ -39,35 +41,47 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
 
     @Override
     public Certificates loadCertificates(String certOcid) {
-        callCount++;
+        callCount_loadCertificates++;
 
-        if (OciTestUtils.ociRealUsage()) {
-            return super.loadCertificates(certOcid);
-        } else {
-            Objects.requireNonNull(certOcid);
-            try (InputStream certIs =
-                    TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
-                return OciCertificatesDownloader.create(version, new Certificate[] {toCertificate(certIs)});
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        try {
+            if (OciTestUtils.ociRealUsage()) {
+                return super.loadCertificates(certOcid);
+            } else {
+                TimeUnit.MILLISECONDS.sleep(1); // make sure metrics timestamp changes
+                Objects.requireNonNull(certOcid);
+                try (InputStream certIs =
+                        TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
+                    return OciCertificatesDownloader.create(version, new Certificate[] {toCertificate(certIs)});
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
+        } catch (Exception e) {
+            System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 
     @Override
     public Certificate loadCACertificate(String caCertOcid) {
-        callCount++;
+        callCount_loadCACertificate++;
 
-        if (OciTestUtils.ociRealUsage()) {
-            return super.loadCACertificate(caCertOcid);
-        } else {
-            Objects.requireNonNull(caCertOcid);
-            try (InputStream caCertIs =
-                    TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/ca.pem")) {
-                return toCertificate(caCertIs);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        try {
+            if (OciTestUtils.ociRealUsage()) {
+                return super.loadCACertificate(caCertOcid);
+            } else {
+                TimeUnit.MILLISECONDS.sleep(1); // make sure metrics timestamp changes
+                Objects.requireNonNull(caCertOcid);
+                try (InputStream caCertIs =
+                        TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/ca.pem")) {
+                    return toCertificate(caCertIs);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
+        } catch (Exception e) {
+            System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, e.getMessage(), e);
+            throw new RuntimeException(e);
         }
     }
 

@@ -56,7 +56,7 @@ public interface OciCertificatesDownloader {
      */
     static Certificates create(String version,
                                Certificate[] certificates) {
-        if (Objects.requireNonNull(version).isBlank()) {
+        if (Objects.requireNonNull(version, "Version is required").isBlank()) {
             throw new IllegalArgumentException();
         }
 

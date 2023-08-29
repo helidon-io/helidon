@@ -22,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Objects;
 
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
@@ -43,6 +45,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
 
     @Override
     public Certificates loadCertificates(String certOcid) {
+        Objects.requireNonNull(certOcid);
         try {
             return loadCerts(certOcid);
         } catch (Exception e) {
@@ -52,6 +55,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
 
     @Override
     public Certificate loadCACertificate(String caCertOcid) {
+        Objects.requireNonNull(caCertOcid);
         try {
             return loadCACert(caCertOcid);
         } catch (Exception e) {
@@ -66,12 +70,13 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
                     client.getCertificateBundle(GetCertificateBundleRequest.builder()
                                                         .certificateId(certOcid)
                                                         .build());
-            String version = res.getEtag();
             ByteArrayInputStream chainIs = new ByteArrayInputStream(res.getCertificateBundle().getCertChainPem()
                                                                             .getBytes(StandardCharsets.US_ASCII));
             ByteArrayInputStream certIs = new ByteArrayInputStream(res.getCertificateBundle().getCertificatePem()
                                                                            .getBytes(StandardCharsets.US_ASCII));
-            return create(version, toCertificates(chainIs, certIs));
+            Certificate[] certs = toCertificates(chainIs, certIs);
+            String version = toVersion(res.getEtag(), certs);
+            return create(version, certs);
         }
     }
 
@@ -105,4 +110,13 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         return cf.generateCertificate(certIs);
     }
 
+    // use the eTag, defaulting to the hash of the certs if not present
+    static String toVersion(String eTag,
+                            Certificate[] certs) {
+        if (eTag != null && !eTag.isBlank()) {
+            return eTag;
+        }
+
+        return String.valueOf(Arrays.hashCode(certs));
+    }
 }

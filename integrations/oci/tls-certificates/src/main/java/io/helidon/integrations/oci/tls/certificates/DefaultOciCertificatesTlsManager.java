@@ -38,6 +38,7 @@ import io.helidon.common.tls.TlsConfig;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.Async;
 import io.helidon.inject.api.InjectionServices;
+import io.helidon.inject.api.ServiceProvider;
 import io.helidon.inject.api.Services;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 import io.helidon.integrations.oci.tls.certificates.spi.OciPrivateKeyDownloader;
@@ -49,13 +50,14 @@ import jakarta.inject.Provider;
  *
  * @see DefaultOciCertificatesTlsManagerProvider
  */
-// consider adding metrics around this in the future (number of calls to check for download, number of new downloads, etc.)
 class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements OciCertificatesTlsManager {
     static final String TYPE = "oci-certificates-tls-manager";
     private static final System.Logger LOGGER = System.getLogger(DefaultOciCertificatesTlsManager.class.getName());
 
     private final OciCertificatesTlsManagerConfig cfg;
     private final AtomicReference<String> lastVersionDownloaded = new AtomicReference<>("");
+    private final MetricsTracker.Gauge checkGauge;
+    private final MetricsTracker.Gauge updateGauge;
 
     // these will only be non-null when enabled
     private Provider<OciPrivateKeyDownloader> pkDownloader;
@@ -73,6 +75,18 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                                      io.helidon.common.config.Config config) {
         super(name, TYPE);
         this.cfg = Objects.requireNonNull(cfg);
+
+        // setup metrics tracking
+        // consider adding "real" metrics around this in the future
+        Services services = InjectionServices.realizedServices();
+        ServiceProvider<MetricsTracker> metrics = services.lookupFirst(MetricsTracker.class, false).orElse(null);
+        if (metrics != null) {
+            this.checkGauge = metrics.get().getOrCreateGauge(TYPE + "." + name + ".check", "Checking for cert updates");
+            this.updateGauge = metrics.get().getOrCreateGauge(TYPE + "." + name + ".update", "Updating cert");
+        } else {
+            this.checkGauge = null;
+            this.updateGauge = null;
+        }
 
         // if config changes then will do a reload
         if (config instanceof Config watchableConfig) {
@@ -93,6 +107,10 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             // the initial loading of the tls
             loadContext(true);
 
+            // register for any available graceful shutdown events
+            Optional<ServiceProvider<LifecycleHook>> shutdownHook = services.lookupFirst(LifecycleHook.class, false);
+            shutdownHook.ifPresent(sp -> sp.get().registerShutdownConsumer(this::shutdown));
+
             // now schedule for reload checking
             String taskIntervalDescription =
                     io.helidon.scheduling.Scheduling.cronBuilder()
@@ -105,6 +123,15 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                     OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
         } catch (Exception e) {
             throw new RuntimeException("Unable to initialize", e);
+        }
+    }
+
+    private void shutdown(Object event) {
+        try {
+            LOGGER.log(System.Logger.Level.DEBUG, "Shutting down");
+            asyncExecutor.shutdownNow();
+        } catch (Exception e) {
+            LOGGER.log(System.Logger.Level.WARNING, "Shut down failed", e);
         }
     }
 
@@ -137,21 +164,27 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
      * @return true if a reload occurred
      */
     boolean loadContext(boolean initialLoad) {
+        long startTime = System.currentTimeMillis();
         try {
             // download all of our security collateral from OCI
             OciCertificatesDownloader cd = certDownloader.get();
             OciCertificatesDownloader.Certificates certificates = cd.loadCertificates(cfg.certOcid());
+            long finishTime = System.currentTimeMillis();
+            if (checkGauge != null) {
+                checkGauge.update(finishTime - startTime);
+            }
             if (lastVersionDownloaded.get().equals(certificates.version())) {
+                assert (!initialLoad);
                 return false;
             }
+
+            // reset start time for the next update phase
+            startTime = System.currentTimeMillis();
             Certificate ca = cd.loadCACertificate(cfg.caOcid());
 
             OciPrivateKeyDownloader pd = pkDownloader.get();
             PrivateKey key = pd.loadKey(cfg.keyOcid(), cfg.vaultCryptoEndpoint());
-
-
             SecureRandom secureRandom = secureRandom(tlsConfig);
-
             KeyManagerFactory kmf = buildKmf(tlsConfig, secureRandom, key, certificates.certificates());
 
             TrustManagerFactory tmf = tmf(tlsConfig);
@@ -167,7 +200,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                     .map(X509KeyManager.class::cast)
                     .findFirst();
             if (keyManager.isEmpty()) {
-                throw new RuntimeException("Unable to find X.509 key manager in download");
+                throw new RuntimeException("Unable to find X.509 key manager in download: " + cfg.certOcid());
             }
 
             Optional<X509TrustManager> trustManager = Arrays.stream(tmf.getTrustManagers())
@@ -175,7 +208,7 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                     .map(X509TrustManager.class::cast)
                     .findFirst();
             if (trustManager.isEmpty()) {
-                throw new RuntimeException("Unable to find X.509 trust manager in download");
+                throw new RuntimeException("Unable to find X.509 trust manager in download: " + cfg.certOcid());
             }
 
             if (initialLoad) {
@@ -183,6 +216,11 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             } else {
                 reload(keyManager, trustManager);
             }
+            finishTime = System.currentTimeMillis();
+            if (updateGauge != null) {
+                updateGauge.update(finishTime - startTime);
+            }
+
             return true;
         } catch (KeyStoreException e) {
             throw new IllegalStateException("Error while loading context from OCI", e);

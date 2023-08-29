@@ -24,6 +24,7 @@
 
     <Match>
         <!-- Needed by OCI - "AESWrapPad" -->
+        <!-- https://docs.oracle.com/en/java/javase/20/docs/specs/security/standard-names.html -->
         <Class name="io.helidon.integrations.oci.tls.certificates.DefaultOciPrivateKeyDownloader" />
         <Method name="unwrapRSA"/>
         <Bug pattern="CIPHER_INTEGRITY"/>

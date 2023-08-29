@@ -23,10 +23,14 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.MGF1ParameterSpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
@@ -63,6 +67,8 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
     @Override
     public PrivateKey loadKey(String keyOcid,
                               URI vaultCryptoEndpoint) {
+        Objects.requireNonNull(keyOcid);
+        Objects.requireNonNull(vaultCryptoEndpoint);
         try (KmsCryptoClient client = KmsCryptoClient.builder()
                 .endpoint(vaultCryptoEndpoint.toString())
                 .build(OciExtension.ociAuthenticationProvider().get())) {
@@ -84,29 +90,35 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
     PrivateKey decode(String encryptedKey) throws Exception {
         byte[] encryptedMaterial = Base64.getDecoder().decode(encryptedKey);
 
-        //rfc3394 - first 256 bytes is tmp AES key encrypted by our temp wrapping RSA
+        // rfc3394 - first 256 bytes is tmp AES key encrypted by our temp wrapping RSA
         byte[] tmpAes = decryptAesKey(Arrays.copyOf(encryptedMaterial, 256));
 
-        //rfc3394 - rest of the bytes is secret key wrapped by tmp AES
+        // rfc3394 - rest of the bytes is secret key wrapped by tmp AES
         byte[] wrappedSecretKey = Arrays.copyOfRange(encryptedMaterial, 256, encryptedMaterial.length);
 
-        // Unwrap with decrypted tmp AES
+        // unwrap with decrypted tmp AES
         return (PrivateKey) unwrapRSA(wrappedSecretKey, tmpAes);
     }
 
-    Key unwrapRSA(byte[] in, byte[] keyBytes) throws Exception {
+    Key unwrapRSA(byte[] in,
+                  byte[] keyBytes) throws Exception {
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
+        // https://docs.oracle.com/en/java/javase/20/docs/specs/security/standard-names.html
         Cipher c = Cipher.getInstance("AESWrapPad");
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(in, "RSA", Cipher.PRIVATE_KEY);
     }
 
     byte[] decryptAesKey(byte[] in) throws Exception {
-        // OCI uses BC
-        //https://stackoverflow.com/a/23859386/626826
-        //https://bugs.openjdk.org/browse/JDK-7038158
-        Cipher decrypt = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING", "BC");
-        decrypt.init(Cipher.DECRYPT_MODE, wrappingPrivateKey);
+        Cipher decrypt = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256andMGF1Padding");
+
+        // https://stackoverflow.com/questions/61665435/encryption-in-java-with-rsa-ecb-oaepwithsha-256andmgf1padding-could-not-be-decry
+        // decrypt.init(Cipher.DECRYPT_MODE, wrappingPrivateKey);
+        decrypt.init(Cipher.DECRYPT_MODE, wrappingPrivateKey,
+                     new OAEPParameterSpec("SHA-256", "MGF1",
+                                           new MGF1ParameterSpec("SHA-256"),
+                                           PSource.PSpecified.DEFAULT));
+
         return decrypt.doFinal(in);
     }
 

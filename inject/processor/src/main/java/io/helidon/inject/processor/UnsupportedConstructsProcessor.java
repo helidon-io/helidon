@@ -115,8 +115,8 @@ public class UnsupportedConstructsProcessor extends AbstractProcessor {
                     return false;
                 }
 
-                String msg = "This module contains unsupported annotations for Injection "
-                                + " to process: " + annotationTypeNames + ".\n";
+                String msg = "This module contains unsupported annotations for Injection to process: "
+                        + annotationTypeNames + ".\n";
                 if (annotationTypeNames.contains(TypeNames.JAKARTA_APPLICATION_SCOPED)
                         || annotationTypeNames.contains(TypeNames.JAVAX_APPLICATION_SCOPED)) {
                     msg += "'" + TypeNames.JAKARTA_APPLICATION_SCOPED + "' can be optionally mapped to '"

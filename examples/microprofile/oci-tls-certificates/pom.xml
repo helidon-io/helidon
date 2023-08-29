@@ -34,15 +34,24 @@
     </description>
 
     <properties>
-        <bouncy-castle.version>1.70</bouncy-castle.version>
+        <bouncy-castle.version>1.74</bouncy-castle.version>
+        <jipher.version>10.30</jipher.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk15to18</artifactId>
             <version>${bouncy-castle.version}</version>
+            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.oracle.pic.jipher</groupId>
+            <artifactId>jipher-jce</artifactId>
+            <version>${jipher.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>

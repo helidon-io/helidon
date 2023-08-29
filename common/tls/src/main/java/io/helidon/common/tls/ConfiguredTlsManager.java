@@ -115,7 +115,7 @@ public class ConfiguredTlsManager implements TlsManager {
      * Reload the current SSL context with the provided key manager and trust manager (if defined).
      *
      * @param keyManager   key manager to use
-     * @param trustManager trust manager to sue
+     * @param trustManager trust manager to use
      */
     // for extensibility it is more suitable to have a single method for reloading, hence the optional parameters,
     // if we need even one more, create an object with a builder
