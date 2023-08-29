@@ -47,6 +47,8 @@ import io.opentelemetry.extension.trace.propagation.JaegerPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import io.opentelemetry.sdk.trace.export.SpanExporter;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
@@ -99,7 +101,7 @@ import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
  *         <td>Path to be used.</td>
  *     </tr>
  *     <tr>
- *         <td>{@code exporter-timeout-millis}</td>
+ *         <td>{@code exporter-timeout}</td>
  *         <td>10 seconds</td>
  *         <td>Timeout of exporter</td>
  *     </tr>
@@ -154,6 +156,9 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final String DEFAULT_HTTP_HOST = "localhost";
     static final int DEFAULT_HTTP_PORT = 14250;
 
+    static final long DEFAULT_SCHEDULE_DELAY = 30_000;
+    static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
+    static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
     private final Map<String, String> tags = new HashMap<>();
     // this is a backward incompatible change, but the correct choice is Jaeger, not B3
     private final Set<PropagationFormat> propagationFormats = EnumSet.noneOf(PropagationFormat.class);
@@ -165,12 +170,17 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     private Number samplerParam = 1;
     private boolean enabled = DEFAULT_ENABLED;
     private boolean global = true;
-    private Duration exporterTimeout = Duration.ofSeconds(10);
     private byte[] privateKey;
     private byte[] certificate;
     private byte[] trustedCertificates;
     private String path;
     private Config config;
+    private Duration exporterTimeout = Duration.ofSeconds(10);
+    private Duration scheduleDelay = Duration.ofMillis(DEFAULT_SCHEDULE_DELAY);
+    private int maxQueueSize = DEFAULT_MAX_QUEUE_SIZE;
+    private int maxExportBatchSize = DEFAULT_MAX_EXPORT_BATCH_SIZE;
+
+    private SpanProcessorType spanProcessorType = SpanProcessorType.BATCH;
 
     /**
      * Default constructor, does not modify any state.
@@ -264,7 +274,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         config.get("path").asString().ifPresent(this::collectorPath);
         config.get("sampler-type").asString().as(SamplerType::create).ifPresent(this::samplerType);
         config.get("sampler-param").asDouble().ifPresent(this::samplerParam);
-        config.get("exporter-timeout-millis").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
         config.get("private-key-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::privateKey);
         config.get("client-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::clientCertificate);
         config.get("trusted-cert-pem").as(io.helidon.common.configurable.Resource::create).ifPresent(this::trustedCertificates);
@@ -298,6 +307,13 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
                 });
 
         config.get("global").asBoolean().ifPresent(this::registerGlobal);
+
+        config.get("span-processor-type").asString()
+                .ifPresent(it -> spanProcessorType(SpanProcessorType.valueOf(it.toUpperCase())));
+        config.get("exporter-timeout").as(Duration.class).ifPresent(this::exporterTimeout);
+        config.get("schedule-delay").as(Duration.class).ifPresent(this::scheduleDelay);
+        config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
+        config.get("max-export-batch-size").asInt().ifPresent(this::maxExportBatchSize);
 
         return this;
     }
@@ -339,14 +355,63 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     }
 
     /**
+     * Span Processor type used.
+     *
+     * @param spanProcessorType to use
+     * @return updated builder
+     */
+    @ConfiguredOption("batch")
+    public JaegerTracerBuilder spanProcessorType(SpanProcessorType spanProcessorType) {
+        this.spanProcessorType = spanProcessorType;
+        return this;
+    }
+
+
+    /**
      * Timeout of exporter requests.
      *
      * @param exporterTimeout timeout to use
      * @return updated builder
      */
-    @ConfiguredOption(key = "exporter-timeout-millis", value = "10000")
+    @ConfiguredOption("PT10S")
     public JaegerTracerBuilder exporterTimeout(Duration exporterTimeout) {
         this.exporterTimeout = exporterTimeout;
+        return this;
+    }
+
+    /**
+     * Schedule Delay of exporter requests.
+     *
+     * @param scheduleDelay timeout to use
+     * @return updated builder
+     */
+    @ConfiguredOption("PT5S")
+    public JaegerTracerBuilder scheduleDelay(Duration scheduleDelay) {
+        this.scheduleDelay = scheduleDelay;
+        return this;
+    }
+
+    /**
+     * Maximum Queue Size of exporter requests.
+     *
+     * @param maxQueueSize to use
+     * @return updated builder
+     */
+    @ConfiguredOption("2048")
+    public JaegerTracerBuilder maxQueueSize(int maxQueueSize) {
+        this.maxQueueSize = maxQueueSize;
+        return this;
+    }
+
+    /**
+     * Maximum Export Batch Size of exporter requests.
+     *
+     * @param maxExportBatchSize to use
+     * @return updated builder
+     */
+    @ConfiguredOption("512")
+    public JaegerTracerBuilder maxExportBatchSize(int maxExportBatchSize) {
+        this.maxExportBatchSize = maxExportBatchSize;
         return this;
     }
 
@@ -462,7 +527,7 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
             Resource serviceName = Resource.create(attributesBuilder.build());
             OpenTelemetry ot = OpenTelemetrySdk.builder()
                     .setTracerProvider(SdkTracerProvider.builder()
-                            .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                            .addSpanProcessor(spanProcessor(exporter))
                             .setSampler(sampler)
                             .setResource(serviceName)
                             .build())
@@ -525,6 +590,26 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return enabled;
     }
 
+    SpanProcessorType spanProcessorType() {
+        return spanProcessorType;
+    }
+
+    Duration exporterTimeout() {
+        return exporterTimeout;
+    }
+
+    Duration scheduleDelay() {
+        return scheduleDelay;
+    }
+
+    int maxQueueSize() {
+        return maxQueueSize;
+    }
+
+    int maxExportBatchSize() {
+        return maxExportBatchSize;
+    }
+
     List<TextMapPropagator> createPropagators() {
         if (propagationFormats.isEmpty()) {
             // for backward compatibility, we add B3 if nothing is defined
@@ -535,6 +620,18 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
         return propagationFormats.stream()
                 .map(JaegerTracerBuilder::mapFormatToPropagator)
                 .toList();
+    }
+
+    private SpanProcessor spanProcessor(SpanExporter exporter) {
+        return switch (spanProcessorType) {
+            case BATCH -> BatchSpanProcessor.builder(exporter)
+                    .setScheduleDelay(scheduleDelay)
+                    .setMaxQueueSize(maxQueueSize)
+                    .setMaxExportBatchSize(maxExportBatchSize)
+                    .setExporterTimeout(exporterTimeout)
+                    .build();
+            case SIMPLE -> SimpleSpanProcessor.create(exporter);
+        };
     }
 
     private static TextMapPropagator mapFormatToPropagator(PropagationFormat propagationFormat) {
@@ -601,5 +698,20 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
          * The W3C trace context propagation format.
          */
         W3C
+    }
+
+
+    /**
+     * Span Processor type. Batch is default for production.
+     */
+    public enum SpanProcessorType {
+        /**
+         * Simple Span Processor.
+         */
+        SIMPLE,
+        /**
+         * Batch Span Processor.
+         */
+        BATCH
     }
 }
