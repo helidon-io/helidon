@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.examples.quickstart.mp;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
-import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
@@ -41,28 +40,28 @@ class MainTest {
     @Test
     void testHelloWorld() {
 
-        JsonObject jsonObject = target.path("/greet")
+        GreetingMessage message = target.path("/greet")
                 .request()
-                .get(JsonObject.class);
-        assertThat("default message", jsonObject.getString("message"),
+                .get(GreetingMessage.class);
+        assertThat("default message", message.getMessage(),
                 is("Hello World!"));
 
-        jsonObject = target.path("/greet/Joe")
+        message = target.path("/greet/Joe")
                 .request()
-                .get(JsonObject.class);
-        assertThat("hello Joe message", jsonObject.getString("message"),
+                .get(GreetingMessage.class);
+        assertThat("hello Joe message", message.getMessage(),
                 is("Hello Joe!"));
 
         try (Response r = target.path("/greet/greeting")
                 .request()
-                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+                .put(Entity.entity("{\"message\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
             assertThat("PUT status code", r.getStatus(), is(204));
         }
 
-        jsonObject = target.path("/greet/Jose")
+        message = target.path("/greet/Jose")
                 .request()
-                .get(JsonObject.class);
-        assertThat("hola Jose message", jsonObject.getString("message"),
+                .get(GreetingMessage.class);
+        assertThat("hola Jose message", message.getMessage(),
                 is("Hola Jose!"));
 
         try (Response r = target.path("/metrics")
