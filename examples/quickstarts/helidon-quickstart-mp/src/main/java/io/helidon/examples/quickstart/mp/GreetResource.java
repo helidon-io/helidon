@@ -132,30 +132,4 @@ public class GreetResource {
 
         return new GreetingMessage(msg);
     }
-
-    /**
-     * POJO defining the greeting message content.
-     */
-    public static class GreetingMessage {
-
-        private String message;
-
-        /**
-         * Gets the message value.
-         *
-         * @return message value
-         */
-        public String getMessage() {
-            return message;
-        }
-
-        /**
-         * Sets the message value.
-         *
-         * @param message message value to set
-         */
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
 }

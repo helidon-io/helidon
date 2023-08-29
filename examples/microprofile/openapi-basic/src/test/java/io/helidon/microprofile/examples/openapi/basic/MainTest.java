@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,32 +53,32 @@ class MainTest {
 
         Client client = ClientBuilder.newClient();
 
-        JsonObject jsonObject = client
+        GreetingMessage message = client
                 .target(getConnectionString("/greet"))
                 .request()
-                .get(JsonObject.class);
-        assertThat("default message", jsonObject.getString("message"),
+                .get(GreetingMessage.class);
+        assertThat("default message", message.getMessage(),
                 is("Hello World!"));
 
-        jsonObject = client
+        message = client
                 .target(getConnectionString("/greet/Joe"))
                 .request()
-                .get(JsonObject.class);
-        assertThat("hello Joe message", jsonObject.getString("message"),
+                .get(GreetingMessage.class);
+        assertThat("hello Joe message", message.getMessage(),
                 is("Hello Joe!"));
 
         try (Response r = client
                 .target(getConnectionString("/greet/greeting"))
                 .request()
-                .put(Entity.entity("{\"greeting\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
+                .put(Entity.entity("{\"message\" : \"Hola\"}", MediaType.APPLICATION_JSON))) {
             assertThat("PUT status code", r.getStatus(), is(204));
         }
 
-        jsonObject = client
+        message = client
                 .target(getConnectionString("/greet/Jose"))
                 .request()
-                .get(JsonObject.class);
-        assertThat("hola Jose message", jsonObject.getString("message"),
+                .get(GreetingMessage.class);
+        assertThat("hola Jose message", message.getMessage(),
                 is("Hola Jose!"));
 
         client.close();
