@@ -43,6 +43,7 @@ class DefaultValuesTest {
 
         assertThat(values.string(), is(DEFAULT_STRING));
         assertThat(values.strings(), hasItems(DEFAULT_STRING, DEFAULT_STRING));
+        assertThat(values.stringSupplier().get(), is(DEFAULT_STRING));
 
         assertThat(values.integer(), is(DEFAULT_INT));
         assertThat(values.integers(), hasItems(DEFAULT_INT, DEFAULT_INT));

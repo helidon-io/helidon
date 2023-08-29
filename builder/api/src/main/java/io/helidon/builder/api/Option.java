@@ -73,10 +73,11 @@ public final class Option {
 
     /**
      * Mark option as a required option.
-     * When used on a primitive type, the value MUST be configured through the builder (e.g. default value
-     * of the primitive type is ignored).
-     * When combined with and of the default value annotations, this option is useless, as there always is
-     * a value.
+     * <p>
+     * Required options of primitive types must be configured through the builder. The default value of the primitive type
+     * is ignored.
+     * This option is not applicable when combined with the default value annotations, as such fields always have values,
+     * unless the type is {@link java.util.Optional}
      */
     @Target(ElementType.METHOD)
     @Inherited
@@ -86,7 +87,7 @@ public final class Option {
 
     /**
      * Mark option as sourced from a {@link java.util.ServiceLoader}.
-     * Use if the configuration may be provided by another module not know to us.
+     * Use if the configuration may be provided by another module not known to us.
      * <p>
      * If the method returns a list, the provider configuration must be under config key {@code providers} under
      * the configured option. On the same level as {@code providers}, there can be {@code discover-services} boolean
@@ -124,14 +125,14 @@ public final class Option {
          * The service provider interface that is used to discover
          * implementations. The type of the property is the service provided by that provider.
          *
-         * @return type of the provider.
+         * @return type of the provider
          */
         Class<?> value();
 
         /**
          * Whether to discover all services using a service loader by default.
-         * When set to true, all services discovered by the service loader will be added (even if no configuration
-         * node exists for them). When se to false, only services that have a configuration node will be added.
+         * When set to {@code true}, all services discovered by the service loader will be added (even if no configuration
+         * node exists for them). When set to {@code false}, only services that have a configuration node will be added.
          * This can be overridden by {@code discover-services} configuration option under this option's key.
          *
          * @return whether to discover services by default for a provider
@@ -141,7 +142,7 @@ public final class Option {
 
     /**
      * Allowed values for this option.
-     * The allowed value is always configured as a string, and it is compared to {@link java.lang.String#valueOf(Object)} of the
+     * The allowed value is always configured as a string, and is compared to {@link java.lang.String#valueOf(Object)} of the
      * value.
      */
     @Target(ElementType.METHOD)

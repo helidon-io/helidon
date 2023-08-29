@@ -93,7 +93,7 @@ interface KeysBlueprint {
      *
      * @return the certificates configured or empty list if none configured
      */
-    @Option.Singular("cert")
+    @Option.Singular
     List<X509Certificate> certs();
 
 }

@@ -67,6 +67,8 @@ record AnnotationDataOption(Javadoc javadoc,
                             String defaultValue) {
     private static final String UNCONFIGURED = "io.helidon.config.metadata.ConfiguredOption.UNCONFIGURED";
 
+    // this is temporary, when we stop supporting config metadata, we can refactor this method
+    @SuppressWarnings("checkstyle:MethodLength")
     static AnnotationDataOption create(TypeHandler handler, TypedElementInfo element) {
         // now we need to support both config metadata and new approach, starting with new, the old can be later removed
         Javadoc javadoc = null;

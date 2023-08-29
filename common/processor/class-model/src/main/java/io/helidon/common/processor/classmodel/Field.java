@@ -166,7 +166,7 @@ public final class Field extends AnnotatedComponent {
         }
 
         /**
-         * Set default value this field should be initialized with using the literal value provided.
+         * Configure a default value for this field as a string that will be copied verbatim to the generated sources.
          *
          * @param defaultValue default value
          * @return updated builder instance

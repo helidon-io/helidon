@@ -18,6 +18,7 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -56,6 +57,9 @@ interface DefaultValuesBlueprint {
 
     @Option.Default({DEFAULT_STRING, DEFAULT_STRING})
     List<String> strings();
+
+    @Option.Default(DEFAULT_STRING)
+    Supplier<String> stringSupplier();
 
     @Option.DefaultInt(DEFAULT_INT)
     int integer();
