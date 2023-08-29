@@ -33,18 +33,20 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 @Aot(description = "Experimental support, tested on limited use cases")
 module io.helidon.integrations.jta.cdi {
-    requires static io.helidon.common.features.api;
 
-    requires jakarta.transaction;
     requires jakarta.annotation;
-    requires java.sql;
-    requires java.rmi;
-    requires jakarta.inject;
     requires jakarta.cdi;
+    requires jakarta.inject;
+    requires jakarta.transaction;
+    requires java.rmi;
+    requires java.sql;
     requires narayana.jta.jakarta;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.integrations.jta.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.jta.cdi.NarayanaExtension;
+
 }

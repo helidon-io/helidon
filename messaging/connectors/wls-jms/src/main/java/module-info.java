@@ -17,16 +17,21 @@
 /**
  * Microprofile messaging Weblogic JMS connector.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.messaging.connectors.wls {
+
+    requires io.helidon.messaging.connectors.jms;
+    requires jakarta.messaging;
     requires java.logging;
+    requires java.naming;
 
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires io.helidon.messaging.connectors.jms;
-    requires jakarta.messaging;
-    requires java.naming;
-    requires microprofile.config.api;
-    requires io.helidon.config.mp;
+
+    requires transitive io.helidon.config.mp;
+    requires transitive microprofile.config.api;
+
 
     exports io.helidon.messaging.connectors.wls;
+
 }

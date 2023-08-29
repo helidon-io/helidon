@@ -23,7 +23,6 @@ module io.helidon.integrations.jta.jdbc {
     requires transitive java.rmi; // jakarta.transaction.TransactionRequiredException extends RemoteException (!)
 
     requires transitive jakarta.transaction; // automatic module
-
     requires transitive io.helidon.integrations.jdbc;
 
     exports io.helidon.integrations.jta.jdbc;

@@ -27,12 +27,13 @@ import io.helidon.http.encoding.spi.ContentEncodingProvider;
          path = "Encoding"
 )
 module io.helidon.http.encoding {
-    requires static io.helidon.common.features.api;
+
     requires io.helidon.builder.api;
+    requires io.helidon.common;
+
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
-
-    requires io.helidon.common;
 
     requires transitive io.helidon.common.config;
     requires transitive io.helidon.http;
@@ -41,4 +42,5 @@ module io.helidon.http.encoding {
     exports io.helidon.http.encoding.spi;
 
     uses ContentEncodingProvider;
+
 }

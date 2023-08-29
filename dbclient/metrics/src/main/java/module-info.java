@@ -27,9 +27,11 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.dbclient.metrics {
 
-    requires static io.helidon.common.features.api;
-    requires transitive io.helidon.dbclient;
     requires io.helidon.metrics.api;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.dbclient;
 
     exports io.helidon.dbclient.metrics;
 

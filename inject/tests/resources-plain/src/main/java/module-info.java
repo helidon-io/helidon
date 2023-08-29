@@ -27,4 +27,5 @@ module io.helidon.inject.tests.plain {
 
     exports io.helidon.inject.tests.plain.hello;
     exports io.helidon.inject.tests.plain.interceptor;
+	
 }

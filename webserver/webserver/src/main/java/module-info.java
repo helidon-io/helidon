@@ -16,12 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webserver.http.spi.SinkProvider;
-import io.helidon.webserver.http1.Http1ConnectionProvider;
-import io.helidon.webserver.http1.Http1ProtocolConfigProvider;
-import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.webserver.spi.ProtocolConfigProvider;
-import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 
 /**
  * Helidon WebServer.
@@ -31,36 +25,32 @@ import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
          in = HelidonFlavor.SE
 )
 module io.helidon.webserver {
-    requires transitive io.helidon.common.buffers;
-    requires transitive io.helidon.common.socket;
-    requires transitive io.helidon.http.encoding;
-    requires transitive io.helidon.http.media;
-    requires transitive io.helidon.common.tls;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.common.security;
-    requires io.helidon.logging.common;
+
     requires io.helidon.builder.api;
     requires io.helidon.common.features.api;
     requires io.helidon.common.features;
     requires io.helidon.common.task;
-
-    requires java.management;
-    // only used to keep logging active until shutdown hook finishes
-    requires java.logging;
-
-    requires jakarta.annotation;
     requires io.helidon.common.uri;
+    requires io.helidon.inject.api;  // needed to compile injection generated classes
+    requires io.helidon.logging.common;
+    requires jakarta.annotation;
+    requires java.logging; // only used to keep logging active until shutdown hook finishes
+    requires java.management;
 
     requires static io.helidon.config.metadata;
     requires static io.helidon.inject.configdriven.runtime;
+    requires static io.helidon.inject.runtime;
     requires static jakarta.inject;
-    // to compile @Generated
     requires static java.compiler;
 
-    // needed to compile injection generated classes
-    requires io.helidon.inject.api;
-    requires static io.helidon.inject.runtime;
+    requires transitive io.helidon.common.buffers;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.common.security;
+    requires transitive io.helidon.common.socket;
+    requires transitive io.helidon.common.tls;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.http.encoding;
+    requires transitive io.helidon.http.media;
 
     // provides multiple packages due to intentional cyclic dependency
     // we want to support HTTP/1.1 by default (we could fully separate it, but the API would be harder to use
@@ -73,13 +63,14 @@ module io.helidon.webserver {
     exports io.helidon.webserver.http1;
     exports io.helidon.webserver.http1.spi;
 
-    uses Http1UpgradeProvider;
-    uses ServerConnectionSelectorProvider;
-    uses SinkProvider;
-    uses ProtocolConfigProvider;
+    uses io.helidon.webserver.http1.spi.Http1UpgradeProvider;
+    uses io.helidon.webserver.spi.ServerConnectionSelectorProvider;
+    uses io.helidon.webserver.http.spi.SinkProvider;
+    uses io.helidon.webserver.spi.ProtocolConfigProvider;
 
-    provides ProtocolConfigProvider
-            with Http1ProtocolConfigProvider;
-    provides ServerConnectionSelectorProvider with Http1ConnectionProvider;
+    provides io.helidon.webserver.spi.ProtocolConfigProvider
+            with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
+    provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
     provides io.helidon.inject.api.ModuleComponent with io.helidon.webserver.Injection$$Module;
+
 }

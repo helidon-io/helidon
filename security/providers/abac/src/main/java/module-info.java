@@ -26,16 +26,20 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Security", "Provider", "ABAC"}
 )
 module io.helidon.security.providers.abac {
-    requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.security;
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.security;
 
     exports io.helidon.security.providers.abac;
     exports io.helidon.security.providers.abac.spi;
 
     uses io.helidon.security.providers.abac.spi.AbacValidatorService;
-    provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.abac.AbacProviderService;
+
+    provides io.helidon.security.spi.SecurityProviderService
+            with io.helidon.security.providers.abac.AbacProviderService;
+
 }

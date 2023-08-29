@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import io.helidon.common.features.api.Aot;
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 
 /**
  * Helidon Database Client JDBC.
@@ -30,19 +28,19 @@ import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 @Aot(description = "Tested with Helidon Oracle and H2 drivers (see examples)")
 module io.helidon.dbclient.jdbc {
 
-    requires static io.helidon.common.features.api;
-
     requires java.sql;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.dbclient;
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.config.metadata;
+    requires transitive io.helidon.dbclient;
 
     exports io.helidon.dbclient.jdbc;
     exports io.helidon.dbclient.jdbc.spi;
 
-    uses JdbcConnectionPoolProvider;
+    uses io.helidon.dbclient.jdbc.JdbcClientProvider;
 
     provides io.helidon.dbclient.spi.DbClientProvider
             with io.helidon.dbclient.jdbc.JdbcClientProvider;

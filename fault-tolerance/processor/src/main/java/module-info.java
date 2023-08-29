@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-import io.helidon.faulttolerance.processor.CircuitBreakerMethodCreator;
-import io.helidon.faulttolerance.processor.FallbackMethodCreator;
-import io.helidon.faulttolerance.processor.RetryMethodCreator;
-import io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator;
 
 /**
  * Annotation processor that generates HTTP Endpoints.
  */
 module io.helidon.faulttolerance.processor {
+
     requires io.helidon.inject.api;
     requires io.helidon.inject.tools;
     requires io.helidon.inject.processor;
@@ -31,8 +28,9 @@ module io.helidon.faulttolerance.processor {
     exports io.helidon.faulttolerance.processor;
     opens templates.inject;
 
-    provides CustomAnnotationTemplateCreator
-            with FallbackMethodCreator,
-                    RetryMethodCreator,
-                    CircuitBreakerMethodCreator;
+    provides io.helidon.inject.tools.spi.CustomAnnotationTemplateCreator
+            with io.helidon.faulttolerance.processor.FallbackMethodCreator,
+                    io.helidon.faulttolerance.processor.RetryMethodCreator,
+                    io.helidon.faulttolerance.processor.CircuitBreakerMethodCreator;
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@
  * Support for HOCON configuration sources.
  */
 module io.helidon.config.hocon.mp {
-    requires microprofile.config.api;
 
     requires io.helidon.config.mp;
-    requires transitive io.helidon.config;
+    requires microprofile.config.api;
     requires typesafe.config;
+
+    requires transitive io.helidon.config;
 
     exports io.helidon.config.hocon.mp;
 

@@ -27,13 +27,17 @@ import io.helidon.common.features.api.Preview;
          in = HelidonFlavor.SE,
          path = "Neo4j"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.neo4j {
+
     requires java.logging;
+    requires io.helidon.common;
 
     requires static io.helidon.common.features.api;
-    requires static io.helidon.config;
 
-    requires org.neo4j.driver;
+    requires transitive io.helidon.common.config;
+    requires transitive org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j;
+
 }

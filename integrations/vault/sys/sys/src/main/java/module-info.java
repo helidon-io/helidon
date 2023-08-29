@@ -28,13 +28,14 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Sys"}
 )
 module io.helidon.integrations.vault.sys {
-    requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
-    requires transitive io.helidon.integrations.vault;
     requires io.helidon.integrations.common.rest;
     requires io.helidon.integrations.vault.auths.common;
+    requires java.logging;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.integrations.vault;
 
     exports io.helidon.integrations.vault.sys;
 
@@ -43,4 +44,5 @@ module io.helidon.integrations.vault.sys {
 
     provides io.helidon.integrations.vault.spi.InjectionProvider
             with io.helidon.integrations.vault.sys.HcpSysProvider;
+
 }

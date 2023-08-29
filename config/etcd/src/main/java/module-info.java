@@ -21,20 +21,23 @@ import io.helidon.config.etcd.EtcdWatcherProvider;
  */
 module io.helidon.config.etcd {
 
-    requires java.logging;
-    requires transitive io.helidon.config;
+    requires com.google.common;
+    requires com.google.protobuf;
     requires etcd4j;
+    requires grpc.api;
     requires grpc.protobuf;
     requires grpc.stub;
-    requires grpc.api;
-    requires com.google.protobuf;
-    requires com.google.common;
-    requires io.helidon.common;
     requires io.helidon.common.media.type;
+    requires io.helidon.common;
+    requires java.logging;
+
     requires static java.annotation;
+
+    requires transitive io.helidon.config;
 
     exports io.helidon.config.etcd;
 
     provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.config.etcd.EtcdConfigSourceProvider;
     provides io.helidon.config.spi.ChangeWatcherProvider with EtcdWatcherProvider;
+
 }

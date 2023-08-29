@@ -25,4 +25,5 @@ module io.helidon.tests.apps.bookstore.common {
     opens io.helidon.tests.apps.bookstore.common to weld.core.impl, io.helidon.microprofile.cdi;
 
     exports io.helidon.tests.apps.bookstore.common;
+
 }

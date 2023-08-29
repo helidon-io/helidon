@@ -27,14 +27,15 @@ import io.helidon.common.features.api.Preview;
         in = HelidonFlavor.SE,
         path = {"Neo4j", "Health"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.neo4j.health {
     requires static io.helidon.common.features.api;
-    requires io.helidon.health;
 
-    requires org.neo4j.driver;
-
+    requires transitive io.helidon.health;
+    requires transitive org.neo4j.driver;
 
     exports io.helidon.integrations.neo4j.health;
 
     opens io.helidon.integrations.neo4j.health;
+
 }

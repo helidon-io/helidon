@@ -18,9 +18,11 @@
  * Helidon WebServer Testing JUnit 5 Support for WebSocket.
  */
 module io.helidon.webserver.testing.junit5.websocket {
-    requires transitive io.helidon.webserver.testing.junit5;
-    requires io.helidon.webserver.websocket;
+
     requires io.helidon.webclient.websocket;
+    requires io.helidon.webserver.websocket;
+
+    requires transitive io.helidon.webserver.testing.junit5;
 
     exports io.helidon.webserver.testing.junit5.websocket;
 
@@ -29,4 +31,5 @@ module io.helidon.webserver.testing.junit5.websocket {
 
     provides io.helidon.webserver.testing.junit5.spi.DirectJunitExtension
             with io.helidon.webserver.testing.junit5.websocket.WsDirectExtension;
+
 }

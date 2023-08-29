@@ -26,12 +26,15 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"WebServer", "AccessLog"}
 )
 module io.helidon.webserver.accesslog {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.common.security;
+    requires io.helidon.webserver;
     requires java.logging;
 
-    requires io.helidon.webserver;
-    requires io.helidon.common.security;
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.config;
 
     exports io.helidon.webserver.accesslog;
+
 }

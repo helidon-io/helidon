@@ -26,17 +26,19 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Security", "Provider", "Header"}
 )
 module io.helidon.security.providers.header {
-    requires static io.helidon.common.features.api;
 
-    requires io.helidon.config;
     requires io.helidon.common;
-    requires io.helidon.security;
-    requires io.helidon.security.util;
     requires io.helidon.security.providers.common;
+    requires io.helidon.security.util;
 
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.config;
+    requires transitive io.helidon.security;
 
     exports io.helidon.security.providers.header;
 
     provides io.helidon.security.spi.SecurityProviderService with io.helidon.security.providers.header.HeaderAtnService;
+
 }

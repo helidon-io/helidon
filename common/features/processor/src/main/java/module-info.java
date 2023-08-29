@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,11 @@
  * Annotation processor generating metadata for Helidon features.
  */
 module io.helidon.common.features.processor {
+
     requires java.compiler;
 
     exports io.helidon.common.features.processor;
 
     provides javax.annotation.processing.Processor with io.helidon.common.features.processor.FeatureProcessor;
+
 }

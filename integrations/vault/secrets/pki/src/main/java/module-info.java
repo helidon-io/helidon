@@ -26,13 +26,14 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"HCP Vault", "Secrets", "PKI"}
 )
 module io.helidon.integrations.vault.secrets.pki {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.http;
+    requires io.helidon.integrations.common.rest;
     requires java.logging;
 
-    requires io.helidon.integrations.common.rest;
+    requires static io.helidon.common.features.api;
+
     requires transitive io.helidon.integrations.vault;
-    requires io.helidon.http;
 
     exports io.helidon.integrations.vault.secrets.pki;
 

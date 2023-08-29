@@ -18,10 +18,14 @@
  * Helidon Injection Integrations for OCI SDK.
  */
 module io.helidon.integrations.oci.sdk.processor {
+
+    requires handlebars;
+    requires java.compiler;
+
     requires static jakarta.inject;
     requires static jdk.jfr;
-    requires java.compiler;
-    requires handlebars;
+
+    requires transitive io.helidon.common.types;
     requires transitive io.helidon.inject.processor;
 
     exports io.helidon.integrations.oci.sdk.processor;
@@ -33,4 +37,5 @@ module io.helidon.integrations.oci.sdk.processor {
             io.helidon.integrations.oci.sdk.processor.OciInjectionProcessorObserver;
     provides io.helidon.inject.tools.spi.ModuleComponentNamer with
             io.helidon.integrations.oci.sdk.processor.OciModuleComponentNamer;
+
 }

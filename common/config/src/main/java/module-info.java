@@ -18,10 +18,12 @@
  * Helidon Common Config Library.
  */
 module io.helidon.common.config {
+
     requires io.helidon.common;
 
     exports io.helidon.common.config;
     exports io.helidon.common.config.spi;
 
     uses io.helidon.common.config.spi.ConfigProvider;
+
 }

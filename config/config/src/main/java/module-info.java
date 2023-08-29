@@ -28,17 +28,16 @@ import io.helidon.common.features.api.HelidonFlavor;
 )
 module io.helidon.config {
 
-    requires transitive jakarta.annotation;
-
-    requires transitive io.helidon.common.config;
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.media.type;
-
     requires io.helidon.inject.api;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.inject.runtime;
     requires static jakarta.inject;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common.media.type;
+    requires transitive io.helidon.common;
+    requires transitive jakarta.annotation;
 
 
     exports io.helidon.config;
@@ -62,4 +61,5 @@ module io.helidon.config {
 
     // needed when running with modules - to make private methods accessible
     opens io.helidon.config to weld.core.impl, io.helidon.microprofile.cdi;
+
 }

@@ -32,13 +32,8 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.MP,
         path = "JPA"
 )
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
+@SuppressWarnings({ "requires-automatic"})
 module io.helidon.integrations.cdi.jpa {
-    requires static io.helidon.common.features.api;
-
-    // Static metamodel generation requires access to java.compiler at
-    // compile time only.
-    requires static java.compiler;
   
     requires jakarta.xml.bind;
 
@@ -54,6 +49,11 @@ module io.helidon.integrations.cdi.jpa {
 
     // JTA is optional at runtime, as well as the modules that support
     // it.
+    requires static io.helidon.common.features.api;
+
+    // Static metamodel generation requires access to java.compiler at
+    // compile time only.
+    requires static java.compiler;
     requires static jakarta.transaction; // automatic module
     requires static io.helidon.integrations.jta.jdbc;
 

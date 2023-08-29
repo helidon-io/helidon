@@ -23,4 +23,5 @@ module io.helidon.integrations.cdi.delegates {
     requires transitive jakarta.cdi;
 
     exports io.helidon.integrations.cdi.delegates;
+	
 }

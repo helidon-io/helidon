@@ -18,14 +18,17 @@
  * Utilities for annotation processors.
  */
 module io.helidon.common.processor {
-    requires transitive java.compiler;
-    requires transitive io.helidon.common.types;
-    requires jdk.compiler;
+
     requires io.helidon.common.processor.classmodel;
+    requires jdk.compiler;
+
+    requires transitive io.helidon.common.types;
+    requires transitive java.compiler;
 
     exports io.helidon.common.processor;
     exports io.helidon.common.processor.spi;
 
     uses io.helidon.common.processor.spi.CopyrightProvider;
     uses io.helidon.common.processor.spi.GeneratedAnnotationProvider;
+
 }

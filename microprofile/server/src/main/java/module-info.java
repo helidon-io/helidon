@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
 
 /**
  * Implementation of a layer that binds microprofile components together and
@@ -28,38 +27,36 @@ import org.glassfish.jersey.internal.inject.InjectionManagerFactory;
         path = "Server"
 )
 module io.helidon.microprofile.server {
-    requires static io.helidon.common.features.api;
-
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.common.context;
-    requires transitive io.helidon.jersey.server;
-    requires transitive io.helidon.common.configurable;
-
-    requires transitive io.helidon.microprofile.cdi;
 
     requires io.helidon.config.mp;
-    requires io.helidon.microprofile.config;
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.ws.rs;
-    requires transitive jakarta.json;
     requires io.helidon.jersey.media.jsonp;
-
+    requires io.helidon.microprofile.config;
     requires io.helidon.webserver.staticcontent;
-    requires transitive io.helidon.webserver.context;
-
-    // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
-    requires java.management;
+    requires java.management; // there is now a hardcoded dependency on Weld, to configure additional bean defining annotation
     requires microprofile.config.api;
+
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common.context;
+    requires transitive io.helidon.jersey.server;
+    requires transitive io.helidon.microprofile.cdi;
+    requires transitive io.helidon.webserver.context;
+    requires transitive io.helidon.webserver;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.json;
+    requires transitive jakarta.ws.rs;
 
     exports io.helidon.microprofile.server;
 
-    provides jakarta.enterprise.inject.spi.Extension with
-            io.helidon.microprofile.server.ServerCdiExtension,
-            io.helidon.microprofile.server.JaxRsCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.server.ServerCdiExtension, io.helidon.microprofile.server.JaxRsCdiExtension;
 
-    provides InjectionManagerFactory with io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory;
+    provides org.glassfish.jersey.internal.inject.InjectionManagerFactory
+            with io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory;
 
     // needed when running with modules - to make private methods and types accessible
     opens io.helidon.microprofile.server;
+
 }

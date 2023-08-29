@@ -30,20 +30,23 @@ import io.helidon.common.features.api.Preview;
 )
 @Aot(false)
 module io.helidon.messaging.connectors.aq {
-    requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.messaging.connectors.jms;
-    requires java.logging;
-    requires jakarta.messaging;
-    requires javax.jms.api;
-    requires static io.helidon.config.mp;
+    requires aqapi;
     requires io.helidon.common.configurable;
-    requires io.helidon.messaging;
     requires io.helidon.messaging.jms.shim;
+    requires java.logging;
+    requires javax.jms.api;
+    requires jakarta.messaging;
+
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.mp;
     requires static jakarta.cdi;
     requires static jakarta.inject;
-    requires aqapi;
-    requires java.sql;
+
+    requires transitive io.helidon.messaging.connectors.jms;
+    requires transitive io.helidon.messaging;
+    requires transitive java.sql;
 
     exports io.helidon.messaging.connectors.aq;
+
 }

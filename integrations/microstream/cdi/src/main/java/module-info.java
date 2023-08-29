@@ -31,24 +31,28 @@ import io.helidon.common.features.api.Preview;
         path = "Microstream"
 )
 @Aot(false)
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.microstream.cdi {
-    requires static io.helidon.common.features.api;
 
-    exports io.helidon.integrations.microstream.cdi;
-
-    requires transitive cache.api;
-    requires io.helidon.integrations.microstream;
     requires io.helidon.integrations.microstream.cache;
-    requires transitive jakarta.cdi;
-    requires transitive jakarta.inject;
+    requires io.helidon.integrations.microstream;
     requires jakarta.annotation;
     requires microstream.base;
     requires microstream.cache;
     requires microstream.persistence;
-    requires microstream.storage;
     requires microstream.storage.embedded;
+    requires microstream.storage;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive cache.api;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.inject;
+
+    exports io.helidon.integrations.microstream.cdi;
 
     provides jakarta.enterprise.inject.spi.Extension
             with io.helidon.integrations.microstream.cdi.EmbeddedStorageManagerExtension,
                     io.helidon.integrations.microstream.cdi.CacheExtension;
+	
 }

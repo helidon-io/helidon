@@ -25,18 +25,25 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.MP,
         path = "Security"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.security {
+
+    requires io.helidon.jersey.common;
+    requires io.helidon.microprofile.cdi;
+    requires io.helidon.microprofile.server;
+    requires io.helidon.security.annotations;
+    requires io.helidon.security.integration.common;
+    requires io.helidon.security.providers.abac;
+    requires io.helidon.security.providers.common;
+
     requires static io.helidon.common.features.api;
 
-    requires transitive io.helidon.security;
+    requires transitive io.helidon.config;
     requires transitive io.helidon.webserver.security;
-    requires io.helidon.security.providers.abac;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.microprofile.cdi;
-    requires io.helidon.jersey.common;
-    requires io.helidon.security.integration.common;
-    requires io.helidon.security.providers.common;
-    requires io.helidon.security.annotations;
+    requires transitive io.helidon.security;
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.ws.rs;
+    requires transitive jersey.common;
 
     exports io.helidon.microprofile.security;
     exports io.helidon.microprofile.security.spi;
@@ -48,6 +55,9 @@ module io.helidon.microprofile.security {
     opens io.helidon.microprofile.security to weld.core.impl, io.helidon.microprofile.cdi, org.glassfish.hk2.locator;
     opens io.helidon.microprofile.security.spi to io.helidon.microprofile.cdi, weld.core.impl;
 
-    provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.security.SecurityCdiExtension;
-    provides org.glassfish.jersey.internal.spi.AutoDiscoverable with io.helidon.microprofile.security.ClientSecurityAutoDiscoverable;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.security.SecurityCdiExtension;
+    provides org.glassfish.jersey.internal.spi.AutoDiscoverable
+            with io.helidon.microprofile.security.ClientSecurityAutoDiscoverable;
+
 }

@@ -24,18 +24,18 @@
  * @see io.helidon.integrations.common.rest.ApiResponse
  */
 module io.helidon.integrations.common.rest {
-    requires java.logging;
-    requires jakarta.json;
 
-    requires io.opentracing.api;
-
-    requires io.helidon.common;
     requires io.helidon.common.context;
-    requires io.helidon.http;
     requires io.helidon.config;
     requires io.helidon.faulttolerance;
-    requires io.helidon.webclient;
     requires io.helidon.http.media.jsonp;
+    requires io.helidon.webclient;
+    requires io.opentracing.api;
+    requires java.logging;
+
+    requires transitive io.helidon.common;
+    requires transitive jakarta.json;
 
     exports io.helidon.integrations.common.rest;
+
 }

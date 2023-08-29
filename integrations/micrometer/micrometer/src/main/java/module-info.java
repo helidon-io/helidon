@@ -28,22 +28,21 @@ import io.helidon.common.features.api.Preview;
         path = "Micrometer"
 )
 module io.helidon.integrations.micrometer {
-    requires static io.helidon.common.features.api;
-
-    requires java.logging;
-
-    requires static jakarta.annotation;
 
     requires io.helidon.config;
     requires io.helidon.http;
-    requires io.helidon.servicecommon;
     requires io.helidon.webserver.cors;
-
-    requires static io.helidon.config.metadata;
-
+    requires java.logging;
     requires micrometer.core;
     requires micrometer.registry.prometheus;
     requires simpleclient;
+
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
+
+    requires transitive io.helidon.common;
+    requires transitive io.helidon.servicecommon;
 
     exports io.helidon.integrations.micrometer;
 

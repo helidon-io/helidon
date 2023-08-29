@@ -25,23 +25,24 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE,
         path = {"grpc", "Metrics"}
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.metrics {
-    requires static io.helidon.common.features.api;
 
-    requires java.logging;
-
-    requires io.helidon.common;
     requires io.helidon.common.media.type;
-    requires transitive io.helidon.metrics.api;
-    requires transitive io.helidon.metrics.serviceapi;
-
-    requires transitive microprofile.metrics.api;
-    requires java.management;
+    requires io.helidon.common;
     requires jakarta.json;
-    requires io.helidon.common.configurable;
-    requires transitive micrometer.core;
+    requires java.logging;
+    requires java.management;
+    requires micrometer.core;
     requires micrometer.registry.prometheus;
     requires simpleclient.common; // for Prometheus formatting
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.metrics.api;
+    requires transitive io.helidon.metrics.serviceapi;
+    requires transitive microprofile.metrics.api;
 
     exports io.helidon.metrics;
 
@@ -50,4 +51,5 @@ module io.helidon.metrics {
     provides io.helidon.metrics.api.spi.RegistryFactoryProvider with io.helidon.metrics.RegistryFactoryProviderImpl;
     provides io.helidon.common.configurable.spi.ExecutorServiceSupplierObserver
             with io.helidon.metrics.ExecutorServiceMetricsObserver;
+	
 }

@@ -28,14 +28,17 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE
 )
 module io.helidon.tracing {
+
     requires io.helidon.common;
-    requires io.helidon.common.config;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common.config;
 
     exports io.helidon.tracing;
     exports io.helidon.tracing.spi;
 
     uses io.helidon.tracing.spi.TracerProvider;
+
 }

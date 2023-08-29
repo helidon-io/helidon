@@ -25,7 +25,7 @@ import io.helidon.common.config.Config;
  * Tracing configuration that contains traced components (such as WebServer, Security) and their traced spans and span logs.
  * Spans can be renamed through configuration, components, spans and span logs may be disabled through this configuration.
  *
- * @see #create(io.helidon.config.Config)
+ * @see #create(io.helidon.common.config.Config)
  * @see #builder()
  */
 public abstract class TracingConfig extends Traceable {

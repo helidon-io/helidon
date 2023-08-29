@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,12 @@
  * Helidon Common Media Type.
  */
 module io.helidon.common.media.type {
+
     requires io.helidon.common;
 
     exports io.helidon.common.media.type;
     exports io.helidon.common.media.type.spi;
 
     uses io.helidon.common.media.type.spi.MediaTypeDetector;
+
 }

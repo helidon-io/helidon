@@ -16,7 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.microprofile.openapi.OpenApiCdiExtension;
 
 /**
  * CDI extension for MicroProfile OpenAPI implementation.
@@ -28,32 +27,30 @@ import io.helidon.microprofile.openapi.OpenApiCdiExtension;
         in = HelidonFlavor.MP,
         path = "Open API"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.openapi {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.microprofile.server;
+    requires java.desktop; // for java.beans package
+    requires java.logging; // logging required for SnakeYAML logging workaround
+    requires microprofile.config.api;
+    requires org.jboss.jandex;
     requires smallrye.open.api.core;
 
-    requires java.desktop; // for java.beans package
-
-    requires microprofile.config.api;
-    requires io.helidon.microprofile.server;
-    requires io.helidon.openapi;
-    requires org.jboss.jandex;
-
-    requires org.yaml.snakeyaml;
-
-    requires transitive microprofile.openapi.api;
-
-    // logging required for SnakeYAML logging workaround
-    requires java.logging;
-
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
-    requires io.helidon.microprofile.servicecommon;
+
+    requires transitive io.helidon.microprofile.servicecommon;
+    requires transitive io.helidon.openapi;
+    requires transitive microprofile.openapi.api;
+    requires transitive org.yaml.snakeyaml;
 
     exports io.helidon.microprofile.openapi;
 
     // this is needed for CDI extensions that use non-public observer methods
     opens io.helidon.microprofile.openapi to weld.core.impl, io.helidon.microprofile.cdi;
 
-    provides jakarta.enterprise.inject.spi.Extension with OpenApiCdiExtension;
+    provides jakarta.enterprise.inject.spi.Extension
+            with io.helidon.microprofile.openapi.OpenApiCdiExtension;
+
 }

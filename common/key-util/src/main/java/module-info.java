@@ -18,12 +18,15 @@
  * Utilities for PKI configuration and loading of certificates and keys.
  */
 module io.helidon.common.pki {
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.config;
-    requires transitive io.helidon.common.configurable;
 
-    requires static io.helidon.config.metadata;
     requires io.helidon.builder.api;
 
+    requires static io.helidon.config.metadata;
+
+    requires transitive io.helidon.common.config;
+    requires transitive io.helidon.common.configurable;
+    requires transitive io.helidon.common;
+
     exports io.helidon.common.pki;
+	
 }

@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = "Tracing",
         since = "1.0.0")
 @Deprecated(since="4.0.0", forRemoval = true)
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.tracing {
     requires static io.helidon.common.features.api;
 
@@ -70,4 +71,5 @@ module io.helidon.microprofile.tracing {
             with io.helidon.microprofile.tracing.MpTracingClientRegistrar;
     provides org.eclipse.microprofile.rest.client.spi.RestClientListener
             with io.helidon.microprofile.tracing.MpTracingRestClientListener;
+	
 }

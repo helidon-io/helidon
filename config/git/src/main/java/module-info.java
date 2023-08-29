@@ -26,14 +26,16 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Config", "git"}
 )
 module io.helidon.config.git {
-    requires static io.helidon.common.features.api;
 
+    requires io.helidon.common.media.type;
+    requires io.helidon.common;
     requires io.helidon.config;
     requires org.eclipse.jgit;
-    requires io.helidon.common;
-    requires io.helidon.common.media.type;
+
+    requires static io.helidon.common.features.api;
 
     exports io.helidon.config.git;
 
     provides io.helidon.config.spi.ConfigSourceProvider with io.helidon.config.git.GitConfigSourceProvider;
+
 }

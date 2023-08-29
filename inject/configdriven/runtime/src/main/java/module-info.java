@@ -18,17 +18,18 @@
  * Injection Config-Driven Services Module.
  */
 module io.helidon.inject.configdriven.runtime {
-    requires static jakarta.inject;
-    requires static jakarta.annotation;
-    requires static io.helidon.config.metadata;
 
-    // required for compilation of generated types
-    requires transitive io.helidon.inject.configdriven.api;
+    requires static io.helidon.config.metadata;
+    requires static jakarta.annotation;
+    requires static jakarta.inject;
+
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.common.types;
     requires transitive io.helidon.config;
     requires transitive io.helidon.inject.api;
+    requires transitive io.helidon.inject.configdriven.api; // required for compilation of generated types
     requires transitive io.helidon.inject.runtime;
 
     exports io.helidon.inject.configdriven.runtime;
+
 }

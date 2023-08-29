@@ -18,23 +18,24 @@
  * Application to test GraalVM native-image with Helidon MP.
  */
 module helidon.tests.nimage.mp {
-    requires jakarta.cdi;
-    requires jakarta.ws.rs;
-    requires io.helidon.security.annotations;
-    requires io.helidon.security.abac.scope;
-    requires jakarta.annotation;
-    requires microprofile.openapi.api;
-    requires jakarta.json;
-    requires jakarta.inject;
-    requires microprofile.jwt.auth.api;
-    requires microprofile.health.api;
-    requires io.helidon.security.jwt;
+
     requires io.helidon.microprofile.server;
-    requires microprofile.fault.tolerance.api;
-    requires microprofile.rest.client.api;
-    requires microprofile.metrics.api;
+    requires io.helidon.security.abac.scope;
+    requires io.helidon.security.annotations;
+    requires io.helidon.security.jwt;
+    requires jakarta.annotation;
+    requires jakarta.cdi;
+    requires jakarta.inject;
     requires jakarta.json.bind;
+    requires jakarta.json;
+    requires jakarta.ws.rs;
     requires microprofile.config.api;
+    requires microprofile.fault.tolerance.api;
+    requires microprofile.health.api;
+    requires microprofile.jwt.auth.api;
+    requires microprofile.metrics.api;
+    requires microprofile.openapi.api;
+    requires microprofile.rest.client.api;
     // this is required, as otherwise the beans from this module
     // never reach health check CDI extension
     requires io.helidon.health.checks;
@@ -53,4 +54,5 @@ module helidon.tests.nimage.mp {
     // static content will not see it
     // if you want to add subdirectories, you will need to open them as well
     opens web;
+
 }

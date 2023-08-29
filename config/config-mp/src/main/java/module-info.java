@@ -17,12 +17,16 @@
 /**
  * Implementation of the non-CDI parts of Eclipse MicroProfile Config specification.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.config.mp {
+
     requires io.helidon.common;
     requires io.helidon.config;
-    requires transitive microprofile.config.api;
     requires jakarta.annotation;
+
     requires static io.helidon.config.metadata;
+
+    requires transitive microprofile.config.api;
 
     exports io.helidon.config.mp;
     exports io.helidon.config.mp.spi;
@@ -35,5 +39,7 @@ module io.helidon.config.mp {
     uses io.helidon.config.mp.spi.MpMetaConfigProvider;
     uses io.helidon.config.spi.ConfigParser;
 
-    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver with io.helidon.config.mp.MpConfigProviderResolver;
+    provides org.eclipse.microprofile.config.spi.ConfigProviderResolver
+            with io.helidon.config.mp.MpConfigProviderResolver;
+
 }

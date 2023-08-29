@@ -26,23 +26,20 @@ import io.helidon.common.features.api.HelidonFlavor;
         path = {"Server", "CORS"}
 )
 module io.helidon.microprofile.cors {
-    requires static io.helidon.common.features.api;
 
-    requires jakarta.ws.rs;
-    requires io.helidon.config;
     requires io.helidon.config.mp;
-    requires io.helidon.webserver.cors;
-
-    // Following to help with JavaDoc...
-    requires io.helidon.jersey.common;
-    requires io.helidon.webserver;
+    requires io.helidon.config;
+    requires io.helidon.jersey.common; // Following to help with JavaDoc...
     requires io.helidon.microprofile.config;
-
-    // ---
+    requires io.helidon.webserver.cors;
+    requires io.helidon.webserver;
     requires jersey.common;
     requires microprofile.config.api;
 
-    requires jakarta.cdi;
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.ws.rs;
 
     exports io.helidon.microprofile.cors;
 
@@ -50,4 +47,5 @@ module io.helidon.microprofile.cors {
             with io.helidon.microprofile.cors.CrossOriginAutoDiscoverable;
 
     provides jakarta.enterprise.inject.spi.Extension with io.helidon.microprofile.cors.CorsCdiExtension;
+
 }

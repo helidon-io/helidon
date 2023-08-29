@@ -18,6 +18,8 @@
  * Helidon WebClient.
  */
 module io.helidon.webclient {
+
     requires transitive io.helidon.webclient.api;
     requires transitive io.helidon.webclient.http1;
+
 }

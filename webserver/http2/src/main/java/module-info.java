@@ -16,13 +16,6 @@
 
 import io.helidon.common.features.api.Feature;
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.webserver.http2.Http2ConnectionProvider;
-import io.helidon.webserver.http2.Http2UpgradeProvider;
-import io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
-import io.helidon.webserver.http2.Http2ProtocolConfigProvider;
-import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
-import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
-import io.helidon.webserver.spi.ProtocolConfigProvider;
 
 /**
  * Helidon WebServer HTTP/2 Support.
@@ -33,31 +26,34 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
          path = {"WebServer", "HTTP/2"}
 )
 module io.helidon.webserver.http2 {
+
+    requires io.helidon.builder.api;
+
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
-    requires transitive io.helidon.common;
-    requires transitive io.helidon.common.uri;
     requires transitive io.helidon.common.socket;
     requires transitive io.helidon.common.task;
-    requires transitive io.helidon.webserver;
-    requires transitive io.helidon.http;
-    requires transitive io.helidon.http.http2;
+    requires transitive io.helidon.common.uri;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.http.encoding;
+    requires transitive io.helidon.http.http2;
     requires transitive io.helidon.http.media;
-    requires io.helidon.builder.api;
+    requires transitive io.helidon.http;
+    requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.http2;
     exports io.helidon.webserver.http2.spi;
 
     // to support prior knowledge for h2c
-    provides ServerConnectionSelectorProvider
-            with Http2ConnectionProvider;
+    provides io.helidon.webserver.spi.ServerConnectionSelectorProvider
+            with io.helidon.webserver.http2.Http2ConnectionProvider;
     // to support upgrade requests for h2c
-    provides Http1UpgradeProvider
-            with Http2UpgradeProvider;
-    provides ProtocolConfigProvider
-            with Http2ProtocolConfigProvider;
+    provides io.helidon.webserver.http1.spi.Http1UpgradeProvider
+            with io.helidon.webserver.http2.Http2UpgradeProvider;
+    provides io.helidon.webserver.spi.ProtocolConfigProvider
+            with io.helidon.webserver.http2.Http2ProtocolConfigProvider;
 
-    uses Http2SubProtocolProvider;
+    uses io.helidon.webserver.http2.spi.Http2SubProtocolProvider;
+
 }

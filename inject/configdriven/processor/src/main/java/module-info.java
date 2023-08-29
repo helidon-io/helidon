@@ -18,15 +18,16 @@
  * Helidon Inject ConfiguredBy Processor module.
  */
 module io.helidon.inject.configdriven.processor {
-    requires java.compiler;
 
-    requires io.helidon.common;
-    requires io.helidon.common.types;
     requires io.helidon.common.processor;
+    requires io.helidon.common.types;
+    requires io.helidon.common;
     requires io.helidon.inject.processor;
+    requires java.compiler;
 
     exports io.helidon.inject.configdriven.processor;
 
     provides javax.annotation.processing.Processor with
             io.helidon.inject.configdriven.processor.ConfigDrivenProcessor;
+
 }

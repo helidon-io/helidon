@@ -17,14 +17,18 @@
 /**
  * MicroProfile Reactive Messaging Health check.
  */
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.messaging.health {
-    requires java.logging;
 
-    requires static jakarta.cdi;
-    requires static jakarta.inject;
-    requires io.helidon.microprofile.messaging;
-    requires io.helidon.microprofile.health;
+    requires jakarta.inject;
+    requires java.logging;
     requires microprofile.health.api;
 
+    requires transitive io.helidon.microprofile.health;
+    requires transitive io.helidon.microprofile.messaging;
+    requires transitive jakarta.cdi;
+    requires transitive org.reactivestreams;
+
     exports io.helidon.microprofile.messaging.health;
+
 }

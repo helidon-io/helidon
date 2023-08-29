@@ -25,31 +25,34 @@ import io.helidon.microprofile.telemetry.TelemetryCdiExtension;
  */
 @Preview
 @Feature(value = "Telemetry",
-         description = "MP Telemetry support",
-         in = HelidonFlavor.MP,
-         path = "Telemetry"
+        description = "MP Telemetry support",
+        in = HelidonFlavor.MP,
+        path = "Telemetry"
 )
+@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.telemetry {
-    requires static io.helidon.common.features.api;
 
     requires io.helidon.common.context;
     requires io.helidon.config.mp;
     requires io.helidon.config;
+    requires io.helidon.tracing.providers.opentelemetry;
     requires io.opentelemetry.api;
     requires io.opentelemetry.context;
-    requires io.opentelemetry.sdk;
     requires io.opentelemetry.sdk.autoconfigure.spi;
     requires io.opentelemetry.sdk.autoconfigure;
     requires io.opentelemetry.sdk.common;
+    requires io.opentelemetry.sdk;
     requires jakarta.annotation;
-    requires jakarta.cdi;
     requires jakarta.inject;
-    requires jakarta.ws.rs;
     requires java.logging;
-    requires jersey.common;
     requires microprofile.config.api;
     requires opentelemetry.instrumentation.annotations;
-    requires io.helidon.tracing.providers.opentelemetry;
+
+    requires static io.helidon.common.features.api;
+
+    requires transitive jakarta.cdi;
+    requires transitive jakarta.ws.rs;
+    requires transitive jersey.common;
 
     exports io.helidon.microprofile.telemetry;
 
