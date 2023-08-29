@@ -1,6 +1,6 @@
 # Helidon Integrations for OCI Key Manager Service
 
-This module contains the **_OciKmsTlsManager_** provider that offers lifecycle and rotation of certificates to be used with Helidon Tls when configured. It is designed specifically to integrate with [OCI](https://www.oracle.com/cloud)'s [Certificates](https://www.oracle.com/security/cloud-security/ssl-tls-certificates) Service.
+This module contains the **_OciKmsTlsManager_** provider that offers lifecycle and rotation of certificates to be used with Helidon Tls when configured. It is designed specifically to integrate with [Oracle Cloud Infrastructure](https://www.oracle.com/cloud)'s [Certificates](https://www.oracle.com/security/cloud-security/ssl-tls-certificates) Service.
 
 ## Usage
 Integrating with OCI's Certificates Service from Helidon is a simple matter of configuration.

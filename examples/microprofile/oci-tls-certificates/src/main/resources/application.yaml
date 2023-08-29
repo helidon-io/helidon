@@ -14,13 +14,6 @@
 # limitations under the License.
 #
 
-test-keys:
-  keystore:
-    trust-store: true
-    cert-chain.alias: "1"
-    resource.path: "src/test/resources/test-keys/keystore-chain.p12"
-    passphrase: "helidon"
-
 server:
   port: 8080
   host: 0.0.0.0
@@ -28,6 +21,8 @@ server:
     - name: "secured"
       port: 8443
       tls:
+        # for server-side auth this should be set to false (or removed altogether)
+        trust-all: true
         manager:
           oci-certificates-tls-manager:
             # Download mTls context every 30 seconds

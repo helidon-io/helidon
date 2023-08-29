@@ -32,8 +32,6 @@
 
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
-        <bouncy-castle.version>1.74</bouncy-castle.version>
-        <jipher.version>10.30</jipher.version>
     </properties>
 
     <dependencies>
@@ -111,19 +109,6 @@
             <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
             <scope>test</scope>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>org.bouncycastle</groupId>-->
-<!--            <artifactId>bcpkix-jdk15to18</artifactId>-->
-<!--            <version>${bouncy-castle.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.oracle.pic.jipher</groupId>-->
-<!--            <artifactId>jipher-jce</artifactId>-->
-<!--            <version>${jipher.version}</version>-->
-<!--            <scope>test</scope>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>io.helidon.common.testing</groupId>

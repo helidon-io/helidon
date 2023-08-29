@@ -14,29 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.examples.microprofile.oci.tls.certificates;
-
-import io.helidon.microprofile.server.Server;
-
 /**
- * Starts the server.
+ * Helidon Microprofile Examples OCI TLS Manager.
  */
-public final class Main {
-
-    private Main() {
-    }
-
-    /**
-     * Main method.
-     *
-     * @param args args
-     */
-    public static void main(final String[] args) {
-        startServer();
-    }
-
-    static Server startServer() {
-        return Server.create().start();
-    }
-
-}
+package io.helidon.examples.microprofile.oci.tls.certificates;

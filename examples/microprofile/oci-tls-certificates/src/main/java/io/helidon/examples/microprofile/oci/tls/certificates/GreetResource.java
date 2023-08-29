@@ -16,27 +16,28 @@
 
 package io.helidon.examples.microprofile.oci.tls.certificates;
 
-import io.helidon.microprofile.server.Server;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 /**
- * Starts the server.
+ * A simple JAX-RS resource to greet you.
  */
-public final class Main {
-
-    private Main() {
-    }
+@Path("/")
+@RequestScoped
+public class GreetResource {
 
     /**
-     * Main method.
+     * Return a greeting message.
      *
-     * @param args args
+     * @return greeting
      */
-    public static void main(final String[] args) {
-        startServer();
-    }
-
-    static Server startServer() {
-        return Server.create().start();
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getDefaultMessage() {
+        return "Hello user!";
     }
 
 }

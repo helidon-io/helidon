@@ -1,5 +1,3 @@
-#!/bin/bash
-
 #
 # Copyright (c) 2023 Oracle and/or its affiliates.
 #
@@ -16,9 +14,4 @@
 # limitations under the License.
 #
 
-# The caller should update these accordingly
-export COMPARTMENT_OCID=ocid1.tenancy.oc1..
-export VAULT_CRYPTO_ENDPOINT=https://TODO.oraclecloud.com
-export VAULT_MANAGEMENT_ENDPOINT=https://TODO.oraclecloud.com
-export CA_OCID=TODO
-export DISPLAY_NAME_PREFIX="tls-test-1"
+auth-strategies: ["instance-principals", "config-file", "resource-principal", "config"]

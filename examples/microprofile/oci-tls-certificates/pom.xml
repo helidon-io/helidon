@@ -33,25 +33,7 @@
         Microprofile example that configures TLS via a Manager and OCI Certificates Service integration with cert rotation
     </description>
 
-    <properties>
-        <bouncy-castle.version>1.74</bouncy-castle.version>
-        <jipher.version>10.30</jipher.version>
-    </properties>
-
     <dependencies>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15to18</artifactId>
-            <version>${bouncy-castle.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.oracle.pic.jipher</groupId>
-            <artifactId>jipher-jce</artifactId>
-            <version>${jipher.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>io.helidon.microprofile.bundles</groupId>
             <artifactId>helidon-microprofile</artifactId>
@@ -76,6 +58,13 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- needed to actually use OCI SDK -->
+        <dependency>
+            <groupId>com.oracle.oci.sdk</groupId>
+            <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -97,6 +86,20 @@
                         <id>make-index</id>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <!-- To be changed manually -->
+<!--                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>-->
+<!--                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>-->
+<!--                        <VAULT_CRYPTO_ENDPOINT>https://dvsozhzvaaf3q-crypto.kms.us-ashburn-1.oraclecloud.com</VAULT_CRYPTO_ENDPOINT>-->
+<!--                        <CA_OCID>ocid1.certificateauthority.oc1.iad.amaaaaaa2rcccgyar6imoqdt43ochnaygyhgoqb65z6bd7w2xzv2tdcsbsga</CA_OCID>-->
+<!--                        <SERVER_CERT_OCID>ocid1.certificate.oc1.iad.amaaaaaa2rcccgya4fxntgo7cctdvcftwzor7l6ls6oglgyrpm6uaun2fgaq</SERVER_CERT_OCID>-->
+<!--                        <SERVER_KEY_OCID>ocid1.key.oc1.iad.dvsozhzvaaf3q.abuwcljsplsjcctmc25t6ciqrhqnuiacb6trrqepepltk6vrrfp6xflynctq</SERVER_KEY_OCID>-->
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
         </plugins>
     </build>

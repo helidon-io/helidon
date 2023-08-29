@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -38,6 +39,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 
+// see pom.xml for system properties that can be used in these tests
 class OciCertificatesTlsManagerTest {
 
     @BeforeAll
@@ -92,9 +94,9 @@ class OciCertificatesTlsManagerTest {
                        greaterThan(0L));
             TestingMetricsHelper.Gauge updateGauge = metrics.metric(
                             DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".update");
-            assertThat(checkGauge.count(),
+            assertThat(updateGauge.count(),
                        equalTo(1L));
-            assertThat(checkGauge.sum(),
+            assertThat(updateGauge.sum(),
                        greaterThan(0L));
         } finally {
             server.stop();
@@ -121,7 +123,7 @@ class OciCertificatesTlsManagerTest {
     void configIsMonitoredForChange() throws Exception {
         TestingConfigSource testingConfigSource =
                 new TestingConfigSource(
-                        "server.sockets.0.tls.server.sockets.0.tls.manager.oci-certificates-tls-manager.key-password");
+                        "server.sockets.0.tls.manager.oci-certificates-tls-manager.key-password");
         Config config = Config.just(testingConfigSource,
                                     ConfigSources.systemProperties(),
                                     ConfigSources.classpath("application.yaml"));
@@ -162,13 +164,33 @@ class OciCertificatesTlsManagerTest {
         assertThat(pwdConfig.exists(),
                    is(true));
 
+        // prepare to watch for changes
+        Services services = InjectionServices.realizedServices();
+        TestingMetricsHelper metrics = services.lookupFirst(TestingMetricsHelper.class).get();
+        TestingMetricsHelper.Gauge checkGauge = metrics.metric(
+                DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".check");
+        TestingMetricsHelper.Gauge updateGauge = metrics.metric(
+                DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".update");
+
         // mutate it
-        TimeUnit.MILLISECONDS.sleep(1); // make sure timestamp changes
         testingConfigSource.update("changed");
+        assertThat(config.context().last()
+                           .get("server.sockets.0.tls.manager.oci-certificates-tls-manager.key-password").asString().asOptional(),
+                   is(Optional.of("changed")));
+        // watch for change
+        synchronized (checkGauge) {
+            checkGauge.wait(1000);
+        }
 
-        // TODO: remove and enhance, but this is just to monitor onChange() in DefaultOciCertificatesDownloader @tlanger
-        Thread.sleep(10000);
-
+        // verify that we at least triggered a recheck on the cert
+        int checkCount = (int) checkGauge.count();
+        int updateCount = (int) updateGauge.count();
+        assertThat("we should be triggering a check since config was mutated",
+                   checkCount,
+                   equalTo(certDownloadCountBaseline + 1));
+        assertThat("the actual cert didn't really change so we should not be updating dynamically",
+                   updateCount,
+                   equalTo(caCertDownloadCountBaseline));
     }
 
     static Server startServer() {

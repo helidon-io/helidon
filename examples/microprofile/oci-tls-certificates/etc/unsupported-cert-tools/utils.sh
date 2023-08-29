@@ -68,7 +68,10 @@ prepareKeyToUpload() {
   # Create the wrapped key material by concatenating both wrapped keys:
   cat $WRAPPED_TEMPORARY_AES_KEY_FILE $WRAPPED_TARGET_KEY_FILE >$WRAPPED_KEY_MATERIAL_FILE
 
-  KEY_MATERIAL_AS_BASE64=$(base64 -w 0 readyToUpload.der)
+# linux
+#  KEY_MATERIAL_AS_BASE64=$(base64 -w 0 readyToUpload.der)
+# macOS
+  KEY_MATERIAL_AS_BASE64=$(base64 -i readyToUpload.der)
 
   JSON_KEY_MATERIAL="{\"keyMaterial\": \"$KEY_MATERIAL_AS_BASE64\",\"wrappingAlgorithm\": \"RSA_OAEP_AES_SHA256\"}"
 

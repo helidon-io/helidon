@@ -24,7 +24,7 @@ This module contains an example usage of the [OciCertificatesTlsManager](../../.
 
 ### Prepare CA(Certification Authority)
 Follow [OCI documentation](https://docs.oracle.com/en-us/iaas/Content/certificates/managing-certificate-authorities.htm):
-
+0. Signup or use an OCI tenancy (see above links).
 1. Create group `CertificateAuthorityAdmins` and add your user in it.
 2. Create dynamic group `CertificateAuthority-DG` with single rule `resource.type='certificateauthority'`
 3. Create policy `CertificateAuthority-PL` with following statements:
@@ -72,6 +72,7 @@ Following env variables are generated automatically by [createKeys.sh](etc/unsup
 - **SERVER_CERT_OCID** - OCID of the server certificate(not the specific version!)
 - **SERVER_KEY_OCID** - OCID of the server private key in vault(not the specific version!)
 
+Optional:
 - **CLIENT_CERT_OCID** - OCID of the client certificate(not the specific version!)
 - **CLIENT_KEY_OCID** - OCID of the client private key in vault(not the specific version!)
 
