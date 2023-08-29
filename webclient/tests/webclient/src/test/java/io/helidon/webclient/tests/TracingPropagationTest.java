@@ -91,28 +91,35 @@ class TracingPropagationTest {
             assertThat(response.entity().as(JsonObject.class), notNullValue());
         }
 
-        List<MockSpan> mockSpans = tracer.finishedSpans();
+        try {
 
-        // the server traces asynchronously, some spans may be written after we receive the response.
-        // we need to try to wait for such spans
-        assertThat("There should be 2 spans reported", tracer.finishedSpans(), hasSize(2));
+            // the server traces asynchronously, some spans may be written after we receive the response.
+            Thread.sleep(1000);
 
-        // we need the first span - parentId 0
-        MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
-        assertThat(clientSpan.operationName(), is("GET-" + uri));
-        List<MockSpan.LogEntry> logEntries = clientSpan.logEntries();
-        assertThat(logEntries, empty());
-        Map<String, Object> tags = clientSpan.tags();
-        assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
+            List<MockSpan> mockSpans = tracer.finishedSpans();
 
-        // now we want to test first child - first WebServer span
-        MockSpan wsSpan = findSpanWithParentId(mockSpans, clientSpan.context().spanId());
-        assertThat(wsSpan.operationName(), is("HTTP Request"));
-        tags = wsSpan.tags();
-        assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
-        assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri.toString()));
-        assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
-        assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webserver"));
+            assertThat("There should be 2 spans reported", tracer.finishedSpans(), hasSize(2));
+
+            // we need the first span - parentId 0
+            MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
+            assertThat(clientSpan.operationName(), is("GET-" + uri));
+            List<MockSpan.LogEntry> logEntries = clientSpan.logEntries();
+            assertThat(logEntries, empty());
+            Map<String, Object> tags = clientSpan.tags();
+            assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
+
+            // now we want to test first child - first WebServer span
+            MockSpan wsSpan = findSpanWithParentId(mockSpans, clientSpan.context().spanId());
+            assertThat(wsSpan.operationName(), is("HTTP Request"));
+            tags = wsSpan.tags();
+            assertThat(tags.get(Tags.HTTP_METHOD.getKey()), is("GET"));
+            assertThat(tags.get(Tags.HTTP_URL.getKey()), is(uri.toString()));
+            assertThat(tags.get(Tags.HTTP_STATUS.getKey()), is(200));
+            assertThat(tags.get(Tags.COMPONENT.getKey()), is("helidon-webserver"));
+
+        }catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private MockSpan findSpanWithParentId(List<MockSpan> mockSpans, long parentId) {
