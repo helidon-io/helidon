@@ -15,19 +15,31 @@
  */
 package io.helidon.metrics.spi;
 
+import java.util.Collection;
+
+import io.helidon.common.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 
 /**
- * Behavior of providers of {@link io.helidon.metrics.api.MetricsFactory} instances.
+ * Creates new instances of {@link io.helidon.metrics.api.MetricsFactory}.
  */
 public interface MetricsFactoryProvider {
 
     /**
-     * Creates a new {@link MetricsFactory} using the provided metrics config.
+     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} from which the caller can obtain
+     * {@link io.helidon.metrics.api.MeterRegistry} and {@link io.helidon.metrics.api.Meter.Builder} instances.
+     * <p>
+     * The {@code metricsConfig} parameter will have been derived from the {@code rootConfig}. In many cases the
+     * new factory will only need to know the metrics configuration so that object is provided as a convenience. The root
+     * config node allows the factory to use information from elsewhere in the config tree if needed.
+     * </p>
      *
-     * @param metricsConfig metrics configuration settings
+     * @param rootConfig      root {@link Config} node
+     * @param metricsConfig   {@link io.helidon.metrics.api.MetricsConfig} settings
+     * @param metersProviders group of {@link io.helidon.metrics.spi.MetersProvider} which can furnish
+     *                        {@link io.helidon.metrics.api.Meter} instances
      * @return new metrics factory
      */
-    MetricsFactory create(MetricsConfig metricsConfig);
+    MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders);
 }

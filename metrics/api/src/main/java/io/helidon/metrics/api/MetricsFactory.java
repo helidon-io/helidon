@@ -15,38 +15,33 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Collection;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.config.Config;
 
 /**
- * Behavior of implementations of the Helidon metrics API.
+ * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
+ * meter <em>builders</em> rather than for meters themselves.
+ * <p>
+ * This is not intended to be the interface which developers use to work with Helidon metrics. Instead use
+ *     <ul>
+ *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
+ *         <li>the static methods on the various meter interfaces in the API (such as {@link io.helidon.metrics.api.Timer},
+ *         or</li>
+ *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
+ *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
+ *     </ul>
  * <p>
  * An implementation of this interface provides instance methods for each
  * of the static methods on the Helidon metrics API interfaces. The prefix of each method
  * here identifies the interface that bears the corresponding static method. For example,
  * {@link #timerStart(io.helidon.metrics.api.MeterRegistry)} corresponds to the static
  * {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
- * </p>
  * <p>
  * Also, various static methods create new instances or return previously-created ones.
- * </p>
- * <p>
- * Note that this is not intended to be the interface which developers use to work with Helidon metrics.
- * Instead use
- *     <ul>
- *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
- *         <li>the static methods on the various interfaces in the API, or</li>
- *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
- *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
- *     </ul>
- * <p>
- *     Rather, implementations of Helidon metrics implement this interface and various internal parts of Helidon metrics,
- *     notably the static methods on {@link io.helidon.metrics.api.Metrics}, delegate to the highest-weight
- *     implementation of this interface.
- * </p>
  */
 public interface MetricsFactory {
 
@@ -62,8 +57,9 @@ public interface MetricsFactory {
     }
 
     /**
-     * Returns a new instance from a highest-weight provider available at runtime using the provided
-     * {@link io.helidon.common.config.Config} to set up the factory.
+     * Returns a new metrics factory instance from a highest-weight provider using the provided
+     * {@link io.helidon.common.config.Config} to set up the metrics factory and saving the resulting metrics factory
+     * as the current one, returned by {@link #getInstance()}}.
      *
      * @param rootConfig top-level config node
      * @return new instance configured as directed
@@ -73,17 +69,29 @@ public interface MetricsFactory {
     }
 
     /**
-     * Invoked shortly after creation so the factory knows about initial meter builders.
-     * @param builders initial builders
-     */
-    void initialMeterBuilders(Collection<Meter.Builder<?, ?>> builders);
-
-    /**
-     * Returns the global meter registry.
+     * Returns the global {@link io.helidon.metrics.api.MeterRegistry} for this metrics factory.
+     *
+     * <p>
+     * The metric factory creates its global registry on-demand using
+     * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
+     * {@link MetricsConfig} instance derived from the root {@link io.helidon.common.config.Config} most recently passed to
+     * {@link #getInstance(io.helidon.common.config.Config)}, or if none then the config from
+     * {@link io.helidon.common.config.GlobalConfig}.
      *
      * @return the global meter registry
      */
     MeterRegistry globalRegistry();
+
+    /**
+     * Returns the global {@link io.helidon.metrics.api.MeterRegistry} enrolling the specified listeners to the meter registry.
+     *
+     * @param onAddListener    invoked whenever a new meter is added to the returned meter registry
+     * @param onRemoveListener invoked whenever a meter is removed from the returned meter registry
+     * @param backfill         whether the meter registry should invoke the on-add listener for meters already present in an
+     *                         existing global registry
+     * @return on-demand global registry with the indicated listeners added
+     */
+    MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill);
 
     /**
      * Returns the {@link io.helidon.metrics.api.MetricsConfig} instance used to initialize the metrics factory.
@@ -101,14 +109,42 @@ public interface MetricsFactory {
     MeterRegistry createMeterRegistry(MetricsConfig metricsConfig);
 
     /**
+     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config and enrolling the specified
+     * listeners with the returned meter registry.
+     *
+     * @param metricsConfig    metrics configuration which influences the new registry
+     * @param onAddListener    invoked whenever a new meter is added to the meter registry
+     * @param onRemoveListener invoked whenever a new meter is removed from the meter registry
+     * @return new meter registry with the listeners enrolled
+     */
+    MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
+                                      Consumer<Meter> onAddListener,
+                                      Consumer<Meter> onRemoveListener);
+
+    /**
      * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided {@link io.helidon.metrics.api.Clock} and
-     * metrics config.
+     * {@link io.helidon.metrics.api.MetricsConfig}.
      *
      * @param clock         default clock to associate with the meter registry
      * @param metricsConfig metrics configuration which influences the new registry
      * @return new meter registry
      */
     MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig);
+
+    /**
+     * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided {@link io.helidon.metrics.api.Clock} and
+     * {@link io.helidon.metrics.api.MetricsConfig} and enrolling the specified listners with the new meter registry.
+     *
+     * @param clock            clock to associate with the meter registry
+     * @param metricsConfig    metrics config which influences the new registry
+     * @param onAddListener    invoked whenever a new meter is added to the meter registry
+     * @param onRemoveListener invoked whenever a new meter is removed from the meter registry
+     * @return new meter registry
+     */
+    MeterRegistry createMeterRegistry(Clock clock,
+                                      MetricsConfig metricsConfig,
+                                      Consumer<Meter> onAddListener,
+                                      Consumer<Meter> onRemoveListener);
 
     /**
      * Returns the system {@link io.helidon.metrics.api.Clock} from the
@@ -136,7 +172,7 @@ public interface MetricsFactory {
      * @param <T>         type of the state object
      * @return counter builder
      */
-    <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name, T stateObject, ToDoubleFunction<T> fn);
+    <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name, T stateObject, Function<T, Long> fn);
 
     /**
      * Creates a builder for a {@link io.helidon.metrics.api.DistributionStatisticsConfig}.

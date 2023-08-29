@@ -18,12 +18,14 @@ package io.helidon.metrics.api;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.config.Config;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -70,5 +72,16 @@ public class SimpleApiTest {
         assertThat("Scope tag name",
                    scopingConfig.tagName(),
                    OptionalMatcher.optionalValue(is(ScopingConfig.SCOPE_TAG_NAME_DEFAULT)));
+    }
+
+    @Test
+    void testExplicitCreateOfMetricsFactory() {
+        // This is a bit silly of a test, but it uses the create(config) method on the MetricsFactoryManager so checkstyle
+        // won't complain.
+        Config config = Config.empty();
+        MetricsFactory mf = MetricsFactoryManager.create(config);
+
+        MeterRegistry mr = mf.globalRegistry();
+        assertThat("No-op registry", mr.meters(), empty());
     }
 }

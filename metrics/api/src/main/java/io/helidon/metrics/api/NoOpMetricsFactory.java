@@ -15,7 +15,8 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.Collection;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -48,11 +49,12 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public void initialMeterBuilders(Collection<Meter.Builder<?, ?>> builders) {
+    public MeterRegistry globalRegistry() {
+        return meterRegistry;
     }
 
     @Override
-    public MeterRegistry globalRegistry() {
+    public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
         return meterRegistry;
     }
 
@@ -67,8 +69,27 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
+                                             Consumer<Meter> onAddListener,
+                                             Consumer<Meter> onRemoveListener) {
+        return createMeterRegistry(metricsConfig)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener);
+    }
+
+    @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
         return createMeterRegistry(metricsConfig);
+    }
+
+    @Override
+    public MeterRegistry createMeterRegistry(Clock clock,
+                                             MetricsConfig metricsConfig,
+                                             Consumer<Meter> onAddListener,
+                                             Consumer<Meter> onRemoveListener) {
+        return createMeterRegistry(clock, metricsConfig)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener);
     }
 
     @Override
@@ -89,7 +110,7 @@ class NoOpMetricsFactory implements MetricsFactory {
     @Override
     public <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name,
                                                                      T stateObject,
-                                                                     ToDoubleFunction<T> fn) {
+                                                                     Function<T, Long> fn) {
         return NoOpMeter.FunctionalCounter.builder(name, stateObject, fn);
     }
 

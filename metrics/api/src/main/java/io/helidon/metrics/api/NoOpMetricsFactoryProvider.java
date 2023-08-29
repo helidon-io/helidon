@@ -15,6 +15,10 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Collection;
+
+import io.helidon.common.config.Config;
+import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 /**
@@ -26,7 +30,7 @@ class NoOpMetricsFactoryProvider implements MetricsFactoryProvider {
     }
 
     @Override
-    public MetricsFactory create(MetricsConfig metricsConfig) {
+    public MetricsFactory create(Config rootNode, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
         return NoOpMetricsFactory.create();
     }
 }

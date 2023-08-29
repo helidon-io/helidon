@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -265,7 +266,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
             super(builder);
         }
 
-        static <T> FunctionalCounter.Builder<T> builder(String name, T target, ToDoubleFunction<T> fn) {
+        static <T> FunctionalCounter.Builder<T> builder(String name, T target, Function<T, Long> fn) {
             return new FunctionalCounter.Builder<>(name, target, fn);
         }
 
@@ -278,9 +279,9 @@ class NoOpMeter implements Meter, NoOpWrapper {
                 implements io.helidon.metrics.api.FunctionalCounter.Builder<T> {
 
             private final T stateObject;
-            private final ToDoubleFunction<T> fn;
+            private final Function<T, Long> fn;
 
-            private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+            private Builder(String name, T stateObject, Function<T, Long> fn) {
                 super(name, Type.COUNTER);
                 this.stateObject = stateObject;
                 this.fn = fn;
@@ -292,7 +293,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
             }
 
             @Override
-            public ToDoubleFunction<T> fn() {
+            public Function<T, Long> fn() {
                 return fn;
             }
 

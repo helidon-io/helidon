@@ -21,8 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * A main entry point to the Helidon metrics implementation, allowing access to the global meter registry and providing shortcut
- * methods to register and locate meters in the global registry and remove meters from it.
+ * A main entry point for developers to the Helidon metrics system, allowing access to the global meter registry and providing
+ * shortcut methods to register and locate meters in the global registry and remove meters from it.
  */
 public interface Metrics {
 
@@ -36,8 +36,7 @@ public interface Metrics {
     }
 
     /**
-     * Creates a meter registry, not added to the global registry, based on
-     * the provided metrics config.
+     * Creates a meter registry, not saved as the global registry, based on the provided metrics config.
      *
      * @param metricsConfig metrics config
      * @return new meter registry
@@ -47,7 +46,8 @@ public interface Metrics {
     }
 
     /**
-     * Creates a meter registry, not added to the global registry, using default metrics config information.
+     * Creates a meter registry, not saved as the global registry, using default metrics config information based on global
+     * config.
      *
      * @return new meter registry
      */
@@ -57,7 +57,7 @@ public interface Metrics {
 
     /**
      * Locates a previously-registered meter using the name and tags in the provided builder or, if not found, registers a new
-     * one using the provided builder.
+     * one using the provided builder, both using the metrics factory's global registry.
      *
      * @param builder builder to use in finding or creating a meter
      * @param <M>     type of the meter

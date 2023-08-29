@@ -15,7 +15,7 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.function.ToDoubleFunction;
+import java.util.function.Function;
 
 /**
  * A read-only counter which wraps some other object that provides the counter value via a function.
@@ -31,7 +31,7 @@ public interface FunctionalCounter extends Meter {
      * @param <T>         type of the state object
      * @return new builder
      */
-    static <T> Builder builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+    static <T> Builder<?> builder(String name, T stateObject, Function<T, Long> fn) {
         return MetricsFactory.getInstance().functionalCounterBuilder(name, stateObject, fn);
     }
 
@@ -61,6 +61,6 @@ public interface FunctionalCounter extends Meter {
          *
          * @return function returning the counter value
          */
-        ToDoubleFunction<T> fn();
+        Function<T, Long> fn();
     }
 }

@@ -15,19 +15,22 @@
  */
 package io.helidon.metrics.spi;
 
-import io.helidon.common.config.Config;
+import java.util.Collection;
+
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MetricsFactory;
 
 /**
- * Behavior of providers of meters.
+ * Furnishes {@link io.helidon.metrics.api.Meter.Builder} instances which are supplied to each {@link io.helidon.metrics.api.MetricsFactory}
+ * when it is created and, in turn, are passed to each {@link io.helidon.metrics.api.MeterRegistry} that factory creates.
  */
 public interface MetersProvider {
 
     /**
-     * Returns meter builders for meters supported by a component.
+     * Returns meter builders created using the specified {@link io.helidon.metrics.api.MetricsFactory}.
      *
-     * @param config root configuration node
+     * @param metricsFactory the {@link io.helidon.metrics.api.MetricsFactory} the provider should use
      * @return meter builders
      */
-    Iterable<Meter.Builder<?, ?>> meters(Config config);
+    Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory);
 }
