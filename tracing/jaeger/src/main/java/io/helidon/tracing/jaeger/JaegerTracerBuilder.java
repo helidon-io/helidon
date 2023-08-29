@@ -159,7 +159,6 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final long DEFAULT_SCHEDULE_DELAY = 30_000;
     static final int DEFAULT_MAX_QUEUE_SIZE = 2048;
     static final int DEFAULT_MAX_EXPORT_BATCH_SIZE = 512;
-
     private final Map<String, String> tags = new HashMap<>();
     // this is a backward incompatible change, but the correct choice is Jaeger, not B3
     private final Set<PropagationFormat> propagationFormats = EnumSet.noneOf(PropagationFormat.class);
@@ -311,8 +310,8 @@ public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
 
         config.get("span-processor-type").asString()
                 .ifPresent(it -> spanProcessorType(SpanProcessorType.valueOf(it.toUpperCase())));
-        config.get("exporter-timeout").asLong().ifPresent(it -> exporterTimeout(Duration.ofMillis(it)));
-        config.get("schedule-delay").asInt().ifPresent(it -> scheduleDelay(Duration.ofMillis(it)));
+        config.get("exporter-timeout").as(Duration.class).ifPresent(this::exporterTimeout);
+        config.get("schedule-delay").as(Duration.class).ifPresent(this::scheduleDelay);
         config.get("max-queue-size").asInt().ifPresent(this::maxQueueSize);
         config.get("max-export-batch-size").asInt().ifPresent(this::maxExportBatchSize);
 
