@@ -18,6 +18,7 @@ package io.helidon.webserver.http2;
 
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
 
@@ -68,6 +69,8 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                                                   Http2Flag.DataFlags.create(Http2Flag.DataFlags.END_OF_STREAM),
                                                   0), BufferData.empty());
     private static final System.Logger LOGGER = System.getLogger(Http2Stream.class.getName());
+    private static final Set<Http2StreamState> DATA_RECEIVABLE_STATES =
+            Set.of(Http2StreamState.OPEN, Http2StreamState.HALF_CLOSED_LOCAL);
 
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
@@ -153,7 +156,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
      * @throws Http2Exception in case data cannot be received
      */
     public void checkDataReceivable() throws Http2Exception {
-        if (state != Http2StreamState.OPEN) {
+        if (!DATA_RECEIVABLE_STATES.contains(state)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received data for stream "
                     + streamId + " in state " + state);
         }
