@@ -251,16 +251,12 @@ public class ConfiguredTlsManager implements TlsManager {
     }
 
     /**
-     * Create a new trust manager factory based on the configuration.
+     * Create a new trust manager factory based on the configuration (i.e., the algorithm and provider).
      *
      * @param tlsConfig TLS config
      * @return a new trust manager factory
      */
-    protected TrustManagerFactory tmf(TlsConfig tlsConfig) {
-        if (tlsConfig.trustAll()) {
-            return new TrustAllManagerFactory();
-        }
-
+    protected TrustManagerFactory createTmf(TlsConfig tlsConfig) {
         try {
             String algorithm = tlsConfig.trustManagerFactoryAlgorithm().orElseGet(TrustManagerFactory::getDefaultAlgorithm);
             if (tlsConfig.trustManagerFactoryProvider().isEmpty()) {
@@ -275,25 +271,37 @@ public class ConfiguredTlsManager implements TlsManager {
         }
     }
 
-    private TrustManagerFactory buildTmf(TlsConfig tlsConfig) throws KeyStoreException {
+    /**
+     * Creates a trust all trust manager factory.
+     *
+     * @return a new trust manager factory trusting all
+     */
+    protected TrustManagerFactory trustAllTmf() {
+        return new TrustAllManagerFactory();
+    }
+
+    // creates an internal keystore and initializes it with certificates discovered from configuration, then gets the trust
+    // manager factory using tmf(TlsConfig)
+    private TrustManagerFactory initTmf(TlsConfig tlsConfig) throws KeyStoreException {
         KeyStore ks = internalKeystore(tlsConfig);
         int i = 1;
         for (X509Certificate cert : tlsConfig.trust()) {
             ks.setCertificateEntry(String.valueOf(i), cert);
             i++;
         }
-        TrustManagerFactory tmf = tmf(tlsConfig);
+        TrustManagerFactory tmf = createTmf(tlsConfig);
         tmf.init(ks);
         return tmf;
     }
 
-    private TrustManagerFactory toTmf(TlsConfig tlsConfig) throws KeyStoreException {
+    // used by ConfiguredTlsManager to setup a TrustManagerFactory, that may be "trustAll", or based on configuration
+    private TrustManagerFactory tmf(TlsConfig tlsConfig) throws KeyStoreException {
         if (tlsConfig.trustAll()) {
-            return new TrustAllManagerFactory();
+            return trustAllTmf();
         }
 
         if (!tlsConfig.trust().isEmpty()) {
-            return buildTmf(tlsConfig);
+            return initTmf(tlsConfig);
         }
 
         return null;
@@ -311,7 +319,7 @@ public class ConfiguredTlsManager implements TlsManager {
                     .map(pk -> buildKmf(tlsConfig, secureRandom, pk, tlsConfig.privateKeyCertChain().toArray(new Certificate[0])))
                     .orElse(null);
 
-            TrustManagerFactory tmf = toTmf(tlsConfig);
+            TrustManagerFactory tmf = tmf(tlsConfig);
 
             initSslContext(tlsConfig,
                            secureRandom,

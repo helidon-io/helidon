@@ -187,10 +187,15 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             SecureRandom secureRandom = secureRandom(tlsConfig);
             KeyManagerFactory kmf = buildKmf(tlsConfig, secureRandom, key, certificates.certificates());
 
-            TrustManagerFactory tmf = tmf(tlsConfig);
-            KeyStore keyStore = internalKeystore(tlsConfig);
-            keyStore.setCertificateEntry("trust-ca", ca);
-            tmf.init(keyStore);
+            TrustManagerFactory tmf;
+            if (tlsConfig.trustAll()) {
+                tmf = trustAllTmf();
+            } else {
+                tmf = createTmf(tlsConfig);
+                KeyStore keyStore = internalKeystore(tlsConfig);
+                keyStore.setCertificateEntry("trust-ca", ca);
+                tmf.init(keyStore);
+            }
 
             // Uncomment to debug downloaded context
             // saveToFile(keyStore, type + ".jks");
