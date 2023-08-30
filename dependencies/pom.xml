@@ -45,10 +45,12 @@
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <!-- commons-codec is for dependency convergence only -->
         <version.lib.commons-codec>1.15</version.lib.commons-codec>
+        <!-- Force upgrade byte-buddy for Java 21. Remove after upgrading hibernate -->
+        <version.lib.byte-buddy>1.14.6</version.lib.byte-buddy>
         <version.lib.commons-logging>1.2</version.lib.commons-logging>
         <version.lib.cron-utils>9.1.6</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.1.2</version.lib.dropwizard.metrics>
-        <version.lib.eclipselink>2.7.12</version.lib.eclipselink>
+        <version.lib.eclipselink>2.7.13</version.lib.eclipselink>
         <version.lib.el-api>3.0.3</version.lib.el-api>
         <version.lib.el-impl>3.0.4</version.lib.el-impl>
         <version.lib.etcd4j>2.18.0</version.lib.etcd4j>
