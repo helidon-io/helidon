@@ -575,8 +575,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // TODO buffer now contains the actual data bytes
         stream.stream().data(frameHeader, buffer);
 
-        if (frameHeader.flags(Http2FrameTypes.DATA).endOfStream()
-                && (REMOVABLE_STREAMS.contains(stream.stream.streamState()))) {
+        // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
+        // even when handler has already finished
+        if ((REMOVABLE_STREAMS.contains(stream.stream.streamState()))
+                && frameHeader.flags(Http2FrameTypes.DATA).endOfStream()) {
             streams.remove(streamId);
         }
 
@@ -855,7 +857,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     throw e;
                 }
             } finally {
-                //5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
+                // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
                 if (stream.streamState() == Http2StreamState.CLOSED) {
                     streams.remove(stream.streamId());
                 }
