@@ -27,7 +27,7 @@ include::{rootdir}/includes/se.adoc[]
 == Contents
 
 - <<Overview, Overview>>
-- <<Profile options, Profile options>>
+- <<Profile Options, Profile Options>>
 - <<Profile-Config-Source, Profile Config Source>>
 - <<Profile-File, Profile Files>>
 
@@ -37,7 +37,7 @@ Configuration profiles provide a capability to prepare structure of configuratio
 environment in advance, and then simply switch between these structures using a system property
 or an environment variable.
 
-== Profile options
+== Profile Options
 To choose a configuration profile to use at runtime, you can use:
 
 1. A system property `config.profile`

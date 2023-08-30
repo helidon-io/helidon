@@ -26,7 +26,7 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview>>
+- <<Overview, Overview>>
 - <<Converting Configuration to Simple Types, Converting Configuration to Simple Types>>
 - <<Converting Configuration to `enum` Values, Converting Configuration to `enum` Values>>
 - <<Converting Configuration to Complex Types, Converting Configuration to Complex Types>>
@@ -223,6 +223,7 @@ Here are two approaches that will always work without requiring changes
 to the target class. For both approaches, you write your own conversion function.
 The difference is in how your application triggers the use of that mapper.
 
+[[customConfigAs]]
 ==== Use Custom Mapper Explicitly: `Config.as` method
 Any time your application has a `Config` instance to map to the target class
 it invokes `Config.as` passing an instance of the corresponding conversion function:
@@ -336,7 +337,6 @@ WebConfig web = config.get("web")
 Either of the two approaches just described will _always_ work without requiring you to change
 the POJO class.
 
-[[customConfigAs]]
 == Advanced Conversions using Explicit Mapping Logic
 If the target Java class you want to use meets certain conditions -- or if you can change
 it to meet one of those conditions -- you might not need to write a separate mapper
