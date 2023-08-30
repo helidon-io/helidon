@@ -21,8 +21,9 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsFactory;
 
 /**
- * Furnishes {@link io.helidon.metrics.api.Meter.Builder} instances which are supplied to each {@link io.helidon.metrics.api.MetricsFactory}
- * when it is created and, in turn, are passed to each {@link io.helidon.metrics.api.MeterRegistry} that factory creates.
+ * Furnishes {@link io.helidon.metrics.api.Meter.Builder} instances which are supplied to each
+ * {@link io.helidon.metrics.api.MetricsFactory} when it is created and, in turn, are passed to each
+ * {@link io.helidon.metrics.api.MeterRegistry} that factory creates.
  */
 public interface MetersProvider {
 

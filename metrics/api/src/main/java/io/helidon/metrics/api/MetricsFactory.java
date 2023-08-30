@@ -98,7 +98,7 @@ public interface MetricsFactory {
      *
      * @return metrics config used to create the metrics factory
      */
-    MetricsConfig.Builder metricsConfig();
+    MetricsConfig metricsConfig();
 
     /**
      * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config.

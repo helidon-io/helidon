@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Set;
 
@@ -47,7 +48,8 @@ public class SimpleApiTest {
 
         timer1 = Metrics.getOrCreate(Timer.builder("timer1")
                                              .tags(Metrics.tags("t1", "v1",
-                                                                "t2", "v2")));
+                                                                "t2", "v2"))
+                                             .maximumExpectedValue(Duration.ofSeconds(4)));
     }
 
     @Test

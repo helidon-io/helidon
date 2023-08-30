@@ -42,7 +42,7 @@ class NoOpMetricsFactory implements MetricsFactory {
         }
     };
     private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
-    private final MetricsConfig.Builder metricsConfig = MetricsConfig.builder();
+    private final MetricsConfig metricsConfig = MetricsConfig.create();
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();
@@ -59,7 +59,7 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public MetricsConfig.Builder metricsConfig() {
+    public MetricsConfig metricsConfig() {
         return metricsConfig;
     }
 

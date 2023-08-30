@@ -19,6 +19,7 @@ import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
@@ -26,15 +27,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
-import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.config.Config;
-import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.spi.MetersProvider;
 
@@ -175,7 +173,8 @@ public class SystemMetersProvider implements MetersProvider {
                             + "-1 if the collection count is undefined for this collector.")
             .withUnit("")
             .build();
-    private MetricsConfig metricsConfig;
+
+    private MetricsFactory metricsFactory;
 
     /**
      * Constructs a new instance for service loading.
@@ -187,41 +186,63 @@ public class SystemMetersProvider implements MetersProvider {
     }
 
     @Override
-    public Iterable<Meter.Builder<?, ?>> meters(Config config) {
-        metricsConfig = MetricsConfig.create(config.get(MetricsConfig.METRICS_CONFIG_KEY));
+    public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
+        this.metricsFactory = metricsFactory; // save at the instance level for ease of access
         return prepareMeterBuilders();
     }
 
-    private Collection<Meter.Builder<?, ?>> prepareMeterBuilders() {
-        if (!metricsConfig.enabled() || !metricsConfig.isScopeEnabled(SCOPE)) {
-            return Set.of();
-        }
+    /**
+     * Returns a function to invoke a function on a main bean to get a sub-bean, then invoke a function on
+     * the sub-bean to retrieve a value.
+     *
+     * @param getSubBeanFn function to get the subbean from the main bean
+     * @param valueFn      function to get the value from the subbean
+     * @param <M>          type of the main bean
+     * @param <S>          type of the subbean
+     * @param <N>          subtype of {@link java.lang.Number} returned by the value-obtaining function applied to the subbean
+     * @return a function for retrieving the value given the main bean
+     */
+    private static <M, S, N extends Number> Function<M, N> typedFn(Function<M, S> getSubBeanFn, Function<S, N> valueFn) {
+        return main -> valueFn.apply(getSubBeanFn.apply(main));
+    }
 
+    private <B extends Meter.Builder<B, M>,
+            M extends Meter>
+    Collection<Meter.Builder<?, ?>> prepareMeterBuilders() {
         Collection<Meter.Builder<?, ?>> result = new ArrayList<>();
 
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
-        registerFunctionalCounter(result, MEMORY_USED_HEAP, memoryBean, mb -> mb.getHeapMemoryUsage().getUsed());
-        registerFunctionalCounter(result, MEMORY_COMMITTED_HEAP, memoryBean, mb -> mb.getHeapMemoryUsage().getCommitted());
-        registerFunctionalCounter(result, MEMORY_MAX_HEAP, memoryBean, mb -> mb.getHeapMemoryUsage().getMax());
+        registerFunctionalCounter(result,
+                                  MEMORY_USED_HEAP,
+                                  memoryBean,
+                                  typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getUsed));
+        registerFunctionalCounter(result,
+                                  MEMORY_USED_HEAP,
+                                  memoryBean,
+                                  typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getCommitted));
+        registerFunctionalCounter(result,
+                                  MEMORY_COMMITTED_HEAP,
+                                  memoryBean,
+                                  typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getMax));
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         registerFunctionalCounter(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        registerFunctionalCounter(result, THREAD_COUNT, threadBean, ThreadMXBean::getThreadCount);
-        registerFunctionalCounter(result, THREAD_DAEMON_COUNT, threadBean, ThreadMXBean::getDaemonThreadCount);
-        registerFunctionalCounter(result, THREAD_MAX_COUNT, threadBean, ThreadMXBean::getPeakThreadCount);
+        registerFunctionalCounter(result, THREAD_COUNT, threadBean, intToLong(ThreadMXBean::getThreadCount));
+        registerFunctionalCounter(result, THREAD_DAEMON_COUNT, threadBean, intToLong(ThreadMXBean::getDaemonThreadCount));
+        registerFunctionalCounter(result, THREAD_MAX_COUNT, threadBean, intToLong(ThreadMXBean::getPeakThreadCount));
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        registerFunctionalCounter(result, CL_LOADED_COUNT, clBean, ClassLoadingMXBean::getLoadedClassCount);
-        registerGauge(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
-        registerGauge(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
+        registerFunctionalCounter(result, CL_LOADED_COUNT, clBean, intToLong(ClassLoadingMXBean::getLoadedClassCount));
+        registerFunctionalCounter(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
+        registerFunctionalCounter(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        registerFunctionalCounter(result, OS_AVAILABLE_CPU, osBean, OperatingSystemMXBean::getAvailableProcessors);
-        registerFunctionalCounter(result, OS_LOAD_AVERAGE, osBean, OperatingSystemMXBean::getSystemLoadAverage);
+        registerFunctionalCounter(result, OS_AVAILABLE_CPU, osBean, intToLong(OperatingSystemMXBean::getAvailableProcessors));
+        registerGauge(result, OS_LOAD_AVERAGE, osBean, OperatingSystemMXBean::getSystemLoadAverage);
 
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
@@ -246,27 +267,27 @@ public class SystemMetersProvider implements MetersProvider {
                                                      T object,
                                                      Function<T, R> fn,
                                                      Tag... tags) {
-        if (metricsConfig.isMeterEnabled(metadata.name, "base")) {
             result.add(Gauge.builder(metadata.name, object, obj -> fn.apply(obj).doubleValue())
                                .scope(SCOPE)
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
                                .tags(Arrays.asList(tags)));
-        }
     }
 
     private <T> void registerFunctionalCounter(Collection<Meter.Builder<?, ?>> result,
                                                Metadata metadata,
                                                T object,
-                                               ToDoubleFunction<T> fn,
+                                               Function<T, Long> fn,
                                                Tag... tags) {
-        if (metricsConfig.isMeterEnabled(metadata.name, "base")) {
-            result.add(FunctionalCounter.builder(metadata.name, object, fn)
-                               .scope(SCOPE)
-                               .description(metadata.description)
-                               .baseUnit(metadata.baseUnit)
-                               .tags(Arrays.asList(tags)));
-        }
+        result.add(metricsFactory.functionalCounterBuilder(metadata.name, object, fn)
+                           .scope(SCOPE)
+                           .description(metadata.description)
+                           .baseUnit(metadata.baseUnit)
+                           .tags(Arrays.asList(tags)));
+    }
+
+    private static <T> Function<T, Long> intToLong(Function<T, Integer> fn) {
+        return t -> (long) fn.apply(t);
     }
 
     private static class Metadata {

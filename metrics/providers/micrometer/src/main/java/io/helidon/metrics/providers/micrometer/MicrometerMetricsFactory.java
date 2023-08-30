@@ -80,7 +80,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     }
 
     @Override
-    public MetricsConfig.Builder metricsConfig() {
+    public MetricsConfig metricsConfig() {
         return metricsConfigBuilder;
     }
 
