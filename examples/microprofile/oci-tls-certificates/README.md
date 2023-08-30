@@ -1,6 +1,6 @@
 # Helidon TLS and OCI Certificate Service Integration Example
 
-This module contains an example usage of the [OciCertificatesTlsManager](../../../integrations/oci/tls-certificates) provider that offers lifecycle and rotation of certificates to be used with Helidon Tls.
+This module contains an example usage of the [OciCertificatesTlsManager](../../../integrations/oci/tls-certificates) provider that offers lifecycle and rotation of certificates to be used with Helidon.
 
 1. [Prerequisites](#prerequisites)
 2. [Setting up OCI](#setting-up-oci)
@@ -15,7 +15,7 @@ This module contains an example usage of the [OciCertificatesTlsManager](../../.
     3. [Test with cURL](#test-with-curl)
 
 ## Prerequisites
-- OCI Tenancy with Vault [KMS](https://www.oracle.com/security/cloud-security/key-management) and [Certificate service](https://www.oracle.com/security/cloud-security/ssl-tls-certificates)
+- OCI Tenancy with Vault [KMS](https://www.oracle.com/security/cloud-security/key-management) and [Certificate service](https://www.oracle.com/security/cloud-security/ssl-tls-certificates) availability.
 - [OCI CLI](https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/cliinstall.htm#Quickstart) 3.2.1 or later with properly configured `~/.oci/config` to access your tenancy
 - OpenSSL (on deb based distros `apt install openssl`)
 - [Keytool](https://docs.oracle.com/en/java/javase/17/docs/specs/man/keytool.html) (comes with JDK installation)
@@ -43,7 +43,7 @@ Follow [OCI documentation](https://docs.oracle.com/en-us/iaas/Content/certificat
     Allow group CertificateAuthorityAdmins to manage keys in tenancy
     Allow group CertificateAuthorityAdmins to manage secret-family in tenancy
     ```
-5. Create or reuse OCI Vault and notice there are cryptographic and management endpoints in the vault general info, we will need them later.
+5. Create or reuse an OCI Vault and notice there are cryptographic and management endpoints in the vault general info, we will need them later.
 6. Create new key in the vault with following properties:
     - Name: `mySuperCAKey`
     - Protection Mode: **HSM** (requirement for CA keys, those can't be downloaded)
@@ -83,7 +83,7 @@ bash createKeys.sh
 ```
 
 ## Rotating mTLS certificates
-Make sure you are in the directory [etc/unsupported-cert-tools/](etc/unsupported-cert-tools/).
+Make sure you are in the directory [./etc/unsupported-cert-tools/](etc/unsupported-cert-tools/).
 ```shell
 bash rotateKeys.sh
 ```
@@ -91,8 +91,9 @@ bash rotateKeys.sh
 
 ## Build and run example
 
+Update the [pom.xml](../pom.xml) to define the system properties for the configuration as mentioned above.
+
 ### Build & Run
-**NOTE: THIS IS NOT SUPPORTED BY THE HELIDON TEAM**
 
 ```shell
 mvn clean package
@@ -102,20 +103,7 @@ Run mTLS secured web server:
 ```shell
 source ./etc/unsupported-cert-tools/config.sh && \
 source ./etc/unsupported-cert-tools/generated-config.sh && \
-java -jar ./target/oci-tls-certificates.jar
-```
-Reload interval can be overridden with:
-```shell
-source ./etc/unsupported-cert-tools/config.sh && \
-source ./etc/unsupported-cert-tools/generated-config.sh && \
-java -Dsecurity.mtls-reload.reload-cron="0/20 * * * * ? *" \
--jar ./target/oci-tls-certificates.jar
-```
-### Test with WebClient
-```shell
-source ./etc/unsupported-cert-tools/config.sh && \
-source ./etc/unsupported-cert-tools/generated-config.sh && \
-java -cp ./target/oci-tls-certificates.jar io.helidon.examples.oci.tls.certificates.Client
+java -jar ./target/helidon-examples-microprofile-oci-tls-certificates.jar
 ```
 
 ### Test with cURL

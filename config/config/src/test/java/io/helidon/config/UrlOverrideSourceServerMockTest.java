@@ -110,7 +110,7 @@ public class UrlOverrideSourceServerMockTest {
         waitForAssert(() -> config.get("aaa.bbb.url").asString().get(), is("URL1"));
     }
 
-    @Disabled // intermittent failures on MacOS
+    @Disabled // intermittent failures on MacOS - https://github.com/helidon-io/helidon/issues/4440
     @Test
     public void testMultipleMatchingWildcards() throws MalformedURLException, InterruptedException {
 

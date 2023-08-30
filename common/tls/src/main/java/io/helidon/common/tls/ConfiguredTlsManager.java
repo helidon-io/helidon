@@ -253,10 +253,14 @@ public class ConfiguredTlsManager implements TlsManager {
     /**
      * Create a new trust manager factory based on the configuration.
      *
-     * @param tlsConfig TLS Config
+     * @param tlsConfig TLS config
      * @return a new trust manager factory
      */
     protected TrustManagerFactory tmf(TlsConfig tlsConfig) {
+        if (tlsConfig.trustAll()) {
+            return new TrustAllManagerFactory();
+        }
+
         try {
             String algorithm = tlsConfig.trustManagerFactoryAlgorithm().orElseGet(TrustManagerFactory::getDefaultAlgorithm);
             if (tlsConfig.trustManagerFactoryProvider().isEmpty()) {
@@ -271,6 +275,30 @@ public class ConfiguredTlsManager implements TlsManager {
         }
     }
 
+    private TrustManagerFactory buildTmf(TlsConfig tlsConfig) throws KeyStoreException {
+        KeyStore ks = internalKeystore(tlsConfig);
+        int i = 1;
+        for (X509Certificate cert : tlsConfig.trust()) {
+            ks.setCertificateEntry(String.valueOf(i), cert);
+            i++;
+        }
+        TrustManagerFactory tmf = tmf(tlsConfig);
+        tmf.init(ks);
+        return tmf;
+    }
+
+    private TrustManagerFactory toTmf(TlsConfig tlsConfig) throws KeyStoreException {
+        if (tlsConfig.trustAll()) {
+            return new TrustAllManagerFactory();
+        }
+
+        if (!tlsConfig.trust().isEmpty()) {
+            return buildTmf(tlsConfig);
+        }
+
+        return null;
+    }
+
     private void sslContext(TlsConfig tlsConfig) {
         if (tlsConfig.sslContext().isPresent()) {
             this.sslContext = tlsConfig.sslContext().get();
@@ -283,16 +311,7 @@ public class ConfiguredTlsManager implements TlsManager {
                     .map(pk -> buildKmf(tlsConfig, secureRandom, pk, tlsConfig.privateKeyCertChain().toArray(new Certificate[0])))
                     .orElse(null);
 
-            TrustManagerFactory tmf;
-            if (tlsConfig.trustAll()) {
-                tmf = buildTrustAllTmf();
-            } else {
-                if (tlsConfig.trust().isEmpty()) {
-                    tmf = null;
-                } else {
-                    tmf = buildTmf(tlsConfig);
-                }
-            }
+            TrustManagerFactory tmf = toTmf(tlsConfig);
 
             initSslContext(tlsConfig,
                            secureRandom,
@@ -301,22 +320,6 @@ public class ConfiguredTlsManager implements TlsManager {
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException("Failed to create SSLContext", e);
         }
-    }
-
-    private TrustManagerFactory buildTrustAllTmf() {
-        return new TrustAllManagerFactory();
-    }
-
-    private TrustManagerFactory buildTmf(TlsConfig target) throws KeyStoreException {
-        KeyStore ks = internalKeystore(target);
-        int i = 1;
-        for (X509Certificate cert : target.trust()) {
-            ks.setCertificateEntry(String.valueOf(i), cert);
-            i++;
-        }
-        TrustManagerFactory tmf = tmf(target);
-        tmf.init(ks);
-        return tmf;
     }
 
     /**

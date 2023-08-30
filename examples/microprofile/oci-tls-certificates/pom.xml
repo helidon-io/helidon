@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -91,13 +91,14 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <!-- To be changed manually -->
-<!--                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>-->
-<!--                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>-->
+                        <!-- To be changed manually - see README.md -->
 <!--                        <VAULT_CRYPTO_ENDPOINT>https://dvsozhzvaaf3q-crypto.kms.us-ashburn-1.oraclecloud.com</VAULT_CRYPTO_ENDPOINT>-->
 <!--                        <CA_OCID>ocid1.certificateauthority.oc1.iad.amaaaaaa2rcccgyar6imoqdt43ochnaygyhgoqb65z6bd7w2xzv2tdcsbsga</CA_OCID>-->
 <!--                        <SERVER_CERT_OCID>ocid1.certificate.oc1.iad.amaaaaaa2rcccgya4fxntgo7cctdvcftwzor7l6ls6oglgyrpm6uaun2fgaq</SERVER_CERT_OCID>-->
 <!--                        <SERVER_KEY_OCID>ocid1.key.oc1.iad.dvsozhzvaaf3q.abuwcljsplsjcctmc25t6ciqrhqnuiacb6trrqepepltk6vrrfp6xflynctq</SERVER_KEY_OCID>-->
+
+                        <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
+                        <org.jboss.logging.provider>jdk</org.jboss.logging.provider>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
