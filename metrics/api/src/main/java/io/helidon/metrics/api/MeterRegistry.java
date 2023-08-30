@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.common.Builder;
+
 /**
  * Manages the look-up and registration of meters.
  */
@@ -219,4 +221,46 @@ public interface MeterRegistry extends Wrapper {
      * @return the meter registry
      */
     MeterRegistry onMeterRemoved(Consumer<Meter> onRemoveListener);
+
+    /**
+     * Builder for creating a new meter registry.
+     *
+     * @param <B> builder type
+     * @param <R> meter registry type
+     */
+    interface Builder<B extends Builder<B, R>, R extends MeterRegistry> extends io.helidon.common.Builder<B, R> {
+
+        /**
+         * Assigns the clock to be used within the meter registry (e.g., in timers), defaulting to a system clock.
+         *
+         * @param clock the {@link io.helidon.metrics.api.Clock} to be used
+         * @return updated builder
+         */
+        B clock(Clock clock);
+
+        /**
+         * Sets the {@link io.helidon.metrics.api.MetricsConfig} for the meter registry, defaulting to the
+         * metrics config with which the {@link io.helidon.metrics.api.MetricsFactory} was created.
+         *
+         * @param metricsConfig metrics config to control the meter registry
+         * @return updated builder
+         */
+        B metricsConfig(MetricsConfig metricsConfig);
+
+        /**
+         * Records a subscriber to meter-added events.
+         *
+         * @param addListener listener for meter-added events
+         * @return updated builder
+         */
+        B onMeterAdded(Consumer<Meter> addListener);
+
+        /**
+         * Records a subscriber to meter-removed events.
+         *
+         * @param removeListener listener for meter-removal events
+         * @return updated builder
+         */
+        B onMeterRemoved(Consumer<Meter> removeListener);
+    }
 }

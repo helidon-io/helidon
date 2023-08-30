@@ -160,7 +160,9 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
      * @param <HB> type of the Helidon meter builder which wraps the Micrometer meter builder
      * @param <HM> type of the Helidon meter which wraps the Micrometer meter
      */
-    abstract static class Builder<B, M extends io.micrometer.core.instrument.Meter, HB extends Builder<B, M, HB, HM>,
+    abstract static class Builder<B,
+            M extends io.micrometer.core.instrument.Meter,
+            HB extends Builder<B, M, HB, HM>,
             HM extends MMeter<M>> {
 
         private final String name;
@@ -175,6 +177,14 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         protected Builder(String name, B delegate) {
             this.name = name;
             this.delegate = delegate;
+        }
+
+        HB from(Meter.Builder<?, ?> neutralBuilder) {
+            neutralBuilder.description().ifPresent(this::description);
+            neutralBuilder.baseUnit().ifPresent(this::baseUnit);
+            neutralBuilder.scope().ifPresent(this::scope);
+            neutralBuilder.tags().forEach((key, value) -> this.addTag(MTag.of(key, value)));
+            return identity();
         }
 
         public HB tags(Iterable<Tag> tags) {

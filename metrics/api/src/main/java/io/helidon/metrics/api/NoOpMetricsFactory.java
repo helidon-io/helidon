@@ -64,6 +64,11 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public NoOpMeterRegistry.Builder meterRegistryBuilder() {
+        return NoOpMeterRegistry.builder();
+    }
+
+    @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
         return new NoOpMeterRegistry();
     }

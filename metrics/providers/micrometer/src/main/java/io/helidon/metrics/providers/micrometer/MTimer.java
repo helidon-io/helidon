@@ -16,14 +16,17 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.Timer;
 
 import io.micrometer.core.instrument.Clock;
 
@@ -45,8 +48,14 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         return new MTimer(id, timer);
     }
 
-    static io.helidon.metrics.api.Timer.Builder builder(String name) {
+    static Builder builder(String name) {
         return new Builder(name);
+    }
+
+    static Builder builderFrom(Timer.Builder tBuilder) {
+        Builder builder = builder(tBuilder.name());
+
+        return builder.from(tBuilder);
     }
 
     static MTimer create(Meter.Id id, io.micrometer.core.instrument.Timer delegate, Optional<String> scope) {
@@ -268,5 +277,24 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         protected MTimer build(Meter.Id id, io.micrometer.core.instrument.Timer meter) {
             return new MTimer(id, meter, this);
         }
+
+        Builder from(Timer.Builder other) {
+            percentiles = iterToArray(other.percentiles());
+            buckets = StreamSupport.stream(other.buckets().spliterator(), false).toList().toArray(new Duration[0]);
+            other.maximumExpectedValue().ifPresent(this::maximumExpectedValue);
+            other.minimumExpectedValue().ifPresent(this::minimumExpectedValue);
+            return super.from(other);
+        }
+
+        private static double[] iterToArray(Iterable<Double> iter) {
+            List<Double> doubles = StreamSupport.stream(iter.spliterator(), false).toList();
+            double[] d = new double[doubles.size()];
+            for (int i = 0; i < doubles.size(); i++) {
+                d[i] = doubles.get(i);
+            }
+            return d;
+        }
+
+
     }
 }

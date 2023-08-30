@@ -20,6 +20,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 
 
@@ -99,6 +101,11 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
      */
     static <N extends Number> SupplierBased.Builder<N> builder(String name, Supplier<N> supplier) {
         return new SupplierBased.Builder<>(name, supplier);
+    }
+
+    static <N extends Number> SupplierBased.Builder<N>  builderFrom(Gauge.Builder<N> gBuilder) {
+        return builder(gBuilder.name(), gBuilder.supplier())
+                .from(gBuilder);
     }
 
     /**
@@ -218,6 +225,11 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             protected MGauge<N> build(Meter.Id id, io.micrometer.core.instrument.Gauge gauge) {
                 return new SupplierBased<>(id, gauge, this);
             }
+
+            @Override
+            public Supplier<N> supplier() {
+                return supplier;
+            }
         }
     }
 
@@ -296,6 +308,11 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             @Override
             protected MGauge<Double> build(Meter.Id id, io.micrometer.core.instrument.Gauge gauge) {
                 return new FunctionBased<>(id, gauge, this);
+            }
+
+            @Override
+            public Supplier<Double> supplier() {
+                return () -> fn.applyAsDouble(stateObject);
             }
         }
     }

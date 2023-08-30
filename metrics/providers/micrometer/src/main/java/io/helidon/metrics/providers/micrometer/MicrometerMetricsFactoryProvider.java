@@ -15,8 +15,12 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.Collection;
+
+import io.helidon.common.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 /**
@@ -31,7 +35,9 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
     }
 
     @Override
-    public MetricsFactory create(MetricsConfig metricsConfig) {
-        return MicrometerMetricsFactory.create(metricsConfig);
+    public MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
+        return MicrometerMetricsFactory.create(rootConfig, metricsConfig, metersProviders);
     }
+
+
 }

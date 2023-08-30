@@ -115,6 +115,14 @@ public interface Meter extends Wrapper {
             return (B) this;
         }
 
+//        /**
+//         * Use the settings in the current builder to prepare the target builder.
+//         *
+//         * @param target other builder to set up
+//         * @return updated other builder
+//         */
+//        <T extends Meter.Builder<?, ?>> T copyTo(T target);
+
         /**
          * Sets the tags to use in identifying the build meter.
          *

@@ -101,6 +101,15 @@ public interface MetricsFactory {
     MetricsConfig metricsConfig();
 
     /**
+     * Returns a builder for creating a new {@link io.helidon.metrics.api.MeterRegistry}.
+     *
+     * @return the new builder
+     * @param <B> specific type of the builder
+     * @param <M> specific type of the registry
+     */
+    <B extends MeterRegistry.Builder<B, M>, M extends MeterRegistry> B meterRegistryBuilder();
+
+    /**
      * Creates a new {@link io.helidon.metrics.api.MeterRegistry} using the provided metrics config.
      *
      * @param metricsConfig metrics configuration which influences the new registry
@@ -264,16 +273,48 @@ public interface MetricsFactory {
      */
     HistogramSnapshot histogramSnapshotEmpty(long count, double total, double max);
 
+//    /**
+//     * Returns a no-op {@link io.helidon.metrics.api.Meter} of the type implied by the builder's type, initialized with
+//     * the builder's name and other required parameters.
+//     *
+//     * @param builder original builder
+//     * @param <B>     type of the builder
+//     * @param <M>     type of the meter the builder produces
+//     * @return corresponding no-op meter
+//     */
+//    default <M extends Meter, B extends Meter.Builder<B, M>> Meter noOpMeter(B builder) {
+//        if (builder instanceof Counter.Builder cb) {
+//            return NoOpMeter.Counter.builder(cb.name()).build();
+//        }
+//        if (builder instanceof FunctionalCounter.Builder fcb) {
+//            return NoOpMeter.FunctionalCounter.builder(fcb.name(), fcb.stateObject(), fcb.fn()).build();
+//        }
+//        if (builder instanceof DistributionSummary.Builder sb) {
+//            return NoOpMeter.DistributionSummary.builder(sb.name()).build();
+//        }
+//        //        if (builder instanceof Gauge.FunctionBasedBuilder gb) {
+//        //            return NoOpMeter.Gauge.builder(gb.name(), gb.stateObject(), gb.fn()).build();
+//        //        }
+//        //        if (builder instanceof Gauge.NumberBasedBuilder<?> nb) {
+//        //            return NoOpMeter.Gauge.builder(nb.name(), nb.number());
+//        //        }
+//        //        if (builder instanceof Gauge.SupplierBased<? extends Number> sb) {
+//        //            return NoOpMeter.Gauge.builder(sb.name(), sb.supplier());
+//        //        }
+//        if (builder instanceof Timer.Builder tb) {
+//            return NoOpMeter.Timer.builder(tb.name()).build();
+//        }
+//        throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
+//    }
+
     /**
-     * Returns a no-op {@link io.helidon.metrics.api.Meter} of the type implied by the builder's type, initialized with
+     * Returns a no-op {@link io.helidon.metrics.api.Meter} of the type implied by the builder's runtime type, initialized with
      * the builder's name and other required parameters.
      *
      * @param builder original builder
-     * @param <B>     type of the builder
-     * @param <M>     type of the meter the builder produces
      * @return corresponding no-op meter
      */
-    default <M extends Meter, B extends Meter.Builder<B, M>> Meter noOpMeter(B builder) {
+    default Meter noOpMeter(Meter.Builder<?, ?> builder) {
         if (builder instanceof Counter.Builder cb) {
             return NoOpMeter.Counter.builder(cb.name()).build();
         }

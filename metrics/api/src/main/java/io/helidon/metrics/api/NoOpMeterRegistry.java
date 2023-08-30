@@ -32,6 +32,10 @@ import java.util.function.Predicate;
  */
 class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
+    static Builder builder() {
+        return new Builder();
+    }
+
     @Override
     public List<Meter> meters() {
         return List.of();
@@ -113,6 +117,34 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     @Override
     public MeterRegistry onMeterRemoved(Consumer<Meter> listener) {
         return this;
+    }
+
+    static class Builder implements MeterRegistry.Builder<Builder, NoOpMeterRegistry> {
+
+        @Override
+        public NoOpMeterRegistry build() {
+            return new NoOpMeterRegistry();
+        }
+
+        @Override
+        public Builder clock(Clock clock) {
+            return identity();
+        }
+
+        @Override
+        public Builder metricsConfig(MetricsConfig metricsConfig) {
+            return identity();
+        }
+
+        @Override
+        public Builder onMeterAdded(Consumer<Meter> addListener) {
+            return identity();
+        }
+
+        @Override
+        public Builder onMeterRemoved(Consumer<Meter> removeListener) {
+            return identity();
+        }
     }
 
     private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {

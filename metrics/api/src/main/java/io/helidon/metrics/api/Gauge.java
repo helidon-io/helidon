@@ -68,5 +68,12 @@ public interface Gauge<N extends Number> extends Meter {
      * @param <N> specific subtype of {@code Number} for the gauge this builder will produce
      */
     interface Builder<N extends Number> extends Meter.Builder<Builder<N>, Gauge<N>> {
+
+        /**
+         * Returns a {@link java.util.function.Supplier} for the values the gauge will produce.
+         *
+         * @return supplier for the values
+         */
+        Supplier<N> supplier();
     }
 }

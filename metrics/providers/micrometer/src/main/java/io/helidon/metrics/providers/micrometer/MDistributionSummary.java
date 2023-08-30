@@ -18,6 +18,7 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.Optional;
 
 import io.helidon.metrics.api.DistributionStatisticsConfig;
+import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.Meter;
 
@@ -47,6 +48,17 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
     static Builder builder(String name,
                            DistributionStatisticsConfig.Builder configBuilder) {
         return new Builder(name, configBuilder);
+    }
+
+    static Builder builderFrom(DistributionSummary.Builder sBuilder) {
+
+        MDistributionStatisticsConfig.Builder configBuilder = sBuilder.distributionStatisticsConfig().isPresent()
+                ? MDistributionStatisticsConfig.builder()
+                : MDistributionStatisticsConfig.builderFrom(sBuilder.distributionStatisticsConfig().get());
+
+        MDistributionSummary.Builder b = MDistributionSummary.builder(sBuilder.name(), configBuilder);
+        b.from(sBuilder);
+        return b;
     }
 
     /**
@@ -187,6 +199,11 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
         @Override
         public Optional<DistributionStatisticsConfig.Builder> distributionStatisticsConfig() {
             return Optional.ofNullable(distributionStatisticsConfigBuilder);
+        }
+
+        protected Builder from(DistributionSummary.Builder other) {
+            other.scale().ifPresent(this::scale);
+            return this;
         }
     }
 }

@@ -126,5 +126,33 @@ public interface DistributionStatisticsConfig extends Wrapper {
          * @return updated builder
          */
         Builder buckets(Iterable<Double> buckets);
+
+        /**
+         * Returns the minimum expected value setting.
+         *
+         * @return min expected value
+         */
+        Optional<Double> minimumExpectedValue();
+
+        /**
+         * Returns the maximum expected value setting.
+         *
+         * @return max expected value
+         */
+        Optional<Double> maximumExpectedValue();
+
+        /**
+         * Returns the percentiles.
+         *
+         * @return percentiles
+         */
+        Iterable<Double> percentiles();
+
+        /**
+         * Returns the buckets.
+         *
+         * @return buckets
+         */
+        Iterable<Double> buckets();
     }
 }

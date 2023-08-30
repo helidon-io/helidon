@@ -16,10 +16,13 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.config.Config;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -33,6 +36,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.spi.MetersProvider;
 
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -44,34 +48,85 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 class MicrometerMetricsFactory implements MetricsFactory {
 
     private final LazyValue<MeterRegistry> globalMeterRegistry;
-    private final MetricsConfig.Builder metricsConfigBuilder;
-    private Collection<Meter.Builder<?, ?>> initialMeterBuilders;
+    private final MetricsConfig metricsConfig;
+    private final Collection<MetersProvider> metersProviders;
 
-    private MicrometerMetricsFactory(MetricsConfig metricsConfig) {
-        this.metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
+    private MicrometerMetricsFactory(MetricsConfig metricsConfig,
+                                     Collection<MetersProvider> metersProviders) {
+        this.metricsConfig = metricsConfig;
+        this.metersProviders = metersProviders;
+
         globalMeterRegistry = LazyValue.create(() -> {
             ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
-            return MMeterRegistry.create(Metrics.globalRegistry, metricsConfig, initialMeterBuilders);
+            MMeterRegistry reg = MMeterRegistry.builder(Metrics.globalRegistry, this).build();
+            return MMeterRegistry.applyMetersProvidersToRegistry(this, reg, metersProviders);
         });
     }
 
-    static MicrometerMetricsFactory create(MetricsConfig metricsConfig) {
-        return new MicrometerMetricsFactory(metricsConfig);
+    static MicrometerMetricsFactory create(Config rootConfig,
+                                           MetricsConfig metricsConfig,
+                                           Collection<MetersProvider> metersProviders) {
+
+        return new MicrometerMetricsFactory(metricsConfig, metersProviders);
     }
 
     @Override
-    public void initialMeterBuilders(Collection<Meter.Builder<?, ?>> builders) {
-        this.initialMeterBuilders = builders;
+    public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
+        MeterRegistry result = globalMeterRegistry.get();
+        result.onMeterAdded(onAddListener);
+        result.onMeterRemoved(onRemoveListener);
+
+        if (backfill) {
+            result.meters().forEach(onAddListener);
+        }
+        return result;
+    }
+
+    @Override
+    public MMeterRegistry.Builder meterRegistryBuilder() {
+        return MMeterRegistry.builder(Metrics.globalRegistry, this);
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return MMeterRegistry.create(metricsConfig, initialMeterBuilders);
+        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+                .metricsConfig(metricsConfig)
+                .build();
+    }
+
+    @Override
+    public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
+                                             Consumer<Meter> onAddListener,
+                                             Consumer<Meter> onRemoveListener) {
+        return MMeterRegistry.builder(Metrics.globalRegistry,
+                                      this)
+                .metricsConfig(metricsConfig)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build();
+    }
+
+    @Override
+    public MeterRegistry createMeterRegistry(Clock clock,
+                                             MetricsConfig metricsConfig,
+                                             Consumer<Meter> onAddListener,
+                                             Consumer<Meter> onRemoveListener) {
+
+        return MMeterRegistry.builder(Metrics.globalRegistry,
+                                     this)
+                .metricsConfig(metricsConfig)
+                .clock(clock)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build();
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
-        return MMeterRegistry.create(clock, metricsConfig);
+        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+                .clock(clock)
+                .metricsConfig(metricsConfig)
+                .build();
     }
 
     @Override
@@ -81,7 +136,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public MetricsConfig metricsConfig() {
-        return metricsConfigBuilder;
+        return metricsConfig;
     }
 
     @Override
@@ -115,7 +170,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public <T> FunctionalCounter.Builder<T> functionalCounterBuilder(String name,
                                                                      T stateObject,
-                                                                     ToDoubleFunction<T> fn) {
+                                                                     Function<T, Long> fn) {
         return MFunctionalCounter.builder(name, stateObject, fn);
     }
 

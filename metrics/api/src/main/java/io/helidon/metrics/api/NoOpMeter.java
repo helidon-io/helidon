@@ -257,6 +257,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
                 return new NoOpMeter.Counter(this);
             }
 
+//            @Override
+//            public <T extends Meter.Builder<?, ?>> T copyTo(T target) {
+//                return target;
+//            }
         }
     }
 
@@ -487,6 +491,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
                         }
                     };
                 }
+
+                @Override
+                public Supplier<Double> supplier() {
+                    return () -> fn.applyAsDouble(stateObject);
+                }
             }
 
             static class SupplierBased<N extends Number> extends Builder<SupplierBased<N>, N> {
@@ -505,6 +514,11 @@ class NoOpMeter implements Meter, NoOpWrapper {
                             return supplier.get();
                         }
                     };
+                }
+
+                @Override
+                public Supplier<N> supplier() {
+                    return supplier;
                 }
             }
         }
@@ -737,6 +751,26 @@ class NoOpMeter implements Meter, NoOpWrapper {
             @Override
             public io.helidon.metrics.api.DistributionStatisticsConfig.Builder buckets(Iterable<Double> buckets) {
                 return identity();
+            }
+
+            @Override
+            public Optional<Double> minimumExpectedValue() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<Double> maximumExpectedValue() {
+                return Optional.empty();
+            }
+
+            @Override
+            public Iterable<Double> percentiles() {
+                return Set.of();
+            }
+
+            @Override
+            public Iterable<Double> buckets() {
+                return Set.of();
             }
         }
     }

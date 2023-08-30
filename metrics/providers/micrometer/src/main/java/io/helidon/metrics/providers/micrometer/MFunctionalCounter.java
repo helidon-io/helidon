@@ -16,7 +16,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.util.Optional;
-import java.util.function.ToDoubleFunction;
+import java.util.function.Function;
 
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Meter;
@@ -33,10 +33,6 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
         super(id, delegate, builder);
     }
 
-    private MFunctionalCounter(Meter.Id id, io.micrometer.core.instrument.FunctionCounter delegate) {
-        super(id, delegate);
-    }
-
     private MFunctionalCounter(Meter.Id id, io.micrometer.core.instrument.FunctionCounter delegate, Optional<String> scope) {
         super(id, delegate, scope);
     }
@@ -51,8 +47,15 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
      * @param <T>         type of the state object
      * @return new builder for a wrapper counter
      */
-    static <T> Builder<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+    static <T> Builder<T> builder(String name, T stateObject, Function<T, Long> fn) {
         return new Builder<>(name, stateObject, fn);
+    }
+
+    static <T> Builder<T> builderFrom(FunctionalCounter.Builder<T> origin) {
+        MFunctionalCounter.Builder<T> builder = builder(origin.name(),
+                                                        origin.stateObject(),
+                                                        origin.fn());
+        return builder.from(origin);
     }
 
     static MFunctionalCounter create(Meter.Id id,
@@ -79,10 +82,10 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
             implements FunctionalCounter.Builder<T> {
 
         private final T stateObject;
-        private final ToDoubleFunction<T> fn;
+        private final Function<T, Long> fn;
 
-        Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-            super(name, FunctionCounter.builder(name, stateObject, fn));
+        Builder(String name, T stateObject, Function<T, Long> fn) {
+            super(name, FunctionCounter.builder(name, stateObject, t -> fn.apply(t).doubleValue()));
             this.stateObject = stateObject;
             this.fn = fn;
         }
@@ -117,7 +120,7 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
         }
 
         @Override
-        public ToDoubleFunction<T> fn() {
+        public Function<T, Long> fn() {
             return fn;
         }
 
