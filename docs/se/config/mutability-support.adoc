@@ -101,7 +101,7 @@ on the link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html[`
 - `regular(Duration interval)` - a general-purpose scheduled polling strategy with a specified,
  constant polling interval.
 - `watch(Path watchedPath)` - a filesystem-specific strategy to watch
- specified path. You can use this strategy with the `file` and `classpath`
+ specified path. You can use this strategy with the `file`
 built-in config sources.
 - `nop()` - a no-op strategy
 
