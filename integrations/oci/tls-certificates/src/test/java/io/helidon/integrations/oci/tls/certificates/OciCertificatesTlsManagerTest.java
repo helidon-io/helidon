@@ -28,7 +28,6 @@ import io.helidon.inject.api.Services;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -48,8 +47,10 @@ class OciCertificatesTlsManagerTest {
         TestingCdiExtension.shutdownCalled = false;
     }
 
-//    @Test
-    @RepeatedTest(10)
+    @Test
+    // left here since the repeat ensured the integrity the async code where container startup & shutdown showed some side affects
+    // that were tricky to reproduce.
+    //    @RepeatedTest(10)
     void serverRuntime() throws Exception {
         Services services = InjectionServices.realizedServices();
         TestingMetricsHelper metrics = services.lookupFirst(TestingMetricsHelper.class).get();

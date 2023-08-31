@@ -18,11 +18,11 @@
  * Helidon Integrations of OCI Certificates Service.
  */
 module io.helidon.integrations.oci.tls.certificates {
-    requires static io.helidon.builder.api;
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
     requires static jakarta.inject;
 
+    requires io.helidon.builder.api;
     requires io.helidon.common;
     requires io.helidon.common.config;
     requires io.helidon.common.pki;
