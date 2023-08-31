@@ -208,7 +208,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
 
         MetricsFeature.Builder builder = MetricsFeature.builder()
                 .meterRegistry(metricsFactory.globalRegistry())
-                .metricsConfig(metricsFactory.metricsConfig())
+                .metricsConfig(MetricsConfig.builder(metricsFactory.metricsConfig()))
                 .webContext("/metrics")
                 .config(helidonConfig);
 

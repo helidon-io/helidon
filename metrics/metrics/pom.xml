@@ -40,7 +40,15 @@
     </properties>
 
    <dependencies>
-        <dependency>
+       <dependency>
+           <groupId>io.helidon.common.features</groupId>
+           <artifactId>helidon-common-features-api</artifactId>
+       </dependency>
+       <dependency>
+           <groupId>io.helidon.metrics</groupId>
+           <artifactId>helidon-metrics-api</artifactId>
+       </dependency>
+       <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
             <artifactId>helidon-metrics-providers-micrometer</artifactId>
             <scope>runtime</scope>
@@ -50,7 +58,8 @@
            <artifactId>helidon-metrics-system-meters</artifactId>
            <scope>runtime</scope>
        </dependency>
-    </dependencies>
+
+   </dependencies>
 
     <build>
         <plugins>

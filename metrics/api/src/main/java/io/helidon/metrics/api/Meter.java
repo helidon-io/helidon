@@ -111,6 +111,7 @@ public interface Meter extends Wrapper {
          *
          * @return properly-typed builder itself
          */
+        @SuppressWarnings("unchecked")
         default B identity() {
             return (B) this;
         }

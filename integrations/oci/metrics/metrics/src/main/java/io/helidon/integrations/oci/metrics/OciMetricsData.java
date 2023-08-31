@@ -91,7 +91,7 @@ class OciMetricsData {
     }
 
     private Stream<MetricDataDetails> forGauge(Meter.Id metricId, Gauge gauge) {
-        return Stream.of(metricDataDetails(gauge, metricId, null, gauge.value()));
+        return Stream.of(metricDataDetails(gauge, metricId, null, gauge.value().doubleValue()));
     }
 
     private Stream<MetricDataDetails> forTimer(Meter.Id metricId, Timer timer) {

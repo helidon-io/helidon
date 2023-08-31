@@ -624,8 +624,8 @@ class Registry implements MetricRegistry {
     private <T> HelidonGauge<Long> createFunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<T> fcBuilder) {
         io.helidon.metrics.api.Gauge delegate = meterRegistry
                 .getOrCreate(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
-                                                                  () -> (long) fcBuilder.fn()
-                                                                          .applyAsDouble(fcBuilder.stateObject())));
+                                                                  () -> fcBuilder.fn()
+                                                                          .apply(fcBuilder.stateObject())));
         return (HelidonGauge<Long>) metricsByDelegate.get(delegate);
     }
 

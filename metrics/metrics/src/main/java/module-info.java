@@ -25,7 +25,6 @@ import io.helidon.common.features.api.HelidonFlavor;
         in = HelidonFlavor.SE,
         path = {"Metrics"}
 )
-@SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.metrics {
     requires static io.helidon.common.features.api;
 

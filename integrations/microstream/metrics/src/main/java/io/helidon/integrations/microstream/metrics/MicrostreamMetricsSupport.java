@@ -103,8 +103,8 @@ public class MicrostreamMetricsSupport {
                              ToDoubleFunction<T> fn,
                              Tag... tags) {
 
-        Gauge.Builder<T> builder(T stateObject) {
-            Gauge.Builder<T> builder = Gauge.builder(name, stateObject, fn)
+        Gauge.Builder builder(T stateObject) {
+            Gauge.Builder<Double> builder = Gauge.builder(name, stateObject, fn)
                     .description(description);
             if (unit != null) {
                 builder.baseUnit(unit);
