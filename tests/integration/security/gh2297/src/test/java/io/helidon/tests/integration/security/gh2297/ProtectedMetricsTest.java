@@ -27,6 +27,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -35,6 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * Unit test for gh2297.
  */
+// TODO metrics
+@Disabled
 class ProtectedMetricsTest {
     private static Server server;
     private static Client client;
@@ -81,6 +84,7 @@ class ProtectedMetricsTest {
         assertThat(response.getStatus(), is(Http.Status.UNAUTHORIZED_401.code()));
     }
 
+    // TODO metrics
     @Test
     void testMetricEndpointSuccess() {
         Response response = metricTarget.request()

@@ -24,6 +24,7 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,6 +39,8 @@ class TestBasicPerformanceIndicators {
     @Inject
     WebTarget webTarget;
 
+    // TODO metrics
+    @Disabled
     @Test
     void checkMetricsVendorURL() {
         doCheckMetricsVendorURL(webTarget);

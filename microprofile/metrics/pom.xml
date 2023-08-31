@@ -31,7 +31,7 @@
     <name>Helidon Microprofile Metrics</name>
 
     <description>
-        Helidon Microprofile Metrics 2.0
+        Helidon Microprofile Metrics Implementation
     </description>
 
     <dependencies>

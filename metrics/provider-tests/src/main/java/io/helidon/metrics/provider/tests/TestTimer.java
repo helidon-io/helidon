@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class TestTimer {
 
@@ -195,18 +196,21 @@ class TestTimer {
 
     @Test
     void testSampleWithImplicitClock() {
-        AdjustableClock clock = new AdjustableClock();
 
         MeterRegistry registry = MetricsFactory.getInstance()
-                .createMeterRegistry(clock, MetricsConfig.builder().build());
+                .createMeterRegistry(MetricsConfig.builder().build());
 
         Timer t = registry.getOrCreate(Timer.builder("g"));
 
         Timer.Sample sample = Timer.start(registry);
 
         long waitTime = 35L;
-        clock.advance(waitTime);
 
+        try {
+            TimeUnit.MILLISECONDS.sleep(waitTime);
+        } catch (InterruptedException e) {
+            fail("Error during delay of timer test", e);
+        }
         sample.stop(t);
 
         assertThat("After sample stop",

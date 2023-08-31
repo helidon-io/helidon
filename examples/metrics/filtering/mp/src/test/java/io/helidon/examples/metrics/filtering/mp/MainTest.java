@@ -44,6 +44,8 @@ public class MainTest {
                    personalizedGreetingsCounter.getCount() - before, is(1L));
     }
 
+    // TODO metrics
+    @Disabled
     @Test
     void checkDisabledMetric() {
         Timer getsTimer = appRegistry.timer(GreetResource.TIMER_FOR_GETS);

@@ -46,7 +46,6 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.search.Search;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 
@@ -118,10 +117,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         delegate.config()
                 .onMeterAdded(this::onMeterAdded)
                 .onMeterRemoved(this::onMeterRemoved);
-        List<io.helidon.metrics.api.Tag> globalTags = metricsConfig.globalTags();
-        if (!globalTags.isEmpty()) {
-            delegate.config().meterFilter(MeterFilter.commonTags(MTag.tags(globalTags)));
-        }
     }
 
     static Builder builder(
@@ -626,12 +621,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                   Optional<String> scope) {
         List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
 
+        // We add a scope tag to the Micrometer meter's ID when we register it, so to find it there by ID
+        // we need to add the scope tag to the search criteria.
         scope.ifPresent(validScope -> SystemTagsManager.instance()
                 .assignScope(validScope, tag -> tagList.add(io.helidon.metrics.api.Tag.create(tag.key(),
                                                                                               tag.value()))));
 
         Meter nativeMeter = delegate.find(name)
-                .tags(MTag.tags(tags))
+                .tags(MTag.tags(tagList))
                 .meter();
 
         lock.lock();

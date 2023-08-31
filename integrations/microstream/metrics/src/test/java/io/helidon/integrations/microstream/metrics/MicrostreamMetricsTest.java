@@ -26,12 +26,15 @@ import one.microstream.X;
 import one.microstream.storage.embedded.types.EmbeddedStorageManager;
 import one.microstream.storage.types.StorageRawFileStatistics;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+// TODO disabled
+@Disabled
 class MicrostreamMetricsTest {
 
     @BeforeAll

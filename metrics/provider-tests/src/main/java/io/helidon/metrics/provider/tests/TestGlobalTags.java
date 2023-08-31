@@ -31,24 +31,34 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 
 class TestGlobalTags {
 
     @Test
     void testWithoutConfig() {
-        List<Tag> globalTags = List.of(Tag.create("g1", "v1"),
-                                       Tag.create("g2", "v2"));
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(
-                MetricsConfig.builder()
-                        .globalTags(globalTags)
-                        .build());
+        Tag g1 = Tag.create("g1", "v1");
+        Tag g2 = Tag.create("g2", "v2");
+
+        List<Tag> globalTags = List.of(g1, g2);
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .globalTags(globalTags)
+                .build();
+
+        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+
+        assertThat("Global tags from the config used to init the meter registry",
+                   metricsConfig.globalTags(),
+                   hasItems(g2, g1));
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
                                                              .tags(List.of(Tag.create("local1", "a"))));
-        assertThat("New counter's global tags",
+
+        // Global tags should appear only on output, not in the actual tags in the meter's ID.
+        assertThat("New counter's tags",
                    counter1.id().tags(),
-                   hasItems(globalTags.toArray(new Tag[0])));
-        assertThat("New counter's original tags",
+                   not(hasItems(globalTags.toArray(new Tag[0]))));
+        assertThat("New counter's tags",
                    counter1.id().tags(),
                    hasItem(Tag.create("local1", "a")));
     }
@@ -64,10 +74,15 @@ class TestGlobalTags {
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
                                                              .tags(List.of(Tag.create("local1", "a"))));
-        assertThat("New counter's global tags",
+
+        Tag g1 = Tag.create("g1", "v1");
+        Tag g2 = Tag.create("g2", "v2");
+
+        // Global tags should appear only in output, not in the meter's ID itself.
+        assertThat("New counter's tags",
                    counter1.id().tags(),
-                   hasItems(List.of(Tag.create("g1", "v1"),
-                                    Tag.create("g2", "v2")).toArray(new Tag[0])));
+                   not(hasItems(g1, g2)));
+
         assertThat("New counter's explicit tags",
                    counter1.id().tags(),
                    hasItem(Tag.create("local1", "a")));

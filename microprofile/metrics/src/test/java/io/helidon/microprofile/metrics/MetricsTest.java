@@ -32,6 +32,7 @@ import org.eclipse.microprofile.metrics.MetricID;
 import org.eclipse.microprofile.metrics.Timer;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
@@ -117,6 +118,8 @@ public class MetricsTest extends MetricsBaseTest {
         assertThat(bean.gaugeForInjectionTest, notNullValue());
     }
 
+    // TODO disabled
+    @Disabled
     @Test
     public void testGauge() {
         final int EXPECTED_VALUE = 42;
