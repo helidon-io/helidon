@@ -56,6 +56,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return the address for the key management service / vault management usage
      */
+    @ConfiguredOption
     Optional<URI> vaultManagementEndpoint();
 
     /**
@@ -63,6 +64,7 @@ interface OciCertificatesTlsManagerConfigBlueprint extends Prototype.Factory<Oci
      *
      * @return the compartment OCID
      */
+    @ConfiguredOption
     Optional<String> compartmentOcid();
 
     /**
