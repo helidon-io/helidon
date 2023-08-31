@@ -16,7 +16,10 @@
 
 package io.helidon.integrations.oci.tls.certificates;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -56,9 +59,9 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
                     throw new RuntimeException(e);
                 }
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -75,13 +78,13 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
                 try (InputStream caCertIs =
                         TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/ca.pem")) {
                     return toCertificate(caCertIs);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
                 }
             }
-        } catch (Exception e) {
+        } catch (InterruptedException | GeneralSecurityException e) {
             System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
