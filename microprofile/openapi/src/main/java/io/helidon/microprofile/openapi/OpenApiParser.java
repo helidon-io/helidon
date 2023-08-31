@@ -15,14 +15,9 @@
  */
 package io.helidon.microprofile.openapi;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import org.eclipse.microprofile.openapi.models.OpenAPI;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
@@ -35,20 +30,6 @@ import org.yaml.snakeyaml.representer.Representer;
 final class OpenApiParser {
 
     private OpenApiParser() {
-    }
-
-    /**
-     * Parse open API.
-     *
-     * @param types types
-     * @param inputStream input stream to parse from
-     * @return parsed document
-     * @throws IOException in case of I/O problems
-     */
-    static OpenAPI parse(Map<Class<?>, ExpandedTypeDescription> types, InputStream inputStream) throws IOException {
-        try (Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-            return parse(types, OpenAPI.class, reader);
-        }
     }
 
     /**

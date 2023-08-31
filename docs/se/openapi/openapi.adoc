@@ -92,7 +92,7 @@ Helidon {flavor-uc} provides an API for creating and setting up the REST endpoin
 
 Helidon SE OpenAPI configuration supports the following settings:
 
-include::{rootdir}/config/io_helidon_openapi_SeOpenApiFeature.adoc[leveloffset=+1,tag=config]
+include::{rootdir}/config/io_helidon_openapi_OpenApiFeature.adoc[leveloffset=+1,tag=config]
 
 
 

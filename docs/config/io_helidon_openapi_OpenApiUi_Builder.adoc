@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -17,17 +17,17 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 ifndef::rootdir[:rootdir: {docdir}/..]
-:description: Configuration of io.helidon.openapi.OpenApiUi.Builder
-:keywords: helidon, config, io.helidon.openapi.OpenApiUi.Builder
-:basic-table-intro: The table below lists the configuration keys that configure io.helidon.openapi.OpenApiUi.Builder
+:description: Configuration of io.helidon.openapi.OpenApiUi
+:keywords: helidon, config, io.helidon.openapi.OpenApiUi
+:basic-table-intro: The table below lists the configuration keys that configure io.helidon.openapi.OpenApiUi
 include::{rootdir}/includes/attributes.adoc[]
 
-= Builder (openapi.OpenApiUi) Configuration
+= OpenApiUi (openapi) Configuration
 
 // tag::config[]
 
 
-Type: link:{javadoc-base-url}/io.helidon.openapi.OpenApiUi/io/helidon/openapi/OpenApiUi/Builder.html[io.helidon.openapi.OpenApiUi.Builder]
+Type: link:{javadoc-base-url}/io.helidon.openapi/io/helidon/openapi/OpenApiUi.html[io.helidon.openapi.OpenApiUi]
 
 
 [source,text]
@@ -49,7 +49,7 @@ ui
 |key |type |default value |description
 
 |`enabled` |boolean |`true` |Sets whether the UI should be enabled.
-|`options` |Map&lt;string, string&gt; |{nbsp} |Merges implementation-specific UI options.
+|`options` |Map&lt;string, string&gt; |{nbsp} |Sets implementation-specific UI options.
 |`web-context` |string |{nbsp} |web context (path) where the UI will respond
 
 |===

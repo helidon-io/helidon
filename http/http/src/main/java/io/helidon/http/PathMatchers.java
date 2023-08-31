@@ -157,12 +157,10 @@ public final class PathMatchers {
             checkPattern = pathPattern.substring(0, pathPattern.length() - 2);
         }
 
-        if (checkPattern.contains("{")) {
-            // pattern with path parameter
-            return pattern(pathPattern);
-        }
-
-        if (checkPattern.contains("*") || checkPattern.contains("\\")) {
+        if (checkPattern.contains("{")
+            || checkPattern.contains("[")
+            || checkPattern.contains("*")
+            || checkPattern.contains("\\")) {
             return pattern(pathPattern);
         }
 

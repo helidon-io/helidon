@@ -39,14 +39,6 @@
     </properties>
 
     <dependencies>
-        <!--
-            See https://github.com/helidon-io/helidon/issues/5411
-        -->
-        <dependency>
-            <groupId>org.eclipse.microprofile.openapi</groupId>
-            <artifactId>microprofile-openapi-api</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
@@ -120,5 +112,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
