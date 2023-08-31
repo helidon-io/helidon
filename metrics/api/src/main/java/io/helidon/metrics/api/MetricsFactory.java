@@ -156,6 +156,11 @@ public interface MetricsFactory {
                                       Consumer<Meter> onRemoveListener);
 
     /**
+     * Clears out the registries known to this metrics factory.
+     */
+    void clear();
+
+    /**
      * Returns the system {@link io.helidon.metrics.api.Clock} from the
      * underlying metrics implementation.
      *

@@ -129,7 +129,7 @@ With this `pom.xml`, the application can be built successfully with Maven:
 
 [source,bash]
 ----
-mvn clean package
+mvn clear package
 ----
 
 This will create a JAR file in the `target` directory.

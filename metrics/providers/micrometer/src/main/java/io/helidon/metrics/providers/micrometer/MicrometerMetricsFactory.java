@@ -16,6 +16,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -50,6 +51,8 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private final LazyValue<MeterRegistry> globalMeterRegistry;
     private final MetricsConfig metricsConfig;
     private final Collection<MetersProvider> metersProviders;
+
+    private final Collection<MeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
                                      Collection<MetersProvider> metersProviders) {
@@ -89,21 +92,21 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+        return save(MMeterRegistry.builder(Metrics.globalRegistry, this)
                 .metricsConfig(metricsConfig)
-                .build();
+                .build());
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
-        return MMeterRegistry.builder(Metrics.globalRegistry,
+        return save(MMeterRegistry.builder(Metrics.globalRegistry,
                                       this)
                 .metricsConfig(metricsConfig)
                 .onMeterAdded(onAddListener)
                 .onMeterRemoved(onRemoveListener)
-                .build();
+                .build());
     }
 
     @Override
@@ -112,26 +115,31 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
 
-        return MMeterRegistry.builder(Metrics.globalRegistry,
+        return save(MMeterRegistry.builder(Metrics.globalRegistry,
                                      this)
                 .metricsConfig(metricsConfig)
                 .clock(clock)
                 .onMeterAdded(onAddListener)
                 .onMeterRemoved(onRemoveListener)
-                .build();
+                .build());
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
-        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+        return save(MMeterRegistry.builder(Metrics.globalRegistry, this)
                 .clock(clock)
                 .metricsConfig(metricsConfig)
-                .build();
+                .build());
     }
 
     @Override
     public MeterRegistry globalRegistry() {
         return globalMeterRegistry.get();
+    }
+
+    @Override
+    public void clear() {
+        meterRegistries.forEach(MeterRegistry::clear);
     }
 
     @Override
@@ -233,5 +241,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
             compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
         }
+    }
+
+    private MeterRegistry save(MeterRegistry meterRegistry) {
+        meterRegistries.add(meterRegistry);
+        return meterRegistry;
     }
 }

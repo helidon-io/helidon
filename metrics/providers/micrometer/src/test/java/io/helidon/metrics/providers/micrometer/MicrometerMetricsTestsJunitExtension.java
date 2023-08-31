@@ -17,8 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
@@ -30,8 +29,8 @@ public class MicrometerMetricsTestsJunitExtension implements Extension,
     static void clear() {
 
         // Removes meters one at a time, invoking the callbacks so downstream consumers also clear out.
-        MeterRegistry globalRegistry = Metrics.globalRegistry();
-        globalRegistry.clear();
+
+        MetricsFactory.getInstance().clear();
 
         // And clear out Micrometer's global registry explicitly to be extra sure.
         io.micrometer.core.instrument.MeterRegistry mmGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
@@ -41,12 +40,12 @@ public class MicrometerMetricsTestsJunitExtension implements Extension,
         int maxSecondsToWait = 5;
         int iterationsRemaining = (maxSecondsToWait * 1000) / delayMS;
 
-        while (iterationsRemaining > 0 && (!globalRegistry.meters().isEmpty() || !mmGlobal.getMeters().isEmpty())) {
+        while (iterationsRemaining > 0 && !mmGlobal.getMeters().isEmpty()) {
             iterationsRemaining--;
             try {
                 TimeUnit.MILLISECONDS.sleep(delayMS);
             } catch (InterruptedException e) {
-                throw new RuntimeException("Error awaiting clean-out of meter registries to finish", e);
+                throw new RuntimeException("Error awaiting clear-out of meter registries to finish", e);
             }
         }
     }

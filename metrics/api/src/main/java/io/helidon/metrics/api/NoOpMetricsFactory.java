@@ -59,6 +59,10 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public void clear() {
+    }
+
+    @Override
     public MetricsConfig metricsConfig() {
         return metricsConfig;
     }
