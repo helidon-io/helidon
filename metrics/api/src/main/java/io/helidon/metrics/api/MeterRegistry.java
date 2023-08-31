@@ -22,8 +22,6 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import io.helidon.common.Builder;
-
 /**
  * Manages the look-up and registration of meters.
  */

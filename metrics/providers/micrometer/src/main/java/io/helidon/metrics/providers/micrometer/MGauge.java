@@ -20,7 +20,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 

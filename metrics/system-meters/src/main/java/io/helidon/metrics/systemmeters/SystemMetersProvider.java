@@ -31,7 +31,6 @@ import java.util.function.Function;
 
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.spi.MetersProvider;

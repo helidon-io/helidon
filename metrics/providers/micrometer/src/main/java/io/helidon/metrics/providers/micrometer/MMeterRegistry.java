@@ -257,7 +257,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
-    public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>, HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder) {
+    public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
+            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder) {
         // Just cast the builder if it "one of ours" because that means it was prepared using our MetricsFactory, and that
         // would already have set the builder up with the correct Micrometer builder delegate.
         if (builder instanceof MMeter.Builder<?, ?, ?, ?> mBuilder) {

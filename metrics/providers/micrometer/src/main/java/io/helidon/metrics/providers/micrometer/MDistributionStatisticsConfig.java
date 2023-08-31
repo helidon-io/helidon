@@ -15,14 +15,9 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.DistributionStatisticsConfig;
 
