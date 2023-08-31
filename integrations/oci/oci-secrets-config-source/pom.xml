@@ -33,6 +33,7 @@
     <properties>
         <compartment-ocid/>
         <java.util.logging.config.file>src/test/java/logging.properties</java.util.logging.config.file>
+        <lazy>false</lazy>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
         <vault-ocid/>
     </properties>
