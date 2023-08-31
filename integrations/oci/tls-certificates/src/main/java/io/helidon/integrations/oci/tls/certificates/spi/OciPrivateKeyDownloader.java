@@ -33,7 +33,7 @@ public interface OciPrivateKeyDownloader {
      * @param keyOcid the key ocid
      * @param vaultCryptoEndpoint the vault crypto endpoint identifying where to go to download the key ocid
      * @return the downloaded private key
-     * @throws RuntimeException if there is any errors loading the key
+     * @throws IllegalStateException if there is any errors loading the key
      */
     PrivateKey loadKey(String keyOcid,
                        URI vaultCryptoEndpoint);

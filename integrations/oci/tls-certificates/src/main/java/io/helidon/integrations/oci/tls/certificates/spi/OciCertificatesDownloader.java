@@ -32,7 +32,7 @@ public interface OciCertificatesDownloader {
      *
      * @param certOcid the cert ocid
      * @return the downloaded certificate chain
-     * @throws RuntimeException if there is any errors loading the key
+     * @throws IllegalStateException if there is any errors loading the key
      * @see #create(String, Certificate[])
      */
     Certificates loadCertificates(String certOcid);
@@ -42,7 +42,7 @@ public interface OciCertificatesDownloader {
      *
      * @param caCertOcid the ca cert ocid
      * @return the downloaded CA certificate
-     * @throws RuntimeException if there is any errors loading the key
+     * @throws IllegalStateException if there is any errors loading the key
      */
     Certificate loadCACertificate(String caCertOcid);
 
