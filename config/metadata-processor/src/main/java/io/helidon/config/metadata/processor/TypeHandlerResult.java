@@ -16,15 +16,16 @@
 
 package io.helidon.config.metadata.processor;
 
-import io.helidon.common.types.TypeInfo;
+import io.helidon.common.types.TypeName;
 
-/*
- * Takes care of blueprints annotated with builder API only.
+/**
+ * Result of annotation processing.
+ *
+ * @param targetType     type that is configured (result of the builder, runtime type of a prototype)
+ * @param moduleName     module of the type
+ * @param configuredType collected configuration metadata
  */
-class MetadataHandlerBlueprint implements MetadataHandler {
-    private final TypeInfo blueprintTypeInfo;
-
-    MetadataHandlerBlueprint(TypeInfo blueprintTypeInfo) {
-        this.blueprintTypeInfo = blueprintTypeInfo;
-    }
+record TypeHandlerResult(TypeName targetType,
+                         String moduleName,
+                         ConfiguredType configuredType) {
 }

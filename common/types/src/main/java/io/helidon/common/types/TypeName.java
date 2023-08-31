@@ -127,6 +127,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
 
         private final List<TypeName> typeArguments = new ArrayList<>();
         private final List<String> enclosingNames = new ArrayList<>();
+        private final List<String> typeParameters = new ArrayList<>();
         private boolean array = false;
         private boolean generic = false;
         private boolean primitive = false;
@@ -155,6 +156,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             generic(prototype.generic());
             wildcard(prototype.wildcard());
             addTypeArguments(prototype.typeArguments());
+            addTypeParameters(prototype.typeParameters());
             return self();
         }
 
@@ -173,6 +175,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             generic(builder.generic());
             wildcard(builder.wildcard());
             addTypeArguments(builder.typeArguments());
+            addTypeParameters(builder.typeParameters());
             return self();
         }
 
@@ -308,7 +311,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
@@ -322,7 +325,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @param typeArguments the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
@@ -335,7 +338,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @param typeArgument the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
@@ -348,7 +351,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @param consumer the type arguments of this type, if this type supports generics/parameterized type
          * @return updated builder instance
@@ -359,6 +362,52 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             var builder = TypeName.builder();
             consumer.accept(builder);
             this.typeArguments.add(builder.build());
+            return self();
+        }
+
+        /**
+         * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+         * for example in declaration of the top level type (as arguments are a function of usage of the type).
+         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+         *
+         * @param typeParameters type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER typeParameters(List<? extends String> typeParameters) {
+            Objects.requireNonNull(typeParameters);
+            this.typeParameters.clear();
+            this.typeParameters.addAll(typeParameters);
+            return self();
+        }
+
+        /**
+         * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+         * for example in declaration of the top level type (as arguments are a function of usage of the type).
+         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+         *
+         * @param typeParameters type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER addTypeParameters(List<? extends String> typeParameters) {
+            Objects.requireNonNull(typeParameters);
+            this.typeParameters.addAll(typeParameters);
+            return self();
+        }
+
+        /**
+         * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+         * for example in declaration of the top level type (as arguments are a function of usage of the type).
+         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+         *
+         * @param typeParameter type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+         * @return updated builder instance
+         * @see #typeParameters()
+         */
+        public BUILDER addTypeParameter(String typeParameter) {
+            Objects.requireNonNull(typeParameter);
+            this.typeParameters.add(typeParameter);
             return self();
         }
 
@@ -428,12 +477,23 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
-         * Returns the list of generic type parameters, or an empty list if no generics are in use.
+         * Returns the list of generic type arguments, or an empty list if no generics are in use.
          *
          * @return the type arguments
          */
         public List<TypeName> typeArguments() {
             return typeArguments;
+        }
+
+        /**
+         * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+         * for example in declaration of the top level type (as arguments are a function of usage of the type).
+         * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+         *
+         * @return the type parameters
+         */
+        public List<String> typeParameters() {
+            return typeParameters;
         }
 
         /**
@@ -464,6 +524,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final boolean wildcard;
             private final List<TypeName> typeArguments;
             private final List<String> enclosingNames;
+            private final List<String> typeParameters;
             private final String className;
             private final String packageName;
 
@@ -481,6 +542,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.generic = builder.generic();
                 this.wildcard = builder.wildcard();
                 this.typeArguments = List.copyOf(builder.typeArguments());
+                this.typeParameters = List.copyOf(builder.typeParameters());
             }
 
             @Override
@@ -556,6 +618,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public List<TypeName> typeArguments() {
                 return typeArguments;
+            }
+
+            @Override
+            public List<String> typeParameters() {
+                return typeParameters;
             }
 
             @Override

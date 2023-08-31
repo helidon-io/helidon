@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package io.helidon.config.metadata.processor;
+package io.helidon.config.tests.config.metadata.meta.api;
 
-interface MetadataHandler {
-    /**
-     * Discover all options of the configured type.
-     */
-    MetadataHandlerResult handle();
+import io.helidon.common.Builder;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
+
+@Configured(description = "abstract builder")
+abstract class AbstractBuilder<BUILDER extends AbstractBuilder<BUILDER, TARGET>, TARGET>
+        implements Builder<BUILDER, TARGET> {
+
+    @ConfiguredOption(description = "abstract description")
+    BUILDER abstractMessage(String message) {
+        return identity();
+    }
 }

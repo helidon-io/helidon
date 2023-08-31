@@ -238,7 +238,6 @@ public final class Prototype {
      *
      */
     @Target(ElementType.TYPE)
-    @Inherited
     @Retention(RetentionPolicy.CLASS)
     public @interface Configured {
         /**

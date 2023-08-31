@@ -122,13 +122,25 @@ interface TypeNameBlueprint {
     boolean wildcard();
 
     /**
-     * Returns the list of generic type parameters, or an empty list if no generics are in use.
+     * Returns the list of generic type arguments, or an empty list if no generics are in use.
      *
      * @return the type arguments of this type, if this type supports generics/parameterized type
+     * @see #typeParameters()
      */
     @Option.Singular
     @Option.Redundant
     List<TypeName> typeArguments();
+
+    /**
+     * Type parameters associated with the type arguments. The type argument list may be empty, even if this list is not,
+     * for example in declaration of the top level type (as arguments are a function of usage of the type).
+     * if {@link #typeArguments()} exist, this list MUST exist and have the same size and order (it maps the name to the type).
+     *
+     * @return type parameter names as declared on this type, or names that represent the {@link #typeArguments()}
+     */
+    @Option.Singular
+    @Option.Redundant
+    List<String> typeParameters();
 
     /**
      * Indicates whether this type is a {@code java.util.List}.

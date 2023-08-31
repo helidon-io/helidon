@@ -30,6 +30,7 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.Errors;
 import io.helidon.common.Severity;
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
@@ -326,9 +327,9 @@ record TypeContext(
         // we are only interested in getter methods
         TypeName typeName = typeInfo.typeName();
         properties.addAll(typeInfo.elementInfo().stream()
-                                  .filter(TypeInfoPredicates::isMethod)
-                                  .filter(Predicate.not(TypeInfoPredicates::isStatic))
-                                  .filter(Predicate.not(TypeInfoPredicates::isPrivate))
+                                  .filter(ElementInfoPredicates::isMethod)
+                                  .filter(Predicate.not(ElementInfoPredicates::isStatic))
+                                  .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                                   .filter(it -> {
                                       if (it.modifiers().contains(TypeValues.MODIFIER_DEFAULT)) {
                                           ignoredMethods.add(MethodSignature.create(it));
@@ -336,7 +337,7 @@ record TypeContext(
                                       }
                                       return true;
                                   })
-                                  .filter(Predicate.not(TypeInfoPredicates.ignoredMethod(ignoredMethods, IGNORED_NAMES)))
+                                  .filter(Predicate.not(BuilderInfoPredicates.ignoredMethod(ignoredMethods, IGNORED_NAMES)))
                                   .filter(it -> {
                                       // if the method is defined on a super prototype, add it to the set
                                       if (ignoreInterfaces.contains(it.enclosingType().get())) {
@@ -364,7 +365,7 @@ record TypeContext(
                                                          severity);
                                           return false;
                                       }
-                                      if (it.parameterArguments().size() != 0) {
+                                      if (!it.parameterArguments().isEmpty()) {
                                           errors.message("Builder definition methods cannot have "
                                                                  + "parameters (must be getters): "
                                                                  + typeName + "." + it.elementName(),

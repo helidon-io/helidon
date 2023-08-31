@@ -47,7 +47,8 @@ public final class Option {
     }
 
     /**
-     * Customize access modifier. Defaults to {@code public}.
+     * Customize access modifier for builder methods.
+     * If undefined on a method, the builder method will be {@code public}.
      * This changes the modifier of the builder methods, as getters are always public (as inherited
      * from the blueprint).
      * <p>

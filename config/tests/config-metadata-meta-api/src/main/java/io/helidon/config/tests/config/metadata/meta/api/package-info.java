@@ -14,17 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.config.metadata.processor;
-
-import io.helidon.common.types.TypeInfo;
-
-/*
- * Takes care of blueprints annotated with builder API only.
+/**
+ * Test to validate generation of JSON metadata for configured types.
  */
-class MetadataHandlerBlueprintConfig implements MetadataHandler {
-    private final TypeInfo blueprintTypeInfo;
-
-    MetadataHandlerBlueprintConfig(TypeInfo blueprintTypeInfo) {
-        this.blueprintTypeInfo = blueprintTypeInfo;
-    }
-}
+package io.helidon.config.tests.config.metadata.meta.api;

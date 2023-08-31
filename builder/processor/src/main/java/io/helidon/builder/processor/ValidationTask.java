@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.common.Errors;
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
@@ -50,9 +51,9 @@ abstract class ValidationTask {
                                               TypeName argument,
                                               String message) {
         if (validatedType.elementInfo().stream()
-                .filter(TypeInfoPredicates::isMethod)
-                .filter(TypeInfoPredicates::isStatic)
-                .filter(TypeInfoPredicates.methodName(methodName))
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates.elementName(methodName))
                 .filter(it -> returnType.equals(it.typeName()))
                 .filter(it -> {
                     List<TypedElementInfo> args = it.parameterArguments();
