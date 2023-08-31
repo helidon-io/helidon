@@ -403,6 +403,7 @@ public class InjectionAnnotationProcessor extends BaseAnnotationProcessor {
                     services.addParentServiceType(serviceTypeName, TypeName.builder(typeName.genericTypeName())
                             .className(typeName.classNameWithEnclosingNames().replace('.', '$')
                                                + ActivatorCreatorDefault.INNER_ACTIVATOR_CLASS_NAME)
+                            .enclosingNames(List.of()) // activators are always flat
                             .build());
                 } else {
                     // otherwise extends AbstractServiceProvider with the correct type
