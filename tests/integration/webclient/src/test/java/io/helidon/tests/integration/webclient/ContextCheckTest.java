@@ -34,7 +34,7 @@ class ContextCheckTest extends TestParent {
         WebClientResponse r = webClient.get()
                 .path("/contextCheck")
                 .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
-                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()
                 .await();
         assertThat(r.status().code(), is(Http.Status.OK_200.code()));
