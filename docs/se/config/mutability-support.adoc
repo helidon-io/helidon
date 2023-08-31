@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -74,18 +74,6 @@ It by itself does not help your application decide _when_ reloading the config m
 useful.
 
 == Responding to Changes in Config Sources [[polling]]
-[IMPORTANT]
-.Evolving API
-====
-This section describes the `Config.changes()` method. It is marked
-as deprecated because it returns an `io.helidon.reactive.Flow.Publisher` object.
-In a future Helidon release that requires Java 11 or later this method will be un-deprecated
-and changed -- or a similar method will be added -- so that the return type is
-`java.util.concurrent.Flow.Publisher` instead.
-
-Any code you write using the existing `Config.changes()` method might need
-to change at that time.
-====
 
 Although in-memory config trees do not change once loaded, applications can respond to change
 in the underlying config sources by:
@@ -113,7 +101,7 @@ on the link:{config-javadoc-base-url}/io/helidon/config/PollingStrategies.html[`
 - `regular(Duration interval)` - a general-purpose scheduled polling strategy with a specified,
  constant polling interval.
 - `watch(Path watchedPath)` - a filesystem-specific strategy to watch
- specified path. You can use this strategy with the `file` and `classpath`
+ specified path. You can use this strategy with the `file`
 built-in config sources.
 - `nop()` - a no-op strategy
 
@@ -130,7 +118,7 @@ Config config = Config.create(
         ConfigSources.file("conf/config.properties")
                 .changeWatcher(FileSystemWatcher.create())                         // <2>
                 .optional(),
-        ConfigSources.classpath("application.properties")
+        ConfigSources.file("my.properties")
                 .pollingStrategy(PollingStrategies::nop));                         // <3>
 ----
 
@@ -138,7 +126,7 @@ Config config = Config.create(
  `2` seconds.
 <2> Optional `file` source `conf/config.properties` will be watched by the Java
  `WatchService` for changes on filesystem.
-<3> The `classpath` resource `application.properties` will not be checked for
+<3> The `file` resource `my.properties` will not be checked for
  changes.
 `PollingStrategies.nop()` polling strategy is default.
 
@@ -153,14 +141,11 @@ your application of any change within the subtree rooted at that node.
 In particular, if you register on the root node,
 then the config system notifies your code of changes anywhere in the config tree.
 
-You can register in either of two ways:
-
-1. register an action to be run upon each change, or
-2. subscribe to a `Flow.Publisher` that notifies of changes.
-
 ==== Registering Actions
-A simple approach is for your application to register a function that should
-run when any change occurs.
+
+You register a function that runs when when a change occurs by using the
+link:{config-javadoc-base-url}/io/helidon/config/Config.html#onChange(java.util.function.Consumer)[`Config.onChange()`]
+method on the node of interest.
 
 [source,java]
 .Subscribe on `greeting` property changes via `onChange` method
@@ -179,70 +164,6 @@ The config system invokes that function each time the subtree rooted at the
 representing the updated subtree rooted at `greeting`.
 <3> The function should return `true` to continue being run on subsequent changes, `false`
 to stop.
-
-==== Subscribing to Events
-The config system also supports the flow publisher/subscriber model for applications
-that need more control over the pace at which the config system delivers
-config change events.
-
-Each `Config` instance exposes the link:{config-javadoc-base-url}/io/helidon/config/Config.html#changes--[`Config.changes()`]
-method which returns a `Flow.Publisher<Config>`.
-Your application can invoke this method, then invoke `subscribe` on the returned
-`Flow.Publisher`, passing your own `Flow.Subscriber` implementation. The config system will
-invoke your subscriber's methods as appropriate, most notably calling `onNext`
-whenever it detects a change in one of the underlying config sources for the config
-node of interest.
-
-Mote that your subscriber will be notified when a change occurs anywhere in the
-subtree represented by the `Config` node.
-
-[source,java]
-.Subscribe on `greeting` property changes
-----
-config.get("greeting")                                                             // <1>
-        .changes()                                                                 // <2>
-        .subscribe(new Flow.Subscriber<>() {                                       // <3>
-            Flow.Subscription subscription;
-
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {              // <4>
-                this.subscription = subscription;
-                subscription.request(1);
-            }
-
-            @Override
-            public void onNext(Config changedNode) {                               // <5>
-                System.out.println("Node " + changedNode.key() + " has changed!");
-                subscription.request(1);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {                             // <6>
-            }
-
-            @Override
-            public void onComplete() {                                             // <7>
-            }
-        });
-----
-
-<1> Navigate to the `Config` node on which you want to register.
-<2> Invoke `changes` to get the `Flow.Publisher` of changes to the subtree rooted
-at the `Config` node.
-<3> Subscribe to the publisher passing a custom `Flow.Subscriber<Config>` implementation.
-<4> Request the first event delivery in `onSubscribe` method.
-<5> The config system invokes `onNext` each time the subtree rooted at the
-`greeting` node changes. The `changedNode` is a new instance of `Config` representing
-the updated subtree rooted at `greeting`, regardless of where in the subtree
-the change actually occurred. Remember to request the next event delivery in `onNext`.
-<6> The config system does not currently invoke `onError`.
-<7> The config system invokes `onComplete` if all config sources indicate _there will
- be no other change event_.
-
-[NOTE]
-Your application _does not_ need to subscribe to the new `Config` instance passed
-to your `onNext` method. The original subscription remains in force for changes
-to the "new" instance.
 
 == Accessing Always-current Values
 Some applications do not need to respond to change as they happen. Instead, it's
@@ -272,5 +193,6 @@ value.
 [IMPORTANT]
 =========
 Supplier support requires that you create the `Config` object from config sources that
-have proper polling strategies set up.
+have proper polling strategies set up. The supplier returns refreshed values only
+after changes have been detected by the polling strategy.
 =========
