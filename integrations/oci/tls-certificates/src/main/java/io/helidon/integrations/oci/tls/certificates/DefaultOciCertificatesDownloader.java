@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,8 +49,8 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         Objects.requireNonNull(certOcid);
         try {
             return loadCerts(certOcid);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load certificate ocid: " + certOcid, e);
+        } catch (CertificateException e) {
+            throw new IllegalStateException("Failed to load certificate ocid: " + certOcid, e);
         }
     }
 
@@ -58,12 +59,12 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         Objects.requireNonNull(caCertOcid);
         try {
             return loadCACert(caCertOcid);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load ca certificate ocid: " + caCertOcid, e);
+        } catch (CertificateException e) {
+            throw new IllegalStateException("Failed to load ca certificate ocid: " + caCertOcid, e);
         }
     }
 
-    static Certificates loadCerts(String certOcid) throws Exception {
+    static Certificates loadCerts(String certOcid) throws CertificateException {
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(OciExtension.ociAuthenticationProvider().get())) {
             GetCertificateBundleResponse res =
@@ -80,7 +81,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         }
     }
 
-    static Certificate loadCACert(String caCertOcid) throws Exception {
+    static Certificate loadCACert(String caCertOcid) throws CertificateException {
         GetCertificateAuthorityBundleResponse res;
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(OciExtension.ociAuthenticationProvider().get())) {
@@ -96,7 +97,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
     }
 
     static Certificate[] toCertificates(InputStream chainIs,
-                                        InputStream certIs) throws Exception {
+                                        InputStream certIs) throws CertificateException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Certificate cert = cf.generateCertificate(certIs);
         ArrayList<Certificate> chain = new ArrayList<>();
@@ -105,7 +106,7 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         return chain.toArray(new Certificate[0]);
     }
 
-    static Certificate toCertificate(InputStream certIs) throws Exception {
+    static Certificate toCertificate(InputStream certIs) throws CertificateException {
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         return cf.generateCertificate(certIs);
     }

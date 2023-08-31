@@ -26,7 +26,7 @@ server:
         manager:
           oci-certificates-tls-manager:
             # Download mTls context every 30 seconds
-            schedule: 0/30 * * * * ? *
+            schedule: "0/30 * * * * ? *"
             # Each OCI Vault has public crypto and management endpoints
             vault-crypto-endpoint: ${VAULT_CRYPTO_ENDPOINT}
             # Certification Authority in OCI we have signed rotated certificates with

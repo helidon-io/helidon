@@ -36,7 +36,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 @Configured
 interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
-     * The default protocol is set to {@code TLS}.
+     * The default protocol.
      */
     String DEFAULT_PROTOCOL = "TLS";
 
@@ -275,14 +275,5 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      */
     @ConfiguredOption
     Optional<String> internalKeystoreProvider();
-
-    /**
-     * Explicit context flag.
-     *
-     * @return explicit context
-     */
-    // do we really need this?
-    @ConfiguredOption(builderMethod = false, configured = false)
-    boolean explicitContext();
 
 }

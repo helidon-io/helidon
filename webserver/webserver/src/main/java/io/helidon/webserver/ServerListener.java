@@ -278,6 +278,7 @@ class ServerListener implements ListenerContext {
             serverSocket = tls.enabled() ? sslServerSocket : new ServerSocket();
             listenerConfig.configureSocket(serverSocket);
             serverSocket.bind(configuredAddress, listenerConfig.backlog());
+
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to start server", e);
         }

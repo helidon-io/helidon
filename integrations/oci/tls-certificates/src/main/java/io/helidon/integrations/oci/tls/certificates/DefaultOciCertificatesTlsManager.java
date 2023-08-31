@@ -97,33 +97,29 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
     @Override // TlsManager
     public void init(TlsConfig tls) {
         this.tlsConfig = tls;
-        try {
-            Services services = InjectionServices.realizedServices();
-            this.pkDownloader = services.lookupFirst(OciPrivateKeyDownloader.class);
-            this.certDownloader = services.lookupFirst(OciCertificatesDownloader.class);
-            this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
-            this.async = Async.builder().executor(asyncExecutor).build();
+        Services services = InjectionServices.realizedServices();
+        this.pkDownloader = services.lookupFirst(OciPrivateKeyDownloader.class);
+        this.certDownloader = services.lookupFirst(OciCertificatesDownloader.class);
+        this.asyncExecutor = Executors.newSingleThreadScheduledExecutor();
+        this.async = Async.builder().executor(asyncExecutor).build();
 
-            // the initial loading of the tls
-            loadContext(true);
+        // the initial loading of the tls
+        loadContext(true);
 
-            // register for any available graceful shutdown events
-            Optional<ServiceProvider<LifecycleHook>> shutdownHook = services.lookupFirst(LifecycleHook.class, false);
-            shutdownHook.ifPresent(sp -> sp.get().registerShutdownConsumer(this::shutdown));
+        // register for any available graceful shutdown events
+        Optional<ServiceProvider<LifecycleHook>> shutdownHook = services.lookupFirst(LifecycleHook.class, false);
+        shutdownHook.ifPresent(sp -> sp.get().registerShutdownConsumer(this::shutdown));
 
-            // now schedule for reload checking
-            String taskIntervalDescription =
-                    io.helidon.scheduling.Scheduling.cronBuilder()
-                            .executor(asyncExecutor)
-                            .expression(cfg.schedule())
-                            .task(inv -> maybeReload())
-                            .build()
-                            .description();
-            LOGGER.log(System.Logger.Level.DEBUG, () ->
-                    OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to initialize", e);
-        }
+        // now schedule for reload checking
+        String taskIntervalDescription =
+                io.helidon.scheduling.Scheduling.cronBuilder()
+                        .executor(asyncExecutor)
+                        .expression(cfg.schedule())
+                        .task(inv -> maybeReload())
+                        .build()
+                        .description();
+        LOGGER.log(System.Logger.Level.DEBUG, () ->
+                OciCertificatesTlsManagerConfig.class.getSimpleName() + " scheduled: " + taskIntervalDescription);
     }
 
     private void shutdown(Object event) {
@@ -197,9 +193,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                 tmf.init(keyStore);
             }
 
-            // Uncomment to debug downloaded context
-            // saveToFile(keyStore, type + ".jks");
-
             Optional<X509KeyManager> keyManager = Arrays.stream(kmf.getKeyManagers())
                     .filter(m -> m instanceof X509KeyManager)
                     .map(X509KeyManager.class::cast)
@@ -231,14 +224,5 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             throw new IllegalStateException("Error while loading context from OCI", e);
         }
     }
-
-    //    private void saveToFile(KeyStore ks, String fileName) {
-    //        try {
-    //            FileOutputStream fos = new FileOutputStream(fileName);
-    //            ks.store(fos, new char[0]);
-    //        } catch (Exception e) {
-    //            throw new RuntimeException(e);
-    //        }
-    //    }
 
 }

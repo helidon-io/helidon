@@ -17,6 +17,8 @@
 package io.helidon.integrations.oci.tls.certificates;
 
 import java.net.URI;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -28,7 +30,10 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
@@ -82,12 +87,19 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
                                              .build());
             String encryptedKey = exportKeyResponse.getExportedKeyData().getEncryptedKey();
             return decode(encryptedKey);
-        } catch (Exception e) {
-            throw new RuntimeException("Problem encountered loading key: " + keyOcid + " from: " + vaultCryptoEndpoint, e);
+        } catch (NoSuchPaddingException
+                 | NoSuchAlgorithmException
+                 | InvalidKeyException
+                 | InvalidAlgorithmParameterException
+                 | IllegalBlockSizeException
+                 | BadPaddingException e) {
+            throw new IllegalStateException("Problem encountered loading key: " + keyOcid + " from: " + vaultCryptoEndpoint, e);
         }
     }
 
-    PrivateKey decode(String encryptedKey) throws Exception {
+    PrivateKey decode(String encryptedKey)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, InvalidAlgorithmParameterException,
+            IllegalBlockSizeException, BadPaddingException {
         byte[] encryptedMaterial = Base64.getDecoder().decode(encryptedKey);
 
         // rfc3394 - first 256 bytes is tmp AES key encrypted by our temp wrapping RSA
@@ -101,7 +113,7 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
     }
 
     Key unwrapRSA(byte[] in,
-                  byte[] keyBytes) throws Exception {
+                  byte[] keyBytes) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException {
         SecretKeySpec key = new SecretKeySpec(keyBytes, "AES");
         // https://docs.oracle.com/en/java/javase/20/docs/specs/security/standard-names.html
         Cipher c = Cipher.getInstance("AESWrapPad");
@@ -109,7 +121,9 @@ class DefaultOciPrivateKeyDownloader implements OciPrivateKeyDownloader {
         return c.unwrap(in, "RSA", Cipher.PRIVATE_KEY);
     }
 
-    byte[] decryptAesKey(byte[] in) throws Exception {
+    byte[] decryptAesKey(byte[] in)
+            throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException,
+            IllegalBlockSizeException, BadPaddingException {
         Cipher decrypt = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256andMGF1Padding");
 
         // https://stackoverflow.com/questions/61665435/encryption-in-java-with-rsa-ecb-oaepwithsha-256andmgf1padding-could-not-be-decry

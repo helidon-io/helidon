@@ -78,11 +78,6 @@ prepareKeyToUpload() {
   echo $JSON_KEY_MATERIAL >key-material.json
 }
 
-test() {
-  KEC="Aha!"
-  echo $KEC
-}
-
 createKeyInVault() {
   TYPE=$1
   KEY_NAME=${2}
