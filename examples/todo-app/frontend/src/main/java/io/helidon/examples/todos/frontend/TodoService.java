@@ -20,8 +20,6 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.tracing.Span;
-import io.helidon.tracing.Tracer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;

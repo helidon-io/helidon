@@ -32,7 +32,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 
 import io.helidon.common.Errors;
 import io.helidon.metrics.api.DistributionSummary;
