@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
@@ -80,7 +81,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private static final System.Logger LOGGER = System.getLogger(Http2Connection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;
-
+    private static final Set<Http2StreamState> REMOVABLE_STREAMS =
+            Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
     private final Map<Integer, StreamContext> streams = new HashMap<>(1000);
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
@@ -573,6 +575,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         // TODO buffer now contains the actual data bytes
         stream.stream().data(frameHeader, buffer);
 
+        // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
+        // even when handler has already finished
+        if ((REMOVABLE_STREAMS.contains(stream.stream.streamState()))
+                && frameHeader.flags(Http2FrameTypes.DATA).endOfStream()) {
+            streams.remove(streamId);
+        }
+
         state = State.READ_FRAME;
     }
 
@@ -716,10 +725,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
     private void rstStream() {
         Http2RstStream rstStream = Http2RstStream.create(inProgressFrame());
-        receiveFrameListener.frame(ctx, frameHeader.streamId(), rstStream);
+        int streamId = frameHeader.streamId();
+        receiveFrameListener.frame(ctx, streamId, rstStream);
 
         try {
-            StreamContext streamContext = stream(frameHeader.streamId());
+            StreamContext streamContext = stream(streamId);
             streamContext.stream().rstStream(rstStream);
 
             state = State.READ_FRAME;
@@ -730,6 +740,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 return;
             }
             throw e;
+        } finally {
+            streams.remove(streamId);
         }
     }
 
@@ -845,7 +857,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     throw e;
                 }
             } finally {
-                streams.remove(stream.streamId());
+                // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
+                if (stream.streamState() == Http2StreamState.CLOSED) {
+                    streams.remove(stream.streamId());
+                }
             }
         }
     }
