@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @ServerTest
-public class HalfClosedStreamsTest {
+class HalfClosedStreamsTest {
 
     private final int port;
     private final URI uri;
