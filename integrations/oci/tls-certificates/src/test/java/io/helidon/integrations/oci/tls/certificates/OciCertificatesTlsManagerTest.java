@@ -28,7 +28,6 @@ import io.helidon.inject.api.Services;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
@@ -41,12 +40,6 @@ import static org.hamcrest.Matchers.greaterThan;
 
 // see pom.xml for system properties that can be used in these tests
 class OciCertificatesTlsManagerTest {
-
-    @BeforeAll
-    static void init() {
-        OciTestUtils.init();
-    }
-
     @AfterEach
     void reset() {
         TestOciCertificatesDownloader.callCount_loadCertificates = 0;
