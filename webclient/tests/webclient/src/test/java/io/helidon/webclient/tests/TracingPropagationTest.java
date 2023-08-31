@@ -17,12 +17,8 @@
 package io.helidon.webclient.tests;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.Http;
@@ -44,12 +40,12 @@ import io.opentracing.tag.Tags;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -57,8 +53,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @ServerTest
 class TracingPropagationTest {
-    private static final Duration TIMEOUT = Duration.ofSeconds(15);
-    private static final AtomicReference<CountDownLatch> SPAN_COUNT_LATCH = new AtomicReference<>();
     private static MockTracer tracer;
     private final Http1Client client;
     private final URI uri;
@@ -79,20 +73,14 @@ class TracingPropagationTest {
 
     @SetUpServer
     public static void setup(WebServerConfig.Builder server) {
-        tracer = new MockTracer() {
-            @Override
-            protected void onSpanFinished(MockSpan mockSpan) {
-                SPAN_COUNT_LATCH.get().countDown();
-            }
-        };
+        tracer = new MockTracer();
         Config config = Config.create();
         server.config(config);
         server.routing(routing -> Main.routing(routing, config, tracer));
     }
 
     @Test
-    void testTracingSuccess() throws InterruptedException {
-        SPAN_COUNT_LATCH.set(new CountDownLatch(2));
+    void testTracingSuccess() {
         Context context = Context.builder().id("tracing-unit-test").build();
         context.register(tracer);
 
@@ -104,14 +92,12 @@ class TracingPropagationTest {
             assertThat(response.entity().as(JsonObject.class), notNullValue());
         }
 
-        assertTrue(SPAN_COUNT_LATCH.get().await(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
-                   "Expected number of spans wasn't reported in time!");
-
         List<MockSpan> mockSpans = tracer.finishedSpans();
 
         // the server traces asynchronously, some spans may be written after we receive the response.
         // we need to try to wait for such spans
-        assertThat("There should be 2 spans reported", tracer.finishedSpans(), hasSize(2));
+        assertThatWithRetry("There should be 2 spans reported", () -> tracer.finishedSpans(), hasSize(2));
+
 
         // we need the first span - parentId 0
         MockSpan clientSpan = findSpanWithParentId(mockSpans, 0);
