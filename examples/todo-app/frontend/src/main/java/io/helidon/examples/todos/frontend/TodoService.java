@@ -126,7 +126,7 @@ public final class TodoService implements HttpService {
     private void delete(ServerRequest req, ServerResponse res) {
         String id = req.path().pathParameters().value("id");
         JsonObject jsonObject = bsc.deleteSingle(id);
-        deleteCounter.incrememt();
+        deleteCounter.increment();
         res.send(jsonObject);
     }
 

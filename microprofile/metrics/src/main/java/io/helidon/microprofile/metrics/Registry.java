@@ -605,17 +605,6 @@ class Registry implements MetricRegistry {
 
     }
 
-    private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T target, ToDoubleFunction<T> fn, Tag... tags) {
-        return (HelidonGauge<N>) createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
-                                                                                  target,
-                                                                                  fn)
-                                                     .scope(scope)
-                                                     .description(metadata.getDescription())
-                                                     .tags(allTags(scope, tags))
-                                                     .baseUnit(sanitizeUnit(metadata.getUnit())));
-
-    }
-
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
         io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(gBuilder);
         return (HelidonGauge<N>) metricsByDelegate.get(delegate);
