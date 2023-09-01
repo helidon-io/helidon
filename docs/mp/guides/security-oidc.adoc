@@ -476,7 +476,7 @@ Now, the project can be build without skiping test.
 [source,bash]
 .Build the project
 ----
-mvn clear install
+mvn clean install
 ----
 
 === Test Keycloak process with Postman
@@ -614,7 +614,7 @@ Assertions.assertEquals(403, response.getStatus());
 [source,bash]
 .Build the project
 ----
-mvn clear install
+mvn clean install
 ----
 
 The tests pass, and your application is secured with specific roles in addition to user IDs.

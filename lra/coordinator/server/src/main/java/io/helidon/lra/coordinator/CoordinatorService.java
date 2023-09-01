@@ -383,7 +383,7 @@ public class CoordinatorService implements HttpService {
                 if (Set.of(LRAStatus.Closed, LRAStatus.Cancelled).contains(lra.status().get())) {
                     // If a participant is unable to complete or compensate immediately or because of a failure
                     // then it must remember the fact (by reporting its' status via the @Status method)
-                    // until explicitly told that it can clear up using this @Forget annotation.
+                    // until explicitly told that it can clean up using this @Forget annotation.
                     LOGGER.log(Level.DEBUG, "Forgetting {0} {1}", new Object[] {lra.status().get(), lra.lraId()});
                     lra.tryForget();
                     lra.tryAfter();
