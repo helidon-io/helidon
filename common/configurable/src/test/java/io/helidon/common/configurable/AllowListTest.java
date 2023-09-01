@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.configurable;
 
 import java.util.Iterator;
@@ -78,7 +79,7 @@ class AllowListTest {
                 new TestData(AllowList.builder().addAllowedSuffix(".helidon.io").build(),
                              "Allow suffix",
                              List.of(false, false, false, false, true)),
-                new TestData(AllowList.builder().addAllowed(new EmptyStringPredicate()).build(),
+                new TestData(AllowList.builder().addAllowedPredicate(new EmptyStringPredicate()).build(),
                              "Allow predicate",
                              List.of(false, false, true, false, false)),
                 new TestData(AllowList.builder().addAllowedPattern(Pattern.compile("f.*t")).build(),
@@ -110,7 +111,7 @@ class AllowListTest {
                              List.of(true, true, true, true, false)),
                 new TestData(AllowList.builder()
                                      .allowAll(true)
-                                     .addDenied(new EmptyStringPredicate())
+                                     .addDeniedPredicate(new EmptyStringPredicate())
                                      .build(),
                              "Deny exact",
                              List.of(true, true, false, true, true)),
@@ -130,7 +131,7 @@ class AllowListTest {
                 new TestData(AllowList.builder()
                                      .addAllowedPrefix("f")
                                      .addAllowedSuffix("helidon.io")
-                                     .addAllowed(new EmptyStringPredicate())
+                                     .addAllowedPredicate(new EmptyStringPredicate())
                                      .addDenied("www.helidon.io")
                                      .addDeniedSuffix("st")
                                      .build(),

@@ -21,22 +21,21 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of a resource.
  */
 @Prototype.Blueprint(createEmptyPublic = false, decorator = ResourceBuilderDecorator.class)
-@Configured
+@Prototype.Configured
 interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
     /**
      * Resource is located on classpath.
      *
      * @return classpath location of the resource
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> resourcePath();
 
     /**
@@ -44,7 +43,7 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return path of the resource
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<Path> path();
 
     /**
@@ -52,7 +51,7 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return plain content
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> contentPlain();
 
     /**
@@ -60,7 +59,7 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return binary content
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<String> content();
 
     /**
@@ -70,7 +69,7 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      * @see #proxy()
      * @see #useProxy()
      */
-    @ConfiguredOption
+    @Option.Configured
     Optional<URI> uri();
 
     /**
@@ -78,7 +77,8 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return proxy host
      */
-    @ConfiguredOption(builderMethod = false)
+    @Option.Configured
+    @Option.Access("")
     Optional<String> proxyHost();
 
     /**
@@ -86,7 +86,9 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return proxy port
      */
-    @ConfiguredOption(builderMethod = false, value = "80")
+    @Option.Configured
+    @Option.DefaultInt(80)
+    @Option.Access("")
     int proxyPort();
 
     /**
@@ -95,7 +97,9 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return whether to use proxy if configured
      */
-    @ConfiguredOption(value = "true", builderMethod = false)
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    @Option.Access("")
     boolean useProxy();
 
     /**
@@ -110,6 +114,7 @@ interface ResourceConfigBlueprint extends Prototype.Factory<Resource> {
      *
      * @return description
      */
-    @ConfiguredOption("")
+    @Option.Configured
+    @Option.Default("")
     String description();
 }

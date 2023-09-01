@@ -16,10 +16,32 @@
 
 package io.helidon.builder.processor;
 
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import io.helidon.common.processor.GeneratorTools;
@@ -28,11 +50,45 @@ import io.helidon.common.processor.classmodel.InnerClass;
 import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
-import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
+    private static final Set<TypeName> BUILT_IN_MAPPERS = Set.of(
+            TypeNames.STRING,
+            TypeNames.BOXED_BOOLEAN,
+            TypeNames.BOXED_BYTE,
+            TypeNames.BOXED_SHORT,
+            TypeNames.BOXED_INT,
+            TypeNames.BOXED_LONG,
+            TypeNames.BOXED_CHAR,
+            TypeNames.BOXED_FLOAT,
+            TypeNames.BOXED_DOUBLE,
+            TypeNames.BOXED_VOID,
+            TypeName.create(BigDecimal.class),
+            TypeName.create(BigInteger.class),
+            TypeName.create(Pattern.class),
+            TypeName.create(Class.class),
+            TypeName.create(Duration.class),
+            TypeName.create(Period.class),
+            TypeName.create(LocalDate.class),
+            TypeName.create(LocalDateTime.class),
+            TypeName.create(LocalTime.class),
+            TypeName.create(ZonedDateTime.class),
+            TypeName.create(ZoneId.class),
+            TypeName.create(ZoneOffset.class),
+            TypeName.create(Instant.class),
+            TypeName.create(OffsetTime.class),
+            TypeName.create(OffsetDateTime.class),
+            TypeName.create(YearMonth.class),
+            TypeName.create(File.class),
+            TypeName.create(Path.class),
+            TypeName.create(Charset.class),
+            TypeName.create(URI.class),
+            TypeName.create(URL.class),
+            TypeName.create(UUID.class)
+    );
     private final TypeName collectionType;
     private final TypeName collectionImplType;
     private final String collector;
@@ -102,16 +158,17 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         if (configured.provider()) {
             return;
         }
+        TypeName actualType = actualType().genericTypeName();
+
         if (factoryMethods.createFromConfig().isPresent()) {
-            // todo this must be more clever - if a factory method exists, we need to check if it accepts a list
-            // or a single value, now hardcoded to single value
             method.addLine(configGet(configured)
                                    + generateFromConfig(factoryMethods)
                                    + ".ifPresent(this::" + setterName() + ");");
-        } else if (actualType().equals(STRING_TYPE)) {
-            // String can be simplified
+        } else if (BUILT_IN_MAPPERS.contains(actualType)) {
+            // types we support in config can be simplified,
+            // this also supports comma separated lists for string based types
             method.addLine(configGet(configured)
-                                   + ".asList(String.class)"
+                                   + ".asList(" + TYPE_TOKEN + actualType.fqName() + TYPE_TOKEN + ".class)"
                                    + (configMapper.orElse(""))
                                    + ".ifPresent(this::" + setterName() + ");");
         } else {

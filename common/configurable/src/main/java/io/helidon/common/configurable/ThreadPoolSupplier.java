@@ -19,34 +19,27 @@ package io.helidon.common.configurable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Supplier of a custom thread pool.
  * The returned thread pool supports {@link io.helidon.common.context.Context} propagation.
  */
-public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
+@RuntimeType.PrototypedBy(ThreadPoolConfig.class)
+public final class ThreadPoolSupplier implements Supplier<ExecutorService>, RuntimeType.Api<ThreadPoolConfig> {
+    // this type is used on config blueprint, as the default value for rejection policy
+    static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();
+
     private static final System.Logger LOGGER = System.getLogger(ThreadPoolSupplier.class.getName());
-    private static final ThreadPool.RejectionHandler DEFAULT_REJECTION_POLICY = new ThreadPool.RejectionHandler();
     private static final AtomicInteger DEFAULT_NAME_COUNTER = new AtomicInteger();
-    private static final int DEFAULT_CORE_POOL_SIZE = 10;
-    private static final int DEFAULT_MAX_POOL_SIZE = 50;
-    private static final int DEFAULT_KEEP_ALIVE_MINUTES = 3;
-    private static final int DEFAULT_QUEUE_CAPACITY = 10000;
-    private static final boolean DEFAULT_IS_DAEMON = true;
-    private static final String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
-    private static final boolean DEFAULT_PRESTART = true;
-    private static final int DEFAULT_GROWTH_RATE = 0; // Maintain JDK pool behavior when max > core
-    private static final int DEFAULT_GROWTH_THRESHOLD = 1000;
 
     private final int corePoolSize;
     private final int maxPoolSize;
@@ -61,20 +54,35 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
     private final ThreadPool.RejectionHandler rejectionHandler;
     private final LazyValue<ExecutorService> lazyValue = LazyValue.create(() -> Contexts.wrap(getThreadPool()));
     private final boolean useVirtualThreads;
+    private final ThreadPoolConfig config;
 
-    private ThreadPoolSupplier(Builder builder) {
-        this.corePoolSize = builder.corePoolSize;
-        this.maxPoolSize = builder.maxPoolSize;
-        this.keepAliveMinutes = builder.keepAliveMinutes;
-        this.queueCapacity = builder.queueCapacity;
-        this.isDaemon = builder.isDaemon;
-        this.threadNamePrefix = builder.threadNamePrefix;
-        this.prestart = builder.prestart;
-        this.name = builder.name;
-        this.growthThreshold = builder.growthThreshold;
-        this.growthRate = builder.growthRate;
-        this.rejectionHandler = builder.rejectionHandler == null ? DEFAULT_REJECTION_POLICY : builder.rejectionHandler;
-        this.useVirtualThreads = builder.useVirtualThreads;
+    private ThreadPoolSupplier(ThreadPoolConfig config) {
+        this.config = config;
+        this.corePoolSize = config.corePoolSize();
+        this.maxPoolSize = config.maxPoolSize();
+        this.keepAliveMinutes = config.keepAlive().toMinutesPart();
+        this.queueCapacity = config.queueCapacity();
+        this.isDaemon = config.daemon();
+        this.prestart = config.shouldPrestart();
+        this.growthThreshold = config.growthThreshold();
+        this.growthRate = config.growthRate();
+        this.rejectionHandler = config.rejectionHandler();
+        this.useVirtualThreads = config.virtualThreads();
+
+        String poolName = config.name().orElse(null);
+        String threadNamePrefix = config.threadNamePrefix().orElse(null);
+        if (poolName == null) {
+            if (config.threadNamePrefix().isEmpty()) {
+                threadNamePrefix = ThreadPoolConfigBlueprint.DEFAULT_THREAD_NAME_PREFIX;
+                LOGGER.log(System.Logger.Level.WARNING, "Neither a thread name prefix nor a pool name specified");
+            }
+            poolName = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
+        } else if (threadNamePrefix == null) {
+            threadNamePrefix = ThreadPoolConfigBlueprint.DEFAULT_THREAD_NAME_PREFIX + poolName + "-";
+        }
+
+        this.name = poolName;
+        this.threadNamePrefix = threadNamePrefix;
         ObserverManager.registerSupplier(this, name, "general");
     }
 
@@ -83,8 +91,8 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      *
      * @return a builder instance
      */
-    public static Builder builder() {
-        return new Builder();
+    public static ThreadPoolConfig.Builder builder() {
+        return ThreadPoolConfig.builder();
     }
 
     /**
@@ -109,6 +117,33 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      */
     public static ThreadPoolSupplier create(String name) {
         return builder().name(name).build();
+    }
+
+    /**
+     * Create a new thread pool supplier based on its configuration.
+     *
+     * @param config configuration
+     * @return a new thread pool supplier
+     */
+    public static ThreadPoolSupplier create(ThreadPoolConfig config) {
+        return new ThreadPoolSupplier(config);
+    }
+
+    /**
+     * Create a new thread pool supplier customizing its configuration.
+     *
+     * @param consumer configuration consumer
+     * @return a new thread pool supplier
+     */
+    public static ThreadPoolSupplier create(Consumer<ThreadPoolConfig.Builder> consumer) {
+        return builder()
+                .update(consumer)
+                .build();
+    }
+
+    @Override
+    public ThreadPoolConfig prototype() {
+        return config;
     }
 
     ExecutorService getThreadPool() {
@@ -146,343 +181,5 @@ public final class ThreadPoolSupplier implements Supplier<ExecutorService> {
      */
     public int corePoolSize() {
         return corePoolSize;
-    }
-
-    /**
-     * A fluent API builder for {@link ThreadPoolSupplier}.
-     */
-    @Configured
-    public static final class Builder implements io.helidon.common.Builder<Builder, ThreadPoolSupplier> {
-        private int corePoolSize = DEFAULT_CORE_POOL_SIZE;
-        private int maxPoolSize = DEFAULT_MAX_POOL_SIZE;
-        private int keepAliveMinutes = DEFAULT_KEEP_ALIVE_MINUTES;
-        private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
-        private boolean isDaemon = DEFAULT_IS_DAEMON;
-        private String threadNamePrefix = null;
-        private boolean prestart = DEFAULT_PRESTART;
-        private int growthThreshold = DEFAULT_GROWTH_THRESHOLD;
-        private int growthRate = DEFAULT_GROWTH_RATE;
-        private ThreadPool.RejectionHandler rejectionHandler = DEFAULT_REJECTION_POLICY;
-        private String name;
-        private boolean useVirtualThreads;
-
-        private Builder() {
-        }
-
-        @Override
-        public ThreadPoolSupplier build() {
-            if (name == null) {
-                if (threadNamePrefix == null) {
-                    LOGGER.log(System.Logger.Level.WARNING, "Neither a thread name prefix nor a pool name specified");
-                    threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX;
-                }
-                name = threadNamePrefix + "thread-pool-" + DEFAULT_NAME_COUNTER.incrementAndGet();
-            } else if (threadNamePrefix == null) {
-                threadNamePrefix = DEFAULT_THREAD_NAME_PREFIX + name + "-";
-            }
-
-            if (rejectionHandler == null) {
-                rejectionHandler = DEFAULT_REJECTION_POLICY;
-            }
-
-            return new ThreadPoolSupplier(this);
-        }
-
-        /**
-         * Core pool size of the thread pool executor.
-         *
-         * @param corePoolSize see {@link ThreadPoolExecutor#getCorePoolSize()}
-         * @return updated builder instance
-         */
-        @ConfiguredOption("10")
-        public Builder corePoolSize(int corePoolSize) {
-            this.corePoolSize = corePoolSize;
-            return this;
-        }
-
-        /**
-         * Max pool size of the thread pool executor.
-         *
-         * @param maxPoolSize see {@link ThreadPoolExecutor#getMaximumPoolSize()}
-         * @return updated builder instance
-         */
-        @ConfiguredOption("50")
-        public Builder maxPoolSize(int maxPoolSize) {
-            this.maxPoolSize = maxPoolSize;
-            return this;
-        }
-
-        /**
-         * Keep alive minutes of the thread pool executor.
-         *
-         * @param keepAliveMinutes see {@link ThreadPoolExecutor#getKeepAliveTime(TimeUnit)}
-         * @return updated builder instance
-         */
-        @ConfiguredOption("3")
-        public Builder keepAliveMinutes(int keepAliveMinutes) {
-            this.keepAliveMinutes = keepAliveMinutes;
-            return this;
-        }
-
-        /**
-         * Queue capacity of the thread pool executor.
-         *
-         * @param queueCapacity capacity of the queue backing the executor
-         * @return updated builder instance
-         */
-        @ConfiguredOption("10000")
-        public Builder queueCapacity(int queueCapacity) {
-            this.queueCapacity = queueCapacity;
-            return this;
-        }
-
-        /**
-         * Is daemon of the thread pool executor.
-         *
-         * @param daemon whether the threads are daemon threads
-         * @return updated builder instance
-         */
-        @ConfiguredOption(key = "is-daemon", value = "true")
-        public Builder daemon(boolean daemon) {
-            isDaemon = daemon;
-            return this;
-        }
-
-        /**
-         * Name of this thread pool executor.
-         *
-         * @param name the pool name
-         * @return updated builder instance
-         */
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        /**
-         * The queue size above which pool growth will be considered if the pool is not fixed size.
-         *
-         * @param growthThreshold the growth threshold
-         * @return updated builder instance
-         */
-        @ConfiguredOption("256")
-        Builder growthThreshold(int growthThreshold) {
-            this.growthThreshold = growthThreshold;
-            return this;
-        }
-
-        /**
-         * The percentage of task submissions that should result in adding threads, expressed as a value from 1 to 100. The
-         * rate applies only when all of the following are true:
-         * <ul>
-         * <li>the pool size is below the maximum, and</li>
-         * <li>there are no idle threads, and</li>
-         * <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
-         * </ul>
-         * For example, a rate of 20 means that while these conditions are met one thread will be added for every 5 submitted
-         * tasks.
-         *
-         * @param growthRate the growth rate
-         * @return updated builder instance
-         */
-        @ConfiguredOption("5")
-        Builder growthRate(int growthRate) {
-            this.growthRate = growthRate;
-            return this;
-        }
-
-        /**
-         * Rejection policy of the thread pool executor.
-         *
-         * @param rejectionHandler the rejection policy
-         * @return updated builder instance
-         */
-        public Builder rejectionHandler(ThreadPool.RejectionHandler rejectionHandler) {
-            this.rejectionHandler = rejectionHandler;
-            return this;
-        }
-
-        /**
-         * Name prefix for threads in this thread pool executor.
-         *
-         * @param threadNamePrefix prefix of a thread name
-         * @return updated builder instance
-         */
-        @ConfiguredOption("helidon-")
-        public Builder threadNamePrefix(String threadNamePrefix) {
-            this.threadNamePrefix = threadNamePrefix;
-            return this;
-        }
-
-        /**
-         * Whether to prestart core threads in this thread pool executor.
-         *
-         * @param prestart whether to prestart the threads
-         * @return updated builder instance
-         */
-        @ConfiguredOption(key = "should-prestart", value = "true")
-        public Builder prestart(boolean prestart) {
-            this.prestart = prestart;
-            return this;
-        }
-
-        /**
-         * <p>
-         * Load all properties for this thread pool from configuration.
-         * </p>
-         * <table class="config">
-         * <caption>Optional Configuration Parameters</caption>
-         * <tr>
-         *     <th>key</th>
-         *     <th>default value</th>
-         *     <th>description</th>
-         * </tr>
-         * <tr>
-         *     <td>core-pool-size</td>
-         *     <td>10</td>
-         *     <td>The number of threads to keep in the pool.</td>
-         * </tr>
-         * <tr>
-         *     <td>max-pool-size</td>
-         *     <td>50</td>
-         *     <td>The maximum number of threads to allow in the pool.</td>
-         * </tr>
-         * <tr>
-         *     <td>keep-alive-minutes</td>
-         *     <td>3</td>
-         *     <td>When the number of threads is greater than the core, this is the maximum time that excess idle threads
-         *     will wait for new tasks before terminating.</td>
-         * </tr>
-         * <tr>
-         *     <td>queue-capacity</td>
-         *     <td>10000</td>
-         *     <td>The maximum number of tasks that the queue can contain before new tasks are rejected.</td>
-         * </tr>
-         * <tr>
-         *     <td>is-daemon</td>
-         *     <td>{@code true}</td>
-         *     <td>Whether or not all threads in the pool should be set as daemon.</td>
-         * </tr>
-         * <tr>
-         *     <td>thread-name-prefix</td>
-         *     <td>{@code "helidon-"}</td>
-         *     <td>The prefix used to generate names for new threads.</td>
-         * </tr>
-         * <tr>
-         *     <td>should-prestart</td>
-         *     <td>{@code true}</td>
-         *     <td>Whether or not all core threads should be started when the pool is created.</td>
-         * </tr>
-         * </table>
-         * <br>
-         * <table class="config">
-         * <caption>Experimental Configuration Parameters (<em>subject to change</em>)</caption>
-         * <tr>
-         *     <th>key</th>
-         *     <th>default value</th>
-         *     <th>description</th>
-         * </tr>
-         * <tr>
-         *     <td>growth-threshold</td>
-         *     <td>256</td>
-         *     <td>The queue size above which pool growth will be considered if the pool is not fixed size.</td>
-         * </tr>
-         * <tr>
-         *     <td>growth-rate</td>
-         *     <td>5</td>
-         *     <td>The percentage of task submissions that should result in adding a thread, expressed as a value from 0 to 100.
-         *     For non-zero values the rate is applied when all of the following are true:
-         *     <ul>
-         *     <li>the pool size is below the maximum, and</li>
-         *     <li>there are no idle threads, and</li>
-         *     <li>the number of tasks in the queue exceeds the {@code growthThreshold}</li>
-         *     </ul>
-         *     <p>For example, a rate of 20 means that while these conditions are met one thread will be added for every 5
-         *     submitted
-         *     tasks.
-         *     <p>A rate of 0 selects the default {@link ThreadPoolExecutor} growth behavior: a thread is added only when a
-         *     submitted task is rejected because the queue is full.</td>
-         * </tr>
-         * </table>
-         *
-         * @param config config located on the key of executor-service
-         * @return updated builder instance
-         */
-        public Builder config(Config config) {
-            config.get("core-pool-size").asInt().ifPresent(this::corePoolSize);
-            config.get("max-pool-size").asInt().ifPresent(this::maxPoolSize);
-            config.get("keep-alive-minutes").asInt().ifPresent(this::keepAliveMinutes);
-            config.get("queue-capacity").asInt().ifPresent(this::queueCapacity);
-            config.get("is-daemon").asBoolean().ifPresent(this::daemon);
-            config.get("thread-name-prefix").asString().ifPresent(this::threadNamePrefix);
-            config.get("should-prestart").asBoolean().ifPresent(this::prestart);
-            config.get("growth-threshold").asInt().ifPresent(value -> {
-                warnExperimental("growth-threshold");
-                growthThreshold(value);
-            });
-            config.get("growth-rate").asInt().ifPresent(value -> {
-                warnExperimental("growth-rate");
-                growthRate(value);
-           });
-
-            config.get("virtual-threads").asBoolean().ifPresent(this::virtualThreads);
-            config.get("virtual-enforced").asBoolean().ifPresent(this::virtualEnforced);
-
-            return this;
-        }
-
-        private void warnExperimental(String key) {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       String.format("Config key \"executor-service.%s\" is EXPERIMENTAL and subject to change.", key));
-        }
-
-        /**
-         * When configured to {@code true}, virtual thread executor service must be available, otherwise the built
-         * executor would fail to start.
-         *
-         * @param enforceVirtualThreads whether to enforce virtual threads, defaults to {@code false}
-         * @return updated builder instance
-         * @see #virtualIfAvailable(boolean)
-         * @deprecated use {@link #virtualThreads(boolean)}
-         */
-        @ConfiguredOption(value = "false", deprecated = true)
-        @Deprecated(forRemoval = true, since = "4.0.0")
-        public Builder virtualEnforced(boolean enforceVirtualThreads) {
-            if (enforceVirtualThreads) {
-                return virtualThreads(true);
-            }
-            return this;
-        }
-
-        /**
-         * When configured to {@code true}, an unbounded virtual executor service (project Loom) will be used
-         * if available.
-         * This is an experimental feature.
-         * <p>
-         * If enabled and available, all other configuration options of this executor service are ignored!
-         *
-         * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
-         * @return updated builder instance
-         * @deprecated use {@link #virtualThreads(boolean)}
-         */
-        @Deprecated(forRemoval = true, since = "4.0.0")
-        public Builder virtualIfAvailable(boolean useVirtualThreads) {
-            this.useVirtualThreads = useVirtualThreads;
-            return this;
-        }
-
-        /**
-         * When configured to {@code true}, an unbounded virtual executor service (project Loom) will be used.
-         * <p>
-         * If enabled, all other configuration options of this executor service are ignored!
-         *
-         * @param useVirtualThreads whether to use virtual threads or not, defaults to {@code false}
-         * @return updated builder instance
-         */
-        @ConfiguredOption(value = "false")
-        public Builder virtualThreads(boolean useVirtualThreads) {
-            this.useVirtualThreads = useVirtualThreads;
-            return this;
-        }
     }
 }
