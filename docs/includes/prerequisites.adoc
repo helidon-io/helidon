@@ -36,7 +36,7 @@ ifndef::h1-prefix[:h1-prefix: SE]
  xref:{rootdir}/{flavor-lc}/guides/quickstart.adoc[Helidon {flavor-uc} Quickstart] to create a sample application.
 // tag::prerequisites-table-details[]
 |https://www.oracle.com/technetwork/java/javase/downloads[Java{nbsp}SE{nbsp}21] (http://jdk.java.net[Open{nbsp}JDK{nbsp}21]) |Helidon requires Java 21+.
-|https://maven.apache.org/download.cgi[Maven 3.6.1+]|Helidon requires Maven 3.6.1+.
+|https://maven.apache.org/download.cgi[Maven 3.8+]|Helidon requires Maven 3.8+.
 |https://docs.docker.com/install/[Docker 18.09+]|You need Docker if you
 want to build and deploy Docker containers.
 |https://kubernetes.io/docs/tasks/tools/install-kubectl/[Kubectl 1.16.5+]|If you want to
@@ -63,11 +63,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 17`
+export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-17
+export JAVA_HOME=/usr/lib/jvm/jdk-21
 ----
 // end::prerequisites[]
 
@@ -97,11 +97,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 17`
+export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-17
+export JAVA_HOME=/usr/lib/jvm/jdk-21
 ----
 
 // end::prerequisites-helm[]
@@ -129,11 +129,11 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 17`
+export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-17
+export JAVA_HOME=/usr/lib/jvm/jdk-21
 ----
 // end::prerequisites-curl[]
 
@@ -163,10 +163,10 @@ kubectl version --short
 .Setting JAVA_HOME
 ----
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 17`
+export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-17
+export JAVA_HOME=/usr/lib/jvm/jdk-21
 ----
 // end::prerequisites-graal[]

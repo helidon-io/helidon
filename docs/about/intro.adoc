@@ -32,8 +32,5 @@ NOTE: Virtual threads are lightweight threads that dramatically reduce the effor
 * Helidon 4 now supports MicroProfile 5.0-based applications working on virtual threads. This is the first MicroProfile framework that supports virtual threads and uses JDK features on the new Helidon WebServer.
 
 
-* item
-
-* Helidon 4 requires Java 20.
 
 

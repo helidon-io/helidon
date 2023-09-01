@@ -377,12 +377,6 @@ backend:
                 glyph:
                   type: "icon"
                   value: "favorite_outline"
-              - type: "PAGE"
-                title: "Injection"
-                source: "inject/injection_intro.adoc"
-                glyph: 
-                  type: "icon"
-                  value: "vaccines"
               - type: "MENU"
                 title: "Integrations"
                 dir: "integrations"
