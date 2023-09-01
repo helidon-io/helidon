@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package io.helidon.tests.integration.webclient;
 
 import io.helidon.common.http.Http;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 
@@ -33,8 +33,8 @@ class ContextCheckTest extends TestParent {
         WebClient webClient = createNewClient();
         WebClientResponse r = webClient.get()
                 .path("/contextCheck")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()
                 .await();
         assertThat(r.status().code(), is(Http.Status.OK_200.code()));

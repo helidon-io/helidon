@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package io.helidon.tests.integration.webclient;
 
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
+import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.security.WebClientSecurity;
 
 import jakarta.json.JsonObject;
@@ -46,8 +46,8 @@ public class SecurityTest extends TestParent {
         try {
             webClient.get()
                     .path(path)
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jack")
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "password")
+                    .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jack")
+                    .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                     .request(JsonObject.class)
                     .thenAccept(jsonObject -> assertThat(jsonObject.getString("message"), is("Hello jack!")))
                     .toCompletableFuture()

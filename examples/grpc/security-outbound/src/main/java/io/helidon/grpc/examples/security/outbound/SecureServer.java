@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import io.helidon.grpc.server.GrpcServer;
 import io.helidon.grpc.server.GrpcServerConfiguration;
 import io.helidon.grpc.server.GrpcService;
 import io.helidon.grpc.server.ServiceDescriptor;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.grpc.GrpcClientSecurity;
@@ -224,8 +225,8 @@ public class SecureServer {
                     .path("upper")
                     .queryParam("value", name)
                     .context(context)
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Ted")
-                    .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "secret")
+                    .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "Ted")
+                    .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "secret")
                     .request()
                     .thenAccept(it -> handleResponse(it, observer))
                     .exceptionally(throwable -> {
@@ -291,8 +292,8 @@ public class SecureServer {
                 // Create the gRPC client security credentials from the current request
                 // overriding with the admin user's credentials
                 GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(req)
-                        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "Ted")
-                        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "secret")
+                        .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "Ted")
+                        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "secret")
                         .build();
 
                 StringServiceGrpc.StringServiceBlockingStub stub = StringServiceGrpc.newBlockingStub(ensureChannel())

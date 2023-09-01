@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.integration.jersey.client.ClientSecurity;
@@ -68,16 +69,16 @@ public class BasicAuthOutboundOverrideTest {
         when(requestContext.getConfiguration()).thenReturn(configuration);
         when(requestContext.getProperty(ClientSecurity.PROPERTY_CONTEXT)).thenReturn(context);
         when(requestContext.getProperty(ClientSecurity.PROPERTY_PROVIDER)).thenReturn("http-basic-auth");
-        when(requestContext.getProperty(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER)).thenReturn(user);
-        when(requestContext.getProperty(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD)).thenReturn(password);
+        when(requestContext.getProperty(EndpointConfig.PROPERTY_OUTBOUND_ID)).thenReturn(user);
+        when(requestContext.getProperty(EndpointConfig.PROPERTY_OUTBOUND_SECRET)).thenReturn(password);
         when(requestContext.getUri()).thenReturn(URI.create("http://localhost:7070/test"));
         when(requestContext.getStringHeaders()).thenReturn(new MultivaluedHashMap<>());
         when(requestContext.getHeaders()).thenReturn(jerseyHeaders);
         when(requestContext.getPropertyNames()).thenReturn(List.of(
                 ClientSecurity.PROPERTY_CONTEXT,
                 ClientSecurity.PROPERTY_PROVIDER,
-                HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER,
-                HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD
+                EndpointConfig.PROPERTY_OUTBOUND_ID,
+                EndpointConfig.PROPERTY_OUTBOUND_SECRET
         ));
 
         ClientSecurityFilter csf = new ClientSecurityFilter();

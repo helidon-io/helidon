@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,9 @@ import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SynchronousProvider;
 import io.helidon.security.util.TokenHandler;
 
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_ID;
+import static io.helidon.security.EndpointConfig.PROPERTY_OUTBOUND_SECRET;
+
 /**
  * Http authentication security provider.
  * Provides support for username and password authentication, with support for roles list.
@@ -59,12 +62,18 @@ import io.helidon.security.util.TokenHandler;
 public class HttpBasicAuthProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     /**
      * Configure this for outbound requests to override user to use.
+     * @deprecated use {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID} instead,
+     *          the value will change in 4.x as well
      */
+    @Deprecated(since = "3.2.3", forRemoval = true)
     public static final String EP_PROPERTY_OUTBOUND_USER = "io.helidon.security.outbound.user";
 
     /**
      * Configure this for outbound requests to override password to use.
+     * @deprecated use {@link io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_SECRET} instead,
+     *          the value will change in 4.x as well
      */
+    @Deprecated(since = "3.2.3", forRemoval = true)
     public static final String EP_PROPERTY_OUTBOUND_PASSWORD = "io.helidon.security.outbound.password";
 
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
@@ -130,7 +139,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                        EndpointConfig outboundEp) {
 
         // explicitly overridden username and/or password
-        if (outboundEp.abacAttributeNames().contains(EP_PROPERTY_OUTBOUND_USER)) {
+        if (outboundEp.abacAttributeNames().contains(PROPERTY_OUTBOUND_ID)) {
             return true;
         }
 
@@ -143,7 +152,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                                                     EndpointConfig outboundEp) {
 
         // explicit username in request properties
-        Optional<Object> maybeUsername = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_USER);
+        Optional<Object> maybeUsername = outboundEp.abacAttribute(PROPERTY_OUTBOUND_ID);
         if (maybeUsername.isPresent()) {
             String username = maybeUsername.get().toString();
             char[] password = passwordFromEndpoint(outboundEp);
@@ -183,7 +192,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                         .flatMap(this::credentialsFromSubject);
             }
 
-            Optional<char[]> overridePassword = outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+            Optional<char[]> overridePassword = outboundEp.abacAttribute(PROPERTY_OUTBOUND_SECRET)
                     .map(String::valueOf)
                     .map(String::toCharArray);
 
@@ -202,7 +211,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
     }
 
     private char[] passwordFromEndpoint(EndpointConfig outboundEp) {
-        return outboundEp.abacAttribute(EP_PROPERTY_OUTBOUND_PASSWORD)
+        return outboundEp.abacAttribute(PROPERTY_OUTBOUND_SECRET)
                 .map(String::valueOf)
                 .map(String::toCharArray)
                 .orElse(HttpBasicOutboundConfig.EMPTY_PASSWORD);

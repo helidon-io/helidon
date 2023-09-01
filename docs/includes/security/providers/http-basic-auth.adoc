@@ -97,8 +97,8 @@ Subject is created based on the username and roles provided by the user store.
 When identity propagation is configured, there are several options for identifying username and password to propagate:
 
 1. We propagate the current username and password (inbound request must be authenticated using basic authentication).
-2. We use username and password from an explicitly configured property (See `HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER`
-    and `HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD`)
+2. We use username and password from an explicitly configured property (See `EndpointConfig.PROPERTY_OUTBOUND_ID`
+    and `EndpointConfig.PROPERTY_OUTBOUND_SECRET`)
 3. We use username and password associated with an outbound target (see example configuration above)
 
 Identity is propagated only if:

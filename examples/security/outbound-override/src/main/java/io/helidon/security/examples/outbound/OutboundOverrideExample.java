@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package io.helidon.security.examples.outbound;
 import java.util.concurrent.CompletionStage;
 
 import io.helidon.config.Config;
+import io.helidon.security.EndpointConfig;
 import io.helidon.security.Principal;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.Subject;
 import io.helidon.security.integration.webserver.WebSecurity;
-import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerRequest;
 import io.helidon.webserver.ServerResponse;
@@ -93,8 +93,8 @@ public final class OutboundOverrideExample {
         SecurityContext context = getSecurityContext(req);
 
         webTarget(servingPort)
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, "jill")
-                .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, "anotherPassword")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_ID, "jill")
+                .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "anotherPassword")
                 .request(String.class)
                 .thenAccept(result -> res.send("You are: " + context.userName()
                                                        + ", backend service returned: " + result + "\n"))

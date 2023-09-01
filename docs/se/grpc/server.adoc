@@ -757,8 +757,8 @@ Security security = Security.builder()  // <1>
         .build();
 
 GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client")) // <2>
-        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, user)
-        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+        .property(EndpointConfig.PROPERTY_OUTBOUND_ID, user)
+        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
         .build();
 
 ClientServiceDescriptor descriptor = ClientServiceDescriptor // <3>
@@ -784,8 +784,8 @@ property expected by the basic auth provider.
 .Example configuring client security for a specific method
 ----
 GrpcClientSecurity clientSecurity = GrpcClientSecurity.builder(security.createContext("test.client")) // <1>
-        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_USER, user)
-        .property(HttpBasicAuthProvider.EP_PROPERTY_OUTBOUND_PASSWORD, password)
+        .property(EndpointConfig.PROPERTY_OUTBOUND_ID, user)
+        .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, password)
         .build();
 
 ClientServiceDescriptor descriptor = ClientServiceDescriptor // <2>
