@@ -35,13 +35,13 @@ ifeval::["{helidon-version-is-release}" == "true"]
 endif::[]
 
 // versions
-:version-plugin-helidon: 4.0.0-SNAPSHOT
+:version-plugin-helidon: 3.0.5
 
 :version-lib-microprofile-api: 5.0
 
 // microprofile specifications
-:version-lib-microprofile-lra-api: 2.0-RC1
-:version-lib-microprofile-config: 3.0.2
+:version-lib-microprofile-lra-api: 2.0
+:version-lib-microprofile-config: 3.0.3
 :version-lib-microprofile-fault-tolerance-api: 4.0.2
 :version-lib-microprofile-graphql: 2.0
 :version-lib-microprofile-health: 4.0
@@ -49,7 +49,7 @@ endif::[]
 :version-lib-microprofile-metrics-api: 5.0.1
 :version-lib-microprofile-openapi-api: 3.1
 :version-lib-microprofile-reactive-messaging-api: 3.0
-:version-lib-microprofile-rs-operators-api: 3.0
+:version-lib-microprofile-rs-operators-api: 3.1.1
 :version-lib-microprofile-rest-client: 3.0
 :version.lib.microprofile-telemetry-tck: 1.0
 :version-lib-microprofile-tracing: 3.0
@@ -71,7 +71,7 @@ endif::[]
 :version-lib-jaeger: 1.22
 :version-lib-jedis: 3.6.3
 :version-lib-hikaricp: 5.0.1
-:version-lib-eclipselink: 4.0.1
+:version-lib-eclipselink: 4.0.2
 :version-lib-hibernate: 6.1.7.Final
 :version-lib-oracle-jdbc: 21
 :version-lib-oracle-ucp: {version-lib-oracle-jdbc}
