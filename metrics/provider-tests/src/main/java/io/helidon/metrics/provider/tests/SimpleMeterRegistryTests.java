@@ -49,6 +49,7 @@ class SimpleMeterRegistryTests {
         meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
     }
 
+    // TODO metrics
     @DisabledIfEnvironmentVariable(named = "PIPELINE", matches = "true")
     @Test
     void testConflictingMeterType() {
