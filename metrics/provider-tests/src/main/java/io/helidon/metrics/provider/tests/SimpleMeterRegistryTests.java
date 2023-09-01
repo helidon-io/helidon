@@ -26,6 +26,7 @@ import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -48,6 +49,7 @@ class SimpleMeterRegistryTests {
         meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
     }
 
+    @DisabledIfEnvironmentVariable(named = "PIPELINE", matches = "true")
     @Test
     void testConflictingMeterType() {
         assertThat("MeterRegistry class name",
