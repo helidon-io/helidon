@@ -28,7 +28,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -46,10 +50,22 @@ class SimpleMeterRegistryTests {
 
     @Test
     void testConflictingMetadata() {
-        meterRegistry.getOrCreate(Counter.builder("b"));
+        assertThat("MeterRegistry class name",
+                   meterRegistry.getClass().getSimpleName(),
+                   equalTo("MMeterRegistry"));
 
-        assertThrows(IllegalArgumentException.class, () ->
-                meterRegistry.getOrCreate(Timer.builder("b")));
+        Counter counter = meterRegistry.getOrCreate(Counter.builder("b"));
+        assertThat("Counter", counter, notNullValue());
+        assertThat("Counter", counter.getClass().getSimpleName(), equalTo("MCounter"));
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            assertThat("Meter registry before adding timer", meterRegistry.meters(), not(empty()));
+
+            if (meterRegistry.meters().isEmpty()) {
+                throw new IllegalStateException("Meter registry is unexpectedly empty");
+            }
+            Timer timer = meterRegistry.getOrCreate(Timer.builder("b"));
+        });
     }
 
     @Test
