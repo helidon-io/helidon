@@ -49,7 +49,7 @@ class SimpleMeterRegistryTests {
     }
 
     @Test
-    void testConflictingMetadata() {
+    void testConflictingMeterType() {
         assertThat("MeterRegistry class name",
                    meterRegistry.getClass().getSimpleName(),
                    equalTo("MMeterRegistry"));
@@ -60,11 +60,7 @@ class SimpleMeterRegistryTests {
 
         assertThrows(IllegalArgumentException.class, () -> {
             assertThat("Meter registry before adding timer", meterRegistry.meters(), not(empty()));
-
-            if (meterRegistry.meters().isEmpty()) {
-                throw new IllegalStateException("Meter registry is unexpectedly empty");
-            }
-            Timer timer = meterRegistry.getOrCreate(Timer.builder("b"));
+            meterRegistry.getOrCreate(Timer.builder("b"));
         });
     }
 
