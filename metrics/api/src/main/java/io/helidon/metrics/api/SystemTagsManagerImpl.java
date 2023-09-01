@@ -83,7 +83,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     // for testing
     private SystemTagsManagerImpl() {
         systemTags = List.of();
-        scopeTagName = "_unset_";
+        scopeTagName = "scope";
     }
 
     /**

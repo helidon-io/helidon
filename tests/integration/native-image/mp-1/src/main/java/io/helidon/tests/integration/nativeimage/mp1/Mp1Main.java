@@ -547,7 +547,7 @@ public final class Mp1Main {
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
 
-        int count = vendor.getInt("requests.count");
+        int count = vendor.getInt("requests.count;mp_scope=vendor");
         if (count == 0) {
             collector.fatal("Vendor metric \"requests.count\" must not be zero");
         }
