@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.oci.tls.certificates.spi;
 
-import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Objects;
 
 import io.helidon.inject.api.Contract;
@@ -33,7 +33,7 @@ public interface OciCertificatesDownloader {
      * @param certOcid the cert ocid
      * @return the downloaded certificate chain
      * @throws IllegalStateException if there is any errors loading the key
-     * @see #create(String, Certificate[])
+     * @see #create(String, X509Certificate[])
      */
     Certificates loadCertificates(String certOcid);
 
@@ -44,7 +44,7 @@ public interface OciCertificatesDownloader {
      * @return the downloaded CA certificate
      * @throws IllegalStateException if there is any errors loading the key
      */
-    Certificate loadCACertificate(String caCertOcid);
+    X509Certificate loadCACertificate(String caCertOcid);
 
     /**
      * Creates a Certificates instance given its version and array of certificates. The version is used to identify change - the
@@ -55,7 +55,7 @@ public interface OciCertificatesDownloader {
      * @return a certificates wrapper
      */
     static Certificates create(String version,
-                               Certificate[] certificates) {
+                               X509Certificate[] certificates) {
         if (Objects.requireNonNull(version, "Version is required").isBlank()) {
             throw new IllegalArgumentException();
         }
@@ -68,10 +68,10 @@ public interface OciCertificatesDownloader {
      */
     class Certificates {
         private final String version;
-        private final Certificate[] certificates;
+        private final X509Certificate[] certificates;
 
         private Certificates(String version,
-                             Certificate[] certificates) {
+                             X509Certificate[] certificates) {
             this.version = version;
             this.certificates = certificates;
         }
@@ -90,7 +90,7 @@ public interface OciCertificatesDownloader {
          *
          * @return certificates
          */
-        public Certificate[] certificates() {
+        public X509Certificate[] certificates() {
             return certificates;
         }
     }

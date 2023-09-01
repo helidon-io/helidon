@@ -20,12 +20,13 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.pki.PemReader;
 import io.helidon.integrations.oci.sdk.runtime.OciExtension;
 import io.helidon.integrations.oci.tls.certificates.spi.OciCertificatesDownloader;
 
@@ -49,22 +50,22 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
         Objects.requireNonNull(certOcid);
         try {
             return loadCerts(certOcid);
-        } catch (CertificateException e) {
+        } catch (RuntimeException e) {
             throw new IllegalStateException("Failed to load certificate ocid: " + certOcid, e);
         }
     }
 
     @Override
-    public Certificate loadCACertificate(String caCertOcid) {
+    public X509Certificate loadCACertificate(String caCertOcid) {
         Objects.requireNonNull(caCertOcid);
         try {
             return loadCACert(caCertOcid);
-        } catch (CertificateException e) {
+        } catch (RuntimeException e) {
             throw new IllegalStateException("Failed to load ca certificate ocid: " + caCertOcid, e);
         }
     }
 
-    static Certificates loadCerts(String certOcid) throws CertificateException {
+    static Certificates loadCerts(String certOcid) {
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(OciExtension.ociAuthenticationProvider().get())) {
             GetCertificateBundleResponse res =
@@ -75,13 +76,13 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
                                                                             .getBytes(StandardCharsets.US_ASCII));
             ByteArrayInputStream certIs = new ByteArrayInputStream(res.getCertificateBundle().getCertificatePem()
                                                                            .getBytes(StandardCharsets.US_ASCII));
-            Certificate[] certs = toCertificates(chainIs, certIs);
+            X509Certificate[] certs = toCertificates(chainIs, certIs);
             String version = toVersion(res.getEtag(), certs);
             return create(version, certs);
         }
     }
 
-    static Certificate loadCACert(String caCertOcid) throws CertificateException {
+    static X509Certificate loadCACert(String caCertOcid) {
         GetCertificateAuthorityBundleResponse res;
         try (CertificatesClient client = CertificatesClient.builder()
                 .build(OciExtension.ociAuthenticationProvider().get())) {
@@ -89,26 +90,26 @@ class DefaultOciCertificatesDownloader implements OciCertificatesDownloader {
                                                                .certificateAuthorityId(caCertOcid)
                                                                .build());
 
-            byte[] pemBytes = res.getCertificateAuthorityBundle().getCertificatePem()
-                    .getBytes(StandardCharsets.US_ASCII);
-            ByteArrayInputStream certIs = new ByteArrayInputStream(pemBytes);
+            ByteArrayInputStream certIs = new ByteArrayInputStream(res.getCertificateAuthorityBundle().getCertificatePem()
+                    .getBytes(StandardCharsets.US_ASCII));
             return toCertificate(certIs);
         }
     }
 
-    static Certificate[] toCertificates(InputStream chainIs,
-                                        InputStream certIs) throws CertificateException {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Certificate cert = cf.generateCertificate(certIs);
-        ArrayList<Certificate> chain = new ArrayList<>();
-        chain.add(cert);
-        chain.addAll(cf.generateCertificates(chainIs));
-        return chain.toArray(new Certificate[0]);
+    static X509Certificate[] toCertificates(InputStream chainIs,
+                                            InputStream certIs) {
+        ArrayList<X509Certificate> chain = new ArrayList<>();
+        chain.addAll(PemReader.readCertificates(certIs));
+        chain.addAll(PemReader.readCertificates(chainIs));
+        return chain.toArray(new X509Certificate[0]);
     }
 
-    static Certificate toCertificate(InputStream certIs) throws CertificateException {
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        return cf.generateCertificate(certIs);
+    static X509Certificate toCertificate(InputStream certIs) {
+        List<X509Certificate> certs = PemReader.readCertificates(certIs);
+        if (certs.size() != 1) {
+            throw new IllegalStateException("Expected a single certificate in stream but found: " + certs.size());
+        }
+        return certs.get(0);
     }
 
     // use the eTag, defaulting to the hash of the certs if not present

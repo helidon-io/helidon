@@ -47,7 +47,7 @@ import javax.crypto.spec.PBEKeySpec;
 /**
  * Reads a PEM file and converts it into a list of DERs so that they are imported into a {@link java.security.KeyStore} easily.
  */
-final class PemReader {
+public final class PemReader {
     private static final System.Logger LOGGER = System.getLogger(PemReader.class.getName());
 
     private static final Pattern CERT_PATTERN = Pattern.compile(
@@ -67,6 +67,54 @@ final class PemReader {
             Pattern.CASE_INSENSITIVE);
 
     private PemReader() {
+    }
+
+    /**
+     * Reads a certificate-based input stream and converts it to a list of {@link X509Certificate}s.
+     *
+     * @param certStream cert input stream
+     * @return list of certificates
+     */
+    public static List<X509Certificate> readCertificates(InputStream certStream) {
+        CertificateFactory cf;
+        try {
+            cf = CertificateFactory.getInstance("X.509");
+        } catch (CertificateException e) {
+            throw new PkiException("Failed to create certificate factory", e);
+        }
+        String content;
+        try {
+            content = readContent(certStream);
+        } catch (IOException e) {
+            throw new PkiException("Failed to read certificate input stream", e);
+        } finally {
+            safeClose(certStream);
+        }
+
+        List<X509Certificate> certs = new ArrayList<>();
+        Matcher m = CERT_PATTERN.matcher(content);
+        int start = 0;
+        while (true) {
+            if (!m.find(start)) {
+                break;
+            }
+
+            byte[] base64 = m.group(1).getBytes(StandardCharsets.US_ASCII);
+            byte[] der = Base64.getMimeDecoder().decode(base64);
+            try {
+                certs.add((X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der)));
+            } catch (Exception e) {
+                throw new PkiException("Failed to read certificate from bytes", e);
+            }
+
+            start = m.end();
+        }
+
+        if (certs.isEmpty()) {
+            throw new PkiException("Found no certificates in input stream");
+        }
+
+        return certs;
     }
 
     static PublicKey readPublicKey(InputStream input) {
@@ -143,54 +191,11 @@ final class PemReader {
     }
 
     private static PrivateKey rsaPrivateKey(KeySpec keySpec) {
-
         try {
             return KeyFactory.getInstance("RSA").generatePrivate(keySpec);
         } catch (Exception e) {
             throw new PkiException("Failed to get RSA private key", e);
         }
-    }
-
-    static List<X509Certificate> readCertificates(InputStream certStream) {
-        CertificateFactory cf;
-        try {
-            cf = CertificateFactory.getInstance("X.509");
-        } catch (CertificateException e) {
-            throw new PkiException("Failed to create certificate factory", e);
-        }
-        String content;
-        try {
-            content = readContent(certStream);
-        } catch (IOException e) {
-            throw new PkiException("Failed to read certificate input stream", e);
-        } finally {
-            safeClose(certStream);
-        }
-
-        List<X509Certificate> certs = new ArrayList<>();
-        Matcher m = CERT_PATTERN.matcher(content);
-        int start = 0;
-        while (true) {
-            if (!m.find(start)) {
-                break;
-            }
-
-            byte[] base64 = m.group(1).getBytes(StandardCharsets.US_ASCII);
-            byte[] der = Base64.getMimeDecoder().decode(base64);
-            try {
-                certs.add((X509Certificate) cf.generateCertificate(new ByteArrayInputStream(der)));
-            } catch (Exception e) {
-                throw new PkiException("Failed to read certificate from bytes", e);
-            }
-
-            start = m.end();
-        }
-
-        if (certs.isEmpty()) {
-            throw new PkiException("Found no certificates in input stream");
-        }
-
-        return certs;
     }
 
     private static KeySpec generateKeySpec(byte[] keyBytes, char[] password) {

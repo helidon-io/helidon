@@ -19,8 +19,7 @@ package io.helidon.integrations.oci.tls.certificates;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.security.GeneralSecurityException;
-import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -54,7 +53,7 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
                 Objects.requireNonNull(certOcid);
                 try (InputStream certIs =
                         TestOciCertificatesDownloader.class.getClassLoader().getResourceAsStream("test-keys/serverCert.pem")) {
-                    return OciCertificatesDownloader.create(version, new Certificate[] {toCertificate(certIs)});
+                    return OciCertificatesDownloader.create(version, new X509Certificate[] {toCertificate(certIs)});
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -66,7 +65,7 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
     }
 
     @Override
-    public Certificate loadCACertificate(String caCertOcid) {
+    public X509Certificate loadCACertificate(String caCertOcid) {
         callCount_loadCACertificate++;
 
         try {
@@ -82,7 +81,7 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
                     throw new UncheckedIOException(e);
                 }
             }
-        } catch (InterruptedException | GeneralSecurityException e) {
+        } catch (InterruptedException e) {
             System.getLogger(getClass().getName()).log(System.Logger.Level.ERROR, e.getMessage(), e);
             throw new IllegalStateException(e);
         }
