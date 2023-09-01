@@ -36,6 +36,7 @@ import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.api.ClientConnection;
@@ -56,9 +57,11 @@ import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
 This class uses package local API to validate connection cache, and at the same time benefits from @ServerTest
@@ -76,9 +79,11 @@ class Http1ClientTest {
 
     private final String baseURI;
     private final WebClient injectedHttp1client;
+    private final int plainPort;
 
     Http1ClientTest(WebServer webServer, WebClient client) {
         baseURI = "http://localhost:" + webServer.port();
+        this.plainPort = webServer.port();
         injectedHttp1client = client;
     }
 
@@ -375,6 +380,22 @@ class Http1ClientTest {
                                                         .submit(testEntity));
         assertThat(ste.getCause(), instanceOf(SocketTimeoutException.class));
     }
+
+    @Test
+    void testSchemeValidation() {
+        try (var r = Http1Client.builder()
+                .baseUri("test://localhost:" + plainPort + "/")
+                .shareConnectionCache(false)
+                .build()
+                .get("/")
+                .request()) {
+
+            fail("Should have failed because of invalid scheme.");
+        } catch (IllegalArgumentException e) {
+            assertThat(e.getMessage(), startsWith("Not supported scheme test"));
+        }
+    }
+
 
     private static void validateSuccessfulResponse(Http1Client client) {
         String requestEntity = "Sending Something";

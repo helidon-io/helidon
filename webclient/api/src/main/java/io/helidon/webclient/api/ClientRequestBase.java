@@ -24,6 +24,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,6 +57,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public static final Http.Header USER_AGENT_HEADER = Http.Headers.create(Http.HeaderNames.USER_AGENT,
                                                                             "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
+    private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
     private final Map<String, String> pathParams = new HashMap<>();
     private final HttpClientConfig clientConfig;
@@ -145,7 +147,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public ClientUri resolvedUri() {
         // we do not want to update our own URI, as this method may be called multiple times
-        return resolveUri(this.clientUri.copy());
+        return resolveUri(ClientUri.create(this.clientUri));
     }
 
     @Override
@@ -249,7 +251,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public R request() {
         headers.setIfAbsent(USER_AGENT_HEADER);
-        return doSubmit(BufferData.EMPTY_BYTES);
+        return validateAndSubmit(BufferData.EMPTY_BYTES);
     }
 
     @Override
@@ -258,7 +260,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
             rejectHeadWithEntity();
         }
         headers.setIfAbsent(USER_AGENT_HEADER);
-        return doSubmit(entity);
+        return validateAndSubmit(entity);
     }
 
     @Override
@@ -433,6 +435,18 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private static String nextRequestId(String protocolId) {
         AtomicLong counter = COUNTERS.computeIfAbsent(protocolId, it -> new AtomicLong());
         return "client-" + protocolId + "-" + Long.toHexString(counter.getAndIncrement());
+    }
+
+    private R validateAndSubmit(Object entity) {
+        if (!SUPPORTED_SCHEMES.contains(uri().scheme())) {
+            throw new IllegalArgumentException(
+                    String.format("Not supported scheme %s, client supported schemes are: %s",
+                                  uri().scheme(),
+                                  String.join(", ", SUPPORTED_SCHEMES)
+                    )
+            );
+        }
+        return doSubmit(entity);
     }
 
     private String resolvePathParams(String path) {

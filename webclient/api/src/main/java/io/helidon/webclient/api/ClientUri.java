@@ -17,7 +17,6 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
-import java.util.Set;
 
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
@@ -29,34 +28,30 @@ import io.helidon.common.uri.UriQueryWriteable;
  * URI abstraction for WebClient.
  */
 public class ClientUri implements UriInfo {
-    private static final Set<String> DEFAULT_SUPPORTED_SCHEMES = Set.of("http", "https");
     private final UriInfo base;
     private final UriQueryWriteable query;
 
     private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
 
-    protected ClientUri() {
+    private ClientUri() {
         this.base = null;
         this.query = UriQueryWriteable.create();
         this.uriBuilder = UriInfo.builder();
     }
 
-    protected ClientUri(ClientUri baseUri) {
-        validateScheme(baseUri.scheme());
+    private ClientUri(ClientUri baseUri) {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
         this.query = UriQueryWriteable.create().from(baseUri.query());
-        validateScheme(baseUri.scheme());
     }
 
-    protected ClientUri(UriInfo baseUri) {
+    private ClientUri(UriInfo baseUri) {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(baseUri);
         this.skipUriEncoding = false;
         this.query = UriQueryWriteable.create().from(baseUri.query());
-        validateScheme(baseUri.scheme());
     }
 
     /**
@@ -98,15 +93,6 @@ public class ClientUri implements UriInfo {
         return create().resolve(baseUri);
     }
 
-    /**
-     * Create copy of this client uri.
-     *
-     * @return copy of this client uri
-     */
-    public ClientUri copy() {
-        return ClientUri.create(this);
-    }
-
     @Override
     public String toString() {
         UriInfo info = uriBuilder.query(this.query).build();
@@ -135,7 +121,6 @@ public class ClientUri implements UriInfo {
      * @return updated instance
      */
     public ClientUri scheme(String scheme) {
-        validateScheme(scheme);
         uriBuilder.scheme(scheme);
         return this;
     }
@@ -197,7 +182,6 @@ public class ClientUri implements UriInfo {
         }
 
         if (uri.getScheme() != null) {
-            validateScheme(uri.getScheme());
             uriBuilder.scheme(uri.getScheme());
         }
         if (uri.getHost() != null) {
@@ -337,10 +321,6 @@ public class ClientUri implements UriInfo {
         return path;
     }
 
-    protected Set<String> supportedSchemes() {
-        return DEFAULT_SUPPORTED_SCHEMES;
-    }
-
     private String extractQuery(String path) {
         if (path != null) {
             int i = path.indexOf('?');
@@ -378,16 +358,5 @@ public class ClientUri implements UriInfo {
         return path
                 + "/"
                 + resolvePath;
-    }
-
-    private void validateScheme(String scheme) {
-        if (!supportedSchemes().contains(scheme)) {
-            throw new IllegalArgumentException(
-                    String.format("Not supported scheme %s, client supported schemes are: %s",
-                                  scheme,
-                                  String.join(", ", supportedSchemes())
-                    )
-            );
-        }
     }
 }

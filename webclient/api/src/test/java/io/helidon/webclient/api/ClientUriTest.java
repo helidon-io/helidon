@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientUriTest {
     @Test
@@ -104,13 +103,5 @@ class ClientUriTest {
         assertThat(helper.path(), is(UriPath.root()));
         assertThat(helper.port(), is(80));
         assertThat(helper.scheme(), is("https"));
-    }
-
-    @Test
-    void testSchemeValidation() {
-        ClientUri validClientUri = ClientUri.create(URI.create("http://localhost"));
-        assertThrows(IllegalArgumentException.class, () -> ClientUri.create(URI.create("ftp://localhost")));
-        assertThrows(IllegalArgumentException.class, () -> validClientUri.scheme("git"));
-        assertThrows(IllegalArgumentException.class, () -> validClientUri.resolve(URI.create("ldap://localhost")));
     }
 }

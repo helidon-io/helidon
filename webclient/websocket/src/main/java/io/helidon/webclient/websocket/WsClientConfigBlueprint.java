@@ -29,7 +29,6 @@ import io.helidon.webclient.api.HttpClientConfig;
  *         io.helidon.webclient.spi.ProtocolConfig)
  */
 @Prototype.Blueprint
-@Prototype.CustomMethods(WsClientConfigSupport.WsCustomMethods.class)
 @Configured
 interface WsClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<WsClient> {
     /**
