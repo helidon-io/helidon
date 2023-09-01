@@ -109,22 +109,16 @@ public class BadGaugeTest {
         assertThat(subCause.getMessage(), containsString("assignment-compatible with Number"));
     }
 
-    // TODO metrics
-    @Disabled
     @Test
     void testAppScoped() {
         goodTest(ApplicationScoped.Literal.INSTANCE);
     }
 
-    // TODO metrics
-    @Disabled
     @Test
     void testSingleton() {
         goodTest(SingletonLiteral.INSTANCE);
     }
 
-    // TODO metrics
-    @Disabled
     @Test
     void testDependentScope() {
         // this is questionable, but it may be reporting a static field
