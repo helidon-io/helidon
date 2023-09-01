@@ -136,6 +136,28 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
         }
     }
 
+    /**
+     * Annotation literal to inject base registry.
+     */
+    static class VendorRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
+
+        @Override
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.VENDOR;
+        }
+    }
+
+    /**
+     * Annotation literal to inject base registry.
+     */
+    static class ApplicationRegistryTypeLiteral extends AnnotationLiteral<RegistryType> implements RegistryType {
+
+        @Override
+        public MetricRegistry.Type type() {
+            return MetricRegistry.Type.APPLICATION;
+        }
+    }
+
     @Override
     public Class<HelidonContainerConfiguration> getConfigurationClass() {
         return HelidonContainerConfiguration.class;
@@ -580,10 +602,16 @@ public class HelidonDeployableContainer implements DeployableContainer<HelidonCo
      */
     private void cleanupBaseMetrics() {
         try {
-            MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class,
-                    new BaseRegistryTypeLiteral()).get();
-            Objects.requireNonNull(metricRegistry);
-            metricRegistry.removeMatching((m, v) -> true);
+            List.of(new BaseRegistryTypeLiteral(),
+                    new VendorRegistryTypeLiteral(),
+                    new ApplicationRegistryTypeLiteral())
+                    .forEach(literal -> {
+                        MetricRegistry metricRegistry = CDI.current().select(MetricRegistry.class,
+                                                                             literal).get();
+                        Objects.requireNonNull(metricRegistry);
+                        metricRegistry.removeMatching((m, v) -> true);
+                    });
+
         } catch (IllegalStateException | ResolutionException e) {
             // this may be a negative CDI test (e.g. when CDI is intended not to start)
             // in such cases, CDI will not be available

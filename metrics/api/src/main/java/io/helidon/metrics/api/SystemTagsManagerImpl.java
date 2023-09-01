@@ -30,6 +30,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
@@ -149,6 +150,29 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
+    public Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope) {
+        if (scopeTagName == null) {
+            return tags;
+        }
+        Map<String, Tag> tagsMap = new TreeMap<>();
+
+        if (defaultScopeValue != null) {
+            tagsMap.put(scopeTagName,
+                        Tag.create(scopeTagName,
+                                   defaultScopeValue));
+        }
+
+        tags.forEach(tag -> tagsMap.put(tag.key(), // If scope is set in a tag, the tag's value overrides the default in the map.
+                                        tag));
+
+        explicitScope.ifPresent(s -> tagsMap.put(scopeTagName,
+                                                 Tag.create(scopeTagName,
+                                                            explicitScope.get())));
+
+        return tagsMap.values();
+    }
+
+    @Override
     public Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope) {
         if (scopeTagName == null) {
             return tags;
@@ -179,6 +203,13 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
+    public Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags) {
+        return explicitScope
+                .or(() -> scopeFromTags(tags))
+                .or(() -> Optional.ofNullable(defaultScopeValue));
+    }
+
+    @Override
     public Optional<String> scopeTagName() {
         return Optional.ofNullable(scopeTagName);
     }
@@ -188,6 +219,15 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
         reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
         return reservedTagNamesUsed;
+    }
+
+    private Optional<String> scopeFromTags(Iterable<Tag> tags) {
+        return (scopeTagName != null)
+                ? StreamSupport.stream(tags.spliterator(), false)
+                .filter(tag -> tag.key().equals(scopeTagName))
+                .findAny()
+                .map(Tag::value)
+                : Optional.empty();
     }
 
     static class MultiIterable<T> implements Iterable<T> {

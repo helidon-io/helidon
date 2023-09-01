@@ -75,6 +75,16 @@ public interface SystemTagsManager {
     Iterable<Map.Entry<String, String>> withScopeTag(Iterable<Map.Entry<String, String>> tags, String scope);
 
     /**
+     * Augments, if necessary, the provided tags with an additional tag with the scope tag name and value from the explicit
+     * scope provided, an existing tag, or the default scope value, if configured.
+     *
+     * @param tags original tags
+     * @param explicitScope explicit scope setting if available
+     * @return tags containing a tag for the scope
+     */
+    Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope);
+
+    /**
      * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting the tag representing the scope,
      * if any appears in the provided tags.
      *
@@ -116,6 +126,16 @@ public interface SystemTagsManager {
      * @return effective scope, preferring the candidate and falling back to the default; empty if neither is present
      */
     Optional<String> effectiveScope(Optional<String> candidateScope);
+
+    /**
+     * Returns the effective scope, given the provided explicit setting and tags (which might specify the scope) combined with
+     * any default scope value in the configuration which was used to initialize this system tags manager.
+     *
+     * @param explicitScope explicit scope to use (if present)
+     * @param tags tag which might specify the scope using the configured scope tag name
+     * @return effective scope; empty if none available from the arguments or the system default
+     */
+    Optional<String> effectiveScope(Optional<String> explicitScope, Iterable<Tag> tags);
 
     /**
      * Returns the scope tag name derived from configuration.

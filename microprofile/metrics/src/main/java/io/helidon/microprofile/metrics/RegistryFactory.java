@@ -19,6 +19,7 @@ package io.helidon.microprofile.metrics;
 import java.lang.System.Logger.Level;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -114,7 +115,8 @@ class RegistryFactory {
     static void erase() {
         RegistryFactory rf = REGISTRY_FACTORY.get();
         if (rf != null) {
-            for (Registry r : rf.registries.values()) {
+            Collection<Registry> registries = List.copyOf(rf.registries.values());
+            for (Registry r : registries) {
                 r.clear();
             }
             rf.registries.clear();

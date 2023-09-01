@@ -205,5 +205,10 @@ class MDistributionSummary extends MMeter<io.micrometer.core.instrument.Distribu
             other.scale().ifPresent(this::scale);
             return this;
         }
+
+        @Override
+        protected Class<? extends Meter> meterType() {
+            return DistributionSummary.class;
+        }
     }
 }

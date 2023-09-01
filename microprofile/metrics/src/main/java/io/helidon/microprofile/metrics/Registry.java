@@ -580,7 +580,9 @@ class Registry implements MetricRegistry {
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
         io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(counterBuilder);
-        return (HelidonCounter) metricsByDelegate.get(delegate);
+        HelidonCounter result = (HelidonCounter) metricsByDelegate.get(delegate);
+        return result;
+//        return (HelidonCounter) metricsByDelegate.get(delegate);
     }
 
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {

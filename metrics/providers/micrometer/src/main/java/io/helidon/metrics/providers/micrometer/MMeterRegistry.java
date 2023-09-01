@@ -296,27 +296,27 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter meter) {
-        return remove(meter.id());
+        return internalRemove(meter.id(), meter.scope());
     }
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter.Id id) {
-        return internalRemove(id.name(), id.tags());
+        return internalRemove(id, Optional.empty());
     }
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<io.helidon.metrics.api.Tag> tags) {
-        return internalRemove(name, tags);
+        return internalRemove(MMeter.PlainId.create(name, tags), Optional.empty());
     }
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter.Id id, String scope) {
-        return internalRemove(id.name(), id.tags(), Optional.ofNullable(scope));
+        return internalRemove(id, Optional.ofNullable(scope));
     }
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(String name, Iterable<io.helidon.metrics.api.Tag> tags, String scope) {
-        return internalRemove(name, tags, Optional.ofNullable(scope));
+        return internalRemove(MMeter.PlainId.create(name, tags), Optional.ofNullable(scope));
     }
 
     @Override
@@ -438,13 +438,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             Function<Tag, ?> builderTagSetter,
             Function<io.micrometer.core.instrument.MeterRegistry, M> registration) {
 
-        io.helidon.metrics.api.Meter.Id id = mBuilder.id();
-
-        MMeter<?> foundMeter = metersById.get(id);
-        if (foundMeter != null) {
-            return (HM) foundMeter;
-        }
-
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
         Optional<String> effectiveScope = SystemTagsManager.instance()
                 .effectiveScope(mBuilder.scope());
@@ -452,6 +445,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // If there is a usable scope value, add a tag to the builder if configuration has a scope tag name.
         effectiveScope.ifPresent(realScope -> SystemTagsManager.instance()
                 .assignScope(realScope, builderTagSetter));
+
+        io.helidon.metrics.api.Meter.Id id = mBuilder.id();
+
+        MMeter<?> foundMeter = metersById.get(id);
+        if (foundMeter != null) {
+            if (!mBuilder.meterType().isInstance(foundMeter)) {
+                throw new IllegalArgumentException("Attempt to get or create a meter of type " + mBuilder.meterType().getName()
+                                                           + " when an existing meter " + id + " has an incompatible type " + foundMeter.getClass()
+                        .getName());
+            }
+            return (HM) foundMeter;
+        }
 
         lock.lock();
         try {
@@ -554,26 +559,23 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 .or(scopingConfig::defaultValue);
     }
 
-    private Optional<io.helidon.metrics.api.Meter> internalRemove(String name,
-                                                                  Iterable<io.helidon.metrics.api.Tag> tags) {
-        return internalRemove(name,
-                              tags,
-                              SystemTagsManager.instance().effectiveScope(Optional.empty()));
-    }
-
-    private Optional<io.helidon.metrics.api.Meter> internalRemove(String name,
-                                                                  Iterable<io.helidon.metrics.api.Tag> tags,
+    /**
+     * Remove the meter specified by the ID, using the provided scope (if present) as the scope of the meter.
+     *
+     * @param id {@link io.helidon.metrics.api.Meter.Id} for the meter to remove
+     * @param scope definitive scope (if present)
+     * @return the removed meter if it was found to be removed; empty otherwise
+     */
+    private Optional<io.helidon.metrics.api.Meter> internalRemove(io.helidon.metrics.api.Meter.Id id,
                                                                   Optional<String> scope) {
-        List<io.helidon.metrics.api.Tag> tagList = Util.list(tags);
 
-        // We add a scope tag to the Micrometer meter's ID when we register it, so to find it there by ID
-        // we need to add the scope tag to the search criteria.
-        scope.ifPresent(validScope -> SystemTagsManager.instance()
-                .assignScope(validScope, tag -> tagList.add(io.helidon.metrics.api.Tag.create(tag.key(),
-                                                                                              tag.value()))));
+        // Create an ID to use for searching. It will need to have the scope tag if one was specified in the original ID's tags
+        // or if the system tags manager says that a scope tag is enabled.
 
-        Meter nativeMeter = delegate.find(name)
-                .tags(MTag.tags(tagList))
+        Iterable<io.helidon.metrics.api.Tag> tags = SystemTagsManager.instance().withScopeTag(id.tags(), scope);
+
+        Meter nativeMeter = delegate.find(id.name())
+                .tags(MTag.tags(tags))
                 .meter();
 
         lock.lock();
@@ -665,7 +667,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private io.helidon.metrics.api.Meter.Id neutralId(Meter.Id micrometerId) {
         return MMeter.PlainId.create(micrometerId.getName(),
-                                         MTag.neutralTags(micrometerId.getTags()));
+                                     MTag.neutralTags(micrometerId.getTags()));
     }
 
     private void recordNewMeter(io.helidon.metrics.api.Meter.Id id,

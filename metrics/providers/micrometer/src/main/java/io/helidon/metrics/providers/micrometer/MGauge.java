@@ -138,6 +138,11 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
         protected Builder(String name, io.micrometer.core.instrument.Gauge.Builder<?> delegate) {
             super(name, delegate);
         }
+
+        @Override
+        protected Class<? extends Meter> meterType() {
+            return Gauge.class;
+        }
     }
 
     static class SupplierBased<N extends Number> extends MGauge<N> {

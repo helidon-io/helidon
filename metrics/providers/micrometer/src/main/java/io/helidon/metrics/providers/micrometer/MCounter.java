@@ -17,6 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Optional;
 
+import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 
 
@@ -113,6 +114,11 @@ class MCounter extends MMeter<io.micrometer.core.instrument.Counter> implements 
         protected Builder delegateBaseUnit(String baseUnit) {
             delegate().baseUnit(baseUnit);
             return identity();
+        }
+
+        @Override
+        protected Class<? extends Meter> meterType() {
+            return Counter.class;
         }
     }
 }

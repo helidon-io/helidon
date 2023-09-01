@@ -128,5 +128,10 @@ class MFunctionalCounter extends MMeter<io.micrometer.core.instrument.FunctionCo
         public MFunctionalCounter build(Meter.Id id, io.micrometer.core.instrument.FunctionCounter functionCounter) {
             return new MFunctionalCounter(id, functionCounter, this);
         }
+
+        @Override
+        protected Class<? extends Meter> meterType() {
+            return FunctionalCounter.class;
+        }
     }
 }

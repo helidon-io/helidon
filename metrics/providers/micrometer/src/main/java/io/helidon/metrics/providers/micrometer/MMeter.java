@@ -259,6 +259,8 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         protected abstract HM build(Meter.Id id, M meter);
 
+        protected abstract Class<? extends Meter> meterType();
+
     }
 
     static class Id implements Meter.Id {

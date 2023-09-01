@@ -277,6 +277,11 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
             return new MTimer(id, meter, this);
         }
 
+        @Override
+        protected Class<? extends Meter> meterType() {
+            return Timer.class;
+        }
+
         Builder from(Timer.Builder other) {
             percentiles = iterToArray(other.percentiles());
             buckets = StreamSupport.stream(other.buckets().spliterator(), false).toList().toArray(new Duration[0]);
