@@ -57,8 +57,6 @@ module io.helidon.microprofile.metrics {
             with io.helidon.microprofile.metrics.MpMetricsProgrammaticConfig;
     provides io.helidon.metrics.spi.MeterRegistryLifeCycleListener
             with io.helidon.microprofile.metrics.RegistryFactoryManager;
-    provides io.helidon.metrics.spi.InitialMetersConsumer
-            with io.helidon.microprofile.metrics.InitialBuildersStore;
 
     uses io.helidon.metrics.spi.ExemplarService;
 }

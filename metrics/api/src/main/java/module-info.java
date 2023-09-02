@@ -44,7 +44,6 @@ import io.helidon.common.features.api.HelidonFlavor;
     uses io.helidon.metrics.api.MetricsFactory;
 
     uses io.helidon.metrics.spi.MetersProvider;
-    uses io.helidon.metrics.spi.InitialMetersConsumer;
 
     uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 }
