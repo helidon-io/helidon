@@ -16,6 +16,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -161,7 +162,9 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public void close() {
-        meterRegistries.forEach(MMeterRegistry::close);
+        List<MMeterRegistry> registries = List.copyOf(meterRegistries);
+        registries.forEach(MMeterRegistry::close);
+        meterRegistries.clear();
         globalMeterRegistry = null;
     }
 

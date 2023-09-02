@@ -64,8 +64,7 @@
         <profile>
             <id>tck-ft</id>
             <modules>
-<!--                TODO metrics hangs with metrics changes - comment out temporarily to check other TCKs-->
-<!--                <module>tck-fault-tolerance</module>-->
+                <module>tck-fault-tolerance</module>
             </modules>
         </profile>
     </profiles>

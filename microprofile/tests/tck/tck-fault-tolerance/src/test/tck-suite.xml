@@ -26,6 +26,17 @@
     <test name="microprofile-fault-tolerance 4.0 TCK">
         <packages>
             <package name="org.eclipse.microprofile.fault.tolerance.tck.*"/>
+<!--            <package name="org.eclipse.microprofile.fault.tolerance.tck.*">-->
+<!--                <exclude name="org.eclipse.microprofile.fault.tolerance.tck.metrics"></exclude>-->
+<!--            </package>-->
         </packages>
+        <!-- TODO metrics because with CDI extension doing closeAll these tests hang -->
+<!--        <classes>-->
+<!--            <class name="org.eclipse.microprofile.fault.tolerance.tck.bulkhead.lifecycle.BulkheadLifecycleTest">-->
+<!--                <methods>-->
+<!--                    <exclude name="noSharingBetweenClasses" />-->
+<!--                </methods>-->
+<!--            </class>-->
+<!--        </classes>-->
     </test>
 </suite>

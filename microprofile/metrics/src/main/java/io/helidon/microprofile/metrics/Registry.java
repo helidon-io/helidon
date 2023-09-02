@@ -28,6 +28,7 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -362,14 +363,16 @@ class Registry implements MetricRegistry {
 
     @Override
     public Map<MetricID, Metric> getMetrics() {
-        return Map.copyOf(metricsById);
+        return access(() -> Map.copyOf(metricsById));
     }
 
     @Override
     public Map<String, Metadata> getMetadata() {
-        var result = new HashMap<String, Metadata>();
-        infoByName.forEach((key, value) -> result.put(key, value.metadata()));
-        return result;
+        return access(() -> {
+            var result = new HashMap<String, Metadata>();
+            infoByName.forEach((key, value) -> result.put(key, value.metadata()));
+            return result;
+        });
     }
 
     @Override
@@ -760,6 +763,17 @@ class Registry implements MetricRegistry {
                                               metricID.getTags().keySet(),
                                               tagNames));
             }
+        }
+    }
+
+    private <T> T access(Callable<T> callable) {
+        lock.lock();
+        try {
+            return callable.call();
+        } catch (Exception ex) {
+            throw new RuntimeException("Exception during locked data access", ex);
+        } finally {
+            lock.unlock();
         }
     }
 }

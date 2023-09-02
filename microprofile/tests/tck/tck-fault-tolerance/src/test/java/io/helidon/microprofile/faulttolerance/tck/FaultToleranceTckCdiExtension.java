@@ -15,15 +15,19 @@
  */
 package io.helidon.microprofile.faulttolerance.tck;
 
+import java.util.List;
+
 import io.helidon.metrics.api.MetricsFactory;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
 
 public class FaultToleranceTckCdiExtension implements Extension {
 
-    void after(@Observes BeforeShutdown shutdown) {
+    void cleanup(@Observes BeforeShutdown shutdown) {
         MetricsFactory.closeAll();
     }
 }
