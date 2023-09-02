@@ -46,7 +46,7 @@ class SimpleMeterRegistryTests {
     }
 
     // TODO metrics
-    @DisabledIfEnvironmentVariable(named = "PIPELINE", matches = "true")
+//    @DisabledIfEnvironmentVariable(named = "PIPELINE", matches = "true")
     @Test
     void testConflictingMeterType() {
         assertThat("MeterRegistry class name",
