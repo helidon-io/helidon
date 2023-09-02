@@ -42,4 +42,12 @@ public interface MetricsFactoryProvider {
      * @return new metrics factory
      */
     MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders);
+
+    /**
+     * Closes all metrics factories created by this provider.
+     * <p>
+     *     Applications do not normally need to invoke this method.
+     * </p>
+     */
+    void close();
 }

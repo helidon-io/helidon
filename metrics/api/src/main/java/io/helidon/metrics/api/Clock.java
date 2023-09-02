@@ -30,7 +30,7 @@ public interface Clock extends Wrapper {
      * @return the system clock
      */
     static Clock system() {
-        return MetricsFactoryManager.getInstance().clockSystem();
+        return MetricsFactoryManager.getMetricsFactory().clockSystem();
     }
 
     /**

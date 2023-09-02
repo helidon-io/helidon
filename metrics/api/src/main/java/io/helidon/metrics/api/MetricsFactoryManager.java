@@ -35,11 +35,11 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
  * {@link io.helidon.metrics.spi.MetricsFactoryProvider}, defaulting to a no-op implementation if no other is available.
  * <p>
- * The {@link #getInstance()} returns the metrics factory most recently created by invoking
- * {@link #getInstance(Config)}, which creates a new metrics factory using the provided config and also saves the
+ * The {@link #getMetricsFactory()} returns the metrics factory most recently created by invoking
+ * {@link #getMetricsFactory(Config)}, which creates a new metrics factory using the provided config and also saves the
  * resulting metrics factory as the most recent.
  * <p>
- * Invoking {@code getInstance()} (no argument) <em>before</em> invoking the variant with the
+ * Invoking {@code getMetricsFactory()} (no argument) <em>before</em> invoking the variant with the
  * {@link io.helidon.common.config.Config} parameter creates and saves a metrics factory using the
  * {@link io.helidon.common.config.GlobalConfig}.
  * <p>
@@ -88,7 +88,7 @@ class MetricsFactoryManager {
      */
     private static Config rootConfig;
     /**
-     * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getInstance} method.
+     * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getMetricsFactory} method.
      */
     private static MetricsFactory metricsFactory;
 
@@ -103,7 +103,7 @@ class MetricsFactoryManager {
      * @param rootConfig root config node
      * @return new metrics factory
      */
-    static MetricsFactory getInstance(Config rootConfig) {
+    static MetricsFactory getMetricsFactory(Config rootConfig) {
 
         MetricsFactoryManager.rootConfig = rootConfig;
 
@@ -121,11 +121,11 @@ class MetricsFactoryManager {
      *
      * @return current metrics factory
      */
-    static MetricsFactory getInstance() {
+    static MetricsFactory getMetricsFactory() {
         return access(() -> {
             rootConfig = Objects.requireNonNullElseGet(rootConfig, GlobalConfig::config);
             metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
-                                                           () -> getInstance(rootConfig));
+                                                           () -> getMetricsFactory(rootConfig));
             return metricsFactory;
         });
     }
@@ -144,13 +144,18 @@ class MetricsFactoryManager {
                                                      METER_PROVIDERS.get());
     }
 
+    static void closeAll() {
+        METRICS_FACTORY_PROVIDER.get().close();
+        metricsFactory = null;
+    }
+
     private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config rootConfig) {
 
         metricsConfig = applyOverrides(metricsConfig);
 
         SystemTagsManager.instance(metricsConfig);
         metricsFactory = METRICS_FACTORY_PROVIDER.get().create(rootConfig, metricsConfig, METER_PROVIDERS.get());
-        MeterRegistry globalRegistryFromFactory = metricsFactory.globalRegistry();
+        MeterRegistry globalRegistryFromFactory = metricsFactory.globalRegistry(metricsConfig);
 
         notifyListenersOfCreate(globalRegistryFromFactory, metricsConfig);
 

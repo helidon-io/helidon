@@ -20,7 +20,6 @@ import java.util.List;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -43,10 +42,7 @@ class SimpleMeterRegistryTests {
 
     @BeforeAll
     static void prep() {
-        io.micrometer.core.instrument.Metrics.globalRegistry
-                .getMeters()
-                .forEach(io.micrometer.core.instrument.Metrics.globalRegistry::remove);
-        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+        meterRegistry = Metrics.globalRegistry();
     }
 
     // TODO metrics

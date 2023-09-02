@@ -17,12 +17,12 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
@@ -48,22 +48,17 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
  */
 class MicrometerMetricsFactory implements MetricsFactory {
 
-    private final LazyValue<MeterRegistry> globalMeterRegistry;
     private final MetricsConfig metricsConfig;
     private final Collection<MetersProvider> metersProviders;
 
-    private final Collection<MeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
+    private final Collection<MMeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
+    private final ReentrantLock lock = new ReentrantLock();
+    private MMeterRegistry globalMeterRegistry;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
                                      Collection<MetersProvider> metersProviders) {
         this.metricsConfig = metricsConfig;
         this.metersProviders = metersProviders;
-
-        globalMeterRegistry = LazyValue.create(() -> {
-            ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
-            MMeterRegistry reg = MMeterRegistry.builder(Metrics.globalRegistry, this).build();
-            return MMeterRegistry.applyMetersProvidersToRegistry(this, reg, metersProviders);
-        });
     }
 
     static MicrometerMetricsFactory create(Config rootConfig,
@@ -73,16 +68,23 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return new MicrometerMetricsFactory(metricsConfig, metersProviders);
     }
 
+    void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
+        meterRegistries.forEach(mr -> mr.onMeterAdded(meter));
+    }
+
+    void onMeterRemoved(io.micrometer.core.instrument.Meter meter) {
+        meterRegistries.forEach(mr -> mr.onMeterRemoved(meter));
+    }
+
     @Override
     public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
-        MeterRegistry result = globalMeterRegistry.get();
-        result.onMeterAdded(onAddListener);
-        result.onMeterRemoved(onRemoveListener);
+        globalMeterRegistry.onMeterAdded(onAddListener);
+        globalMeterRegistry.onMeterRemoved(onRemoveListener);
 
         if (backfill) {
-            result.meters().forEach(onAddListener);
+            globalMeterRegistry.meters().forEach(onAddListener);
         }
-        return result;
+        return globalMeterRegistry;
     }
 
     @Override
@@ -93,8 +95,8 @@ class MicrometerMetricsFactory implements MetricsFactory {
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
         return save(MMeterRegistry.builder(Metrics.globalRegistry, this)
-                .metricsConfig(metricsConfig)
-                .build());
+                            .metricsConfig(metricsConfig)
+                            .build());
     }
 
     @Override
@@ -102,11 +104,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
         return save(MMeterRegistry.builder(Metrics.globalRegistry,
-                                      this)
-                .metricsConfig(metricsConfig)
-                .onMeterAdded(onAddListener)
-                .onMeterRemoved(onRemoveListener)
-                .build());
+                                           this)
+                            .metricsConfig(metricsConfig)
+                            .onMeterAdded(onAddListener)
+                            .onMeterRemoved(onRemoveListener)
+                            .build());
     }
 
     @Override
@@ -116,30 +118,51 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onRemoveListener) {
 
         return save(MMeterRegistry.builder(Metrics.globalRegistry,
-                                     this)
-                .metricsConfig(metricsConfig)
-                .clock(clock)
-                .onMeterAdded(onAddListener)
-                .onMeterRemoved(onRemoveListener)
-                .build());
+                                           this)
+                            .metricsConfig(metricsConfig)
+                            .clock(clock)
+                            .onMeterAdded(onAddListener)
+                            .onMeterRemoved(onRemoveListener)
+                            .build());
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
         return save(MMeterRegistry.builder(Metrics.globalRegistry, this)
-                .clock(clock)
-                .metricsConfig(metricsConfig)
-                .build());
+                            .clock(clock)
+                            .metricsConfig(metricsConfig)
+                            .build());
     }
 
     @Override
     public MeterRegistry globalRegistry() {
-        return globalMeterRegistry.get();
+        return globalMeterRegistry != null
+                ? globalMeterRegistry
+                : globalRegistry(MetricsConfig.create());
     }
 
     @Override
-    public void clear() {
-        meterRegistries.forEach(MeterRegistry::clear);
+    public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
+        lock.lock();
+        try {
+            if (globalMeterRegistry != null) {
+                globalMeterRegistry.close();
+                meterRegistries.remove(globalMeterRegistry);
+            }
+            ensurePrometheusRegistry(Metrics.globalRegistry, metricsConfig);
+            globalMeterRegistry = save(MMeterRegistry.builder(Metrics.globalRegistry, this)
+                                               .metricsConfig(metricsConfig)
+                                               .build());
+            return globalMeterRegistry;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public void close() {
+        meterRegistries.forEach(MMeterRegistry::close);
+        globalMeterRegistry = null;
     }
 
     @Override
@@ -243,7 +266,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
         }
     }
 
-    private MeterRegistry save(MeterRegistry meterRegistry) {
+    private MMeterRegistry save(MMeterRegistry meterRegistry) {
         meterRegistries.add(meterRegistry);
         return meterRegistry;
     }

@@ -452,7 +452,8 @@ class Registry implements MetricRegistry {
                 if (info == null) {
                     collector.warn(String.format("Unable to locate info for name %s", metricName));
                 } else {
-                    if (info.remove(metricID)) {
+                    info.remove(metricID);
+                    if (info.metricIDs.isEmpty()) {
                         infoByName.remove(metricName);
                     }
                 }
@@ -494,7 +495,6 @@ class Registry implements MetricRegistry {
         lock.lock();
         try {
             infoByName.clear();
-            meterRegistry.clear();
             metricsByDelegate.clear();
             metricsById.clear();
         } finally {

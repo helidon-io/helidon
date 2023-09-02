@@ -18,7 +18,6 @@ package io.helidon.metrics.provider.tests;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,10 +32,7 @@ class TestCounter {
 
     @BeforeAll
     static void prep() {
-        io.micrometer.core.instrument.Metrics.globalRegistry
-                .getMeters()
-                .forEach(io.micrometer.core.instrument.Metrics.globalRegistry::remove);
-        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+        meterRegistry = Metrics.globalRegistry();
     }
 
     @Test

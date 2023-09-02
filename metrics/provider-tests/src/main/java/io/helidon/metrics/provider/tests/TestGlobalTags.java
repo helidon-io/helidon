@@ -45,7 +45,7 @@ class TestGlobalTags {
                 .globalTags(globalTags)
                 .build();
 
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        MeterRegistry meterRegistry = Metrics.globalRegistry();
 
         assertThat("Global tags from the config used to init the meter registry",
                    metricsConfig.globalTags(),

@@ -15,22 +15,21 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class MetricsTestsRegistryJunitExtension implements Extension,
-                                                           BeforeAllCallback {
+public class MicroProfileMetricsTestsRegistryJunitExtension implements Extension,
+                                                                       BeforeAllCallback {
 
     static void clear() {
         // Clears out all Registry instances.
 
         RegistryFactory.erase();
 
-        // Removes meters one at a time, invoking the callbacks so downstream consumers also clear out.
-        Metrics.globalRegistry().clear();
+        MetricsFactory.closeAll();
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,7 +33,7 @@ class TestGauge {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+        meterRegistry = Metrics.globalRegistry();
     }
 
     @Test

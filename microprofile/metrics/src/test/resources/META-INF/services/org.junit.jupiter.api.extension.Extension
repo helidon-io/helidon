@@ -1,1 +1,1 @@
-io.helidon.microprofile.metrics.MetricsTestsRegistryJunitExtension
+io.helidon.microprofile.metrics.MicroProfileMetricsTestsRegistryJunitExtension

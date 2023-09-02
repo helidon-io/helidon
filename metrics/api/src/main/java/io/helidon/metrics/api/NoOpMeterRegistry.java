@@ -37,6 +37,10 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
+    public void close() {
+    }
+
+    @Override
     public List<Meter> meters() {
         return List.of();
     }

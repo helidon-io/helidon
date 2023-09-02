@@ -25,7 +25,6 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.ValueAtPercentile;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -42,7 +41,7 @@ class TestDistributionSummary {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+        meterRegistry = Metrics.globalRegistry();
     }
 
     @Test

@@ -28,9 +28,7 @@ public class MicrometerMetricsTestsJunitExtension implements Extension,
 
     static void clear() {
 
-        // Removes meters one at a time, invoking the callbacks so downstream consumers also clear out.
-
-        MetricsFactory.getInstance().clear();
+        MetricsFactory.closeAll();
 
         // And clear out Micrometer's global registry explicitly to be extra sure.
         io.micrometer.core.instrument.MeterRegistry mmGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;

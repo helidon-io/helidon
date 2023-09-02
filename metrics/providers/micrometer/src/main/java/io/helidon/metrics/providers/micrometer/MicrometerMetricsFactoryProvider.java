@@ -15,7 +15,9 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import io.helidon.common.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
@@ -23,21 +25,50 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Metrics;
+
 /**
  * Provides the Micrometer meter registry to use as a delegate for the implementation of the Helidon metrics API.
  */
 public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
 
+    private final List<MicrometerMetricsFactory> metricsFactories = new ArrayList<>();
+
     /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} based on Micrometer.
+     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} based on Micrometer. Public for service loading.
      */
     public MicrometerMetricsFactoryProvider() {
+        observeGlobalRegistry();
     }
 
     @Override
     public MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        return MicrometerMetricsFactory.create(rootConfig, metricsConfig, metersProviders);
+        return save(MicrometerMetricsFactory.create(rootConfig, metricsConfig, metersProviders));
     }
 
+    @Override
+    public void close() {
+        metricsFactories.forEach(MetricsFactory::close);
+        metricsFactories.clear();
+        Metrics.globalRegistry.forEachMeter(m -> Metrics.globalRegistry.remove(m));
+    }
 
+    private MicrometerMetricsFactory save(MicrometerMetricsFactory metricsFactory) {
+        metricsFactories.add(metricsFactory);
+        return metricsFactory;
+    }
+
+    private void onMeterAdded(Meter meter) {
+        metricsFactories.forEach(mf -> mf.onMeterAdded(meter));
+    }
+
+    private void onMeterRemoved(Meter meter) {
+        metricsFactories.forEach(mf -> mf.onMeterRemoved(meter));
+    }
+
+    private void observeGlobalRegistry() {
+        Metrics.globalRegistry.config().onMeterAdded(this::onMeterAdded);
+        Metrics.globalRegistry.config().onMeterRemoved(this::onMeterRemoved);
+    }
 }

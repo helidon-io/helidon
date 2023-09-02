@@ -23,8 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.config.mp.MpConfigSources;
 import io.helidon.microprofile.server.JaxRsCdiExtension;
 import io.helidon.microprofile.server.ServerCdiExtension;
-import io.helidon.microprofile.tests.junit5.AddBean;
-import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Dependent;
@@ -86,7 +84,7 @@ public class BadGaugeTest {
     @Disabled
     @Test
     void testBadBean() {
-        MetricsTestsRegistryJunitExtension.clear();
+        MicroProfileMetricsTestsRegistryJunitExtension.clear();
 
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertThat(initializer, is(notNullValue()));
@@ -136,7 +134,7 @@ public class BadGaugeTest {
     }
 
     private SeContainer startContainer(Annotation scope) {
-        MetricsTestsRegistryJunitExtension.clear();
+        MicroProfileMetricsTestsRegistryJunitExtension.clear();
         return SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addExtensions(MetricsCdiExtension.class, ServerCdiExtension.class, JaxRsCdiExtension.class)

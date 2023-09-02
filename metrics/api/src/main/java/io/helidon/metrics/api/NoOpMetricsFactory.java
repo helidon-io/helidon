@@ -49,17 +49,22 @@ class NoOpMetricsFactory implements MetricsFactory {
     }
 
     @Override
+    public void close() {
+    }
+
+    @Override
     public MeterRegistry globalRegistry() {
+        return meterRegistry;
+    }
+
+    @Override
+    public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
         return meterRegistry;
     }
 
     @Override
     public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
         return meterRegistry;
-    }
-
-    @Override
-    public void clear() {
     }
 
     @Override

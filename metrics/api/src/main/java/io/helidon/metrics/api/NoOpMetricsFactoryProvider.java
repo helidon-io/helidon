@@ -33,4 +33,8 @@ class NoOpMetricsFactoryProvider implements MetricsFactoryProvider {
     public MetricsFactory create(Config rootNode, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
         return NoOpMetricsFactory.create();
     }
+
+    @Override
+    public void close() {
+    }
 }

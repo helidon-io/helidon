@@ -44,7 +44,7 @@ class TestScopeManagement {
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .scoping(ScopingConfig.builder())
                 .build();
-        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+        MeterRegistry reg = MetricsFactory.getInstance().globalRegistry();
         SystemTagsManager.instance(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.

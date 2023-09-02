@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.microprofile.metrics.tck;
+package io.helidon.microprofile.messaging.tck;
 
 import io.helidon.metrics.api.MetricsFactory;
 
 import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
 import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.Extension;
 
-public class MetricsTckCdiExtension implements Extension {
-
-    void before(@Observes BeforeBeanDiscovery discovery) {
-        discovery.addAnnotatedType(ArrayParamConverterProvider.class, ArrayParamConverterProvider.class.getSimpleName());
-    }
+public class MessagingTckCdiExtension implements Extension {
 
     void after(@Observes BeforeShutdown shutdown) {
         MetricsFactory.closeAll();

@@ -58,11 +58,9 @@ public interface MeterRegistry extends Wrapper {
     Iterable<String> scopes();
 
     /**
-     * Clears all registered meters from the meter registry.
+     * Closes the meter registry.
      */
-    default void clear() {
-        meters().forEach(this::remove);
-    }
+    void close();
 
     /**
      * Returns whether the specified meter is enabled or not, based on whether the meter registry as a whole is enabled and also

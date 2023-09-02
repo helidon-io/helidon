@@ -53,7 +53,7 @@ public interface MetricsFactory {
      * @return current or new metrics factory
      */
     static MetricsFactory getInstance() {
-        return MetricsFactoryManager.getInstance();
+        return MetricsFactoryManager.getMetricsFactory();
     }
 
     /**
@@ -65,8 +65,28 @@ public interface MetricsFactory {
      * @return new instance configured as directed
      */
     static MetricsFactory getInstance(Config rootConfig) {
-        return MetricsFactoryManager.getInstance(rootConfig);
+        return MetricsFactoryManager.getMetricsFactory(rootConfig);
     }
+
+    /**
+     * Closes all {@link io.helidon.metrics.api.MetricsFactory} instances.
+     *
+     * <p>
+     *     Applications do not normally need to invoke this method.
+     * </p>
+     */
+    static void closeAll() {
+        MetricsFactoryManager.closeAll();
+    }
+
+    /**
+     * Closes this metrics factory.
+     *
+     * <p>
+     *     Applications do not normally need to invoke this method.
+     * </p>
+     */
+    void close();
 
     /**
      * Returns the global {@link io.helidon.metrics.api.MeterRegistry} for this metrics factory.
@@ -81,6 +101,15 @@ public interface MetricsFactory {
      * @return the global meter registry
      */
     MeterRegistry globalRegistry();
+
+    /**
+     * Creates a new global registry according to the configuration and returns it.
+     *
+     * @param metricsConfig configuration to control the meter registry
+     * @return meter registry
+     */
+    MeterRegistry globalRegistry(MetricsConfig metricsConfig);
+
 
     /**
      * Returns the global {@link io.helidon.metrics.api.MeterRegistry} enrolling the specified listeners to the meter registry.
@@ -154,11 +183,6 @@ public interface MetricsFactory {
                                       MetricsConfig metricsConfig,
                                       Consumer<Meter> onAddListener,
                                       Consumer<Meter> onRemoveListener);
-
-    /**
-     * Clears out the registries known to this metrics factory.
-     */
-    void clear();
 
     /**
      * Returns the system {@link io.helidon.metrics.api.Clock} from the
