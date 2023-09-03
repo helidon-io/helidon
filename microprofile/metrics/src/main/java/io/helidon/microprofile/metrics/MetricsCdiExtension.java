@@ -68,6 +68,7 @@ import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
@@ -840,6 +841,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 LOGGER.log(Level.DEBUG, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
             });
         }
+    }
+
+    private void onShutdown(@Observes BeforeShutdown shutdown) {
+        MetricsFactory.closeAll();
+        RegistryFactory.closeAll();
     }
 
     private void registerAnnotatedGauges(BeanManager bm) {
