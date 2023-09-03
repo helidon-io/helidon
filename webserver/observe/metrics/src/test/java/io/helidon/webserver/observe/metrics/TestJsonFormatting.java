@@ -25,6 +25,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
@@ -50,7 +51,7 @@ class TestJsonFormatting {
                                  .defaultValue("application"))
                 .build();
 
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
         SystemTagsManager.instance(metricsConfig);
 
         Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
@@ -92,7 +93,7 @@ class TestJsonFormatting {
                                  .defaultValue("application"))
                 .build();
 
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
         SystemTagsManager.instance(metricsConfig);
 
         Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
