@@ -124,6 +124,9 @@
     }
 ]]></value>
             </list>
+            <list key="Observe-feature-builder">
+                <value if="${metrics}"><![CDATA[                    .addProvider(MetricsObserveProvider.create())]]></value>
+            </list>
             <list key="Abstract-tests">
                 <value if="${metrics}"><![CDATA[
     @Test

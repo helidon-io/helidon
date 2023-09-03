@@ -128,16 +128,13 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     private MetricRegistry registry;]]></value>
                                     </list>
                                     <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                        <value>io.helidon.metrics.api.Metrics</value>
                                         <value>io.helidon.metrics.api.MeterRegistry</value>
                                         <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
                                         <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
                                     </list>
                                     <list key="Main-routing" if="${flavor} == 'se'">
                                         <value><![CDATA[
-        MeterRegistry appRegistry = Metrics.globalRegistry();
-
-        MetricsService metricsService = new MetricsService(config, appRegistry);
+        MetricsService metricsService = new MetricsService(config);
 ]]></value>
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
@@ -145,6 +142,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                         <value><![CDATA[.register("/metrics-greet", metricsService)]]></value>
                                     </list>
                                     <list key="MetricsService-imports" if="${flavor} == 'se'">
+                                        <value>io.helidon.metrics.api.Metrics</value>
                                         <value>io.helidon.metrics.api.MeterRegistry</value>
                                         <value>io.helidon.metrics.api.Counter</value>
                                     </list>
@@ -156,6 +154,7 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
                                     </list>
                                     <list key="MetricsService-constructor" if="${flavor} == 'se'">
                                         <value><![CDATA[
+        MeterRegistry appRegistry = Metrics.globalRegistry();
         this.personalizedGetCounter = appRegistry.getOrCreate(
                 Counter.builder(PERSONALIZED_GETS_COUNTER_NAME)
                        .description("Counts the number of HTTP responses to /{name} query"));
@@ -189,8 +188,9 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
     }
 ]]></value>
                                     </list>
-                                    <list key="modules">
-                                        <value if="${flavor} == 'mp'">io.helidon.microprofile.metrics</value>
+                                    <list key="modules" if="${flavor} == 'mp'">
+                                        <value>io.helidon.microprofile.metrics</value>
+                                        <value>micrometer.core</value>
                                     </list>
                                 </model>
                             </output>
@@ -374,10 +374,11 @@ allRequests_total 0.0
                                     </list>
                                     <list key="Main-routing-builder" if="${flavor} == 'se'">
                                         <value><![CDATA[.register("/metrics-greet", metricsService)
-.addFeature(metricsService.micrometerFeature())]]></value>
+                .addFeature(metricsService.micrometerFeature())]]></value>
                                     </list>
                                     <list key="modules">
                                         <value if="${flavor} == 'se'">io.helidon.integrations.micrometer</value>
+                                        <value>micrometer.core</value>
                                     </list>
                                 </model>
                             </output>
