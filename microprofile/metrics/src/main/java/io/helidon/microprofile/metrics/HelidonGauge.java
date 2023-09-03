@@ -211,5 +211,10 @@ abstract class HelidonGauge<N extends Number> extends MetricImpl<io.helidon.metr
         public Long getValue() {
             return functionalCounter.count();
         }
+
+        @Override
+        public boolean removeViaDelegate(MeterRegistry meterRegistry) {
+            return functionalCounter != null && meterRegistry.remove(functionalCounter).isPresent();
+        }
     }
 }

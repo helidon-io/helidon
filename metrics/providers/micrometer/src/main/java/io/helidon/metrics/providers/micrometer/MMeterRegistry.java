@@ -266,8 +266,22 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         // If this is not "one of ours" then we need to create a new builder, based on the one passed in but with the correct
         // Micrometer delegate builder assigned.
-        return (HM) getOrCreateUntyped((HB) convertNeutralBuilder(builder));
+        return (HM) getOrCreateUntyped(convertNeutralBuilder(builder));
     }
+
+//    @Override
+//    public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
+//            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder) {
+//        // Just cast the builder if it "one of ours" because that means it was prepared using our MetricsFactory, and that
+//        // would already have set the builder up with the correct Micrometer builder delegate.
+//        if (builder instanceof MMeter.Builder<?, ?, ?, ?> mBuilder) {
+//            return (HM) getOrCreateUntyped((HB) mBuilder);
+//        }
+//
+//        // If this is not "one of ours" then we need to create a new builder, based on the one passed in but with the correct
+//        // Micrometer delegate builder assigned.
+//        return (HM) getOrCreateUntyped((HB) convertNeutralBuilder(builder));
+//    }
 
     @Override
     public <M extends io.helidon.metrics.api.Meter> Optional<M> meter(Class<M> mClass,
@@ -434,12 +448,13 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralId(addedMeter.getId());
 
             /*
-             Derive the scope value from just the added meter. Use it to look up any pending builder for this new meter.
+             We do not have an explicit scope so get the scope from the tags of the new meter if we can.
              */
-            Optional<String> scope = chooseScope(addedMeter, Optional.empty());
+            Optional<String> scope = SystemTagsManager.instance()
+                    .effectiveScope(Optional.empty(), neutralIdForAddedMeter.tags());
 
             /*
-             See if there is any "pending builder" that we might have created and used to create this new meter.
+             See if there is any "pending builder" that we already created in getOrCreate and use it to create this new meter.
              */
             Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> buildersInScope =
                     buildersByPromMeterId.get(scope.orElse(""));
@@ -556,7 +571,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> pendingBuildersInScope =
                     buildersByPromMeterId.computeIfAbsent(effectiveScope.orElse(""),
                                                           k -> new HashMap<>());
-            pendingBuildersInScope.put(id, mBuilder);
+            MMeter.Builder<?, ?, ?, ?> previousBuilderWithId = pendingBuildersInScope.put(id, mBuilder);
+            if (previousBuilderWithId != null) {
+                LOGGER.log(Level.WARNING,
+                           "Unexpected overwrite of existing pending builder " + previousBuilderWithId
+                           + " during creation of new meter " + mBuilder);
+            }
 
             M meter = registration.apply(delegate());
 

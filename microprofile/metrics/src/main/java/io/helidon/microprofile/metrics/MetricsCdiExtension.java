@@ -750,6 +750,18 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         return defaultRouting;
     }
 
+    /**
+     * Clears data structures.
+     * <p>
+     *     CDI invokes the {@link #onShutdown(jakarta.enterprise.inject.spi.BeforeShutdown)} method when CDI is in play, but
+     *     some tests do not use the CDI environment and need to invoke this method to do the clean-up.
+     * </p>
+     */
+    static void shutdown() {
+        MetricsFactory.closeAll();
+        RegistryFactory.closeAll();
+    }
+
     @Override
     protected Config seComponentConfig() {
         // Combine the Helidon-specific "metrics.xxx" settings with the MP
@@ -844,8 +856,7 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
     }
 
     private void onShutdown(@Observes BeforeShutdown shutdown) {
-        MetricsFactory.closeAll();
-        RegistryFactory.closeAll();
+        shutdown();
     }
 
     private void registerAnnotatedGauges(BeanManager bm) {

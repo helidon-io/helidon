@@ -30,7 +30,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
 
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.Gauge;
@@ -47,9 +46,9 @@ import org.eclipse.microprofile.metrics.Timer;
  * only
  * one meter registry will every be created in a production server.
  * </p>
- * <p>The {@link #getInstance(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig, java.util.Collection)}
+ * <p>The {@link #getInstance(io.helidon.metrics.api.MeterRegistry)}
  * method creates a new instance and saves it for retrieval via {@link #getInstance()}. The
- * {@link #create(io.helidon.metrics.api.MeterRegistry, io.helidon.metrics.api.MetricsConfig, java.util.Collection)}
+ * {@link #create(io.helidon.metrics.api.MeterRegistry)}
  * method creates a new instance but does not record it internally.
  * </p>
  */
@@ -64,31 +63,20 @@ class RegistryFactory {
     private final MeterRegistry meterRegistry;
     private final Map<String, Registry> registries = new HashMap<>();
     private final Lock metricsSettingsAccess = new ReentrantLock(true);
-    private final MetricsConfig metricsConfig;
 
-    private Collection<Meter.Builder<?, ?>> initialBuilders;
-
-    private RegistryFactory(MeterRegistry meterRegistry,
-                            MetricsConfig metricsConfig,
-                            Collection<Meter.Builder<?, ?>> initialBuilders) {
+    private RegistryFactory(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
-        this.metricsConfig = metricsConfig;
-        this.initialBuilders = initialBuilders;
         meterRegistry
                 .onMeterAdded(this::registerMetricForExistingMeter)
                 .onMeterRemoved(this::removeMetricForMeter);
     }
 
-    static RegistryFactory create(MeterRegistry meterRegistry,
-                                  MetricsConfig metricsConfig,
-                                  Collection<Meter.Builder<?, ?>> initialBuilders) {
-        return new RegistryFactory(meterRegistry, metricsConfig, initialBuilders);
+    static RegistryFactory create(MeterRegistry meterRegistry) {
+        return new RegistryFactory(meterRegistry);
     }
 
-    static RegistryFactory getInstance(MeterRegistry meterRegistry,
-                                       MetricsConfig metricsConfig,
-                                       Collection<Meter.Builder<?, ?>> initialBuilders) {
-        REGISTRY_FACTORY.set(create(meterRegistry, metricsConfig, initialBuilders));
+    static RegistryFactory getInstance(MeterRegistry meterRegistry) {
+        REGISTRY_FACTORY.set(create(meterRegistry));
         return REGISTRY_FACTORY.get();
     }
 
@@ -102,7 +90,7 @@ class RegistryFactory {
         if (result == null) {
             LOGGER.log(Level.WARNING, "Attempt to retrieve current " + RegistryFactory.class.getName()
                     + " before it has been initialized; using default Helidon meter registry and continuing");
-            result = new RegistryFactory(Metrics.globalRegistry(), MetricsConfig.create(), Set.of());
+            result = new RegistryFactory(Metrics.globalRegistry());
             REGISTRY_FACTORY.set(result);
         }
         return result;
@@ -112,14 +100,11 @@ class RegistryFactory {
      * Intended for use by test initializers to do a brute force clearout of each registry and
      * the factory's collection of registries.
      */
-    static void erase() {
+    static void closeAll() {
         RegistryFactory rf = REGISTRY_FACTORY.get();
         if (rf != null) {
-            Collection<Registry> registries = List.copyOf(rf.registries.values());
-            for (Registry r : registries) {
-                r.clear();
-            }
-            rf.registries.clear();
+            rf.close();
+            REGISTRY_FACTORY.set(null);
         }
     }
 
@@ -138,14 +123,12 @@ class RegistryFactory {
         PeriodicExecutor.start();
     }
 
-    void stop() {
+    void close() {
         /*
             Primarily for successive tests (e.g., in the TCK) which might share the same VM, delete each metric individually
-            (which will trickle down into the delegate meter registry) and also erase out the collection of registries.
+            (which will trickle down into the delegate meter registry) and also closeAll out the collection of registries.
          */
-        registries.values()
-                .forEach(r -> r.getMetrics()
-                        .forEach((id, m) -> r.remove(id)));
+        List.copyOf(registries.values()).forEach(Registry::clear);
         registries.clear();
         PeriodicExecutor.stop();
     }

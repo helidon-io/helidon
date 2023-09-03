@@ -665,7 +665,9 @@ class Registry implements MetricRegistry {
     private boolean removeViaDelegate(MetricID metricId) {
         lock.lock();
         try {
-            return meterRegistry.remove(metricsById.get(metricId).delegate()).isPresent();
+            HelidonMetric<?> helidonMetric = metricsById.get(metricId);
+            return helidonMetric != null
+                    && helidonMetric.removeViaDelegate(meterRegistry);
         } finally {
             lock.unlock();
         }

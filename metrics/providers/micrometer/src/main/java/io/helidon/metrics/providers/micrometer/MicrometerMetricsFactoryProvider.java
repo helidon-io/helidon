@@ -51,7 +51,8 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
     public void close() {
         metricsFactories.forEach(MetricsFactory::close);
         metricsFactories.clear();
-        Metrics.globalRegistry.forEachMeter(m -> Metrics.globalRegistry.remove(m));
+        List<Meter> meters = List.copyOf(Metrics.globalRegistry.getMeters());
+        meters.forEach(Metrics.globalRegistry::remove);
     }
 
     private MicrometerMetricsFactory save(MicrometerMetricsFactory metricsFactory) {

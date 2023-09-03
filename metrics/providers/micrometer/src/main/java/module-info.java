@@ -18,7 +18,6 @@
  * Micrometer adapter for Helidon metrics API.
  */
 module io.helidon.metrics.providers.micrometer {
-
     requires io.helidon.metrics.api;
     requires micrometer.core;
     requires static micrometer.registry.prometheus;
@@ -31,4 +30,7 @@ module io.helidon.metrics.providers.micrometer {
             io.helidon.metrics.providers.micrometer.MicrometerMetricsFactoryProvider;
     provides io.helidon.metrics.spi.MeterRegistryFormatterProvider
             with io.helidon.metrics.providers.micrometer.MicrometerPrometheusFormatterProvider;
+
+    uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
+
 }

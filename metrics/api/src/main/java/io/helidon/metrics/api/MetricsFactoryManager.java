@@ -26,7 +26,6 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.common.config.GlobalConfig;
-import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
@@ -155,9 +154,6 @@ class MetricsFactoryManager {
 
         SystemTagsManager.instance(metricsConfig);
         metricsFactory = METRICS_FACTORY_PROVIDER.get().create(rootConfig, metricsConfig, METER_PROVIDERS.get());
-        MeterRegistry globalRegistryFromFactory = metricsFactory.globalRegistry(metricsConfig);
-
-        notifyListenersOfCreate(globalRegistryFromFactory, metricsConfig);
 
         return metricsFactory;
     }
@@ -166,11 +162,6 @@ class MetricsFactoryManager {
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
         METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
         return metricsConfigBuilder.build();
-    }
-
-    private static void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
-        HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
-                .forEach(listener -> listener.onCreate(meterRegistry, metricsConfig));
     }
 
     private static <T> T access(Callable<T> c) {

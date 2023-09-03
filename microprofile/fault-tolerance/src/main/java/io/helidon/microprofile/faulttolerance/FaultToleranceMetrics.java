@@ -46,8 +46,7 @@ class FaultToleranceMetrics {
     static final String METRIC_NAME_TEMPLATE = "ft.%s.%s.%s";
 
     private static final ReentrantLock LOCK = new ReentrantLock();
-    private static final LazyValue<MetricRegistry> METRIC_REGISTRY = LazyValue.create(
-            () -> CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get());
+    private static LazyValue<MetricRegistry> metricRegistry = metricRegistryLazyValue();
 
     private FaultToleranceMetrics() {
     }
@@ -57,7 +56,17 @@ class FaultToleranceMetrics {
     }
 
     static MetricRegistry getMetricRegistry() {
-        return METRIC_REGISTRY.get();
+        return metricRegistry.get();
+    }
+
+    static void close() {
+        // Facilitates reuse in successive tests in the same JVM.
+        metricRegistry = metricRegistryLazyValue();
+    }
+
+    private static LazyValue<MetricRegistry> metricRegistryLazyValue() {
+        return LazyValue.create(
+                () -> CDI.current().select(MetricRegistry.class, new BaseRegistryTypeLiteral()).get());
     }
 
     /**

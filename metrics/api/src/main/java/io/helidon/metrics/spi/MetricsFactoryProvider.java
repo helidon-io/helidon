@@ -38,7 +38,7 @@ public interface MetricsFactoryProvider {
      * @param rootConfig      root {@link Config} node
      * @param metricsConfig   {@link io.helidon.metrics.api.MetricsConfig} settings
      * @param metersProviders group of {@link io.helidon.metrics.spi.MetersProvider} which can furnish
-     *                        {@link io.helidon.metrics.api.Meter} instances
+     *                        {@link io.helidon.metrics.api.Meter.Builder} instances
      * @return new metrics factory
      */
     MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders);

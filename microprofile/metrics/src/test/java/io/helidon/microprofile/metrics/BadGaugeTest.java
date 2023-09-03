@@ -84,7 +84,7 @@ public class BadGaugeTest {
     @Disabled
     @Test
     void testBadBean() {
-        MicroProfileMetricsTestsRegistryJunitExtension.clear();
+        MetricsCdiExtension.shutdown();
 
         SeContainerInitializer initializer = SeContainerInitializer.newInstance();
         assertThat(initializer, is(notNullValue()));
@@ -134,7 +134,7 @@ public class BadGaugeTest {
     }
 
     private SeContainer startContainer(Annotation scope) {
-        MicroProfileMetricsTestsRegistryJunitExtension.clear();
+        MetricsCdiExtension.shutdown();
         return SeContainerInitializer.newInstance()
                 .disableDiscovery()
                 .addExtensions(MetricsCdiExtension.class, ServerCdiExtension.class, JaxRsCdiExtension.class)

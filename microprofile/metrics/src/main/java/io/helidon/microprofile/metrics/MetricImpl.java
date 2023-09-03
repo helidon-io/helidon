@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.SystemTagsManager;
 
 import org.eclipse.microprofile.metrics.Metadata;
@@ -61,6 +62,11 @@ abstract class MetricImpl<M extends Meter> extends AbstractMetric<M> implements 
 
     protected String toStringDetails() {
         return "";
+    }
+
+    @Override
+    public boolean removeViaDelegate(MeterRegistry meterRegistry) {
+        return delegate() != null && meterRegistry.remove(delegate()).isPresent();
     }
 
     /**

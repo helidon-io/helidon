@@ -17,6 +17,7 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -24,6 +25,8 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.config.Config;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
@@ -38,6 +41,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
 
 import io.micrometer.core.instrument.Metrics;
@@ -54,6 +58,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private final Collection<MMeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
     private final ReentrantLock lock = new ReentrantLock();
+
+    private final LazyValue<Collection<MeterRegistryLifeCycleListener>> meterRegistryLifeCycleListeners =
+            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
+                    .asList());
+
     private MMeterRegistry globalMeterRegistry;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
@@ -154,6 +163,16 @@ class MicrometerMetricsFactory implements MetricsFactory {
             globalMeterRegistry = save(MMeterRegistry.builder(Metrics.globalRegistry, this)
                                                .metricsConfig(metricsConfig)
                                                .build());
+
+            /*
+             Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
+             we apply any meters providers. This way the listeners get to learn of the meters which the registry creates from
+             the builders.
+             */
+            notifyListenersOfCreate(globalMeterRegistry, metricsConfig);
+
+            applyMetersProvidersToRegistry(this, globalMeterRegistry, metersProviders);
+
             return globalMeterRegistry;
         } finally {
             lock.unlock();
@@ -267,6 +286,22 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 .noneMatch(mr -> mr instanceof PrometheusMeterRegistry)) {
             compositeMeterRegistry.add(new PrometheusMeterRegistry(key -> metricsConfig.lookupConfig(key).orElse(null)));
         }
+    }
+
+    private void notifyListenersOfCreate(MeterRegistry meterRegistry, MetricsConfig metricsConfig) {
+        meterRegistryLifeCycleListeners.get().forEach(listener -> listener.onCreate(meterRegistry, metricsConfig));
+    }
+
+    @SuppressWarnings("unchecked")
+    private <B extends Meter.Builder<B, M>, M extends Meter> MeterRegistry applyMetersProvidersToRegistry(
+            MetricsFactory factory,
+            MeterRegistry registry,
+            Collection<MetersProvider> metersProviders) {
+        metersProviders.stream()
+                .flatMap(mp -> mp.meterBuilders(factory).stream())
+                .forEach(b -> registry.getOrCreate((B) b));
+
+        return registry;
     }
 
     private MMeterRegistry save(MMeterRegistry meterRegistry) {

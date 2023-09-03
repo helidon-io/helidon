@@ -17,6 +17,7 @@
 package io.helidon.microprofile.metrics;
 
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
 
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.Metric;
@@ -89,4 +90,12 @@ interface HelidonMetric<M extends Meter> extends Metric {
      * Returns the type of the delegate meter.
      */
     Class<?> delegateType();
+
+    /**
+     * Delete the metric by removing the delegate from its registry.
+     *
+     * @param meterRegistry meter registry from which to remove the delegate
+     * @return whether the delegate was successfully removed
+     */
+    boolean removeViaDelegate(MeterRegistry meterRegistry);
 }
