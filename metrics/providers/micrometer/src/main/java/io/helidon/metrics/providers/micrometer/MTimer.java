@@ -198,6 +198,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         private Builder(String name) {
             super(name, io.micrometer.core.instrument.Timer.builder(name));
+            percentiles(MDistributionStatisticsConfig.Builder.DEFAULT_PERCENTILES);
         }
 
         @Override

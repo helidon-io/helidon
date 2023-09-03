@@ -92,6 +92,8 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
 
     static class Builder implements io.helidon.metrics.api.DistributionStatisticsConfig.Builder {
 
+        static final double[] DEFAULT_PERCENTILES = {0.5, 0.75, 0.95, 0.98, 0.99, 0.999};
+        static final int DEFAULT_PRECISION = 3;
         private final DistributionStatisticConfig.Builder delegate;
         private Optional<Double> min = Optional.empty();
         private Optional<Double> max = Optional.empty();
@@ -101,10 +103,12 @@ class MDistributionStatisticsConfig implements io.helidon.metrics.api.Distributi
 
         private Builder() {
             delegate = DistributionStatisticConfig.builder();
+            percentiles(DEFAULT_PERCENTILES);
         }
 
         @Override
         public MDistributionStatisticsConfig build() {
+            delegate.percentilePrecision(DEFAULT_PRECISION);
             return new MDistributionStatisticsConfig(this);
         }
 
