@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
@@ -31,7 +30,7 @@ import io.helidon.metrics.api.Timer;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -41,12 +40,12 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-// TODO metrics overrides service-loaded in system tag manager settings override explicit settings in config in prep method
-@Disabled
 class TestPrometheusFormatting {
 
     private static final String SCOPE_TAG_NAME = "this-scope";
     private static MeterRegistry meterRegistry;
+
+    private static MetricsConfig metricsConfig;
 
     @BeforeAll
     static void prep() {
@@ -55,10 +54,22 @@ class TestPrometheusFormatting {
                                  .tagName(SCOPE_TAG_NAME)
                                  .defaultValue("app"));
 
-        MetricsConfig metricsConfig = metricsConfigBuilder.build();
-        SystemTagsManager.create(metricsConfig);
+        metricsConfig = metricsConfigBuilder.build();
         meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
+    }
 
+    /**
+     * Sets the system tags according to what this test expects.
+     * <p>
+     *     When a metrics factory is obtained via MetricsFactory.getInstance(metricsConfig), that config object initializes
+     *     the system tags manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the
+     *     test here. We would only need to do it once, not before each test, but it's low cost esp. in a test environment.
+     *
+     * </p>
+     */
+    @BeforeEach
+    void setUpSystemTags() {
+        SystemTagsManager.instance(metricsConfig);
     }
 
     @Test
