@@ -200,18 +200,20 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         super(LOGGER, MetricsCdiExtension::createMetricsService, "metrics");
     }
 
-    private static MetricsFeature createMetricsService(Config helidonConfig) {
+    private static MetricsFeature createMetricsService(Config metricsConfigNode) {
 
         // Initialize the metrics factory instance and, along with it, the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(helidonConfig);
+        MetricsFactory metricsFactory = MetricsFactory.getInstance(metricsConfigNode);
 
         Contexts.globalContext().register(metricsFactory);
-
+        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder().config(metricsConfigNode);
+        MetricsConfig metricsConfig = metricsConfigBuilder.build();
         MetricsFeature.Builder builder = MetricsFeature.builder()
-                .meterRegistry(metricsFactory.globalRegistry())
-                .metricsConfig(MetricsConfig.builder(metricsFactory.metricsConfig()))
+                .metricsConfig(metricsConfigBuilder)
+                .meterRegistry(metricsFactory.globalRegistry(metricsConfig))
+                .metricsConfig(MetricsConfig.builder(metricsConfig))
                 .webContext("/metrics")
-                .config(helidonConfig);
+                .config(metricsConfigNode);
 
         return builder.build();
     }

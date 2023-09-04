@@ -42,13 +42,13 @@ class TestGlobalTags {
 
         List<Tag> globalTags = List.of(g1, g2);
         MetricsConfig metricsConfig = MetricsConfig.builder()
-                .globalTags(globalTags)
+                .tags(globalTags)
                 .build();
 
         MeterRegistry meterRegistry = Metrics.globalRegistry();
 
         assertThat("Global tags from the config used to init the meter registry",
-                   metricsConfig.globalTags(),
+                   metricsConfig.tags(),
                    hasItems(g2, g1));
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
@@ -65,7 +65,7 @@ class TestGlobalTags {
 
     @Test
     void testWithConfig() {
-        var settings = Map.of("metrics.global-tags", "g1=v1,g2=v2");
+        var settings = Map.of("metrics.tags", "g1=v1,g2=v2");
 
         Config config = Config.just(ConfigSources.create(settings));
 

@@ -203,7 +203,10 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                     .forEach(m -> {
                         Meter.Id meterId = m.getId();
                         if (scopePredicate.test(m)) {
-                            allUnitsForMeterName.add("_" + normalizeUnit(meterId.getBaseUnit()));
+                            String normalizedUnit = normalizeUnit(meterId.getBaseUnit());
+                            if (!normalizedUnit.isBlank()) {
+                                allUnitsForMeterName.add("_" + normalizedUnit);
+                            }
                             allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
                         }
                     });

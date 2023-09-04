@@ -56,12 +56,21 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
 
-    private final List<Tag> systemTags;
+    private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
+
+    private final List<Tag> systemTags; // global tags plus the app tag, if any specified
+    private final Set<String> systemTagNames = new HashSet<>(); // tag names for global tags and app
+    private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for globa tags, app, and scope
     private String scopeTagName;
     private String defaultScopeValue;
 
     private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
-        List<Tag> result = new ArrayList<>(metricsConfig.globalTags());
+
+        metricsConfig.tags().forEach(tag -> systemTagNames.add(tag.key()));
+        systemAndScopeTagNames.addAll(systemTagNames);
+        metricsConfig.scoping().tagName().ifPresent(systemAndScopeTagNames::add);
+
+        List<Tag> result = new ArrayList<>(metricsConfig.tags());
 
         // Add a tag for the app name if there is an appName setting in config AND we have a setting
         // from somewhere for the tag name to use for recording the app name.
@@ -79,6 +88,10 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         metricsConfig.scoping().tagName()
                 .ifPresent(tagNameToUse -> scopeTagName = tagNameToUse);
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
+    }
+
+    static void onChange(Consumer<SystemTagsManager> subscriber) {
+        ON_CHANGE_SUBSCRIBERS.add(subscriber);
     }
 
     // for testing
@@ -103,6 +116,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     static SystemTagsManagerImpl instance(MetricsConfig metricsConfig) {
         instance = createWithoutSaving(metricsConfig);
+        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance()));
         return instance;
     }
 
@@ -136,19 +150,27 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     }
 
     @Override
-    public Iterable<Tag> withoutScopeTag(Iterable<Tag> tags) {
-        if (scopeTagName == null) {
+    public Iterable<Tag> withoutSystemTags(Iterable<Tag> tags) {
+        return without(tags, systemTagNames);
+    }
+
+    @Override
+    public Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags) {
+        return without(tags, systemAndScopeTagNames);
+    }
+
+    private Iterable<Tag> without(Iterable<Tag> tags, Collection<String> unwantedTagNames) {
+        if (unwantedTagNames.isEmpty()) {
             return tags;
         }
         List<Tag> result = new ArrayList<>();
         tags.forEach(tag -> {
-            if (!scopeTagName.equals(tag.key())) {
+            if (!unwantedTagNames.contains(tag.key())) {
                 result.add(tag);
             }
         });
         return result;
     }
-
     @Override
     public Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope) {
         if (scopeTagName == null) {

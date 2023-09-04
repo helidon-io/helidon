@@ -388,7 +388,7 @@ class Registry implements MetricRegistry {
 
         Errors.Collector collector = Errors.collector();
 
-        MetricID newMetricID = metricIDWithoutScope(collector, meter.id());
+        MetricID newMetricID = metricIDWithoutSystemTags(collector, meter.id());
 
         lock.lock();
 
@@ -449,7 +449,7 @@ class Registry implements MetricRegistry {
             try {
                 metric.markAsDeleted();
                 String metricName = meter.id().name();
-                MetricID metricID = metricIDWithoutScope(collector, meter.id());
+                MetricID metricID = metricIDWithoutSystemTags(collector, meter.id());
 
                 InfoPerName info = infoByName.get(metricName);
                 if (info == null) {
@@ -559,10 +559,10 @@ class Registry implements MetricRegistry {
         return builder.build();
     }
 
-    private static Map<String, String> tagsWithoutScope(Iterable<io.helidon.metrics.api.Tag> tags) {
+    private static Map<String, String> tagsWithoutSystemOrScopeTags(Iterable<io.helidon.metrics.api.Tag> tags) {
         Map<String, String> result = new TreeMap<>();
 
-        SystemTagsManager.instance().withoutScopeTag(tags).forEach(t -> result.put(t.key(), t.value()));
+        SystemTagsManager.instance().withoutSystemOrScopeTags(tags).forEach(t -> result.put(t.key(), t.value()));
 
         return result;
     }
@@ -693,8 +693,8 @@ class Registry implements MetricRegistry {
         return null;
     }
 
-    private MetricID metricIDWithoutScope(Errors.Collector collector, Meter.Id meterId) {
-        Map<String, String> tagsWithoutScope = tagsWithoutScope(meterId.tags());
+    private MetricID metricIDWithoutSystemTags(Errors.Collector collector, Meter.Id meterId) {
+        Map<String, String> tagsWithoutScope = tagsWithoutSystemOrScopeTags(meterId.tags());
 
         Collection<String> reservedTagNamesUsed = SystemTagsManager.instance().reservedTagNamesUsed(tagsWithoutScope.keySet());
 

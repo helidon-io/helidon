@@ -31,7 +31,7 @@ class TestGlobalTags {
     @DisabledIfSystemProperty(named = "testSelection", matches = "topLevelAndMetricsLevel")
     void testTopLevelTagsIgnoredForMetrics() {
         MetricsConfig metricsConfig = MetricsConfig.create(Config.create().get(MetricsConfig.METRICS_CONFIG_KEY));
-        assertThat("Global tags with top-level 'tags' assigned", metricsConfig.globalTags(), emptyIterable());
+        assertThat("Global tags with top-level 'tags' assigned", metricsConfig.tags(), emptyIterable());
     }
 
     @Test
@@ -42,7 +42,7 @@ class TestGlobalTags {
         String globalTags = tag + "=" + value;
         MetricsConfig metricsConfig = MetricsConfig.create(Config.create().get(MetricsConfig.METRICS_CONFIG_KEY));
         assertThat("Global tags with top-level and metrics 'tags' assigned",
-                   metricsConfig.globalTags(),
+                   metricsConfig.tags(),
                    hasItem(Tag.create(tag, value)));
     }
 }

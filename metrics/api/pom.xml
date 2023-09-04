@@ -140,7 +140,7 @@
                                 <testSelection>topLevel</testSelection>
                             </systemPropertyVariables>
                             <environmentVariables>
-                                <tags>topLevel</tags>
+                                <tags>topLevel=topValue</tags>
                             </environmentVariables>
                             <includes>
                                 <include>**/TestGlobalTags.java</include>
@@ -160,10 +160,10 @@
                                 <testSelection>topLevelAndMetricsLevel</testSelection>
                                 <!-- Use properties for the metrics global tag instead of env var;
                                      dots in env names seem to not always work. -->
-                                <metrics.global-tags>myTag=myValue</metrics.global-tags>
+                                <metrics.tags>myTag=myValue</metrics.tags>
                             </systemPropertyVariables>
                             <environmentVariables>
-                                <tags>topLevel</tags>
+                                <tags>topLevel=topValue</tags>
                             </environmentVariables>
                             <includes>
                                 <include>**/TestGlobalTags.java</include>

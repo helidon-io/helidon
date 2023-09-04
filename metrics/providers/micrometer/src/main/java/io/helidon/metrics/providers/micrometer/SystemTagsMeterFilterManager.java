@@ -20,37 +20,44 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.SystemTagsManager;
 
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 
 /**
  * Adds system tags to every meter registered in Micrometer.
+ *
+ * <p>
+ *     The list of tags is returned to another class that uses it to create a Micrometer meter filter.
+ *     Normally in an application this happens once, but in testing environments the system tags manager might be
+ *     instantiated multiple times with potentially different settings. This class is notified in such cases and updates
+ *     the list of system tags accordingly so the code referring to the list gets the up-to-date values so the single
+ *     Micrometer meter filter instance always uses the current group of system tags.
+ * </p>
  */
-class SystemTagsMeterFilter implements Consumer<SystemTagsManager> {
+class SystemTagsMeterFilterManager implements Consumer<SystemTagsManager> {
+
+    private static final LazyValue<SystemTagsMeterFilterManager> MANAGER = LazyValue.create(() -> {
+        SystemTagsMeterFilterManager result = new SystemTagsMeterFilterManager(SystemTagsManager.instance());
+        SystemTagsManager.onChange(result);
+        return result;
+    });
+
+    static SystemTagsMeterFilterManager instance() {
+        return MANAGER.get();
+    }
+
 
     private final List<Tag> micrometerSystemTags = new ArrayList<>();
     private final ReentrantLock lock = new ReentrantLock();
 
-    private SystemTagsManager systemTagsManager;
-
-    private SystemTagsMeterFilter(SystemTagsManager systemTagsManager) {
-        this.systemTagsManager = systemTagsManager;
+    private SystemTagsMeterFilterManager(SystemTagsManager systemTagsManager) {
         apply(systemTagsManager);
     }
 
     @Override
-    public Meter.Id map(Meter.Id id) {
-        if (micrometerSystemTags.isEmpty()) {
-            return id;
-        }
-
-    }
-
-    @Override
     public void accept(SystemTagsManager systemTagsManager) {
-        this.systemTagsManager = systemTagsManager;
         apply(systemTagsManager);
 
     }
@@ -59,7 +66,7 @@ class SystemTagsMeterFilter implements Consumer<SystemTagsManager> {
         return micrometerSystemTags;
     }
 
-    private void apply(SystemTagsManager systemTagsManager) {
+    private SystemTagsMeterFilterManager apply(SystemTagsManager systemTagsManager) {
         lock.lock();
 
         try {
@@ -67,7 +74,9 @@ class SystemTagsMeterFilter implements Consumer<SystemTagsManager> {
             systemTagsManager.displayTags()
                     .forEach(tag -> micrometerSystemTags.add(Tag.of(tag.key(),
                                                                     tag.value())));
+            return this;
         } finally {
             lock.unlock();
         }
+    }
 }

@@ -62,11 +62,11 @@ interface MetricsConfigBlueprint {
     String KEY_PERFORMANCE_INDICATORS_CONFIG_KEY = "key-performance-indicators";
 
     @Prototype.FactoryMethod
-    static List<Tag> createGlobalTags(Config globalTagExpression) {
-        return createGlobalTags(globalTagExpression.asString().get());
+    static List<Tag> createTags(Config globalTagExpression) {
+        return createTags(globalTagExpression.asString().get());
     }
 
-    static List<Tag> createGlobalTags(String pairs) {
+    static List<Tag> createTags(String pairs) {
         // Use a TreeMap to order by tag name.
         Map<String, Tag> result = new TreeMap<>();
         List<String> allErrors = new ArrayList<>();
@@ -114,7 +114,7 @@ interface MetricsConfigBlueprint {
             position++;
         }
         if (!allErrors.isEmpty()) {
-            throw new IllegalArgumentException("Error(s) in global tag expression: " + allErrors);
+            throw new IllegalArgumentException("Error(s) in tag expression: " + allErrors);
         }
         return result.values()
                 .stream()
@@ -142,8 +142,8 @@ interface MetricsConfigBlueprint {
      *
      * @return name/value pairs for global tags
      */
-    @ConfiguredOption
-    List<Tag> globalTags();
+    @ConfiguredOption // for compatibility with MP metrics and earlier Helidon releases
+    List<Tag> tags();
 
     /**
      * Value for the application tag to be added to each meter ID.

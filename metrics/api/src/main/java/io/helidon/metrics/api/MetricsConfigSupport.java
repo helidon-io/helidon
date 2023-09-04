@@ -72,24 +72,6 @@ class MetricsConfigSupport {
     @Prototype.PrototypeMethod
     static boolean isMeterEnabled(MetricsConfig metricsConfig, String name, String targetScope) {
         return true;
-
-        // TODO actually do the filtering
-        //        if (!metricsConfig.enabled()) {
-        //            return false;
-        //        }
-        //        // First, look for a direct match of a scope config with the targetScope name.
-        //        Optional<ScopeConfig> matchedScopeConfig = metricsConfig.scopes().stream()
-        //                .filter(scope -> scope.scope().isPresent()
-        //                        && scope.scope().get().equals(targetScope))
-        //                .findAny();
-        //
-        //        // Failing a direct match, treat settings with no scope name as a wildcard.
-        //        matchedScopeConfig = matchedScopeConfig.isPresent() ? matchedScopeConfig
-        //                : metricsConfig.scopes().stream()
-        //                        .filter(scope -> scope.scope().isEmpty() || scope.scope().get().isBlank())
-        //                        .findAny();
-        //        return matchedScopeConfig.map(s -> s.isMeterEnabled(name)).orElse(true);
-
     }
 
     public static class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {

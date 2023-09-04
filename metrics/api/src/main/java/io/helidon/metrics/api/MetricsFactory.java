@@ -61,11 +61,11 @@ public interface MetricsFactory {
      * {@link io.helidon.common.config.Config} to set up the metrics factory and saving the resulting metrics factory
      * as the current one, returned by {@link #getInstance()}}.
      *
-     * @param rootConfig top-level config node
+     * @param metricsConfigNode metrics config node
      * @return new instance configured as directed
      */
-    static MetricsFactory getInstance(Config rootConfig) {
-        return MetricsFactoryManager.getMetricsFactory(rootConfig);
+    static MetricsFactory getInstance(Config metricsConfigNode) {
+        return MetricsFactoryManager.getMetricsFactory(metricsConfigNode);
     }
 
     /**

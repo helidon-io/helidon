@@ -27,6 +27,7 @@ import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.config.MeterFilter;
 
 /**
  * Provides the Micrometer meter registry to use as a delegate for the implementation of the Helidon metrics API.
@@ -40,6 +41,7 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
      */
     public MicrometerMetricsFactoryProvider() {
         observeGlobalRegistry();
+        addSystemTagsFilter();
     }
 
     @Override
@@ -71,5 +73,13 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
     private void observeGlobalRegistry() {
         Metrics.globalRegistry.config().onMeterAdded(this::onMeterAdded);
         Metrics.globalRegistry.config().onMeterRemoved(this::onMeterRemoved);
+    }
+
+    private void addSystemTagsFilter() {
+        Metrics.globalRegistry
+                .config()
+                .meterFilter(MeterFilter.commonTags(SystemTagsMeterFilterManager
+                                                            .instance()
+                                                            .tags()));
     }
 }

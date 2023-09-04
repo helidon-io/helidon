@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -57,6 +58,15 @@ public interface SystemTagsManager {
     }
 
     /**
+     * Allows subscription to notification when a new system tags manager is created with a new configuration.
+     *
+     * @param changeListener subscriber to receive change notifications
+     */
+    static void onChange(Consumer<SystemTagsManager> changeListener) {
+        SystemTagsManagerImpl.onChange(changeListener);
+    }
+
+    /**
      * Returns a scope tag so long as the candidate scope or configured default scope are present and the scope tag name
      * is configured.
      *
@@ -85,13 +95,21 @@ public interface SystemTagsManager {
     Iterable<Tag> withScopeTag(Iterable<Tag> tags, Optional<String> explicitScope);
 
     /**
-     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting the tag representing the scope,
-     * if any appears in the provided tags.
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting any system tags but including
+     * the scope tag, if these appear in the provided tags.
      *
      * @param tags tags to filter
-     * @return tags without the scope tag
+     * @return tags without the system tags
      */
-    Iterable<Tag> withoutScopeTag(Iterable<Tag> tags);
+    Iterable<Tag> withoutSystemTags(Iterable<Tag> tags);
+
+    /**
+     * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} omitting system and scope tags.
+     *
+     * @param tags tags to filter
+     * @return tags without system or scope tags
+     */
+    Iterable<Tag> withoutSystemOrScopeTags(Iterable<Tag> tags);
 
     /**
      * Returns an {@link java.lang.Iterable} of {@link io.helidon.metrics.api.Tag} representing the any system tags

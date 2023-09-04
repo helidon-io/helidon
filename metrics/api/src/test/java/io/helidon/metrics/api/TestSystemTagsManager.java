@@ -46,7 +46,7 @@ class TestSystemTagsManager {
 
     private static final Map<String, String> GLOBAL_ONLY_TAGS_SETTINGS = Map.of(
             MetricsConfig.METRICS_CONFIG_KEY
-                    + ".global-tags",
+                    + ".tags",
             String.format("%s=%s,%s=%s", GLOBAL_TAG_1, GLOBAL_VALUE_1, GLOBAL_TAG_2, GLOBAL_VALUE_2));
 
     private static final Map<String, String> APP_ONLY_TAGS_SETTINGS = Map.of(
@@ -67,7 +67,7 @@ class TestSystemTagsManager {
         MetricsConfig metricsConfig = MetricsConfig.create(mConfig);
         Map<String, String> tags = new HashMap<>();
 
-        metricsConfig.globalTags().forEach(t -> tags.put(t.key(), t.value()));
+        metricsConfig.tags().forEach(t -> tags.put(t.key(), t.value()));
 
         assertThat("Global tags in settings",
                    tags,

@@ -31,14 +31,14 @@ class TestMetricsSettingsTagsHandling {
 
     @Test
     void checkSingle() {
-        var pairs = toMap(MetricsConfigBlueprint.createGlobalTags("a=4"));
+        var pairs = toMap(MetricsConfigBlueprint.createTags("a=4"));
         assertThat("Result", pairs.entrySet(), hasSize(1));
         assertThat("Tag", pairs, hasEntry("a", "4"));
     }
 
     @Test
     void checkMultiple() {
-        var pairs = toMap(MetricsConfigBlueprint.createGlobalTags("a=11,b=12,c=13"));
+        var pairs = toMap(MetricsConfigBlueprint.createTags("a=11,b=12,c=13"));
         assertThat("Result", pairs.entrySet(), hasSize(3));
         assertThat("Tags", pairs, allOf(hasEntry("a", "11"),
                                         hasEntry("b", "12"),
@@ -47,7 +47,7 @@ class TestMetricsSettingsTagsHandling {
 
     @Test
     void checkQuoted() {
-        var pairs = toMap(MetricsConfigBlueprint.createGlobalTags("d=r\\=3,e=4,f=0\\,1,g=hi"));
+        var pairs = toMap(MetricsConfigBlueprint.createTags("d=r\\=3,e=4,f=0\\,1,g=hi"));
         assertThat("Result", pairs.entrySet(), hasSize(4));
         assertThat("Tags", pairs, allOf(hasEntry("e", "4"),
                                         hasEntry("f", "0,1"),
@@ -57,14 +57,14 @@ class TestMetricsSettingsTagsHandling {
     @Test
     void checkEmptyAssignment() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                toMap(MetricsConfigBlueprint.createGlobalTags("")));
+                toMap(MetricsConfigBlueprint.createTags("")));
         assertThat("Empty assignment", ex.getMessage(), containsString("empty"));
     }
 
     @Test
     void checkNoRightSide() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                toMap(MetricsConfigBlueprint.createGlobalTags("a=")));
+                toMap(MetricsConfigBlueprint.createTags("a=")));
         assertThat("No right side", ex.getMessage(), containsString("missing tag value"));
     }
 
@@ -72,14 +72,14 @@ class TestMetricsSettingsTagsHandling {
     void checkNoLeftSide() {
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                toMap(MetricsConfigBlueprint.createGlobalTags("=1")));
+                toMap(MetricsConfigBlueprint.createTags("=1")));
         assertThat("No left side", ex.getMessage(), containsString("missing tag name"));
     }
 
     @Test
     void checkInvalidTagName() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                toMap(MetricsConfigBlueprint.createGlobalTags("a*=1,")));
+                toMap(MetricsConfigBlueprint.createTags("a*=1,")));
         assertThat("Invalid tag name", ex.getMessage(), containsString("tag name must"));
     }
 

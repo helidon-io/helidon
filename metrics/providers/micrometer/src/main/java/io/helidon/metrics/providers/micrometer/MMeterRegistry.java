@@ -445,7 +445,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             we will create the MMeter from the meter passed to us by Micrometer..
              */
 
-            io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralId(addedMeter.getId());
+            io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralIdWithoutSystemTags(addedMeter.getId());
 
             /*
              We do not have an explicit scope so get the scope from the tags of the new meter if we can.
@@ -706,9 +706,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private io.helidon.metrics.api.Meter.Id neutralId(Meter.Id micrometerId) {
+    private io.helidon.metrics.api.Meter.Id neutralIdWithoutSystemTags(Meter.Id micrometerId) {
         return MMeter.PlainId.create(micrometerId.getName(),
-                                     MTag.neutralTags(micrometerId.getTags()));
+                                     SystemTagsManager.instance().withoutSystemTags(MTag.neutralTags(micrometerId.getTags())));
     }
 
     private void recordNewMeter(io.helidon.metrics.api.Meter.Id id,

@@ -83,9 +83,9 @@ class MetricsFactoryManager {
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
                     .asList());
     /**
-     * The root {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
+     * The metrics {@link io.helidon.common.config.Config} node used to initialize the current metrics factory.
      */
-    private static Config rootConfig;
+    private static Config metricsConfigNode;
     /**
      * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getMetricsFactory} method.
      */
@@ -99,16 +99,16 @@ class MetricsFactoryManager {
      * section in the specified config node, deriving and saving the metrics config as the current metrics config, saving the new
      * factory as the current factory, and registering meters via meter providers to the global meter registry of the new factory.
      *
-     * @param rootConfig root config node
+     * @param metricsConfigNode metrics config node
      * @return new metrics factory
      */
-    static MetricsFactory getMetricsFactory(Config rootConfig) {
+    static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
 
-        MetricsFactoryManager.rootConfig = rootConfig;
+        MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
 
-        MetricsConfig metricsConfig = MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY));
+        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
 
-        metricsFactory = access(() -> completeGetInstance(metricsConfig, rootConfig));
+        metricsFactory = access(() -> completeGetInstance(metricsConfig, metricsConfigNode));
 
         return metricsFactory;
     }
@@ -122,9 +122,9 @@ class MetricsFactoryManager {
      */
     static MetricsFactory getMetricsFactory() {
         return access(() -> {
-            rootConfig = Objects.requireNonNullElseGet(rootConfig, GlobalConfig::config);
+            metricsConfigNode = Objects.requireNonNullElseGet(metricsConfigNode, GlobalConfig::config);
             metricsFactory = Objects.requireNonNullElseGet(metricsFactory,
-                                                           () -> getMetricsFactory(rootConfig));
+                                                           () -> getMetricsFactory(metricsConfigNode));
             return metricsFactory;
         });
     }
@@ -134,12 +134,13 @@ class MetricsFactoryManager {
      * {@link io.helidon.metrics.api.MetricsConfig} with no side effects: neither the config nor the new factory replace
      * the current values stored in this manager.
      *
-     * @param rootConfig the root config node to use in creating the metrics factory
+     * @param metricsConfigNode the metrics config node to use in creating the metrics factory
      * @return new metrics factory
      */
-    static MetricsFactory create(Config rootConfig) {
-        return METRICS_FACTORY_PROVIDER.get().create(rootConfig,
-                                                     MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY)),
+    static MetricsFactory create(Config metricsConfigNode) {
+        return METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode,
+                                                     MetricsConfig.create(
+                                                             metricsConfigNode.get(MetricsConfig.METRICS_CONFIG_KEY)),
                                                      METER_PROVIDERS.get());
     }
 
@@ -148,12 +149,12 @@ class MetricsFactoryManager {
         metricsFactory = null;
     }
 
-    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config rootConfig) {
+    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
 
         metricsConfig = applyOverrides(metricsConfig);
 
         SystemTagsManager.instance(metricsConfig);
-        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(rootConfig, metricsConfig, METER_PROVIDERS.get());
+        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get());
 
         return metricsFactory;
     }
