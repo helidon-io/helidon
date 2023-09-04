@@ -16,11 +16,12 @@
 
 package io.helidon.tests.integration.context;
 
+import javax.inject.Inject;
+import javax.ws.rs.client.WebTarget;
+
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
-import jakarta.inject.Inject;
-import jakarta.ws.rs.client.WebTarget;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import org.junit.jupiter.api.Test;
 
