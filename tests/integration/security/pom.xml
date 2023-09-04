@@ -40,5 +40,6 @@
         <module>gh2455</module>
         <module>path-params</module>
         <module>security-response-mapper</module>
+        <module>security-context-not-overridden</module>
     </modules>
 </project>
