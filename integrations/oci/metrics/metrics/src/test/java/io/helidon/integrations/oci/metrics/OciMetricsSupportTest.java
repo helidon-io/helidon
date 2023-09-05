@@ -21,11 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.WebServer;
 
@@ -34,12 +37,6 @@ import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
 import com.oracle.bmc.monitoring.responses.PostMetricDataResponse;
-
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metric;
-import org.eclipse.microprofile.metrics.MetricFilter;
-import org.eclipse.microprofile.metrics.MetricID;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,11 +60,7 @@ class OciMetricsSupportTest {
     private static int noOfMetrics;
     private static String endPoint = "https://telemetry.DummyEndpoint.com";
     private static String postingEndPoint;
-    private final String[] types = Registry.BUILT_IN_SCOPES.toArray(new String[0]);
-    private final RegistryFactory rf = RegistryFactory.getInstance();
-    private final MetricRegistry baseMetricRegistry = rf.getRegistry(Registry.BASE_SCOPE);
-    private final MetricRegistry vendorMetricRegistry = rf.getRegistry(Registry.VENDOR_SCOPE);
-    private final MetricRegistry appMetricRegistry = rf.getRegistry(Registry.APPLICATION_SCOPE);
+    private static final MeterRegistry meterRegistry = Metrics.globalRegistry();
 
     @BeforeAll
     static void mockSetGetEndpoints() {
@@ -83,21 +76,16 @@ class OciMetricsSupportTest {
     @BeforeEach
     void resetState() {
         // clear all registry
-        for (String type : types) {
-            MetricRegistry metricRegistry = rf.getRegistry(type);
-            metricRegistry.removeMatching(new MetricFilter() {
-                @Override
-                public boolean matches(MetricID metricID, Metric metric) {
-                    return true;
-                }
-            });
-        }
+        meterRegistry.meters()
+                .forEach(meterRegistry::remove);
+
         endPoint = "https://telemetry.DummyEndpoint.com";
     }
 
     @Test
     void testMetricUpdate() throws InterruptedException {
-        Counter counter = baseMetricRegistry.counter("DummyCounter");
+        Counter counter = meterRegistry.getOrCreate(Counter.builder("DummyCounter")
+                                                            .scope(Meter.Scope.BASE));
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
         noOfExecutions = 0;
@@ -113,7 +101,7 @@ class OciMetricsSupportTest {
             testMetricUpdateCounterValue[noOfExecutions == 1 ? 0 : 1] =
                     allMetricDataDetails.get(0).getDatapoints().get(0).getValue();
             if (noOfExecutions == 1) {
-                counter.inc();
+                counter.increment();
             } else {
                 // Give signal that multiple metric updates have been triggered
                 countDownLatch.countDown();
@@ -135,7 +123,7 @@ class OciMetricsSupportTest {
 
         HttpRouting routing = createRouting(ociMetricsSupportBuilder);
 
-        counter.inc();
+        counter.increment();
         WebServer webServer = createWebServer(routing);
 
         // Wait for metric updates to complete
@@ -153,9 +141,12 @@ class OciMetricsSupportTest {
     void testEndpoint() throws InterruptedException {
         String originalEndPoint = endPoint;
 
-        baseMetricRegistry.counter("baseDummyCounter1").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter1").inc();
-        appMetricRegistry.counter("appDummyCounter1").inc();
+        meterRegistry.getOrCreate(Counter.builder("baseDummyCounter1")
+                                          .scope(Meter.Scope.BASE)).increment();
+        meterRegistry.getOrCreate(Counter.builder("vendorDummyCounter1")
+                                          .scope(Meter.Scope.VENDOR)).increment();
+        meterRegistry.getOrCreate(Counter.builder("appDummyCounter1")
+                                          .scope(Meter.Scope.APPLICATION)).increment();;
 
         CountDownLatch countDownLatch = new CountDownLatch(1);
         noOfExecutions = 0;
@@ -213,24 +204,32 @@ class OciMetricsSupportTest {
 
     @Test
     void testBatchSize() throws InterruptedException {
-        baseMetricRegistry.counter("baseDummyCounter1").inc();
-        baseMetricRegistry.counter("baseDummyCounter2").inc();
-        baseMetricRegistry.counter("baseDummyCounter3").inc();
+        Stream.of("baseDummyCounter1",
+                  "baseDummyCounter2",
+                  "baseDummyCounter3")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.BASE)).increment());
+        Stream.of("vendorDummyCounter1",
+                  "vendorDummyCounter2",
+                  "vendorDummyCounter3")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.VENDOR)).increment());
+        Stream.of("appDummyCounter1",
+                  "appDummyCounter2",
+                  "appDummyCounter3",
+                  "appDummyCounter4")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.APPLICATION)).increment());
 
-        vendorMetricRegistry.counter("vendorDummyCounter1").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter2").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter3").inc();
-
-        appMetricRegistry.counter("appDummyCounter1").inc();
-        appMetricRegistry.counter("appDummyCounter2").inc();
-        appMetricRegistry.counter("appDummyCounter3").inc();
-        appMetricRegistry.counter("appDummyCounter4").inc();
+        Stream.of("appDummyCounter1",
+                  "appDummyCounter2",
+                  "appDummyCounter3",
+                  "appDummyCounter4")
+                        .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                           .scope(Meter.Scope.APPLICATION)).increment());
 
         // Should be 10 metrics
-        int totalMetrics =
-                baseMetricRegistry.getMetrics().size() +
-                        vendorMetricRegistry.getMetrics().size() +
-                        appMetricRegistry.getMetrics().size();
+        int totalMetrics = meterRegistry.meters().size(); // gets all scopes
 
         int batchSize = 3;
         long batchDelay = 100L;
@@ -296,14 +295,18 @@ class OciMetricsSupportTest {
 
     @Test
     void testConfigSources() {
-        baseMetricRegistry.counter("baseDummyCounter1").inc();
+        meterRegistry.getOrCreate(Counter.builder("baseDummyCounter1")
+                                          .scope(Meter.Scope.BASE)).increment();
 
-        vendorMetricRegistry.counter("vendorDummyCounter1").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter2").inc();
-
-        appMetricRegistry.counter("appDummyCounter1").inc();
-        appMetricRegistry.counter("appDummyCounter2").inc();
-        appMetricRegistry.counter("appDummyCounter3").inc();
+        Stream.of("vendorDummyCounter1",
+                  "vendorDummyCounter2")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.VENDOR)).increment());
+        Stream.of("appDummyCounter1",
+                  "appDummyCounter2",
+                  "appDummyCounter3")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.APPLICATION)).increment());
 
         validateMetricCount("base, vendor, application", 6);
         validateMetricCount("base", 1);
@@ -314,20 +317,29 @@ class OciMetricsSupportTest {
 
     @Test
     void testMetricScope() {
-        baseMetricRegistry.counter("baseDummyCounter1").inc();
+        meterRegistry.getOrCreate(Counter.builder("baseDummyCounter1")
+                                          .scope(Meter.Scope.BASE))
+                .increment();
 
-        vendorMetricRegistry.counter("vendorDummyCounter1").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter2").inc();
+        Stream.of("vendorDummyCounter1",
+                  "vendorDummyCounter2")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.VENDOR))
+                        .increment());
 
-        appMetricRegistry.counter("appDummyCounter1").inc();
-        appMetricRegistry.counter("appDummyCounter2").inc();
-        appMetricRegistry.counter("appDummyCounter3").inc();
+        Stream.of("appDummyCounter1",
+                  "appDummyCounter2",
+                  "appDummyCounter3")
+                .forEach(name -> meterRegistry.getOrCreate(Counter.builder(name)
+                                                                   .scope(Meter.Scope.APPLICATION))
+                        .increment());
+
 
         validateMetricCount(new String[] {}, 6);
-        validateMetricCount(new String[] {Registry.BASE_SCOPE, Registry.VENDOR_SCOPE, Registry.APPLICATION_SCOPE}, 6);
-        validateMetricCount(new String[] {Registry.BASE_SCOPE}, 1);
-        validateMetricCount(new String[] {Registry.VENDOR_SCOPE}, 2);
-        validateMetricCount(new String[] {Registry.APPLICATION_SCOPE}, 3);
+        validateMetricCount(new String[] {Meter.Scope.BASE, Meter.Scope.VENDOR, Meter.Scope.APPLICATION}, 6);
+        validateMetricCount(new String[] {Meter.Scope.BASE}, 1);
+        validateMetricCount(new String[] {Meter.Scope.VENDOR}, 2);
+        validateMetricCount(new String[] {Meter.Scope.APPLICATION}, 3);
         validateMetricCount(new String[] {"base", "vendor", "application"}, 6);
         validateMetricCount(new String[] {"base"}, 1);
         validateMetricCount(new String[] {"vendor"}, 2);
@@ -336,9 +348,12 @@ class OciMetricsSupportTest {
 
     @Test
     void testDisableMetrics() {
-        baseMetricRegistry.counter("baseDummyCounter1").inc();
-        vendorMetricRegistry.counter("vendorDummyCounter1").inc();
-        appMetricRegistry.counter("appDummyCounter1").inc();
+        meterRegistry.getOrCreate(Counter.builder("baseDummyCounter1")
+                                          .scope(Meter.Scope.BASE)).increment();
+        meterRegistry.getOrCreate(Counter.builder("vendorDummyCounter1")
+                                          .scope(Meter.Scope.VENDOR)).increment();
+        meterRegistry.getOrCreate(Counter.builder("appDummyCounter1")
+                                          .scope(Meter.Scope.APPLICATION)).increment();
 
         OciMetricsSupport.Builder ociMetricsSupportBuilder = OciMetricsSupport.builder()
                 .namespace("namespace")

@@ -18,7 +18,6 @@ package io.helidon.microprofile.metrics;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.helidon.metrics.api.RegistryFactory;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.inject.Inject;

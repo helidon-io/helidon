@@ -19,7 +19,6 @@ import java.lang.System.Logger.Level;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;
 
-import io.helidon.metrics.api.HelidonMetric;
 import io.helidon.microprofile.servicecommon.HelidonInterceptor;
 
 import jakarta.inject.Inject;

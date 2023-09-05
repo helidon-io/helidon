@@ -24,6 +24,7 @@ import org.eclipse.microprofile.metrics.Histogram;
 import org.eclipse.microprofile.metrics.Metadata;
 import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.eclipse.microprofile.metrics.MetricUnits;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 

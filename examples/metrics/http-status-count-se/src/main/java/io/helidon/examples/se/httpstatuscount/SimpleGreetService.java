@@ -19,7 +19,9 @@ import java.util.Collections;
 import java.util.logging.Logger;
 
 import io.helidon.config.Config;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -28,8 +30,6 @@ import io.helidon.webserver.http.ServerResponse;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 
 /**
  * A simple service to greet you. Examples:
@@ -44,8 +44,8 @@ public class SimpleGreetService implements HttpService {
     private static final Logger LOGGER = Logger.getLogger(SimpleGreetService.class.getName());
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
-    private final MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
-    private final Counter accessCtr = registry.counter("accessctr");
+    private final MeterRegistry registry = Metrics.globalRegistry();
+    private final Counter accessCtr = registry.getOrCreate(Counter.builder("accessctr"));
 
     private final String greeting;
 
@@ -82,7 +82,7 @@ public class SimpleGreetService implements HttpService {
 
 
     private void countAccess(ServerRequest request, ServerResponse response) {
-        accessCtr.inc();
+        accessCtr.increment();
         response.next();
     }
 }

@@ -22,9 +22,10 @@ module io.helidon.metrics.traceexemplar {
 
     requires io.helidon.common.context;
     requires io.helidon.tracing;
+    requires io.helidon.metrics.api;
 
     requires transitive io.helidon.metrics;
 
-    provides io.helidon.metrics.api.spi.ExemplarService
+    provides io.helidon.metrics.spi.ExemplarService
             with io.helidon.metrics.exemplartrace.TraceExemplarService;
 }

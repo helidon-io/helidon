@@ -18,7 +18,7 @@ package io.helidon.examples.metrics.kpi;
 
 import java.util.Collections;
 
-import io.helidon.metrics.api.Registry;
+import io.helidon.metrics.api.Meter;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.containsString;
 @ServerTest
 public class MainTest {
 
-    private static final String KPI_REGISTRY_TYPE = Registry.VENDOR_SCOPE;
+    private static final String KPI_REGISTRY_TYPE = Meter.Scope.VENDOR;
     private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject TEST_JSON_OBJECT = JSON_BUILDER.createObjectBuilder()
             .add("greeting", "Hola")

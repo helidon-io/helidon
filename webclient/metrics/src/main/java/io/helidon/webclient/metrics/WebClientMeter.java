@@ -16,10 +16,9 @@
 package io.helidon.webclient.metrics;
 
 import io.helidon.http.Http;
+import io.helidon.metrics.api.Counter;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
-
-import org.eclipse.microprofile.metrics.Metadata;
 
 /**
  * Client metric meter for all requests.
@@ -49,6 +48,8 @@ public class WebClientMeter extends WebClientMetric {
     }
 
     private void updateMeter(Metadata metadata) {
-        metricRegistry().counter(metadata).inc();
+        meterRegistry().getOrCreate(Counter.builder(metadata.name())
+                                            .description(metadata.description()))
+                .increment();
     }
 }

@@ -56,6 +56,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
@@ -68,11 +73,6 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

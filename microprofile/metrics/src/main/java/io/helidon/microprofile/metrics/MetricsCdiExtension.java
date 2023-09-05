@@ -43,8 +43,8 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
-import io.helidon.metrics.api.MetricsSettings;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
 import io.helidon.microprofile.metrics.MetricUtil.LookupResult;
 import io.helidon.microprofile.metrics.spi.MetricAnnotationDiscoveryObserver;
@@ -68,6 +68,7 @@ import jakarta.enterprise.inject.spi.AnnotatedType;
 import jakarta.enterprise.inject.spi.Bean;
 import jakarta.enterprise.inject.spi.BeanManager;
 import jakarta.enterprise.inject.spi.BeforeBeanDiscovery;
+import jakarta.enterprise.inject.spi.BeforeShutdown;
 import jakarta.enterprise.inject.spi.DeploymentException;
 import jakarta.enterprise.inject.spi.ProcessAnnotatedType;
 import jakarta.enterprise.inject.spi.ProcessManagedBean;
@@ -199,10 +200,20 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         super(LOGGER, MetricsCdiExtension::createMetricsService, "metrics");
     }
 
-    private static MetricsFeature createMetricsService(Config helidonConfig) {
+    private static MetricsFeature createMetricsService(Config metricsConfigNode) {
+
+        // Initialize the metrics factory instance and, along with it, the system tags manager.
+        MetricsFactory metricsFactory = MetricsFactory.getInstance(metricsConfigNode);
+
+        Contexts.globalContext().register(metricsFactory);
+        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder().config(metricsConfigNode);
+        MetricsConfig metricsConfig = metricsConfigBuilder.build();
         MetricsFeature.Builder builder = MetricsFeature.builder()
+                .metricsConfig(metricsConfigBuilder)
+                .meterRegistry(metricsFactory.globalRegistry(metricsConfig))
+                .metricsConfig(MetricsConfig.builder(metricsConfig))
                 .webContext("/metrics")
-                .config(helidonConfig);
+                .config(metricsConfigNode);
 
         return builder.build();
     }
@@ -502,15 +513,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         return result;
     }
 
-//    private Set<Class<? extends Annotation>> metricsAnnotationClasses(Annotated annotated) {
-//        return annotated
-//                .getAnnotations()
-//                .stream()
-//                .map(Annotation::annotationType)
-//                .filter(METRIC_ANNOTATIONS::containsKey)
-//                .collect(Collectors.toSet());
-//    }
-
     /**
      * Checks to make sure the annotated type is not abstract and is not an interceptor.
      *
@@ -721,6 +723,8 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
             throw new DeploymentException("Metrics module found issues with deployment: " + problems.toString());
         }
 
+        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsConfig.METRICS_CONFIG_KEY);
+
         HttpRules defaultRouting = super.registerService(adv, bm, server);
         MetricsFeature metricsSupport = serviceSupport();
 
@@ -734,8 +738,6 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         Set<String> vendorMetricsAdded = new HashSet<>();
         vendorMetricsAdded.add("@default");
 
-        Config config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(MetricsSettings.Builder.METRICS_CONFIG_KEY);
-
         // now we may have additional sockets we want to add vendor metrics to
         config.get("vendor-metrics-routings")
                 .asList(String.class)
@@ -747,10 +749,19 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                     }
                 });
 
-        // registry factory is available in global
-        Contexts.globalContext().register(RegistryFactory.getInstance());
-
         return defaultRouting;
+    }
+
+    /**
+     * Clears data structures.
+     * <p>
+     *     CDI invokes the {@link #onShutdown(jakarta.enterprise.inject.spi.BeforeShutdown)} method when CDI is in play, but
+     *     some tests do not use the CDI environment and need to invoke this method to do the clean-up.
+     * </p>
+     */
+    static void shutdown() {
+        MetricsFactory.closeAll();
+        RegistryFactory.closeAll();
     }
 
     @Override
@@ -844,6 +855,10 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
                 LOGGER.log(Level.DEBUG, () -> String.format("Recorded annotated gauge with name %s", gaugeName));
             });
         }
+    }
+
+    private void onShutdown(@Observes BeforeShutdown shutdown) {
+        shutdown();
     }
 
     private void registerAnnotatedGauges(BeanManager bm) {

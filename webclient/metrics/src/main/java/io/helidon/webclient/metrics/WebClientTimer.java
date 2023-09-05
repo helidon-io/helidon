@@ -18,11 +18,9 @@ package io.helidon.webclient.metrics;
 import java.time.Duration;
 
 import io.helidon.http.Http;
+import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
-
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.Timer;
 
 /**
  * Timer which measures the length of request.
@@ -54,8 +52,9 @@ class WebClientTimer extends WebClientMetric {
 
     private void updateTimer(Metadata metadata, long start) {
         long time = System.nanoTime() - start;
-        Timer timer = metricRegistry().timer(metadata);
-        timer.update(Duration.ofNanos(time));
+        Timer timer = meterRegistry().getOrCreate(Timer.builder(metadata.name())
+                                                    .description(metadata.description()));
+        timer.record(Duration.ofNanos(time));
     }
 
 }

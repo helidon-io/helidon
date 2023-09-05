@@ -16,17 +16,16 @@
 package io.helidon.examples.todos.frontend;
 
 import io.helidon.http.Http;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import jakarta.json.JsonObject;
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricUnits;
 
 /**
  * TODO service.
@@ -57,15 +56,12 @@ public final class TodoService implements HttpService {
      * @param bsc the {@code BackendServiceClient} to use
      */
     TodoService(BackendServiceClient bsc) {
-        MetricRegistry registry = RegistryFactory.getInstance().getRegistry(MetricRegistry.APPLICATION_SCOPE);
+        MeterRegistry registry = Metrics.globalRegistry();
+
         this.bsc = bsc;
-        this.createCounter = registry.counter("created");
-        this.updateCounter = registry.counter("updates");
-        this.deleteCounter = registry.counter(Metadata.builder()
-                                                      .withName("deletes")
-                                                      .withDescription("Number of deleted todos")
-                                                      .withUnit(MetricUnits.NONE)
-                                                      .build());
+        this.createCounter = registry.getOrCreate(Counter.builder("created"));
+        this.updateCounter = registry.getOrCreate(Counter.builder("updates"));
+        this.deleteCounter = registry.getOrCreate(counterMetadata("deletes", "Number of deleted todos"));
     }
 
     @Override
@@ -77,6 +73,12 @@ public final class TodoService implements HttpService {
                 .post("/todo", this::create);
     }
 
+    private Counter.Builder counterMetadata(String name, String description) {
+        return Counter.builder(name)
+                .description(description)
+                .baseUnit(Meter.BaseUnits.NONE);
+    }
+
     /**
      * Handler for {@code POST /todo}.
      *
@@ -85,7 +87,7 @@ public final class TodoService implements HttpService {
      */
     private void create(ServerRequest req, ServerResponse res) {
         JsonObject jsonObject = bsc.create(req.content().as(JsonObject.class));
-        createCounter.inc();
+        createCounter.increment();
         res.status(Http.Status.CREATED_201);
         res.send(jsonObject);
     }
@@ -109,7 +111,7 @@ public final class TodoService implements HttpService {
     private void update(ServerRequest req, ServerResponse res) {
         String id = req.path().pathParameters().value("id");
         JsonObject jsonObject = bsc.update(id, req.content().as(JsonObject.class));
-        updateCounter.inc();
+        updateCounter.increment();
         res.send(jsonObject);
     }
 
@@ -122,7 +124,7 @@ public final class TodoService implements HttpService {
     private void delete(ServerRequest req, ServerResponse res) {
         String id = req.path().pathParameters().value("id");
         JsonObject jsonObject = bsc.deleteSingle(id);
-        deleteCounter.inc();
+        deleteCounter.increment();
         res.send(jsonObject);
     }
 

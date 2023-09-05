@@ -30,9 +30,9 @@ module io.helidon.webserver.observe.metrics {
     requires io.helidon.common.features.api;
     requires io.helidon.http.media.jsonp;
     requires io.helidon.metrics.api;
-    requires io.helidon.metrics.serviceapi;
     requires io.helidon.servicecommon;
     requires io.helidon.webserver;
+    requires java.management;
 
     requires static io.helidon.config.metadata;
 
@@ -43,5 +43,9 @@ module io.helidon.webserver.observe.metrics {
 
     provides io.helidon.webserver.observe.spi.ObserveProvider
             with io.helidon.webserver.observe.metrics.MetricsObserveProvider;
+    provides io.helidon.metrics.spi.MeterRegistryFormatterProvider
+            with io.helidon.webserver.observe.metrics.JsonMeterRegistryFormatterProvider;
+
+    uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 
 }

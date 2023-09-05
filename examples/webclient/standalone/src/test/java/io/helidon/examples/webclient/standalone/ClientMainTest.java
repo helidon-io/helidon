@@ -22,8 +22,9 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import io.helidon.config.Config;
-import io.helidon.metrics.api.Registry;
-import io.helidon.metrics.api.RegistryFactory;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.api.WebClient;
@@ -31,8 +32,6 @@ import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 
-import org.eclipse.microprofile.metrics.Counter;
-import org.eclipse.microprofile.metrics.MetricRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -49,8 +48,7 @@ import static org.hamcrest.Matchers.is;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ClientMainTest {
 
-    private static final MetricRegistry METRIC_REGISTRY =
-            RegistryFactory.getInstance().getRegistry(Registry.APPLICATION_SCOPE);
+    private static final MeterRegistry METRIC_REGISTRY = Metrics.globalRegistry();
 
     private final WebServer server;
     private final Path testFile;
@@ -101,10 +99,10 @@ public class ClientMainTest {
     @Order(3)
     public void testMetricsExample() {
         String counterName = "example.metric.GET.localhost";
-        Counter counter = METRIC_REGISTRY.counter(counterName);
-        assertThat("Counter " + counterName + " has not been 0", counter.getCount(), is(0L));
+        Counter counter = METRIC_REGISTRY.getOrCreate(Counter.builder(counterName));
+        assertThat("Counter " + counterName + " has not been 0", counter.count(), is(0L));
         ClientMain.clientMetricsExample("http://localhost:" + server.port() + "/greet", Config.create());
-        assertThat("Counter " + counterName + " " + "has not been 1", counter.getCount(), is(1L));
+        assertThat("Counter " + counterName + " " + "has not been 1", counter.count(), is(1L));
     }
 
     @Test

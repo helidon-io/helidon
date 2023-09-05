@@ -139,14 +139,25 @@ class MetricAnnotationInfo<A extends Annotation, T extends Metric> {
             // pre-existing metadata. We interpret "consistent" to mean that if the annotation specifies a value it must
             // match the value in the pre-existing metadata; if the annotation does not specify a value then it is treated
             // as a wildcard and is consistent with any value stored in the pre-existing metadata.
+
             List<String> mismatches = new ArrayList<>();
             Metadata existingMetadata = registry.getMetadata(metricName);
             if (existingMetadata == null) {
                 return;
             }
-            if (metadata.getUnit() != null
-                    && !metadata.getUnit().equals(existingMetadata.getUnit())) {
-                mismatches.add("unit");
+
+            // Some underlying implementations (e.g., the Micrometer Prometheus meter registry) impose their own ideas
+            // about the units for timers, with the result that registered metrics and therefore our recorded metadata might have
+            // a different unit setting from what the annotation or programmatically-specified metadata called for. To allow for
+            // that case, we'll exclude units on timers from the validation. Note that the Prometheus meter registry
+            // checks the consistency of metadata itself and throws the expected IllegalArgumentException in case of violations,
+            // as the MP Metrics spec requires.
+
+            if (!Timed.class.isAssignableFrom(annotationType)) {
+                if (metadata.getUnit() != null
+                        && !metadata.getUnit().equals(existingMetadata.getUnit())) {
+                    mismatches.add("unit");
+                }
             }
             if (metadata.getDescription() != null
                     && !metadata.getDescription().equals(existingMetadata.getDescription())) {

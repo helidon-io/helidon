@@ -24,7 +24,7 @@ public interface Sample {
     /**
      * Create a new derived value with a reference.
      *
-     * @param value value
+     * @param value     value
      * @param reference reference
      * @return a new derived value
      */
@@ -57,9 +57,10 @@ public interface Sample {
     /**
      * Returns the value as a double.
      * <p>
-     *     For actual samples this serves as a conversion from long to double so all sample types can be treated somewhat
-     *     uniformly.
+     * For actual samples this serves as a conversion from long to double so all sample types can be treated somewhat
+     * uniformly.
      * </p>
+     *
      * @return value of the sample as a double
      */
     double doubleValue();
@@ -98,6 +99,7 @@ public interface Sample {
     interface Labeled extends Sample {
         /**
          * The value.
+         *
          * @return value
          */
         double value();

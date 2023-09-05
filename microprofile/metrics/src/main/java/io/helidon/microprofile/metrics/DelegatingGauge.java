@@ -29,7 +29,6 @@ import org.eclipse.microprofile.metrics.Gauge;
  * @param <T> data type reported by the underlying {@code Gauge}
  */
 class DelegatingGauge<T extends Number> implements Gauge<T> {
-    // TODO uncomment preceding clause once MP metrics enforces restriction
 
     private final Method method;
     private final Object obj;
@@ -53,7 +52,6 @@ class DelegatingGauge<T extends Number> implements Gauge<T> {
      */
     public static <S extends Number> DelegatingGauge<S> newInstance(Method method, Object obj,
             Class<S> clazz) {
-        // TODO uncomment preceding clause once MP metrics enforces restriction
         return new DelegatingGauge<>(method, obj, clazz);
     }
 

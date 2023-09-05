@@ -69,7 +69,6 @@
                 <value>io.helidon.webserver.observe.health.HealthObserveProvider</value>
             </list>
             <list key="Main-helidon-imports" if="${metrics}">
-                <value>io.helidon.metrics.api.MetricsSettings</value>
                 <value>io.helidon.webserver.observe.metrics.MetricsFeature</value>
                 <value>io.helidon.webserver.observe.metrics.MetricsObserveProvider</value>
             </list>
@@ -120,6 +119,9 @@
         }
     }
 ]]></value>
+            </list>
+            <list key="Observe-feature-builder">
+                <value if="${metrics}"><![CDATA[                    .addProvider(MetricsObserveProvider.create())]]></value>
             </list>
             <list key="Abstract-tests">
                 <value if="${metrics}"><![CDATA[

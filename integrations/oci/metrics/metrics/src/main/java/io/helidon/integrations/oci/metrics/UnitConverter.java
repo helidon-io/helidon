@@ -17,7 +17,7 @@ package io.helidon.integrations.oci.metrics;
 
 import java.util.Map;
 
-import org.eclipse.microprofile.metrics.MetricUnits;
+import io.helidon.metrics.api.Meter;
 
 abstract class UnitConverter {
 
@@ -46,41 +46,41 @@ abstract class UnitConverter {
     }
 
     boolean handles(String metricUnits) {
-        return conversions.containsKey(metricUnits);
+        return metricUnits != null && conversions.containsKey(metricUnits);
     }
 
     private static class StorageUnitConverter extends UnitConverter {
 
         private static final Map<String, Double> CONVERSIONS = Map.of(
-                MetricUnits.BITS, 1.0 / 8.0,
-                MetricUnits.KILOBITS, 1.0D / 8.0 * 1000.0,
-                MetricUnits.MEGABITS, 1.0 / 8.0 * 1000.0 * 1000.0,
-                MetricUnits.GIGABITS, 1.0 / 8.0 * 1000.0 * 1000.0 * 1000.0,
-                MetricUnits.BYTES, 1.0,
-                MetricUnits.KILOBYTES, 1000.0,
-                MetricUnits.MEGABYTES, 1000.0 * 1000.0,
-                MetricUnits.GIGABYTES, 1000.0 * 1000.0 * 1000.0
+                Meter.BaseUnits.BITS, 1.0 / 8.0,
+                Meter.BaseUnits.KILOBITS, 1.0D / 8.0 * 1000.0,
+                Meter.BaseUnits.MEGABITS, 1.0 / 8.0 * 1000.0 * 1000.0,
+                Meter.BaseUnits.GIGABITS, 1.0 / 8.0 * 1000.0 * 1000.0 * 1000.0,
+                Meter.BaseUnits.BYTES, 1.0,
+                Meter.BaseUnits.KILOBYTES, 1000.0,
+                Meter.BaseUnits.MEGABYTES, 1000.0 * 1000.0,
+                Meter.BaseUnits.GIGABYTES, 1000.0 * 1000.0 * 1000.0
         );
 
         StorageUnitConverter() {
-            super(MetricUnits.BYTES, CONVERSIONS);
+            super(Meter.BaseUnits.BYTES, CONVERSIONS);
         }
     }
 
     private static class TimeUnitConverter extends UnitConverter {
 
         private static final Map<String, Double> CONVERSIONS = Map.of(
-                MetricUnits.NANOSECONDS, 1.0 / 1000.0 / 1000.0 / 1000.0,
-                MetricUnits.MICROSECONDS, 1.0 / 1000.0 / 1000.0,
-                MetricUnits.MILLISECONDS, 1.0 / 1000.0,
-                MetricUnits.SECONDS, 1.0,
-                MetricUnits.MINUTES, 60.0,
-                MetricUnits.HOURS, 60.0 * 60.0,
-                MetricUnits.DAYS, 60.0 * 60.0 * 24.0
+                Meter.BaseUnits.NANOSECONDS, 1.0 / 1000.0 / 1000.0 / 1000.0,
+                Meter.BaseUnits.MICROSECONDS, 1.0 / 1000.0 / 1000.0,
+                Meter.BaseUnits.MILLISECONDS, 1.0 / 1000.0,
+                Meter.BaseUnits.SECONDS, 1.0,
+                Meter.BaseUnits.MINUTES, 60.0,
+                Meter.BaseUnits.HOURS, 60.0 * 60.0,
+                Meter.BaseUnits.DAYS, 60.0 * 60.0 * 24.0
         );
 
         TimeUnitConverter() {
-            super(MetricUnits.SECONDS, CONVERSIONS);
+            super(Meter.BaseUnits.SECONDS, CONVERSIONS);
         }
     }
 }

@@ -73,7 +73,9 @@ public interface MetricAnnotationDiscovery {
     interface OfConstructor extends MetricAnnotationDiscovery {
 
         /**
-         * @return the configurator for the constructor on which an annotation of interest appears
+         * Returns the configurator for the constructor on which an annotation of interest appears.
+         *
+         * @return the configurator
          */
         AnnotatedConstructorConfigurator<?> configurator();
     }

@@ -49,6 +49,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>jakarta.enterprise</groupId>
+            <artifactId>jakarta.enterprise.cdi-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.microprofile.reactive.messaging</groupId>
             <artifactId>microprofile-reactive-messaging-tck</artifactId>
         </dependency>

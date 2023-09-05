@@ -42,21 +42,23 @@
             <artifactId>helidon-common-config</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common.features</groupId>
+            <artifactId>helidon-common-features-api</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-metadata</artifactId>
             <optional>true</optional>
         </dependency>
         <dependency>
-            <groupId>org.eclipse.microprofile.metrics</groupId>
-            <artifactId>microprofile-metrics-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.common.testing</groupId>
             <artifactId>helidon-common-testing-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -78,6 +80,7 @@
             <artifactId>hamcrest-all</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -89,8 +92,23 @@
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.common.features</groupId>
+                            <artifactId>helidon-common-features-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.config</groupId>
                             <artifactId>helidon-config-metadata-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.inject.configdriven</groupId>
+                            <artifactId>helidon-inject-configdriven-processor</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-processor</artifactId>
                             <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
@@ -122,7 +140,7 @@
                                 <testSelection>topLevel</testSelection>
                             </systemPropertyVariables>
                             <environmentVariables>
-                                <tags>topLevel</tags>
+                                <tags>topLevel=topValue</tags>
                             </environmentVariables>
                             <includes>
                                 <include>**/TestGlobalTags.java</include>
@@ -145,7 +163,7 @@
                                 <metrics.tags>myTag=myValue</metrics.tags>
                             </systemPropertyVariables>
                             <environmentVariables>
-                                <tags>topLevel</tags>
+                                <tags>topLevel=topValue</tags>
                             </environmentVariables>
                             <includes>
                                 <include>**/TestGlobalTags.java</include>

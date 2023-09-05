@@ -30,7 +30,6 @@ module io.helidon.webclient.metrics {
     requires io.helidon.common.features.api;
     requires io.helidon.metrics.api;
     requires io.helidon.webclient;
-    requires microprofile.metrics.api;
 
     requires transitive io.helidon.common.config;
 

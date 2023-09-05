@@ -31,9 +31,11 @@
 
     <modules>
         <module>metrics</module>
+        <module>providers</module>
         <module>prometheus</module>
         <module>trace-exemplar</module>
         <module>api</module>
-        <module>service-api</module>
+        <module>system-meters</module>
+        <module>provider-tests</module>
     </modules>
 </project>

@@ -62,6 +62,10 @@
             <artifactId>helidon-webserver-access-log</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-tracing</artifactId>
         </dependency>
@@ -124,14 +128,7 @@
         <dependency>
             <groupId>io.helidon.metrics</groupId>
             <artifactId>helidon-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.metrics</groupId>
-            <artifactId>helidon-metrics-service-api</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.testing.junit5</groupId>

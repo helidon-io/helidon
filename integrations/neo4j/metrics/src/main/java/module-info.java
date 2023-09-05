@@ -31,8 +31,7 @@ import io.helidon.common.features.api.Preview;
 module io.helidon.integrations.neo4j.metrics {
 
     requires io.helidon.integrations.neo4j;
-    requires io.helidon.metrics;
-    requires microprofile.metrics.api;
+    requires io.helidon.metrics.api;
 
     requires transitive io.helidon.common;
     requires transitive org.neo4j.driver;
