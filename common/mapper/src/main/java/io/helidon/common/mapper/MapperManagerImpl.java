@@ -66,17 +66,6 @@ final class MapperManagerImpl implements MapperManager {
     }
 
     @Override
-    public <SOURCE, TARGET> Optional<Mapper<SOURCE, TARGET>> mapper(Class<SOURCE> sourceType,
-                                                                    Class<TARGET> targetType,
-                                                                    String... qualifiers) {
-        Mapper<SOURCE, TARGET> mapper = findMapper(sourceType, targetType, false, qualifiers);
-        if (mapper instanceof NotFoundMapper) {
-            return Optional.empty();
-        }
-        return Optional.of(mapper);
-    }
-
-    @Override
     public <SOURCE, TARGET> Optional<Mapper<SOURCE, TARGET>> mapper(GenericType<SOURCE> sourceType,
                                                                     GenericType<TARGET> targetType,
                                                                     String... qualifiers) {
