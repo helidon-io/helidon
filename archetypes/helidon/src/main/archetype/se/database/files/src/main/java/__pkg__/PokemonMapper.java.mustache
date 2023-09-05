@@ -23,7 +23,7 @@ public class PokemonMapper implements DbMapper<Pokemon> {
         }
 
         DbColumn type = row.column("type");
-        return new Pokemon(name.as(String.class), type.as(String.class));
+        return new Pokemon(name.get(String.class), type.get(String.class));
     }
 
     @Override
