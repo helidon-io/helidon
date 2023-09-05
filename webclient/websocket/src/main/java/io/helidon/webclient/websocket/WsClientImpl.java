@@ -23,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Random;
+import java.util.Set;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketContext;
@@ -57,7 +58,7 @@ class WsClientImpl implements WsClient {
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(StandardCharsets.US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
-
+    private static final Set<String> SUPPORTED_SCHEMES = Set.of("wss", "ws", "https", "http");
     private final ClientRequestHeaders headers;
     private final WebClient webClient;
     private final Http1Client http1Client;
@@ -94,6 +95,16 @@ class WsClientImpl implements WsClient {
                 .uri(uri);
         UriInfo resolvedUri = upgradeRequest.resolvedUri();
         String scheme = resolvedUri.scheme();
+
+        if (!SUPPORTED_SCHEMES.contains(scheme)) {
+            throw new IllegalArgumentException(
+                    String.format("Not supported scheme %s, web socket client supported schemes are: %s",
+                                  scheme,
+                                  String.join(", ", SUPPORTED_SCHEMES)
+                    )
+            );
+        }
+
         if ("ws".equals(scheme)) {
             upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("http"));
         } else if ("wss".equals(scheme)) {
@@ -167,4 +178,5 @@ class WsClientImpl implements WsClient {
             throw new IllegalStateException("SHA-1 not provided", e);
         }
     }
+
 }

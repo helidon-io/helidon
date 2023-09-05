@@ -60,7 +60,7 @@ public class DirectWebClient implements WebClient {
     public DirectWebClient(HttpRouting routing) {
         this.routing = routing;
         this.webClient = WebClient.builder()
-                .baseUri("unit://helidon-unit:65000")
+                .baseUri("http://helidon-unit:65000")
                 .build();
         this.router = Router.builder().addRouting(routing).build();
     }
