@@ -260,7 +260,7 @@ public interface RequestedUriDiscoveryContext {
             }
             if (trustedProxies == null) {
                 trustedProxies = AllowList.builder()
-                        .addDeniedPredicate(s -> true)
+                        .addDenied(s -> true)
                         .build();
             }
         }

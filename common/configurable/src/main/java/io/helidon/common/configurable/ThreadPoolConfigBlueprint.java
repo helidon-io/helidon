@@ -26,55 +26,55 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 interface ThreadPoolConfigBlueprint extends Prototype.Factory<ThreadPoolSupplier> {
     /**
-     * Default core pool size.
+     * Default core pool size ({@value}).
      *
      * @see #corePoolSize()
      */
     int DEFAULT_CORE_POOL_SIZE = 10;
     /**
-     * Default max pool size.
+     * Default max pool size ({@value}).
      *
      * @see #maxPoolSize()
      */
     int DEFAULT_MAX_POOL_SIZE = 50;
     /**
-     * Default keep alive (duration format).
+     * Default keep alive (duration format - {@value}).
      *
      * @see #keepAlive()
      */
     String DEFAULT_KEEP_ALIVE = "PT3M";
     /**
-     * Default queue capacity.
+     * Default queue capacity ({@value}).
      *
      * @see #queueCapacity()
      */
     int DEFAULT_QUEUE_CAPACITY = 10000;
     /**
-     * Default is daemon.
+     * Default is daemon ({@value}).
      *
      * @see #daemon()
      */
     boolean DEFAULT_IS_DAEMON = true;
     /**
-     * Default thread name prefix.
+     * Default thread name prefix ({@value}).
      *
      * @see #threadNamePrefix()
      */
     String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
     /**
-     * Default prestart of threads.
+     * Default prestart of threads ({@value}).
      *
      * @see #shouldPrestart()
      */
     boolean DEFAULT_PRESTART = true;
     /**
-     * Default growth rate.
+     * Default growth rate ({@value}).
      *
      * @see #growthRate()
      */
     int DEFAULT_GROWTH_RATE = 0; // Maintain JDK pool behavior when max > core
     /**
-     * Default growth threshold.
+     * Default growth threshold ({@value}).
      *
      * @see #growthThreshold()
      */

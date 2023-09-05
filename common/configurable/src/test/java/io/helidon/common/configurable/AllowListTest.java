@@ -79,7 +79,7 @@ class AllowListTest {
                 new TestData(AllowList.builder().addAllowedSuffix(".helidon.io").build(),
                              "Allow suffix",
                              List.of(false, false, false, false, true)),
-                new TestData(AllowList.builder().addAllowedPredicate(new EmptyStringPredicate()).build(),
+                new TestData(AllowList.builder().addAllowed(new EmptyStringPredicate()).build(),
                              "Allow predicate",
                              List.of(false, false, true, false, false)),
                 new TestData(AllowList.builder().addAllowedPattern(Pattern.compile("f.*t")).build(),
@@ -111,7 +111,7 @@ class AllowListTest {
                              List.of(true, true, true, true, false)),
                 new TestData(AllowList.builder()
                                      .allowAll(true)
-                                     .addDeniedPredicate(new EmptyStringPredicate())
+                                     .addDenied(new EmptyStringPredicate())
                                      .build(),
                              "Deny exact",
                              List.of(true, true, false, true, true)),
@@ -131,7 +131,7 @@ class AllowListTest {
                 new TestData(AllowList.builder()
                                      .addAllowedPrefix("f")
                                      .addAllowedSuffix("helidon.io")
-                                     .addAllowedPredicate(new EmptyStringPredicate())
+                                     .addAllowed(new EmptyStringPredicate())
                                      .addDenied("www.helidon.io")
                                      .addDeniedSuffix("st")
                                      .build(),

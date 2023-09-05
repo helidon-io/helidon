@@ -125,7 +125,7 @@ interface AllowListConfigBlueprint extends Prototype.Factory<AllowList> {
      *
      * @return predicates to allow
      */
-    @Option.Singular
+    @Option.Singular("allowed")
     List<Predicate<String>> allowedPredicates();
 
     /**
@@ -133,6 +133,6 @@ interface AllowListConfigBlueprint extends Prototype.Factory<AllowList> {
      *
      * @return predicates to deny
      */
-    @Option.Singular
+    @Option.Singular("denied")
     List<Predicate<String>> deniedPredicates();
 }

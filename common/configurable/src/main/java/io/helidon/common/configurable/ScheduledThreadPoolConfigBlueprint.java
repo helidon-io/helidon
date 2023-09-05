@@ -23,25 +23,25 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 interface ScheduledThreadPoolConfigBlueprint extends Prototype.Factory<ScheduledThreadPoolSupplier> {
     /**
-     * Default core pool size.
+     * Default core pool size ({@value}).
      *
      * @see #corePoolSize()
      */
     int DEFAULT_CORE_POOL_SIZE = 16;
     /**
-     * Default daemon status of the created threads.
+     * Default daemon status of the created threads ({@value}).
      *
      * @see #daemon()
      */
     boolean DEFAULT_IS_DAEMON = true;
     /**
-     * Default thread name prefix.
+     * Default thread name prefix ({@value}).
      *
      * @see #threadNamePrefix()
      */
     String DEFAULT_THREAD_NAME_PREFIX = "helidon-";
     /**
-     * Default prestart status of threads.
+     * Default prestart status of threads ({@value}).
      *
      * @see #prestart()
      */
