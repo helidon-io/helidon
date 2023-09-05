@@ -23,9 +23,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.Headers;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
@@ -65,6 +67,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     private final List<Http2FrameData> continuationData = new ArrayList<>();
 
     private Http2StreamState state = Http2StreamState.IDLE;
+    private ReadState readState = ReadState.HEADERS;
     private Http2Headers currentHeaders;
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
@@ -73,6 +76,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
     private StreamBuffer buffer;
+    private final CompletableFuture<Headers> trailers = new CompletableFuture<>();
 
     Http2ClientStream(Http2ClientConnection connection,
                       Http2Settings serverSettings,
@@ -98,8 +102,17 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     @Override
     public void headers(Http2Headers headers, boolean endOfStream) {
+        readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
         this.currentHeaders = headers;
         this.hasEntity = !endOfStream;
+    }
+
+    @Override
+    public void trailers(Http2Headers headers, boolean endOfStream) {
+        // Doesn't really matter of we received endOfStream
+        // end of the trailers is end of the exchange
+        readState = readState.check(ReadState.END);
+        this.trailers.complete(headers.httpHeaders());
     }
 
     @Override
@@ -146,6 +159,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
+        readState = readState.check(ReadState.DATA);
         flowControl.inbound().incrementWindowSize(header.length());
     }
 
@@ -162,6 +176,10 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     @Override
     public void closeResource() {
         close();
+    }
+
+    CompletableFuture<Headers> trailers() {
+        return trailers;
     }
 
     boolean hasEntity() {
@@ -206,7 +224,7 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
     }
 
     BufferData read() {
-        while (state == Http2StreamState.HALF_CLOSED_LOCAL) {
+        while (state == Http2StreamState.HALF_CLOSED_LOCAL && readState != ReadState.END && hasEntity) {
             Http2FrameData frameData = readOne();
             if (frameData != null) {
                 return frameData.data();
@@ -299,12 +317,21 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
                 continuationData.add(frameData);
                 if (endOfHeaders) {
                     var requestHuffman = Http2HuffmanDecoder.create();
+
                     Http2Headers http2Headers = Http2Headers.create(this,
                                                                     connection.getInboundDynamicTable(),
                                                                     requestHuffman,
                                                                     continuationData.toArray(new Http2FrameData[0]));
+
                     recvListener.headers(ctx, streamId, http2Headers);
-                    this.headers(http2Headers, endOfStream);
+
+                    if (readState == ReadState.HEADERS) {
+                        // Clear out for trailers
+                        continuationData.clear();
+                        this.headers(http2Headers, endOfStream);
+                    } else {
+                        this.trailers(http2Headers, endOfStream);
+                    }
                 }
                 break;
             default:
@@ -361,6 +388,26 @@ class Http2ClientStream implements Http2Stream, ReleasableResource {
 
         private void write(int off, int len, byte... bytes) {
             writeData(BufferData.create(bytes, off, len), false);
+        }
+    }
+
+    private enum ReadState {
+        END,
+        TRAILERS(END),
+        DATA(TRAILERS, END),
+        HEADERS(DATA, TRAILERS);
+
+        private final Set<ReadState> allowedTransitions;
+
+        ReadState(ReadState... allowedTransitions){
+            this.allowedTransitions = Set.of(allowedTransitions);
+        }
+
+        ReadState check(ReadState newState) {
+            if (this == newState || allowedTransitions.contains(newState)) {
+                return newState;
+            }
+            throw new IllegalStateException("Transition from " + this + " to " + newState + " is not allowed!");
         }
     }
 }

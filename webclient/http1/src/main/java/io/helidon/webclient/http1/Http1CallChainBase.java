@@ -511,8 +511,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                            + BufferData.create(hex.getBytes(US_ASCII)).debugDataHex());
             }
             if (length == 0) {
-                reader.skip(2); // second CRLF finishing the entity
-
+                if (reader.startsWithNewLine()) {
+                    // No trailers, skip second CRLF
+                    reader.skip(2);
+                }
                 helidonSocket.log(LOGGER, TRACE, "read last (empty) chunk");
                 finished = true;
                 currentBuffer = null;

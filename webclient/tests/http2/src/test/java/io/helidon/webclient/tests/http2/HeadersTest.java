@@ -17,6 +17,7 @@
 package io.helidon.webclient.tests.http2;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +27,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
@@ -42,27 +43,29 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HeadersTest {
-
+    private static final Header BEFORE_HEADER = HeaderValues.create("test", "before");
+    private static final Header TRAILER_HEADER = HeaderValues.create("Trailer-header", "trailer-test");
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final String DATA = "Helidon!!!".repeat(10);
-    private static final Vertx vertx = Vertx.vertx();
-    private static final ExecutorService exec = Executors.newVirtualThreadPerTaskExecutor();
-    private static HttpServer server;
-    private static int port;
+    private static final Vertx VERTX = Vertx.vertx();
+    private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
+    private static HttpServer SERVER;
+    private static Http2Client CLIENT;
 
     @BeforeAll
     static void beforeAll() throws ExecutionException, InterruptedException, TimeoutException {
         LogConfig.configureRuntime();
-        server = vertx.createHttpServer(new HttpServerOptions()
+        SERVER = VERTX.createHttpServer(new HttpServerOptions()
                         .setInitialSettings(new Http2Settings()
                                 .setMaxHeaderListSize(Integer.MAX_VALUE)
                         )
@@ -71,9 +74,17 @@ class HeadersTest {
                     HttpServerResponse res = req.response();
                     switch (req.path()) {
                         case "/trailer" -> {
-                            res.putHeader("test", "before");
+                            res.putHeader(BEFORE_HEADER.name(), BEFORE_HEADER.get());
+                            res.putHeader(HeaderNames.TRAILER.defaultCase(), "Trailer-header");
                             res.write(DATA);
-                            res.putTrailer("Trailer-header", "trailer-test");
+                            res.putTrailer(TRAILER_HEADER.name(), TRAILER_HEADER.get());
+                            res.end();
+                        }
+                        case "/no-trailer" -> {
+                            res.putHeader(BEFORE_HEADER.name(), BEFORE_HEADER.get());
+                            res.write(DATA);
+                            res.write(DATA);
+                            res.write(DATA);
                             res.end();
                         }
                         case "/cont-in" -> {
@@ -94,6 +105,17 @@ class HeadersTest {
                             res.write(sb.toString());
                             res.end();
                         }
+                        case "/cont-trailer" -> {
+                            // Push vertx to split trailers to multiple frames - continuations
+                            Map<String, String> trailers = new HashMap<>(500);
+                            for (int i = 0; i < 500; i++) {
+                                trailers.put("test-trailer-" + i, DATA);
+                            }
+                            res.headers().add(HeaderNames.TRAILER.defaultCase(), trailers.keySet());
+                            res.write(DATA);
+                            res.trailers().addAll(trailers);
+                            res.end();
+                        }
                         default -> res.setStatusCode(404).end();
                     }
                 })
@@ -102,55 +124,83 @@ class HeadersTest {
                 .toCompletableFuture()
                 .get(TIMEOUT.toMillis(), MILLISECONDS);
 
-        port = server.actualPort();
+        int port = SERVER.actualPort();
+        CLIENT = Http2Client.builder()
+                .baseUri("http://localhost:" + port + "/")
+                .build();
     }
 
     @AfterAll
     static void afterAll() {
-        server.close();
-        vertx.close();
-        exec.shutdown();
+        SERVER.close();
+        VERTX.close();
+        EXECUTOR.shutdown();
         try {
-            if (!exec.awaitTermination(TIMEOUT.toMillis(), MILLISECONDS)) {
-                exec.shutdownNow();
+            if (!EXECUTOR.awaitTermination(TIMEOUT.toMillis(), MILLISECONDS)) {
+                EXECUTOR.shutdownNow();
             }
         } catch (InterruptedException e) {
-            exec.shutdownNow();
+            EXECUTOR.shutdownNow();
         }
     }
 
     @Test
-    //FIXME: #6544 trailer headers are not implemented yet
-    @Disabled
     void trailerHeader() {
-        try (Http2ClientResponse res = Http2Client.builder()
-                .baseUri("http://localhost:" + port + "/")
-                .build()
+        try (Http2ClientResponse res = CLIENT
                 .method(Method.GET)
                 .path("/trailer")
                 .priorKnowledge(true)
                 .request()) {
-            Headers h = res.headers();
-            assertThat(h.first(HeaderNames.create("test")).orElse(null), is("before"));
+            assertThat(res.headers(), hasHeader(BEFORE_HEADER));
+            assertThrows(IllegalStateException.class, res::trailers);
             assertThat(res.as(String.class), is(DATA));
-            assertThat(h.first(HeaderNames.create("Trailer-header")).orElse(null), is("trailer-test"));
+            assertThat(res.trailers(), hasHeader(TRAILER_HEADER));
+        }
+    }
+
+
+    @Test
+    void noTrailerHeader() {
+        try (Http2ClientResponse res = CLIENT
+                .method(Method.GET)
+                .path("/no-trailer")
+                .priorKnowledge(true)
+                .request()) {
+            assertThat(res.headers(), hasHeader(BEFORE_HEADER));
+            assertThat(res.as(String.class), is(DATA+DATA+DATA));
+            IllegalStateException ex = assertThrows(IllegalStateException.class, res::trailers);
+            assertThat(ex.getMessage(), is("No trailers are expected."));
+        }
+    }
+
+    @Test
+    void trailerHeaderContinuation() {
+        try (Http2ClientResponse res = CLIENT
+                .method(Method.GET)
+                .path("/cont-trailer")
+                .priorKnowledge(true)
+                .request()) {
+
+            assertThat(res.as(String.class), is(DATA));
+            assertThat(res.trailers().size(), is(500));
+            for (int i = 0; i < 500; i++) {
+                Header indexedTrailerHeader = HeaderValues.create("test-trailer-" + i, DATA);
+                assertThat(res.trailers(), hasHeader(indexedTrailerHeader));
+            }
         }
     }
 
     @Test
     void continuationInbound() {
-        try (Http2ClientResponse res = Http2Client.builder()
-                .baseUri("http://localhost:" + port + "/")
-                .build()
+        try (Http2ClientResponse res = CLIENT
                 .method(Method.GET)
                 .path("/cont-in")
                 .priorKnowledge(true)
                 .request()) {
 
-            Headers h = res.headers();
             for (int i = 0; i < 500; i++) {
-                String name = "test-header-" + i;
-                assertThat("Headers " + name, h.first(HeaderNames.create(name)).orElse(null), is(DATA));
+                Header indexedHeader = HeaderValues.create("test-header-" + i, DATA);
+                assertThat(res.headers(), hasHeader(indexedHeader));
             }
 
             assertThat(res.as(String.class), is(DATA));
@@ -160,15 +210,13 @@ class HeadersTest {
     @Test
     void continuationOutbound() {
         Set<String> expected = new HashSet<>(500);
-        try (Http2ClientResponse res = Http2Client.builder()
-                .baseUri("http://localhost:" + port + "/")
-                .build()
+        try (Http2ClientResponse res = CLIENT
                 .method(Method.GET)
                 .path("/cont-out")
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(HeaderValues.createCached("test-header-" + i, DATA + i));
+                        hv.add(HeaderValues.create("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })
@@ -181,9 +229,7 @@ class HeadersTest {
     @Test
     void continuationOutboundPost() {
         Set<String> expected = new HashSet<>(500);
-        try (Http2ClientResponse res = Http2Client.builder()
-                .baseUri("http://localhost:" + port + "/")
-                .build()
+        try (Http2ClientResponse res = CLIENT
                 .method(Method.POST)
                 .path("/cont-out")
                 .priorKnowledge(true)

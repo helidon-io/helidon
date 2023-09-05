@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
 
 /**
@@ -36,6 +37,15 @@ interface ClientResponseBase {
      * @return headers
      */
     ClientResponseHeaders headers();
+
+    /**
+     * Response trailer headers.
+     * Blocks until trailers are available.
+     *
+     * @throws java.lang.IllegalStateException when invoked before entity is requested
+     * @return trailers
+     */
+    ClientResponseTrailers trailers();
 
     /**
      * URI of the last request. (after redirection)

@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
 
 class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
@@ -49,6 +50,11 @@ class ClientResponseTypedImpl<T> implements ClientResponseTyped<T> {
     @Override
     public ClientResponseHeaders headers() {
         return response.headers();
+    }
+
+    @Override
+    public ClientResponseTrailers trailers() {
+        return response.trailers();
     }
 
     @Override

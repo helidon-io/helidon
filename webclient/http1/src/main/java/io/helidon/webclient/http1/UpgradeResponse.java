@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.util.NoSuchElementException;
 
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientConnection;
@@ -115,6 +116,11 @@ public final class UpgradeResponse {
         @Override
         public ClientResponseHeaders headers() {
             return delegate.headers();
+        }
+
+        @Override
+        public ClientResponseTrailers trailers() {
+            return delegate.trailers();
         }
 
         @Override
