@@ -371,16 +371,6 @@ public class MetricsFeature extends HelidonFeatureSupport {
     private void setUpDisabledEndpoints(HttpRules rules) {
         rules.get("/", DISABLED_ENDPOINT_HANDLER)
                 .options("/", DISABLED_ENDPOINT_HANDLER);
-
-        // TODO we should not need the following because catching the root (within metrics) should reject even subresource reqs.
-//        // routing to GET and OPTIONS for each metrics scope (registry type) and a specific metric within each scope:
-//        // application, base, vendor
-//        Meter.Scope.BUILT_IN_SCOPES
-//                .forEach(type -> Stream.of("", "/{metric}") // for the whole scope and for a specific metric within that scope
-//                        .map(suffix -> "/" + type + suffix)
-//                        .forEach(path -> rules.get(path, DISABLED_ENDPOINT_HANDLER)
-//                                .options(path, this::rejectOptions)
-//                        ));
     }
 
     /**

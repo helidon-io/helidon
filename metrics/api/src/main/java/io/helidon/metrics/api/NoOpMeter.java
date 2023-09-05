@@ -256,11 +256,6 @@ class NoOpMeter implements Meter, NoOpWrapper {
             public Counter build() {
                 return new NoOpMeter.Counter(this);
             }
-
-//            @Override
-//            public <T extends Meter.Builder<?, ?>> T copyTo(T target) {
-//                return target;
-//            }
         }
     }
 

@@ -585,9 +585,9 @@ class Registry implements MetricRegistry {
         io.helidon.metrics.api.Counter delegate = meterRegistry.getOrCreate(counterBuilder);
         HelidonCounter result = (HelidonCounter) metricsByDelegate.get(delegate);
         return result;
-//        return (HelidonCounter) metricsByDelegate.get(delegate);
     }
 
+    @SuppressWarnings("unchecked")
     private <N extends Number, T> HelidonGauge<N> createGauge(Metadata metadata, T object, Function<T, N> func, Tag... tags) {
         return (HelidonGauge<N>) createGauge(io.helidon.metrics.api.Gauge.builder(metadata.getName(),
                                                                                   (Supplier<? extends N>) () -> func
@@ -609,13 +609,15 @@ class Registry implements MetricRegistry {
 
     }
 
+    @SuppressWarnings("unchecked")
     private <N extends Number> HelidonGauge<N> createGauge(io.helidon.metrics.api.Gauge.Builder<N> gBuilder) {
-        io.helidon.metrics.api.Gauge delegate = meterRegistry.getOrCreate(gBuilder);
+        io.helidon.metrics.api.Gauge<?> delegate = meterRegistry.getOrCreate(gBuilder);
         return (HelidonGauge<N>) metricsByDelegate.get(delegate);
     }
 
+    @SuppressWarnings("unchecked")
     private <T> HelidonGauge<Long> createFunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<T> fcBuilder) {
-        io.helidon.metrics.api.Gauge delegate = meterRegistry
+        io.helidon.metrics.api.Gauge<?> delegate = meterRegistry
                 .getOrCreate(io.helidon.metrics.api.Gauge.builder(fcBuilder.name(),
                                                                   () -> fcBuilder.fn()
                                                                           .apply(fcBuilder.stateObject())));

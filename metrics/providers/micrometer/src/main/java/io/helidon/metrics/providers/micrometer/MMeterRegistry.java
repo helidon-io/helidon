@@ -269,20 +269,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return (HM) getOrCreateUntyped(convertNeutralBuilder(builder));
     }
 
-//    @Override
-//    public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
-//            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder) {
-//        // Just cast the builder if it "one of ours" because that means it was prepared using our MetricsFactory, and that
-//        // would already have set the builder up with the correct Micrometer builder delegate.
-//        if (builder instanceof MMeter.Builder<?, ?, ?, ?> mBuilder) {
-//            return (HM) getOrCreateUntyped((HB) mBuilder);
-//        }
-//
-//        // If this is not "one of ours" then we need to create a new builder, based on the one passed in but with the correct
-//        // Micrometer delegate builder assigned.
-//        return (HM) getOrCreateUntyped((HB) convertNeutralBuilder(builder));
-//    }
-
     @Override
     public <M extends io.helidon.metrics.api.Meter> Optional<M> meter(Class<M> mClass,
                                                                       String name,

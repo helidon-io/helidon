@@ -109,6 +109,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
                             .build());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
                                              Consumer<Meter> onAddListener,
@@ -121,6 +122,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
                             .build());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MeterRegistry createMeterRegistry(Clock clock,
                                              MetricsConfig metricsConfig,

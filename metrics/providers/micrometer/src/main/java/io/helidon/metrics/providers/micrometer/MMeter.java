@@ -59,6 +59,7 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
         this.scope = scope;
     }
 
+    @SuppressWarnings("unchecked")
     static <M extends io.micrometer.core.instrument.Meter,
             HM extends MMeter<M>> HM create(Meter.Id id,
                                             io.micrometer.core.instrument.Meter meter,
