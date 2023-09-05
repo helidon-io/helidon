@@ -66,6 +66,8 @@ class Http2CallEntityChain extends Http2CallChainBase {
         stream.flowControl().inbound().incrementWindowSize(clientRequest().requestPrefetch());
         whenSent.complete(serviceRequest);
 
+        stream.waitFor100Continue();
+
         if (entityBytes.length != 0) {
             stream.writeData(BufferData.create(entityBytes), true);
         }

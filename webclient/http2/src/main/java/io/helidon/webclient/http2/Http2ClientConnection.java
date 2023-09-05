@@ -79,6 +79,7 @@ class Http2ClientConnection {
     private final DataReader reader;
     private final DataWriter dataWriter;
     private final Semaphore pingPongSemaphore = new Semaphore(0);
+    private final Http2ClientConfig clientConfig;
     private volatile int lastStreamId;
 
     private Http2Settings serverSettings = Http2Settings.builder()
@@ -87,13 +88,14 @@ class Http2ClientConnection {
 
     private volatile boolean closed = false;
 
-    Http2ClientConnection(Http2ClientProtocolConfig protocolConfig, ClientConnection connection) {
+    Http2ClientConnection(Http2ClientImpl http2Client, ClientConnection connection) {
+        this.protocolConfig = http2Client.protocolConfig();
+        this.clientConfig = http2Client.clientConfig();
         this.connectionFlowControl = ConnectionFlowControl.clientBuilder(this::writeWindowsUpdate)
                 .maxFrameSize(protocolConfig.maxFrameSize())
                 .initialWindowSize(protocolConfig.initialWindowSize())
                 .blockTimeout(protocolConfig.flowControlBlockTimeout())
                 .build();
-        this.protocolConfig = protocolConfig;
         this.connection = connection;
         this.ctx = connection.helidonSocket();
         this.dataWriter = connection.writer();
@@ -105,7 +107,7 @@ class Http2ClientConnection {
                                         ClientConnection connection,
                                         boolean sendSettings) {
 
-        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client.protocolConfig(), connection);
+        Http2ClientConnection h2conn = new Http2ClientConnection(http2Client, connection);
         h2conn.start(http2Client.protocolConfig(), http2Client.webClient().executor(), sendSettings);
 
         return h2conn;
@@ -139,7 +141,8 @@ class Http2ClientConnection {
         Http2ClientStream stream = new Http2ClientStream(this,
                 serverSettings,
                 ctx,
-                config.timeout(),
+                config,
+                clientConfig,
                 streamIdSeq);
         return stream;
     }

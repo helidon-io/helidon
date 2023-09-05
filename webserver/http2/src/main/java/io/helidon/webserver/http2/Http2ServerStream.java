@@ -237,7 +237,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     @Override
-    public void data(Http2FrameHeader header, BufferData data) {
+    public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
         // todo check number of queued items and modify flow control if we seem to be collecting messages
         if (expectedLength != -1 && expectedLength < header.length()) {
             state = Http2StreamState.CLOSED;
