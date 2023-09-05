@@ -23,26 +23,25 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class WsClientTest {
+class WsClientTest {
     @Test
     void testSchemeValidation() {
-        try {
-            WsClient.builder()
-                    .baseUri("test://localhost:8888/")
-                    .shareConnectionCache(false)
-                    .build()
-                    .connect("/whatever", new WsListener() {
-                        @Override
-                        public void onMessage(WsSession session, String text, boolean last) {
-                            //not used
-                        }
-                    });
+        IllegalArgumentException ex =
+                assertThrows(IllegalArgumentException.class,
+                             () -> WsClient.builder()
+                                     .baseUri("test://localhost:8888/")
+                                     .shareConnectionCache(false)
+                                     .build()
+                                     .connect("/whatever", new WsListener() {
+                                         @Override
+                                         public void onMessage(WsSession session, String text, boolean last) {
+                                             //not used
+                                         }
+                                     }),
+                             "Should have failed because of invalid scheme.");
 
-            fail("Should have failed because of invalid scheme.");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), startsWith("Not supported scheme test"));
-        }
+        assertThat(ex.getMessage(), startsWith("Not supported scheme test"));
     }
 }
