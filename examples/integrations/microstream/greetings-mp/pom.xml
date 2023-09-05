@@ -39,6 +39,11 @@
             <groupId>io.helidon.integrations.microstream</groupId>
             <artifactId>helidon-integrations-microstream-cdi</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-binding</artifactId>
+            <scope>runtime</scope>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>

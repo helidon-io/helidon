@@ -15,27 +15,21 @@
  */
 package io.helidon.microprofile.examples.cors;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.http.Headers;
 import io.helidon.common.http.MediaType;
 import io.helidon.config.Config;
-import io.helidon.media.jsonp.JsonpSupport;
+import io.helidon.media.jsonb.JsonbSupport;
 import io.helidon.microprofile.server.Server;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientRequestBuilder;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.cors.CrossOriginConfig;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -49,15 +43,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@Disabled("3.0.0-JAKARTA") // OpenAPI: Caused by: java.lang.NoSuchMethodError:
-// 'java.util.List org.jboss.jandex.ClassInfo.unsortedFields()'
 public class TestCORS {
-
-    private static final String JSON_MESSAGE_RESPONSE_LABEL = "message";
-    private static final String JSON_NEW_GREETING_LABEL = "greeting";
-
-    private static final JsonBuilderFactory JSON_BF = Json.createBuilderFactory(Collections.emptyMap());
-    private static final JsonpSupport JSONP_SUPPORT = JsonpSupport.create();
+    private static final JsonbSupport JSONB_SUPPORT = JsonbSupport.create();
 
     private static WebClient client;
     private static Server server;
@@ -73,7 +60,7 @@ public class TestCORS {
             .start();
         client = WebClient.builder()
                     .baseUri("http://localhost:" + server.port())
-                    .addMediaSupport(JSONP_SUPPORT)
+                    .addMediaSupport(JSONB_SUPPORT)
                     .build();
     }
 
@@ -220,17 +207,15 @@ public class TestCORS {
     }
 
     private static String fromPayload(WebClientResponse response) {
-        JsonObject json = response
+        GreetingMessage message = response
                 .content()
-                .as(JsonObject.class)
+                .as(GreetingMessage.class)
                 .await();
-        return json.getString(JSON_MESSAGE_RESPONSE_LABEL);
+        return message.getMessage();
     }
 
-    private static JsonObject toPayload(String message) {
-        JsonObjectBuilder builder = JSON_BF.createObjectBuilder();
-        return builder.add(JSON_NEW_GREETING_LABEL, message)
-                .build();
+    private static GreetingMessage toPayload(String message) {
+        return new GreetingMessage(message);
     }
     private static WebClientResponse putResponse(String path, String message) {
         return putResponse(path, message, client.put());

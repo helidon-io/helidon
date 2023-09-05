@@ -20,7 +20,6 @@ import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.inject.Inject;
-import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.examples.integrations.micrometer.mp.GreetResource.PERSONALIZED_GETS_COUNTER_NAME;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-
 
 @HelidonTest
 public class TestEndpoint {
@@ -42,23 +40,23 @@ public class TestEndpoint {
     @Test
     public void pingGreet() {
 
-        JsonObject jsonObject = webTarget
+        GreetingMessage message = webTarget
                  .path("/greet/Joe")
                  .request(MediaType.APPLICATION_JSON_TYPE)
-                 .get(JsonObject.class);
+                 .get(GreetingMessage.class);
 
-        String responseString = jsonObject.getString("message");
+        String responseString = message.getMessage();
 
         assertThat("Response string", responseString, is("Hello Joe!"));
         Counter counter = registry.counter(PERSONALIZED_GETS_COUNTER_NAME);
         double before = counter.count();
 
-        jsonObject = webTarget
+        message = webTarget
                 .path("/greet/Jose")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class);
+                .get(GreetingMessage.class);
 
-        responseString = jsonObject.getString("message");
+        responseString = message.getMessage();
 
         assertThat("Response string", responseString, is("Hello Jose!"));
         double after = counter.count();
