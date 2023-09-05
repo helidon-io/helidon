@@ -379,4 +379,3 @@ interface ListenerConfigBlueprint {
         }
     }
 }
-

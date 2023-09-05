@@ -22,13 +22,12 @@ import java.util.Objects;
 
 import javax.net.ssl.X509TrustManager;
 
-class ReloadableX509TrustManager implements X509TrustManager, TlsReloadableComponent {
-
-    private static final System.Logger LOGGER = System.getLogger(ReloadableX509TrustManager.class.getName());
+class TlsReloadableX509TrustManager implements X509TrustManager, TlsReloadableComponent {
+    private static final System.Logger LOGGER = System.getLogger(TlsReloadableX509TrustManager.class.getName());
 
     private volatile X509TrustManager trustManager;
 
-    ReloadableX509TrustManager(X509TrustManager trustManager) {
+    private TlsReloadableX509TrustManager(X509TrustManager trustManager) {
         this.trustManager = trustManager;
     }
 
@@ -49,19 +48,45 @@ class ReloadableX509TrustManager implements X509TrustManager, TlsReloadableCompo
 
     @Override
     public void reload(Tls tls) {
-        Objects.requireNonNull(tls.originalKeyManager(), "Cannot unset trust store");
-        if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-            LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
-        }
-        this.trustManager = tls.originalTrustManager();
+        tls.trustManager().ifPresent(this::reload);
     }
 
-    static class NotReloadableTrustManager implements TlsReloadableComponent {
+    void reload(X509TrustManager trustManager) {
+        Objects.requireNonNull(trustManager, "Cannot unset trust store");
+        assertValid(trustManager);
+        LOGGER.log(System.Logger.Level.DEBUG, "Reloading TLS X509TrustManager");
+        this.trustManager = trustManager;
+    }
+
+    static TlsReloadableX509TrustManager create(X509TrustManager trustManager) {
+        if (trustManager instanceof TlsReloadableX509TrustManager) {
+            return (TlsReloadableX509TrustManager) trustManager;
+        }
+        assertValid(trustManager);
+        return new TlsReloadableX509TrustManager(trustManager);
+    }
+
+    static void assertValid(X509TrustManager trustManager) {
+        if (trustManager instanceof TlsReloadableX509TrustManager) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    static class NotReloadableTrustManager extends TlsReloadableX509TrustManager {
+        NotReloadableTrustManager() {
+            super(null);
+        }
+
         @Override
         public void reload(Tls tls) {
-            if (tls.originalTrustManager() != null) {
+            if (tls.trustManager().isPresent()) {
                 throw new UnsupportedOperationException("Cannot set trust manager if one was not set during server start");
             }
+        }
+
+        @Override
+        void reload(X509TrustManager trustManager) {
+            throw new UnsupportedOperationException("Cannot set trust manager if one was not set during server start");
         }
     }
 }

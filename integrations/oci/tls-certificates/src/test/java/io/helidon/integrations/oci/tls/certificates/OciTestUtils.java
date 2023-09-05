@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package io.helidon.common.tls;
+package io.helidon.integrations.oci.tls.certificates;
 
-import java.util.List;
-
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
-
-record TlsInternalInfo(boolean explicitContext,
-                       List<TlsReloadableComponent> reloadableComponents,
-                       X509TrustManager originalTrustManager,
-                       X509KeyManager originalKeyManager) {
+class OciTestUtils {
+    static boolean ociRealUsage() {
+        return Boolean.getBoolean("oci.real.usage");
+    }
 }

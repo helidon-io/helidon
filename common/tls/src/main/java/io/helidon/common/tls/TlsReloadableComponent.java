@@ -16,9 +16,16 @@
 
 package io.helidon.common.tls;
 
-
+/**
+ * Implementors are responsible for reloading the TLS instance.
+ */
 interface TlsReloadableComponent {
 
+    /**
+     * Reload reloadable TLS components with the new configuration.
+     *
+     * @param tls new TLS configuration
+     */
     void reload(Tls tls);
 
 }

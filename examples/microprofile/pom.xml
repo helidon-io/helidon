@@ -45,6 +45,7 @@
         <module>messaging-sse</module>
         <module>cors</module>
         <module>tls</module>
+        <module>oci-tls-certificates</module>
         <module>multiport</module>
         <module>bean-validation</module>
         <module>http-status-count-mp</module>
