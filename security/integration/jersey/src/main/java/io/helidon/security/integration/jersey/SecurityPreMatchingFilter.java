@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,13 +57,19 @@ class SecurityPreMatchingFilter extends SecurityFilterCommon implements Containe
     public void filter(ContainerRequestContext request) {
         SecurityTracing tracing = SecurityTracing.get();
 
-        // create a new security context
-        SecurityContext securityContext = security()
-                .contextBuilder(Integer.toString(CONTEXT_COUNTER.incrementAndGet(), Character.MAX_RADIX))
-                .tracingSpan(tracing.findParent().orElse(null))
-                .build();
+        SecurityContext securityContext = Contexts.context()
+                .flatMap(context -> context.get(SecurityContext.class))
+                .orElse(null);
 
-        Contexts.context().ifPresent(ctx -> ctx.register(securityContext));
+        if (securityContext == null) {
+            // create a new security context
+            securityContext = security()
+                    .contextBuilder(Integer.toString(CONTEXT_COUNTER.incrementAndGet(), Character.MAX_RADIX))
+                    .tracingSpan(tracing.findParent().orElse(null))
+                    .build();
+            SecurityContext finalSecurityContext = securityContext;
+            Contexts.context().ifPresent(ctx -> ctx.register(finalSecurityContext));
+        }
 
         injectionManager.<Ref<SecurityContext>>getInstance((new GenericType<Ref<SecurityContext>>() { }).getType())
                 .set(securityContext);
