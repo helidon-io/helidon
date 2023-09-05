@@ -39,7 +39,6 @@ include::{rootdir}/includes/se.adoc[]
 - <<Configuration, Configuration>>
 ** <<Configuring the gRPC Server in the Code, Configuring the gRPC Server in the Code>>
 ** <<Configuring the gRPC Server in a Configuration File, Configuring the gRPC Server in a Configuration File>>
-** <<Configuration Options, Configuration Options>>
 - <<Examples, Examples>>
 ** <<Quick Start, Quick Start>>
 ** <<Additional gRPC Server Examples, Additional gRPC Server Examples>>
