@@ -50,7 +50,7 @@ echo "Client private key OCID: $NEW_CLIENT_KEY_OCID"
 echo "Saving to gen-config.sh"
 tee ${CDIR}/generated-config.sh << EOF
 #!/bin/bash
-## Content of this file gets rewritten by createKeys.sh
+## Content of this file gets rewritten by create-keys.sh
 export SERVER_CERT_OCID=$NEW_SERVER_CERT_OCID
 export SERVER_KEY_OCID=$NEW_SERVER_KEY_OCID
 

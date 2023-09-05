@@ -92,10 +92,10 @@
                 <configuration>
                     <systemPropertyVariables>
                         <!-- To be changed manually - see README.md -->
-<!--                        <VAULT_CRYPTO_ENDPOINT>https://XXX-crypto.kms.XXX.oraclecloud.com</VAULT_CRYPTO_ENDPOINT>-->
-<!--                        <CA_OCID>ocid1.XXX</CA_OCID>-->
-<!--                        <SERVER_CERT_OCID>ocid1.certificate.oc1.XXX</SERVER_CERT_OCID>-->
-<!--                        <SERVER_KEY_OCID>ocid1.key.oc1.id1.certificate.oc1.</SERVER_KEY_OCID>-->
+<!--                        <VAULT_CRYPTO_ENDPOINT>SETME</VAULT_CRYPTO_ENDPOINT>-->
+<!--                        <CA_OCID>SETME</CA_OCID>-->
+<!--                        <SERVER_CERT_OCID>SETME</SERVER_CERT_OCID>-->
+<!--                        <SERVER_KEY_OCID>SETME</SERVER_KEY_OCID>-->
 
                         <java.util.logging.config.file>${project.build.testOutputDirectory}/logging.properties</java.util.logging.config.file>
                         <org.jboss.logging.provider>jdk</org.jboss.logging.provider>

@@ -36,7 +36,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 @Configured
 interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
     /**
-     * The default protocol.
+     * The default protocol is set to {@value}.
      */
     String DEFAULT_PROTOCOL = "TLS";
 

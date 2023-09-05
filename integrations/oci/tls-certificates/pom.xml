@@ -227,10 +227,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <systemPropertyVariables>
-                        <VAULT_CRYPTO_ENDPOINT>https://dvsozhzvaaf3q-crypto.kms.us-ashburn-1.oraclecloud.com</VAULT_CRYPTO_ENDPOINT>
-                        <CA_OCID>ocid1.certificateauthority.oc1.iad.amaaaaaa2rcccgyar6imoqdt43ochnaygyhgoqb65z6bd7w2xzv2tdcsbsga</CA_OCID>
-                        <SERVER_CERT_OCID>ocid1.certificate.oc1.iad.amaaaaaa2rcccgya4fxntgo7cctdvcftwzor7l6ls6oglgyrpm6uaun2fgaq</SERVER_CERT_OCID>
-                        <SERVER_KEY_OCID>ocid1.key.oc1.iad.dvsozhzvaaf3q.abuwcljsplsjcctmc25t6ciqrhqnuiacb6trrqepepltk6vrrfp6xflynctq</SERVER_KEY_OCID>
+                        <VAULT_CRYPTO_ENDPOINT>SETME</VAULT_CRYPTO_ENDPOINT>
+                        <CA_OCID>SETME</CA_OCID>
+                        <SERVER_CERT_OCID>SETME</SERVER_CERT_OCID>
+                        <SERVER_KEY_OCID>SETME</SERVER_KEY_OCID>
 
                         <oci.real.usage>false</oci.real.usage>
                     </systemPropertyVariables>

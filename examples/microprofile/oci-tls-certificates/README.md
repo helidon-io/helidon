@@ -68,7 +68,7 @@ for both [rotating](#rotating-mtls-certificates) certificates and [running](#bui
 - **VAULT_MANAGEMENT_ENDPOINT** - crypto endpoint of the vault we are rotating the private keys in
 - **CA_OCID** - OCID of the CA authority we have created in [Prepare CA](#prepare-cacertification-authority) step
 
-Following env variables are generated automatically by [createKeys.sh](etc/unsupported-cert-tools/createKeys.sh) or needs to be configured manually for [rotateKeys.sh](etc/unsupported-cert-tools/rotateKeys.sh) in [generated-config.sh](etc/unsupported-cert-tools/generated-config.sh)
+Following env variables are generated automatically by [create-keys.sh](etc/unsupported-cert-tools/create-keys.sh) or needs to be configured manually for [rotate-keys.sh](etc/unsupported-cert-tools/rotate-keys.sh) in [generated-config.sh](etc/unsupported-cert-tools/generated-config.sh)
 - **SERVER_CERT_OCID** - OCID of the server certificate(not the specific version!)
 - **SERVER_KEY_OCID** - OCID of the server private key in vault(not the specific version!)
 
@@ -79,13 +79,13 @@ Optional:
 ### Prepare keys and certificates
 Make sure you are in the directory [./etc/unsupported-cert-tools/](etc/unsupported-cert-tools/).
 ```shell
-bash createKeys.sh
+bash create-keys.sh
 ```
 
 ## Rotating mTLS certificates
 Make sure you are in the directory [./etc/unsupported-cert-tools/](etc/unsupported-cert-tools/).
 ```shell
-bash rotateKeys.sh
+bash rotate-keys.sh
 ```
 ⚠️ Keep in mind that rotation creates new [versions](https://docs.oracle.com/en-us/iaas/Content/certificates/rotation-states.htm), OCIDs of the keys and certificates stays the same, and you don't need to change your configuration.
 

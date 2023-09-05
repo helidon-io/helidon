@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-## Content of this file gets rewritten by createKeys.sh
+## Content of this file gets rewritten by create-keys.sh
 export SERVER_CERT_OCID=ocid1.certificate.oc1.
 export SERVER_KEY_OCID=ocid1.key.oc1.
 

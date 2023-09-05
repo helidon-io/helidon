@@ -146,19 +146,16 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
      * @return true if a reload occurred
      */
     boolean loadContext(boolean initialLoad) {
-        long startTime = System.currentTimeMillis();
         try {
             // download all of our security collateral from OCI
             OciCertificatesDownloader cd = certDownloader.get();
             OciCertificatesDownloader.Certificates certificates = cd.loadCertificates(cfg.certOcid());
-            long finishTime = System.currentTimeMillis();
             if (lastVersionDownloaded.get().equals(certificates.version())) {
                 assert (!initialLoad);
                 return false;
             }
 
             // reset start time for the next update phase
-            startTime = System.currentTimeMillis();
             Certificate ca = cd.loadCACertificate(cfg.caOcid());
 
             OciPrivateKeyDownloader pd = pkDownloader.get();
@@ -197,7 +194,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             } else {
                 reload(keyManager, trustManager);
             }
-            finishTime = System.currentTimeMillis();
 
             return true;
         } catch (KeyStoreException e) {
