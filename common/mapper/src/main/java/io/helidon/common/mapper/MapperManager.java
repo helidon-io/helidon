@@ -153,12 +153,7 @@ public interface MapperManager {
          * Add a new {@link io.helidon.common.mapper.spi.MapperProvider} to the list of providers loaded from
          * system service loader.
          * <p>
-         * You may add multiple instances of the same implementation class.
-         * <p>
-         * If the same provider implementation would be loaded by Java Service loader, the service loader instance is ignored.
-         * If you need to add a new implementation of the same type, please use the full features
-         * of the {@link io.helidon.common.HelidonServiceLoader} and invoke
-         * {@link MapperManager#create(io.helidon.common.HelidonServiceLoader)}.
+         * You can control whether discovered services are loaded through see {@link #discoverServices(boolean)}
          *
          * @param provider prioritized mapper provider to use
          * @return updated builder instance
