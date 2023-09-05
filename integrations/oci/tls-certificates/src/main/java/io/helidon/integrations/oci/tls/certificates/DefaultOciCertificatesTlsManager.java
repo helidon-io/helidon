@@ -56,8 +56,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
 
     private final OciCertificatesTlsManagerConfig cfg;
     private final AtomicReference<String> lastVersionDownloaded = new AtomicReference<>("");
-    private final MetricsTracker.Gauge checkGauge;
-    private final MetricsTracker.Gauge updateGauge;
 
     // these will only be non-null when enabled
     private Provider<OciPrivateKeyDownloader> pkDownloader;
@@ -75,18 +73,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                                      io.helidon.common.config.Config config) {
         super(name, TYPE);
         this.cfg = Objects.requireNonNull(cfg);
-
-        // setup metrics tracking
-        // consider adding "real" metrics around this in the future
-        Services services = InjectionServices.realizedServices();
-        ServiceProvider<MetricsTracker> metrics = services.lookupFirst(MetricsTracker.class, false).orElse(null);
-        if (metrics != null) {
-            this.checkGauge = metrics.get().getOrCreateGauge(TYPE + "." + name + ".check", "Checking for cert updates");
-            this.updateGauge = metrics.get().getOrCreateGauge(TYPE + "." + name + ".update", "Updating cert");
-        } else {
-            this.checkGauge = null;
-            this.updateGauge = null;
-        }
 
         // if config changes then will do a reload
         if (config instanceof Config watchableConfig) {
@@ -166,9 +152,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
             OciCertificatesDownloader cd = certDownloader.get();
             OciCertificatesDownloader.Certificates certificates = cd.loadCertificates(cfg.certOcid());
             long finishTime = System.currentTimeMillis();
-            if (checkGauge != null) {
-                checkGauge.update(finishTime - startTime);
-            }
             if (lastVersionDownloaded.get().equals(certificates.version())) {
                 assert (!initialLoad);
                 return false;
@@ -215,9 +198,6 @@ class DefaultOciCertificatesTlsManager extends ConfiguredTlsManager implements O
                 reload(keyManager, trustManager);
             }
             finishTime = System.currentTimeMillis();
-            if (updateGauge != null) {
-                updateGauge.update(finishTime - startTime);
-            }
 
             return true;
         } catch (KeyStoreException e) {

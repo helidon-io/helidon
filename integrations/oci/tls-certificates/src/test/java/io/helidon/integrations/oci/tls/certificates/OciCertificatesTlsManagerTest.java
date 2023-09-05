@@ -35,7 +35,6 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
 
 // see pom.xml for system properties that can be used in these tests
 class OciCertificatesTlsManagerTest {
@@ -53,7 +52,6 @@ class OciCertificatesTlsManagerTest {
     //    @RepeatedTest(10)
     void serverRuntime() throws Exception {
         Services services = InjectionServices.realizedServices();
-        TestingMetricsHelper metrics = services.lookupFirst(TestingMetricsHelper.class).get();
         LifecycleHook lifecycleHook = services.lookupFirst(LifecycleHook.class).get();
         CountDownLatch startup = new CountDownLatch(1);
 
@@ -62,8 +60,6 @@ class OciCertificatesTlsManagerTest {
         boolean res = startup.await(10, TimeUnit.SECONDS);
         assertThat(res,
                    is(true));
-        assertThat(metrics.metrics(),
-                   equalTo(2));
 
         CountDownLatch shutdown = new CountDownLatch(1);
         lifecycleHook.registerShutdownConsumer(c -> shutdown.countDown());
@@ -78,20 +74,6 @@ class OciCertificatesTlsManagerTest {
                        equalTo(1));
             assertThat(pkDownloadCountBaseLine,
                        equalTo(1));
-
-            // check metrics that they match what we expect
-            TestingMetricsHelper.Gauge checkGauge = metrics.metric(
-                    DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".check");
-            assertThat(checkGauge.count(),
-                       equalTo(1L));
-            assertThat(checkGauge.sum(),
-                       greaterThan(0L));
-            TestingMetricsHelper.Gauge updateGauge = metrics.metric(
-                            DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".update");
-            assertThat(updateGauge.count(),
-                       equalTo(1L));
-            assertThat(updateGauge.sum(),
-                       greaterThan(0L));
         } finally {
             server.stop();
             res = shutdown.await(10, TimeUnit.SECONDS);
@@ -158,33 +140,11 @@ class OciCertificatesTlsManagerTest {
         assertThat(pwdConfig.exists(),
                    is(true));
 
-        // prepare to watch for changes
-        Services services = InjectionServices.realizedServices();
-        TestingMetricsHelper metrics = services.lookupFirst(TestingMetricsHelper.class).get();
-        TestingMetricsHelper.Gauge checkGauge = metrics.metric(
-                DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".check");
-        TestingMetricsHelper.Gauge updateGauge = metrics.metric(
-                DefaultOciCertificatesTlsManager.TYPE + "." + DefaultOciCertificatesTlsManager.TYPE + ".update");
-
         // mutate it
         testingConfigSource.update("changed");
         assertThat(config.context().last()
                            .get("server.sockets.0.tls.manager.oci-certificates-tls-manager.key-password").asString().asOptional(),
                    is(Optional.of("changed")));
-        // watch for change
-        synchronized (checkGauge) {
-            checkGauge.wait(1000);
-        }
-
-        // verify that we at least triggered a recheck on the cert
-        int checkCount = (int) checkGauge.count();
-        int updateCount = (int) updateGauge.count();
-        assertThat("we should be triggering a check since config was mutated",
-                   checkCount,
-                   equalTo(certDownloadCountBaseline + 1));
-        assertThat("the actual cert didn't really change so we should not be updating dynamically",
-                   updateCount,
-                   equalTo(caCertDownloadCountBaseline));
     }
 
     static Server startServer() {

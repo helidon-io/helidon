@@ -37,10 +37,6 @@ class TestOciCertificatesDownloader extends DefaultOciCertificatesDownloader {
     static int callCount_loadCertificates;
     static int callCount_loadCACertificate;
 
-    void version(String version) {
-        TestOciCertificatesDownloader.version = version;
-    }
-
     @Override
     public Certificates loadCertificates(String certOcid) {
         callCount_loadCertificates++;
