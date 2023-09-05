@@ -33,7 +33,7 @@ public class StatusService implements HttpService {
     }
 
     private void respondWithRequestedStatus(ServerRequest request, ServerResponse response) {
-        String statusText = request.path().pathParameters().value("status");
+        String statusText = request.path().pathParameters().get("status");
         int status;
         String msg;
         try {

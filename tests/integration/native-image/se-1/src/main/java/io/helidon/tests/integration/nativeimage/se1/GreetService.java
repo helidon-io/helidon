@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Http;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -93,7 +93,7 @@ class GreetService implements HttpService {
      */
     private void getMessageHandler(ServerRequest request,
                                    ServerResponse response) {
-        String name = request.path().pathParameters().value("name");
+        String name = request.path().pathParameters().get("name");
 
         sendResponse(response, name);
     }

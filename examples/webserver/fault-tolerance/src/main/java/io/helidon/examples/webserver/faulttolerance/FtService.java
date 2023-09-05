@@ -73,12 +73,12 @@ public class FtService implements HttpService {
     }
 
     private void timeoutHandler(ServerRequest request, ServerResponse response) {
-        long sleep = Long.parseLong(request.path().pathParameters().value("millis"));
+        long sleep = Long.parseLong(request.path().pathParameters().get("millis"));
         response.send(timeout.invoke(() -> sleep(sleep)));
     }
 
     private void retryHandler(ServerRequest request, ServerResponse response) {
-        int count = Integer.parseInt(request.path().pathParameters().value("count"));
+        int count = Integer.parseInt(request.path().pathParameters().get("count"));
 
         AtomicInteger call = new AtomicInteger(1);
         AtomicInteger failures = new AtomicInteger();
@@ -95,7 +95,7 @@ public class FtService implements HttpService {
     }
 
     private void fallbackHandler(ServerRequest request, ServerResponse response) {
-        boolean success = "true".equalsIgnoreCase(request.path().pathParameters().value("success"));
+        boolean success = "true".equalsIgnoreCase(request.path().pathParameters().get("success"));
         if (success) {
             response.send(fallback.invoke(this::data));
         } else {
@@ -104,7 +104,7 @@ public class FtService implements HttpService {
     }
 
     private void circuitBreakerHandler(ServerRequest request, ServerResponse response) {
-        boolean success = "true".equalsIgnoreCase(request.path().pathParameters().value("success"));
+        boolean success = "true".equalsIgnoreCase(request.path().pathParameters().get("success"));
         if (success) {
             response.send(breaker.invoke(this::data));
         } else {
@@ -113,7 +113,7 @@ public class FtService implements HttpService {
     }
 
     private void bulkheadHandler(ServerRequest request, ServerResponse response) {
-        long sleep = Long.parseLong(request.path().pathParameters().value("millis"));
+        long sleep = Long.parseLong(request.path().pathParameters().get("millis"));
         response.send(bulkhead.invoke(() -> sleep(sleep)));
     }
 

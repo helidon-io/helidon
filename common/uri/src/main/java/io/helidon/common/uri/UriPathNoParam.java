@@ -23,7 +23,7 @@ import java.util.Objects;
 import io.helidon.common.parameters.Parameters;
 
 class UriPathNoParam implements UriPath {
-    private static final Parameters EMPTY_PARAMS = Parameters.empty("path");
+    private static final Parameters EMPTY_PARAMS = Parameters.empty("uri/path");
 
     private final UriPath absolute;
     private final String rawPath;

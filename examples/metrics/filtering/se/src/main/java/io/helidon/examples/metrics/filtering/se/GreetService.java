@@ -100,7 +100,7 @@ public class GreetService implements HttpService {
      */
     private void getMessageHandler(ServerRequest request,
                                    ServerResponse response) {
-        String name = request.path().pathParameters().value("name");
+        String name = request.path().pathParameters().get("name");
         sendResponse(response, name);
     }
 

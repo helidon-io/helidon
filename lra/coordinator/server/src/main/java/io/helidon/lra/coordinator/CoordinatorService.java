@@ -187,7 +187,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void close(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
             res.status(NOT_FOUND_404).send();
@@ -209,7 +209,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void cancel(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
             res.status(NOT_FOUND_404).send();
@@ -227,7 +227,7 @@ public class CoordinatorService implements HttpService {
      */
     private void join(ServerRequest req, ServerResponse res) {
 
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         String compensatorLink = req.headers().first(Http.HeaderNames.LINK).orElse("");
 
         Lra lra = lraPersistentRegistry.get(lraId);
@@ -255,7 +255,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void status(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         Lra lra = lraPersistentRegistry.get(lraId);
         if (lra == null) {
             res.status(NOT_FOUND_404).send();
@@ -274,7 +274,7 @@ public class CoordinatorService implements HttpService {
      * @param res HTTP Response
      */
     private void leave(ServerRequest req, ServerResponse res) {
-        String lraId = req.path().pathParameters().value("LraId");
+        String lraId = req.path().pathParameters().get("LraId");
         String compensatorLinks = req.content().as(String.class);
 
         Lra lra = lraPersistentRegistry.get(lraId);
@@ -296,7 +296,7 @@ public class CoordinatorService implements HttpService {
         nextRecoveryCycle();
 
         Optional<String> lraUUID = req.query().first("lraId")
-                .or(() -> req.path().pathParameters().first("LraId"))
+                .or(() -> req.path().pathParameters().first("LraId").asOptional())
                 .map(l -> {
                     if (l.lastIndexOf("/") != -1 && l.lastIndexOf("/") + 1 < l.length()) {
                         return l.substring(l.lastIndexOf("/") + 1);
@@ -339,7 +339,7 @@ public class CoordinatorService implements HttpService {
 
     private void get(ServerRequest req, ServerResponse res) {
         Optional<String> lraId = req.path().pathParameters().first("LraId")
-                .or(() -> req.query().first("lraId"));
+                .or(() -> req.query().first("lraId").asOptional());
 
         JsonArray array = lraPersistentRegistry
                 .stream()

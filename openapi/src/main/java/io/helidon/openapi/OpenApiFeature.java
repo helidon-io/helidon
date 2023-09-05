@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -373,7 +374,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
          * Response media type default is application/vnd.oai.openapi (YAML)
          * unless otherwise specified.
          */
-        Optional<String> queryParameterFormat = req.query()
+        OptionalValue<String> queryParameterFormat = req.query()
                 .first(OPENAPI_ENDPOINT_FORMAT_QUERY_PARAMETER);
         if (queryParameterFormat.isPresent()) {
             String queryParameterFormatValue = queryParameterFormat.get();

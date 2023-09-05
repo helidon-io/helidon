@@ -42,7 +42,7 @@ class HeaderValueLazy extends HeaderValueBase {
     }
 
     @Override
-    public String value() {
+    public String get() {
         return value.stripOws();
     }
 

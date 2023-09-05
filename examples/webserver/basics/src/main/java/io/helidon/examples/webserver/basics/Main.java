@@ -143,7 +143,7 @@ public class Main {
                     .first("bar")
                     .ifPresent(v -> sb.append("bar: ").append(v).append("\n"));
             // Path parameters
-            sb.append("id: ").append(req.path().pathParameters().value("id"));
+            sb.append("id: ").append(req.path().pathParameters().get("id"));
             // Response headers
             res.headers().contentType(MediaTypes.TEXT_PLAIN);
             // Response entity (payload)
@@ -242,7 +242,7 @@ public class Main {
                         res.send(JSON.createObjectBuilder()
                                 .add("message", "Hello " + req.path()
                                         .pathParameters()
-                                        .value("what"))
+                                        .get("what"))
                                 .build()));
         mediaContext.addMediaSupport(JsonpSupport.create());
     }

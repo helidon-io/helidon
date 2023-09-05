@@ -88,14 +88,12 @@ class {{className}} implements GeneratedHandler {
     private <T> T query(ServerRequest req, ServerResponse res, String name, String defaultValue, Class<T> type) {
         UriQuery query = req.query();
         if (query.contains(name)) {
-            // todo hardcoded type
-            return (T) query.value(name);
+            return query.first(name).get(type);
         }
         if (defaultValue == null) {
             throw new HttpException("Query parameter \"" + name + "\" is required", Http.Status.BAD_REQUEST_400, true);
         }
-        // todo also hardcoded type
-        return (T) defaultValue;
+        return io.helidon.common.mapper.MapperManager.global().map(defaultValue, String.class, type, "http", "endpoint");
     }
 {{/if}}
 }

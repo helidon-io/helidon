@@ -78,7 +78,7 @@ class SharedHttp2CacheTest {
 
             Integer firstReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
-                firstReqClientPort = res.headers().get(clientPortHeader).value(Integer.TYPE);
+                firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
                 assertThat(res.status(), is(Http.Status.OK_200));
             }
 
@@ -94,7 +94,7 @@ class SharedHttp2CacheTest {
 
             Integer secondReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
-                secondReqClientPort = res.headers().get(clientPortHeader).value(Integer.TYPE);
+                secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
                 assertThat(res.status(), is(Http.Status.OK_200));
             }
 

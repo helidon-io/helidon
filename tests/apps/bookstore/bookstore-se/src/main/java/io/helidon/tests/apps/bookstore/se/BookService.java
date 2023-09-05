@@ -18,15 +18,15 @@ package io.helidon.tests.apps.bookstore.se;
 
 import java.util.Collection;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Http;
+import io.helidon.tests.apps.bookstore.common.Book;
+import io.helidon.tests.apps.bookstore.common.BookMapper;
+import io.helidon.tests.apps.bookstore.common.BookStore;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.tests.apps.bookstore.common.Book;
-import io.helidon.tests.apps.bookstore.common.BookMapper;
-import io.helidon.tests.apps.bookstore.common.BookStore;
 
 import jakarta.json.JsonObject;
 
@@ -101,7 +101,7 @@ public class BookService implements HttpService {
     }
 
     private void getBook(ServerRequest request, ServerResponse response) {
-        String isbn = request.path().pathParameters().value(ISBN_PARAM);
+        String isbn = request.path().pathParameters().get(ISBN_PARAM);
         Book book = BOOK_STORE.find(isbn);
 
         if (book == null) {
@@ -148,7 +148,7 @@ public class BookService implements HttpService {
     }
 
     private void deleteBook(ServerRequest request, ServerResponse response) {
-        String isbn = request.path().pathParameters().value(ISBN_PARAM);
+        String isbn = request.path().pathParameters().get(ISBN_PARAM);
         if (BOOK_STORE.contains(isbn)) {
             BOOK_STORE.remove(isbn);
             response.send();

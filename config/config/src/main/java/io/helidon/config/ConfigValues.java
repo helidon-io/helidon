@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.config;
 
 import java.util.List;
@@ -46,7 +47,17 @@ public final class ConfigValues {
             }
 
             @Override
-            public <N> ConfigValue<N> as(Function<T, N> mapper) {
+            public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
+                return empty();
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(Class<N> type) {
+                return empty();
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(GenericType<N> type) {
                 return empty();
             }
 
@@ -83,15 +94,26 @@ public final class ConfigValues {
      * @return a config value that uses the value provided
      */
     public static <T> ConfigValue<T> simpleValue(T value) {
-        return new ConfigValueBase<>(Config.Key.create("")) {
+        Config.Key key = Config.Key.create("");
+        return new ConfigValueBase<>(key) {
             @Override
             public Optional<T> asOptional() {
                 return Optional.ofNullable(value);
             }
 
             @Override
-            public <N> ConfigValue<N> as(Function<T, N> mapper) {
+            public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
                 return simpleValue(mapper.apply(value));
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(Class<N> type) {
+                throw new ConfigMappingException(key, "Cannot map a simple value detached from configuration.");
+            }
+
+            @Override
+            public <N> io.helidon.common.config.ConfigValue<N> as(GenericType<N> type) {
+                throw new ConfigMappingException(key, "Cannot map a simple value detached from configuration.");
             }
 
             @Override
@@ -237,6 +259,17 @@ public final class ConfigValues {
         }
 
         @Override
+        public <N> ConfigValue<N> as(Class<N> type) {
+            return owningConfig.as(type);
+        }
+
+        @Override
+        public <N> ConfigValue<N> as(GenericType<N> type) {
+            return owningConfig.as(type);
+        }
+
+
+        @Override
         public Supplier<T> supplier() {
             return () -> configMethod.apply(latest()).get();
         }
@@ -256,7 +289,7 @@ public final class ConfigValues {
         }
 
         @Override
-        public <N> ConfigValue<N> as(Function<T, N> mapper) {
+        public <N> ConfigValue<N> as(Function<? super T, ? extends N> mapper) {
             return new GenericConfigValueImpl<>(owningConfig,
                                                 () -> map(mapper),
                                                 config -> configMethod.apply(config).as(mapper));

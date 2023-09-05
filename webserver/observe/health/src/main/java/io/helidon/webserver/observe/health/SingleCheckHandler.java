@@ -57,7 +57,7 @@ class SingleCheckHandler implements Handler {
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        String name = req.path().pathParameters().value("name");
+        String name = req.path().pathParameters().get("name");
         HealthCheck check = checks.get(name);
         if (check == null) {
             throw new NotFoundException(name);

@@ -16,12 +16,12 @@
 
 package io.helidon.webserver.tests;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Http;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +40,7 @@ class UriEncodingTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.get("/foo", (req, res) -> res.send("It works!"))
-                .get("/foo/{bar}", (req, res) -> res.send(req.path().pathParameters().value("bar")));
+                .get("/foo/{bar}", (req, res) -> res.send(req.path().pathParameters().get("bar")));
     }
 
     /**

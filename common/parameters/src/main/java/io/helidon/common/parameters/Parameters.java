@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.OptionalValue;
 
 /**
  * Parameters abstraction (used by any component that has named parameters with possible multiple values).
@@ -68,7 +69,7 @@ public interface Parameters {
      * @return new named parameters with values based on the map
      */
     static Parameters create(String component, Map<String, List<String>> params) {
-        return new ParametersMap(component, params);
+        return new ParametersMap(MapperManager.global(), component, params);
     }
 
     /**
@@ -79,7 +80,7 @@ public interface Parameters {
      * @return new named parameters with values based on the map
      */
     static Parameters createSingleValueMap(String component, Map<String, String> params) {
-        return new ParametersSingleValueMap(component, params);
+        return new ParametersSingleValueMap(MapperManager.global(), component, params);
     }
 
     /**
@@ -112,22 +113,17 @@ public interface Parameters {
      * @return first value
      * @throws NoSuchElementException in case the name is not present
      */
-    String value(String name) throws NoSuchElementException;
+    String get(String name) throws NoSuchElementException;
 
     /**
      * Get the first value as an optional.
      * Managing optionals has performance impact. If performance is of issue, use {@link #contains(String)}
-     * and {@link #value(String)} instead.
+     * and {@link #get(String)} instead.
      *
      * @param name name of the parameter
      * @return first value or empty optional
      */
-    default Optional<String> first(String name) {
-        if (contains(name)) {
-            return Optional.of(value(name));
-        }
-        return Optional.empty();
-    }
+    OptionalValue<String> first(String name);
 
     /**
      * Whether these parameters contain the provided name.
@@ -190,13 +186,29 @@ public interface Parameters {
         private final Map<String, List<String>> params = new LinkedHashMap<>();
         private final String component;
 
+        private MapperManager mapperManager;
+
         private Builder(String component) {
             this.component = component;
         }
 
         @Override
         public Parameters build() {
-            return Parameters.create(component, params);
+            if (mapperManager == null) {
+                mapperManager = MapperManager.global();
+            }
+            return new ParametersMap(mapperManager, component, params);
+        }
+
+        /**
+         * Configure mapper manager to use.
+         *
+         * @param mapperManager mapper manager
+         * @return updated builder
+         */
+        public Builder mapperManager(MapperManager mapperManager) {
+            this.mapperManager = mapperManager;
+            return this;
         }
 
         /**

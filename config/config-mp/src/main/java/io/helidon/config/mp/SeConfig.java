@@ -187,7 +187,7 @@ class SeConfig implements Config {
             return (ConfigValue<T>) as(genericType.rawType());
         }
 
-        return new SeConfigValue<>(key, () -> mapper.mapper().map(SeConfig.this, genericType));
+        return new SeConfigValue<>(this, key, () -> mapper.mapper().map(SeConfig.this, genericType));
     }
 
     @Override
@@ -200,7 +200,7 @@ class SeConfig implements Config {
                     .map(ConfigValues::simpleValue)
                     .orElseGet(ConfigValues::empty);
         } else {
-            return new SeConfigValue<>(key, () -> mapper.mapper().map(SeConfig.this, type));
+            return new SeConfigValue<>(this, key, () -> mapper.mapper().map(SeConfig.this, type));
         }
     }
 
@@ -355,7 +355,7 @@ class SeConfig implements Config {
     }
 
     private <T> ConfigValue<List<T>> asList(String configKey, Class<T> typeArg) {
-        return new SeConfigValue<>(key(), () -> toList(configKey, typeArg));
+        return new SeConfigValue<>(this, key(), () -> toList(configKey, typeArg));
     }
 
     private <T> List<T> toList(String configKey, Class<T> typeArg) {

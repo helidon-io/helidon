@@ -187,7 +187,7 @@ class TenantAuthenticationHandler {
                 token = token.or(() -> PARAM_HEADER_HANDLER.extractToken(providerRequest.env().headers()));
 
                 if (token.isEmpty()) {
-                    token = token.or(() -> providerRequest.env().queryParams().first(oidcConfig.paramName()));
+                    token = token.or(() -> providerRequest.env().queryParams().first(oidcConfig.paramName()).asOptional());
                 }
 
                 if (token.isEmpty()) {

@@ -209,7 +209,7 @@ public class HttpMethodCreator extends HttpCreatorBase implements CustomAnnotati
 
         // todo now we only support String for query, path and header -> add conversions
         switch (httpAnnotation.typeName().resolvedName()) {
-        case PATH_PARAM_ANNOTATION -> parameters.add("req.path().pathParameters().value(\"" + httpAnnotation.value().orElseThrow()
+        case PATH_PARAM_ANNOTATION -> parameters.add("req.path().pathParameters().get(\"" + httpAnnotation.value().orElseThrow()
                                                              + "\"),");
         case (ENTITY_PARAM_ANNOTATION) -> parameters.add("req.content().as(" + type + ".class),");
         case (HEADER_PARAM_ANNOTATION) -> {

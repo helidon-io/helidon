@@ -461,7 +461,7 @@ public final class PathMatchers {
                     params.put(entry.getKey(), paramValue);
                 }
             }
-            return Parameters.createSingleValueMap("path-template", params);
+            return Parameters.createSingleValueMap("http/path", params);
         }
     }
 
@@ -513,7 +513,7 @@ public final class PathMatchers {
 
     // path without parameters
     private static class NoParamRoutedPath implements RoutedPath, Supplier<RoutedPath> {
-        private static final Parameters EMPTY_PARAMS = Parameters.empty("path-template");
+        private static final Parameters EMPTY_PARAMS = Parameters.empty("http/path");
         private final UriPath path;
 
         NoParamRoutedPath(UriPath path) {

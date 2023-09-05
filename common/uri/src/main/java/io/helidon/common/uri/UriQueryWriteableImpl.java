@@ -25,6 +25,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.OptionalValue;
+
 final class UriQueryWriteableImpl implements UriQueryWriteable {
     private final Map<String, List<String>> rawQueryParams = new HashMap<>();
     private final Map<String, List<String>> decodedQueryParams = new HashMap<>();
@@ -124,6 +128,16 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     }
 
     @Override
+    public OptionalValue<String> first(String name) {
+        List<String> values = decodedQueryParams.get(name);
+        if (values == null) {
+            return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
+        }
+        String value = values.isEmpty() ? "" : values.iterator().next();
+        return OptionalValue.create(MapperManager.global(), name, value, GenericType.STRING, "uri", "query");
+    }
+
+    @Override
     public String getRaw(String name) throws NoSuchElementException {
         List<String> values = rawQueryParams.get(name);
         if (values == null) {
@@ -151,7 +165,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     }
 
     @Override
-    public String value(String name) throws NoSuchElementException {
+    public String get(String name) throws NoSuchElementException {
         List<String> values = decodedQueryParams.get(name);
         if (values == null) {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");

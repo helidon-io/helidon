@@ -784,7 +784,7 @@ class Http1ClientTest {
                         entitySize += chunkLength;
                     }
                 } else if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-                    entitySize = reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value(int.class);
+                    entitySize = reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).get(int.class);
                     if (entitySize > 0) {
                         entity.write(serverReader.getBuffer(entitySize));
                     }
@@ -800,7 +800,7 @@ class Http1ClientTest {
                     resHeaders.set(REQ_EXPECT_100_HEADER_NAME);
                 }
                 if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
+                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).get());
                 }
                 if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
                     resHeaders.set(REQ_CHUNKED_HEADER);
@@ -820,7 +820,7 @@ class Http1ClientTest {
             resHeaders.add(Http.HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
             for (Http.Header header : resHeaders) {
-                header.writeHttp1Header(entityBuffer);
+header.writeHttp1Header(entityBuffer);
             }
             entityBuffer.write(Bytes.CR_BYTE);
             entityBuffer.write(Bytes.LF_BYTE);

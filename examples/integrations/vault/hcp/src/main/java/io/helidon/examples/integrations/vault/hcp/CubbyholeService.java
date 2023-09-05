@@ -49,7 +49,7 @@ class CubbyholeService implements HttpService {
     }
 
     private void getSecret(ServerRequest req, ServerResponse res) {
-        String path = req.path().pathParameters().value("path");
+        String path = req.path().pathParameters().get("path");
         Optional<Secret> secret = secrets.get(path);
         if (secret.isPresent()) {
             // using toString so we do not need to depend on JSON-B

@@ -58,8 +58,8 @@ public class VerifyData {
         List<DbRow> rowsList = rows.toList();
         assertThat(rowsList, hasSize(valid.size()));
         for (DbRow row : rowsList) {
-            Integer id = row.column(1).as(Integer.class);
-            String name = row.column(2).as(String.class);
+            Integer id = row.column(1).get(Integer.class);
+            String name = row.column(2).get(String.class);
             LOGGER.log(Level.INFO, () -> String.format("Pokemon id=%d, name=%s", id, name));
             assertThat(valid.containsKey(id), equalTo(true));
             assertThat(name, equalTo(valid.get(id).getName()));
@@ -77,8 +77,8 @@ public class VerifyData {
         Map<Integer, Pokemon> valid = range(idMin, idMax);
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
-        Integer id = row.column(1).as(Integer.class);
-        String name = row.column(2).as(String.class);
+        Integer id = row.column(1).get(Integer.class);
+        String name = row.column(2).get(String.class);
         assertThat(valid.containsKey(id), equalTo(true));
         assertThat(name, equalTo(valid.get(id).getName()));
     }
@@ -93,8 +93,8 @@ public class VerifyData {
         assertThat(rows, notNullValue());
         assertThat(rows, hasSize(1));
         DbRow row = rows.get(0);
-        Integer id = row.column(1).as(Integer.class);
-        String name = row.column(2).as(String.class);
+        Integer id = row.column(1).get(Integer.class);
+        String name = row.column(2).get(String.class);
         assertThat(id, equalTo(expected.getId()));
         assertThat(name, expected.getName().equals(name));
     }
@@ -119,8 +119,8 @@ public class VerifyData {
     public static void verifyPokemon(Optional<DbRow> maybeRow, Pokemon expected) {
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
-        Integer id = row.column(1).as(Integer.class);
-        String name = row.column(2).as(String.class);
+        Integer id = row.column(1).get(Integer.class);
+        String name = row.column(2).get(String.class);
         assertThat(id, equalTo(expected.getId()));
         assertThat(name, expected.getName().equals(name));
     }
@@ -150,8 +150,8 @@ public class VerifyData {
 
         assertThat(maybeRow.isPresent(), equalTo(true));
         DbRow row = maybeRow.get();
-        Integer id = row.column("id").as(Integer.class);
-        String name = row.column("name").as(String.class);
+        Integer id = row.column("id").get(Integer.class);
+        String name = row.column("name").get(String.class);
         assertThat(id, equalTo(data.getId()));
         assertThat(name, data.getName().equals(name));
     }

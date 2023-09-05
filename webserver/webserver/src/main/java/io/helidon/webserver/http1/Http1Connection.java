@@ -145,7 +145,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
 
                 if (canUpgrade) {
                     if (headers.contains(Http.HeaderNames.UPGRADE)) {
-                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.HeaderNames.UPGRADE).value());
+                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.HeaderNames.UPGRADE).get());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
                             // upgrader may decide not to upgrade this connection
@@ -292,7 +292,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             this.currentEntitySize = -1;
         } else if (headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
             try {
-                this.currentEntitySize = headers.get(Http.HeaderNames.CONTENT_LENGTH).value(long.class);
+                this.currentEntitySize = headers.get(Http.HeaderNames.CONTENT_LENGTH).get(long.class);
                 if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                     throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
@@ -346,7 +346,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (contentEncodingContext.contentDecodingEnabled()) {
             // there may be some decoder used
             if (headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
-                String contentEncoding = headers.get(Http.HeaderNames.CONTENT_ENCODING).value();
+                String contentEncoding = headers.get(Http.HeaderNames.CONTENT_ENCODING).get();
                 if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                     decoder = contentEncodingContext.decoder(contentEncoding);
                 } else {

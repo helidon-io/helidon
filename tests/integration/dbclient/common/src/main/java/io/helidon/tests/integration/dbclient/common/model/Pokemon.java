@@ -44,7 +44,7 @@ public class Pokemon {
 
         @Override
         public Pokemon read(DbRow row) {
-            return new Pokemon(row.column("id").as(Integer.class), row.column("name").as(String.class));
+            return new Pokemon(row.column("id").get(Integer.class), row.column("name").get(String.class));
         }
 
         @Override

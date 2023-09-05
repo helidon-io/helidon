@@ -356,7 +356,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
     private void handle() {
         Headers httpHeaders = headers.httpHeaders();
         if (httpHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-            this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).value(long.class);
+            this.expectedLength = httpHeaders.get(HeaderNames.CONTENT_LENGTH).get(long.class);
         }
 
         subProtocolHandler = null;
@@ -383,7 +383,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
             ContentDecoder decoder;
             if (contentEncodingContext.contentDecodingEnabled()) {
                 if (httpHeaders.contains(Http.HeaderNames.CONTENT_ENCODING)) {
-                    String contentEncoding = httpHeaders.get(Http.HeaderNames.CONTENT_ENCODING).value();
+                    String contentEncoding = httpHeaders.get(Http.HeaderNames.CONTENT_ENCODING).get();
                     if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                         decoder = contentEncodingContext.decoder(contentEncoding);
                     } else {

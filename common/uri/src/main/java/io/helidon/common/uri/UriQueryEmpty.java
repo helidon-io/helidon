@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,10 @@ package io.helidon.common.uri;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.OptionalValue;
 
 final class UriQueryEmpty implements UriQuery {
     static final UriQuery INSTANCE = new UriQueryEmpty();
@@ -49,8 +53,13 @@ final class UriQueryEmpty implements UriQuery {
     }
 
     @Override
-    public String value(String name) {
+    public String get(String name) {
         throw new UnsupportedOperationException("Empty query");
+    }
+
+    @Override
+    public OptionalValue<String> first(String name) {
+        return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
     }
 
     @Override

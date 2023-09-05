@@ -166,7 +166,7 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
         Optional<String> tenantId = Optional.empty();
         missingLocations.add("tenant-id-finder");
         if (oidcConfig.useParam()) {
-            tenantId = providerRequest.env().queryParams().first(oidcConfig.tenantParamName());
+            tenantId = providerRequest.env().queryParams().first(oidcConfig.tenantParamName()).asOptional();
 
             if (tenantId.isEmpty()) {
                 missingLocations.add("query-param");

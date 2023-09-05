@@ -24,7 +24,7 @@ import java.util.Map;
 import io.helidon.common.parameters.Parameters;
 
 final class CookieParser {
-    private static final Parameters EMPTY_COOKIES = Parameters.empty("cookies");
+    private static final Parameters EMPTY_COOKIES = Parameters.empty("http/cookies");
 
     private static final String RFC2965_VERSION = "$Version";
     private static final String RFC2965_PATH = "$Path";
@@ -51,7 +51,7 @@ final class CookieParser {
         if (allCookies.isEmpty()) {
             return EMPTY_COOKIES;
         }
-        return Parameters.create("cookies", allCookies);
+        return Parameters.create("http/cookies", allCookies);
     }
 
     static Parameters empty() {

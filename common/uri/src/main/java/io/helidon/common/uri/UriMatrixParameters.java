@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,22 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 
 import static io.helidon.common.uri.UriEncoding.decodeUri;
 
 class UriMatrixParameters implements Parameters {
-    private final Map<String, List<String>> matrixPatams;
+    private static final String COMPONENT = "uri/matrix";
+    private static final String[] QUALIFIERS = new String[] {"uri", "matrix"};
+    private final Map<String, List<String>> matrixParams;
+    private final MapperManager mapperManager;
 
-    private UriMatrixParameters(Map<String, List<String>> matrixPatams) {
-        this.matrixPatams = matrixPatams;
+    private UriMatrixParameters(Map<String, List<String>> matrixParams) {
+        this.matrixParams = matrixParams;
+        this.mapperManager = MapperManager.global();
     }
 
     static Parameters create(String rawPath) {
@@ -95,7 +102,7 @@ class UriMatrixParameters implements Parameters {
 
     @Override
     public List<String> all(String name) throws NoSuchElementException {
-        List<String> value = matrixPatams.get(name);
+        List<String> value = matrixParams.get(name);
         if (value == null) {
             throw new NoSuchElementException("This path does not contain parameter named \"" + name + "\"");
         }
@@ -103,8 +110,8 @@ class UriMatrixParameters implements Parameters {
     }
 
     @Override
-    public String value(String name) throws NoSuchElementException {
-        List<String> value = matrixPatams.get(name);
+    public String get(String name) throws NoSuchElementException {
+        List<String> value = matrixParams.get(name);
         if (value == null) {
             throw new NoSuchElementException("This path does not contain parameter named \"" + name + "\"");
         }
@@ -112,32 +119,41 @@ class UriMatrixParameters implements Parameters {
     }
 
     @Override
+    public OptionalValue<String> first(String name) {
+        List<String> value = matrixParams.get(name);
+        if (value == null) {
+            return OptionalValue.create(mapperManager, name, GenericType.STRING, QUALIFIERS);
+        }
+        return OptionalValue.create(mapperManager, name, value.get(0), GenericType.STRING, QUALIFIERS);
+    }
+
+    @Override
     public boolean contains(String name) {
-        return matrixPatams.containsKey(name);
+        return matrixParams.containsKey(name);
     }
 
     @Override
     public boolean isEmpty() {
-        return matrixPatams.isEmpty();
+        return matrixParams.isEmpty();
     }
 
     @Override
     public int size() {
-        return matrixPatams.size();
+        return matrixParams.size();
     }
 
     @Override
     public Set<String> names() {
-        return matrixPatams.keySet();
+        return matrixParams.keySet();
     }
 
     @Override
     public String component() {
-        return "uri-path-parameters";
+        return COMPONENT;
     }
 
     @Override
     public String toString() {
-        return component() + ": " + matrixPatams;
+        return component() + ": " + matrixParams;
     }
 }

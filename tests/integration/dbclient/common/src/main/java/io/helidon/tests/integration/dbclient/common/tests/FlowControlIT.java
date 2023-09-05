@@ -21,8 +21,8 @@ import java.util.stream.Stream;
 
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
-
 import io.helidon.tests.integration.dbclient.common.model.Type;
+
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.tests.integration.dbclient.common.model.Type.TYPES;
@@ -57,8 +57,8 @@ public class FlowControlIT {
         assertThat(list, not(empty()));
         assertThat(list.size(), equalTo(18));
         for (DbRow row : list) {
-            Integer id = row.column(1).as(Integer.class);
-            String name = row.column(2).as(String.class);
+            Integer id = row.column(1).get(Integer.class);
+            String name = row.column(2).get(String.class);
             Type type = new Type(id, name);
             assertThat(name, TYPES.get(id).name().equals(name));
             LOGGER.log(Level.DEBUG, () -> String.format("Type: %s", type));
