@@ -29,6 +29,8 @@
     <name>Helidon Metrics Provider Tests</name>
 
     <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
 
