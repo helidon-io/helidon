@@ -72,7 +72,14 @@ public final class OciSecretsMpMetaConfigProvider implements MpMetaConfigProvide
     @Override
     @SuppressWarnings("deprecation")
     public List<? extends ConfigSource> create(String type, Config metaConfig, String profile) {
-        return List.of(MpConfigSources.create(this.p.create(type, metaConfig)));
+        return List.of(MpConfigSources.create(Config.builder()
+                                              .disableEnvironmentVariablesSource()
+                                              .disableFilterServices()
+                                              .disableMapperServices()
+                                              .disableParserServices()
+                                              .disableSystemPropertiesSource()
+                                              .addSource(this.p.create(type, metaConfig))
+                                              .build()));
     }
 
     /**
