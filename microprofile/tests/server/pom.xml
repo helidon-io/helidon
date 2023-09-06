@@ -20,41 +20,45 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns="http://maven.apache.org/POM/4.0.0"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon.microprofile</groupId>
-        <artifactId>helidon-microprofile-project</artifactId>
+        <groupId>io.helidon.microprofile.tests</groupId>
+        <artifactId>tests-project</artifactId>
         <version>4.0.0-SNAPSHOT</version>
     </parent>
-    <packaging>pom</packaging>
-    <groupId>io.helidon.microprofile.tests</groupId>
-    <artifactId>tests-project</artifactId>
-    <name>Helidon Microprofile Tests</name>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>helidon-microprofile-tests-server</artifactId>
+    <name>Helidon Microprofile Tests Server</name>
+
 
     <properties>
         <maven.deploy.skip>true</maven.deploy.skip>
         <maven.sources.skip>true</maven.sources.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <spotbugs.skip>true</spotbugs.skip>
+        <checkstyle.skip>true</checkstyle.skip>
         <dependency-check.skip>true</dependency-check.skip>
         <helidon.services.skip>true</helidon.services.skip>
     </properties>
 
-    <modules>
-        <module>arquillian</module>
-        <module>junit5</module>
-        <module>junit5-tests</module>
-        <module>testng</module>
-        <module>testng-tests</module>
-        <module>server</module>
-    </modules>
-
-    <profiles>
-        <profile>
-            <id>tck</id>
-            <modules>
-                <module>tck</module>
-            </modules>
-        </profile>
-    </profiles>
+    <dependencies>
+        <dependency>
+            <groupId>io.helidon.microprofile.bundles</groupId>
+            <artifactId>helidon-microprofile-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.microprofile.tests</groupId>
+            <artifactId>helidon-microprofile-tests-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

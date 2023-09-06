@@ -55,16 +55,16 @@ import static io.helidon.webserver.testing.junit5.Junit5Util.withStaticMethods;
 /**
  * JUnit5 extension to support Helidon WebServer in tests.
  */
-class HelidonServerJunitExtension implements BeforeAllCallback,
-                                             AfterAllCallback,
-                                             AfterEachCallback,
-                                             InvocationInterceptor,
-                                             ParameterResolver {
+class HelidonServerJunitExtension extends JunitExtensionBase
+        implements BeforeAllCallback,
+                   AfterAllCallback,
+                   AfterEachCallback,
+                   InvocationInterceptor,
+                   ParameterResolver {
 
     private final Map<String, URI> uris = new ConcurrentHashMap<>();
     private final List<ServerJunitExtension> extensions;
 
-    private Class<?> testClass;
     private WebServer server;
 
     HelidonServerJunitExtension() {
@@ -75,7 +75,8 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
     public void beforeAll(ExtensionContext context) {
         LogConfig.configureRuntime();
 
-        testClass = context.getRequiredTestClass();
+        Class<?> testClass = context.getRequiredTestClass();
+        super.testClass(testClass);
         ServerTest testAnnot = testClass.getAnnotation(ServerTest.class);
         if (testAnnot == null) {
             throw new IllegalStateException("Invalid test class for this extension: " + testClass);
@@ -106,6 +107,8 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
         if (server != null) {
             server.stop();
         }
+
+        super.afterAll(extensionContext);
     }
 
     @Override
@@ -188,7 +191,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
     }
 
     private void setupServer(WebServerConfig.Builder builder) {
-        withStaticMethods(testClass, SetUpServer.class, (setUpServer, method) -> {
+        withStaticMethods(testClass(), SetUpServer.class, (setUpServer, method) -> {
             Class<?>[] parameterTypes = method.getParameterTypes();
             if (parameterTypes.length != 1) {
                 throw new IllegalArgumentException("Method " + method + " annotated with " + SetUpServer.class.getSimpleName()
@@ -213,7 +216,7 @@ class HelidonServerJunitExtension implements BeforeAllCallback,
 
         listenerConfigs.put(DEFAULT_SOCKET_NAME, ListenerConfig.builder().from(builder));
 
-        withStaticMethods(testClass, SetUpRoute.class, (setUpRoute, method) -> {
+        withStaticMethods(testClass(), SetUpRoute.class, (setUpRoute, method) -> {
             // validate parameters
             String socketName = setUpRoute.value();
 

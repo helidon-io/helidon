@@ -14,47 +14,53 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.tests;
+package io.helidon.microprofile.tests.server;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.api.WebClient;
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.testing.junit5.AfterStop;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.se.SeContainer;
+import jakarta.enterprise.inject.se.SeContainerInitializer;
+import jakarta.enterprise.inject.spi.Extension;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@ServerTest
-class LifecycleMethodAnnotatedTest {
+class WebServerLifecycleTest {
     private static final TestFeature FEATURE = new TestFeature();
 
-    @SetUpRoute
-    static void setUpRoute(HttpRouting.Builder http) {
-        http.addFeature(FEATURE);
+    @BeforeEach
+    void reset() {
+        FEATURE.reset();
     }
 
-    @AfterStop
-    static void afterStop() {
+    @Test
+    void testLifecycleMethods() {
+        try (SeContainer container = SeContainerInitializer.newInstance()
+                .addExtensions(new TestExtension())
+                .initialize()) {
+            assertThat("Before start should have been called on server startup", FEATURE.beforeStart.get(), is(1));
+            assertThat("After stop should not have been called on server startup", FEATURE.afterStop.get(), is(0));
+        }
         assertThat("Before start should only have been called on server startup", FEATURE.beforeStart.get(), is(1));
         assertThat("After stop should have been called on server stop", FEATURE.afterStop.get(), is(1));
     }
 
-    @Test
-    void testBeforeStartCalled(WebClient webClient) {
-        ClientResponseTyped<String> request = webClient.get()
-                .request(String.class);
-
-        assertThat(request.entity(), is("works"));
-
-        assertThat("Before start should have been called on server startup", FEATURE.beforeStart.get(), is(1));
-        assertThat("After stop should not have been called on server startup", FEATURE.afterStop.get(), is(0));
+    private static final class TestExtension implements Extension {
+        void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
+                             ServerCdiExtension server) {
+            server.serverRoutingBuilder().addFeature(FEATURE);
+        }
     }
 
     private static final class TestFeature implements HttpFeature {
