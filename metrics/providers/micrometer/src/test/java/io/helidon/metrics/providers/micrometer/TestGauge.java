@@ -34,7 +34,7 @@ class TestGauge {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.createMeterRegistry(MetricsConfig.create());
+        meterRegistry = Metrics.globalRegistry();
     }
 
     @Test

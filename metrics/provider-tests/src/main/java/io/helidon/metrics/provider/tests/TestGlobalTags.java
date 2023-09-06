@@ -24,6 +24,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ class TestGlobalTags {
 
         Config config = Config.just(ConfigSources.create(settings));
 
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(
                 MetricsConfig.create(config.get("metrics")));
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
