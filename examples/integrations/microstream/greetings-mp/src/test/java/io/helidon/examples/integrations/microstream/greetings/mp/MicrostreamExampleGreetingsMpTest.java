@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package io.helidon.examples.integrations.microstream.greetings.mp;
 import java.nio.file.Path;
 
 import javax.inject.Inject;
-import javax.json.JsonObject;
 import javax.ws.rs.client.WebTarget;
 
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -46,9 +45,9 @@ class MicrostreamExampleGreetingsMpTest {
 
     @Test
     void testGreeting() {
-        JsonObject response = webTarget.path("/greet").request().get(JsonObject.class);
+        GreetingMessage response = webTarget.path("/greet").request().get(GreetingMessage.class);
 
-        assertEquals("Hello World!", response.getString("message"), "response should be 'Hello World' ");
+        assertEquals("Hello World!", response.getMessage(), "response should be 'Hello World' ");
     }
 
 }
