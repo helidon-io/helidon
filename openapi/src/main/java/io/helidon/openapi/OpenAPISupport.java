@@ -549,7 +549,7 @@ public abstract class OpenAPISupport implements Service {
 
         RequestHeaders headers = req.headers();
         if (headers.acceptedTypes().isEmpty()) {
-            headers.add(Http.Header.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+            return Optional.of(DEFAULT_RESPONSE_MEDIA_TYPE);
         }
         return headers
                 .bestAccepted(preferredMediaTypeOrdering);
