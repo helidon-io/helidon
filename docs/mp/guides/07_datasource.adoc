@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -54,9 +54,7 @@ mvn -U archetype:generate \
     -DarchetypeVersion={helidon-version} \
     -DgroupId=io.helidon.example \
     -DartifactId=helidon-ds \
-    -Dpackage=io.helidon.example.ds \
-    -DrestResourceName=ExampleResource \
-    -DapplicationName=ExampleApplication
+    -Dpackage=io.helidon.example.ds
 ----
 
 Now `cd` into `helidon-ds`.  The rest of this guide will assume all
@@ -72,7 +70,6 @@ Add the following dependency in your `pom.xml`:
 <dependency>
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
-    <version>1.4.199</version>
     <scope>runtime</scope>
 </dependency>
 ----
@@ -137,11 +134,11 @@ class].
 
 NOTE: For more information about datasources, see https://docs.oracle.com/javase/8/docs/api/javax/sql/DataSource.html
 
-In the `src/main/java/io/helidon/example/ds/ExampleResource.java` file, add the following
+In the `src/main/java/io/helidon/example/ds/GreetResource.java` file, add the following
 imports:
 
 [source,java]
-.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+.`src/main/java/io/helidon/example/ds/GreetResource.java`
 ----
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
@@ -152,19 +149,20 @@ import javax.sql.DataSource;
 Annotate the resource class declaration with `@Dependent`:
 
 [source,java]
-.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+.`src/main/java/io/helidon/example/ds/GreetResource.java`
 ----
+@Path("/greet")
 @Dependent <1>
-public class ExampleResource {
+public class GreetResource {
 ----
 
-<1> This ensures that `io.helidon.example.jpa.ExampleResource` is a
+<1> This ensures that `io.helidon.example.jpa.GreetResource` is a
 discoverable CDI bean.
 
 Then add the following annotated field declaration:
 
 [source,java]
-.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+.`src/main/java/io/helidon/example/ds/GreetResource.java`
 ----
 @Inject <1>
 @Named("test") <2>
@@ -185,11 +183,11 @@ Here, the `test` data source is requested.
 
 Now that you have a `DataSource`, you'll use it to connect to the database.
 
-First, ensure the `io.helidon.example.ds.ExampleResource` resource
+First, ensure the `io.helidon.example.ds.GreetResource` resource
 class imports various `java.sql` classes:
 
 [source,java]
-.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+.`src/main/java/io/helidon/example/ds/GreetResource.java`
 ----
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -197,10 +195,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 ----
 
-Add the following resource method to the `ExampleResource` class:
+Add the following resource method to the `GreetResource` class:
 
 [source,java]
-.`src/main/java/io/helidon/example/ds/ExampleResource.java`
+.`src/main/java/io/helidon/example/ds/GreetResource.java`
 ----
 @GET
 @Path("tables")
@@ -252,7 +250,7 @@ Execute the following:
 
 [source,bash]
 ----
-curl http://localhost:8080/example/tables
+curl http://localhost:8080/greet/tables
 ----
 
 Observe that the result will be a list of database table names.

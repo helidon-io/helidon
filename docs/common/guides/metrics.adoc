@@ -523,8 +523,10 @@ into Kubernetes, then verify that it discovered the Helidon metrics in your appl
 [source,bash]
 .Install Prometheus and wait until the pod is ready:
 ----
-helm install stable/prometheus --name metrics
-export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install metrics prometheus-community/prometheus
+export POD_NAME=$(kubectl get pod -l app.kubernetes.io/name=prometheus -l  app.kubernetes.io/component=server -o jsonpath="{.items[0].metadata.name}")
 kubectl get pod $POD_NAME
 ----
 
@@ -536,12 +538,12 @@ metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
 ----
 
 [source,bash]
-.Create a port-forward so you can access the server URL:
+.Create a port-forward, so you can access the server URL:
 ----
 kubectl --namespace default port-forward $POD_NAME 7090:9090
 ----
 
-Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page and you will see your
+Now open your browser and navigate to `http://localhost:7090/targets`.  Search for helidon on the page, and you will see your
 Helidon application as one of the Prometheus targets.
 
 ==== Final Cleanup
