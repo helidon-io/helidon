@@ -21,7 +21,7 @@
  * href="https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/vault/package-summary.html">Vault</a>
  * API-using {@linkplain org.eclipse.microprofile.config.spi.ConfigSource configuration sources}.
  *
- * @see io.helidon.integrations.oci.secrets.mp.configsource.OciSecretsMpConfigProvider
+ * @see io.helidon.integrations.oci.secrets.mp.configsource.OciSecretsMpMetaConfigProvider
  */
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.integrations.oci.secrets.mp.configsource {
