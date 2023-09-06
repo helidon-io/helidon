@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,10 @@
  */
 package io.helidon.examples.istio;
 
-
-import java.util.Collections;
 import java.util.List;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.PersistenceException;
@@ -58,9 +52,6 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-
     @PersistenceContext(unitName = "hello")
     private EntityManager em;
 
@@ -77,11 +68,11 @@ public class GreetResource {
     /**
      * Return a worldly greeting message.
      *
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() {
+    public GreetingMessage getDefaultMessage() {
         return createResponse("World");
     }
 
@@ -89,7 +80,7 @@ public class GreetResource {
      * Return a greeting message using the name that was provided.
      *
      * @param nick the nick to greet
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @Path("/{nick}")
     @GET
@@ -97,18 +88,14 @@ public class GreetResource {
     @Transactional
     public Response getMessage(@PathParam("nick") String nick) {
         Person entity = em.find(Person.class, nick);
-        JsonObjectBuilder entityBuilder = JSON.createObjectBuilder()
-                .add("nick", nick);
         if (entity == null) {
-            JsonObject responseEntity = entityBuilder
-                    .add("error", String.format("Nick %s was not found", nick))
-                    .build();
+            GreetingMessage message = new GreetingMessage(String.format("Nick %s was not found", nick));
             return Response
                     .status(Response.Status.CONFLICT)
-                    .entity(responseEntity)
+                    .entity(message)
                     .build();
         }
-        JsonObject responseEntity = createResponse(entity.getName());
+        GreetingMessage responseEntity = createResponse(entity.getName());
         return Response
                 .status(Response.Status.OK)
                 .entity(responseEntity)
@@ -118,7 +105,7 @@ public class GreetResource {
     /**
      * Return all persons info, if available.
      *
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @Path("/all")
     @GET
@@ -130,14 +117,13 @@ public class GreetResource {
                 em.createNamedStoredProcedureQuery("GetAllPersons");
 
         List<Person> persons = getAllProcedure.getResultList();
+        GreetingMessage message = new GreetingMessage();
 
         if (persons == null || persons.isEmpty()) {
-            JsonObject responseEntity = JSON.createObjectBuilder()
-                    .add("error", String.format("No person was not found"))
-                    .build();
+            message.setMessage("No person was not found");
             return Response
                     .status(Response.Status.CONFLICT)
-                    .entity(responseEntity)
+                    .entity(message)
                     .build();
         }
 
@@ -147,65 +133,50 @@ public class GreetResource {
             System.out.println(person.toString());
             msg.append(person);
         }
-
-        JsonObject responseEntity = JSON.createObjectBuilder()
-                .add("message", msg.toString())
-                .build();
+        message.setMessage(msg.toString());
 
         return Response
                 .status(Response.Status.OK)
-                .entity(responseEntity)
+                .entity(message)
                 .build();
     }
 
     /**
      * Store a new person for greetings.
      *
-     * @param jsonPerson JSON object with person to store
+     * @param person Person to store
      * @return HTTPrequest result
      */
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Transactional
     @POST
-    public Response createPerson(JsonObject jsonPerson) {
-        if (jsonPerson == null || !jsonPerson.containsKey("nick")
-                || !jsonPerson.containsKey("name")) {
+    public Response createPerson(Person person) {
+        if (person == null || person.getNick() == null
+                || person.getName() == null) {
             return Response
                     .status(Response.Status.fromStatusCode(422))
                     .build();
         }
-        String nick = jsonPerson.getString("nick");
-        String name = jsonPerson.getString("name");
-        Person person = new Person();
-        person.setNick(nick);
-        person.setName(name);
-        JsonObjectBuilder entityBuilder = JSON.createObjectBuilder()
-                .add("nick", nick)
-                .add("name", name);
         try {
             em.persist(person);
             return Response.status(Response.Status.OK)
-                    .entity(entityBuilder.build())
+                    .entity(person)
                     .build();
         } catch (PersistenceException pe) {
             pe.printStackTrace();
-            JsonObject entity = entityBuilder
-                    .add("error", pe.getMessage())
-                    .build();
+            GreetingMessage message = new GreetingMessage("Error: " + pe.getMessage());
             return Response
                     .status(Response.Status.CONFLICT)
-                    .entity(entity)
+                    .entity(message)
                     .build();
         }
     }
 
-    private JsonObject createResponse(String who) {
+    private GreetingMessage createResponse(String who) {
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
 
-        return JSON.createObjectBuilder()
-                .add("message", msg)
-                .build();
+        return new GreetingMessage(msg);
     }
 
 }

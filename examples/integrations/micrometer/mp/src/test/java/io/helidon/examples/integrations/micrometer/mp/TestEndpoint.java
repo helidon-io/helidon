@@ -16,7 +16,6 @@
 package io.helidon.examples.integrations.micrometer.mp;
 
 import javax.inject.Inject;
-import javax.json.JsonObject;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
@@ -45,25 +44,21 @@ public class TestEndpoint {
     @Test
     public void pingGreet() {
 
-        JsonObject jsonObject = webTarget
+        GreetingMessage message = webTarget
                  .path("/greet/Joe")
                  .request(MediaType.APPLICATION_JSON_TYPE)
-                 .get(JsonObject.class);
+                 .get(GreetingMessage.class);
 
-        String responseString = jsonObject.getString("message");
-
-        assertThat("Response string", responseString, is("Hello Joe!"));
+        assertThat("Response string", message.getMessage(), is("Hello Joe!"));
         Counter counter = registry.counter(PERSONALIZED_GETS_COUNTER_NAME);
         double before = counter.count();
 
-        jsonObject = webTarget
+        message = webTarget
                 .path("/greet/Jose")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(JsonObject.class);
+                .get(GreetingMessage.class);
 
-        responseString = jsonObject.getString("message");
-
-        assertThat("Response string", responseString, is("Hello Jose!"));
+        assertThat("Response string", message.getMessage(), is("Hello Jose!"));
         double after = counter.count();
         assertThat("Difference in personalized greeting counter between successive calls", after - before, is(1d));
 
