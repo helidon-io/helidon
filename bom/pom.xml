@@ -820,7 +820,12 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.integrations.oci</groupId>
-                <artifactId>helidon-integrations-oci-secrets-configsource</artifactId>
+                <artifactId>helidon-integrations-oci-secrets-config-source</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.integrations.oci</groupId>
+                <artifactId>helidon-integrations-oci-secrets-mp-config-source</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
             <dependency>

@@ -35,6 +35,7 @@
     <modules>
         <module>metrics</module>
         <module>oci-secrets-config-source</module>
+        <module>oci-secrets-mp-config-source</module>
         <module>sdk</module>
         <module>tls-certificates</module>
     </modules>
