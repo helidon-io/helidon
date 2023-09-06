@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
 import jakarta.inject.Inject;
-import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.WebTarget;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,9 +44,9 @@ class MicrostreamExampleGreetingsMpTest {
 
     @Test
     void testGreeting() {
-        JsonObject response = webTarget.path("/greet").request().get(JsonObject.class);
+        GreetingMessage response = webTarget.path("/greet").request().get(GreetingMessage.class);
 
-        assertEquals("Hello World!", response.getString("message"), "response should be 'Hello World' ");
+        assertEquals("Hello World!", response.getMessage(), "response should be 'Hello World' ");
     }
 
 }

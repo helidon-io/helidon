@@ -16,23 +16,15 @@
 
 package io.helidon.examples.microprofile.telemetry;
 
-import java.util.Collections;
-
 import io.opentelemetry.instrumentation.annotations.WithSpan;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-
-
 
 /**
  * A simple JAX-RS resource used by Telemetry Example.
  */
 @Path("/secondary")
 public class SecondaryResource {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * Return a secondary message.

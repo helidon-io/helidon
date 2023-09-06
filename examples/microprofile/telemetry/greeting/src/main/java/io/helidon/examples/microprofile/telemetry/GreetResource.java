@@ -16,16 +16,11 @@
 
 package io.helidon.examples.microprofile.telemetry;
 
-import java.util.Collections;
-
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.inject.Inject;
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -48,8 +43,6 @@ import org.glassfish.jersey.server.Uri;
  */
 @Path("/greet")
 public class GreetResource {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     private Span span;
 
@@ -77,36 +70,32 @@ public class GreetResource {
 
     /**
      *  Create an internal custom span and return its description.
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @GET
     @Path("custom")
     @Produces(MediaType.APPLICATION_JSON)
     @WithSpan
-    public JsonObject useCustomSpan(){
+    public GreetingMessage useCustomSpan() {
         Span span = tracer.spanBuilder("custom")
                 .setSpanKind(SpanKind.INTERNAL)
                 .setAttribute("attribute", "value")
                 .startSpan();
         span.end();
 
-        return JSON.createObjectBuilder()
-                .add("Custom Span", span.toString())
-                .build();
+        return new GreetingMessage("Custom Span" + span);
     }
     /**
      * Get Span info.
      *
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @GET
     @Path("span")
     @Produces(MediaType.APPLICATION_JSON)
     @WithSpan
-    public JsonObject getSpanInfo(){
-        return JSON.createObjectBuilder()
-                .add("Span", span.toString())
-                .build();
+    public GreetingMessage getSpanInfo() {
+        return new GreetingMessage("Span " + span.toString());
     }
 
     /**
