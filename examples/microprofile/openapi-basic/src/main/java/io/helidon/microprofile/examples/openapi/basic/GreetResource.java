@@ -16,13 +16,8 @@
 
 package io.helidon.microprofile.examples.openapi.basic;
 
-import java.util.Collections;
-
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -55,15 +50,13 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
  * curl -X GET http://localhost:8080/openapi
  *
  * Note that the output will include not only the annotated endpoints from this
- * class but also an endpoint added by the {@link SimpleAPIModelReader}.
+ * class but also an endpoint added by the {@link io.helidon.microprofile.examples.openapi.basic.internal.SimpleAPIModelReader}.
  *
  * The message is returned as a JSON object.
  */
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     /**
      * The greeting message provider.
@@ -84,7 +77,7 @@ public class GreetResource {
     /**
      * Return a worldly greeting message.
      *
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @GET
     @Operation(summary = "Returns a generic greeting",
@@ -93,7 +86,7 @@ public class GreetResource {
             content = @Content(mediaType = "application/json",
                                schema = @Schema(implementation = GreetingMessage.class)))
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() {
+    public GreetingMessage getDefaultMessage() {
         return createResponse("World");
     }
 
@@ -101,7 +94,7 @@ public class GreetResource {
      * Return a greeting message using the name that was provided.
      *
      * @param name the name to greet
-     * @return {@link JsonObject}
+     * @return {@link GreetingMessage}
      */
     @Path("/{name}")
     @GET
@@ -110,14 +103,14 @@ public class GreetResource {
             content = @Content(mediaType = "application/json",
                                schema = @Schema(implementation = GreetingMessage.class)))
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getMessage(@PathParam("name") String name) {
+    public GreetingMessage getMessage(@PathParam("name") String name) {
         return createResponse(name);
     }
 
     /**
      * Set the greeting to use in future messages.
      *
-     * @param jsonObject JSON containing the new greeting
+     * @param message JSON containing the new greeting
      * @return {@link Response}
      */
     @Path("/greeting")
@@ -129,86 +122,27 @@ public class GreetResource {
         description = "Conveys the new greeting prefix to use in building greetings",
         content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = GreetingUpdateMessage.class),
+                    schema = @Schema(implementation = GreetingMessage.class),
                     examples = @ExampleObject(
                         name = "greeting",
                         summary = "Example greeting message to update",
-                        value = "{\"greeting\": \"New greeting message\"}")))
+                        value = "{\"message\": \"New greeting message\"}")))
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response updateGreeting(JsonObject jsonObject) {
+    public Response updateGreeting(GreetingMessage message) {
 
-        if (!jsonObject.containsKey("greeting")) {
-            JsonObject entity = JSON.createObjectBuilder()
-                    .add("error", "No greeting provided")
-                    .build();
+        if (message.getMessage() == null) {
+            GreetingMessage entity = new GreetingMessage("No greeting provided");
             return Response.status(Response.Status.BAD_REQUEST).entity(entity).build();
         }
-
-        String newGreeting = jsonObject.getString("greeting");
-
-        greetingProvider.setMessage(newGreeting);
+        greetingProvider.setMessage(message.getMessage());
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 
-    private JsonObject createResponse(String who) {
+    private GreetingMessage createResponse(String who) {
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
 
-        return JSON.createObjectBuilder()
-                .add("message", msg)
-                .build();
-    }
-
-    /**
-     * POJO defining the greeting message content exchanged with clients.
-     */
-    public static class GreetingMessage {
-
-        private String message;
-
-        /**
-         * Gets the message value.
-         *
-         * @return message value
-         */
-        public String getMessage() {
-            return message;
-        }
-
-        /**
-         * Sets the message value.
-         *
-         * @param message message value to set
-         */
-        public void setMessage(String message) {
-            this.message = message;
-        }
-    }
-
-    /**
-     * POJO defining the greeting to use in future messages.
-     */
-    public static class GreetingUpdateMessage {
-
-        private String greeting;
-
-        /**
-         * Gets the greeting value.
-         *
-         * @return greeting value
-         */
-        public String getGreeting() {
-            return greeting;
-        }
-
-        /**
-         * Sets the greeting value.
-         *
-         * @param greeting greeting value to set
-         */
-        public void setGreeting(String greeting) {
-            this.greeting = greeting;
-        }
+        return new GreetingMessage(msg);
     }
 
 }
