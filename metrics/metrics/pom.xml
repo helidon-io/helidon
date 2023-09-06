@@ -165,7 +165,7 @@
             </build>
         </profile>
         <profile>
-            <id>releaseX</id>
+            <id>release</id>
             <build>
                 <plugins>
                     <plugin>
