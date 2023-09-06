@@ -70,6 +70,11 @@
             <artifactId>helidon-webclient</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-jsonb</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
