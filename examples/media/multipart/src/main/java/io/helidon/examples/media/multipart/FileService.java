@@ -107,7 +107,7 @@ public final class FileService implements HttpService {
     }
 
     private void download(ServerRequest req, ServerResponse res) {
-        Path filePath = storage.resolve(req.path().pathParameters().value("fname"));
+        Path filePath = storage.resolve(req.path().pathParameters().get("fname"));
         if (!filePath.getParent().equals(storage)) {
             res.status(BAD_REQUEST_400).send("Invalid file name");
             return;

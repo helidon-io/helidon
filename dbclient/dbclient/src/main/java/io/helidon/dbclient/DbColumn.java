@@ -19,11 +19,12 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
+import io.helidon.common.mapper.Value;
 
 /**
  * Column data and metadata.
  */
-public interface DbColumn {
+public interface DbColumn extends Value<Object> {
 
     /**
      * Typed value of this column.
@@ -36,7 +37,8 @@ public interface DbColumn {
      * @throws io.helidon.common.mapper.MapperException in case the type is not the underlying {@link #javaType()} and
      *                         there is no mapper registered for it
      */
-    <T> T as(Class<T> type) throws MapperException;
+    @Override
+    <T> T get(Class<T> type) throws MapperException;
 
     /**
      * Value of this column as a generic type.
@@ -48,14 +50,16 @@ public interface DbColumn {
      * @return value mapped to the expected type if possible
      * @throws MapperException in case the mapping cannot be done
      */
-    <T> T as(GenericType<T> type) throws MapperException;
+    @Override
+    <T> T get(GenericType<T> type) throws MapperException;
 
     /**
      * Untyped value of this column, returns java type as provided by the underlying database driver.
      *
      * @return value of this column
      */
-    default Object value() {
+    @Override
+    default Object get() {
         return as(javaType());
     }
 
@@ -82,6 +86,7 @@ public interface DbColumn {
      *
      * @return name of this column
      */
+    @Override
     String name();
 
     /**

@@ -56,7 +56,7 @@ class InfoService implements HttpService {
     }
 
     private void namedInfo(ServerRequest req, ServerResponse res) {
-        String name = req.path().pathParameters().value("name");
+        String name = req.path().pathParameters().get("name");
 
         Object value = info.get(name);
         if (value == null) {

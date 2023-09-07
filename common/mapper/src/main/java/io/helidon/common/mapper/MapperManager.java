@@ -16,6 +16,7 @@
 package io.helidon.common.mapper;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
@@ -40,6 +41,25 @@ import io.helidon.common.mapper.spi.MapperProvider;
  */
 public interface MapperManager {
     /**
+     * Get an instance of the configured global manager. If none is explicitly set, an instance is created using
+     * discovered and built-in mappers.
+     *
+     * @return global mapper manager
+     */
+    static MapperManager global() {
+        return GlobalManager.mapperManager();
+    }
+
+    /**
+     * Configure a new global mapper manager.
+     *
+     * @param manager mapper manager to use
+     */
+    static void global(MapperManager manager) {
+        GlobalManager.mapperManager(manager);
+    }
+
+    /**
      * Create a fluent API builder to create a customized mapper manager.
      *
      * @return a new builder
@@ -56,30 +76,6 @@ public interface MapperManager {
      */
     static MapperManager create() {
         return MapperManager.builder().build();
-    }
-
-    /**
-     * Create a fluent API builder to create a customized mapper manager based on the provided Helidon Service loader.
-     *
-     * @param serviceLoader fully configured service loader
-     * @return a new builder
-     */
-    static Builder builder(HelidonServiceLoader<MapperProvider> serviceLoader) {
-        return MapperManager.builder()
-                .mapperProviders(serviceLoader);
-    }
-
-    /**
-     * Create a mapper manager using only the provided Helidon Service loader.
-     * loaded {@link io.helidon.common.mapper.spi.MapperProvider MapperProviders}.
-     *
-     * @param serviceLoader fully configured service loader
-     * @return create a new mapper manager from service loader
-     */
-    static MapperManager create(HelidonServiceLoader<MapperProvider> serviceLoader) {
-        return MapperManager.builder()
-                .mapperProviders(serviceLoader)
-                .build();
     }
 
     /**
@@ -116,18 +112,40 @@ public interface MapperManager {
             throws MapperException;
 
     /**
+     * Obtain a mapper for the provided types and qualifiers.
+     *
+     * @param sourceType type to map from
+     * @param targetType type to map to
+     * @param qualifiers qualifiers of the mapper
+     * @return mapper if found
+     * @param <SOURCE> source type
+     * @param <TARGET> target type
+     */
+    <SOURCE, TARGET> Optional<Mapper<SOURCE, TARGET>> mapper(GenericType<SOURCE> sourceType,
+                                                             GenericType<TARGET> targetType,
+                                                             String... qualifiers);
+
+    /**
      * Fluent API builder for {@link io.helidon.common.mapper.MapperManager}.
      */
     final class Builder implements io.helidon.common.Builder<Builder, MapperManager> {
         private HelidonServiceLoader.Builder<MapperProvider> providers = HelidonServiceLoader
                 .builder(ServiceLoader.load(MapperProvider.class));
+        private boolean useBuiltIn;
+        private boolean builtInAdded;
+        private boolean discoverServices = true;
 
         private Builder() {
         }
 
         @Override
         public MapperManager build() {
+            if (useBuiltIn && !builtInAdded) {
+                providers.addService(new BuiltInMappers(), 10);
+                builtInAdded = true;
+            }
             providers.addService(new DefaultMapperProvider(), 0);
+            providers.useSystemServiceLoader(discoverServices);
             return new MapperManagerImpl(this);
         }
 
@@ -135,12 +153,7 @@ public interface MapperManager {
          * Add a new {@link io.helidon.common.mapper.spi.MapperProvider} to the list of providers loaded from
          * system service loader.
          * <p>
-         * You may add multiple instances of the same implementation class.
-         * <p>
-         * If the same provider implementation would be loaded by Java Service loader, the service loader instance is ignored.
-         * If you need to add a new implementation of the same type, please use the full features
-         * of the {@link io.helidon.common.HelidonServiceLoader} and invoke
-         * {@link MapperManager#create(io.helidon.common.HelidonServiceLoader)}.
+         * You can control whether discovered services are loaded through see {@link #discoverServices(boolean)}
          *
          * @param provider prioritized mapper provider to use
          * @return updated builder instance
@@ -271,17 +284,30 @@ public interface MapperManager {
             return this;
         }
 
+        /**
+         * Whether to use built-in mappers.
+         *
+         * @return updated builder
+         */
+        public Builder useBuiltIn(boolean useBuiltIn) {
+            this.useBuiltIn = useBuiltIn;
+            return this;
+        }
+
+        /**
+         * Whether to use {@link java.util.ServiceLoader} to discover mappers, defaults to {@code true}.
+         *
+         * @param discoverServices whether to discover services
+         * @return updated builder
+         */
+        public Builder discoverServices(boolean discoverServices) {
+            this.discoverServices = discoverServices;
+            return this;
+        }
+
         // used by the implementation
         List<MapperProvider> mapperProviders() {
             return providers.build().asList();
-        }
-
-        private Builder mapperProviders(HelidonServiceLoader<MapperProvider> serviceLoader) {
-            providers = HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
-                    .useSystemServiceLoader(false);
-
-            serviceLoader.forEach(providers::addService);
-            return this;
         }
     }
 }

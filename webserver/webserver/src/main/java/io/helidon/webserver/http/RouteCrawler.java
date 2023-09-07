@@ -144,7 +144,7 @@ class RouteCrawler {
                 newParams.put(paramName, params.all(paramName));
             }
             newParams.replaceAll((name, values) -> List.copyOf(values));
-            RoutedPath result = new CrawlerRoutedPath(path, Parameters.create("path-template-parameters", newParams));
+            RoutedPath result = new CrawlerRoutedPath(path, Parameters.create("http/path", newParams));
             return new CrawlerItem(result, handler);
         }
 

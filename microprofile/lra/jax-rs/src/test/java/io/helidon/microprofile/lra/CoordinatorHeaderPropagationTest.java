@@ -157,7 +157,7 @@ class CoordinatorHeaderPropagationTest {
                     closeHeadersCoordinator.putAll(req.headers().toMap());
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
-                            .value("lraId");
+                            .get("lraId");
                     if (lraMap.get(lraId).get("complete") == null) {
                         //no complete resource
                         // after lra
@@ -204,7 +204,7 @@ class CoordinatorHeaderPropagationTest {
                     closeHeadersCoordinator.putAll(req.headers().toMap());
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
-                            .value("lraId");
+                            .get("lraId");
 
                     try (Http1ClientResponse clientResponse = Http1Client.builder()
                             .baseUri(lraMap.get(lraId).get("compensate").toASCIIString())
@@ -227,7 +227,7 @@ class CoordinatorHeaderPropagationTest {
                     joinHeadersCoordinator.putAll(req.headers().toMap());
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
-                            .value("lraId");
+                            .get("lraId");
                     String content = req.content().as(String.class);
 
                     for (String part : content.split(",")) {

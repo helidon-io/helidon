@@ -108,9 +108,9 @@ class NonJaxRsResource {
 
         PropagatedHeaders propagatedHeaders = participantService.prepareCustomHeaderPropagation(headers.toMap());
 
-        String fqdn = path.value("fqdn");
-        String method = path.value("methodName");
-        String type = path.value("type");
+        String fqdn = path.get("fqdn");
+        String method = path.get("methodName");
+        String type = path.get("type");
 
         try {
             handleRequest(req, res, type, fqdn, method, lraId, parentId, propagatedHeaders);

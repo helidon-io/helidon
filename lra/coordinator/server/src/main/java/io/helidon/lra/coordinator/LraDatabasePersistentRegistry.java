@@ -76,26 +76,26 @@ class LraDatabasePersistentRegistry implements LraPersistentRegistry {
     public void load(CoordinatorService coordinatorService) {
         DbExecute tx = dbClient.execute();
         tx.namedQuery("load").forEach(row -> {
-            String lraId = row.column("ID").as(String.class);
-            String parentId = row.column("PARENT_ID").as(String.class);
-            Long timeout = row.column("TIMEOUT").as(Long.class);
-            String lraStatus = row.column("STATUS").as(String.class);
-            Boolean isChild = row.column("IS_CHILD").as(Boolean.class);
-            Long whenReadyToDelete = row.column("WHEN_READY_TO_DELETE").as(Long.class);
+            String lraId = row.column("ID").get(String.class);
+            String parentId = row.column("PARENT_ID").get(String.class);
+            Long timeout = row.column("TIMEOUT").get(Long.class);
+            String lraStatus = row.column("STATUS").get(String.class);
+            Boolean isChild = row.column("IS_CHILD").get(Boolean.class);
+            Long whenReadyToDelete = row.column("WHEN_READY_TO_DELETE").get(Long.class);
 
-            String completeLink = row.column("COMPLETE_LINK").as(String.class);
-            String compensateLink = row.column("COMPENSATE_LINK").as(String.class);
-            String afterLink = row.column("AFTER_LINK").as(String.class);
-            String forgetLink = row.column("FORGET_LINK").as(String.class);
-            String statusLink = row.column("STATUS_LINK").as(String.class);
-            String participantStatus = row.column("PARTICIPANT_STATUS").as(String.class);
-            String compensateStatus = row.column("COMPENSATE_STATUS").as(String.class);
-            String forgetStatus = row.column("FORGET_STATUS").as(String.class);
-            String afterStatus = row.column("AFTER_LRA_STATUS").as(String.class);
-            String sendingStatus = row.column("SENDING_STATUS").as(String.class);
+            String completeLink = row.column("COMPLETE_LINK").get(String.class);
+            String compensateLink = row.column("COMPENSATE_LINK").get(String.class);
+            String afterLink = row.column("AFTER_LINK").get(String.class);
+            String forgetLink = row.column("FORGET_LINK").get(String.class);
+            String statusLink = row.column("STATUS_LINK").get(String.class);
+            String participantStatus = row.column("PARTICIPANT_STATUS").get(String.class);
+            String compensateStatus = row.column("COMPENSATE_STATUS").get(String.class);
+            String forgetStatus = row.column("FORGET_STATUS").get(String.class);
+            String afterStatus = row.column("AFTER_LRA_STATUS").get(String.class);
+            String sendingStatus = row.column("SENDING_STATUS").get(String.class);
 
-            Integer remainingCloseAttempts = row.column("REMAINING_CLOSE_ATTEMPTS").as(Integer.class);
-            Integer remainingAfterAttempts = row.column("REMAINING_AFTER_ATTEMPTS").as(Integer.class);
+            Integer remainingCloseAttempts = row.column("REMAINING_CLOSE_ATTEMPTS").get(Integer.class);
+            Integer remainingAfterAttempts = row.column("REMAINING_AFTER_ATTEMPTS").get(Integer.class);
             Lra lra = lraMap.get(lraId);
             if (lra == null) {
                 lra = new Lra(coordinatorService, lraId,

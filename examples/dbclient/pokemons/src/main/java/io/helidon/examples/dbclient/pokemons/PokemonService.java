@@ -129,7 +129,7 @@ public class PokemonService implements HttpService {
     private void getPokemonById(ServerRequest request, ServerResponse response) {
         int pokemonId = Integer.parseInt(request.path()
                 .pathParameters()
-                .value("id"));
+                .get("id"));
 
         response.send(dbClient.execute().createNamedGet("select-pokemon-by-id")
                 .addParam("id", pokemonId)
@@ -145,7 +145,7 @@ public class PokemonService implements HttpService {
      * @param response server response
      */
     private void getPokemonByName(ServerRequest request, ServerResponse response) {
-        String pokemonName = request.path().pathParameters().value("name");
+        String pokemonName = request.path().pathParameters().get("name");
         response.send(dbClient.execute().namedGet("select-pokemon-by-name", pokemonName)
                 .orElseThrow(() -> new NotFoundException("Pokemon " + pokemonName + " not found"))
                 .as(JsonObject.class));

@@ -22,11 +22,19 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.OptionalValue;
+
 class ParametersMap implements Parameters {
+    private final MapperManager mapperManager;
     private final String component;
     private final Map<String, List<String>> params;
+    private final String[] qualifiers;
 
-    ParametersMap(String component, Map<String, List<String>> params) {
+    ParametersMap(MapperManager mapperManager, String component, Map<String, List<String>> params) {
+        this.qualifiers = component.split("/");
+        this.mapperManager = mapperManager;
         this.component = component;
         this.params = new LinkedHashMap<>(params);
     }
@@ -41,7 +49,7 @@ class ParametersMap implements Parameters {
     }
 
     @Override
-    public String value(String name) throws NoSuchElementException {
+    public String get(String name) throws NoSuchElementException {
         List<String> value = params.get(name);
         if (value == null) {
             throw new NoSuchElementException("This " + component + " does not contain parameter named \"" + name + "\"");
@@ -72,5 +80,13 @@ class ParametersMap implements Parameters {
     @Override
     public String toString() {
         return component + ": " + params;
+    }
+
+    @Override
+    public OptionalValue<String> first(String name) {
+        if (contains(name)) {
+            return OptionalValue.create(mapperManager, name, get(name), GenericType.STRING, qualifiers);
+        }
+        return OptionalValue.create(mapperManager, name, GenericType.STRING, qualifiers);
     }
 }

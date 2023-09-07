@@ -1,21 +1,77 @@
-# Generic Mapping Proposal
+# Mapping of values in Helidon
 
-This change was merged into master.
-Module: `common/mapper`
-Since: Helidon 1.2.2
-Please consult javadocs for current documentation.
+Designed for 4.0.0
 
 Provide an API to map an arbitrary Java type to another arbitrary Java type.
 
-## Proposal
+## Mapper API
 
-The API consist of the following classes (may be changed due to implementation details):
+The API consist of the following classes
 - `MapperManager` - the entry point to mapping of types
 - `Mapper` - a class capable of converting one type to another
 - `MapperProvider` - SPI class to support providers loaded through Java Service loader or configured through a builder
 - `MapperException` - `RuntimeException` thrown when a mapping is missing or the mapping itself failed
+- `ValueProvider` - a named provider of types values (similar to a config node), such as headers
+- `Value` - a named value that can be mapped (similar to config value), reason for having a name: we want to have descriptive
+            errors, such as "Failed to map http/query-param \"request-count\" from java.lang.String to java.lang.Integer"
 
-This API should be also added to `Config` as an additional source of mappings.
+### Value and OptionalValue
+
+The following methods are available (`T` is the type of the value, usually defaults to `java.lang.String`:
+- `String name()` - we consider each value to be a named instance
+- `T get()` - get the value, throws `NoSuchElementException` if optional and not present
+- `N get(Class<N>)` - map to another type
+- `N get(GenericType<N>)` - map to another type
+- `Value<N> as(Class<N>)` - map to another type, but keep as a mappable value
+- `Value<N> as(GenericType<N>)` - map to another type, but keep as a mappable value
+- `Value<N> as(Function<T, N>)` - map to another type, but keep as a mappable value
+- `Optional<T> asOptional()` - get an optional instance representing the same value
+
+The following method that are functional equivalents of a `java.util.Optional` are available:
+- `Optional<T> filter(Predicate<T>)`
+- `Optional<T> flatMap(Function<T, Optional<U>>)`
+- `Stream<T> stream()`
+
+Some shortcut methods for common types exist for both the `as` and `get` methods, such as: 
+- `Value<Boolean> asBoolean()`
+- `boolean getBoolean()`
+
+`OptionalValue` has the following methods that are functional equivalents of `java.util.Optional`:
+- `Optional<T> or(Supplier<T>)`
+- `boolean isPresent()`
+- `boolean isEmpty()`
+- `void ifPresentOrElse(Consumer<T>, Runnable)`
+- `void ifPresent(Consumer<T>)`
+- `Optional<U> map(Function<T, U>)`
+- `T orElse(T)`
+- `T orElseGet(Supplier<T>)`
+- `T orElseThrow(Supplier<X extends Throwable>)`
+
+### Value Provider
+
+A value provider should support using a custom `MapperManager`, if not provided, it falls back to `MapperManager.global()`.
+Each value provider has its own "path" of mapping tags, allowing customization of mapping depending on context.
+
+For example HTTP query parameters would use `List.of("http", "query-param")`, headers would use `List.of("http", "header")`
+and the mapper manager will use the provider that matches as many of these as possible.
+
+For example for query parameters, we would do the following:
+- find mapper that matches "http", "query-param"
+- find mapper that matches "http"
+- find mapper that does not have any tag (never fallback to mappers for other tags)
+- use a built-in mapper if available
+
+This allows us to create a mapper for example for `java.util.time.Instant`, 
+that will behave differently for database, JSON, config, and headers.
+
+The following modules should use this approach:
+- Config
+- DbClient
+- HTTP headers
+- HTTP query
+- HTTP path params
+- HTTP matrix params
+- 
 
 ### Mapper Manager
 
@@ -190,6 +246,26 @@ Suggested supported mapping pairs (primitive types should be supported as well):
  
 Other reasonable mapping pairs can be added.
  
+## Qualifiers
+
+As mappers provide possibility to qualify the mapper, we should have a list of known qualifiers (to make it easy to 
+implement a mapper that is only valid for example for HTTP headers).
+
+The mapper may provide a value for a specific qualifier. If multiple qualifiers are requested, the lookup sequence is as follows:
+1. look for qualifier created from all elements of the array (such as for `http, headers`, we look for `http/headers`)
+2. look for qualifier created from less elements (such as for `http, headers`, the next lookup sequence is qualifier `http`)
+3. if not found, use the default qualifier (empty string)
+4. if not found, mapper could not be discovered, and mapping will eventually fail
+
+Known qualifiers (array of strings):
+- "" (empty string) - looks only for providers that do not have a qualifier defined
+- `dbclient`
+- `http`
+- `http/header`
+- `uri/query`
+- `uri/matrix`
+- `uri/path`
+
 ## Examples
 
 ### Using the MapperManager

@@ -97,7 +97,7 @@ class TransitService implements HttpService {
     }
 
     private void decryptSecret(ServerRequest req, ServerResponse res) {
-        String encrypted = req.path().pathParameters().value("text");
+        String encrypted = req.path().pathParameters().get("text");
 
         Decrypt.Response decryptResponse = secrets.decrypt(Decrypt.Request.builder()
                                                                           .encryptionKeyName(ENCRYPTION_KEY)
@@ -107,7 +107,7 @@ class TransitService implements HttpService {
     }
 
     private void encryptSecret(ServerRequest req, ServerResponse res) {
-        String secret = req.path().pathParameters().value("text");
+        String secret = req.path().pathParameters().get("text");
 
         Encrypt.Response encryptResponse = secrets.encrypt(Encrypt.Request.builder()
                                                                           .encryptionKeyName(ENCRYPTION_KEY)
@@ -133,7 +133,7 @@ class TransitService implements HttpService {
     }
 
     private void verifyHmac(ServerRequest req, ServerResponse res) {
-        String hmac = req.path().pathParameters().value("text");
+        String hmac = req.path().pathParameters().get("text");
 
         Verify.Response verifyResponse = secrets.verify(Verify.Request.builder()
                                                               .digestKeyName(ENCRYPTION_KEY)
@@ -144,7 +144,7 @@ class TransitService implements HttpService {
     }
 
     private void verify(ServerRequest req, ServerResponse res) {
-        String signature = req.path().pathParameters().value("text");
+        String signature = req.path().pathParameters().get("text");
 
         Verify.Response verifyResponse = secrets.verify(Verify.Request.builder()
                                                               .digestKeyName(SIGNATURE_KEY)

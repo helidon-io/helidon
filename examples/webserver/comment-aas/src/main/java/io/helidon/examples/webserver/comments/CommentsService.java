@@ -42,13 +42,13 @@ public class CommentsService implements HttpService {
     }
 
     private void handleListComments(ServerRequest req, ServerResponse resp) {
-        String topic = req.path().pathParameters().value("topic");
+        String topic = req.path().pathParameters().get("topic");
         resp.headers().contentType(HttpMediaTypes.PLAINTEXT_UTF_8);
         resp.send(listComments(topic));
     }
 
     private void handleAddComment(ServerRequest req, ServerResponse res) {
-        String topic = req.path().pathParameters().value("topic");
+        String topic = req.path().pathParameters().get("topic");
         String userName = req.context().get("user", String.class).orElse("anonymous");
         String msg = req.content().as(String.class);
         addComment(msg, userName, topic);

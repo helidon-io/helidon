@@ -19,13 +19,13 @@ package io.helidon.jersey.connector;
 import java.util.Arrays;
 
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
@@ -34,7 +34,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
 import org.glassfish.jersey.client.ClientConfig;
-
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -80,8 +79,8 @@ class JerseyConnectorTest {
     }
 
     static void basicGetQuery(ServerRequest request, ServerResponse response) {
-        String first = request.query().value("first");
-        String second = request.query().value("second");
+        String first = request.query().get("first");
+        String second = request.query().get("second");
         response.status(Http.Status.OK_200).send(first + second);
     }
 

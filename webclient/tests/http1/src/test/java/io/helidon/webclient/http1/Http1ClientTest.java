@@ -36,9 +36,6 @@ import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
-import io.helidon.webclient.http2.Http2Client;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientRequest;
@@ -49,6 +46,8 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -83,7 +82,7 @@ class Http1ClientTest {
 
     Http1ClientTest(WebServer webServer, WebClient client) {
         baseURI = "http://localhost:" + webServer.port();
-        this.plainPort = webServer.port();
+        plainPort = webServer.port();
         injectedHttp1client = client;
     }
 
@@ -480,7 +479,7 @@ class Http1ClientTest {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
         if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).value());
+            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).get());
         }
         if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
             res.headers().set(REQ_CHUNKED_HEADER);

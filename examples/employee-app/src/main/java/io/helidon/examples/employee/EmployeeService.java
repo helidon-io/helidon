@@ -83,7 +83,7 @@ public class EmployeeService implements HttpService {
     private void getByLastName(ServerRequest request, ServerResponse response) {
         LOGGER.fine("getByLastName");
 
-        String name = request.path().pathParameters().value("name");
+        String name = request.path().pathParameters().get("name");
         // Invalid query strings handled in isValidQueryStr. Keeping DRY
         if (isValidQueryStr(response, name)) {
             response.send(employees.getByLastName(name));
@@ -99,7 +99,7 @@ public class EmployeeService implements HttpService {
     private void getByTitle(ServerRequest request, ServerResponse response) {
         LOGGER.fine("getByTitle");
 
-        String title = request.path().pathParameters().value("name");
+        String title = request.path().pathParameters().get("name");
         if (isValidQueryStr(response, title)) {
             response.send(employees.getByTitle(title));
         }
@@ -114,7 +114,7 @@ public class EmployeeService implements HttpService {
     private void getByDepartment(ServerRequest request, ServerResponse response) {
         LOGGER.fine("getByDepartment");
 
-        String department = request.path().pathParameters().value("name");
+        String department = request.path().pathParameters().get("name");
         if (isValidQueryStr(response, department)) {
             response.send(employees.getByDepartment(department));
         }
@@ -129,7 +129,7 @@ public class EmployeeService implements HttpService {
     private void getEmployeeById(ServerRequest request, ServerResponse response) {
         LOGGER.fine("getEmployeeById");
 
-        String id = request.path().pathParameters().value("id");
+        String id = request.path().pathParameters().get("id");
         // If invalid, response handled in isValidId. Keeping DRY
         if (isValidQueryStr(response, id)) {
             employees.getById(id)
@@ -167,7 +167,7 @@ public class EmployeeService implements HttpService {
     private void update(ServerRequest request, ServerResponse response) {
         LOGGER.fine("update");
 
-        String id = request.path().pathParameters().value("id");
+        String id = request.path().pathParameters().get("id");
         if (isValidQueryStr(response, id)) {
             if (employees.update(request.content().as(Employee.class), id) == 0) {
                 response.status(404).send();
@@ -186,7 +186,7 @@ public class EmployeeService implements HttpService {
     private void delete(ServerRequest request, ServerResponse response) {
         LOGGER.fine("delete");
 
-        String id = request.path().pathParameters().value("id");
+        String id = request.path().pathParameters().get("id");
         if (isValidQueryStr(response, id)) {
             if (employees.deleteById(id) == 0) {
                 response.status(404).send();

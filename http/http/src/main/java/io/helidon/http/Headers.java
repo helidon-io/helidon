@@ -112,7 +112,7 @@ public interface Headers extends Iterable<Http.Header> {
      */
     default Optional<String> first(Http.HeaderName headerName) {
         if (contains(headerName)) {
-            return Optional.of(get(headerName).value());
+            return Optional.of(get(headerName).get());
         }
         return Optional.empty();
     }
@@ -148,7 +148,7 @@ public interface Headers extends Iterable<Http.Header> {
      */
     default OptionalLong contentLength() {
         if (contains(HeaderNameEnum.CONTENT_LENGTH)) {
-            return OptionalLong.of(get(HeaderNameEnum.CONTENT_LENGTH).value(long.class));
+            return OptionalLong.of(get(HeaderNameEnum.CONTENT_LENGTH).get(long.class));
         }
         return OptionalLong.empty();
     }
@@ -162,7 +162,7 @@ public interface Headers extends Iterable<Http.Header> {
     default Optional<HttpMediaType> contentType() {
         if (contains(HeaderNameEnum.CONTENT_TYPE)) {
             return Optional.of(HttpMediaType.create(get(HeaderNameEnum.CONTENT_TYPE)
-                                                            .value()));
+                                                            .get()));
         }
         return Optional.empty();
     }

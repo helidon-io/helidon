@@ -109,7 +109,7 @@ public final class TodoService implements HttpService {
      * @param res the server response
      */
     private void update(ServerRequest req, ServerResponse res) {
-        String id = req.path().pathParameters().value("id");
+        String id = req.path().pathParameters().get("id");
         JsonObject jsonObject = bsc.update(id, req.content().as(JsonObject.class));
         updateCounter.increment();
         res.send(jsonObject);
@@ -122,7 +122,7 @@ public final class TodoService implements HttpService {
      * @param res the server response
      */
     private void delete(ServerRequest req, ServerResponse res) {
-        String id = req.path().pathParameters().value("id");
+        String id = req.path().pathParameters().get("id");
         JsonObject jsonObject = bsc.deleteSingle(id);
         deleteCounter.increment();
         res.send(jsonObject);
@@ -135,7 +135,7 @@ public final class TodoService implements HttpService {
      * @param res the server response
      */
     private void get(ServerRequest req, ServerResponse res) {
-        String id = req.path().pathParameters().value("id");
+        String id = req.path().pathParameters().get("id");
         res.send(bsc.get(id));
     }
 }

@@ -90,7 +90,7 @@ public class ObjectStorageService implements HttpService {
      * @param response response
      */
     public void download(ServerRequest request, ServerResponse response) {
-        String fileName = request.path().pathParameters().value("file-name");
+        String fileName = request.path().pathParameters().get("file-name");
         GetObjectResponse getObjectResponse =
                 objectStorageClient.getObject(
                         GetObjectRequest.builder()
@@ -127,7 +127,7 @@ public class ObjectStorageService implements HttpService {
      * @param response response
      */
     public void upload(ServerRequest request, ServerResponse response) {
-        String fileName = request.path().pathParameters().value("fileName");
+        String fileName = request.path().pathParameters().get("fileName");
         PutObjectRequest putObjectRequest;
         try (InputStream stream = new FileInputStream(System.getProperty("user.dir") + File.separator + fileName)) {
             byte[] contents = stream.readAllBytes();
@@ -158,7 +158,7 @@ public class ObjectStorageService implements HttpService {
      * @param response response
      */
     public void delete(ServerRequest request, ServerResponse response) {
-        String fileName = request.path().pathParameters().value("file-name");
+        String fileName = request.path().pathParameters().get("file-name");
         DeleteObjectResponse deleteObjectResponse = objectStorageClient.deleteObject(DeleteObjectRequest.builder()
                 .namespaceName(namespaceName)
                 .bucketName(bucketName)

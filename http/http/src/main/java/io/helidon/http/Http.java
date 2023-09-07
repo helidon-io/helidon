@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 import io.helidon.common.buffers.Ascii;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.LazyString;
+import io.helidon.common.mapper.Value;
 
 /**
  * HTTP protocol related constants and utilities.
@@ -803,7 +804,7 @@ public final class Http {
      *
      * @see io.helidon.http.Http.Headers
      */
-    public interface Header {
+    public interface Header extends Value<String> {
 
         /**
          * Name of the header as configured by user
@@ -811,7 +812,19 @@ public final class Http {
          *
          * @return header name, always lower case for HTTP/2 headers
          */
+        @Override
         String name();
+
+        /**
+         * Value of the header.
+         *
+         * @return header value
+         * @deprecated use {@link #get()}
+         */
+        @Deprecated(forRemoval = true, since = "4.0.0")
+        default String value() {
+            return get();
+        }
 
         /**
          * Header name for the header.
@@ -819,22 +832,6 @@ public final class Http {
          * @return header name
          */
         HeaderName headerName();
-
-        /**
-         * First value of this header.
-         *
-         * @return the first value
-         */
-        String value();
-
-        /**
-         * Value mapped using a {@link io.helidon.common.mapper.MapperManager}.
-         *
-         * @param type class of the value
-         * @param <T>  type of the value
-         * @return typed value
-         */
-        <T> T value(Class<T> type);
 
         /**
          * All values concatenated using a comma.
@@ -903,7 +900,7 @@ public final class Http {
          * @return value bytes
          */
         default byte[] valueBytes() {
-            return value().getBytes(StandardCharsets.US_ASCII);
+            return get().getBytes(StandardCharsets.US_ASCII);
         }
 
         /**

@@ -330,7 +330,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     }
 
     private void getByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
-        String metricName = req.path().pathParameters().value("metric");
+        String metricName = req.path().pathParameters().get("metric");
         getMatching(req, res, scopeSelection, Set.of(metricName));
     }
 
@@ -348,7 +348,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         }
 
         private void optionsByName(ServerRequest req, ServerResponse res, Iterable<String> scopeSelection) {
-            String metricName = req.path().pathParameters().value("metric");
+            String metricName = req.path().pathParameters().get("metric");
             optionsMatching(req, res, scopeSelection, Set.of(metricName));
         }
 

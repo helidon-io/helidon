@@ -35,6 +35,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
@@ -241,7 +242,7 @@ public final class OidcFeature implements HttpFeature {
 
     private String findTenantName(ServerRequest request) {
         List<String> missingLocations = new LinkedList<>();
-        Optional<String> tenantId = Optional.empty();
+        OptionalValue<String> tenantId = null;
         if (oidcConfig.useParam()) {
             tenantId = request.query().first(oidcConfig.tenantParamName());
 
@@ -249,7 +250,7 @@ public final class OidcFeature implements HttpFeature {
                 missingLocations.add("query-param");
             }
         }
-        if (oidcConfig.useCookie() && tenantId.isEmpty()) {
+        if (oidcConfig.useCookie() && tenantId == null) {
             Optional<String> cookie = oidcConfig.tenantCookieHandler()
                     .findCookie(request.headers().toMap());
 
@@ -258,7 +259,7 @@ public final class OidcFeature implements HttpFeature {
             }
             missingLocations.add("cookie");
         }
-        if (tenantId.isPresent()) {
+        if (tenantId != null) {
             return tenantId.get();
         } else {
             if (LOGGER.isLoggable(Level.TRACE)) {
@@ -291,7 +292,7 @@ public final class OidcFeature implements HttpFeature {
     }
 
     private void logoutWithTenant(ServerRequest req, ServerResponse res, Tenant tenant) {
-        Optional<String> idTokenCookie = req.headers()
+        OptionalValue<String> idTokenCookie = req.headers()
                 .cookies()
                 .first(idTokenCookieHandler.cookieName());
 
@@ -354,7 +355,7 @@ public final class OidcFeature implements HttpFeature {
 
     private void processOidcRedirect(ServerRequest req, ServerResponse res) {
         // redirected from OIDC provider
-        Optional<String> codeParam = req.query().first(CODE_PARAM_NAME);
+        OptionalValue<String> codeParam = req.query().first(CODE_PARAM_NAME);
         // if code is not in the request, this is a problem
         codeParam.ifPresentOrElse(code -> processCode(code, req, res),
                                   () -> processError(req, res));
@@ -420,7 +421,7 @@ public final class OidcFeature implements HttpFeature {
         ServerRequestHeaders headers = req.headers();
         if (headers.contains(HOST)) {
             String scheme = oidcConfig.forceHttpsRedirects() || req.isSecure() ? "https" : "http";
-            return scheme + "://" + headers.get(HOST).value() + path;
+            return scheme + "://" + headers.get(HOST).get() + path;
         } else {
             LOGGER.log(Level.WARNING, "Request without Host header received, yet post logout URI does not define a host");
             return oidcConfig.toString();

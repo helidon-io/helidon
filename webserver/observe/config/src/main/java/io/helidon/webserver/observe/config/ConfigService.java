@@ -92,7 +92,7 @@ class ConfigService implements HttpService {
     }
 
     private void value(ServerRequest req, ServerResponse res) {
-        String name = req.path().pathParameters().value("name");
+        String name = req.path().pathParameters().get("name");
 
         ConfigValue<String> value = GlobalConfig.config().get(name).asString();
         if (value.isPresent()) {

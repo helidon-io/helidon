@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package io.helidon.common.mapper.spi;
 
 import io.helidon.common.GenericType;
@@ -20,7 +21,7 @@ import io.helidon.common.mapper.Mapper;
 
 /**
  * Java Service loader service to get mappers.
- *
+ * <p>
  * Mapper provider provides mappers based on the source and target types and a qualifier.
  * Generic mappers should always return {@link io.helidon.common.mapper.spi.MapperProvider.Support#COMPATIBLE}, so specific mappers
  * can be created for qualified usages. This is to support a different date/time mapper depending on usage. For this
@@ -36,7 +37,7 @@ public interface MapperProvider {
      *
      * @param sourceClass class of the source
      * @param targetClass class of the target
-     * @param qualifier   qualifiers of this mapping (such as {@code config} or {@code http-headers}
+     * @param qualifier   qualifiers of this mapping (such as {@code config} or {@code http-headers}, may be empty for default
      * @return a mapper that is capable of mapping (or converting) sources to targets
      */
     ProviderResponse mapper(Class<?> sourceClass, Class<?> targetClass, String qualifier);

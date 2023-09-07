@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ class ResponseOrderingTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         rules.any("/multi", (req, res) -> {
-                    long requestId = Long.parseLong(req.query().value("id"));
+                    long requestId = Long.parseLong(req.query().get("id"));
                     queue.add(requestId);
                     res.status(Http.Status.CREATED_201)
                             .send("" + requestId);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package io.helidon.common.mapper;
 
-import java.util.ServiceLoader;
+import java.util.NoSuchElementException;
 
 import io.helidon.common.GenericType;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.mapper.spi.MapperProvider;
+import io.helidon.common.mapper.spi.MapperProvider.ProviderResponse;
 
 import org.junit.jupiter.api.Test;
 
@@ -63,9 +63,8 @@ class MapperManagerTest {
 
     @Test
     void testUsingCustomProviders() {
-        MapperManager mm = MapperManager.builder(HelidonServiceLoader.builder(ServiceLoader.load(MapperProvider.class))
-                                                         .useSystemServiceLoader(false)
-                                                         .build())
+        MapperManager mm = MapperManager.builder()
+                .discoverServices(false)
                 .addMapperProvider(new ServiceLoaderMapper1())
                 .build();
 
@@ -128,9 +127,120 @@ class MapperManagerTest {
         stringResult = mm.map(42, GenericType.create(Integer.class), ServiceLoaderMapper2.STRING_TYPE, "default");
         assertThat(stringResult, is("42"));
 
-        stringResult = mm.map((short)42, Short.class, String.class, "default");
+        stringResult = mm.map((short) 42, Short.class, String.class, "default");
         assertThat(stringResult, is("42"));
-        stringResult = mm.map((short)42, ServiceLoaderMapper2.SHORT_TYPE, ServiceLoaderMapper2.STRING_TYPE, "default");
+        stringResult = mm.map((short) 42, ServiceLoaderMapper2.SHORT_TYPE, ServiceLoaderMapper2.STRING_TYPE, "default");
         assertThat(stringResult, is("42"));
+    }
+
+    @Test
+    void testQualifiedMapping() {
+        MapperManager mapperManager = MapperManager.builder()
+                .addMapperProvider((t1, t2, qualifier) -> {
+                    if (qualifier.equals("http")) {
+                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, req -> "http_" + req);
+                    }
+                    return ProviderResponse.unsupported();
+                })
+                .addMapperProvider((t1, t2, qualifier) -> {
+                    if (qualifier.equals("http/header")) {
+                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, req -> "http_header_" + req);
+                    }
+                    return ProviderResponse.unsupported();
+                })
+                .addMapperProvider((t1, t2, qualifier) -> {
+                    if (qualifier.equals("http/query")) {
+                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, req -> "http_query_" + req);
+                    }
+                    return ProviderResponse.unsupported();
+                })
+                .build();
+
+        assertThrows(MapperException.class, () -> mapperManager.map("value", String.class, String.class, ""));
+
+        // http qualifier exists
+        String value = mapperManager.map("value", String.class, String.class, "http");
+        assertThat(value, is("http_value"));
+
+        // http/header qualifier exist
+        value = mapperManager.map("value", String.class, String.class, "http", "header");
+        assertThat(value, is("http_header_value"));
+
+        // http/query qualifier exists
+        value = mapperManager.map("value", String.class, String.class, "http", "query");
+        assertThat(value, is("http_query_value"));
+
+        // should fall back to http qualifier
+        value = mapperManager.map("value", String.class, String.class, "http", "matrix");
+        assertThat(value, is("http_value"));
+    }
+
+    @Test
+    void testExistingValue() {
+        // int -> double
+        // not double to int
+
+        MapperManager mapperManager = MapperManager.builder()
+                .useBuiltIn(true)
+                .discoverServices(false)
+                .addMapperProvider((t1, t2, qualifier) -> {
+                    if (t1.equals(Integer.class) && t2.equals(Double.class)) {
+                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, anInt -> ((Integer) anInt).doubleValue());
+                    }
+                    return ProviderResponse.unsupported();
+                })
+                .build();
+
+        Value<String> value = Value.create(mapperManager, "name", "42");
+        assertThat(value.get(), is("42"));
+
+        Value<Integer> integerValue = value.as(Integer.class);
+        assertThat(integerValue.get(), is(42));
+
+        value = integerValue.asString();
+        assertThat(value.get(), is("42"));
+
+        Value<Double> doubleValue = integerValue.as(Double.class);
+        assertThat(doubleValue.get(), is(42D));
+
+        assertThrows(MapperException.class, () -> doubleValue.as(Integer.class));
+    }
+
+    @Test
+    void testEmptyValue() {
+        // int -> double
+        // not double to int
+
+        MapperManager mapperManager = MapperManager.builder()
+                .useBuiltIn(true)
+                .addMapperProvider((t1, t2, qualifier) -> {
+                    if (t1.equals(Integer.class) && t2.equals(Double.class)) {
+                        return new ProviderResponse(MapperProvider.Support.SUPPORTED, anInt -> ((Integer) anInt).doubleValue());
+                    }
+                    return ProviderResponse.unsupported();
+                })
+                .build();
+
+        OptionalValue<String> value = OptionalValue.create(mapperManager, "name", String.class);
+        assertThrows(NoSuchElementException.class, value::get);
+        assertThat(value.isPresent(), is(false));
+        assertThat(value.isEmpty(), is(true));
+
+        OptionalValue<Integer> integerValue = value.as(Integer.class);
+        assertThrows(NoSuchElementException.class, integerValue::get);
+        assertThat(integerValue.isPresent(), is(false));
+        assertThat(integerValue.isEmpty(), is(true));
+
+        value = integerValue.asString();
+        assertThrows(NoSuchElementException.class, value::get);
+        assertThat(value.isPresent(), is(false));
+        assertThat(value.isEmpty(), is(true));
+
+        OptionalValue<Double> doubleValue = integerValue.as(Double.class);
+        assertThrows(NoSuchElementException.class, doubleValue::get);
+        assertThat(doubleValue.isPresent(), is(false));
+        assertThat(doubleValue.isEmpty(), is(true));
+
+        assertThrows(MapperException.class, () -> doubleValue.as(Integer.class));
     }
 }

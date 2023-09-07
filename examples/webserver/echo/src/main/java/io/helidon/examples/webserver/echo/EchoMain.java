@@ -65,11 +65,11 @@ public class EchoMain {
         Set<String> queryNames = query.names();
 
         for (String pathParamName : pathParams.names()) {
-            res.header("R-PATH_PARAM_" + pathParamName, pathParams.value(pathParamName));
+            res.header("R-PATH_PARAM_" + pathParamName, pathParams.get(pathParamName));
         }
 
         for (String paramName : templateParams.names()) {
-            res.header("R-PATH_" + paramName, templateParams.value(paramName));
+            res.header("R-PATH_" + paramName, templateParams.get(paramName));
         }
 
         for (String queryName : queryNames) {

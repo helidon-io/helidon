@@ -25,16 +25,16 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriFragment;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
-import io.helidon.common.parameters.Parameters;
-import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriPath;
-import io.helidon.common.uri.UriQuery;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -236,7 +236,7 @@ class StaticContentHandlerTest {
         when(request.path()).thenReturn(new RoutedPath() {
             @Override
             public Parameters pathParameters() {
-                return Parameters.empty("unit-template-params");
+                return Parameters.empty("http/path");
             }
 
             @Override

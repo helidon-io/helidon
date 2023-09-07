@@ -25,6 +25,10 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.OptionalValue;
+
 import static io.helidon.common.uri.UriEncoding.decodeUri;
 
 // must be lazily populated to prevent perf overhead when queries are ignored
@@ -117,13 +121,24 @@ final class UriQueryImpl implements UriQuery {
     }
 
     @Override
-    public String value(String name) throws NoSuchElementException {
+    public String get(String name) throws NoSuchElementException {
         ensureDecoded();
         List<String> values = decodedQueryParams.get(name);
         if (values == null) {
             throw new NoSuchElementException("Query parameter \"" + name + "\" is not available");
         }
         return values.isEmpty() ? "" : values.iterator().next();
+    }
+
+    @Override
+    public OptionalValue<String> first(String name) {
+        ensureDecoded();
+        List<String> values = decodedQueryParams.get(name);
+        if (values == null) {
+            return OptionalValue.create(MapperManager.global(), name, GenericType.STRING, "uri", "query");
+        }
+        String value = values.isEmpty() ? "" : values.iterator().next();
+        return OptionalValue.create(MapperManager.global(), name, value, GenericType.STRING, "uri", "query");
     }
 
     @Override

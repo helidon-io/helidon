@@ -130,7 +130,7 @@ public final class Filters implements ServerLifecycle {
     }
 
     private static final class FilterRoutedPath implements RoutedPath {
-        private static final Parameters EMPTY_PARAMS = Parameters.empty("filter-path-template");
+        private static final Parameters EMPTY_PARAMS = Parameters.empty("http/path");
 
         private final UriPath uriPath;
 

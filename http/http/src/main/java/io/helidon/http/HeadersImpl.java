@@ -73,7 +73,7 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
         }
         if (headerWithValue.valueCount() == 1 && headerValue.valueCount() == 1) {
             // just a string compare instead of list compare
-            return headerWithValue.value().equals(headerValue.value());
+            return headerWithValue.get().equals(headerValue.get());
         }
         return headerWithValue.allValues().equals(headerValue.allValues());
     }

@@ -52,17 +52,17 @@ public class DbRowToJsonObjectMapper implements DbMapper<JsonObject> {
     public static final SimpleDateFormat DATE_TIME_FORMATTER = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 
     static {
-        MAPPERS.put(Byte.class, (job, column) -> job.add(column.name(), column.as(Byte.class).intValue()));
-        MAPPERS.put(Short.class, (job, column) -> job.add(column.name(), column.as(Short.class).intValue()));
-        MAPPERS.put(Integer.class, (job, column) -> job.add(column.name(), column.as(Integer.class).intValue()));
-        MAPPERS.put(Long.class, (job, column) -> job.add(column.name(), column.as(Long.class).longValue()));
-        MAPPERS.put(Float.class, (job, column) -> job.add(column.name(), column.as(Float.class).doubleValue()));
-        MAPPERS.put(Double.class, (job, column) -> job.add(column.name(), column.as(Double.class).doubleValue()));
-        MAPPERS.put(BigInteger.class, (job, column) -> job.add(column.name(), column.as(BigInteger.class)));
-        MAPPERS.put(BigDecimal.class, (job, column) -> job.add(column.name(), column.as(BigDecimal.class)));
-        MAPPERS.put(String.class, (job, column) -> job.add(column.name(), column.as(String.class)));
-        MAPPERS.put(Character.class, (job, column) -> job.add(column.name(), column.as(Character.class).toString()));
-        MAPPERS.put(Boolean.class, (job, column) -> job.add(column.name(), column.as(Boolean.class)));
+        MAPPERS.put(Byte.class, (job, column) -> job.add(column.name(), column.get(Byte.class).intValue()));
+        MAPPERS.put(Short.class, (job, column) -> job.add(column.name(), column.get(Short.class).intValue()));
+        MAPPERS.put(Integer.class, (job, column) -> job.add(column.name(), column.get(Integer.class)));
+        MAPPERS.put(Long.class, (job, column) -> job.add(column.name(), column.get(Long.class)));
+        MAPPERS.put(Float.class, (job, column) -> job.add(column.name(), column.get(Float.class).doubleValue()));
+        MAPPERS.put(Double.class, (job, column) -> job.add(column.name(), column.get(Double.class)));
+        MAPPERS.put(BigInteger.class, (job, column) -> job.add(column.name(), column.get(BigInteger.class)));
+        MAPPERS.put(BigDecimal.class, (job, column) -> job.add(column.name(), column.get(BigDecimal.class)));
+        MAPPERS.put(String.class, (job, column) -> job.add(column.name(), column.get(String.class)));
+        MAPPERS.put(Character.class, (job, column) -> job.add(column.name(), column.get(Character.class).toString()));
+        MAPPERS.put(Boolean.class, (job, column) -> job.add(column.name(), column.get(Boolean.class)));
         MAPPERS.put(java.sql.Date.class, (job, column) -> job.add(column.name(), DATE_FORMATTER.format(column.as(java.sql.Date.class))));
         MAPPERS.put(java.sql.Time.class, (job, column) -> job.add(column.name(), TIME_FORMATTER.format(column.as(java.sql.Time.class))));
         MAPPERS.put(java.sql.Timestamp.class, (job, column) -> job.add(column.name(), DATE_TIME_FORMATTER.format(column.as(java.sql.Timestamp.class))));
@@ -81,7 +81,7 @@ public class DbRowToJsonObjectMapper implements DbMapper<JsonObject> {
             if (mapper != null) {
                 mapper.accept(job, dbColumn);
             } else {
-                job.add(dbColumn.name(), dbColumn.value().toString());
+                job.add(dbColumn.name(), dbColumn.get().toString());
             }
         });
         return job.build();

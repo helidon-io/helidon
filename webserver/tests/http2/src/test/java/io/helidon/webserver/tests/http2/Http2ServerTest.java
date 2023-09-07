@@ -25,15 +25,11 @@ import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderNames;
-import io.helidon.common.pki.Keys;
-import io.helidon.common.tls.Tls;
-import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -41,6 +37,10 @@ import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -178,6 +178,6 @@ class Http2ServerTest {
     }
 
     private static void queryEndpoint(ServerRequest req, ServerResponse res) {
-        res.send(req.query().value("param"));
+        res.send(req.query().get("param"));
     }
 }

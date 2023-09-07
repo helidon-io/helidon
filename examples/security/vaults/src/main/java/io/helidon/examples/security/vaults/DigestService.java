@@ -39,16 +39,16 @@ class DigestService implements HttpService {
     }
 
     private void digest(ServerRequest req, ServerResponse res) {
-        String configName = req.path().pathParameters().value("config");
-        String text = req.path().pathParameters().value("text");
+        String configName = req.path().pathParameters().get("config");
+        String text = req.path().pathParameters().get("text");
 
         res.send(security.digest(configName, text.getBytes(UTF_8)));
     }
 
     private void verify(ServerRequest req, ServerResponse res) {
-        String configName = req.path().pathParameters().value("config");
-        String text = req.path().pathParameters().value("text");
-        String digest = req.path().pathParameters().value("digest");
+        String configName = req.path().pathParameters().get("config");
+        String text = req.path().pathParameters().get("text");
+        String digest = req.path().pathParameters().get("digest");
 
         boolean valid = security.verifyDigest(configName, text.getBytes(UTF_8), digest);
         res.send(valid ? "Valid" : "Invalid");

@@ -57,13 +57,13 @@ public class FtService implements HttpService {
     }
 
     private void timeoutHandler(ServerRequest request, ServerResponse response) {
-        long sleep = Long.parseLong(request.path().pathParameters().value("millis"));
+        long sleep = request.path().pathParameters().first("millis").getLong();
 
         response.send(timeout.invoke(() -> sleep(sleep)));
     }
 
     private void retryHandler(ServerRequest request, ServerResponse response) {
-        int count = Integer.parseInt(request.path().pathParameters().value("count"));
+        int count = request.path().pathParameters().first("count").getInt();
 
         AtomicInteger call = new AtomicInteger(1);
         AtomicInteger failures = new AtomicInteger();
@@ -79,7 +79,7 @@ public class FtService implements HttpService {
     }
 
     private void fallbackHandler(ServerRequest request, ServerResponse response) {
-        boolean success = "true".equalsIgnoreCase(request.path().pathParameters().value("success"));
+        boolean success = request.path().pathParameters().first("success").getBoolean();
         if (success) {
             response.send(fallback.invoke(this::reactiveData));
         } else {
@@ -88,7 +88,7 @@ public class FtService implements HttpService {
     }
 
     private void circuitBreakerHandler(ServerRequest request, ServerResponse response) {
-        boolean success = "true".equalsIgnoreCase(request.path().pathParameters().value("success"));
+        boolean success = request.path().pathParameters().first("success").getBoolean();
         if (success) {
             response.send(circuitBreaker.invoke(this::reactiveData));
         } else {
@@ -97,7 +97,7 @@ public class FtService implements HttpService {
     }
 
     private void bulkheadHandler(ServerRequest request, ServerResponse response) {
-        long sleep = Long.parseLong(request.path().pathParameters().value("millis"));
+        long sleep = request.path().pathParameters().first("millis").getLong();
         CompletableFuture<String> future = async.invoke(() -> bulkhead.invoke(() -> sleep(sleep)));
         sleep(100);
         if (bulkhead.stats().callsRejected() > 0) {

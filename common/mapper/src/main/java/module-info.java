@@ -18,7 +18,6 @@
  * Helidon Common Mapper.
  */
 module io.helidon.common.mapper {
-
     requires transitive io.helidon.common;
 
     exports io.helidon.common.mapper;

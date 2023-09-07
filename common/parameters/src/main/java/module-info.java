@@ -20,6 +20,8 @@ module io.helidon.common.parameters {
 
     // GenericType
     requires transitive io.helidon.common;
+    // OptionalValue
+    requires transitive io.helidon.common.mapper;
 
     exports io.helidon.common.parameters;
 

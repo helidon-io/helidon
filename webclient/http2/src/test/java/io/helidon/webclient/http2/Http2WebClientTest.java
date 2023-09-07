@@ -31,22 +31,19 @@ import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.Http;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -137,24 +134,24 @@ class Http2WebClientTest {
                         .route(Http1Route.route(GET, "/versionspecific", (req, res) -> res.send("HTTP/1.1 route")))
                         .route(Http2Route.route(GET, "/versionspecific", (req, res) -> {
                             res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().value("custQueryParam"));
+                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
                             res.send("HTTP/2 route");
                         }))
                         .route(Http2Route.route(PUT, "/versionspecific", (req, res) -> {
                             res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).value());
                             res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().value("custQueryParam"));
+                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
                             res.send("PUT " + req.content().as(String.class));
                         }))
                         .route(Http2Route.route(POST, "/versionspecific", (req, res) -> {
                             res.header(SERVER_CUSTOM_HEADER_NAME, req.headers().get(CLIENT_CUSTOM_HEADER_NAME).value());
                             res.header(CLIENT_USER_AGENT_HEADER_NAME, req.headers().get(USER_AGENT).value());
-                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().value("custQueryParam"));
+                            res.header(SERVER_HEADER_FROM_PARAM_NAME, req.query().get("custQueryParam"));
                             res.send("POST " + req.content().as(String.class));
                         }))
                         .route(Http2Route.route(GET, "/versionspecific/h2streaming", (req, res) -> {
                             res.status(Http.Status.OK_200);
-                            String execId = req.query().value("execId");
+                            String execId = req.query().get("execId");
                             try (OutputStream os = res.outputStream()) {
                                 for (int i = 0; i < 5; i++) {
                                     os.write(String.format(execId + "BAF%03d", i).getBytes());

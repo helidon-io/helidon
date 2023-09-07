@@ -24,7 +24,7 @@ class HeaderValueCopy extends HeaderValueBase {
     private List<String> values;
 
     HeaderValueCopy(Http.Header header) {
-        super(header.headerName(), header.changing(), header.sensitive(), header.value());
+        super(header.headerName(), header.changing(), header.sensitive(), header.get());
 
         this.original = header;
     }

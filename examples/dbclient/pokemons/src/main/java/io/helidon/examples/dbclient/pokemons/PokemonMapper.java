@@ -34,7 +34,7 @@ public class PokemonMapper implements DbMapper<Pokemon> {
         DbColumn id = row.column("id");
         DbColumn name = row.column("name");
         DbColumn type = row.column("idType");
-        return new Pokemon(id.as(Integer.class), name.as(String.class), type.as(Integer.class));
+        return new Pokemon(id.get(Integer.class), name.get(String.class), type.get(Integer.class));
     }
 
     @Override

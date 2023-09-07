@@ -62,13 +62,13 @@ class Kv1Service implements HttpService {
     }
 
     private void deleteSecret(ServerRequest req, ServerResponse res) {
-        String path = req.path().pathParameters().value("path");
+        String path = req.path().pathParameters().get("path");
         secrets.delete(path);
         res.send("Deleted secret on path " + path);
     }
 
     private void getSecret(ServerRequest req, ServerResponse res) {
-        String path = req.path().pathParameters().value("path");
+        String path = req.path().pathParameters().get("path");
 
         Optional<Secret> secret = secrets.get(path);
         if (secret.isPresent()) {

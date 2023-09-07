@@ -18,12 +18,12 @@ package io.helidon.tests.integration.dbclient.app;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbExecute;
+import io.helidon.tests.integration.dbclient.app.tests.AbstractService;
+import io.helidon.tests.integration.dbclient.app.tools.QueryParams;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.tests.integration.dbclient.app.tests.AbstractService;
-import io.helidon.tests.integration.dbclient.app.tools.QueryParams;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
@@ -59,8 +59,8 @@ public class VerifyService implements HttpService {
         JsonObject jsonObject = exec
                 .namedGet("get-pokemon-by-id", id)
                 .map(row -> Json.createObjectBuilder()
-                        .add("name", row.column("name").as(String.class))
-                        .add("id", row.column("id").as(Integer.class))
+                        .add("name", row.column("name").getString())
+                        .add("id", row.column("id").getInt())
                         .add("types", exec.namedQuery("get-pokemon-types", id)
                                 .map(typeRow -> typeRow.as(JsonObject.class))
                                 .collect(

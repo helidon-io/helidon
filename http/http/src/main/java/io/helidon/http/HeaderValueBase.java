@@ -17,13 +17,17 @@
 package io.helidon.http;
 
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
+import io.helidon.common.mapper.Value;
 import io.helidon.http.Http.HeaderName;
 
 abstract class HeaderValueBase implements Http.HeaderValueWriteable {
-    private static final MapperManager MAPPER_MANAGER = MapperManager.create();
-
+    private static final String[] QUALIFIER = new String[] {"http", "header"};
     private final HeaderName name;
     private final String actualName;
     private final String firstValue;
@@ -52,13 +56,58 @@ abstract class HeaderValueBase implements Http.HeaderValueWriteable {
     }
 
     @Override
-    public String value() {
+    public String get() {
         return firstValue;
     }
 
     @Override
-    public <T> T value(Class<T> type) {
-        return MAPPER_MANAGER.map(value(), String.class, type, "http-header");
+    public <T> T get(Class<T> type) {
+        return MapperManager.global().map(get(), String.class, type, QUALIFIER);
+    }
+
+    @Override
+    public <N> Value<N> as(Function<? super String, ? extends N> mapper) {
+        return Value.create(MapperManager.global(), name(), mapper.apply(get()), QUALIFIER);
+    }
+
+    @Override
+    public <N> Value<N> as(Class<N> type) throws MapperException {
+        return asString().as(type);
+    }
+
+    @Override
+    public Value<String> asString() {
+        return Value.create(MapperManager.global(), name(), get(), GenericType.STRING, QUALIFIER);
+    }
+
+    @Override
+    public <N> Value<N> as(GenericType<N> type) throws MapperException {
+        return asString().as(type);
+    }
+
+    @Override
+    public Optional<String> asOptional() throws MapperException {
+        return asString().asOptional();
+    }
+
+    @Override
+    public Value<Boolean> asBoolean() {
+        return asString().asBoolean();
+    }
+
+    @Override
+    public Value<Integer> asInt() {
+        return asString().asInt();
+    }
+
+    @Override
+    public Value<Long> asLong() {
+        return asString().asLong();
+    }
+
+    @Override
+    public Value<Double> asDouble() {
+        return asString().asDouble();
     }
 
     @Override

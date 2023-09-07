@@ -103,7 +103,7 @@ public abstract class AbstractPokemonService implements HttpService {
     private void insertPokemonSimple(ServerRequest req, ServerResponse res) {
         Parameters params = req.path().pathParameters();
         // Test Pokémon POJO mapper
-        Pokemon pokemon = new Pokemon(params.value("name"), params.value("type"));
+        Pokemon pokemon = new Pokemon(params.get("name"), params.get("type"));
 
         long count = dbClient.execute().createNamedInsert("insert2")
                 .namedParam(pokemon)
@@ -118,7 +118,7 @@ public abstract class AbstractPokemonService implements HttpService {
      * @param res server response
      */
     private void getPokemon(ServerRequest req, ServerResponse res) {
-        String pokemonName = req.path().pathParameters().value("name");
+        String pokemonName = req.path().pathParameters().get("name");
         res.send(dbClient.execute()
                 .namedGet("select-one", pokemonName)
                 .orElseThrow(() -> new NotFoundException("Pokemon " + pokemonName + " not found"))
@@ -146,8 +146,8 @@ public abstract class AbstractPokemonService implements HttpService {
      */
     private void updatePokemonType(ServerRequest req, ServerResponse res) {
         Parameters params = req.path().pathParameters();
-        String name = params.value("name");
-        String type = params.value("type");
+        String name = params.get("name");
+        String type = params.get("type");
         long count = dbClient.execute()
                 .createNamedUpdate("update")
                 .addParam("name", name)
@@ -182,7 +182,7 @@ public abstract class AbstractPokemonService implements HttpService {
      * @param res the server response
      */
     private void deletePokemon(ServerRequest req, ServerResponse res) {
-        String name = req.path().pathParameters().value("name");
+        String name = req.path().pathParameters().get("name");
         long count = dbClient.execute().namedDelete("delete", name);
         res.send("Deleted: " + count + " values");
     }
