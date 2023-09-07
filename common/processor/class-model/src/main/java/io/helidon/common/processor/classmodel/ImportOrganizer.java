@@ -16,7 +16,6 @@
 package io.helidon.common.processor.classmodel;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,21 +27,20 @@ import io.helidon.common.types.TypeName;
 
 class ImportOrganizer {
 
-    private final List<String> imports;
-    private final List<String> staticImports;
+    private final List<List<String>> importsToWrite;
+    private final List<List<String>> staticImportsToWrite;
+    //Set of all imports to make it easier to go through when checking what import name should be used.
+    private final Set<String> imports;
     private final Set<String> noImport;
     private final Set<String> forcedFullImports;
     private final Map<String, String> identifiedInnerClasses;
 
     private ImportOrganizer(Builder builder) {
-        this.imports = builder.finalImports.values()
-                .stream()
-                .sorted()
-                .toList();
-        this.staticImports = builder.staticImports.stream()
-                .map(Type::fqTypeName)
-                .sorted()
-                .toList();
+        this.importsToWrite = ImportSorter.sortImports(builder.finalImports.values());
+        this.staticImportsToWrite = ImportSorter.sortImports(builder.staticImports.stream()
+                                                                     .map(Type::fqTypeName)
+                                                                     .toList());
+        this.imports = Set.copyOf(builder.finalImports.values());
         this.noImport = builder.noImports.values()
                 .stream()
                 .map(Type::fqTypeName)
@@ -74,34 +72,30 @@ class ImportOrganizer {
         return identifiedInnerClasses.getOrDefault(type.fqTypeName(), type.fqTypeName());
     }
 
-    void writeImports(Writer writer) throws IOException {
-        if (!imports.isEmpty()) {
-            for (String importName : imports.stream().sorted().toList()) {
-                writer.write("import " + importName + ";\n");
+    void writeImports(ModelWriter writer) throws IOException {
+        if (!importsToWrite.isEmpty()) {
+            for (List<String> importGroup : importsToWrite) {
+                for (String importName : importGroup) {
+                    writer.writeLine("import " + importName + ";");
+                }
+                if (!importGroup.isEmpty()) {
+                    writer.writeSeparatorLine();
+                }
             }
-            writer.write("\n");
         }
     }
 
-    void writeStaticImports(Writer writer) throws IOException {
-        if (!staticImports.isEmpty()) {
-            for (String importName : staticImports) {
-                writer.write("import static " + importName + ";\n");
+    void writeStaticImports(ModelWriter writer) throws IOException {
+        if (!staticImportsToWrite.isEmpty()) {
+            for (List<String> importGroup : staticImportsToWrite) {
+                for (String importName : importGroup) {
+                    writer.writeLine("import static " + importName + ";");
+                }
+                if (!importGroup.isEmpty()) {
+                    writer.writeSeparatorLine();
+                }
             }
-            writer.write("\n");
         }
-    }
-
-    List<String> imports() {
-        return imports;
-    }
-
-    Set<String> noImport() {
-        return noImport;
-    }
-
-    Set<String> forcedFullImports() {
-        return forcedFullImports;
     }
 
     static final class Builder implements io.helidon.common.Builder<Builder, ImportOrganizer> {
