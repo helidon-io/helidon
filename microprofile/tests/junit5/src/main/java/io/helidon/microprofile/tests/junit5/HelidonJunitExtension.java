@@ -16,7 +16,6 @@
 
 package io.helidon.microprofile.tests.junit5;
 
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
@@ -354,6 +353,7 @@ class HelidonJunitExtension implements BeforeAllCallback,
     public void afterAll(ExtensionContext context) {
         stopContainer();
         releaseConfig();
+        callAfterStop();
     }
 
     @Override
@@ -444,6 +444,34 @@ class HelidonJunitExtension implements BeforeAllCallback,
             return Array.get(Array.newInstance(paramType, 1), 0);
         } else {
             return null;
+        }
+    }
+
+    private void callAfterStop() {
+        List<Method> toInvoke = new ArrayList<>();
+
+        Method[] methods = testClass.getMethods();
+        for (Method method : methods) {
+            AfterStop annotation = method.getAnnotation(AfterStop.class);
+            if (annotation != null) {
+                if (method.getParameterCount() != 0) {
+                    throw new IllegalStateException("Method " + method + " is annotated with @AfterStop, but it has parameters");
+                }
+                if (Modifier.isStatic(method.getModifiers())) {
+                    method.setAccessible(true);
+                    toInvoke.add(method);
+                } else {
+                    throw new IllegalStateException("Method " + method + " is annotated with @AfterStop, but it is not static");
+                }
+            }
+        }
+
+        for (Method method : toInvoke) {
+            try {
+                method.invoke(testClass);
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to invoke method: " + method, e);
+            }
         }
     }
 
