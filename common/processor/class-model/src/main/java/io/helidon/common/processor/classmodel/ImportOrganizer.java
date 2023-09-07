@@ -16,7 +16,6 @@
 package io.helidon.common.processor.classmodel;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;

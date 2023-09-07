@@ -22,6 +22,9 @@ import java.util.List;
 
 class ImportSorter {
 
+    private ImportSorter() {
+    }
+
     static List<List<String>> sortImports(Collection<String> imports) {
         if (imports.isEmpty()) {
             return List.of();
