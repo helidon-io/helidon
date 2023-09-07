@@ -9,6 +9,30 @@ For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.co
 
 For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
 
+## [2.6.3]
+
+This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
+
+### CHANGES
+
+- Config: Fix SeConfig.asMap to not truncate keys [7493](https://github.com/helidon-io/helidon/pull/7493)
+- OCI: Make OciMetricsDataTest.beforeEach non private [7332](https://github.com/helidon-io/helidon/pull/7332)
+- Security: Fix get in evictable cache, as it did not update last accessed timestamp [7465](https://github.com/helidon-io/helidon/pull/7465)
+- Security: Fix google-login behind proxy [7473](https://github.com/helidon-io/helidon/pull/7473)
+- Security: JWK signature now follows P1363 pair format [7197](https://github.com/helidon-io/helidon/pull/7197)
+- Security: Security context not overridden [7511](https://github.com/helidon-io/helidon/pull/7511)
+- WebServer Replace deprecated socket(String) on namedSocket(String) from ServerConfiguration [7325](https://github.com/helidon-io/helidon/pull/7325)
+- WebServer: Correctly handle IPv6 addresses for requested URI.  [7479](https://github.com/helidon-io/helidon/pull/7479)
+- WebServer: fix out of order chunk [7460](https://github.com/helidon-io/helidon/pull/7460)
+- Dependencies: Upgrade EclipseLink and ByteBuddy for Java 21 [7495](https://github.com/helidon-io/helidon/pull/7495)
+- Dependencies: Upgrade grpc-java to 1.57.1 and remove repackaging of io.grpc [7300](https://github.com/helidon-io/helidon/pull/7300)
+- Dependencies: upgrade okio to 3.4.0 [7259](https://github.com/helidon-io/helidon/pull/7259)
+- Docs: fix various issues [7526](https://github.com/helidon-io/helidon/pull/7526)
+- Examples: Add Docker and Kubernetes files to bare-* and database-* (2.x) [7290](https://github.com/helidon-io/helidon/pull/7290)
+- Examples: Refactor TODO app examples to not use NodeJS/NPM [7467](https://github.com/helidon-io/helidon/pull/7467)
+- Examples: Remove license from generated files [7233](https://github.com/helidon-io/helidon/pull/7233) [7250](https://github.com/helidon-io/helidon/pull/7250)
+- Examples: Use JSON-B instead of JSON-P in MP quickstarts [7523](https://github.com/helidon-io/helidon/pull/7523)
+
 ## [2.6.2]
 
 This is a bugfix release of Helidon. It is recommended for all users of Helidon 2.
@@ -2146,6 +2170,7 @@ If there is no authorization provider configured, ABAC provider will be configur
       otherwise they are ignored
 
 
+[2.6.3]: https://github.com/oracle/helidon/compare/2.6.2...2.6.3
 [2.6.2]: https://github.com/oracle/helidon/compare/2.6.1...2.6.2
 [2.6.1]: https://github.com/oracle/helidon/compare/2.6.0...2.6.1
 [2.6.0]: https://github.com/oracle/helidon/compare/2.5.6...2.6.0
