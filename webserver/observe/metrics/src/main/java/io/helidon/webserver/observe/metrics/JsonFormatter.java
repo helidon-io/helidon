@@ -48,7 +48,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.SystemTagsManager;
-import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
 import jakarta.json.Json;
@@ -214,8 +213,9 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                 List<List<String>> tagGroups = new ArrayList<>();
 
-
-                List<String> tags = StreamSupport.stream(sanitizeTags(meter.id().tags()).spliterator(), false)
+                List<String> tags = StreamSupport.stream(SystemTagsManager.instance()
+                                                                 .withoutSystemOrScopeTags(meter.id().tags())
+                                                                 .spliterator(), false)
                         .map(tag -> jsonEscape(tag.key()) + "=" + jsonEscape(tag.value()))
                         .toList();
                 if (!tags.isEmpty()) {
@@ -244,20 +244,6 @@ class JsonFormatter implements MeterRegistryFormatter {
             metadataOutputBuildersIgnoringScope.forEach(top::add);
         }
         return isAnyOutput.get() ? Optional.of(top.build()) : Optional.empty();
-    }
-
-    private Iterable<Tag> sanitizeTags(Iterable<Tag> tags) {
-        if (metricsConfig.scoping().tagName().isEmpty()) {
-            return tags;
-        }
-        String scopeTagName = metricsConfig.scoping().tagName().get();
-        List<Tag> descopedTags = new ArrayList<>();
-        tags.forEach(tag -> {
-            if (!tag.key().equals(scopeTagName)) {
-                descopedTags.add(tag);
-            }
-        });
-        return descopedTags;
     }
 
     /**
