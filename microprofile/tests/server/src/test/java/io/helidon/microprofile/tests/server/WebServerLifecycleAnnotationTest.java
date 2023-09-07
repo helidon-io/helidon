@@ -16,72 +16,47 @@
 
 package io.helidon.microprofile.tests.server;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.AfterStop;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.webserver.http.HttpFeature;
-import io.helidon.webserver.http.HttpRouting;
+import io.helidon.microprofile.tests.server.WebServerLifecycleTest.TestExtension;
 
-import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.Initialized;
-import jakarta.enterprise.event.Observes;
-import jakarta.enterprise.inject.spi.Extension;
 import org.junit.jupiter.api.Test;
 
-import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
+import static io.helidon.microprofile.tests.server.WebServerLifecycleTest.validateAfterStart;
+import static io.helidon.microprofile.tests.server.WebServerLifecycleTest.validateAfterStop;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
-@AddExtension(WebServerLifecycleAnnotationTest.TestExtension.class)
+@AddExtension(TestExtension.class)
 class WebServerLifecycleAnnotationTest {
-    private static final TestFeature FEATURE = new TestFeature();
-    private static ServerCdiExtension server;
+    private static final WebServerLifecycleTest.TestFeature FEATURE = new WebServerLifecycleTest.TestFeature();
+    private static final WebServerLifecycleTest.TestService SERVICE = new WebServerLifecycleTest.TestService();
+    private static final WebServerLifecycleTest.TestRoute ROUTE = new WebServerLifecycleTest.TestRoute();
+    private static final WebServerLifecycleTest.TestHandler HANDLER = new WebServerLifecycleTest.TestHandler();
+    private static final WebServerLifecycleTest.TestFilter FILTER = new WebServerLifecycleTest.TestFilter();
 
     @AfterStop
     static void afterAll() {
-        assertThat(server, notNullValue());
-        assertThat(server.started(), is(false));
-        assertThat("Before start should only have been called on server startup", FEATURE.beforeStart.get(), is(1));
-        assertThat("After stop should have been called on server stop", FEATURE.afterStop.get(), is(1));
+        assertThat(TestExtension.server, notNullValue());
+        assertThat(TestExtension.server.started(), is(false));
+
+        validateAfterStop("Feature", FEATURE);
+        validateAfterStop("Service", SERVICE);
+        validateAfterStop("Route", ROUTE);
+        validateAfterStop("Handler", HANDLER);
+        validateAfterStop("Filter", FILTER);
     }
 
     @Test
     void testLifecycleMethods() {
-        assertThat("Before start should have been called on server startup", FEATURE.beforeStart.get(), is(1));
-        assertThat("After stop should not have been called on server startup", FEATURE.afterStop.get(), is(0));
+        validateAfterStart("Feature", FEATURE);
+        validateAfterStart("Service", SERVICE);
+        validateAfterStart("Route", ROUTE);
+        validateAfterStart("Handler", HANDLER);
+        validateAfterStart("Filter", FILTER);
     }
 
-    public static final class TestExtension implements Extension {
-        void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
-                             ServerCdiExtension server) {
-            server.serverRoutingBuilder().addFeature(FEATURE);
-            WebServerLifecycleAnnotationTest.server = server;
-        }
-    }
-
-    private static final class TestFeature implements HttpFeature {
-        final AtomicInteger beforeStart = new AtomicInteger();
-        final AtomicInteger afterStop = new AtomicInteger();
-
-        @Override
-        public void setup(HttpRouting.Builder routing) {
-            routing.get("/", (req, res) -> res.send("works"));
-        }
-
-        @Override
-        public void beforeStart() {
-            beforeStart.incrementAndGet();
-        }
-
-        @Override
-        public void afterStop() {
-            afterStop.incrementAndGet();
-        }
-    }
 }
