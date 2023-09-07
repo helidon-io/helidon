@@ -16,11 +16,8 @@
 
 package io.helidon.webserver.tests;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
-import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.AfterStop;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -28,57 +25,50 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.webserver.tests.LifecycleMethodTest.validateAfterStart;
+import static io.helidon.webserver.tests.LifecycleMethodTest.validateAfterStop;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class LifecycleMethodAnnotatedTest {
-    private static final TestFeature FEATURE = new TestFeature();
+    private static final LifecycleMethodTest.TestFeature FEATURE = new LifecycleMethodTest.TestFeature();
+    private static final LifecycleMethodTest.TestService SERVICE = new LifecycleMethodTest.TestService();
+    private static final LifecycleMethodTest.TestRoute ROUTE = new LifecycleMethodTest.TestRoute();
+    private static final LifecycleMethodTest.TestHandler HANDLER = new LifecycleMethodTest.TestHandler();
+    private static final LifecycleMethodTest.TestFilter FILTER = new LifecycleMethodTest.TestFilter();
 
     @SetUpRoute
     static void setUpRoute(HttpRouting.Builder http) {
-        http.addFeature(FEATURE);
+        http.addFeature(FEATURE)
+                .register(SERVICE)
+                .route(ROUTE)
+                .get("/handler", HANDLER)
+                .addFilter(FILTER);
     }
 
     @AfterStop
     static void afterStop() {
-        assertThat("Before start should only have been called on server startup", FEATURE.beforeStart.get(), is(1));
-        assertThat("After stop should have been called on server stop", FEATURE.afterStop.get(), is(1));
+        validateAfterStop("Feature", FEATURE);
+        validateAfterStop("Service", SERVICE);
+        validateAfterStop("Route", ROUTE);
+        validateAfterStop("Handler", HANDLER);
+        validateAfterStop("Filter", FILTER);
     }
 
     @Test
     void testBeforeStartCalled(WebClient webClient) {
-        ClientResponseTyped<String> request = webClient.get()
+        ClientResponseTyped<String> request = webClient.get("/feature")
                 .request(String.class);
 
-        assertThat(request.entity(), is("works"));
+        assertThat(request.entity(), is("feature"));
 
-        assertThat("Before start should have been called on server startup", FEATURE.beforeStart.get(), is(1));
-        assertThat("After stop should not have been called on server startup", FEATURE.afterStop.get(), is(0));
+        validateAfterStart("Feature", FEATURE);
+        validateAfterStart("Service", SERVICE);
+        validateAfterStart("Route", ROUTE);
+        validateAfterStart("Handler", HANDLER);
+        validateAfterStart("Filter", FILTER);
     }
 
-    private static final class TestFeature implements HttpFeature {
-        final AtomicInteger beforeStart = new AtomicInteger();
-        final AtomicInteger afterStop = new AtomicInteger();
 
-        @Override
-        public void setup(HttpRouting.Builder routing) {
-            routing.get("/", (req, res) -> res.send("works"));
-        }
-
-        @Override
-        public void beforeStart() {
-            beforeStart.incrementAndGet();
-        }
-
-        @Override
-        public void afterStop() {
-            afterStop.incrementAndGet();
-        }
-
-        void reset() {
-            beforeStart.set(0);
-            afterStop.set(0);
-        }
-    }
 }
