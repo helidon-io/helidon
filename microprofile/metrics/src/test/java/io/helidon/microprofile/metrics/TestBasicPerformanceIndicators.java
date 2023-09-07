@@ -39,8 +39,8 @@ class TestBasicPerformanceIndicators {
     @Inject
     WebTarget webTarget;
 
-    // TODO metrics
-    @Disabled
+//    // TODO metrics
+//    @Disabled
     @Test
     void checkMetricsVendorURL() {
         doCheckMetricsVendorURL(webTarget);

@@ -246,7 +246,7 @@ public class SystemMetersProvider implements MetersProvider {
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcBean : gcBeans) {
             String poolName = gcBean.getName();
-            registerGauge(result,
+            registerFunctionalCounter(result,
                           GC_COUNT,
                           gcBean,
                           GarbageCollectorMXBean::getCollectionCount,

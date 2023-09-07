@@ -47,6 +47,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -297,7 +298,9 @@ class JsonFormatter implements MeterRegistryFormatter {
     private static String flatNameAndTags(Meter.Id meterId) {
         StringJoiner sj = new StringJoiner(";");
         sj.add(meterId.name());
-        meterId.tags().forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
+        SystemTagsManager.instance()
+                .withoutSystemOrScopeTags(meterId.tags())
+                .forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
         return sj.toString();
     }
 
@@ -484,7 +487,9 @@ class JsonFormatter implements MeterRegistryFormatter {
             private static String tagsPortion(Meter.Id metricID) {
                 StringJoiner sj = new StringJoiner(";", ";", "");
                 sj.setEmptyValue("");
-                metricID.tags().forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
+                SystemTagsManager.instance()
+                        .withoutSystemOrScopeTags(metricID.tags())
+                        .forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
                 return sj.toString();
             }
         }

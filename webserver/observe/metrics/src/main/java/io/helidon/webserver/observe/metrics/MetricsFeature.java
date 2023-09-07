@@ -99,6 +99,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
 
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
+    private KeyPerformanceIndicatorSupport.Metrics kpiMetrics;
 
     private MetricsFeature(Builder builder) {
         super(LOGGER, builder, "Metrics");
@@ -156,13 +157,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     @Override
     public Optional<HttpService> service() {
         // main service is responsible for exposing metrics endpoints over HTTP
-        return Optional.of(rules -> {
-            if (metricsConfig.enabled()) {
-                setUpEndpoints(rules);
-            } else {
-                setUpDisabledEndpoints(rules);
-            }
-        });
+        return Optional.of(new MetricsService());
     }
 
     /**
@@ -171,7 +166,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
      * @param rules     rules to use
      */
     public void configureVendorMetrics(HttpRouting.Builder rules) {
-        KeyPerformanceIndicatorSupport.Metrics kpiMetrics =
+        kpiMetrics =
                 KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
                                                         KPI_METER_NAME_PREFIX_WITH_DOT,
                                                         metricsConfig
@@ -212,6 +207,25 @@ public class MetricsFeature extends HelidonFeatureSupport {
                                                            nameSelection);
 
         return formatter.format();
+    }
+
+    /**
+     * Separate metrics service class with an afterStop method that is properly invoked.
+     */
+    private class MetricsService implements HttpService {
+        @Override
+        public void routing(HttpRules rules) {
+            if (metricsConfig.enabled()) {
+                setUpEndpoints(rules);
+            } else {
+                setUpDisabledEndpoints(rules);
+            }
+        }
+
+        @Override
+        public void afterStop() {
+            kpiMetrics.close();
+        }
     }
 
     private MeterRegistryFormatter chooseFormatter(MeterRegistry meterRegistry,

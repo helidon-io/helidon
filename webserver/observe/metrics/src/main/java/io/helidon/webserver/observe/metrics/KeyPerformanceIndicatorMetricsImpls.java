@@ -16,7 +16,9 @@
 package io.helidon.webserver.observe.metrics;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -77,24 +79,42 @@ class KeyPerformanceIndicatorMetricsImpls {
                         : new Basic(kpiMeterRegistry, meterNamePrefix));
     }
 
+    static void close() {
+        KPI_METRICS.clear();
+    }
+
     /**
      * Basic KPI metrics.
      */
     private static class Basic implements KeyPerformanceIndicatorSupport.Metrics {
 
         private final Counter totalCount;
+        private final MeterRegistry meterRegistry;
+        private final List<Meter> meters = new ArrayList<>();
 
         protected Basic(MeterRegistry kpiMeterRegistry, String meterNamePrefix) {
-            totalCount = kpiMeterRegistry.getOrCreate(
+            meterRegistry = kpiMeterRegistry;
+            totalCount = add(kpiMeterRegistry.getOrCreate(
                     Counter.builder(meterNamePrefix + REQUESTS_COUNT_NAME)
                             .description(
                                     "Each request (regardless of HTTP method) will increase this counter")
-                            .scope(KPI_METERS_SCOPE));
+                            .scope(KPI_METERS_SCOPE)));
         }
 
         @Override
         public void onRequestReceived() {
             totalCount.increment();
+        }
+
+        @Override
+        public void close() {
+            meters.forEach(meterRegistry::remove);
+            KPI_METRICS.clear();
+        }
+
+        protected <M extends Meter> M add(M meter) {
+            meters.add(meter);
+            return meter;
         }
 
         protected Counter totalCount() {
