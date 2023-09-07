@@ -100,7 +100,7 @@ class WebServerLifecycleTest {
         void reset();
     }
 
-    public static final class TestExtension implements Extension {
+    private static final class TestExtension implements Extension {
         static ServerCdiExtension server;
 
         void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,

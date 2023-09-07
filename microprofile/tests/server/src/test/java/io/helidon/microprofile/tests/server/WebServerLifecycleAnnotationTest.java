@@ -16,21 +16,27 @@
 
 package io.helidon.microprofile.tests.server;
 
+import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddExtension;
 import io.helidon.microprofile.tests.junit5.AfterStop;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
-import io.helidon.microprofile.tests.server.WebServerLifecycleTest.TestExtension;
 
+import jakarta.annotation.Priority;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Initialized;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.inject.spi.Extension;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.tests.server.WebServerLifecycleTest.validateAfterStart;
 import static io.helidon.microprofile.tests.server.WebServerLifecycleTest.validateAfterStop;
+import static jakarta.interceptor.Interceptor.Priority.LIBRARY_BEFORE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @HelidonTest
-@AddExtension(TestExtension.class)
+@AddExtension(WebServerLifecycleAnnotationTest.TestExtension.class)
 class WebServerLifecycleAnnotationTest {
     private static final WebServerLifecycleTest.TestFeature FEATURE = new WebServerLifecycleTest.TestFeature();
     private static final WebServerLifecycleTest.TestService SERVICE = new WebServerLifecycleTest.TestService();
@@ -38,10 +44,12 @@ class WebServerLifecycleAnnotationTest {
     private static final WebServerLifecycleTest.TestHandler HANDLER = new WebServerLifecycleTest.TestHandler();
     private static final WebServerLifecycleTest.TestFilter FILTER = new WebServerLifecycleTest.TestFilter();
 
+    static ServerCdiExtension server;
+
     @AfterStop
     static void afterAll() {
-        assertThat(TestExtension.server, notNullValue());
-        assertThat(TestExtension.server.started(), is(false));
+        assertThat(server, notNullValue());
+        assertThat(server.started(), is(false));
 
         validateAfterStop("Feature", FEATURE);
         validateAfterStop("Service", SERVICE);
@@ -59,4 +67,16 @@ class WebServerLifecycleAnnotationTest {
         validateAfterStart("Filter", FILTER);
     }
 
+    public static final class TestExtension implements Extension {
+        void registerService(@Observes @Priority(LIBRARY_BEFORE + 10) @Initialized(ApplicationScoped.class) Object adv,
+                             ServerCdiExtension server) {
+            WebServerLifecycleAnnotationTest.server = server;
+            server.serverRoutingBuilder()
+                    .addFeature(FEATURE)
+                    .register(SERVICE)
+                    .route(ROUTE)
+                    .get("/handler", HANDLER)
+                    .addFilter(FILTER);
+        }
+    }
 }
