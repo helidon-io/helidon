@@ -19,6 +19,7 @@ package io.helidon.inject.api;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.ConfiguredOption;
 
@@ -48,7 +49,7 @@ interface DependencyInfoBlueprint {
      *
      * @return the set of dependencies
      */
-    @Prototype.Singular("injectionPointDependency")
+    @Option.Singular("injectionPointDependency")
     Set<InjectionPointInfo> injectionPointDependencies();
 
     /**

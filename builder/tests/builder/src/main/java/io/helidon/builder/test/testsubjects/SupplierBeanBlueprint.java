@@ -19,15 +19,14 @@ package io.helidon.builder.test.testsubjects;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Blueprint with a supplier from configuration.
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface SupplierBeanBlueprint {
     /**
      * This value is either explicitly configured, or uses config to get the supplier.
@@ -35,15 +34,15 @@ interface SupplierBeanBlueprint {
      *
      * @return supplier with latest value
      */
-    @ConfiguredOption
+    @Option.Configured
     Supplier<String> stringSupplier();
 
-    @ConfiguredOption(key = "string-supplier")
+    @Option.Configured("string-supplier")
     Supplier<char[]> charSupplier();
 
-    @ConfiguredOption
+    @Option.Configured
     Supplier<Optional<String>> optionalSupplier();
 
-    @ConfiguredOption(key = "optional-supplier")
+    @Option.Configured("optional-supplier")
     Supplier<Optional<char[]>> optionalCharSupplier();
 }

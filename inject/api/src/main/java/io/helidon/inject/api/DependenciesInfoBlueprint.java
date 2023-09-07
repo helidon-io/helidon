@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
@@ -38,7 +39,7 @@ interface DependenciesInfoBlueprint {
      *
      * @return map from the service info to its dependencies
      */
-    @Prototype.Singular("serviceInfoDependency")
+    @Option.Singular("serviceInfoDependency")
     Map<ServiceInfoCriteria, Set<DependencyInfo>> serviceInfoDependencies();
 
     /**

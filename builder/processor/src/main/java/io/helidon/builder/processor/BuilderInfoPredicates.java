@@ -21,57 +21,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypeValues;
 import io.helidon.common.types.TypedElementInfo;
 
-final class TypeInfoPredicates {
-    private TypeInfoPredicates() {
-    }
-
-    static boolean isMethod(TypedElementInfo element) {
-        return TypeValues.KIND_METHOD.equals(element.elementTypeKind());
-    }
-
-    static boolean isStatic(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_STATIC);
-    }
-
-    static boolean isPrivate(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_PRIVATE);
-    }
-
-    static boolean isDefault(TypedElementInfo element) {
-        return element.modifiers().contains(TypeValues.MODIFIER_DEFAULT);
-    }
-
-    static boolean hasNoArgs(TypedElementInfo element) {
-        return element.parameterArguments().isEmpty();
-    }
-
-    static Predicate<TypedElementInfo> hasAnnotation(TypeName annotation) {
-        return element -> element.hasAnnotation(annotation);
-    }
-
-    static Predicate<TypedElementInfo> methodName(String methodName) {
-        return element -> methodName.equals(element.elementName());
-    }
-
-    static Predicate<TypedElementInfo> hasParams(TypeName... paramTypes) {
-        return element -> {
-            List<TypedElementInfo> arguments = element.parameterArguments();
-            if (paramTypes.length != arguments.size()) {
-                return false;
-            }
-            for (int i = 0; i < paramTypes.length; i++) {
-                TypeName paramType = paramTypes[i];
-                if (!paramType.equals(arguments.get(i).typeName())) {
-                    return false;
-                }
-            }
-            return true;
-        };
+final class BuilderInfoPredicates {
+    private BuilderInfoPredicates() {
     }
 
     /**
@@ -106,7 +62,7 @@ final class TypeInfoPredicates {
                                                  TypeInfo typeInfo) {
         return typeInfo.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isMethod)
                 .filter(it -> {
                     Set<String> modifiers = it.modifiers();
                     if (expectedModifiers != null) {

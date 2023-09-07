@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
@@ -41,7 +42,7 @@ interface ActivatorCreatorResponseBlueprint extends GeneralCreatorResponseBluepr
      *
      * @return interceptors generated
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<TypeName, InterceptionPlan> serviceTypeInterceptorPlans();
 
     /**

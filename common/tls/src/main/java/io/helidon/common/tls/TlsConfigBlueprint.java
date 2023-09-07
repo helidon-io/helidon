@@ -26,6 +26,7 @@ import java.util.Optional;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.spi.TlsManagerProvider;
@@ -77,7 +78,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return private key certificate chain, only used when private key is configured
      */
-    @Prototype.Singular
+    @Option.Singular
     @ConfiguredOption(key = "private-key")
     // same config node as privateKey
     List<X509Certificate> privateKeyCertChain();
@@ -87,7 +88,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return certificates to be trusted
      */
-    @Prototype.Singular
+    @Option.Singular
     @ConfiguredOption
     List<X509Certificate> trust();
 
@@ -168,7 +169,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *
      * @return application protocols
      */
-    @Prototype.Singular
+    @Option.Singular
     List<String> applicationProtocols();
 
     /**
@@ -231,7 +232,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      *         are enabled
      */
     @ConfiguredOption(key = "cipher-suite")
-    @Prototype.Singular("enabledCipherSuite")
+    @Option.Singular("enabledCipherSuite")
     List<String> enabledCipherSuites();
 
     /**
@@ -241,7 +242,7 @@ interface TlsConfigBlueprint extends Prototype.Factory<Tls> {
      * @return protocols to enable, by default (or if list is empty), all available protocols are enabled
      */
     @ConfiguredOption(key = "protocols")
-    @Prototype.Singular
+    @Option.Singular
     List<String> enabledProtocols();
 
     /**

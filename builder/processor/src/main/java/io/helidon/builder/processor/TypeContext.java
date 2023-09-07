@@ -30,6 +30,7 @@ import javax.lang.model.util.Elements;
 
 import io.helidon.common.Errors;
 import io.helidon.common.Severity;
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
@@ -39,7 +40,6 @@ import io.helidon.common.types.TypeValues;
 import static io.helidon.builder.processor.Types.BLUEPRINT_TYPE;
 import static io.helidon.builder.processor.Types.BUILDER_DECORATOR;
 import static io.helidon.builder.processor.Types.CONFIGURED_OPTION_TYPE;
-import static io.helidon.builder.processor.Types.CONFIGURED_TYPE;
 import static io.helidon.builder.processor.Types.IMPLEMENT_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_FACTORY_TYPE;
 import static io.helidon.builder.processor.Types.PROTOTYPE_TYPE;
@@ -50,8 +50,8 @@ import static io.helidon.common.types.TypeNames.OPTIONAL;
 
 record TypeContext(
         TypeInformation typeInfo,
-        BlueprintData blueprintData,
-        ConfiguredData configuredData,
+        AnnotationDataBlueprint blueprintData,
+        AnnotationDataConfigured configuredData,
         PropertyData propertyData,
         CustomMethods customMethods) {
 
@@ -74,10 +74,8 @@ record TypeContext(
         String javadoc = elementUtils.getDocComment(blueprintElement);
         // we need to have Blueprint
         Optional<Annotation> blueprintAnnotationOpt = blueprint.findAnnotation(BLUEPRINT_TYPE);
-        Optional<Annotation> configuredAnnoOpt = blueprint.findAnnotation(CONFIGURED_TYPE);
         Optional<Annotation> implementAnnoOpt = blueprint.findAnnotation(IMPLEMENT_TYPE);
 
-        boolean isConfigured = configuredAnnoOpt.isPresent();
 
         if (blueprintAnnotationOpt.isEmpty()) {
             throw new IllegalStateException("Cannot get @Prototype.Blueprint annotation when processing it for type "
@@ -86,8 +84,6 @@ record TypeContext(
 
         Annotation blueprintAnnotation =
                 blueprintAnnotationOpt.orElseGet(() -> Annotation.create(BLUEPRINT_TYPE));
-        Annotation configuredAnnotation =
-                configuredAnnoOpt.orElseGet(() -> Annotation.create(CONFIGURED_TYPE));
         List<TypeName> prototypeImplements =
                 implementAnnoOpt.map(TypeContext::prototypeImplements)
                         .orElseGet(List::of);
@@ -166,13 +162,13 @@ record TypeContext(
                 .anyMatch(it -> it.declaredType().genericTypeName().equals(OPTIONAL));
         boolean hasRequired = propertyMethods.stream()
                 .map(PrototypeProperty::configuredOption)
-                .anyMatch(PrototypeProperty.ConfiguredOption::required);
+                .anyMatch(AnnotationDataOption::required);
         boolean hasNonNulls = propertyMethods.stream()
                 .map(PrototypeProperty::configuredOption)
-                .anyMatch(PrototypeProperty.ConfiguredOption::validateNotNull);
+                .anyMatch(AnnotationDataOption::validateNotNull);
         boolean hasAllowedValues = propertyMethods.stream()
                 .map(PrototypeProperty::configuredOption)
-                .anyMatch(PrototypeProperty.ConfiguredOption::hasAllowedValues);
+                .anyMatch(AnnotationDataOption::hasAllowedValues);
         boolean prototypePublic = blueprintAnnotation.getValue("isPublic")
                 .map(Boolean::parseBoolean)
                 .orElse(true);
@@ -188,7 +184,7 @@ record TypeContext(
                 .orElse(true);
         boolean hasProvider = propertyMethods.stream()
                 .map(PrototypeProperty::configuredOption)
-                .map(PrototypeProperty.ConfiguredOption::provider)
+                .map(AnnotationDataOption::provider)
                 .filter(it -> it) // filter our falses
                 .findFirst()
                 .orElse(false);
@@ -204,11 +200,7 @@ record TypeContext(
         boolean isFactory = factoryInterface.isPresent();
         Optional<TypeName> runtimeObject = factoryInterface.map(it -> it.typeName().typeArguments().get(0));
 
-        boolean isConfigRoot = configuredAnnotation.getValue("root")
-                .map(Boolean::parseBoolean)
-                .orElse(false);
-        String configPrefix = configuredAnnotation.getValue("prefix")
-                .orElse("");
+        AnnotationDataConfigured configured = AnnotationDataConfigured.create(blueprint);
 
         TypeName prototype = generatedTypeName(blueprint);
 
@@ -232,7 +224,7 @@ record TypeContext(
 
         return new TypeContext(
                 typeInformation,
-                new BlueprintData(
+                new AnnotationDataBlueprint(
                         prototypePublic,
                         builderPublic,
                         createFromConfigPublic,
@@ -241,9 +233,7 @@ record TypeContext(
                         extendList,
                         javadoc,
                         blueprint.typeName().typeArguments()),
-                new TypeContext.ConfiguredData(isConfigured,
-                                               isConfigRoot,
-                                               configPrefix),
+                configured,
                 new TypeContext.PropertyData(hasOptional,
                                              hasRequired,
                                              hasNonNulls,
@@ -337,9 +327,9 @@ record TypeContext(
         // we are only interested in getter methods
         TypeName typeName = typeInfo.typeName();
         properties.addAll(typeInfo.elementInfo().stream()
-                                  .filter(TypeInfoPredicates::isMethod)
-                                  .filter(Predicate.not(TypeInfoPredicates::isStatic))
-                                  .filter(Predicate.not(TypeInfoPredicates::isPrivate))
+                                  .filter(ElementInfoPredicates::isMethod)
+                                  .filter(Predicate.not(ElementInfoPredicates::isStatic))
+                                  .filter(Predicate.not(ElementInfoPredicates::isPrivate))
                                   .filter(it -> {
                                       if (it.modifiers().contains(TypeValues.MODIFIER_DEFAULT)) {
                                           ignoredMethods.add(MethodSignature.create(it));
@@ -347,7 +337,7 @@ record TypeContext(
                                       }
                                       return true;
                                   })
-                                  .filter(Predicate.not(TypeInfoPredicates.ignoredMethod(ignoredMethods, IGNORED_NAMES)))
+                                  .filter(Predicate.not(BuilderInfoPredicates.ignoredMethod(ignoredMethods, IGNORED_NAMES)))
                                   .filter(it -> {
                                       // if the method is defined on a super prototype, add it to the set
                                       if (ignoreInterfaces.contains(it.enclosingType().get())) {
@@ -375,7 +365,7 @@ record TypeContext(
                                                          severity);
                                           return false;
                                       }
-                                      if (it.parameterArguments().size() != 0) {
+                                      if (!it.parameterArguments().isEmpty()) {
                                           errors.message("Builder definition methods cannot have "
                                                                  + "parameters (must be getters): "
                                                                  + typeName + "." + it.elementName(),
@@ -442,23 +432,6 @@ record TypeContext(
                     .build()
                     .genericTypeName();
         }
-    }
-
-    record BlueprintData(
-            boolean prototypePublic,
-            boolean builderPublic,
-            boolean createFromConfigPublic,
-            boolean createEmptyPublic,
-            boolean isFactory,
-            Set<TypeName> extendsList,
-            String javadoc,
-            List<TypeName> typeArguments) {
-    }
-
-    record ConfiguredData(
-            boolean configured,
-            boolean root,
-            String prefix) {
     }
 
     record PropertyData(

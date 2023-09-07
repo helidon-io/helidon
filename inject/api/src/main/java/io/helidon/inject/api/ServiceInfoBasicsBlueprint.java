@@ -19,6 +19,7 @@ package io.helidon.inject.api;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
@@ -51,7 +52,7 @@ interface ServiceInfoBasicsBlueprint {
      *
      * @return the service scope type name
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<TypeName> scopeTypeNames();
 
     /**
@@ -59,7 +60,7 @@ interface ServiceInfoBasicsBlueprint {
      *
      * @return the service qualifiers
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Qualifier> qualifiers();
 
     /**
@@ -68,7 +69,7 @@ interface ServiceInfoBasicsBlueprint {
      * @see ExternalContracts
      * @return the service contracts implemented
      */
-    @Prototype.Singular("contractImplemented")
+    @Option.Singular("contractImplemented")
     Set<TypeName> contractsImplemented();
 
     /**

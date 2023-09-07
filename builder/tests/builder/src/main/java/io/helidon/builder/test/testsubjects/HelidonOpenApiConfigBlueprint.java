@@ -19,8 +19,8 @@ package io.helidon.builder.test.testsubjects;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
 interface HelidonOpenApiConfigBlueprint extends FakeOpenApiConfig {
@@ -33,10 +33,10 @@ interface HelidonOpenApiConfigBlueprint extends FakeOpenApiConfig {
     }
 
     /**
-     * Override to mix-in the {@link io.helidon.builder.api.Prototype.Singular} annotation.
+     * Override to mix-in the {@link io.helidon.builder.api.Option.Singular} annotation.
      */
     @Override
-    @Prototype.Singular
+    @Option.Singular
     default Set<String> servers() {
         return new HashSet<>();
     }
@@ -44,7 +44,7 @@ interface HelidonOpenApiConfigBlueprint extends FakeOpenApiConfig {
     /**
      * Override to mix-in a default value.
      */
-    @ConfiguredOption("@default")
+    @Option.Default("@default")
     default String modelReader() {
         return null;
     }

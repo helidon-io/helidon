@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,8 +36,8 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
 
     private final ThreadPoolSupplier supplier;
 
-    private ServerThreadPoolSupplier(final ThreadPoolSupplier.Builder builder) {
-        this.supplier = builder.build();
+    private ServerThreadPoolSupplier(ThreadPoolConfig config) {
+        this.supplier = config.build();
         ObserverManager.registerSupplier(this, "server", "helidon-");
     }
 
@@ -51,7 +51,7 @@ public final class ServerThreadPoolSupplier implements Supplier<ExecutorService>
      *
      * @return a builder instance
      */
-    public static ThreadPoolSupplier.Builder builder() {
+    public static ThreadPoolConfig.Builder builder() {
 
         // Set defaults appropriate to a thread-per-request model, based on the number of cores.
 

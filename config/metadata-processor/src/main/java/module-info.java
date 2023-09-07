@@ -20,6 +20,8 @@
 module io.helidon.config.metadata.processor {
 
     requires java.compiler;
+    requires io.helidon.common.types;
+    requires io.helidon.common.processor;
 
     exports io.helidon.config.metadata.processor;
 

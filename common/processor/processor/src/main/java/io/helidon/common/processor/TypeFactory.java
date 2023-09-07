@@ -27,6 +27,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -121,6 +123,36 @@ public final class TypeFactory {
         }
 
         throw new IllegalStateException("Unknown type mirror: " + typeMirror);
+    }
+
+    /**
+     * Create type from type mirror. The element is needed to correctly map
+     * type arguments to type parameters.
+     *
+     * @param element the type element of the type mirror
+     * @param mirror the type mirror as declared in source code
+     * @return type for the provided values
+     */
+    public static Optional<TypeName> createTypeName(TypeElement element, TypeMirror mirror) {
+        Optional<TypeName> result = TypeFactory.createTypeName(mirror);
+        if (result.isEmpty()) {
+            return result;
+        }
+
+        TypeName mirrorName = result.get();
+        int typeArgumentSize = mirrorName.typeArguments().size();
+
+        List<String> typeParameters = element.getTypeParameters()
+                .stream()
+                .map(TypeParameterElement::toString)
+                .toList();
+        if (typeArgumentSize > typeParameters.size()) {
+            throw new IllegalStateException("Found " + typeArgumentSize + " type arguments, but only " + typeParameters.size()
+                                                    + " type parameters on: " + mirror);
+        }
+        return Optional.of(TypeName.builder(mirrorName)
+                                   .typeParameters(typeParameters)
+                                   .build());
     }
 
     /**

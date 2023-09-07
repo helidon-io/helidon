@@ -16,7 +16,6 @@
 
 package io.helidon.config.metadata.processor;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,21 +23,23 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.types.TypeName;
+
 final class ConfiguredType {
     private final Set<ConfiguredProperty> allProperties = new HashSet<>();
     private final List<ProducerMethod> producerMethods = new LinkedList<>();
     /*
      * The type that is built by a builder, or created using create method.
      */
-    private final String targetClass;
+    private final TypeName targetClass;
     /*
     The type we are processing that has @Configured annotation
      */
-    private final String annotatedClass;
-    private final List<String> inherited = new LinkedList<>();
+    private final TypeName annotatedClass;
+    private final List<TypeName> inherited = new LinkedList<>();
     private final ConfiguredAnnotation configured;
 
-    ConfiguredType(ConfiguredAnnotation configured, String annotatedClass, String targetClass, boolean typeDefinition) {
+    ConfiguredType(ConfiguredAnnotation configured, TypeName annotatedClass, TypeName targetClass, boolean typeDefinition) {
         this.annotatedClass = annotatedClass;
         this.targetClass = targetClass;
         this.configured = configured;
@@ -63,11 +64,11 @@ final class ConfiguredType {
     }
 
     String targetClass() {
-        return targetClass;
+        return targetClass.fqName();
     }
 
     String annotatedClass() {
-        return annotatedClass;
+        return annotatedClass.fqName();
     }
 
     boolean standalone() {
@@ -90,7 +91,9 @@ final class ConfiguredType {
         configured.description().ifPresent(it -> typeObject.add("description", it));
 
         if (!inherited.isEmpty()) {
-            typeObject.add("inherits", inherited);
+            typeObject.add("inherits", inherited.stream()
+                    .map(TypeName::fqName)
+                    .toList());
         }
 
         if (!configured.provides().isEmpty()) {
@@ -114,19 +117,17 @@ final class ConfiguredType {
 
     @Override
     public String toString() {
-        return targetClass;
+        return targetClass.fqName();
     }
 
-    void addInherited(String classOrIface) {
+    void addInherited(TypeName classOrIface) {
         inherited.add(classOrIface);
     }
 
-    private static String paramsToString(String[] params) {
-        String result = Arrays.toString(params);
-        if (result.startsWith("[") && result.endsWith("]")) {
-            return result.substring(1, result.length() - 1);
-        }
-        return result;
+    private static String paramsToString(List<TypeName> params) {
+        return params.stream()
+                .map(TypeName::resolvedName)
+                .collect(Collectors.joining(", "));
     }
 
     private void writeProperty(JArray optionsBuilder,
@@ -179,7 +180,7 @@ final class ConfiguredType {
         if (!property.allowedValues.isEmpty()) {
             JArray allowedValues = new JArray();
 
-            for (ConfigMetadataHandler.AllowedValue allowedValue : property.allowedValues) {
+            for (ConfiguredOptionData.AllowedValue allowedValue : property.allowedValues) {
                 allowedValues.add(new JObject()
                                           .add("value", allowedValue.value())
                                           .add("description", allowedValue.description()));
@@ -200,11 +201,11 @@ final class ConfiguredType {
 
     static final class ProducerMethod {
         private final boolean isStatic;
-        private final String owningClass;
+        private final TypeName owningClass;
         private final String methodName;
-        private final String[] methodParams;
+        private final List<TypeName> methodParams;
 
-        ProducerMethod(boolean isStatic, String owningClass, String methodName, String[] methodParams) {
+        ProducerMethod(boolean isStatic, TypeName owningClass, String methodName, List<TypeName> methodParams) {
             this.isStatic = isStatic;
             this.owningClass = owningClass;
             this.methodName = methodName;
@@ -213,7 +214,7 @@ final class ConfiguredType {
 
         @Override
         public String toString() {
-            return owningClass
+            return owningClass.fqName()
                     + "#"
                     + methodName + "("
                     + paramsToString(methodParams) + ")";
@@ -232,7 +233,7 @@ final class ConfiguredType {
         private final boolean provider;
         private final boolean deprecated;
         private final boolean merge;
-        private final List<ConfigMetadataHandler.AllowedValue> allowedValues;
+        private final List<ConfiguredOptionData.AllowedValue> allowedValues;
         // if this is a nested type
         private ConfiguredType configuredType;
 
@@ -240,19 +241,19 @@ final class ConfiguredType {
                            String key,
                            String description,
                            String defaultValue,
-                           String type,
+                           TypeName type,
                            boolean experimental,
                            boolean optional,
                            String kind,
                            boolean provider,
                            boolean deprecated,
                            boolean merge,
-                           List<ConfigMetadataHandler.AllowedValue> allowedValues) {
+                           List<ConfiguredOptionData.AllowedValue> allowedValues) {
             this.builderMethod = builderMethod;
             this.key = key;
             this.description = description;
             this.defaultValue = defaultValue;
-            this.type = type;
+            this.type = type.fqName();
             this.experimental = experimental;
             this.optional = optional;
             this.kind = kind;

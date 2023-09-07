@@ -19,26 +19,23 @@ package io.helidon.builder.test.testsubjects;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.config.metadata.ConfiguredValue;
 
 /**
  * Shows usage of allowed values.
  */
 @Prototype.Blueprint
+@Prototype.Configured
 interface AllowedValuesBlueprint {
-
-    @ConfiguredOption(allowedValues = {
-            @ConfiguredValue(value = "GOOD_1", description = "First good value"),
-            @ConfiguredValue(value = "GOOD_2", description = "Second good value")
-    })
+    @Option.AllowedValue(value = "GOOD_1", description = "First good value")
+    @Option.AllowedValue(value = "GOOD_2", description = "Second good value")
+    @Option.Configured
     Optional<String> restrictedOptions();
 
-    @ConfiguredOption(allowedValues = {
-            @ConfiguredValue(value = "GOOD_1", description = "First good value"),
-            @ConfiguredValue(value = "GOOD_2", description = "Second good value")
-    })
-    @Prototype.Singular("restrictedOptionToList")
+    @Option.AllowedValue(value = "GOOD_1", description = "First good value")
+    @Option.AllowedValue(value = "GOOD_2", description = "Second good value")
+    @Option.Singular("restrictedOptionToList")
+    @Option.Configured
     List<String> restrictedOptionsList();
 }

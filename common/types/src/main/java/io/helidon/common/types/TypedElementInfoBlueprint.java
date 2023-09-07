@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * An annotation with defined values.
@@ -34,7 +34,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return description of this element
      */
-    @Prototype.Redundant
+    @Option.Redundant
     Optional<String> description();
 
     /**
@@ -43,7 +43,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the type name of the element
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     TypeName typeName();
 
     /**
@@ -51,7 +51,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the name of the element
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String elementName();
 
     /**
@@ -60,7 +60,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      * @return the element kind
      * @see io.helidon.common.types.TypeInfo
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String elementTypeKind();
 
     /**
@@ -68,7 +68,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the default value as a string
      */
-    @Prototype.Redundant
+    @Option.Redundant
     Optional<String> defaultValue();
 
     /**
@@ -76,7 +76,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the list of annotations on this element's (return) type.
      */
-    @Prototype.Redundant
+    @Option.Redundant
     List<Annotation> elementTypeAnnotations();
 
     /**
@@ -84,7 +84,7 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the component type names of the element
      */
-    @Prototype.Redundant
+    @Option.Redundant
     List<TypeName> componentTypes();
 
     /**
@@ -93,8 +93,8 @@ interface TypedElementInfoBlueprint extends Annotated {
      * @return element modifiers
      * @see io.helidon.common.types.TypeInfo
      */
-    @Prototype.Redundant
-    @Prototype.Singular
+    @Option.Redundant
+    @Option.Singular
     Set<String> modifiers();
 
     /**
@@ -114,6 +114,6 @@ interface TypedElementInfoBlueprint extends Annotated {
      *
      * @return the list of parameters belonging to this method if applicable
      */
-    @Prototype.Singular
+    @Option.Singular
     List<TypedElementInfo> parameterArguments();
 }

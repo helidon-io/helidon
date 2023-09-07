@@ -16,8 +16,8 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates interception of builders.
@@ -30,7 +30,7 @@ interface InterceptedBeanBlueprint {
      *
      * @return the name
      */
-    @ConfiguredOption(required = true)
+    @Option.Required
     String name();
 
     /**

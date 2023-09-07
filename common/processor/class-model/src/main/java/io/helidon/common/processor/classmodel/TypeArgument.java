@@ -172,6 +172,11 @@ public final class TypeArgument extends Type implements TypeName {
     }
 
     @Override
+    public List<String> typeParameters() {
+        return List.of();
+    }
+
+    @Override
     public String toString() {
         if (bound == null) {
             return "Token: " + token.className();
@@ -284,7 +289,7 @@ public final class TypeArgument extends Type implements TypeName {
 
         @Override
         public TypeArgument build() {
-            if (tokenBuilder.className() == null) {
+            if (tokenBuilder.className().isEmpty()) {
                 throw new ClassModelException("Token name needs to be specified.");
             }
             return new TypeArgument(this);

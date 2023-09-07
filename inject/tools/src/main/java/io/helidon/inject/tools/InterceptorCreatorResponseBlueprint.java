@@ -19,6 +19,7 @@ package io.helidon.inject.tools;
 import java.nio.file.Path;
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 
@@ -33,7 +34,7 @@ public interface InterceptorCreatorResponseBlueprint {
      *
      * @return the generated files
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<TypeName, Path> generatedFiles();
 
     /**

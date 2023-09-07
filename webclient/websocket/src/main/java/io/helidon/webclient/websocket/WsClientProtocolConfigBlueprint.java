@@ -18,6 +18,7 @@ package io.helidon.webclient.websocket;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -39,6 +40,6 @@ interface WsClientProtocolConfigBlueprint extends ProtocolConfig {
     String name();
 
     @ConfiguredOption
-    @Prototype.Singular
+    @Option.Singular
     List<String> subProtocols();
 }

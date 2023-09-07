@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -40,19 +41,19 @@ interface ComplexCaseBlueprint extends MyConfigBeanBlueprint {
     }
 
     /**
-     * Used for testing, and demonstrating the {@link io.helidon.builder.api.Prototype.Singular} annotation.
+     * Used for testing, and demonstrating the {@link io.helidon.builder.api.Option.Singular} annotation.
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular("keyToConfigBean")
+    @Option.Singular("keyToConfigBean")
     Map<String, List<MyConfigBean>> getMapOfKeyToConfigBeans();
 
     /**
-     * Used for testing, and demonstrating the {@link io.helidon.builder.api.Prototype.Singular} annotation.
+     * Used for testing, and demonstrating the {@link io.helidon.builder.api.Option.Singular} annotation.
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular("configBean")
+    @Option.Singular("configBean")
     List<MyConfigBean> getListOfConfigBeans();
 
     /**

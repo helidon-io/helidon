@@ -18,6 +18,7 @@ package io.helidon.http.encoding;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -32,7 +33,7 @@ interface ContentEncodingContextConfigBlueprint extends Prototype.Factory<Conten
      *
      * @return list of content encodings to be used (such as {@code gzip,deflate})
      */
-    @Prototype.Singular
+    @Option.Singular
     @ConfiguredOption(provider = true,
                       providerType = ContentEncodingProvider.class)
     List<ContentEncoding> contentEncodings();

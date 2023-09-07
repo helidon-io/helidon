@@ -19,8 +19,8 @@ package io.helidon.builder.test.testsubjects;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates multi-level inheritance for the generated builder.
@@ -29,36 +29,36 @@ import io.helidon.config.metadata.ConfiguredOption;
 interface Level2Blueprint extends Level1Blueprint {
 
     /**
-     * Used for testing and demonstrating {@link io.helidon.config.metadata.ConfiguredOption} settings.
+     * Used for testing and demonstrating option settings.
      *
      * @return ignored, here for testing purposes only
      */
     @Override
-    @ConfiguredOption("2")
+    @Option.Default("2")
     String getLevel0StringAttribute();
 
     /**
-     * Used for testing and demonstrating the use of {@link io.helidon.builder.api.Prototype.Singular}.
+     * Used for testing and demonstrating the use of {@link io.helidon.builder.api.Option.Singular}.
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Level0> getLevel2Level0Info();
 
     /**
-     * Used for testing and demonstrating the use of {@link io.helidon.builder.api.Prototype.Singular}.
+     * Used for testing and demonstrating the use of {@link io.helidon.builder.api.Option.Singular}.
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular("Level0")
+    @Option.Singular("Level0")
     List<Level0> getLevel2ListOfLevel0s();
 
     /**
-     * Used for testing and demonstrating the use of {@link io.helidon.builder.api.Prototype.Singular}.
+     * Used for testing and demonstrating the use of {@link io.helidon.builder.api.Option.Singular}.
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular("stringToLevel1")
+    @Option.Singular("stringToLevel1")
     Map<String, Level1> getLevel2MapOfStringToLevel1s();
 
 }

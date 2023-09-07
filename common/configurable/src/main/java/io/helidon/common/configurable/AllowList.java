@@ -21,9 +21,8 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.config.Config;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * {@code AllowList} defines a list of allowed and/or denied matches and tests if a particular value conforms to
@@ -36,15 +35,53 @@ import io.helidon.config.metadata.ConfiguredOption;
  * <li>Value is permitted</li>
  * </ol>
  */
-public interface AllowList extends Predicate<String> {
+@RuntimeType.PrototypedBy(AllowListConfig.class)
+public class AllowList implements Predicate<String>, RuntimeType.Api<AllowListConfig> {
+    private static final System.Logger LOGGER = System.getLogger(AllowList.class.getName());
+    private static final String ALLOWED_MATCHED_LOG_FORMAT = "Value '%s' is allowed by %s";
+    private static final String DENIED_MATCHED_LOG_FORMAT = " but is denied by %s";
+
+    private final List<Predicate<String>> allowedPredicates = new ArrayList<>();
+    private final List<Predicate<String>> deniedPredicates = new ArrayList<>();
+
+    private final AllowListConfig config;
+
+    AllowList(AllowListConfig config) {
+        this.config = config;
+
+        allowedPredicates.addAll(config.allowedPredicates());
+        deniedPredicates.addAll(config.deniedPredicates());
+
+        config.allowed().forEach(it -> allowedPredicates.add(new ExactPredicate(it)));
+        config.denied().forEach(it -> deniedPredicates.add(new ExactPredicate(it)));
+
+        config.allowedPrefixes().forEach(it -> allowedPredicates.add(new PrefixPredicate(it)));
+        config.deniedPrefixes().forEach(it -> deniedPredicates.add(new PrefixPredicate(it)));
+
+        config.allowedSuffixes().forEach(it -> allowedPredicates.add(new SuffixPredicate(it)));
+        config.deniedSuffixes().forEach(it -> deniedPredicates.add(new SuffixPredicate(it)));
+
+        config.allowedPatterns().forEach(it -> allowedPredicates.add(new PatternPredicate(it)));
+        config.deniedPatterns().forEach(it -> deniedPredicates.add(new PatternPredicate(it)));
+
+        if (config.allowAll()) {
+            if (!allowedPredicates.isEmpty()) {
+                LOGGER.log(Level.INFO, getClass().getSimpleName()
+                        + " allowAll=true overrides the other, more specific, allow predicates");
+                allowedPredicates.clear();
+            }
+            // just allow all
+            allowedPredicates.add(new AllowAllPredicate());
+        }
+    }
 
     /**
      * Create a fluent API builder to configure an instance.
      *
      * @return a new builder
      */
-    static Builder builder() {
-        return new Builder();
+    public static AllowListConfig.Builder builder() {
+        return AllowListConfig.builder();
     }
 
     /**
@@ -53,8 +90,35 @@ public interface AllowList extends Predicate<String> {
      * @param config configuration
      * @return a new configured {@code AllowList}
      */
-    static AllowList create(Config config) {
+    public static AllowList create(Config config) {
         return builder().config(config).build();
+    }
+
+    /**
+     * Create a new allow list based on its configuration.
+     *
+     * @param config configuration
+     * @return a new allow list
+     */
+    public static AllowList create(AllowListConfig config) {
+        return new AllowList(config);
+    }
+
+    /**
+     * Create a new allow list customizing its configuration.
+     *
+     * @param consumer configuration consumer
+     * @return a new allow list
+     */
+    public static AllowList create(java.util.function.Consumer<AllowListConfig.Builder> consumer) {
+        var builder = AllowListConfig.builder();
+        consumer.accept(builder);
+        return builder.build();
+    }
+
+    @Override
+    public AllowListConfig prototype() {
+        return config;
     }
 
     /**
@@ -64,421 +128,135 @@ public interface AllowList extends Predicate<String> {
      * @return {@code true} if the value is allowed, {@code false} if it is not allowed or it is explicitly denied
      */
     @Override
-    boolean test(String value);
+    public boolean test(String value) {
+        for (Predicate<String> allowedPredicate : allowedPredicates) {
+            if (allowedPredicate.test(value)) {
+                // value is allowed, let's check it is not explicitly denied
+                Predicate<String> deniedPredicate = testNotDenied(value);
+                if (deniedPredicate == null) {
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, String.format(ALLOWED_MATCHED_LOG_FORMAT, value, allowedPredicate));
+                    }
+                    return true;
+                } else {
+                    if (LOGGER.isLoggable(Level.DEBUG)) {
+                        LOGGER.log(Level.DEBUG, String.format(ALLOWED_MATCHED_LOG_FORMAT + DENIED_MATCHED_LOG_FORMAT,
+                                                              value,
+                                                              allowedPredicate,
+                                                              deniedPredicate));
+                    }
+                    return false;
+                }
+            }
+        }
 
-    /**
-     * Fluent API builder for {@code AllowList}.
-     */
-    @Configured
-    final class Builder implements io.helidon.common.Builder<Builder, AllowList> {
+        // no allowed predicate, deny
+        if (LOGGER.isLoggable(Level.DEBUG)) {
+            LOGGER.log(Level.DEBUG, "Denying value '" + value + "'; no matching allow predicates are defined");
+        }
+        return false;
+    }
 
-        private static final System.Logger LOGGER = System.getLogger(AllowList.class.getName());
+    @Override
+    public String toString() {
+        return "Allowed: " + allowedPredicates + ", Denied: " + deniedPredicates;
+    }
 
-        private final List<Predicate<String>> allowedPredicates = new ArrayList<>();
-        private final List<Predicate<String>> deniedPredicates = new ArrayList<>();
+    private Predicate<String> testNotDenied(String value) {
+        for (Predicate<String> deniedPredicate : deniedPredicates) {
+            if (deniedPredicate.test(value)) {
+                return deniedPredicate;
+            }
+        }
+        return null;
+    }
 
-        private boolean allowAllSetting = false;
-
-        private Builder() {
+    private static final class AllowAllPredicate implements Predicate<String> {
+        @Override
+        public boolean test(String s) {
+            return true;
         }
 
         @Override
-        public AllowList build() {
-            checkAndAddAllowAllPredicate();
-            return new AllowListImpl(this);
+        public String toString() {
+            return "AllowAllPredicate";
         }
+    }
+
+    private static final class ExactPredicate implements Predicate<String> {
+        private final String testValue;
 
         /**
-         * Update builder from configuration.
+         * Creates a new {@code ExactPredicate} from the provided exact-match string.
          *
-         * @param config configuration to use
-         * @return updated builder
+         * @param exact match string
          */
-        public Builder config(Config config) {
-            Config allowed = config.get("allow");
-            allowed.get("exact").asList(String.class).ifPresent(this::allowed);
-            allowed.get("prefix").asList(String.class).ifPresent(this::allowedPrefixes);
-            allowed.get("suffix").asList(String.class).ifPresent(this::allowedSuffixes);
-            allowed.get("pattern").asList(Pattern.class).ifPresent(this::allowedPatterns);
-            allowed.get("all").asBoolean().ifPresent(this::allowAll);
-
-            Config denied = config.get("deny");
-            denied.get("exact").asList(String.class).ifPresent(this::denied);
-            denied.get("prefix").asList(String.class).ifPresent(this::deniedPrefixes);
-            denied.get("suffix").asList(String.class).ifPresent(this::deniedSuffixes);
-            denied.get("pattern").asList(Pattern.class).ifPresent(this::deniedPatterns);
-
-            return this;
+        ExactPredicate(String exact) {
+            this.testValue = exact;
         }
 
-        /**
-         * Allows all strings to match (subject to "deny" conditions). An {@code allow.all} setting of {@code false} does
-         * not deny all strings but rather represents the absence of a universal match, meaning that other allow and deny settings
-         * determine the matching outcomes.
-         *
-         * @param value whether to allow all strings to match (subject to "deny" conditions)
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "allow.all", type = Boolean.class, value = "false")
-        public Builder allowAll(boolean value) {
-            allowAllSetting = value;
-            return this;
+        @Override
+        public boolean test(String value) {
+            return this.testValue.equals(value);
         }
 
-        /**
-         * Exact strings to allow.
-         *
-         * @param exacts which allow matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "allow.exact")
-        public Builder allowed(List<String> exacts) {
-            exacts.forEach(this::addAllowed);
-            return this;
+        @Override
+        public String toString() {
+            return "Exact(" + testValue + ")";
+        }
+    }
+
+    private static final class PrefixPredicate implements Predicate<String> {
+        private final String testValue;
+
+        private PrefixPredicate(String testValue) {
+            this.testValue = testValue;
         }
 
-        /**
-         * Prefixes specifying strings to allow.
-         *
-         * @param prefixes which allow matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "allow.prefix")
-        public Builder allowedPrefixes(List<String> prefixes) {
-            prefixes.forEach(this::addAllowedPrefix);
-            return this;
+        @Override
+        public boolean test(String value) {
+            return value.startsWith(testValue);
         }
 
-        /**
-         * Suffixes specifying strings to allow.
-         *
-         * @param suffixes which allow matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "allow.suffix")
-        public Builder allowedSuffixes(List<String> suffixes) {
-            suffixes.forEach(this::addAllowedSuffix);
-            return this;
+        @Override
+        public String toString() {
+            return "Prefix(" + testValue + ")";
+        }
+    }
+
+    private static final class SuffixPredicate implements Predicate<String> {
+        private final String testValue;
+
+        private SuffixPredicate(String testValue) {
+            this.testValue = testValue;
         }
 
-        /**
-         * {@link Pattern}s specifying strings to allow.
-         *
-         * @param patterns which allow matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "allow.pattern")
-        public Builder allowedPatterns(List<Pattern> patterns) {
-            patterns.forEach(this::addAllowedPattern);
-            return this;
+        @Override
+        public boolean test(String value) {
+            return value.endsWith(testValue);
         }
 
-        /**
-         * Adds an exact string to allow.
-         *
-         * @param exact which allows matching
-         * @return updated builder
-         */
-        public Builder addAllowed(String exact) {
-            return addAllowed(new ExactPredicate(exact));
+        @Override
+        public String toString() {
+            return "Suffix(" + testValue + ")";
+        }
+    }
+
+    private static final class PatternPredicate implements Predicate<String> {
+        private final Pattern testPattern;
+
+        private PatternPredicate(Pattern testPattern) {
+            this.testPattern = testPattern;
         }
 
-        /**
-         * Adds a {@link Pattern} specifying strings to allow.
-         *
-         * @param pattern which allows matching
-         * @return updated builder
-         */
-        public Builder addAllowedPattern(Pattern pattern) {
-            return addAllowed(new PatternPredicate(pattern));
+        @Override
+        public boolean test(String value) {
+            return this.testPattern.matcher(value).matches();
         }
 
-        /**
-         * Adds a prefix specifying strings to allow.
-         *
-         * @param prefix which allows matching
-         * @return updated builder
-         */
-        public Builder addAllowedPrefix(String prefix) {
-            return addAllowed(new PrefixPredicate(prefix));
-        }
-
-        /**
-         * Adds a suffix specifying strings to allow.
-         *
-         * @param suffix which allows matching
-         * @return updated builder
-         */
-        public Builder addAllowedSuffix(String suffix) {
-            return addAllowed(new SuffixPredicate(suffix));
-        }
-
-        /**
-         * Adds a predicate specifying strings to allow.
-         *
-         * @param predicate which allows matching
-         * @return updated builder
-         */
-        public Builder addAllowed(Predicate<String> predicate) {
-            this.allowedPredicates.add(predicate);
-            return this;
-        }
-
-        /**
-         * Exact strings to deny.
-         *
-         * @param exacts which deny matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "deny.exact")
-        public Builder denied(List<String> exacts) {
-            exacts.forEach(this::addDenied);
-            return this;
-        }
-
-        /**
-         * Prefixes specifying strings to deny.
-         *
-         * @param prefixes which deny matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "deny.prefix")
-        public Builder deniedPrefixes(List<String> prefixes) {
-            prefixes.forEach(this::addDeniedPrefix);
-            return this;
-        }
-
-        /**
-         * Suffixes specifying strings to deny.
-         *
-         * @param suffixes which deny matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "deny.suffix")
-        public Builder deniedSuffixes(List<String> suffixes) {
-            suffixes.forEach(this::addDeniedSuffix);
-            return this;
-        }
-
-        /**
-         * Patterns specifying strings to deny.
-         *
-         * @param patterns which deny matching
-         * @return updated builder
-         */
-        @ConfiguredOption(key = "deny.pattern")
-        public Builder deniedPatterns(List<Pattern> patterns) {
-            patterns.forEach(this::addDeniedPattern);
-            return this;
-        }
-
-        /**
-         * Adds an exact string to deny.
-         *
-         * @param exact match to deny matching
-         * @return updated builder
-         */
-        public Builder addDenied(String exact) {
-            return addDenied(new ExactPredicate(exact));
-        }
-
-        /**
-         * Adds a {@link Pattern} which specifies strings to deny.
-         *
-         * @param pattern to deny matching
-         * @return updated builder
-         */
-        public Builder addDeniedPattern(Pattern pattern) {
-            return addDenied(new PatternPredicate(pattern));
-        }
-
-        /**
-         * Adds a prefix which specifies strings to deny.
-         *
-         * @param prefix to deny matching
-         * @return updated builder
-         */
-        public Builder addDeniedPrefix(String prefix) {
-            return addDenied(new PrefixPredicate(prefix));
-        }
-
-        /**
-         * Adds a suffix which specifies strings to deny.
-         *
-         * @param suffix to deny matching
-         * @return updated builder
-         */
-        public Builder addDeniedSuffix(String suffix) {
-            return addDenied(new SuffixPredicate(suffix));
-        }
-
-        /**
-         * Adds a predicate which specifies strings to deny.
-         *
-         * @param predicate to deny matching
-         * @return updated builder
-         */
-        public Builder addDenied(Predicate<String> predicate) {
-            this.deniedPredicates.add(predicate);
-            return this;
-        }
-
-        private void checkAndAddAllowAllPredicate() {
-            // Specifying allowAll(true) with any other allow is odd. Accept it but warn the user.
-            if (allowAllSetting) {
-                if (!allowedPredicates.isEmpty()) {
-                    LOGGER.log(Level.INFO, getClass().getSimpleName()
-                            + " allowAll=true overrides the other, more specific, allow predicates");
-                }
-                allowedPredicates.add(new AllowAllPredicate());
-            }
-        }
-
-        private static final class AllowListImpl implements AllowList {
-
-            private static final String ALLOWED_MATCHED_LOG_FORMAT = "Value '%s' is allowed by %s";
-            private static final String DENIED_MATCHED_LOG_FORMAT = " but is denied by %s";
-
-            private final List<Predicate<String>> allowedPredicates;
-            private final List<Predicate<String>> deniedPredicates;
-
-            private AllowListImpl(Builder builder) {
-                this.allowedPredicates = List.copyOf(builder.allowedPredicates);
-                this.deniedPredicates = List.copyOf(builder.deniedPredicates);
-            }
-
-            @Override
-            public boolean test(String value) {
-                for (Predicate<String> allowedPredicate : allowedPredicates) {
-                    if (allowedPredicate.test(value)) {
-                        // value is allowed, let's check it is not explicitly denied
-                        Predicate<String> deniedPredicate = testNotDenied(value);
-                        if (deniedPredicate == null) {
-                            if (LOGGER.isLoggable(Level.DEBUG)) {
-                                LOGGER.log(Level.DEBUG, String.format(ALLOWED_MATCHED_LOG_FORMAT, value, allowedPredicate));
-                            }
-                            return true;
-                        } else {
-                            if (LOGGER.isLoggable(Level.DEBUG)) {
-                                LOGGER.log(Level.DEBUG, String.format(ALLOWED_MATCHED_LOG_FORMAT + DENIED_MATCHED_LOG_FORMAT,
-                                                                     value,
-                                                                     allowedPredicate,
-                                                                     deniedPredicate));
-                            }
-                            return false;
-                        }
-                    }
-                }
-
-                // no allowed predicate, deny
-                if (LOGGER.isLoggable(Level.DEBUG)) {
-                    LOGGER.log(Level.DEBUG, "Denying value '" + value + "'; no matching allow predicates are defined");
-                }
-                return false;
-            }
-
-            @Override
-            public String toString() {
-                return "Allowed: " + allowedPredicates + ", Denied: " + deniedPredicates;
-            }
-
-            private Predicate<String> testNotDenied(String value) {
-                for (Predicate<String> deniedPredicate : deniedPredicates) {
-                    if (deniedPredicate.test(value)) {
-                        return deniedPredicate;
-                    }
-                }
-                return null;
-            }
-        }
-
-        private static final class AllowAllPredicate implements Predicate<String> {
-            @Override
-            public boolean test(String s) {
-                return true;
-            }
-
-            @Override
-            public String toString() {
-                return "AllowAllPredicate";
-            }
-        }
-
-        private static final class ExactPredicate implements Predicate<String> {
-            private final String testValue;
-
-            /**
-             * Creates a new {@code ExactPredicate} from the provided exact-match string.
-             *
-             * @param exact match string
-             */
-            ExactPredicate(String exact) {
-                this.testValue = exact;
-            }
-
-            @Override
-            public boolean test(String value) {
-                return this.testValue.equals(value);
-            }
-
-            @Override
-            public String toString() {
-                return "Exact(" + testValue + ")";
-            }
-        }
-
-        private static final class PrefixPredicate implements Predicate<String> {
-            private final String testValue;
-
-            private PrefixPredicate(String testValue) {
-                this.testValue = testValue;
-            }
-
-            @Override
-            public boolean test(String value) {
-                return value.startsWith(testValue);
-            }
-
-            @Override
-            public String toString() {
-                return "Prefix(" + testValue + ")";
-            }
-        }
-
-        private static final class SuffixPredicate implements Predicate<String> {
-            private final String testValue;
-
-            private SuffixPredicate(String testValue) {
-                this.testValue = testValue;
-            }
-
-            @Override
-            public boolean test(String value) {
-                return value.endsWith(testValue);
-            }
-
-            @Override
-            public String toString() {
-                return "Suffix(" + testValue + ")";
-            }
-        }
-
-        private static final class PatternPredicate implements Predicate<String> {
-            private final Pattern testPattern;
-
-            private PatternPredicate(Pattern testPattern) {
-                this.testPattern = testPattern;
-            }
-
-            @Override
-            public boolean test(String value) {
-                return this.testPattern.matcher(value).matches();
-            }
-
-            @Override
-            public String toString() {
-                return "Pattern(" + testPattern.pattern() + ")";
-            }
+        @Override
+        public String toString() {
+            return "Pattern(" + testPattern.pattern() + ")";
         }
     }
 }

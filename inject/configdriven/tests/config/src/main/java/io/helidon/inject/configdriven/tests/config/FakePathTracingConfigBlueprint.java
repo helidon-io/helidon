@@ -18,6 +18,7 @@ package io.helidon.inject.configdriven.tests.config;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -44,7 +45,7 @@ interface FakePathTracingConfigBlueprint {
      *
      * @return list of methods, if empty, this configuration is valid for any method
      */
-    @Prototype.Singular("method")
+    @Option.Singular("method")
     // Builder::addMethod(String method);
     List<String> methods();
 

@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -54,6 +55,6 @@ interface ScopingConfigBlueprint {
      * @return scope settings
      */
     @ConfiguredOption
-    @Prototype.Singular
+    @Option.Singular
     Map<String, ScopeConfig> scopes();
 }

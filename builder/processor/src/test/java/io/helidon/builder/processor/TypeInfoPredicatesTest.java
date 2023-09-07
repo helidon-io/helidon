@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.processor.ElementInfoPredicates;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeValues;
@@ -82,7 +83,7 @@ class TypeInfoPredicatesTest {
     void isMethodTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::isMethod)
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -95,7 +96,7 @@ class TypeInfoPredicatesTest {
     void isStaticTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isStatic)
+                .filter(ElementInfoPredicates::isStatic)
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -108,7 +109,7 @@ class TypeInfoPredicatesTest {
     void isPrivateTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isPrivate)
+                .filter(ElementInfoPredicates::isPrivate)
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -120,7 +121,7 @@ class TypeInfoPredicatesTest {
     void isDefaultTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isDefault)
+                .filter(ElementInfoPredicates::isDefault)
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -131,8 +132,8 @@ class TypeInfoPredicatesTest {
     void hasNoArgsTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
-                .filter(TypeInfoPredicates::hasNoArgs)
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates::hasNoArgs)
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -143,7 +144,7 @@ class TypeInfoPredicatesTest {
     void hasAnnotationTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates.hasAnnotation(Types.PROTOTYPE_ANNOTATED_TYPE))
+                .filter(ElementInfoPredicates.hasAnnotation(Types.PROTOTYPE_ANNOTATED_TYPE))
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -154,7 +155,7 @@ class TypeInfoPredicatesTest {
     void methodNameTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates.methodName("staticMethodWithParams"))
+                .filter(ElementInfoPredicates.elementName("staticMethodWithParams"))
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -166,8 +167,8 @@ class TypeInfoPredicatesTest {
     void hasParamsTest() {
         List<TypedElementInfo> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
-                .filter(TypeInfoPredicates.hasParams(Types.CONFIG_TYPE))
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(ElementInfoPredicates.hasParams(Types.CONFIG_TYPE))
                 .toList();
 
         assertThat(methods, hasSize(1));
@@ -180,8 +181,8 @@ class TypeInfoPredicatesTest {
     void ignoredMethodByNameTest() {
         List<String> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
-                .filter(TypeInfoPredicates.ignoredMethod(Set.of(), Set.of("defaultMethod")))
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(BuilderInfoPredicates.ignoredMethod(Set.of(), Set.of("defaultMethod")))
                 .map(TypedElementInfo::elementName)
                 .toList();
 
@@ -192,10 +193,10 @@ class TypeInfoPredicatesTest {
     void ignoredMethodBySignatureTest() {
         List<TypedElementInfo> methods = TEST_SUBJECT.elementInfo()
                 .stream()
-                .filter(TypeInfoPredicates::isMethod)
-                .filter(TypeInfoPredicates.ignoredMethod(Set.of(new MethodSignature(Types.STRING_TYPE,
-                        "staticMethodWithParams",
-                        List.of(Types.CONFIG_TYPE, Types.CONFIG_TYPE)
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(BuilderInfoPredicates.ignoredMethod(Set.of(new MethodSignature(Types.STRING_TYPE,
+                                                                                       "staticMethodWithParams",
+                                                                                       List.of(Types.CONFIG_TYPE, Types.CONFIG_TYPE)
                 )), Set.of()))
                 .toList();
 
@@ -207,11 +208,11 @@ class TypeInfoPredicatesTest {
 
     @Test
     void findMethodTest() {
-        Optional<TypedElementInfo> found = TypeInfoPredicates.findMethod(new MethodSignature(Types.STRING_TYPE,
-                        "staticMethodWithParams",
-                        List.of(Types.CONFIG_TYPE, Types.CONFIG_TYPE)),
-                null,
-                TEST_SUBJECT);
+        Optional<TypedElementInfo> found = BuilderInfoPredicates.findMethod(new MethodSignature(Types.STRING_TYPE,
+                                                                                                "staticMethodWithParams",
+                                                                                                List.of(Types.CONFIG_TYPE, Types.CONFIG_TYPE)),
+                                                                            null,
+                                                                            TEST_SUBJECT);
 
         assertThat(found, not(Optional.empty()));
 

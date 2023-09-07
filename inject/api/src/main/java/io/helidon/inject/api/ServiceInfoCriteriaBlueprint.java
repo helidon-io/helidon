@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -46,7 +47,7 @@ interface ServiceInfoCriteriaBlueprint {
      *
      * @return the service scope type name
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<TypeName> scopeTypeNames();
 
     /**
@@ -54,7 +55,7 @@ interface ServiceInfoCriteriaBlueprint {
      *
      * @return the service qualifiers
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Qualifier> qualifiers();
 
     /**
@@ -63,7 +64,7 @@ interface ServiceInfoCriteriaBlueprint {
      * @see ExternalContracts
      * @return the service contracts implemented
      */
-    @Prototype.Singular("contractImplemented")
+    @Option.Singular("contractImplemented")
     Set<TypeName> contractsImplemented();
 
     /**
@@ -88,7 +89,7 @@ interface ServiceInfoCriteriaBlueprint {
      * @see ExternalContracts
      * @return the service external contracts implemented
      */
-    @Prototype.Singular("externalContractImplemented")
+    @Option.Singular("externalContractImplemented")
     Set<TypeName> externalContractsImplemented();
 
     /**

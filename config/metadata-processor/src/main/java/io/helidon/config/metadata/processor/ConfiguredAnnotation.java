@@ -20,31 +20,52 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypeInfo;
 
-import static io.helidon.config.metadata.processor.ConfigMetadataHandler.findValue;
+import static io.helidon.config.metadata.processor.UsedTypes.CONFIGURED;
+import static io.helidon.config.metadata.processor.UsedTypes.DESCRIPTION;
+import static io.helidon.config.metadata.processor.UsedTypes.PROTOTYPE_PROVIDES;
 
 record ConfiguredAnnotation(Optional<String> description,
                             Optional<String> prefix,
                             List<String> provides,
                             boolean root,
                             boolean ignoreBuildMethod) {
-    static ConfiguredAnnotation create(AnnotationMirror mirror) {
+
+    static ConfiguredAnnotation createMeta(Annotation annotation) {
         return new ConfiguredAnnotation(
-                findValue(mirror, "description", String.class).filter(Predicate.not(String::isBlank)),
-                findValue(mirror, "prefix", String.class).filter(Predicate.not(String::isBlank)),
-                toProvides(mirror),
-                findValue(mirror, "root", Boolean.class, false),
-                findValue(mirror, "ignoreBuildMethod", Boolean.class, false));
+                annotation.stringValue("description").filter(Predicate.not(String::isBlank)),
+                annotation.stringValue("prefix").filter(Predicate.not(String::isBlank)),
+                toProvidesMeta(annotation),
+                annotation.booleanValue("root").orElse(false),
+                annotation.booleanValue("ignoreBuildMethod").orElse(false)
+        );
     }
 
-    @SuppressWarnings("unchecked")
-    private static List<String> toProvides(AnnotationMirror mirror) {
-        return ((List<AnnotationValue>) findValue(mirror, "provides", List.class, List.of()))
+    static ConfiguredAnnotation createBuilder(TypeInfo blueprint) {
+        Optional<String> config = blueprint.findAnnotation(CONFIGURED).flatMap(Annotation::stringValue)
+                .filter(Predicate.not(String::isBlank));
+
+        return new ConfiguredAnnotation(
+                blueprint.findAnnotation(DESCRIPTION).flatMap(Annotation::stringValue),
+                config,
+                toProvidesBuilder(blueprint),
+                config.isPresent(),
+                false
+        );
+    }
+
+    private static List<String> toProvidesBuilder(TypeInfo blueprint) {
+        return blueprint.findAnnotation(PROTOTYPE_PROVIDES)
+                .flatMap(Annotation::stringValues)
                 .stream()
-                .map(AnnotationValue::getValue)
-                .map(Object::toString)
+                .flatMap(List::stream)
                 .toList();
+    }
+
+    private static List<String> toProvidesMeta(Annotation annotation) {
+        return annotation.stringValues("provides")
+                .orElseGet(List::of);
     }
 }

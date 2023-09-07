@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
 import io.helidon.common.context.Context;
@@ -68,7 +69,7 @@ interface ListenerConfigBlueprint {
      * @return all defined protocol configurations, loaded from service loader by default
      */
     @ConfiguredOption(provider = true, providerType = ProtocolConfigProvider.class)
-    @Prototype.Singular
+    @Option.Singular
     List<ProtocolConfig> protocols();
 
     /**
@@ -86,7 +87,7 @@ interface ListenerConfigBlueprint {
      *
      * @return router for this listener/server
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Routing> routings();
 
     /**
@@ -283,8 +284,8 @@ interface ListenerConfigBlueprint {
      *
      * @return custom socket options
      */
-    @Prototype.Singular
-    @Prototype.SameGeneric
+    @Option.Singular
+    @Option.SameGeneric
     Map<SocketOption<?>, Object> listenerSocketOptions();
 
     /**
@@ -293,7 +294,7 @@ interface ListenerConfigBlueprint {
      *
      * @return connection selectors to be used for this socket
      */
-    @Prototype.Singular
+    @Option.Singular
     List<ServerConnectionSelector> connectionSelectors();
 
     /**

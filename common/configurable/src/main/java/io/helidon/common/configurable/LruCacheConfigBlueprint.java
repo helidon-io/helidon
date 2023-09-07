@@ -16,9 +16,8 @@
 
 package io.helidon.common.configurable;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of a LRU Cache.
@@ -27,15 +26,14 @@ import io.helidon.config.metadata.ConfiguredOption;
  * @param <V> type of values
  */
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface LruCacheConfigBlueprint<K, V> extends Prototype.Factory<LruCache<K, V>> {
-    String DEFAULT_CAPACITY = "10000";
-
     /**
-     * Configure capacity of the cache. Defaults to {@value #DEFAULT_CAPACITY}.
+     * Configure capacity of the cache. Defaults to {@value LruCache#DEFAULT_CAPACITY}.
      *
      * @return maximal number of records in the cache before the oldest one is removed
      */
-    @ConfiguredOption(DEFAULT_CAPACITY)
+    @Option.DefaultInt(LruCache.DEFAULT_CAPACITY)
+    @Option.Configured
     int capacity();
 }

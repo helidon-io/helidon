@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -38,7 +39,7 @@ interface CustomNamedBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<String> getStringSet();
 
     /**
@@ -46,7 +47,7 @@ interface CustomNamedBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular
+    @Option.Singular
     @com.fasterxml.jackson.annotation.JsonIgnore
     List<String> getStringList();
 
@@ -55,7 +56,7 @@ interface CustomNamedBlueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @Prototype.Singular
+    @Option.Singular
     @com.fasterxml.jackson.annotation.JsonIgnore
     Map<String, Integer> getStringToIntegerMap();
 

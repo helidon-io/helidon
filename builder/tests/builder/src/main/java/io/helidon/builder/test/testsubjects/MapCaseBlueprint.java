@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -33,7 +34,7 @@ interface MapCaseBlueprint {
      *
      * @return for testing
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, String> stringToString();
 
     /**
@@ -41,7 +42,7 @@ interface MapCaseBlueprint {
      *
      * @return for testing
      */
-    @Prototype.Singular("Dependency")
+    @Option.Singular("Dependency")
     Map<String, Set<Dependency>> stringToDependencies();
 
     /**
@@ -49,7 +50,7 @@ interface MapCaseBlueprint {
      *
      * @return for testing
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, Map<String, Dependency>> stringToDependencyMap();
 
     /**
@@ -57,7 +58,7 @@ interface MapCaseBlueprint {
      *
      * @return for testing
      */
-    @Prototype.Singular
+    @Option.Singular
     Map<String, List<String>> stringToStringList();
 
     /**

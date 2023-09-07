@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,11 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class ConfigMetadataHandlerTest {
     @Test
     void testToConfigKey() {
-        ConfigMetadataHandler p = new ConfigMetadataHandler();
         assertAll(
-                () -> assertThat(p.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
-                () -> assertThat(p.toConfigKey("port"), is("port")),
-                () -> assertThat(p.toConfigKey("listenAddress"), is("listen-address"))
+                () -> assertThat(TypeHandlerBase.toConfigKey("maxInitialLineLength"), is("max-initial-line-length")),
+                () -> assertThat(TypeHandlerBase.toConfigKey("port"), is("port")),
+                () -> assertThat(TypeHandlerBase.toConfigKey("listenAddress"), is("listen-address"))
         );
     }
 }

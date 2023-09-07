@@ -72,6 +72,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         private final Map<TypeName, String> referencedModuleNames = new LinkedHashMap<>();
         private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations = new LinkedHashMap<>();
         private final Set<String> modifiers = new LinkedHashSet<>();
+        private String module;
         private String typeKind;
         private TypeInfo superTypeInfo;
         private TypeName typeName;
@@ -98,6 +99,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             superTypeInfo(prototype.superTypeInfo());
             addInterfaceTypeInfo(prototype.interfaceTypeInfo());
             addModifiers(prototype.modifiers());
+            module(prototype.module());
             addAnnotations(prototype.annotations());
             return self();
         }
@@ -118,6 +120,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             builder.superTypeInfo().ifPresent(this::superTypeInfo);
             addInterfaceTypeInfo(builder.interfaceTypeInfo());
             addModifiers(builder.modifiers());
+            builder.module().ifPresent(this::module);
             addAnnotations(builder.annotations());
             return self();
         }
@@ -558,6 +561,30 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Clear existing value of this property.
+         *
+         * @return updated builder instance
+         * @see #module()
+         */
+        public BUILDER clearModule() {
+            this.module = null;
+            return self();
+        }
+
+        /**
+         * Module of this type, if available.
+         *
+         * @param module module name
+         * @return updated builder instance
+         * @see #module()
+         */
+        public BUILDER module(String module) {
+            Objects.requireNonNull(module);
+            this.module = module;
+            return self();
+        }
+
+        /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
          *
@@ -708,6 +735,15 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Module of this type, if available.
+         *
+         * @return the module
+         */
+        public Optional<String> module() {
+            return Optional.ofNullable(module);
+        }
+
+        /**
          * The list of known annotations for this element. Note that "known" implies that the annotation is visible, which depends
          * upon the context in which it was build.
          *
@@ -725,6 +761,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                     + "elementInfo=" + elementInfo + ","
                     + "superTypeInfo=" + superTypeInfo + ","
                     + "modifiers=" + modifiers + ","
+                    + "module=" + module + ","
                     + "annotations=" + annotations
                     + "}";
         }
@@ -741,10 +778,10 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         protected void validatePrototype() {
             Errors.Collector collector = Errors.collector();
             if (typeName == null) {
-                collector.fatal(getClass(), "Property \"type-name\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeName\" is required, but not set");
             }
             if (typeKind == null) {
-                collector.fatal(getClass(), "Property \"type-kind\" is required, but not set");
+                collector.fatal(getClass(), "Property \"typeKind\" is required, but not set");
             }
             collector.collect().checkValid();
         }
@@ -763,6 +800,19 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
         }
 
         /**
+         * Module of this type, if available.
+         *
+         * @param module module name
+         * @return updated builder instance
+         * @see #module()
+         */
+        BUILDER module(Optional<? extends String> module) {
+            Objects.requireNonNull(module);
+            this.module = module.orElse(null);
+            return self();
+        }
+
+        /**
          * Generated implementation of the prototype, can be extended by descendant prototype implementations.
          */
         protected static class TypeInfoImpl implements TypeInfo {
@@ -774,6 +824,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             private final Map<TypeName, String> referencedModuleNames;
             private final Map<TypeName, List<Annotation>> referencedTypeNamesToAnnotations;
             private final Optional<TypeInfo> superTypeInfo;
+            private final Optional<String> module;
             private final Set<String> modifiers;
             private final String typeKind;
             private final TypeName typeName;
@@ -794,6 +845,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                 this.superTypeInfo = builder.superTypeInfo();
                 this.interfaceTypeInfo = List.copyOf(builder.interfaceTypeInfo());
                 this.modifiers = Collections.unmodifiableSet(new LinkedHashSet<>(builder.modifiers()));
+                this.module = builder.module();
                 this.annotations = List.copyOf(builder.annotations());
             }
 
@@ -843,6 +895,11 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
             }
 
             @Override
+            public Optional<String> module() {
+                return module;
+            }
+
+            @Override
             public List<Annotation> annotations() {
                 return annotations;
             }
@@ -855,6 +912,7 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         + "elementInfo=" + elementInfo + ","
                         + "superTypeInfo=" + superTypeInfo + ","
                         + "modifiers=" + modifiers + ","
+                        + "module=" + module + ","
                         + "annotations=" + annotations
                         + "}";
             }
@@ -872,12 +930,13 @@ public interface TypeInfo extends TypeInfoBlueprint, Prototype.Api {
                         && Objects.equals(elementInfo, other.elementInfo())
                         && Objects.equals(superTypeInfo, other.superTypeInfo())
                         && Objects.equals(modifiers, other.modifiers())
+                        && Objects.equals(module, other.module())
                         && Objects.equals(annotations, other.annotations());
             }
 
             @Override
             public int hashCode() {
-                return Objects.hash(typeName, typeKind, elementInfo, superTypeInfo, modifiers, annotations);
+                return Objects.hash(typeName, typeKind, elementInfo, superTypeInfo, modifiers, module, annotations);
             }
 
         }

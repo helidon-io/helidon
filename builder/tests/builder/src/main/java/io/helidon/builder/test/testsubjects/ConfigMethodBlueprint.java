@@ -16,15 +16,15 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.config.Config;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 
 @Prototype.Blueprint
-@Configured
+@Prototype.Configured
 interface ConfigMethodBlueprint {
-    @ConfiguredOption("default-value")
+    @Option.Default("default-value")
+    @Option.Configured
     String key();
 
     Config config();

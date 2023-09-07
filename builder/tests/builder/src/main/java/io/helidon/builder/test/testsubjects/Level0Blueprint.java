@@ -16,8 +16,8 @@
 
 package io.helidon.builder.test.testsubjects;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Demonstrates multi-level inheritance for the generated builder.
@@ -32,7 +32,7 @@ interface Level0Blueprint {
      *
      * @return ignored, here for testing purposes only
      */
-    @ConfiguredOption("1")
+    @Option.Default("1")
     String getLevel0StringAttribute();
 
 }

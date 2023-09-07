@@ -18,6 +18,7 @@ package io.helidon.builder.test.testsubjects;
 
 import java.util.List;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -33,7 +34,7 @@ interface PickleBarrelBlueprint extends ContainerBlueprint {
      *
      * @return the pickles in this barrel
      */
-    @Prototype.Singular
+    @Option.Singular
     List<Pickle> pickles();
 
 }

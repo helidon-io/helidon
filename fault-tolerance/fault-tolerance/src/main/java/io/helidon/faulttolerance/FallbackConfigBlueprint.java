@@ -19,6 +19,7 @@ package io.helidon.faulttolerance;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
@@ -39,7 +40,7 @@ interface FallbackConfigBlueprint<T> {
      * @return throwable classes to skip retries
      * @see #applyOn()
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Class<? extends Throwable>> skipOn();
 
     /**
@@ -48,6 +49,6 @@ interface FallbackConfigBlueprint<T> {
      * @return throwable classes to trigger retries
      * @see #skipOn()
      */
-    @Prototype.Singular
+    @Option.Singular
     Set<Class<? extends Throwable>> applyOn();
 }

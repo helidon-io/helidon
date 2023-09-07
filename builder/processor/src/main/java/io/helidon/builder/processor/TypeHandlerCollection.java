@@ -16,11 +16,33 @@
 
 package io.helidon.builder.processor;
 
+import java.io.File;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.helidon.common.processor.GeneratorTools;
 import io.helidon.common.processor.classmodel.Field;
@@ -28,11 +50,45 @@ import io.helidon.common.processor.classmodel.InnerClass;
 import io.helidon.common.processor.classmodel.Javadoc;
 import io.helidon.common.processor.classmodel.Method;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 
-import static io.helidon.builder.processor.Types.STRING_TYPE;
 import static io.helidon.common.processor.classmodel.ClassModel.TYPE_TOKEN;
 
 abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
+    private static final Set<TypeName> BUILT_IN_MAPPERS = Set.of(
+            TypeNames.STRING,
+            TypeNames.BOXED_BOOLEAN,
+            TypeNames.BOXED_BYTE,
+            TypeNames.BOXED_SHORT,
+            TypeNames.BOXED_INT,
+            TypeNames.BOXED_LONG,
+            TypeNames.BOXED_CHAR,
+            TypeNames.BOXED_FLOAT,
+            TypeNames.BOXED_DOUBLE,
+            TypeNames.BOXED_VOID,
+            TypeName.create(BigDecimal.class),
+            TypeName.create(BigInteger.class),
+            TypeName.create(Pattern.class),
+            TypeName.create(Class.class),
+            TypeName.create(Duration.class),
+            TypeName.create(Period.class),
+            TypeName.create(LocalDate.class),
+            TypeName.create(LocalDateTime.class),
+            TypeName.create(LocalTime.class),
+            TypeName.create(ZonedDateTime.class),
+            TypeName.create(ZoneId.class),
+            TypeName.create(ZoneOffset.class),
+            TypeName.create(Instant.class),
+            TypeName.create(OffsetTime.class),
+            TypeName.create(OffsetDateTime.class),
+            TypeName.create(YearMonth.class),
+            TypeName.create(File.class),
+            TypeName.create(Path.class),
+            TypeName.create(Charset.class),
+            TypeName.create(URI.class),
+            TypeName.create(URL.class),
+            TypeName.create(UUID.class)
+    );
     private final TypeName collectionType;
     private final TypeName collectionImplType;
     private final String collector;
@@ -53,7 +109,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    Field.Builder fieldDeclaration(PrototypeProperty.ConfiguredOption configured, boolean isBuilder, boolean alwaysFinal) {
+    Field.Builder fieldDeclaration(AnnotationDataOption configured, boolean isBuilder, boolean alwaysFinal) {
         Field.Builder builder = super.fieldDeclaration(configured, isBuilder, true);
         if (isBuilder && !configured.hasDefault()) {
             builder.defaultValue("new " + TYPE_TOKEN + collectionImplType.fqName() + TYPE_TOKEN + "<>()");
@@ -62,31 +118,57 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     @Override
-    String toDefaultValue(String defaultValue) {
-        String defaults = Stream.of(defaultValue.split(","))
-                .map(super::toDefaultValue)
-                .collect(Collectors.joining(", "));
+    String toDefaultValue(List<String> defaultValues,
+                          List<Integer> defaultInts,
+                          List<Long> defaultLongs,
+                          List<Double> defaultDoubles,
+                          List<Boolean> defaultBooleans) {
 
-        return collectionType.fqName() + ".of(" + defaults + ")";
+        if (defaultValues != null) {
+            String defaults = defaultValues.stream()
+                    .map(super::toDefaultValue)
+                    .collect(Collectors.joining(", "));
+            return collectionType.fqName() + ".of(" + defaults + ")";
+        }
+
+        if (defaultInts != null) {
+            return defaultCollection(defaultInts);
+        }
+        if (defaultLongs != null) {
+            String defaults = defaultLongs.stream()
+                    .map(String::valueOf)
+                    .map(it -> it + "L")
+                    .collect(Collectors.joining(", "));
+            return collectionType.fqName() + ".of(" + defaults + ")";
+        }
+        if (defaultDoubles != null) {
+            return defaultCollection(defaultDoubles);
+        }
+        if (defaultBooleans != null) {
+            return defaultCollection(defaultBooleans);
+        }
+
+        return null;
     }
 
     @Override
     void generateFromConfig(Method.Builder method,
-                            PrototypeProperty.ConfiguredOption configured,
+                            AnnotationDataOption configured,
                             FactoryMethods factoryMethods) {
         if (configured.provider()) {
             return;
         }
+        TypeName actualType = actualType().genericTypeName();
+
         if (factoryMethods.createFromConfig().isPresent()) {
-            // todo this must be more clever - if a factory method exists, we need to check if it accepts a list
-            // or a single value, now hardcoded to single value
             method.addLine(configGet(configured)
                                    + generateFromConfig(factoryMethods)
                                    + ".ifPresent(this::" + setterName() + ");");
-        } else if (actualType().equals(STRING_TYPE)) {
-            // String can be simplified
+        } else if (BUILT_IN_MAPPERS.contains(actualType)) {
+            // types we support in config can be simplified,
+            // this also supports comma separated lists for string based types
             method.addLine(configGet(configured)
-                                   + ".asList(String.class)"
+                                   + ".asList(" + TYPE_TOKEN + actualType.fqName() + TYPE_TOKEN + ".class)"
                                    + (configMapper.orElse(""))
                                    + ".ifPresent(this::" + setterName() + ");");
         } else {
@@ -110,8 +192,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
 
     @Override
     void setters(InnerClass.Builder classBuilder,
-                 PrototypeProperty.ConfiguredOption configured,
-                 PrototypeProperty.Singular singular,
+                 AnnotationDataOption configured,
                  FactoryMethods factoryMethods,
                  TypeName returnType,
                  Javadoc blueprintJavadoc) {
@@ -129,8 +210,8 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             factorySetter(classBuilder, configured, returnType, blueprintJavadoc, factoryMethods.createTargetType().get());
         }
 
-        if (singular.hasSingular()) {
-            singularSetter(classBuilder, configured, returnType, blueprintJavadoc, singular);
+        if (configured.singular()) {
+            singularSetter(classBuilder, configured, returnType, blueprintJavadoc, configured.singularName());
         }
 
         if (factoryMethods.builder().isPresent()) {
@@ -139,13 +220,19 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
                                   returnType,
                                   blueprintJavadoc,
                                   factoryMethods,
-                                  factoryMethods.builder().get(),
-                                  singular);
+                                  factoryMethods.builder().get());
         }
     }
 
+    private String defaultCollection(List<?> list) {
+        String defaults = list.stream()
+                .map(String::valueOf)
+                .collect(Collectors.joining(", "));
+        return collectionType.fqName() + ".of(" + defaults + ")";
+    }
+
     private void discoverServicesSetter(InnerClass.Builder classBuilder,
-                                        PrototypeProperty.ConfiguredOption configured,
+                                        AnnotationDataOption configured,
                                         TypeName returnType,
                                         Javadoc blueprintJavadoc) {
         classBuilder.addMethod(builder -> builder.name(setterName() + "DiscoverServices")
@@ -161,12 +248,11 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     private void factorySetterConsumer(InnerClass.Builder classBuilder,
-                                       PrototypeProperty.ConfiguredOption configured,
+                                       AnnotationDataOption configured,
                                        TypeName returnType,
                                        Javadoc blueprintJavadoc,
                                        FactoryMethods factoryMethods,
-                                       FactoryMethods.FactoryMethod factoryMethod,
-                                       PrototypeProperty.Singular singular) {
+                                       FactoryMethods.FactoryMethod factoryMethod) {
         // if there is a factory method for the return type, we also have setters for the type (probably config object)
         TypeName builderType;
         if (factoryMethod.factoryMethodReturnType().className().equals("Builder")) {
@@ -203,8 +289,8 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
             builder.addLine("this." + name() + "(builder.build());")
                     .addLine("return self();");
             classBuilder.addMethod(builder);
-        } else if (singular.hasSingular()) {
-            String singularName = singular.singularName();
+        } else if (configured.singular()) {
+            String singularName = configured.singularName();
             String methodName = "add" + GeneratorTools.capitalize(singularName);
             builder.name(methodName)
                     .addLine("this." + name() + ".add(builder.build());")
@@ -213,11 +299,10 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
         }
     }
 
-    private void singularSetter(InnerClass.Builder classBuilder, PrototypeProperty.ConfiguredOption configured,
+    private void singularSetter(InnerClass.Builder classBuilder, AnnotationDataOption configured,
                                 TypeName returnType,
                                 Javadoc blueprintJavadoc,
-                                PrototypeProperty.Singular singular) {
-        String singularName = singular.singularName();
+                                String singularName) {
         String methodName = "add" + GeneratorTools.capitalize(singularName);
 
         Method.Builder builder = Method.builder()
@@ -237,7 +322,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     private void factorySetter(InnerClass.Builder classBuilder,
-                               PrototypeProperty.ConfiguredOption configured,
+                               AnnotationDataOption configured,
                                TypeName returnType,
                                Javadoc blueprintJavadoc,
                                FactoryMethods.FactoryMethod factoryMethod) {
@@ -262,7 +347,7 @@ abstract class TypeHandlerCollection extends TypeHandler.OneTypeHandler {
     }
 
     private void declaredSetters(InnerClass.Builder classBuilder,
-                                 PrototypeProperty.ConfiguredOption configured,
+                                 AnnotationDataOption configured,
                                  TypeName returnType,
                                  Javadoc blueprintJavadoc) {
         // we cannot call super. as collections are always final
