@@ -103,7 +103,7 @@ just use `Config.create()`
 
 === Configuration Options
 
-// include::{rootdir}/config/io_helidon_reactive_webserver_WebServer.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_reactive_webserver_WebServer.adoc[leveloffset=+2,tag=config]
 
 == Routing
 
@@ -1026,7 +1026,7 @@ server:
             resource-path: "chain.pem"
 ----
 
-=== Configuration options
+=== Configuration Options
 
 // include::{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[leveloffset=+2,tag=config]
 
