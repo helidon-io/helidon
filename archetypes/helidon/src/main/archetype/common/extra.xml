@@ -101,6 +101,11 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                     <value key="groupId">io.helidon.microprofile.metrics</value>
                                     <value key="artifactId">helidon-microprofile-metrics</value>
                                 </map>
+                                <map>
+                                    <value key="groupId">io.helidon.metrics</value>
+                                    <value key="artifactId">helidon-metrics</value>
+                                    <value key="scope">compile</value>
+                                </map>
                             </list>
                             <list key="modules">
                                 <value if="${flavor} == 'mp'">io.helidon.microprofile.faulttolerance</value>
