@@ -38,6 +38,11 @@
             <artifactId>helidon-microprofile</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
