@@ -353,6 +353,7 @@ class JsonFormatter implements MeterRegistryFormatter {
         private static MetricOutputBuilder create(Meter meter) {
             return meter instanceof Counter
                     || meter instanceof io.helidon.metrics.api.Gauge
+                    || meter instanceof FunctionalCounter
                     ? new Flat(meter)
                     : new Structured(meter);
         }
@@ -405,6 +406,10 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                     String nameWithTags = flatNameAndTags(meter().id());
                     addNarrowed(builder, nameWithTags, gauge.value());
+                    return;
+                }
+                if (meter() instanceof FunctionalCounter fCounter) {
+                    builder.add(flatNameAndTags(meter().id()), fCounter.count());
                     return;
                 }
                 throw new IllegalArgumentException("Attempt to format meter with structured data as flat JSON "
