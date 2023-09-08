@@ -31,7 +31,16 @@ class ScopeConfigSupport {
      */
     @Prototype.PrototypeMethod
     static boolean isMeterEnabled(ScopeConfig scopeConfig, String name) {
-        // TODO actually do the filtering using the include and exclude patterns
-        return scopeConfig.enabled();
+        /*
+         The following must be true for the meter to be enabled:
+
+         1. The scope itself must be enabled (that's the default).
+         2. If there is an exclude pattern, the name must not match it.
+         3. If there is an include pattern, the name must match it.
+         */
+        return scopeConfig.enabled()
+                && scopeConfig.exclude().map(excludePattern -> !excludePattern.matcher(name).matches()).orElse(true)
+                && scopeConfig.include().map(includePattern -> includePattern.matcher(name).matches()).orElse(true);
+
     }
 }
