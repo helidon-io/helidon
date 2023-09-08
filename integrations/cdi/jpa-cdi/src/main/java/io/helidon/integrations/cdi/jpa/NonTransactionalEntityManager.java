@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,6 +69,16 @@ class NonTransactionalEntityManager extends DelegatingEntityManager {
      * Constructors.
      */
 
+
+    /**
+     * Creates a new {@link NonTransactionalEntityManager}.
+     *
+     * @deprecated For use by CDI only.
+     */
+    @Deprecated // For use by CDI only
+    NonTransactionalEntityManager() {
+        super();
+    }
 
     /**
      * Creates a new {@link NonTransactionalEntityManager}.
