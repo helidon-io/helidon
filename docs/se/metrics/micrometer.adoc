@@ -162,7 +162,7 @@ MicrometerSupport support = MicrometerSupport.builder()
 include::{rootdir}/includes/metrics/micrometer-shared.adoc[tag=overriding-using-config]
 
 
-=== Enrolling Other Micrometer meter registries
+=== Enrolling Other Micrometer Meter Registries
 To create additional types of registries and enroll them with `MicrometerSupport`, you need to:
 
 . Write a `Handler` +
