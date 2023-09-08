@@ -442,21 +442,21 @@ class JsonFormatter implements MeterRegistryFormatter {
                 children.forEach(child -> {
                     Meter.Id childID = child.id();
 
-                    if (meter() instanceof Counter typedChild) {
+                    if (child instanceof Counter typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                    } else if (meter() instanceof DistributionSummary typedChild) {
+                    } else if (child instanceof DistributionSummary typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                         sameNameBuilder.add(valueId("max", childID), typedChild.snapshot().max());
                         sameNameBuilder.add(valueId("mean", childID), typedChild.snapshot().mean());
                         sameNameBuilder.add(valueId("total", childID), typedChild.totalAmount());
-                    } else if (meter() instanceof Timer typedChild) {
+                    } else if (child instanceof Timer typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
                         sameNameBuilder.add(valueId("elapsedTime", childID), typedChild.totalTime(TimeUnit.SECONDS));
                         sameNameBuilder.add(valueId("max", childID), typedChild.max(TimeUnit.SECONDS));
                         sameNameBuilder.add(valueId("mean", childID), typedChild.mean(TimeUnit.SECONDS));
-                    } else if (meter() instanceof FunctionalCounter typedChild) {
+                    } else if (child instanceof FunctionalCounter typedChild) {
                         sameNameBuilder.add(valueId("count", childID), typedChild.count());
-                    } else if (meter() instanceof Gauge typedChild) {
+                    } else if (child instanceof Gauge typedChild) {
                         MetricOutputBuilder.addNarrowed(sameNameBuilder, valueId("value", childID), typedChild.value());
                     } else {
                         throw new IllegalArgumentException("Unrecognized meter type "

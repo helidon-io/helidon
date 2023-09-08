@@ -32,30 +32,25 @@ import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 class KeyPerformanceIndicatorMetricsImpls {
 
     /**
+     * Name for metric recording number of requests currently deferred (received but not yet processing).
+     */
+    public static final String DEFERRED_NAME = "deferred";
+    /**
      * Name for metric counting total requests received.
      */
     static final String REQUESTS_COUNT_NAME = "count";
-
     /**
      * Name for metric recording current number of requests being processed.
      */
     static final String INFLIGHT_REQUESTS_NAME = "inFlight";
-
     /**
      * Name for metric recording rate of requests with processing time exceeding a threshold.
      */
     static final String LONG_RUNNING_REQUESTS_NAME = "longRunning";
-
     /**
      * Name for metric recording number requests currently being processed.
      */
     static final String LOAD_NAME = "load";
-
-    /**
-     * Name for metric recording number of requests currently deferred (received but not yet processing).
-     */
-    public static final String DEFERRED_NAME = "deferred";
-
     static final String KPI_METERS_SCOPE = Meter.Scope.VENDOR;
 
     private static final Map<String, KeyPerformanceIndicatorSupport.Metrics> KPI_METRICS = new HashMap<>();
@@ -66,8 +61,9 @@ class KeyPerformanceIndicatorMetricsImpls {
     /**
      * Provides a KPI metrics instance.
      *
-     * @param meterNamePrefix prefix to use for the created metrics (e.g., "requests")
-     * @param kpiConfig         KPI metrics config which may influence the construction of the metrics
+     * @param kpiMeterRegistry meter registry holding the KPI metrics
+     * @param meterNamePrefix  prefix to use for the created metrics (e.g., "requests")
+     * @param kpiConfig        KPI metrics config which may influence the construction of the metrics
      * @return properly prepared new KPI metrics instance
      */
     static KeyPerformanceIndicatorSupport.Metrics get(MeterRegistry kpiMeterRegistry,
@@ -127,18 +123,16 @@ class KeyPerformanceIndicatorMetricsImpls {
      */
     private static class Extended extends Basic {
 
+        protected static final String LOAD_DESCRIPTION =
+                "Measures the total number of in-flight requests over the life of the server";
         private final Gauge inflightRequests;
         private final DeferredRequests deferredRequests;
         private final Counter longRunningRequests;
         private final Counter load;
-        private final long longRunningRequestThresdholdMs;
         // The deferred-requests metric is derived from load and totalCount, so no need to have a reference to update
         // it directly.
-
+        private final long longRunningRequestThresdholdMs;
         private AtomicInteger inflightRequestsCount = new AtomicInteger();
-
-        protected static final String LOAD_DESCRIPTION =
-                "Measures the total number of in-flight requests over the life of the server";
 
         protected Extended(MeterRegistry kpiMeterRegistry,
                            String meterNamePrefix,
@@ -151,22 +145,26 @@ class KeyPerformanceIndicatorMetricsImpls {
             this.longRunningRequestThresdholdMs = longRunningRequestThreshold.toMillis();
 
             inflightRequests = kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + INFLIGHT_REQUESTS_NAME,
-                                                                                      inflightRequestsCount,
-                                                                                      AtomicInteger::get));
+                                                                          inflightRequestsCount,
+                                                                          AtomicInteger::get)
+                                                                    .scope(KPI_METERS_SCOPE));
 
             longRunningRequests = kpiMeterRegistry.getOrCreate(
                     Counter.builder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
                             .description("Measures the total number of long-running requests and rates at which they occur")
+                            .scope(KPI_METERS_SCOPE)
             );
 
             load = kpiMeterRegistry.getOrCreate(Counter.builder(meterNamePrefix + LOAD_NAME)
-                    .description(LOAD_DESCRIPTION));
+                                                        .description(LOAD_DESCRIPTION)
+                                                        .scope(KPI_METERS_SCOPE));
 
             deferredRequests = new DeferredRequests();
             kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + DEFERRED_NAME,
                                                        deferredRequests,
                                                        DeferredRequests::value)
-                                              .description("Measures deferred requests"));
+                                                 .description("Measures deferred requests")
+                                                 .scope(KPI_METERS_SCOPE));
         }
 
         @Override
