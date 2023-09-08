@@ -103,9 +103,9 @@
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
         <version.lib.micrometer>1.11.3</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.11.3</version.lib.micrometer-prometheus>
-        <version.lib.micronaut>3.4.3</version.lib.micronaut>
-        <version.lib.micronaut.data>3.3.0</version.lib.micronaut.data>
-        <version.lib.micronaut.sql>4.4.0</version.lib.micronaut.sql>
+        <version.lib.micronaut>3.8.7</version.lib.micronaut>
+        <version.lib.micronaut.data>3.4.3</version.lib.micronaut.data>
+        <version.lib.micronaut.sql>4.8.0</version.lib.micronaut.sql>
         <!-- FIXME upgrade to 3.1 when it is released in Maven -->
         <version.lib.microprofile-config>3.0.3</version.lib.microprofile-config>
         <!-- FIXME upgrade to 4.1 when it is released in Maven -->
@@ -1250,10 +1250,6 @@
                     <exclusion>
                         <groupId>com.google.code.findbugs</groupId>
                         <artifactId>jsr305</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.validation</groupId>
-                        <artifactId>validation-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
