@@ -108,17 +108,16 @@ class MainTest {
                 .get();
 
         if (params.metricsEnabled) {
-            // TODO metrics
-//            assertThat("port " + port + " (" + params.socketName + ") should be serving metrics",
-//                       response.getStatusInfo().toEnum(), is(Response.Status.OK));
-//
-//            response = baseTarget.path(METRICS_URI)
-//                    .path(DISABLED_METRIC)
-//                    .request(MediaType.APPLICATION_JSON_TYPE)
-//                    .get();
-//
-//            assertThat("Metric " + DISABLED_METRIC + " should be disabled by configuration",
-//                       response.getStatusInfo().toEnum(), is(Response.Status.NOT_FOUND));
+            assertThat("port " + port + " (" + params.socketName + ") should be serving metrics",
+                       response.getStatusInfo().toEnum(), is(Response.Status.OK));
+
+            response = baseTarget.path(METRICS_URI)
+                    .path(DISABLED_METRIC)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get();
+
+            assertThat("Metric " + DISABLED_METRIC + " should be disabled by configuration",
+                       response.getStatusInfo().toEnum(), is(Response.Status.NOT_FOUND));
         } else {
             assertThat("port " + port + " (" + params.socketName + ") should NOT be serving metrics",
                        response.getStatusInfo().toEnum(), is(Response.Status.NOT_FOUND));
