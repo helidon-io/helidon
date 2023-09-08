@@ -61,7 +61,7 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 == Configuration
 
-Configure the WebServer either programmatically, or by the Helidon configuration framework.
+You can configure the WebServer either programmatically or by the Helidon configuration framework.
 
 === Configuring the WebServer in Your Code
 
@@ -902,7 +902,7 @@ To enable Access logging add the following dependency to project's `pom.xml`:
 ----
 
 
-=== Configuring Access Log in your code
+=== Configuring Access Log in Your Code
 
 Access log is configured in your code by registering it as a service with `Routing`
 
@@ -915,7 +915,7 @@ Routing.builder()
 
 The order of registration is significant - make sure `AccessLogSupport` is registered first (even before security, tracing etc.).
 
-=== Configuring Access Log in a configuration file
+=== Configuring Access Log in a Configuration File
 
 Access log can be configured as follows:
 
