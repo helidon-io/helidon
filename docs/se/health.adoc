@@ -441,7 +441,7 @@ Routing defaultRouting = Routing.builder()
         .build();
 
 WebServer server = WebServer.builder(defaultRouting)
-        .config(ServerConfiguration.builder()
+        .config(WebServer.builder()
                 .port(8080) // <6>
                 .addSocket("health", SocketConfiguration.builder() // <7>
                         .port(8081)
