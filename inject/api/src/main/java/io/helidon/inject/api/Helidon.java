@@ -28,7 +28,9 @@ import io.helidon.logging.common.LogConfig;
  *
  * @see #start()
  * @see #serviceRegistry()
+ * @deprecated this type may have backward incompatible changes, as it is considered a preview feature of Helidon!
  */
+@Deprecated(since = "4.0.0")
 public class Helidon {
     private static final System.Logger LOGGER = System.getLogger(Helidon.class.getName());
     private static final ReentrantReadWriteLock REENTRANT_READ_WRITE_LOCK = new ReentrantReadWriteLock();
