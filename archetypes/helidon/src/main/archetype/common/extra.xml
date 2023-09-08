@@ -104,7 +104,7 @@ java -cp "target/classes:target/libs/*" {{package}}.WebClientMain PORT
                                 <map>
                                     <value key="groupId">io.helidon.metrics</value>
                                     <value key="artifactId">helidon-metrics</value>
-                                    <value key="scope">compile</value>
+                                    <value key="scope">runtime</value>
                                 </map>
                             </list>
                             <list key="modules">
