@@ -28,7 +28,6 @@ import jakarta.ws.rs.client.Invocation;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -39,15 +38,13 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 
-// TODO metrics
-@Disabled
 @HelidonTest()
 // Set up the metrics endpoint on its own socket
 @AddConfig(key = "server.sockets.0.name", value = "metrics")
 // No port setting, so use any available one
 @AddConfig(key = "server.sockets.0.bind-address", value = "0.0.0.0")
 @AddConfig(key = "metrics.routing", value = "metrics")
-@AddConfig(key = "metrics.key-performance-indicators.isExtended", value = "true")
+@AddConfig(key = "metrics.key-performance-indicators.extended", value = "true")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class TestMetricsOnOwnSocket {
 
