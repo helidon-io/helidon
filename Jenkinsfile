@@ -40,4 +40,9 @@ pipeline {
       }
     }
   }
+  post {
+    always {
+        archiveArtifacts artifacts: 'parent/target/nexus-staging/**'
+    }
+  }
 }
