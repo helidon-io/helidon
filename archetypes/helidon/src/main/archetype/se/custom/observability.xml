@@ -44,14 +44,6 @@
                 <value>.addFeature(observe)</value>
             </list>
             <list key="dependencies">
-                <map if="${metrics}">
-                    <value key="groupId">io.helidon.webserver.observe</value>
-                    <value key="artifactId">helidon-webserver-observe-metrics</value>
-                </map>
-                <map if="${metrics}">
-                    <value key="groupId">io.helidon.metrics</value>
-                    <value key="artifactId">helidon-metrics</value>
-                </map>
                 <map if="${tracing}">
                     <value key="groupId">io.helidon.webserver</value>
                     <value key="artifactId">helidon-webserver-tracing</value>
