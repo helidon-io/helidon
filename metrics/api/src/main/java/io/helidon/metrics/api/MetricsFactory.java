@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -310,21 +311,23 @@ public interface MetricsFactory {
      * @return corresponding no-op meter
      */
     default Meter noOpMeter(Meter.Builder<?, ?> builder) {
+        NoOpMeter.Builder<?, ?> noOpBuilder;
         if (builder instanceof Counter.Builder cb) {
-            return NoOpMeter.Counter.builder(cb.name()).build();
+            noOpBuilder = NoOpMeter.Counter.builder(cb.name());
+        } else if (builder instanceof FunctionalCounter.Builder fcb) {
+            noOpBuilder = NoOpMeter.FunctionalCounter.builder(fcb.name(), fcb.stateObject(), fcb.fn());
+        } else if (builder instanceof DistributionSummary.Builder sb) {
+            noOpBuilder = NoOpMeter.DistributionSummary.builder(sb.name());
+        } else if (builder instanceof Gauge.Builder gb) {
+            noOpBuilder = NoOpMeter.Gauge.builder(gb.name(), gb.supplier());
+        } else if (builder instanceof Timer.Builder tb) {
+            noOpBuilder = NoOpMeter.Timer.builder(tb.name());
+        } else {
+            throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        if (builder instanceof FunctionalCounter.Builder fcb) {
-            return NoOpMeter.FunctionalCounter.builder(fcb.name(), fcb.stateObject(), fcb.fn()).build();
-        }
-        if (builder instanceof DistributionSummary.Builder sb) {
-            return NoOpMeter.DistributionSummary.builder(sb.name()).build();
-        }
-        if (builder instanceof Gauge.Builder gb) {
-            return NoOpMeter.Gauge.builder(gb.name(), gb.supplier()).build();
-        }
-        if (builder instanceof Timer.Builder tb) {
-            return NoOpMeter.Timer.builder(tb.name()).build();
-        }
-        throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
+        SystemTagsManager.instance()
+                .effectiveScope(builder.scope())
+                .ifPresent(noOpBuilder::scope);
+        return noOpBuilder.build();
     }
 }

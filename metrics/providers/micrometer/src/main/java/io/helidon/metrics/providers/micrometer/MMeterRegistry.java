@@ -244,10 +244,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return scopeMembership.keySet();
     }
 
-    // TODO enhance after adding back the filtering config
     @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
-        return metricsConfig.enabled();
+        return metricsConfig.enabled()
+                && (scope.isEmpty()
+                    || metricsConfig.isMeterEnabled(name, scope.get()));
     }
 
     @Override
@@ -392,7 +393,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         try {
 
             if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
-                return metricsFactory.noOpMeter(builder);
+                lock.lock();
+                try {
+                    io.helidon.metrics.api.Meter result = metricsFactory.noOpMeter(builder);
+                    onAddListeners.forEach(listener -> listener.accept(result));
+                    return result;
+                } finally {
+                    lock.unlock();
+                }
             }
 
             io.helidon.metrics.api.Meter helidonMeter;
