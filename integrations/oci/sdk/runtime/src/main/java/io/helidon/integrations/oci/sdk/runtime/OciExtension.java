@@ -16,6 +16,7 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -220,7 +221,7 @@ public final class OciExtension {
         Path ociConfigFilePath = Paths.get(ociConfigFilename());
         boolean ociConfigResourceExists = (OciExtension.class.getClassLoader().getResource(ociConfigFile) != null);
         if (fallbackConfigSupplier != null
-                && !(ociConfigResourceExists || ociConfigFilePath.toFile().exists())) {
+                && !(ociConfigResourceExists || Files.exists(ociConfigFilePath))) {
             return fallbackConfigSupplier;
         }
 
