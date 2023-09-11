@@ -29,6 +29,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
@@ -78,9 +79,9 @@ public class Main {
      * @param routing routing builder
      */
     public static void firstRouting(HttpRouting.Builder routing) {
-        routing.post("/firstRouting/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
+        routing.post("/firstRouting/post-endpoint", (req, res) -> res.status(Status.CREATED_201)
                         .send())
-                .get("/firstRouting/get-endpoint", (req, res) -> res.status(Http.Status.OK_200)
+                .get("/firstRouting/get-endpoint", (req, res) -> res.status(Status.OK_200)
                         .send("Hello World!"));
     }
 
@@ -110,9 +111,9 @@ public class Main {
                     // Filters are just routing handlers which calls next()
                     res.next();
                 })
-                .post("/routingAsFilter/post-endpoint", (req, res) -> res.status(Http.Status.CREATED_201)
+                .post("/routingAsFilter/post-endpoint", (req, res) -> res.status(Status.CREATED_201)
                         .send())
-                .get("/routingAsFilter/get-endpoint", (req, res) -> res.status(Http.Status.OK_200)
+                .get("/routingAsFilter/get-endpoint", (req, res) -> res.status(Status.OK_200)
                         .send("Hello World!"));
     }
 
@@ -201,7 +202,7 @@ public class Main {
                         System.out.println("/foo DATA: " + data);
                         res.send(data);
                     } catch (Throwable th) {
-                        res.status(Http.Status.BAD_REQUEST_400);
+                        res.status(Status.BAD_REQUEST_400);
                     }
                 })
                 // It is possible to use Handler.of() method to automatically cover all error states.
@@ -220,7 +221,7 @@ public class Main {
     public static void mediaReader(HttpRouting.Builder routing, MediaContextConfig.Builder mediaContext) {
         routing.post("/mediaReader/create-record", Handler.create(Name.class, (name, res) -> {
             System.out.println("Name: " + name);
-            res.status(Http.Status.CREATED_201)
+            res.status(Status.CREATED_201)
                     .send(name.toString());
         }));
 
@@ -267,9 +268,9 @@ public class Main {
                     res.next();
                 })
                 .error(NumberFormatException.class,
-                        (req, res, ex) -> res.status(Http.Status.BAD_REQUEST_400).send())
+                        (req, res, ex) -> res.status(Status.BAD_REQUEST_400).send())
                 .error(ArithmeticException.class,
-                        (req, res, ex) -> res.status(Http.Status.PRECONDITION_FAILED_412).send());
+                        (req, res, ex) -> res.status(Status.PRECONDITION_FAILED_412).send());
     }
 
 

@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -34,8 +35,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import org.junit.jupiter.api.RepeatedTest;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
-import static io.helidon.http.Http.Status.INTERNAL_SERVER_ERROR_500;
-import static io.helidon.http.Http.Status.OK_200;
+import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
+import static io.helidon.http.Status.OK_200;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -99,7 +100,7 @@ class KeepAliveTest {
     private static HttpClientResponse testCall(Http1Client client,
                                                boolean keepAlive,
                                                String path,
-                                               Http.Status expectedStatus) {
+                                               Status expectedStatus) {
 
         Http1ClientRequest request = client.method(Method.PUT)
                 .uri(path);

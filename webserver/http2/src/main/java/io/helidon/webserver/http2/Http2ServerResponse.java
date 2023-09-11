@@ -26,6 +26,7 @@ import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2Flag.DataFlags;
@@ -178,7 +179,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private final Http2StreamWriter writer;
         private final int streamId;
         private final FlowControl.Outbound flowControl;
-        private final Http.Status status;
+        private final Status status;
         private final Runnable responseCloseRunnable;
 
         private BufferData firstBuffer;
@@ -190,7 +191,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                      Http2StreamWriter writer,
                                      int streamId,
                                      FlowControl.Outbound flowControl,
-                                     Http.Status status,
+                                     Status status,
                                      Runnable responseCloseRunnable) {
 
             this.headers = headers;

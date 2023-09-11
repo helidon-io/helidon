@@ -33,6 +33,7 @@ import io.helidon.cors.LogHelper.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 
 import static io.helidon.cors.LogHelper.DECISION_LEVEL;
 import static java.lang.Character.isDigit;
@@ -325,7 +326,7 @@ public class CorsSupportHelper<Q, R> {
         if (requestType == RequestType.CORS) {
             // Aggregator knows only about expect paths. If response is 404, use an ad hoc cross-origin config for the given
             // origin and method, thus allowing the 404 to pass through the CORS handling in the client.
-            CrossOriginConfig crossOrigin = responseAdapter.status() == Http.Status.NOT_FOUND_404.code()
+            CrossOriginConfig crossOrigin = responseAdapter.status() == Status.NOT_FOUND_404.code()
                 ? CrossOriginConfig.builder()
                     .allowOrigins(requestAdapter.firstHeader(Http.HeaderNames.ORIGIN).orElse("*"))
                     .allowMethods(requestAdapter.method())

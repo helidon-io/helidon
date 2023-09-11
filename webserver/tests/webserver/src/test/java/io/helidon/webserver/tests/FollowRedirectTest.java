@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -35,7 +36,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Status.INTERNAL_SERVER_ERROR_500;
+import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,19 +53,19 @@ class FollowRedirectTest {
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
         router.route(Method.PUT, "/infiniteRedirect", (req, res) -> {
-            res.status(Http.Status.TEMPORARY_REDIRECT_307)
+            res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(Http.HeaderNames.LOCATION, "/infiniteRedirect2")
                     .send();
         }).route(Method.PUT, "/infiniteRedirect2", (req, res) -> {
-            res.status(Http.Status.TEMPORARY_REDIRECT_307)
+            res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(Http.HeaderNames.LOCATION, "/infiniteRedirect")
                     .send();
         }).route(Method.PUT, "/redirect", (req, res) -> {
-            res.status(Http.Status.TEMPORARY_REDIRECT_307)
+            res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(Http.HeaderNames.LOCATION, "/plain")
                     .send();
         }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
-            res.status(Http.Status.FOUND_302)
+            res.status(Status.FOUND_302)
                     .header(Http.HeaderNames.LOCATION, "/plain")
                     .send();
         }).route(Method.PUT, "/plain", (req, res) -> {
@@ -86,7 +87,7 @@ class FollowRedirectTest {
                 while ((read = in.read(buffer)) > 0) {
                     BUFFER.append("\n").append(new String(buffer, 0, read));
                 }
-                res.status(Http.Status.SEE_OTHER_303)
+                res.status(Status.SEE_OTHER_303)
                         .header(Http.HeaderNames.LOCATION, "/afterUpload")
                         .send();
             } catch (Exception e) {

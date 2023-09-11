@@ -16,23 +16,23 @@
 
 package io.helidon.examples.webserver.basics;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Http;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Status.BAD_REQUEST_400;
-import static io.helidon.http.Http.Status.CREATED_201;
-import static io.helidon.http.Http.Status.INTERNAL_SERVER_ERROR_500;
-import static io.helidon.http.Http.Status.OK_200;
-import static io.helidon.http.Http.Status.PRECONDITION_FAILED_412;
+import static io.helidon.http.Status.BAD_REQUEST_400;
+import static io.helidon.http.Status.CREATED_201;
+import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
+import static io.helidon.http.Status.OK_200;
+import static io.helidon.http.Status.PRECONDITION_FAILED_412;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;

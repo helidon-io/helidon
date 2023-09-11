@@ -20,8 +20,8 @@ import java.util.List;
 
 import io.helidon.common.buffers.DataListener;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 
 /**
@@ -62,6 +62,6 @@ public interface Http1ConnectionListener extends DataListener<ConnectionContext>
      * @param ctx    context
      * @param status status
      */
-    default void status(ConnectionContext ctx, Http.Status status) {
+    default void status(ConnectionContext ctx, Status status) {
     }
 }

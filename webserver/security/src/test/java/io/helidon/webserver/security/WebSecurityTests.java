@@ -19,6 +19,7 @@ package io.helidon.webserver.security;
 import java.util.Set;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -99,7 +100,7 @@ abstract class WebSecurityTests {
     @Test
     void basicTest401() {
         try (Http1ClientResponse response = webClient.get("/noRoles").request()) {
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
 
             String header = response.headers()
                     .first(Http.HeaderNames.WWW_AUTHENTICATE)
@@ -110,7 +111,7 @@ abstract class WebSecurityTests {
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
 
             String header = response.headers()
                     .first(Http.HeaderNames.WWW_AUTHENTICATE)
@@ -123,7 +124,7 @@ abstract class WebSecurityTests {
     @Test
     void testCustomizedAudit() {
         try (Http1ClientResponse response = webClient.get("/auditOnly").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         // audit
@@ -137,7 +138,7 @@ abstract class WebSecurityTests {
         try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
                     response.status(),
-                    is(Http.Status.FORBIDDEN_403));
+                    is(Status.FORBIDDEN_403));
         }
     }
 
@@ -149,7 +150,7 @@ abstract class WebSecurityTests {
 
         try (HttpClientResponse response = callProtected(uri, username, password)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             String entity = response.entity().as(String.class);
 

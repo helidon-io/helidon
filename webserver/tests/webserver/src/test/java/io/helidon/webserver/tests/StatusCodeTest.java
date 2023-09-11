@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
@@ -49,7 +49,7 @@ class StatusCodeTest {
     @Test
     void testCode() {
         try (HttpClientResponse response = client.method(Method.GET).request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
 }

@@ -20,8 +20,8 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Status;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;

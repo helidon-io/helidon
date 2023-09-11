@@ -19,7 +19,7 @@ package io.helidon.webclient.http1;
 import java.util.NoSuchElementException;
 
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
@@ -108,7 +108,7 @@ public final class UpgradeResponse {
         }
 
         @Override
-        public Http.Status status() {
+        public Status status() {
             return delegate.status();
         }
 

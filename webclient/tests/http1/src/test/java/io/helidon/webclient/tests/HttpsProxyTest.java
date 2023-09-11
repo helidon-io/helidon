@@ -23,7 +23,7 @@ import java.net.ProxySelector;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
@@ -182,7 +182,7 @@ class HttpsProxyTest {
 
     private void successVerify(Proxy proxy, HttpClient<?> client) {
         try (HttpClientResponse response = client.get("/get").proxy(proxy).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
         }
@@ -190,7 +190,7 @@ class HttpsProxyTest {
 
     private void noProxyChecks(HttpClient<?> client) {
         try (HttpClientResponse response = client.get("/get").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
         }

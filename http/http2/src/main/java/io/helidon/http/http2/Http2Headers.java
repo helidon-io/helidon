@@ -33,6 +33,7 @@ import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -210,7 +211,7 @@ public class Http2Headers {
      *
      * @return status or null if none defined
      */
-    public Http.Status status() {
+    public Status status() {
         return pseudoHeaders.status();
     }
 
@@ -369,7 +370,7 @@ public class Http2Headers {
      * @param status status to use
      * @return updated headers
      */
-    public Http2Headers status(Http.Status status) {
+    public Http2Headers status(Status status) {
         pseudoHeaders.status(status);
         return this;
     }
@@ -385,20 +386,20 @@ public class Http2Headers {
         // first write pseudoheaders
         if (pseudoHeaders.hasStatus()) {
             StaticHeader indexed = null;
-            Http.Status status = pseudoHeaders.status();
-            if (status == Http.Status.OK_200) {
+            Status status = pseudoHeaders.status();
+            if (status == Status.OK_200) {
                 indexed = StaticHeader.STATUS_200;
-            } else if (status == Http.Status.NO_CONTENT_204) {
+            } else if (status == Status.NO_CONTENT_204) {
                 indexed = StaticHeader.STATUS_204;
-            } else if (status == Http.Status.PARTIAL_CONTENT_206) {
+            } else if (status == Status.PARTIAL_CONTENT_206) {
                 indexed = StaticHeader.STATUS_206;
-            } else if (status == Http.Status.NOT_MODIFIED_304) {
+            } else if (status == Status.NOT_MODIFIED_304) {
                 indexed = StaticHeader.STATUS_304;
-            } else if (status == Http.Status.BAD_REQUEST_400) {
+            } else if (status == Status.BAD_REQUEST_400) {
                 indexed = StaticHeader.STATUS_400;
-            } else if (status == Http.Status.NOT_FOUND_404) {
+            } else if (status == Status.NOT_FOUND_404) {
                 indexed = StaticHeader.STATUS_404;
-            } else if (status == Http.Status.INTERNAL_SERVER_ERROR_500) {
+            } else if (status == Status.INTERNAL_SERVER_ERROR_500) {
                 indexed = StaticHeader.STATUS_500;
             }
             if (indexed == null) {
@@ -1296,7 +1297,7 @@ public class Http2Headers {
         private Method method;
         private String path;
         private String scheme;
-        private Http.Status status;
+        private Status status;
         private int size;
 
         public int size() {
@@ -1343,10 +1344,10 @@ public class Http2Headers {
         }
 
         void status(String status) {
-            status(Http.Status.create(Integer.parseInt(status)));
+            status(Status.create(Integer.parseInt(status)));
         }
 
-        PseudoHeaders status(Http.Status status) {
+        PseudoHeaders status(Status status) {
             this.status = status;
             size++;
             return this;
@@ -1388,7 +1389,7 @@ public class Http2Headers {
             return status != null;
         }
 
-        Http.Status status() {
+        Status status() {
             return status;
         }
     }

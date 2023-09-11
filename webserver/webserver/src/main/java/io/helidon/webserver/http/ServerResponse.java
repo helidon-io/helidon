@@ -25,6 +25,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.spi.Sink;
 
 /**
@@ -37,7 +38,7 @@ public interface ServerResponse {
      * @param status HTTP status
      * @return this instance
      */
-    ServerResponse status(Http.Status status);
+    ServerResponse status(Status status);
 
     /**
      * Status of the response.
@@ -46,15 +47,15 @@ public interface ServerResponse {
      * @return this instance
      */
     default ServerResponse status(int status) {
-        return status(Http.Status.create(status));
+        return status(Status.create(status));
     }
 
     /**
-     * Configured HTTP status, if not configured, returns {@link Http.Status#OK_200}.
+     * Configured HTTP status, if not configured, returns {@link io.helidon.http.Status#OK_200}.
      *
      * @return status
      */
-    Http.Status status();
+    Status status();
 
     /**
      * Set a header. If the values are constant, please use
@@ -171,7 +172,7 @@ public interface ServerResponse {
     ServerResponse reroute(String path, UriQuery query);
 
     /**
-     * Continue processing with the next route (and if none found, return a {@link Http.Status#NOT_FOUND_404}).
+     * Continue processing with the next route (and if none found, return a {@link io.helidon.http.Status#NOT_FOUND_404}).
      * If any entity method was called, this method will throw an exception.
      *
      * @return this instance

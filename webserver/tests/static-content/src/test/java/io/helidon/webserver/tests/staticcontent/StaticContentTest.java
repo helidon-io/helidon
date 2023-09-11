@@ -16,13 +16,13 @@
 
 package io.helidon.webserver.tests.staticcontent;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.staticcontent.StaticContentService;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -70,7 +70,7 @@ class StaticContentTest {
     void testNotFound() {
         try (Http1ClientResponse response = client.get("/files/notThere")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 
@@ -78,7 +78,7 @@ class StaticContentTest {
     void testOutOfDirectory() {
         try (Http1ClientResponse response = client.get("/files/../logging-test.properties")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 }

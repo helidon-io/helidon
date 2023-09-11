@@ -28,6 +28,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -96,7 +97,7 @@ class PostTest {
                 .uri("/string")
                 .submit("Hello");
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         String entity = response.entity().as(String.class);
         assertThat(entity, is("Hello"));
         Headers headers = response.headers();
@@ -110,7 +111,7 @@ class PostTest {
                 .uri("/bytes")
                 .submit(BYTES);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         byte[] entity = response.entity().as(byte[].class);
         assertThat(entity, is(BYTES));
         Headers headers = response.headers();
@@ -127,7 +128,7 @@ class PostTest {
                     outputStream.close();
                 });
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         byte[] entity = response.entity().as(byte[].class);
         assertThat(entity, is(BYTES));
     }
@@ -140,7 +141,7 @@ class PostTest {
                 .header(REQUEST_HEADER_VALUE)
                 .submit("Hello");
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         String entity = response.entity().as(String.class);
         assertThat(entity, is("Hello"));
         Headers headers = response.headers();
@@ -156,14 +157,14 @@ class PostTest {
                 .uri("/close")
                 .submit("Hello");
 
-        assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+        assertThat(response.status(), is(Status.NO_CONTENT_204));
         String entity = response.entity().as(String.class);
         assertThat(entity, is(""));
     }
 
     private static class Routes {
         public static void close(ServerRequest req, ServerResponse res) {
-            res.status(Http.Status.NO_CONTENT_204);
+            res.status(Status.NO_CONTENT_204);
             res.send();
         }
 

@@ -34,6 +34,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http1.Http1Route;
@@ -150,7 +151,7 @@ class Http2WebClientTest {
                             res.send("POST " + req.content().as(String.class));
                         }))
                         .route(Http2Route.route(GET, "/versionspecific/h2streaming", (req, res) -> {
-                            res.status(Http.Status.OK_200);
+                            res.status(Status.OK_200);
                             String execId = req.query().get("execId");
                             try (OutputStream os = res.outputStream()) {
                                 for (int i = 0; i < 5; i++) {
@@ -190,7 +191,7 @@ class Http2WebClientTest {
                 .queryParam("custQueryParam", "test-get")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("HTTP/2 route"));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
                        is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
@@ -211,7 +212,7 @@ class Http2WebClientTest {
                 .header(CLIENT_CUSTOM_HEADER_NAME, custHeaderValue)
                 .submit(payload)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("PUT " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
                        is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));
@@ -234,7 +235,7 @@ class Http2WebClientTest {
                 .header(CLIENT_CUSTOM_HEADER_NAME, custHeaderValue)
                 .submit(payload)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("POST " + payload));
             assertThat(response.headers().get(CLIENT_USER_AGENT_HEADER_NAME).value(),
                        is(Http2ClientRequestImpl.USER_AGENT_HEADER.value()));

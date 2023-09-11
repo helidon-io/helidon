@@ -24,6 +24,7 @@ import io.helidon.http.Http.Header;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -65,7 +66,7 @@ class StringTest {
                 .request();
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type plain/text; charset=UTF-8",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaTypes.PLAINTEXT_UTF_8))),
@@ -78,7 +79,7 @@ class StringTest {
                 .request();
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type plain/text; charset=ISO_8859_2",
                                  response.headers().contentType(),
                                  is(Optional.of(TEXT_ISO_8859_2))),
@@ -92,7 +93,7 @@ class StringTest {
                 .submit(UTF_8_TEXT);
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type plain/text; charset=UTF-8",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaTypes.PLAINTEXT_UTF_8))),

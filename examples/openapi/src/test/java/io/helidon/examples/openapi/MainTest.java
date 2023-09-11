@@ -18,14 +18,14 @@ package io.helidon.examples.openapi;
 
 import java.util.Map;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.examples.openapi.internal.SimpleAPIModelReader;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -79,7 +79,7 @@ public class MainTest {
         }
 
         try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
 
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {

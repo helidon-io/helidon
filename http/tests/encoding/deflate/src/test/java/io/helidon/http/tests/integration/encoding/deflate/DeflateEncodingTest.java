@@ -33,6 +33,7 @@ import java.util.zip.InflaterInputStream;
 
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http2.Http2Client;
@@ -91,7 +92,7 @@ class DeflateEncodingTest {
                                        (req, res) -> {
                                            String entity = req.content().as(String.class);
                                            if (!ENTITY.equals(entity)) {
-                                               res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
+                                               res.status(Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
                                            } else {
                                                res.send(entity);
                                            }
@@ -101,7 +102,7 @@ class DeflateEncodingTest {
                                         (req, res) -> {
                                             String entity = req.content().as(String.class);
                                             if (!ENTITY.equals(entity)) {
-                                                res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
+                                                res.status(Status.INTERNAL_SERVER_ERROR_500).send("Wrong data");
                                             } else {
                                                 res.send(entity);
                                             }
@@ -145,7 +146,7 @@ class DeflateEncodingTest {
                 .submit(DEFLATED_ENTITY, String.class);
 
         Assertions.assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat(response.entity(), is(ENTITY)),
                 () -> assertThat(response.headers(), hasHeader(CONTENT_ENCODING_DEFLATE))
         );

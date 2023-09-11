@@ -20,7 +20,7 @@ import java.util.Formatter;
 import java.util.Optional;
 
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 /**
  * Exception when invoking remote REST API caused by wrong response from the API call.
@@ -31,7 +31,7 @@ import io.helidon.http.Http;
  */
 public abstract class ApiRestException extends ApiException {
     private final String requestId;
-    private final Http.Status status;
+    private final Status status;
     private final Headers headers;
     private final String apiSpecificError;
 
@@ -54,7 +54,7 @@ public abstract class ApiRestException extends ApiException {
      *
      * @return status
      */
-    public Http.Status status() {
+    public Status status() {
         return status;
     }
 
@@ -94,7 +94,7 @@ public abstract class ApiRestException extends ApiException {
     public abstract static class BaseBuilder<B extends BaseBuilder<B>> {
         private String message;
         private String requestId;
-        private Http.Status status;
+        private Status status;
         private Headers headers;
         private String apiSpecificError;
         private Throwable cause;
@@ -139,7 +139,7 @@ public abstract class ApiRestException extends ApiException {
          * @param status returned status
          * @return updated builder
          */
-        public B status(Http.Status status) {
+        public B status(Status status) {
             this.status = status;
             return me();
         }

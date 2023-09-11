@@ -25,6 +25,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.RoutedPath;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.ServerRequest;
@@ -84,7 +85,7 @@ public class EchoMain {
                 OutputStream outputStream = res.outputStream()) {
             inputStream.transferTo(outputStream);
         } catch (Exception e) {
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("failed: " + e.getMessage());
+            res.status(Status.INTERNAL_SERVER_ERROR_500).send("failed: " + e.getMessage());
         }
     }
 }

@@ -17,6 +17,7 @@ package io.helidon.webserver.tests;
 
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
@@ -64,7 +65,7 @@ class ContentEncodingDisabledTest extends ContentEncodingDisabledAbstract {
         try (Http1ClientResponse response = client().method(Method.POST)
                 .header(Http.HeaderNames.CONTENT_ENCODING, "data")
                 .submit("any")) {
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
             assertThat(response.as(String.class), is("Content-Encoding header present when content encoding is disabled"));
         }
     }

@@ -17,6 +17,7 @@
 package io.helidon.examples.security.google;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 
@@ -40,7 +41,7 @@ public abstract class GoogleMainTest {
     public void testEndpoint() {
         try (Http1ClientResponse response = client.get("/rest/profile").request()) {
 
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
             assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Bearer realm=\"helidon\",scope=\"openid profile email\"")));
         }

@@ -39,6 +39,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -545,7 +546,7 @@ public final class SecurityHandler implements Handler {
         } catch (Exception e) {
             tracing.error(e);
             LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", e);
-            abortRequest(res, null, Http.Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
+            abortRequest(res, null, Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
         }
 
         // auditing
@@ -671,7 +672,7 @@ public final class SecurityHandler implements Handler {
 
         abortRequest(res,
                      response,
-                     Http.Status.UNAUTHORIZED_401.code(),
+                     Status.UNAUTHORIZED_401.code(),
                      Map.of(Http.HeaderNames.WWW_AUTHENTICATE,
                             List.of("Basic realm=\"Security Realm\"")));
         return true;
@@ -682,7 +683,7 @@ public final class SecurityHandler implements Handler {
             LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
             return false;
         } else {
-            int defaultStatusCode = Http.Status.UNAUTHORIZED_401.code();
+            int defaultStatusCode = Status.UNAUTHORIZED_401.code();
 
             abortRequest(res, response, defaultStatusCode, Map.of());
             return true;
@@ -690,7 +691,7 @@ public final class SecurityHandler implements Handler {
     }
 
     private void atnFinish(ServerResponse res, AuthenticationResponse response) {
-        int defaultStatusCode = Http.Status.OK_200.code();
+        int defaultStatusCode = Status.OK_200.code();
         abortRequest(res, response, defaultStatusCode, Map.of());
     }
 
@@ -718,7 +719,7 @@ public final class SecurityHandler implements Handler {
             httpHeaders.set(entry.getKey(), entry.getValue());
         }
 
-        res.status(Http.Status.create(statusCode));
+        res.status(Status.create(statusCode));
         res.send();
     }
 
@@ -750,14 +751,14 @@ public final class SecurityHandler implements Handler {
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
                     auditRoleMissing(context, req.path(), context.user(), rolesSet);
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
+                    abortRequest(res, null, Status.FORBIDDEN_403.code(), Map.of());
                     atzTracing.finish();
                     return AtxResult.STOP;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
                     auditRoleMissing(context, req.path(), context.user(), rolesSet);
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
+                    abortRequest(res, null, Status.FORBIDDEN_403.code(), Map.of());
                     atzTracing.finish();
                     return AtxResult.STOP;
                 }
@@ -781,8 +782,8 @@ public final class SecurityHandler implements Handler {
             case FAILURE_FINISH:
             case SUCCESS_FINISH:
                 int defaultStatus = (response.status() == AuthenticationResponse.SecurityStatus.FAILURE_FINISH)
-                        ? Http.Status.FORBIDDEN_403.code()
-                        : Http.Status.OK_200.code();
+                        ? Status.FORBIDDEN_403.code()
+                        : Status.OK_200.code();
 
                 atzTracing.finish();
                 abortRequest(res, response, defaultStatus, Map.of());
@@ -790,7 +791,7 @@ public final class SecurityHandler implements Handler {
             case ABSTAIN:
             case FAILURE:
                 atzTracing.finish();
-                abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), Map.of());
+                abortRequest(res, response, Status.FORBIDDEN_403.code(), Map.of());
                 return AtxResult.STOP;
             default:
                 throw new SecurityException("Invalid SecurityStatus returned: " + response.status());

@@ -37,6 +37,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -97,7 +98,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                           WebClientServiceRequest serviceRequest,
                                                           ClientConnection connection,
                                                           DataReader reader,
-                                                          Http.Status responseStatus,
+                                                          Status responseStatus,
                                                           ClientResponseHeaders responseHeaders,
                                                           CompletableFuture<WebClientServiceResponse> whenComplete) {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
@@ -207,7 +208,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                                     ClientConnection connection,
                                                     DataReader reader) {
-        Http.Status responseStatus;
+        Status responseStatus;
         try {
             responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
         } catch (UncheckedIOException e) {
@@ -266,11 +267,11 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
     }
 
-    private static boolean mayHaveEntity(Http.Status responseStatus, ClientResponseHeaders responseHeaders) {
+    private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
         if (responseHeaders.contains(Http.Headers.CONTENT_LENGTH_ZERO)) {
             return false;
         }
-        if (responseStatus == Http.Status.NO_CONTENT_204) {
+        if (responseStatus == Status.NO_CONTENT_204) {
             return false;
         }
         if ((

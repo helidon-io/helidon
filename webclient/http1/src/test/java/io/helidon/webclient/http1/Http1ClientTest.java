@@ -41,6 +41,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -265,7 +266,7 @@ class Http1ClientTest {
                 ? getHttp1ClientResponseFromOutputStream(request, new String[] {"Sending Something"})
                 : request.submit("Sending Something");
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         StringTokenizer st = new StringTokenizer(connection.getPrologue(), " ");
         // skip method part
         st.nextToken();
@@ -300,7 +301,7 @@ class Http1ClientTest {
         request.connection(new FakeHttp1ClientConnection());
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
         }
@@ -320,7 +321,7 @@ class Http1ClientTest {
         request.header(header);
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
         }
@@ -340,9 +341,9 @@ class Http1ClientTest {
         request.connection(new FakeHttp1ClientConnection());
         HttpClientResponse response = request.submit("Sending Something");
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
         }
     }
 
@@ -360,7 +361,7 @@ class Http1ClientTest {
         String headerNameAndValue = headerName + HEADER_NAME_VALUE_DELIMETER + headerValue;
         if (expectsValid) {
             HttpClientResponse response = request.submit(headerNameAndValue);
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
@@ -380,7 +381,7 @@ class Http1ClientTest {
         Http1ClientRequest request = clientWithNoHeaderValidation.put("http://localhost:" + dummyPort + BAD_HEADER_PATH);
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = request.submit(headerName + HEADER_NAME_VALUE_DELIMETER + headerValue);
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
@@ -393,7 +394,7 @@ class Http1ClientTest {
         }
         Http1ClientResponse response = request.submit(requestEntity);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity().as(String.class), is(requestEntity));
     }
 
@@ -410,7 +411,7 @@ class Http1ClientTest {
     }
 
     private static void validateChunkTransfer(Http1ClientResponse response, boolean chunked, long contentLength, String entity) {
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         if (contentLength == NO_CONTENT_LENGTH) {
             assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
         } else {

@@ -24,6 +24,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
@@ -121,7 +122,7 @@ class WebSecurityBuilderGateDefaultsTest {
         // as then audit is called twice - first time with 401 (challenge) and second time with 200 (correct request)
         // and that intermittently breaks this test
         try (Http1ClientResponse response = webClient.get("/auditOnly").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
 
         // audit
@@ -168,10 +169,10 @@ class WebSecurityBuilderGateDefaultsTest {
     void basicTest401() {
         try (Http1ClientResponse response = webClient.get("/noRoles").request()) {
 
-            if (response.status() != Http.Status.UNAUTHORIZED_401) {
+            if (response.status() != Status.UNAUTHORIZED_401) {
                 assertThat("Response received: " + response.entity().as(String.class),
                         response.status(),
-                        is(Http.Status.UNAUTHORIZED_401));
+                        is(Status.UNAUTHORIZED_401));
             }
 
             assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
@@ -179,7 +180,7 @@ class WebSecurityBuilderGateDefaultsTest {
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
             assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
@@ -190,7 +191,7 @@ class WebSecurityBuilderGateDefaultsTest {
         try (HttpClientResponse response = callProtected(uri, username, password)) {
             assertThat(uri + " for user " + username + " should be forbidden",
                     response.status(),
-                    is(Http.Status.FORBIDDEN_403));
+                    is(Status.FORBIDDEN_403));
         }
     }
 
@@ -202,7 +203,7 @@ class WebSecurityBuilderGateDefaultsTest {
 
         String entity;
         try (HttpClientResponse response = callProtected(uri, username, password)) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             entity = response.entity().as(String.class);
 

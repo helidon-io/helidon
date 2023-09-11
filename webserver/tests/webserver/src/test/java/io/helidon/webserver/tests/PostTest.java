@@ -28,6 +28,7 @@ import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.Handler;
@@ -84,7 +85,7 @@ class PostTest {
                 .uri("/string")
                 .submit("Hello")) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             headers = response.headers();
@@ -100,7 +101,7 @@ class PostTest {
                 .uri("/bytes")
                 .submit(BYTES)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
             headers = response.headers();
@@ -120,7 +121,7 @@ class PostTest {
                     outputStream.close();
                 })) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
             headers = response.headers();
@@ -137,7 +138,7 @@ class PostTest {
                 .header(REQUEST_HEADER_VALUE)
                 .submit("Hello")) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             headers = response.headers();
@@ -155,7 +156,7 @@ class PostTest {
                 .uri("/close")
                 .submit("Hello")) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
             assertThrows(IllegalStateException.class, () -> response.entity().as(String.class));
             headers = response.headers();
         }
@@ -165,7 +166,7 @@ class PostTest {
     private static class Routes {
         public static void close(ServerRequest req, ServerResponse res) {
             res.header(Headers.CONNECTION_CLOSE);
-            res.status(Http.Status.NO_CONTENT_204);
+            res.status(Status.NO_CONTENT_204);
             res.send();
         }
 

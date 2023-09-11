@@ -17,7 +17,7 @@ package io.helidon.webserver.cors;
 
 import java.util.Date;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -59,7 +59,7 @@ class TestUtil {
 
         void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
             String msg = String.format("%s %s!", greeting, new Date().toString());
-            response.status(Http.Status.OK_200);
+            response.status(Status.OK_200);
             response.send(msg);
         }
 

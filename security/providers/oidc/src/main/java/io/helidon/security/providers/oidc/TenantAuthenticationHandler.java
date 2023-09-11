@@ -36,6 +36,7 @@ import io.helidon.common.Errors;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -124,7 +125,7 @@ class TenantAuthenticationHandler {
                 OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);
 
                 try (HttpClientResponse response = post.submit(form.build())) {
-                    if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                    if (response.status().family() == Status.Family.SUCCESSFUL) {
                         try {
                             JsonObject jsonObject = response.as(JsonObject.class);
                             if (!jsonObject.getBoolean("active")) {
@@ -211,7 +212,7 @@ class TenantAuthenticationHandler {
                                 LOGGER.log(System.Logger.Level.DEBUG, "Invalid token in cookie", e);
                             }
                             return errorResponse(providerRequest,
-                                                 Http.Status.UNAUTHORIZED_401,
+                                                 Status.UNAUTHORIZED_401,
                                                  null,
                                                  "Invalid token",
                                                  tenantId);
@@ -229,7 +230,7 @@ class TenantAuthenticationHandler {
         } else {
             LOGGER.log(System.Logger.Level.DEBUG, () -> "Missing token, could not find in either of: " + missingLocations);
             return errorResponse(providerRequest,
-                                 Http.Status.UNAUTHORIZED_401,
+                                 Status.UNAUTHORIZED_401,
                                  null,
                                  "Missing token, could not find in either of: "
                                          + missingLocations,
@@ -265,7 +266,7 @@ class TenantAuthenticationHandler {
     }
 
     private AuthenticationResponse errorResponse(ProviderRequest providerRequest,
-                                                 Http.Status status,
+                                                 Status status,
                                                  String code,
                                                  String description,
                                                  String tenantId) {
@@ -319,7 +320,7 @@ class TenantAuthenticationHandler {
             return AuthenticationResponse
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
-                    .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
+                    .statusCode(Status.TEMPORARY_REDIRECT_307.code())
                     .description("Redirecting to identity server: " + description)
                     .responseHeader("Location", authorizationEndpoint + queryString)
                     .build();
@@ -354,7 +355,7 @@ class TenantAuthenticationHandler {
         }
     }
 
-    private AuthenticationResponse errorResponseNoRedirect(String code, String description, Http.Status status) {
+    private AuthenticationResponse errorResponseNoRedirect(String code, String description, Status status) {
         if (optional) {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.ABSTAIN)
@@ -364,7 +365,7 @@ class TenantAuthenticationHandler {
         if (null == code) {
             return AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE)
-                    .statusCode(Http.Status.UNAUTHORIZED_401.code())
+                    .statusCode(Status.UNAUTHORIZED_401.code())
                     .responseHeader(HeaderNames.WWW_AUTHENTICATE.defaultCase(),
                                     "Bearer realm=\"" + tenantConfig.realm() + "\"")
                     .description(description)
@@ -466,7 +467,7 @@ class TenantAuthenticationHandler {
                 return AuthenticationResponse.success(subject);
             } else {
                 return errorResponse(providerRequest,
-                                     Http.Status.FORBIDDEN_403,
+                                     Status.FORBIDDEN_403,
                                      "insufficient_scope",
                                      "Scopes " + missingScopes + " are missing",
                                      tenantId);
@@ -478,7 +479,7 @@ class TenantAuthenticationHandler {
                 validationErrors.log(LOGGER);
             }
             return errorResponse(providerRequest,
-                                 Http.Status.UNAUTHORIZED_401,
+                                 Status.UNAUTHORIZED_401,
                                  "invalid_token",
                                  "Token not valid",
                                  tenantId);

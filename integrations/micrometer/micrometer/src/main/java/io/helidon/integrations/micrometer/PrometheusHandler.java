@@ -19,8 +19,8 @@ package io.helidon.integrations.micrometer;
 import java.io.StringWriter;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -57,7 +57,7 @@ class PrometheusHandler implements Handler {
             MicrometerPrometheusRegistrySupport.metadata(writer, registry);
             res.send(writer.toString());
         } else {
-            res.status(Http.Status.NOT_IMPLEMENTED_501)
+            res.status(Status.NOT_IMPLEMENTED_501)
                     .send();
         }
     }

@@ -17,11 +17,12 @@
 package io.helidon.metrics.prometheus;
 
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Counter;
@@ -82,7 +83,7 @@ public class PrometheusSupportTest {
     @Test
     public void simpleCall() {
         try (Http1ClientResponse response = client.get("/metrics").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null),
                     StringStartsWith.startsWith("text/plain"));
             String body = response.as(String.class);
@@ -115,7 +116,7 @@ public class PrometheusSupportTest {
     @Test
     public void filter() {
         try (Http1ClientResponse response = client.get("/metrics").queryParam("name[]", "alpha").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String body = response.as(String.class);
             assertThat(body, not(containsString("# TYPE beta")));
             assertThat(body, not(containsString("beta_total 3.0")));

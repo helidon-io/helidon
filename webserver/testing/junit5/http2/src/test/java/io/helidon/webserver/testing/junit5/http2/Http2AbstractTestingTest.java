@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.testing.junit5.http2;
 
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.http.HttpRules;
@@ -52,7 +52,7 @@ abstract class Http2AbstractTestingTest {
         ClientResponseTyped<String> response = httpClient.get("/greet")
                 .request(String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("hello"));
     }
 
@@ -61,7 +61,7 @@ abstract class Http2AbstractTestingTest {
         ClientResponseTyped<String> response = customClient.get("/greet")
                 .request(String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("custom"));
     }
 }

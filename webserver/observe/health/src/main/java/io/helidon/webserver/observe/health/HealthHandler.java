@@ -23,7 +23,7 @@ import java.util.List;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.http.HtmlEncoder;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.http.Handler;
@@ -77,10 +77,10 @@ class HealthHandler implements Handler {
             }
         }
 
-        Http.Status responseStatus = switch (status) {
-            case UP -> details ? Http.Status.OK_200 : Http.Status.NO_CONTENT_204;
-            case DOWN -> Http.Status.SERVICE_UNAVAILABLE_503;
-            case ERROR -> Http.Status.INTERNAL_SERVER_ERROR_500;
+        Status responseStatus = switch (status) {
+            case UP -> details ? Status.OK_200 : Status.NO_CONTENT_204;
+            case DOWN -> Status.SERVICE_UNAVAILABLE_503;
+            case ERROR -> Status.INTERNAL_SERVER_ERROR_500;
         };
 
         res.status(responseStatus);

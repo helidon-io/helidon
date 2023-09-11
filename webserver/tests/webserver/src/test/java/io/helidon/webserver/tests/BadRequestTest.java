@@ -25,6 +25,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.DirectHandlers;
@@ -100,7 +101,7 @@ class BadRequestTest {
                                                       null,
                                                       List.of("Content-Length: 47a"));
 
-        assertThat(SocketHttpClient.statusFromResponse(response), is(Http.Status.TEMPORARY_REDIRECT_307));
+        assertThat(SocketHttpClient.statusFromResponse(response), is(Status.TEMPORARY_REDIRECT_307));
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(response);
         assertThat(headers, hasHeader(LOCATION_ERROR_PAGE));
@@ -148,18 +149,18 @@ class BadRequestTest {
 
     private static DirectHandler.TransportResponse badRequestHandler(DirectHandler.TransportRequest request,
                                                                      DirectHandler.EventType eventType,
-                                                                     Http.Status httpStatus,
+                                                                     Status httpStatus,
                                                                      ServerResponseHeaders responseHeaders,
                                                                      String message) {
         if (request.path().equals("/redirect")) {
             return DirectHandler.TransportResponse.builder()
-                    .status(Http.Status.TEMPORARY_REDIRECT_307)
+                    .status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, "/errorPage")
                     .build();
         }
         return DirectHandler.TransportResponse.builder()
-                .status(Http.Status.create(Http.Status.BAD_REQUEST_400.code(),
-                                           CUSTOM_REASON_PHRASE))
+                .status(Status.create(Status.BAD_REQUEST_400.code(),
+                                      CUSTOM_REASON_PHRASE))
                 .headers(responseHeaders)
                 .entity(CUSTOM_ENTITY)
                 .build();

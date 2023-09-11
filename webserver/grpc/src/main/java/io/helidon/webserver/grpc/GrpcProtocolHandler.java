@@ -166,7 +166,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 writable.set(GRPC_ENCODING_IDENTITY);
 
                 Http2Headers http2Headers = Http2Headers.create(writable);
-                http2Headers.status(Http.Status.OK_200);
+                http2Headers.status(io.helidon.http.Status.OK_200);
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
@@ -209,7 +209,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     writable.set(Http.Headers.create(GrpcStatus.MESSAGE_NAME, description));
                 }
 
-                Http2Headers http2Headers = Http2Headers.create(writable).status(Http.Status.OK_200);
+                Http2Headers http2Headers = Http2Headers.create(writable).status(io.helidon.http.Status.OK_200);
                 streamWriter.writeHeaders(http2Headers,
                                           streamId,
                                           Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),

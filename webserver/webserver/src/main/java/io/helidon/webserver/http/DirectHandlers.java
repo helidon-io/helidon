@@ -23,6 +23,7 @@ import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.Http;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
 
 import static java.lang.System.Logger.Level.WARNING;
@@ -83,7 +84,7 @@ public class DirectHandlers {
                 httpException.responseHeaders(),
                 httpException);
 
-        Http.Status usedStatus;
+        Status usedStatus;
 
         res.status(response.status());
         response.headers()
@@ -110,7 +111,7 @@ public class DirectHandlers {
 
         usedStatus = response.status();
 
-        if (usedStatus == Http.Status.INTERNAL_SERVER_ERROR_500) {
+        if (usedStatus == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", httpException);
         }
     }

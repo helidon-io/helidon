@@ -28,6 +28,7 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Status;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -316,7 +317,7 @@ public class TracingFeature implements HttpFeature, Weighted {
 
                 Contexts.runInContext(context, chain::proceed);
 
-                Http.Status status = res.status();
+                Status status = res.status();
                 span.tag(Tag.HTTP_STATUS.create(status.code()));
 
                 if (status.code() >= 400) {

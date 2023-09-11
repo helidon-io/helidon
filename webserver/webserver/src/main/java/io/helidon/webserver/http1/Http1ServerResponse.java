@@ -37,6 +37,7 @@ import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
@@ -97,13 +98,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     static void nonEntityBytes(ServerResponseHeaders headers,
-                               Http.Status status,
+                               Status status,
                                BufferData buffer,
                                boolean keepAlive,
                                boolean validateHeaders) {
 
         // first write status
-        if (status == null || status == Http.Status.OK_200) {
+        if (status == null || status == Status.OK_200) {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
@@ -243,7 +244,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
         }
         // Request not acceptable if provider not found
-        throw new HttpException("Unable to find sink provider for request", Http.Status.NOT_ACCEPTABLE_406);
+        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {
@@ -304,7 +305,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
         }
 
-        Http.Status usedStatus = status();
+        Status usedStatus = status();
         sendListener.status(ctx, usedStatus);
         sendListener.headers(ctx, headers);
 
@@ -333,7 +334,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static class BlockingOutputStream extends OutputStream {
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
-        private final Supplier<Http.Status> status;
+        private final Supplier<Status> status;
         private final DataWriter dataWriter;
         private final Runnable responseCloseRunnable;
         private final ConnectionContext ctx;
@@ -355,7 +356,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      WritableHeaders<?> trailers,
-                                     Supplier<Http.Status> status,
+                                     Supplier<Status> status,
                                      Supplier<String> streamResult,
                                      DataWriter dataWriter,
                                      Runnable responseCloseRunnable,
@@ -485,7 +486,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
-                    Http.Status usedStatus = status.get();
+                    Status usedStatus = status.get();
                     sendListener.status(ctx, usedStatus);
                     sendListener.headers(ctx, headers);
                     // write headers and payload part in one buffer to avoid TCP/ACK delay problems
@@ -541,7 +542,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
 
             // at this moment, we must send headers
-            Http.Status usedStatus = status.get();
+            Status usedStatus = status.get();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
@@ -574,7 +575,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             // at this moment, we must send headers
-            Http.Status usedStatus = status.get();
+            Status usedStatus = status.get();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);

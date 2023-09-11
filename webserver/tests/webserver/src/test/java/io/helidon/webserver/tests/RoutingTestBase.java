@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -61,7 +62,7 @@ class RoutingTestBase {
     void testRouteWithSpace() {
         try (Http1ClientResponse response = client.get("/my path").request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             String message = response.as(String.class);
             assertThat(message, is("done"));
@@ -72,7 +73,7 @@ class RoutingTestBase {
     void testRouteWithUtf8() {
         try (Http1ClientResponse response = client.get("/českáCesta").request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             String message = response.as(String.class);
             assertThat(message, is("done"));
@@ -83,7 +84,7 @@ class RoutingTestBase {
     @MethodSource("basic")
     void testHttpShortcutMethods(Function<String, Http1ClientRequest> request, String path, String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(responseMessage));
         }
     }
@@ -94,7 +95,7 @@ class RoutingTestBase {
                                                    String path,
                                                    String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(responseMessage));
         }
     }
@@ -105,7 +106,7 @@ class RoutingTestBase {
                                                 String path,
                                                 String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(responseMessage));
         }
     }
@@ -116,7 +117,7 @@ class RoutingTestBase {
                                                   String path,
                                                   String responseMessage) {
         try (Http1ClientResponse response = request.apply(path).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(MULTI_HANDLER));
             assertThat(response.as(String.class), is(responseMessage));
         }

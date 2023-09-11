@@ -50,11 +50,11 @@ import jakarta.json.JsonValue;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
 
-import static io.helidon.http.Http.Status.CREATED_201;
-import static io.helidon.http.Http.Status.GONE_410;
-import static io.helidon.http.Http.Status.NOT_FOUND_404;
-import static io.helidon.http.Http.Status.OK_200;
-import static io.helidon.http.Http.Status.PRECONDITION_FAILED_412;
+import static io.helidon.http.Status.CREATED_201;
+import static io.helidon.http.Status.GONE_410;
+import static io.helidon.http.Status.NOT_FOUND_404;
+import static io.helidon.http.Status.OK_200;
+import static io.helidon.http.Status.PRECONDITION_FAILED_412;
 
 /**
  * LRA coordinator with Narayana like rest api.

@@ -48,6 +48,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 
 /**
  * A definition of a proxy server to use for outgoing requests.
@@ -479,7 +480,7 @@ public class Proxy {
         proxy.proxyAuthHeader.ifPresent(request::header);
         // we cannot close the response, as that would close the connection
         HttpClientResponse response = request.request();
-        if (response.status().family() != Http.Status.Family.SUCCESSFUL) {
+        if (response.status().family() != Status.Family.SUCCESSFUL) {
             response.close();
             throw new IllegalStateException("Proxy sent wrong HTTP response code: " + response.status());
         }

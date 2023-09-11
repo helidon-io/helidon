@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.ServerCdiExtension;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -89,7 +89,7 @@ public class TestMetricsOnOwnSocket {
                 .request(MediaType.TEXT_PLAIN_TYPE)
                 .get()) {
 
-            assertThat("Response code getting greeting", r.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat("Response code getting greeting", r.getStatus(), is(Status.OK_200.code()));
         }
     }
 
@@ -103,7 +103,7 @@ public class TestMetricsOnOwnSocket {
 
     private int getRequestsLoadCount(String descr) {
         try (Response r = metricsInvocation().invoke()) {
-            assertThat(descr + " metrics sampling response", r.getStatus(), is(Http.Status.OK_200.code()));
+            assertThat(descr + " metrics sampling response", r.getStatus(), is(Status.OK_200.code()));
 
             JsonObject metrics = r.readEntity(JsonObject.class);
             assertThat("Check for requests.load", metrics.containsKey("requests.load"), is(true));

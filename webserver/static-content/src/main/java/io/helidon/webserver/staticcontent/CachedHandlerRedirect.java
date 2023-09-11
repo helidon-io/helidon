@@ -22,6 +22,7 @@ import io.helidon.common.configurable.LruCache;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -41,7 +42,7 @@ record CachedHandlerRedirect(String location) implements CachedHandler {
             locationWithQuery = location() + "?" + query.rawValue();
         }
 
-        response.status(Http.Status.MOVED_PERMANENTLY_301);
+        response.status(Status.MOVED_PERMANENTLY_301);
         response.headers().set(Http.HeaderNames.LOCATION, locationWithQuery);
         response.send();
         return true;

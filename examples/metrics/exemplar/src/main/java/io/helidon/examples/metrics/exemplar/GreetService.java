@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -123,13 +123,13 @@ public class GreetService implements HttpService {
             JsonObject jsonErrorObject = JSON.createObjectBuilder()
                     .add("error", "No greeting provided")
                     .build();
-            response.status(Http.Status.BAD_REQUEST_400)
+            response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
         greeting.set(jo.getString("greeting"));
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**

@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
@@ -47,7 +47,7 @@ class Status204Test {
         rules.get("/", (req, res) -> res.send("test"))
                 .put("/", (req, res) -> {
                     String ignored = req.content().as(String.class);
-                    res.status(Http.Status.NO_CONTENT_204).send();
+                    res.status(Status.NO_CONTENT_204).send();
                 });
     }
 
@@ -56,7 +56,7 @@ class Status204Test {
         try (HttpClientResponse response = client.method(Method.PUT)
                 .submit("test call")) {
 
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
 
         assertThat(client.get().requestEntity(String.class), is("test"));

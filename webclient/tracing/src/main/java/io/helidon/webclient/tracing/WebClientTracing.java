@@ -24,6 +24,7 @@ import java.util.function.Function;
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
@@ -97,13 +98,13 @@ public class WebClientTracing implements WebClientService {
 
         try {
             WebClientServiceResponse response = chain.proceed(request);
-            Http.Status status = response.status();
+            Status status = response.status();
             span.tag(Tag.HTTP_STATUS.create(status.code()));
 
-            Http.Status.Family family = status.family();
+            Status.Family family = status.family();
 
             if (status.code() >= 400) {
-                String errorKind = family == Http.Status.Family.CLIENT_ERROR ? "ClientError" : "ServerError";
+                String errorKind = family == Status.Family.CLIENT_ERROR ? "ClientError" : "ServerError";
                 span.addEvent("error", Map.of("message", "Response HTTP status: " + status,
                                               "error.kind", errorKind));
 

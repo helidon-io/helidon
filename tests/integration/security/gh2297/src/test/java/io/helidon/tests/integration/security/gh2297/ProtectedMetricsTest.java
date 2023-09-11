@@ -18,7 +18,7 @@ package io.helidon.tests.integration.security.gh2297;
 
 import java.util.Base64;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.Server;
 
 import jakarta.ws.rs.client.Client;
@@ -81,7 +81,7 @@ class ProtectedMetricsTest {
         Response response = metricTarget.request()
                 .get();
 
-        assertThat(response.getStatus(), is(Http.Status.UNAUTHORIZED_401.code()));
+        assertThat(response.getStatus(), is(Status.UNAUTHORIZED_401.code()));
     }
 
     // TODO metrics
@@ -91,7 +91,7 @@ class ProtectedMetricsTest {
                 .header("Authorization", basic("success"))
                 .get();
 
-        assertThat(response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat(response.getStatus(), is(Status.OK_200.code()));
     }
 
     @Test
@@ -100,7 +100,7 @@ class ProtectedMetricsTest {
                 .header("Authorization", basic("fail"))
                 .get();
 
-        assertThat(response.getStatus(), is(Http.Status.FORBIDDEN_403.code()));
+        assertThat(response.getStatus(), is(Status.FORBIDDEN_403.code()));
     }
 
     private String basic(String user) {

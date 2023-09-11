@@ -32,6 +32,7 @@ import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
@@ -55,7 +56,7 @@ class AccessLogFeatureTest {
     private static final String PATH = "/greet/World";
     private static final String HTTP_VERSION = "HTTP/1.1";
 
-    private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT_418.code();
+    private static final int STATUS_CODE = Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "0";
     private static final long TIME_TAKEN_MICROS = 1140000;
     private static final Http.Header REFERER_HEADER = Http.Headers.create(HeaderNames.REFERER, "first", "second");
@@ -87,7 +88,7 @@ class AccessLogFeatureTest {
         when(request.prologue()).thenReturn(prologue);
 
         RoutingResponse response = mock(RoutingResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
+        when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
         AccessLogContext accessLogContext = mock(AccessLogContext.class);
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
@@ -137,7 +138,7 @@ class AccessLogFeatureTest {
         when(request.prologue()).thenReturn(prologue);
 
         RoutingResponse response = mock(RoutingResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
+        when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
         AccessLogContext accessLogContext = mock(AccessLogContext.class);
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
@@ -183,7 +184,7 @@ class AccessLogFeatureTest {
         when(request.headers()).thenReturn(ServerRequestHeaders.create(headers));
 
         RoutingResponse response = mock(RoutingResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
+        when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
         String logRecord = accessLog.createLogRecord(request,
                                                      response,

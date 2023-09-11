@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -101,14 +102,14 @@ public class ObjectStorageService implements HttpService {
 
         if (getObjectResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GetObjectResponse is empty");
-            response.status(Http.Status.NOT_FOUND_404).send();
+            response.status(Status.NOT_FOUND_404).send();
             return;
         }
 
         try (InputStream fileStream = getObjectResponse.getInputStream()) {
             byte[] objectContent = fileStream.readAllBytes();
             response
-                    .status(Http.Status.OK_200)
+                    .status(Status.OK_200)
                     .header(Http.HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
                     .header(Http.HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
@@ -116,7 +117,7 @@ public class ObjectStorageService implements HttpService {
             response.send(objectContent);
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GetObjectResponse", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
         }
     }
 
@@ -141,12 +142,12 @@ public class ObjectStorageService implements HttpService {
                             .build();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error creating PutObjectRequest", e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
         PutObjectResponse putObjectResponse = objectStorageClient.putObject(putObjectRequest);
 
-        response.status(Http.Status.OK_200).header("opc-request-id", putObjectResponse.getOpcRequestId());
+        response.status(Status.OK_200).header("opc-request-id", putObjectResponse.getOpcRequestId());
 
         response.send();
     }
@@ -164,7 +165,7 @@ public class ObjectStorageService implements HttpService {
                 .bucketName(bucketName)
                 .objectName(fileName)
                 .build());
-        response.status(Http.Status.OK_200).header("opc-request-id", deleteObjectResponse.getOpcRequestId());
+        response.status(Status.OK_200).header("opc-request-id", deleteObjectResponse.getOpcRequestId());
 
         response.send();
     }

@@ -30,6 +30,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -100,7 +101,7 @@ class Http2ServerTest {
         Http1ClientResponse response = http1Client.get("/")
                 .request();
 
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
     }
 
     @Test

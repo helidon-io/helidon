@@ -16,10 +16,10 @@
 
 package io.helidon.http;
 
-import static io.helidon.http.Http.Status.UNAUTHORIZED_401;
+import static io.helidon.http.Status.UNAUTHORIZED_401;
 
 /**
- * A runtime exception indicating a {@link Http.Status#UNAUTHORIZED_401 unauthorized}.
+ * A runtime exception indicating a {@link Status#UNAUTHORIZED_401 unauthorized}.
  */
 public class UnauthorizedException extends HttpException {
 

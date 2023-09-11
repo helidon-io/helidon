@@ -17,7 +17,7 @@
 package io.helidon.webclient.api;
 
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 /**
  * Http client response base.
@@ -28,7 +28,7 @@ interface ClientResponseBase {
      *
      * @return status
      */
-    Http.Status status();
+    Status status();
 
     /**
      * Response headers.

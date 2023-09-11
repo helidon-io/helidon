@@ -18,6 +18,7 @@ package io.helidon.webserver.cors;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
@@ -25,9 +26,9 @@ import io.helidon.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
+import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -42,7 +43,7 @@ class TestDefaultCorsSupport {
         }
 
         rules.get("/greet", (req, res) -> res.send("Hello World!"))
-                .options("/greet", (req, res) -> res.status(Http.Status.OK_200).send());
+                .options("/greet", (req, res) -> res.status(Status.OK_200).send());
     }
 
     @Test

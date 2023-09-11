@@ -25,9 +25,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.ReadablePart;
 import io.helidon.http.media.multipart.WriteableMultiPart;
@@ -97,7 +97,7 @@ class MultipartTest {
                 .path("/multipart")
                 .submit(multiPart)) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(FIRST_PART_NAME + ":" + FIRST_PART_CONTENT + ","
                                                              + SECOND_PART_NAME + ":" + SECOND_PART_CONTENT));
         }
@@ -107,7 +107,7 @@ class MultipartTest {
     void testReadMultipart() throws IOException {
         try (Http1ClientResponse response = client.get("/multipart")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             MultiPart mp = response.as(MultiPart.class);
 
             ReadablePart part = mp.next();

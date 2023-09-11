@@ -17,6 +17,7 @@
 package io.helidon.examples.webserver.staticcontent;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -58,7 +59,7 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         routing.any("/", (req, res) -> {
                     // showing the capability to run on any path, and redirecting from root
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.status(Status.MOVED_PERMANENTLY_301);
                     res.headers().set(UI_REDIRECT);
                     res.send();
                 })

@@ -32,6 +32,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
@@ -52,7 +53,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private final AtomicBoolean closed = new AtomicBoolean();
 
-    private final Http.Status responseStatus;
+    private final Status responseStatus;
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;
     private final InputStream inputStream;
@@ -70,7 +71,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private WritableHeaders<?> trailers;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
-                            Http.Status responseStatus,
+                            Status responseStatus,
                             ClientRequestHeaders requestHeaders,
                             ClientResponseHeaders responseHeaders,
                             ClientConnection connection,
@@ -104,7 +105,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         return responseStatus;
     }
 

@@ -38,6 +38,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.config.mp.Prioritized;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.cdi.RuntimeStart;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.ListenerConfig;
@@ -481,7 +482,7 @@ public class ServerCdiExtension implements Extension {
         Optional.ofNullable(basePath)
                 .or(() -> config.get("server.base-path").asString().asOptional())
                 .ifPresent(basePath -> routingBuilder.any("/", (req, res) -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.status(Status.MOVED_PERMANENTLY_301);
                     res.headers().set(Http.HeaderNames.LOCATION, basePath);
                     res.send();
                 }));

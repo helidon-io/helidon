@@ -32,6 +32,7 @@ import java.util.Random;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -94,7 +95,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofString("Hello"))
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();
@@ -116,7 +117,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofByteArray(BYTES))
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -138,7 +139,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofByteArray(BYTES))
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -162,7 +163,7 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofString("Hello"))
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();
@@ -192,12 +193,12 @@ class PostTest {
                                                             .POST(HttpRequest.BodyPublishers.ofString("Hello"))
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.NO_CONTENT_204.code()));
+        assertThat(response.statusCode(), is(Status.NO_CONTENT_204.code()));
     }
 
     private static class Routes {
         public static void noContent(ServerRequest req, ServerResponse res) {
-            res.status(Http.Status.NO_CONTENT_204);
+            res.status(Status.NO_CONTENT_204);
             res.send();
         }
 

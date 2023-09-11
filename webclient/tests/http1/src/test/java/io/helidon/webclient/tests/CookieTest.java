@@ -16,9 +16,10 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -75,7 +76,7 @@ class CookieTest {
     @Order(1)
     void testCookieGet() {
         try (Http1ClientResponse response = client.get("/cookie").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 
@@ -83,7 +84,7 @@ class CookieTest {
     @Order(2)
     void testCookiePut() {
         try (Http1ClientResponse response = client.put("/cookie").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 
@@ -91,7 +92,7 @@ class CookieTest {
     @Order(3)
     void testCookieGetAfterPut() {
         try (Http1ClientResponse response = client.get("/cookie").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 
@@ -102,12 +103,12 @@ class CookieTest {
                     && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
                     && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
                 res.header(Http.HeaderNames.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
-                res.status(Http.Status.OK_200).send();
+                res.status(Status.OK_200).send();
             } else {
-                res.status(Http.Status.BAD_REQUEST_400).send();
+                res.status(Status.BAD_REQUEST_400).send();
             }
         } else {
-            res.status(Http.Status.BAD_REQUEST_400).send();
+            res.status(Status.BAD_REQUEST_400).send();
         }
     }
 
@@ -123,12 +124,12 @@ class CookieTest {
                 res.header(Http.HeaderNames.SET_COOKIE,
                         "flavor1=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0",
                         "flavor2=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0");
-                res.status(Http.Status.OK_200).send();
+                res.status(Status.OK_200).send();
             } else {
-                res.status(Http.Status.BAD_REQUEST_400).send();
+                res.status(Status.BAD_REQUEST_400).send();
             }
         } else {
-            res.status(Http.Status.BAD_REQUEST_400).send();
+            res.status(Status.BAD_REQUEST_400).send();
         }
     }
 }

@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -182,8 +183,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                 redirectUri.port(resolvedUri.port());
             }
             //Method and entity is required to be the same as with original request with 307 and 308 requests
-            if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
-                    || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+            if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
+                    || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
                 clientRequest = new Http2ClientRequestImpl(clientRequest, clientRequest.method(), redirectUri, properties());
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes

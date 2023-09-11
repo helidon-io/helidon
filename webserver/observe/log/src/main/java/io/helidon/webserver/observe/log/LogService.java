@@ -40,6 +40,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.jsonp.JsonpSupport;
@@ -161,7 +162,7 @@ class LogService implements HttpService {
     private void unsetLoggerHandler(ServerRequest req, ServerResponse res) {
         String logger = req.path().pathParameters().first("logger").orElse("");
         Logger.getLogger(logger).setLevel(null);
-        res.status(Http.Status.NO_CONTENT_204).send();
+        res.status(Status.NO_CONTENT_204).send();
     }
 
     private void setLevelHandler(ServerRequest req, ServerResponse res) {
@@ -175,7 +176,7 @@ class LogService implements HttpService {
         Logger.getLogger(logger)
                 .setLevel(desiredLevel);
 
-        res.status(Http.Status.NO_CONTENT_204).send();
+        res.status(Status.NO_CONTENT_204).send();
     }
 
     private void loggerHandler(ServerRequest req, ServerResponse res) {

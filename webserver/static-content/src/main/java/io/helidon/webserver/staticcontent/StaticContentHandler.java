@@ -42,6 +42,7 @@ import io.helidon.http.NotFoundException;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -87,7 +88,7 @@ abstract class StaticContentHandler implements StaticContentService {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
                 if ("*".equals(ifNoneMatch) || ifNoneMatch.equals(etag)) {
                     // using exception to handle normal flow (same as in reactive static content)
-                    throw new HttpException("Accepted by If-None-Match header", Http.Status.NOT_MODIFIED_304, true);
+                    throw new HttpException("Accepted by If-None-Match header", Status.NOT_MODIFIED_304, true);
                 }
             }
         }
@@ -105,7 +106,7 @@ abstract class StaticContentHandler implements StaticContentService {
                     }
                 }
                 if (!ifMatchChecked) {
-                    throw new HttpException("Not accepted by If-Match header", Http.Status.PRECONDITION_FAILED_412, true);
+                    throw new HttpException("Not accepted by If-Match header", Status.PRECONDITION_FAILED_412, true);
                 }
             }
         }
@@ -126,14 +127,14 @@ abstract class StaticContentHandler implements StaticContentService {
                 .ifModifiedSince()
                 .map(ChronoZonedDateTime::toInstant);
         if (ifModSince.isPresent() && !ifModSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Modified-Since header", Http.Status.NOT_MODIFIED_304, true);
+            throw new HttpException("Not valid for If-Modified-Since header", Status.NOT_MODIFIED_304, true);
         }
         // If-Unmodified-Since
         Optional<Instant> ifUnmodSince = requestHeaders
                 .ifUnmodifiedSince()
                 .map(ChronoZonedDateTime::toInstant);
         if (ifUnmodSince.isPresent() && ifUnmodSince.get().isBefore(modified)) {
-            throw new HttpException("Not valid for If-Unmodified-Since header", Http.Status.PRECONDITION_FAILED_412, true);
+            throw new HttpException("Not valid for If-Unmodified-Since header", Status.PRECONDITION_FAILED_412, true);
         }
     }
 
@@ -218,7 +219,7 @@ abstract class StaticContentHandler implements StaticContentService {
                 response.next();
             }
         } catch (HttpException httpException) {
-            if (httpException.status().code() == Http.Status.NOT_FOUND_404.code()) {
+            if (httpException.status().code() == Status.NOT_FOUND_404.code()) {
                 // Prefer to next() before NOT_FOUND
                 response.next();
             } else {

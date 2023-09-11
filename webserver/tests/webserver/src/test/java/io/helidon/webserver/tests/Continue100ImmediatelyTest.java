@@ -28,6 +28,7 @@ import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.Handler;
@@ -56,7 +57,7 @@ class Continue100ImmediatelyTest {
         if (Boolean.parseBoolean(req.headers()
                 .first(Http.HeaderNames.create("test-fail-before-read"))
                 .orElse("false"))) {
-            res.status(Http.Status.EXPECTATION_FAILED_417).send();
+            res.status(Status.EXPECTATION_FAILED_417).send();
             return;
         }
 
@@ -105,7 +106,7 @@ class Continue100ImmediatelyTest {
         router.route(Method.predicate(Method.PUT, Method.POST),
                      PathMatchers.exact("/redirect"), (req, res) ->
 
-                             res.status(Http.Status.MOVED_PERMANENTLY_301)
+                             res.status(Status.MOVED_PERMANENTLY_301)
                                      .header(Http.HeaderNames.LOCATION, "/")
                                      // force 301 to not use chunked encoding
                                      // https://github.com/helidon-io/helidon/issues/5713
@@ -115,7 +116,7 @@ class Continue100ImmediatelyTest {
                 .route(Method.predicate(Method.PUT, Method.POST),
                        PathMatchers.exact("/"), ANY_HANDLER)
                 .route(Method.predicate(Method.GET),
-                       PathMatchers.exact("/"), (req, res) -> res.status(Http.Status.OK_200).send("GET TEST"));
+                       PathMatchers.exact("/"), (req, res) -> res.status(Status.OK_200).send("GET TEST"));
     }
 
     @Test

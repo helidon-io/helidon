@@ -31,6 +31,7 @@ import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.ConnectionFlowControl;
@@ -389,7 +390,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                     } else {
                         throw RequestException.builder()
                                 .type(DirectHandler.EventType.OTHER)
-                                .status(Http.Status.UNSUPPORTED_MEDIA_TYPE_415)
+                                .status(Status.UNSUPPORTED_MEDIA_TYPE_415)
                                 .message("Unsupported content encoding")
                                 .build();
                     }
@@ -414,7 +415,7 @@ public class Http2ServerStream implements Runnable, Http2Stream {
                     routing.route(ctx, request, response);
                 } else {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
-                    response.status(Http.Status.SERVICE_UNAVAILABLE_503)
+                    response.status(Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
                     response.commit();
                 }

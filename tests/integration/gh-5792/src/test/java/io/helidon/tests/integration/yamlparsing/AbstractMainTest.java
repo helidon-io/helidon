@@ -15,15 +15,14 @@
  */
 package io.helidon.tests.integration.yamlparsing;
 
-
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import org.junit.jupiter.api.Test;
 import jakarta.json.JsonObject;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -44,7 +43,7 @@ abstract class AbstractMainTest {
     @Test
     void testRootRoute() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat(json.getString("message"), is("Hello World!"));
         }
@@ -53,7 +52,7 @@ abstract class AbstractMainTest {
     @Test
     void testOpenApi() {
         try (Http1ClientResponse response = client.get("/openapi").request()) {
-            assertThat("/openapi status", response.status(), is(Http.Status.OK_200));
+            assertThat("/openapi status", response.status(), is(Status.OK_200));
             assertThat("/openapi content", response.as(String.class), containsString("title: Swagger Petstore"));
         }
     }

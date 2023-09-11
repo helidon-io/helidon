@@ -27,10 +27,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.EntityWriter;
@@ -53,7 +53,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     private final List<Runnable> whenSent = new ArrayList<>(5);
     private final int maxInMemory;
 
-    private Http.Status status;
+    private Status status;
     private boolean nexted;
     private boolean reroute;
     private UriQuery rerouteQuery;
@@ -73,15 +73,15 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     @Override
-    public T status(Http.Status status) {
+    public T status(Status status) {
         this.status = status;
         return (T) this;
     }
 
     @Override
-    public Http.Status status() {
+    public Status status() {
         if (status == null) {
-            return Http.Status.OK_200;
+            return Status.OK_200;
         }
         return status;
     }
@@ -103,7 +103,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
             // now we have to use a media writer, so we may fail
             doSend(entity);
         } catch (UnsupportedTypeException e) {
-            throw new HttpException(e.getMessage(), Http.Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
+            throw new HttpException(e.getMessage(), Status.UNSUPPORTED_MEDIA_TYPE_415, e, true);
         }
     }
 

@@ -19,8 +19,8 @@ package io.helidon.webserver.tests;
 import java.util.Collections;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
@@ -51,9 +51,9 @@ class ExceptionMessageTest {
         String response = socketClient.sendAndReceive(Method.GET,
                                                       path,
                                                       "");
-        Http.Status status = SocketHttpClient.statusFromResponse(response);
+        Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
-        assertThat(status, is(Http.Status.BAD_REQUEST_400));
+        assertThat(status, is(Status.BAD_REQUEST_400));
         assertThat(entity, containsString("see server log"));
         assertThat(entity, not(containsString("javascript")));
     }
@@ -64,9 +64,9 @@ class ExceptionMessageTest {
                                                       "/",
                                                       "",
                                                       Collections.singletonList("<Content-Type>: <javascript/>"));
-        Http.Status status = SocketHttpClient.statusFromResponse(response);
+        Status status = SocketHttpClient.statusFromResponse(response);
         String entity = SocketHttpClient.entityFromResponse(response, false);
-        assertThat(status, is(Http.Status.BAD_REQUEST_400));
+        assertThat(status, is(Status.BAD_REQUEST_400));
         assertThat(entity, not(containsString("javascript")));
     }
 }

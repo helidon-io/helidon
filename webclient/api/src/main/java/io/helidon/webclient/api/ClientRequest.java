@@ -34,6 +34,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 
 /**
  * Request can be reused within a single thread, but it remembers all explicitly configured headers and URI.
@@ -276,10 +277,10 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      */
     default <E> E requestEntity(Class<E> type) throws HttpException {
         ClientResponseTyped<E> typedResponse = request(type);
-        if (typedResponse.status().family() == Http.Status.Family.SUCCESSFUL) {
+        if (typedResponse.status().family() == Status.Family.SUCCESSFUL) {
             return typedResponse.entity();
         }
-        if (typedResponse.status() == Http.Status.BAD_REQUEST_400) {
+        if (typedResponse.status() == Status.BAD_REQUEST_400) {
             throw new IllegalArgumentException("Failed to read entity, received bad request");
         }
         throw new IllegalStateException(typedResponse.status() + ": Failed to read entity, as response status is not success");

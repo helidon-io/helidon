@@ -16,6 +16,7 @@
 package io.helidon.examples.media.multipart;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.staticcontent.StaticContentService;
@@ -51,7 +52,7 @@ public final class Main {
      */
     static void routing(HttpRules rules) {
         rules.any("/", (req, res) -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.status(Status.MOVED_PERMANENTLY_301);
                     res.header(UI_LOCATION);
                     res.send();
                 })

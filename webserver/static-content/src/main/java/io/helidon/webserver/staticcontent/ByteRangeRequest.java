@@ -25,6 +25,7 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -77,13 +78,13 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
                                             false,
                                             "bytes " + offset + "-" + last + "/" + fileLength));
         response.contentLength(length);
-        response.status(Http.Status.PARTIAL_CONTENT_206);
+        response.status(Status.PARTIAL_CONTENT_206);
     }
 
     private static ByteRangeRequest create(ServerRequest req, ServerResponse res, long offset, long last, long fileLength) {
         if (offset >= fileLength || last < offset) {
             res.header(HeaderNames.CONTENT_RANGE, "*/" + fileLength);
-            throw new HttpException("Wrong range", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 
         long length = (last - offset) + 1;

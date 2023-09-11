@@ -16,12 +16,13 @@
 
 package io.helidon.examples.quickstart.se;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ class MainTest {
     @Test
     void testRootRoute() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat(json.getString("message"), is("Hello World!"));
         }
@@ -54,20 +55,20 @@ class MainTest {
     @Test
     void testHealthObserver() {
         try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
     @Test
     void testDeadlockHealthCheck() {
         try (Http1ClientResponse response = client.get("/observe/health/live/deadlock").request()) {
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
 
     @Test
     void testMetricsObserver() {
         try (Http1ClientResponse response = client.get("/observe/metrics").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 }

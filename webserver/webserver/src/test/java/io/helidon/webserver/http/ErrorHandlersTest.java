@@ -24,9 +24,9 @@ import java.util.stream.Stream;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
@@ -143,9 +143,9 @@ class ErrorHandlersTest {
             throw e;
         });
 
-        var status = ArgumentCaptor.forClass(Http.Status.class);
+        var status = ArgumentCaptor.forClass(Status.class);
         verify(res).status(status.capture());
-        assertThat(status.getValue(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+        assertThat(status.getValue(), is(Status.INTERNAL_SERVER_ERROR_500));
 
         var sent = ArgumentCaptor.forClass(byte[].class);
         verify(res).send(sent.capture());

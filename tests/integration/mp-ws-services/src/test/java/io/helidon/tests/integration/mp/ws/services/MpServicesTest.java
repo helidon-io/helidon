@@ -23,7 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.Server;
 
 import org.junit.jupiter.api.AfterAll;
@@ -81,7 +81,7 @@ class MpServicesTest {
 
         assertThat("Should be a successful request (http://localhost:" + port + path + ")",
                    con.getResponseCode(),
-                   is(Http.Status.OK_200.code()));
+                   is(Status.OK_200.code()));
 
         InputStream inputStream = con.getInputStream();
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();

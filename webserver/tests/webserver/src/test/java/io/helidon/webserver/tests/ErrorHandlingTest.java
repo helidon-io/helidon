@@ -17,9 +17,7 @@
 package io.helidon.webserver.tests;
 
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.DirectClient;
-import io.helidon.webserver.testing.junit5.RoutingTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.ErrorHandler;
@@ -30,6 +28,9 @@ import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.DirectClient;
+import io.helidon.webserver.testing.junit5.RoutingTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -97,7 +98,7 @@ class ErrorHandlingTest {
         try (Http1ClientResponse response = client.get()
                 .header(ROUTING)
                 .request()) {
-            assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
             assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
         }
     }

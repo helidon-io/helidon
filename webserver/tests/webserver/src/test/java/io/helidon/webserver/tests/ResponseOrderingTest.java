@@ -23,8 +23,8 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -59,7 +59,7 @@ class ResponseOrderingTest {
         rules.any("/multi", (req, res) -> {
                     long requestId = Long.parseLong(req.query().get("id"));
                     queue.add(requestId);
-                    res.status(Http.Status.CREATED_201)
+                    res.status(Status.CREATED_201)
                             .send("" + requestId);
                 })
                 .any("/stream", (req, res) -> {

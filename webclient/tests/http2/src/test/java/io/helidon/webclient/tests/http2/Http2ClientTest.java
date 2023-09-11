@@ -25,6 +25,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http2.Http2Client;
@@ -107,7 +108,7 @@ class Http2ClientTest {
                 .get("/")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
         }
     }
 
@@ -132,7 +133,7 @@ class Http2ClientTest {
                 .get("/")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));
@@ -145,7 +146,7 @@ class Http2ClientTest {
                 .get("/")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));
@@ -159,7 +160,7 @@ class Http2ClientTest {
                 .priorKnowledge(true)
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(MESSAGE));
             assertThat(TEST_HEADER + " header must be present in response",
                        response.headers().contains(TEST_HEADER), is(true));

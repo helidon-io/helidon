@@ -17,6 +17,7 @@
 package io.helidon.webclient.tests;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -50,7 +51,7 @@ class SharedCacheTest {
                     .build();
 
             try (var res = webClient.post().submit("WHATEVER")) {
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
             webServer.stop();
             webServer = WebServer.builder()
@@ -60,7 +61,7 @@ class SharedCacheTest {
                     .start();
 
             try (var res = webClient.post().submit("WHATEVER")) {
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
         } finally {
             if (webServer != null) {
@@ -96,13 +97,13 @@ class SharedCacheTest {
             Integer firstReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             Integer secondReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             assertThat("In case of cached connection client port must be the same.",

@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -148,7 +149,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param response full HTTP response
      * @return status
      */
-    public static Http.Status statusFromResponse(String response) {
+    public static Status statusFromResponse(String response) {
         // response should start with HTTP/1.1 000 reasonPhrase\n
         int eol = response.indexOf('\n');
         assertThat("There must be at least a line end after first line: " + response, eol > -1);
@@ -161,7 +162,7 @@ public class SocketHttpClient implements AutoCloseable {
         int statusCode = Integer.parseInt(matcher.group(1));
         String phrase = matcher.group(2);
 
-        return Http.Status.create(statusCode, phrase);
+        return Status.create(statusCode, phrase);
     }
 
     /**

@@ -16,7 +16,7 @@
 package io.helidon.webserver.observe.metrics;
 
 import io.helidon.common.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 
@@ -87,7 +87,7 @@ public class MetricsObserveProvider implements ObserveProvider {
             routing.addFeature(observer);
         } else {
             String finalPath = componentPath + (componentPath.endsWith("/") ? "*" : "/*");
-            routing.get(finalPath, (req, res) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503)
+            routing.get(finalPath, (req, res) -> res.status(Status.SERVICE_UNAVAILABLE_503)
                     .send());
         }
     }

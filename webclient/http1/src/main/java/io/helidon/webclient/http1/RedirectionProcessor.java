@@ -21,6 +21,7 @@ import java.net.URI;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientUri;
 
 class RedirectionProcessor {
@@ -28,8 +29,8 @@ class RedirectionProcessor {
     private RedirectionProcessor() {
     }
 
-    static boolean redirectionStatusCode(Http.Status status) {
-        return status.family() == Http.Status.Family.REDIRECTION;
+    static boolean redirectionStatusCode(Status status) {
+        return status.family() == Status.Family.REDIRECTION;
     }
 
     static Http1ClientResponseImpl invokeWithFollowRedirects(Http1ClientRequestImpl request, byte[] entity) {
@@ -68,8 +69,8 @@ class RedirectionProcessor {
                     redirectUri.port(resolvedUri.port());
                 }
                 //Method and entity is required to be the same as with original request with 307 and 308 requests
-                if (clientResponse.status() == Http.Status.TEMPORARY_REDIRECT_307
-                        || clientResponse.status() == Http.Status.PERMANENT_REDIRECT_308) {
+                if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
+                        || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,

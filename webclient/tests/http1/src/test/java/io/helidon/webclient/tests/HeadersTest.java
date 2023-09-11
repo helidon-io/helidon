@@ -24,6 +24,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRules;
@@ -62,7 +63,7 @@ class HeadersTest {
                 .request()) {
             ClientResponseHeaders h = res.headers();
             Http.Header contentType = h.get(Http.HeaderNames.CONTENT_TYPE);
-            assertThat(res.status(), is(Http.Status.OK_200));
+            assertThat(res.status(), is(Status.OK_200));
             assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_VALUE));
         }
     }
@@ -73,7 +74,7 @@ class HeadersTest {
         try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidTextContentType")
                 .request()) {
-            assertThat(res.status(), is(Http.Status.OK_200));
+            assertThat(res.status(), is(Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
             Http.Header rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
@@ -98,7 +99,7 @@ class HeadersTest {
         try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidTextContentType")
                 .request()) {
-            assertThat(res.status(), is(Http.Status.OK_200));
+            assertThat(res.status(), is(Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
             Http.Header rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);

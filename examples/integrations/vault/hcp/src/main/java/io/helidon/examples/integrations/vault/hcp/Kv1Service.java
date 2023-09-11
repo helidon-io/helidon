@@ -19,7 +19,7 @@ package io.helidon.examples.integrations.vault.hcp;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.integrations.vault.Secret;
 import io.helidon.integrations.vault.secrets.kv1.Kv1Secrets;
 import io.helidon.integrations.vault.sys.Sys;
@@ -75,7 +75,7 @@ class Kv1Service implements HttpService {
             // using toString so we do not need to depend on JSON-B
             res.send(secret.get().values().toString());
         } else {
-            res.status(Http.Status.NOT_FOUND_404);
+            res.status(Status.NOT_FOUND_404);
             res.send();
         }
     }

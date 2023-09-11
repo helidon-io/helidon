@@ -29,13 +29,13 @@ import java.util.function.Supplier;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Weights;
 import io.helidon.http.DirectHandler;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.ServerLifecycle;
@@ -86,7 +86,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
     }
 
     /**
-     * Empty routing (all requests will return {@link io.helidon.http.Http.Status#NOT_FOUND_404}.
+     * Empty routing (all requests will return {@link io.helidon.http.Status#NOT_FOUND_404}.
      *
      * @return empty routing
      */
@@ -528,7 +528,7 @@ public final class HttpRouting implements Routing, Prototype.Api {
                     LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
                             + " times. Will not attempt further routing");
 
-                    throw new HttpException("Too many reroutes", Http.Status.INTERNAL_SERVER_ERROR_500, true);
+                    throw new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
                 }
 
                 result = doRoute(ctx, request, response);

@@ -30,6 +30,7 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -47,9 +48,9 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
 import static io.helidon.http.Http.HeaderNames.ALLOW;
-import static io.helidon.http.Http.Status.METHOD_NOT_ALLOWED_405;
-import static io.helidon.http.Http.Status.NOT_FOUND_404;
-import static io.helidon.http.Http.Status.OK_200;
+import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
+import static io.helidon.http.Status.NOT_FOUND_404;
+import static io.helidon.http.Status.OK_200;
 
 /**
  * Support for metrics for Helidon WebServer.
@@ -90,7 +91,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
     private static final String KPI_METER_NAME_PREFIX_WITH_DOT = KPI_METER_NAME_PREFIX + ".";
 
     private static final System.Logger LOGGER = System.getLogger(MetricsFeature.class.getName());
-    private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Http.Status.NOT_FOUND_404)
+    private static final Handler DISABLED_ENDPOINT_HANDLER = (req, res) -> res.status(Status.NOT_FOUND_404)
             .send("Metrics are disabled");
 
     private static final Iterable<String> EMPTY_ITERABLE = Collections::emptyIterator;
@@ -237,7 +238,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
             return formatter.get();
         }
         throw new HttpException("Unsupported media type for metrics formatting: " + mediaType,
-                                Http.Status.UNSUPPORTED_MEDIA_TYPE_415,
+                                Status.UNSUPPORTED_MEDIA_TYPE_415,
                                 true);
     }
 
@@ -253,7 +254,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
         MediaType mediaType = bestAccepted(req);
         res.header(Http.Headers.CACHE_NO_CACHE);
         if (mediaType == null) {
-            res.status(Http.Status.NOT_ACCEPTABLE_406);
+            res.status(Status.NOT_ACCEPTABLE_406);
             res.send();
         }
 

@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2Client;
@@ -79,10 +79,10 @@ class MaxConcurrentRequestsTest {
         // now that we have request in progress, any other should fail
         ClientResponseTyped<String> response = webClient.get("/greet")
                 .request(String.class);
-        assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+        assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
         response = http2Client.get("/greet")
                 .request(String.class);
-        assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+        assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
         clientCountDown.countDown();
         assertThat(client.receive(), containsString("200 OK"));
     }

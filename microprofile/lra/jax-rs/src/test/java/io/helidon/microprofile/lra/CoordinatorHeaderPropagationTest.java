@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import io.helidon.common.context.Contexts;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.microprofile.config.ConfigCdiExtension;
@@ -144,7 +145,7 @@ class CoordinatorHeaderPropagationTest {
 
                     lraMap.put(lraId, new ConcurrentHashMap<>());
 
-                    res.status(Http.Status.CREATED_201)
+                    res.status(Status.CREATED_201)
                             .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                             .header(NOT_PROPAGATED_HEADER, "not this extra one!")
                             .header(EXTRA_COORDINATOR_PROPAGATED_HEADER, "yes extra start header!")
@@ -173,7 +174,7 @@ class CoordinatorHeaderPropagationTest {
                                         req.headers().forEach(reqHeaders::add);
                                     })
                                     .submit(LRAStatus.Closing.name())) {
-                                if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
+                                if (clientResponse.status().family() != Status.Family.SUCCESSFUL) {
                                     res.status(clientResponse.status());
                                 }
                                 res.send();
@@ -195,7 +196,7 @@ class CoordinatorHeaderPropagationTest {
                                 req.headers().forEach(reqHeaders::add);
                             })
                             .request()) {
-                        if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
+                        if (clientResponse.status().family() != Status.Family.SUCCESSFUL) {
                             res.status(clientResponse.status());
                         }
                         res.send();
@@ -217,7 +218,7 @@ class CoordinatorHeaderPropagationTest {
                                 req.headers().forEach(reqHeaders::add);
                             })
                             .request()) {
-                        if (clientResponse.status().family() != Http.Status.Family.SUCCESSFUL) {
+                        if (clientResponse.status().family() != Status.Family.SUCCESSFUL) {
                             res.status(clientResponse.status());
                         }
                         res.send();

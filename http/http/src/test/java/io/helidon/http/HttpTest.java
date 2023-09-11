@@ -27,7 +27,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -38,25 +37,25 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 class HttpTest {
     @Test
     void testStatusIsStatus() {
-        Http.Status rs = Http.Status.create(Http.Status.TEMPORARY_REDIRECT_307.code());
-        assertThat(rs, sameInstance(Http.Status.TEMPORARY_REDIRECT_307));
+        Status rs = Status.create(Status.TEMPORARY_REDIRECT_307.code());
+        assertThat(rs, sameInstance(Status.TEMPORARY_REDIRECT_307));
     }
 
     @Test
     void testStatusWithReasonIsStatus() {
-        Http.Status rs = Http.Status
-                .create(Http.Status.TEMPORARY_REDIRECT_307.code(), Http.Status.TEMPORARY_REDIRECT_307.reasonPhrase().toUpperCase());
-        assertThat(rs, sameInstance(Http.Status.TEMPORARY_REDIRECT_307));
+        Status rs = Status
+                .create(Status.TEMPORARY_REDIRECT_307.code(), Status.TEMPORARY_REDIRECT_307.reasonPhrase().toUpperCase());
+        assertThat(rs, sameInstance(Status.TEMPORARY_REDIRECT_307));
     }
 
     @Test
     void testResposneStatusCustomReason() {
-        Http.Status rs = Http.Status
-                .create(Http.Status.TEMPORARY_REDIRECT_307.code(), "Custom reason phrase");
-        assertThat(rs, CoreMatchers.not(Http.Status.TEMPORARY_REDIRECT_307));
+        Status rs = Status
+                .create(Status.TEMPORARY_REDIRECT_307.code(), "Custom reason phrase");
+        assertThat(rs, CoreMatchers.not(Status.TEMPORARY_REDIRECT_307));
         assertThat(rs.reasonPhrase(), is("Custom reason phrase"));
-        MatcherAssert.assertThat(rs.code(), CoreMatchers.is(Http.Status.TEMPORARY_REDIRECT_307.code()));
-        MatcherAssert.assertThat(rs.family(), CoreMatchers.is(Http.Status.TEMPORARY_REDIRECT_307.family()));
+        MatcherAssert.assertThat(rs.code(), CoreMatchers.is(Status.TEMPORARY_REDIRECT_307.code()));
+        MatcherAssert.assertThat(rs.family(), CoreMatchers.is(Status.TEMPORARY_REDIRECT_307.family()));
     }
 
     @ParameterizedTest

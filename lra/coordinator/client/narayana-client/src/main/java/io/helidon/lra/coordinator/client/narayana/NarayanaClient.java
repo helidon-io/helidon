@@ -31,6 +31,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.CoordinatorConnectionException;
@@ -110,7 +111,7 @@ public class NarayanaClient implements CoordinatorClient {
                     .queryParam(QUERY_PARAM_PARENT_LRA, parentLRA == null ? "" : parentLRA.toASCIIString());
 
             try (HttpClientResponse res = req.request()) {
-                Http.Status status = res.status();
+                Status status = res.status();
                 if (status.code() != 201) {
                     throw connectionError("Unexpected response " + status + " from coordinator "
                             + req.resolvedUri() + ": " + res.as(String.class), null);

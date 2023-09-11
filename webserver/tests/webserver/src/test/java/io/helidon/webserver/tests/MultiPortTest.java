@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
@@ -148,7 +149,7 @@ class MultiPortTest {
                 .putSocket("redirect", listener -> {
                     listener.routing(routing -> routing
                                               .any((req, res) -> {
-                                                  res.status(Http.Status.MOVED_PERMANENTLY_301)
+                                                  res.status(Status.MOVED_PERMANENTLY_301)
                                                           .header(Http.HeaderNames.LOCATION,
                                                                   String.format("http://%s:%s%s",
                                                                                 host(req.authority()),
@@ -164,7 +165,7 @@ class MultiPortTest {
 
         try (HttpClientResponse response = CLIENT.get("http://localhost:" + server.port("redirect") + "/foo")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+            assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(),
                        hasHeader(Http.Headers.create(Http.HeaderNames.LOCATION, "http://localhost:" + server.port() + "/foo")));
         }
@@ -184,7 +185,7 @@ class MultiPortTest {
                 .path(path)
                 .request()) {
 
-            assertAll(() -> assertThat(response.status(), is(Http.Status.OK_200)),
+            assertAll(() -> assertThat(response.status(), is(Status.OK_200)),
                       () -> assertThat(response.as(String.class), matcher));
         }
     }

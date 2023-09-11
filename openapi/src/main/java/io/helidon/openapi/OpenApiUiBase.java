@@ -30,6 +30,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -143,7 +144,7 @@ public abstract class OpenApiUiBase implements OpenApiUi {
                     .send(prepareDocument(request.query(), mediaType));
         } catch (IOException e) {
             LOGGER.log(System.Logger.Level.WARNING, "Error formatting OpenAPI output as " + mediaType, e);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+            response.status(Status.INTERNAL_SERVER_ERROR_500)
                     .send("Error formatting OpenAPI output. See server log.");
         }
         return true;

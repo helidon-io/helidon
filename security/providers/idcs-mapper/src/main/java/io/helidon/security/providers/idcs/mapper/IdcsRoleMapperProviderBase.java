@@ -35,6 +35,7 @@ import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
 import io.helidon.security.ProviderRequest;
@@ -173,7 +174,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
     protected List<? extends Grant> processRoleRequest(HttpClientRequest request, Object entity, String subjectName) {
         try (HttpClientResponse response = request.submit(entity)) {
-            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+            if (response.status().family() == Status.Family.SUCCESSFUL) {
                 try {
                     JsonObject jsonObject = response.as(JsonObject.class);
                     return processServerResponse(jsonObject, subjectName);
@@ -189,7 +190,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                     message = response.as(String.class);
                     LOGGER.log(Level.WARNING, "Cannot read groups for user \"" + subjectName + "\". "
                             + "Response code: " + response.status()
-                            + (response.status() == Http.Status.UNAUTHORIZED_401 ? ", make sure your IDCS client has role "
+                            + (response.status() == Status.UNAUTHORIZED_401 ? ", make sure your IDCS client has role "
                                     + "\"Authenticator Client\" added on the client configuration page" : "")
                             + ", error entity: " + message);
                 } catch (Exception e) {
@@ -453,7 +454,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
                     .header(Http.Headers.ACCEPT_JSON);
 
             try (HttpClientResponse response = request.submit(params)) {
-                if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+                if (response.status().family() == Status.Family.SUCCESSFUL) {
                     try {
                         JsonObject jsonObject = response.as(JsonObject.class);
                         String accessToken = jsonObject.getString(ACCESS_TOKEN_KEY);

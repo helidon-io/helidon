@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
@@ -55,7 +55,7 @@ public class SecurityTest extends TestParent {
                 .property(EndpointConfig.PROPERTY_OUTBOUND_SECRET, "password")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(JsonObject.class).getString("message"), is("Hello jack!"));
         }
     }

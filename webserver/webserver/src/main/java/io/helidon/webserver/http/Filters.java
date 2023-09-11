@@ -22,9 +22,9 @@ import java.util.concurrent.Callable;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.RoutedPath;
+import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerLifecycle;
 
@@ -123,7 +123,7 @@ public final class Filters implements ServerLifecycle {
                     // intentionally not using InternalServerException, as we do not have a cause
                     throw new HttpException("Routing finished but response was not sent. Helidon WebServer does not support "
                                                     + "asynchronous responses. Please block until a response can be sent.",
-                                            Http.Status.INTERNAL_SERVER_ERROR_500);
+                                            Status.INTERNAL_SERVER_ERROR_500);
                 }
             }
         }

@@ -19,7 +19,7 @@ package io.helidon.examples.webserver.faulttolerance;
 import io.helidon.faulttolerance.BulkheadException;
 import io.helidon.faulttolerance.CircuitBreakerOpenException;
 import io.helidon.faulttolerance.TimeoutException;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -55,13 +55,13 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         routing.register("/ft", new FtService())
                .error(BulkheadException.class,
-                       (req, res, ex) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503).send("bulkhead"))
+                       (req, res, ex) -> res.status(Status.SERVICE_UNAVAILABLE_503).send("bulkhead"))
                .error(CircuitBreakerOpenException.class,
-                       (req, res, ex) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503).send("circuit breaker"))
+                       (req, res, ex) -> res.status(Status.SERVICE_UNAVAILABLE_503).send("circuit breaker"))
                .error(TimeoutException.class,
-                       (req, res, ex) -> res.status(Http.Status.REQUEST_TIMEOUT_408).send("timeout"))
+                       (req, res, ex) -> res.status(Status.REQUEST_TIMEOUT_408).send("timeout"))
                .error(Throwable.class,
-                       (req, res, ex) -> res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                       (req, res, ex) -> res.status(Status.INTERNAL_SERVER_ERROR_500)
                                             .send(ex.getClass().getName() + ": " + ex.getMessage()));
     }
 }

@@ -21,9 +21,9 @@ import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webserver.ConnectionContext;
@@ -90,7 +90,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         if (!continueImmediately && expectContinue && !drain) {
             BufferData buffer = BufferData.create(Http1Connection.CONTINUE_100);
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Http.Status.CONTINUE_100);
+                ctx.log(LOGGER, System.Logger.Level.DEBUG, "send: status %s", Status.CONTINUE_100);
                 ctx.log(LOGGER, System.Logger.Level.DEBUG, "send %n%s", buffer.debugDataHex());
             }
             ctx.dataWriter().writeNow(buffer);

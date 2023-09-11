@@ -28,6 +28,7 @@ import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -79,10 +80,10 @@ record CachedHandlerInMemory(MediaType mediaType,
                 ByteRangeRequest range = ranges.get(0);
 
                 if (range.offset() > contentLength()) {
-                    throw new HttpException("Invalid range offset", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    throw new HttpException("Invalid range offset", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
                 }
                 if (range.length() > (contentLength() - range.offset())) {
-                    throw new HttpException("Invalid length", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+                    throw new HttpException("Invalid length", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
                 }
 
                 range.setContentRange(response);

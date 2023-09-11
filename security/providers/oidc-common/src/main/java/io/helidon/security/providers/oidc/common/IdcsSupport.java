@@ -21,6 +21,7 @@ import java.time.Duration;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -53,7 +54,7 @@ class IdcsSupport {
                 .header(Http.Headers.ACCEPT_JSON)
                 .submit(form)) {
 
-            if (response.status().family() == Http.Status.Family.SUCCESSFUL) {
+            if (response.status().family() == Status.Family.SUCCESSFUL) {
                 JsonObject json = response.as(JsonObject.class);
 
                 String accessToken = json.getString("access_token");

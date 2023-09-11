@@ -16,19 +16,19 @@
 
 package io.helidon.webserver.cors;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_MAX_AGE;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -66,7 +66,7 @@ class CorsTest extends AbstractCorsTest {
         String origin = fooOrigin();
         HttpClientResponse response = runTest1PreFlightAllowedOrigin();
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, origin));
         assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
         assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_HEADERS));

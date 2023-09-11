@@ -24,6 +24,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
@@ -138,7 +139,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             response = invokeRequestWithEntity(BufferData.EMPTY_BYTES);
         }
 
-        if (response.status() == Http.Status.SWITCHING_PROTOCOLS_101) {
+        if (response.status() == Status.SWITCHING_PROTOCOLS_101) {
             // yep, this is the response we want
             if (response.headers().contains(requestedUpgrade)) {
                 if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {

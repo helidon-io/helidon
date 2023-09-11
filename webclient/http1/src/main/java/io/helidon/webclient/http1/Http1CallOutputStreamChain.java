@@ -35,6 +35,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequest;
@@ -100,10 +101,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        Http.Status responseStatus;
+        Status responseStatus;
         try {
             responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
-            if (responseStatus == Http.Status.CONTINUE_100) {
+            if (responseStatus == Status.CONTINUE_100) {
                 // skip the next empty end of line
                 readHeaders(reader);
                 responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
@@ -382,7 +383,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             whenSent.complete(request);
 
             if (expects100Continue) {
-                Http.Status responseStatus;
+                Status responseStatus;
 
                 try {
                     connection.readTimeout(originalRequest.readContinueTimeout());
@@ -395,17 +396,17 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 } finally {
                     connection.readTimeout(originalRequest.readTimeout());
                 }
-                if (responseStatus == Http.Status.CONTINUE_100) {
+                if (responseStatus == Status.CONTINUE_100) {
                     // there is the status and (usually) empty headers. We ignore such headers
                     Http1HeadersParser.readHeaders(reader,
                                                    protocolConfig.maxHeaderSize(),
                                                    protocolConfig.validateResponseHeaders());
                 }
                 if (responseStatus == null) {
-                    responseStatus = Http.Status.CONTINUE_100;
+                    responseStatus = Status.CONTINUE_100;
                 }
 
-                if (responseStatus != Http.Status.CONTINUE_100) {
+                if (responseStatus != Status.CONTINUE_100) {
                     WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
                                                                                         protocolConfig.maxHeaderSize(),
                                                                                         protocolConfig.validateResponseHeaders());
@@ -434,13 +435,13 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             }
         }
 
-        private void redirect(Http.Status lastStatus, WritableHeaders<?> headerValues) {
+        private void redirect(Status lastStatus, WritableHeaders<?> headerValues) {
             String redirectedUri = headerValues.get(Http.HeaderNames.LOCATION).value();
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
-            if (lastStatus == Http.Status.TEMPORARY_REDIRECT_307
-                    || lastStatus == Http.Status.PERMANENT_REDIRECT_308) {
+            if (lastStatus == Status.TEMPORARY_REDIRECT_307
+                    || lastStatus == Status.PERMANENT_REDIRECT_308) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
@@ -482,8 +483,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 if (RedirectionProcessor.redirectionStatusCode(response.status())) {
                     try (response) {
                         checkRedirectHeaders(response.headers());
-                        if (response.status() != Http.Status.TEMPORARY_REDIRECT_307
-                                && response.status() != Http.Status.PERMANENT_REDIRECT_308) {
+                        if (response.status() != Status.TEMPORARY_REDIRECT_307
+                                && response.status() != Status.PERMANENT_REDIRECT_308) {
                             method = Method.GET;
                             sendEntity = false;
                         }

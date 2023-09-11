@@ -36,7 +36,7 @@ import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.jdbc.JdbcClientProvider;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -85,7 +85,7 @@ class AtpService implements HttpService {
 
         if (walletResponse.getContentLength() == 0) {
             LOGGER.log(Level.SEVERE, "GenerateAutonomousDatabaseWalletResponse is empty");
-            res.status(Http.Status.NOT_FOUND_404).send();
+            res.status(Status.NOT_FOUND_404).send();
             return;
         }
 
@@ -94,7 +94,7 @@ class AtpService implements HttpService {
             walletContent = walletResponse.getInputStream().readAllBytes();
         } catch (IOException e) {
             LOGGER.log(Level.SEVERE, "Error processing GenerateAutonomousDatabaseWalletResponse", e);
-            res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send();
+            res.status(Status.INTERNAL_SERVER_ERROR_500).send();
             return;
         }
 

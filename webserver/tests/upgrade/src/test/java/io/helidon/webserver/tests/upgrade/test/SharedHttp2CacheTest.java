@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests.upgrade.test;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
@@ -79,7 +80,7 @@ class SharedHttp2CacheTest {
             Integer firstReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 firstReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             if (param.restart()) {
@@ -95,7 +96,7 @@ class SharedHttp2CacheTest {
             Integer secondReqClientPort;
             try (var res = webClient.post().submit("WHATEVER")) {
                 secondReqClientPort = res.headers().get(clientPortHeader).get(Integer.TYPE);
-                assertThat(res.status(), is(Http.Status.OK_200));
+                assertThat(res.status(), is(Status.OK_200));
             }
 
             if (!param.restart()) {

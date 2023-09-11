@@ -29,6 +29,7 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2Headers;
@@ -57,7 +58,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     private Http2ClientStream stream;
     private HttpClientResponse response;
     private ClientRequestHeaders requestHeaders;
-    private Http.Status responseStatus;
+    private Status responseStatus;
 
     Http2CallChainBase(Http2ClientImpl http2Client,
                        Http2ClientRequestImpl clientRequest,
@@ -105,7 +106,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return requestHeaders;
     }
 
-    Http.Status responseStatus() {
+    Status responseStatus() {
         return responseStatus;
     }
 

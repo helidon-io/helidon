@@ -21,10 +21,10 @@ import java.nio.charset.StandardCharsets;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.DirectHandler;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.DirectTransportRequest;
 
@@ -118,7 +118,7 @@ public final class Http1Prologue {
                 throw RequestException.builder()
                         .message("Request URI too long.")
                         .type(DirectHandler.EventType.BAD_REQUEST)
-                        .status(Http.Status.REQUEST_URI_TOO_LONG_414)
+                        .status(Status.REQUEST_URI_TOO_LONG_414)
                         .request(DirectTransportRequest.create("", method.text(), reader.readAsciiString(secondSpace)))
                         .build();
             }

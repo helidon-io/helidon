@@ -15,7 +15,7 @@
  */
 package io.helidon.examples.se.httpstatuscount;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -40,7 +40,7 @@ public class StatusService implements HttpService {
             status = Integer.parseInt(statusText);
             msg = "Successful conversion";
         } catch (NumberFormatException ex) {
-            status = Http.Status.INTERNAL_SERVER_ERROR_500.code();
+            status = Status.INTERNAL_SERVER_ERROR_500.code();
             msg = "Unsuccessful conversion";
         }
         response.status(status).send(msg);

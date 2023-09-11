@@ -39,6 +39,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
@@ -339,7 +340,7 @@ class JaxRsService implements HttpService {
                 }
             }
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
-            res.status(Http.Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
+            res.status(Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
             if (contentLength > 0) {
                 res.header(Http.Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));

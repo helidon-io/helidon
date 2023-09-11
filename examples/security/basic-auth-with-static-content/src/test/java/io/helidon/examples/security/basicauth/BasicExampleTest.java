@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Set;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
 import io.helidon.security.providers.httpauth.HttpBasicAuthProvider;
@@ -61,7 +62,7 @@ public abstract class BasicExampleTest {
     public void testPublic() {
         //Must be accessible without authentication
         try (Http1ClientResponse response = client.get().uri("/public").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, containsString("<ANONYMOUS>"));
         }
@@ -122,7 +123,7 @@ public abstract class BasicExampleTest {
         try (Http1ClientResponse response = client.get().uri(uri).request()) {
 
             // authentication is optional, so we are not challenged, only forbidden, as the role can never be there...
-            assertThat(response.status(), is(Http.Status.FORBIDDEN_403));
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
         }
     }
 
@@ -130,7 +131,7 @@ public abstract class BasicExampleTest {
         //Must NOT be accessible without authentication
         try (Http1ClientResponse response = client.get().uri(uri).request()) {
 
-            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
             String header = response.headers().get(Http.HeaderNames.WWW_AUTHENTICATE).value();
 
             assertThat(header.toLowerCase(), containsString("basic"));
@@ -150,7 +151,7 @@ public abstract class BasicExampleTest {
     @SuppressWarnings("SameParameterValue")
     private void testProtectedDenied(String uri, String username, String password) {
         try (Http1ClientResponse response = callProtected(uri, username, password)) {
-            assertThat(response.status(), is(Http.Status.FORBIDDEN_403));
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
         }
     }
 
@@ -164,7 +165,7 @@ public abstract class BasicExampleTest {
         try (Http1ClientResponse response = callProtected(uri, username, password)) {
 
             String entity = response.entity().as(String.class);
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
             // check login
             assertThat(entity, containsString("id='" + username + "'"));

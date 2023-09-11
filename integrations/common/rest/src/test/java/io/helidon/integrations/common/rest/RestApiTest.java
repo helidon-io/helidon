@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import io.helidon.http.Http;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.WebServer;
@@ -111,7 +111,7 @@ class RestApiTest {
         var response = restApi.get("/echo", RestRequest.builder(), responseBuilder);
 
         assertThat(response.entity(), not(Optional.empty()));
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
     }
 
     @Test
@@ -121,7 +121,7 @@ class RestApiTest {
         var response = restApi.get("/missing", RestRequest.builder(), responseBuilder);
 
         assertThat(response.entity(), is(Optional.empty()));
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
     }
 
     private static class TestApiService implements HttpService {

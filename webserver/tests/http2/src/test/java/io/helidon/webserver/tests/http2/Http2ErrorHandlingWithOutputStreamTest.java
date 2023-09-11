@@ -30,6 +30,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.ErrorHandler;
@@ -95,20 +96,20 @@ class Http2ErrorHandlingWithOutputStreamTest {
         // explicitly on HTTP/2 only, to make sure we do upgrade
         router.error(CustomException.class, new CustomRoutingHandler())
                 .route(Http2Route.route(GET, "get-outputStream", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     res.outputStream();
                     throw new CustomException();
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeOnceThenError", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnceOnly".getBytes(StandardCharsets.UTF_8));
                     throw new CustomException();
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeTwiceThenError", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
@@ -116,7 +117,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
                     throw new CustomException();
                 }))
                 .route(Http2Route.route(GET, "get-outputStream-writeFlushThenError", (req, res) -> {
-                    res.status(Http.Status.OK_200);
+                    res.status(Status.OK_200);
                     res.header(MAIN_HEADER_NAME, "x");
                     OutputStream os = res.outputStream();
                     os.write("writeOnce".getBytes(StandardCharsets.UTF_8));
@@ -215,7 +216,7 @@ class Http2ErrorHandlingWithOutputStreamTest {
     private static class CustomRoutingHandler implements ErrorHandler<CustomException> {
         @Override
         public void handle(ServerRequest req, ServerResponse res, CustomException throwable) {
-            res.status(Http.Status.I_AM_A_TEAPOT_418);
+            res.status(Status.I_AM_A_TEAPOT_418);
             res.header(ERROR_HEADER_NAME, "err");
             res.send("TeaPotIAm");
         }

@@ -24,8 +24,8 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -94,7 +94,7 @@ public class ClientMain {
         clientMetricsExample(url, config);
     }
 
-    static Http.Status performPutMethod(WebClient client) {
+    static Status performPutMethod(WebClient client) {
         System.out.println("Put request execution.");
         try (HttpClientResponse response = client.put("/greeting").submit(JSON_NEW_GREETING)) {
             System.out.println("PUT request executed with status: " + response.status());
@@ -113,7 +113,7 @@ public class ClientMain {
     static String followRedirects(WebClient client) {
         System.out.println("Following request redirection.");
         try (HttpClientResponse response = client.get("/redirect").request()) {
-            if (response.status() != Http.Status.OK_200) {
+            if (response.status() != Status.OK_200) {
                 throw new IllegalStateException("Follow redirection failed!");
             }
             String result = response.as(String.class);

@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.util.stream.Stream;
 
 import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -84,11 +85,11 @@ class ValidateResponseHeadersTest {
         Http1ClientRequest request = client.get("/test");
         HttpClientResponse response = request.submit(headerNameAndValue);
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
-            assertThat(response.status(), not(Http.Status.OK_200));
+            assertThat(response.status(), not(Status.OK_200));
         }
     }
 
@@ -99,11 +100,11 @@ class ValidateResponseHeadersTest {
         Http1ClientRequest request = client.get("/testOutputStream");
         HttpClientResponse response = request.submit(headerNameAndValue);
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
-            assertThat(response.status(), not(Http.Status.OK_200));
+            assertThat(response.status(), not(Status.OK_200));
         }
     }
 

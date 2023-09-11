@@ -20,9 +20,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -65,7 +65,7 @@ class JsonpTest {
                 .request();
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type application/json",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaType.create(MediaTypes.APPLICATION_JSON)))),
@@ -79,7 +79,7 @@ class JsonpTest {
                 .submit(MESSAGE);
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 // todo matcher for headers
                 () -> assertThat("Should contain content type application/json",
                                  response.headers().contentType(),

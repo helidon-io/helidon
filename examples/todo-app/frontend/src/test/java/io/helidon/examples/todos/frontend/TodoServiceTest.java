@@ -19,21 +19,22 @@ package io.helidon.examples.todos.frontend;
 import java.net.URI;
 import java.util.Base64;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
+import io.helidon.http.Status;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webclient.security.WebClientSecurity;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.security.Security;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
-import io.helidon.security.Security;
 import io.helidon.webserver.security.SecurityFeature;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import jakarta.json.Json;
@@ -101,7 +102,7 @@ class TodoServiceTest {
     @Test
     void testList() {
         try (Http1ClientResponse response = client.get().request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(JsonArray.class).getJsonObject(0), is(TODO));
         }
     }
@@ -109,7 +110,7 @@ class TodoServiceTest {
     @Test
     void testCreate() {
         try (Http1ClientResponse response = client.post().submit(TODO)) {
-            assertThat(response.status(), is(Http.Status.CREATED_201));
+            assertThat(response.status(), is(Status.CREATED_201));
             assertThat(response.as(JsonObject.class), is(TODO));
         }
     }
@@ -117,7 +118,7 @@ class TodoServiceTest {
     @Test
     void testGet() {
         try (Http1ClientResponse response = client.get("1").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(JsonObject.class), is(TODO));
         }
     }
@@ -125,7 +126,7 @@ class TodoServiceTest {
     @Test
     void testDelete() {
         try (Http1ClientResponse response = client.delete("1").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(JsonObject.class), is(TODO));
         }
     }
@@ -133,7 +134,7 @@ class TodoServiceTest {
     @Test
     void testUpdate() {
         try (Http1ClientResponse response = client.put("1").submit(TODO)) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(JsonObject.class), is(TODO));
         }
     }

@@ -31,6 +31,7 @@ import java.util.Random;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -84,7 +85,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();
@@ -100,7 +101,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -116,7 +117,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -134,7 +135,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();

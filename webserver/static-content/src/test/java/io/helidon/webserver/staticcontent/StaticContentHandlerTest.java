@@ -36,6 +36,7 @@ import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -77,7 +78,7 @@ class StaticContentHandlerTest {
         when(req.contains(IF_MATCH)).thenReturn(false);
         when(req.get(IF_NONE_MATCH)).thenReturn(Http.Headers.create(IF_NONE_MATCH, "\"ccc\"", "W/\"aaa\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
-        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.NOT_MODIFIED_304);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.NOT_MODIFIED_304);
         verify(res).set(ETAG, ETAG_VALUE);
     }
 
@@ -88,7 +89,7 @@ class StaticContentHandlerTest {
         when(req.contains(IF_MATCH)).thenReturn(true);
         when(req.get(IF_MATCH)).thenReturn(Http.Headers.create(IF_MATCH, "\"ccc\"", "\"ddd\""));
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
-        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Http.Status.PRECONDITION_FAILED_412);
+        assertHttpException(() -> StaticContentHandler.processEtag("aaa", req, res), Status.PRECONDITION_FAILED_412);
         verify(res).set(ETAG, ETAG_VALUE);
     }
 
@@ -121,7 +122,7 @@ class StaticContentHandlerTest {
         Mockito.doReturn(Optional.empty()).when(req).ifUnmodifiedSince();
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
-                            Http.Status.NOT_MODIFIED_304);
+                            Status.NOT_MODIFIED_304);
     }
 
     @Test
@@ -142,7 +143,7 @@ class StaticContentHandlerTest {
         Mockito.doReturn(Optional.empty()).when(req).ifModifiedSince();
         ServerResponseHeaders res = mock(ServerResponseHeaders.class);
         assertHttpException(() -> StaticContentHandler.processModifyHeaders(modified.toInstant(), req, res),
-                            Http.Status.PRECONDITION_FAILED_412);
+                            Status.PRECONDITION_FAILED_412);
     }
 
     @Test
@@ -155,7 +156,7 @@ class StaticContentHandlerTest {
 
         CachedHandlerRedirect redirectHandler = new CachedHandlerRedirect("/foo/");
         redirectHandler.handle(LruCache.create(), Method.GET, req, res, "/foo");
-        verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
+        verify(res).status(Status.MOVED_PERMANENTLY_301);
         verify(resh).set(LOCATION, "/foo/");
         verify(res).send();
     }
@@ -211,7 +212,7 @@ class StaticContentHandlerTest {
         assertThat(handler.counter.get(), is(1));
     }
 
-    private static void assertHttpException(Runnable runnable, Http.Status status) {
+    private static void assertHttpException(Runnable runnable, Status status) {
         try {
             runnable.run();
             throw new AssertionError("Expected HttpException was not thrown!");

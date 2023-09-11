@@ -17,7 +17,7 @@ package io.helidon.microprofile.openapi;
 
 import java.util.Map;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 import io.helidon.openapi.OpenApiFeature;
@@ -52,7 +52,7 @@ public class BasicServerTest {
                 .request(OpenApiFeature.DEFAULT_RESPONSE_MEDIA_TYPE.text())
                 .get()) {
             assertThat("Fetch of OpenAPI document from server status", response.getStatus(),
-                    is(equalTo(Http.Status.OK_200.code())));
+                    is(equalTo(Status.OK_200.code())));
             String yamlText = response.readEntity(String.class);
             return new Yaml().load(yamlText);
         }

@@ -20,8 +20,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -92,7 +93,7 @@ public class MicrometerSimplePrometheusTest {
 
         String promOutput = response.entity();
 
-        assertThat("Unexpected HTTP status, response is: " + promOutput, response.status(), is(Http.Status.OK_200));
+        assertThat("Unexpected HTTP status, response is: " + promOutput, response.status(), is(Status.OK_200));
     }
 
     @Test
@@ -106,7 +107,7 @@ public class MicrometerSimplePrometheusTest {
                 .queryParam("type", "prometheus")
                 .request(String.class);
 
-        assertThat("Unexpected HTTP status", response.status(), is(Http.Status.OK_200));
+        assertThat("Unexpected HTTP status", response.status(), is(Status.OK_200));
     }
 
     @Test
@@ -116,7 +117,7 @@ public class MicrometerSimplePrometheusTest {
                 .path("/micrometer")
                 .request()) {
 
-            assertThat("Expected failed HTTP status", response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+            assertThat("Expected failed HTTP status", response.status(), is(Status.NOT_ACCEPTABLE_406));
         }
     }
 

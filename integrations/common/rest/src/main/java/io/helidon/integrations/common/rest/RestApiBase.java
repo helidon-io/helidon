@@ -33,6 +33,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -329,15 +330,15 @@ public abstract class RestApiBase implements RestApi {
                                 ApiRequest<?> request,
                                 Method method,
                                 String requestId,
-                                Http.Status status) {
-        if (status == Http.Status.NOT_FOUND_404) {
+                                Status status) {
+        if (status == Status.NOT_FOUND_404) {
             return true;
         }
-        if (status == Http.Status.NOT_MODIFIED_304) {
+        if (status == Status.NOT_MODIFIED_304) {
             return true;
         }
 
-        Http.Status.Family family = Http.Status.Family.of(status.code());
+        Status.Family family = Status.Family.of(status.code());
         return switch (family) {
             // we do have not modified handled, we also follow redirects - so this is an error
             case REDIRECTION, CLIENT_ERROR, SERVER_ERROR -> false;
@@ -364,8 +365,8 @@ public abstract class RestApiBase implements RestApi {
                                        ApiRequest<?> request,
                                        Method method,
                                        String requestId,
-                                       Http.Status status) {
-        Http.Status.Family family = Http.Status.Family.of(status.code());
+                                       Status status) {
+        Status.Family family = Status.Family.of(status.code());
         return switch (family) {
             // we do have not modified handled, we also follow redirects - so this is an error
             case REDIRECTION, CLIENT_ERROR, SERVER_ERROR -> false;
@@ -420,8 +421,8 @@ public abstract class RestApiBase implements RestApi {
     }
 
     /**
-     * Empty response, may be because of a {@link Http.Status#NOT_FOUND_404}, or
-     * some other status, such as {@link Http.Status#NOT_MODIFIED_304}.
+     * Empty response, may be because of a {@link io.helidon.http.Status#NOT_FOUND_404}, or
+     * some other status, such as {@link io.helidon.http.Status#NOT_MODIFIED_304}.
      *
      * @param path            requested path
      * @param request         original request
@@ -495,8 +496,8 @@ public abstract class RestApiBase implements RestApi {
             HttpClientResponse response,
             ApiEntityResponse.Builder<?, T, JsonObject> responseBuilder) {
 
-        Http.Status status = response.status();
-        if (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL) {
+        Status status = response.status();
+        if (Status.Family.of(status.code()) == Status.Family.SUCCESSFUL) {
             LOGGER.finest(() -> requestId + ": " + method + " on path " + path + " returned " + status);
             try {
                 JsonObject entity = response.entity().as(JsonObject.class);
@@ -528,9 +529,9 @@ public abstract class RestApiBase implements RestApi {
                                                        String requestId,
                                                        HttpClientResponse response,
                                                        ApiResponse.Builder<?, T> responseBuilder) {
-        Http.Status status = response.status();
+        Status status = response.status();
 
-        boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL);
+        boolean success = (Status.Family.of(status.code()) == Status.Family.SUCCESSFUL);
 
         if (success) {
             LOGGER.finest(() -> requestId + ": " + method + " on path " + path + " returned " + status);
@@ -965,10 +966,10 @@ public abstract class RestApiBase implements RestApi {
                                         String requestId,
                                         HttpClientResponse response) {
 
-        Http.Status status = response.status();
-        boolean success = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
+        Status status = response.status();
+        boolean success = (Status.Family.of(status.code()) == Status.Family.SUCCESSFUL)
                 || isSuccess(path, request, method, requestId, status);
-        boolean isEntityExpected = (Http.Status.Family.of(status.code()) == Http.Status.Family.SUCCESSFUL)
+        boolean isEntityExpected = (Status.Family.of(status.code()) == Status.Family.SUCCESSFUL)
                 || isEntityExpected(path, request, method, requestId, status);
         return new ResponseState(success, isEntityExpected);
     }

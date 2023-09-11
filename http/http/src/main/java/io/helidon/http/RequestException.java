@@ -23,7 +23,7 @@ package io.helidon.http;
  */
 public class RequestException extends RuntimeException {
     private final DirectHandler.EventType eventType;
-    private final Http.Status status;
+    private final Status status;
     private final DirectHandler.TransportRequest transportRequest;
     private final boolean keepAlive;
     private final ServerResponseHeaders responseHeaders;
@@ -59,7 +59,7 @@ public class RequestException extends RuntimeException {
      *
      * @return status
      */
-    public Http.Status status() {
+    public Status status() {
         return status;
     }
 
@@ -117,7 +117,7 @@ public class RequestException extends RuntimeException {
         private Throwable cause;
         private DirectHandler.TransportRequest request;
         private DirectHandler.EventType type;
-        private Http.Status status;
+        private Status status;
         private Boolean keepAlive;
         private final ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         private boolean safeMessage = true;
@@ -196,7 +196,7 @@ public class RequestException extends RuntimeException {
          * @param status status to use
          * @return updated builder
          */
-        public Builder status(Http.Status status) {
+        public Builder status(Status status) {
             this.status = status;
             return this;
         }

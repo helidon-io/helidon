@@ -17,18 +17,18 @@ package io.helidon.examples.se.httpstatuscount;
 
 import java.util.Set;
 
-import io.helidon.http.Http.Status;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.Tag;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;

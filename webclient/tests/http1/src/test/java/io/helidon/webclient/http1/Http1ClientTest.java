@@ -32,6 +32,7 @@ import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -339,12 +340,12 @@ class Http1ClientTest {
         try (HttpClientResponse response = injectedHttp1client.put("/redirect")
                 .followRedirects(false)
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Http.Status.FOUND_302));
+            assertThat(response.status(), is(Status.FOUND_302));
         }
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirect")
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
             assertThat(response.as(String.class), is(EXPECTED_GET_AFTER_REDIRECT_STRING));
         }
@@ -355,13 +356,13 @@ class Http1ClientTest {
         try (HttpClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
                 .followRedirects(false)
                 .submit("Test entity")) {
-            assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+            assertThat(response.status(), is(Status.TEMPORARY_REDIRECT_307));
         }
 
         try (HttpClientResponse response = injectedHttp1client.put("/redirectKeepMethod")
                 .submit("Test entity")) {
             assertThat(response.lastEndpointUri().path().path(), is("/afterRedirect"));
-            assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+            assertThat(response.status(), is(Status.NO_CONTENT_204));
         }
     }
 
@@ -370,7 +371,7 @@ class Http1ClientTest {
         String testEntity = "Test entity";
         try (HttpClientResponse response = injectedHttp1client.put("/delayedEndpoint")
                 .submit(testEntity)) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(testEntity));
         }
 
@@ -402,7 +403,7 @@ class Http1ClientTest {
         Http1ClientRequest request = client.put("/test");
         ClientResponseTyped<String> response = request.submit(requestEntity, String.class);
 
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is(requestEntity));
     }
 
@@ -414,7 +415,7 @@ class Http1ClientTest {
     }
 
     private static void validateChunkTransfer(HttpClientResponse response, boolean chunked, long contentLength, String entity) {
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         if (contentLength == NO_CONTENT_LENGTH) {
             assertThat(response.headers(), noHeader(REQ_CONTENT_LENGTH_HEADER_NAME));
         } else {
@@ -430,20 +431,20 @@ class Http1ClientTest {
     }
 
     private static void redirect(ServerRequest req, ServerResponse res) {
-        res.status(Http.Status.FOUND_302)
+        res.status(Status.FOUND_302)
                 .header(Http.HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void redirectKeepMethod(ServerRequest req, ServerResponse res) {
-        res.status(Http.Status.TEMPORARY_REDIRECT_307)
+        res.status(Status.TEMPORARY_REDIRECT_307)
                 .header(Http.HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void afterRedirectGet(ServerRequest req, ServerResponse res) {
         if (req.content().hasEntity()) {
-            res.status(Http.Status.BAD_REQUEST_400)
+            res.status(Status.BAD_REQUEST_400)
                     .send("GET after redirect endpoint reached with entity");
             return;
         }
@@ -453,11 +454,11 @@ class Http1ClientTest {
     private static void afterRedirectPut(ServerRequest req, ServerResponse res) {
         String entity = req.content().as(String.class);
         if (!entity.equals("Test entity")) {
-            res.status(Http.Status.BAD_REQUEST_400)
+            res.status(Status.BAD_REQUEST_400)
                     .send("Entity was not kept the same after the redirect");
             return;
         }
-        res.status(Http.Status.NO_CONTENT_204)
+        res.status(Status.NO_CONTENT_204)
                 .send();
     }
 

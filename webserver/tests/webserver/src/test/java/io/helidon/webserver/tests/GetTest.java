@@ -26,6 +26,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.Headers;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -81,7 +82,7 @@ class GetTest {
         try (Http1ClientResponse response = client.get("/string")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             io.helidon.http.Headers headers = response.headers();
@@ -95,7 +96,7 @@ class GetTest {
         try (Http1ClientResponse response = client.get("/bytes")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
             io.helidon.http.Headers headers = response.headers();
@@ -110,7 +111,7 @@ class GetTest {
         try (Http1ClientResponse response = client.get("/chunked")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             byte[] entity = response.entity().as(byte[].class);
             assertThat(entity, is(BYTES));
             io.helidon.http.Headers headers = response.headers();
@@ -126,7 +127,7 @@ class GetTest {
                 .header(REQUEST_HEADER_VALUE)
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             io.helidon.http.Headers headers = response.headers();
@@ -143,7 +144,7 @@ class GetTest {
         try (Http1ClientResponse response = client.get("/close")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello"));
             io.helidon.http.Headers headers = response.headers();
@@ -157,7 +158,7 @@ class GetTest {
         try (Http1ClientResponse response = client.get("/optional")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("return value"));
         }
@@ -169,7 +170,7 @@ class GetTest {
                 .queryParam("empty", "true")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat(response.status(), is(Status.NOT_FOUND_404));
             assertThat(response.headers(), hasHeader(Headers.CONTENT_LENGTH_ZERO));
         }
     }

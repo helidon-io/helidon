@@ -19,13 +19,11 @@ package io.helidon.webserver.tests;
 import java.util.stream.Stream;
 
 import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -37,7 +35,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -45,7 +42,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /**
@@ -85,9 +81,9 @@ class ValidateRequestHeadersTest {
         request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
         HttpClientResponse response = request.submit("any");
         if (expectsValid) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
-            assertThat(response.status(), not(Http.Status.OK_200));
+            assertThat(response.status(), not(Status.OK_200));
         }
     }
 

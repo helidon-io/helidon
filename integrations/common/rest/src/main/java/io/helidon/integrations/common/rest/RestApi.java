@@ -24,7 +24,6 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
@@ -43,10 +42,10 @@ import jakarta.json.JsonWriterFactory;
  */
 public interface RestApi {
     /**
-     * Get with an optional response. In case the call returns {@link io.helidon.http.Http.Status#NOT_FOUND_404}
+     * Get with an optional response. In case the call returns {@link io.helidon.http.Status#NOT_FOUND_404}
      * this would return an empty optional entity, rather than fail.
      * This may also be the case for requests that use {@code If-Modified-Since} that return a
-     * {@link Http.Status#NOT_MODIFIED_304} response code.
+     * {@link io.helidon.http.Status#NOT_MODIFIED_304} response code.
      *
      * @param path            path to invoke
      * @param request         request to use
@@ -239,7 +238,7 @@ public interface RestApi {
 
     /**
      * Invoke a request that may yield an entity.
-     * The entity is expected to be missing if {@link Http.Status#NOT_FOUND_404} is returned by the API call (and for some
+     * The entity is expected to be missing if {@link io.helidon.http.Status#NOT_FOUND_404} is returned by the API call (and for some
      * other cases, such as not modified).
      *
      * @param method          HTTP method to invoke

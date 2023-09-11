@@ -40,6 +40,7 @@ import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -173,7 +174,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request and closing connection.");
                     throw RequestException.builder()
                             .setKeepAlive(false)
-                            .status(Http.Status.SERVICE_UNAVAILABLE_503)
+                            .status(Status.SERVICE_UNAVAILABLE_503)
                             .type(EventType.OTHER)
                             .message("Too Many Concurrent Requests")
                             .build();
@@ -250,7 +251,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {
             throw RequestException.builder()
                     .type(EventType.BAD_REQUEST)
-                    .status(Http.Status.REQUEST_ENTITY_TOO_LARGE_413)
+                    .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
                     .request(DirectTransportRequest.create(prologue, headers))
                     .setKeepAlive(false)
                     .build();
@@ -296,7 +297,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                     throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
-                            .status(Http.Status.REQUEST_ENTITY_TOO_LARGE_413)
+                            .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
                             .request(DirectTransportRequest.create(prologue, headers))
                             .setKeepAlive(false)
                             .build();
@@ -454,7 +455,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         sendListener.data(ctx, buffer);
         writer.write(buffer);
 
-        if (response.status() == Http.Status.INTERNAL_SERVER_ERROR_500) {
+        if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
             LOGGER.log(WARNING, "Internal server error", e);
         }
     }

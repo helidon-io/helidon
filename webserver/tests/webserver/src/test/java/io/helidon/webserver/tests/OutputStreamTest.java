@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -53,7 +53,7 @@ class OutputStreamTest {
     @Test
     void verifyAutoFlush() {
         try (Http1ClientResponse response = client.get("/outputStream").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             String entity = response.entity().as(String.class);
             assertThat(entity, is("Hello World"));
         }
