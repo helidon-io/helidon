@@ -2,7 +2,7 @@ package {{package}};
 
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.http.Http;
+import io.helidon.http.Header;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.webserver.WebServer;
@@ -84,7 +84,7 @@ public final class OutboundOverrideJwt {
                                 .get("/hello", (req, res) -> {
 
                                     // This is the token. It should be bearer <signed JWT base64 encoded>
-                                    req.headers().first(Http.Header.AUTHORIZATION)
+                                    req.headers().first(Header.AUTHORIZATION)
                                             .ifPresent(System.out::println);
 
                                     String username = req.context()

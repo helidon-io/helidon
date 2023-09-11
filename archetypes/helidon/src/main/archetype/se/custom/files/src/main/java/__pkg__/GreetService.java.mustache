@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 {{#GreetService-imports}}
 {{.}}
 {{/GreetService-imports}}
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -91,7 +91,7 @@ class GreetService implements HttpService {
 
     private void updateGreeting(String update, ServerResponse response) {
         greeting.set(update);
-        response.status(Http.Status.NO_CONTENT_204).send();
+        response.status(Status.NO_CONTENT_204).send();
     }
 
     /**

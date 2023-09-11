@@ -547,7 +547,7 @@ curl -s -X GET http://localhost:8080/health
     @Test
     void testHealth() {
         try (Http1ClientResponse response = client.get("/observe/health").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), containsString("status\":\"UP"));
         }
     }

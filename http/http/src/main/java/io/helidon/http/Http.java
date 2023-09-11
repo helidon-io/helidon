@@ -17,13 +17,22 @@
 package io.helidon.http;
 
 /**
- * HTTP protocol related constants and utilities.
- * <p>
- * <b>Utility class</b>
+ * All types from this class are moved to top-level classes.
+ * This "container" class will be reused later, kept here for deprecation purposes to point to the right place
+ * for the time being.
+ *
+ * @deprecated please use the top level classes in this package
+ * @see io.helidon.http.Method
+ * @see io.helidon.http.Status
+ * @see io.helidon.http.HeaderName
+ * @see io.helidon.http.HeaderNames
+ * @see io.helidon.http.Header
+ * @see io.helidon.http.HeaderWriteable
+ * @see io.helidon.http.HeaderValues
+ * @see io.helidon.http.DateTime
  */
+@Deprecated(since = "4.0.0")
 public final class Http {
-
     private Http() {
     }
-
 }
