@@ -25,8 +25,8 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
+import io.helidon.http.DateTime;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
@@ -74,7 +74,7 @@ public class WsConnection implements ServerConnection, WsSession {
         this.wsKey = wsKey;
         this.listener = wsRoute.listener();
         this.dataReader = ctx.dataReader();
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
     }
 
     /**
@@ -106,13 +106,13 @@ public class WsConnection implements ServerConnection, WsSession {
                     readingNetwork = true;
                     ClientWsFrame frame = readFrame();
                     readingNetwork = false;
-                    lastRequestTimestamp = Http.DateTime.timestamp();
+                    lastRequestTimestamp = DateTime.timestamp();
                     try {
                         if (!processFrame(frame)) {
-                            lastRequestTimestamp = Http.DateTime.timestamp();
+                            lastRequestTimestamp = DateTime.timestamp();
                             return;
                         }
-                        lastRequestTimestamp = Http.DateTime.timestamp();
+                        lastRequestTimestamp = DateTime.timestamp();
                     } catch (CloseConnectionException e) {
                         throw e;
                     } catch (Exception e) {
@@ -174,7 +174,7 @@ public class WsConnection implements ServerConnection, WsSession {
 
     @Override
     public Duration idleTime() {
-        return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+        return Duration.between(lastRequestTimestamp, DateTime.timestamp());
     }
 
     @Override

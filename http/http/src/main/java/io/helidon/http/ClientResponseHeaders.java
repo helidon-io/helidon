@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.media.type.ParserMode;
-import io.helidon.http.Http.DateTime;
 
 import static io.helidon.http.HeaderNames.ACCEPT_PATCH;
 import static io.helidon.http.HeaderNames.EXPIRES;

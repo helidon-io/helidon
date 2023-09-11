@@ -21,10 +21,10 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.Http;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.http2.FlowControl;
@@ -89,7 +89,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                 true,
                                                 false,
                                                 String.valueOf(bytes.length)));
-        headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.status(status());
@@ -278,7 +278,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                                                 String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
-            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
@@ -308,7 +308,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void sendHeadersAndPrepare() {
-            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);

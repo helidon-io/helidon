@@ -263,7 +263,7 @@ public class ContentDisposition implements Header {
      * @return {@code Optional<ZonedDateTime>}, never {@code null}
      */
     public Optional<ZonedDateTime> creationDate() {
-        return Optional.ofNullable(parameters.get(CREATION_DATE_PARAMETER)).map(Http.DateTime::parse);
+        return Optional.ofNullable(parameters.get(CREATION_DATE_PARAMETER)).map(DateTime::parse);
     }
 
     /**
@@ -273,7 +273,7 @@ public class ContentDisposition implements Header {
      * @return {@code Optional<ZonedDateTime>}, never {@code null}
      */
     public Optional<ZonedDateTime> modificationDate() {
-        return Optional.ofNullable(parameters.get(MODIFICATION_DATE_PARAMETER)).map(Http.DateTime::parse);
+        return Optional.ofNullable(parameters.get(MODIFICATION_DATE_PARAMETER)).map(DateTime::parse);
     }
 
     /**
@@ -283,7 +283,7 @@ public class ContentDisposition implements Header {
      * @return {@code Optional<ZonedDateTime>}, never {@code null}
      */
     public Optional<ZonedDateTime> readDate() {
-        return Optional.ofNullable(parameters.get(READ_DATE_PARAMETER)).map(Http.DateTime::parse);
+        return Optional.ofNullable(parameters.get(READ_DATE_PARAMETER)).map(DateTime::parse);
     }
 
     /**
@@ -380,7 +380,7 @@ public class ContentDisposition implements Header {
          * @return this builder
          */
         public Builder creationDate(ZonedDateTime date) {
-            parameters.put(CREATION_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            parameters.put(CREATION_DATE_PARAMETER, date.format(DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -391,7 +391,7 @@ public class ContentDisposition implements Header {
          * @return this builder
          */
         public Builder modificationDate(ZonedDateTime date) {
-            parameters.put(MODIFICATION_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            parameters.put(MODIFICATION_DATE_PARAMETER, date.format(DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 
@@ -402,7 +402,7 @@ public class ContentDisposition implements Header {
          * @return this builder
          */
         public Builder readDate(ZonedDateTime date) {
-            parameters.put(READ_DATE_PARAMETER, date.format(Http.DateTime.RFC_1123_DATE_TIME));
+            parameters.put(READ_DATE_PARAMETER, date.format(DateTime.RFC_1123_DATE_TIME));
             return this;
         }
 

@@ -31,11 +31,11 @@ import io.helidon.common.mapper.MapperException;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.BadRequestException;
+import io.helidon.http.DateTime;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
@@ -113,7 +113,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         this.contentEncodingContext = ctx.listenerContext().contentEncodingContext();
         this.routing = ctx.router().routing(HttpRouting.class, HttpRouting.empty());
         this.maxPayloadSize = ctx.listenerContext().config().maxPayloadSize();
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
     }
 
     @Override
@@ -134,7 +134,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
                 currentlyReadingPrologue = false;
-                lastRequestTimestamp = Http.DateTime.timestamp();
+                lastRequestTimestamp = DateTime.timestamp();
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
@@ -165,9 +165,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
                 if (requestSemaphore.tryAcquire()) {
                     try {
-                        this.lastRequestTimestamp = Http.DateTime.timestamp();
+                        this.lastRequestTimestamp = DateTime.timestamp();
                         route(prologue, headers);
-                        this.lastRequestTimestamp = Http.DateTime.timestamp();
+                        this.lastRequestTimestamp = DateTime.timestamp();
                     } finally {
                         requestSemaphore.release();
                     }
@@ -206,7 +206,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     @Override
     public Duration idleTime() {
         if (upgradeConnection == null) {
-            return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+            return Duration.between(lastRequestTimestamp, DateTime.timestamp());
         }
         return upgradeConnection.idleTime();
     }

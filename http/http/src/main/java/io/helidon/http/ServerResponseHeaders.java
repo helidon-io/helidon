@@ -122,7 +122,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      */
     default ServerResponseHeaders lastModified(Instant modified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(modified, ZoneId.systemDefault());
-        return set(HeaderValues.create(LAST_MODIFIED, true, false, dt.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(HeaderValues.create(LAST_MODIFIED, true, false, dt.format(DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -134,7 +134,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return this instance
      */
     default ServerResponseHeaders lastModified(ZonedDateTime modified) {
-        return set(HeaderValues.create(LAST_MODIFIED, true, false, modified.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(HeaderValues.create(LAST_MODIFIED, true, false, modified.format(DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -158,7 +158,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      * @return updated headers
      */
     default ServerResponseHeaders expires(ZonedDateTime dateTime) {
-        return set(HeaderValues.create(EXPIRES, dateTime.format(Http.DateTime.RFC_1123_DATE_TIME)));
+        return set(HeaderValues.create(EXPIRES, dateTime.format(DateTime.RFC_1123_DATE_TIME)));
     }
 
     /**
@@ -171,6 +171,6 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
      */
     default ServerResponseHeaders expires(Instant dateTime) {
         return set(HeaderValues.create(EXPIRES, ZonedDateTime.ofInstant(dateTime, ZoneId.systemDefault())
-                .format(Http.DateTime.RFC_1123_DATE_TIME)));
+                .format(DateTime.RFC_1123_DATE_TIME)));
     }
 }

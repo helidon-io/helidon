@@ -79,7 +79,7 @@ public interface ServerRequestHeaders extends Headers {
         if (contains(HeaderNames.IF_MODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_MODIFIED_SINCE))
                     .map(Header::value)
-                    .map(Http.DateTime::parse);
+                    .map(DateTime::parse);
         }
 
         return Optional.empty();
@@ -96,7 +96,7 @@ public interface ServerRequestHeaders extends Headers {
         if (contains(HeaderNames.IF_UNMODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_UNMODIFIED_SINCE))
                     .map(Header::value)
-                    .map(Http.DateTime::parse);
+                    .map(DateTime::parse);
         }
         return Optional.empty();
     }
@@ -187,7 +187,7 @@ public interface ServerRequestHeaders extends Headers {
         if (contains(HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(HeaderNames.ACCEPT_DATETIME))
                     .map(Header::value)
-                    .map(Http.DateTime::parse);
+                    .map(DateTime::parse);
         }
         return Optional.empty();
     }
@@ -201,7 +201,7 @@ public interface ServerRequestHeaders extends Headers {
         if (contains(HeaderNames.DATE)) {
             return Optional.of(get(HeaderNames.DATE))
                     .map(Header::value)
-                    .map(Http.DateTime::parse);
+                    .map(DateTime::parse);
         }
         return Optional.empty();
     }

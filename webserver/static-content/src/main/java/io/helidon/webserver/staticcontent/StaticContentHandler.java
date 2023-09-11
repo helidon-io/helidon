@@ -33,10 +33,10 @@ import java.util.function.Function;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.DateTime;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
@@ -346,6 +346,6 @@ abstract class StaticContentHandler implements StaticContentService {
 
     static String formatLastModified(Instant lastModified) {
         ZonedDateTime dt = ZonedDateTime.ofInstant(lastModified, ZoneId.systemDefault());
-        return dt.format(Http.DateTime.RFC_1123_DATE_TIME);
+        return dt.format(DateTime.RFC_1123_DATE_TIME);
     }
 }

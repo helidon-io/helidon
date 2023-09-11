@@ -103,7 +103,7 @@ public class SetCookie {
             switch (partName.toLowerCase()) {
             case "expires":
                 hasValue(partName, partValue);
-                builder.expires(Http.DateTime.parse(partValue));
+                builder.expires(DateTime.parse(partValue));
                 break;
             case "max-age":
                 hasValue(partName, partValue);
@@ -178,7 +178,7 @@ public class SetCookie {
         if (expires != null) {
             result.append(PARAM_SEPARATOR);
             result.append("Expires=");
-            result.append(expires.format(Http.DateTime.RFC_1123_DATE_TIME));
+            result.append(expires.format(DateTime.RFC_1123_DATE_TIME));
         }
         if ((maxAge != null) && !maxAge.isNegative() && !maxAge.isZero()) {
             result.append(PARAM_SEPARATOR);
