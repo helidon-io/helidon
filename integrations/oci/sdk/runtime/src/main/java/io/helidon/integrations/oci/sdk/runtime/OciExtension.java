@@ -244,7 +244,7 @@ public final class OciExtension {
      * @see #configSupplier()
      */
     public static void configSupplier(Supplier<io.helidon.common.config.Config> configSupplier) {
-        ociConfigSupplier = configSupplier;
+        ociConfigSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
     }
 
     /**
@@ -257,7 +257,7 @@ public final class OciExtension {
      * @see #configSupplier()
      */
     public static void fallbackConfigSupplier(Supplier<io.helidon.common.config.Config> configSupplier) {
-        fallbackConfigSupplier = configSupplier;
+        fallbackConfigSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
     }
 
     /**
