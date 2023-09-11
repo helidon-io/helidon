@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import io.helidon.common.Reflected;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;

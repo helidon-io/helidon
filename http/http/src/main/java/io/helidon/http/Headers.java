@@ -47,7 +47,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @param defaultSupplier supplier to obtain default values if the header is not present
      * @return list of header values
      */
-    List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier);
+    List<String> all(HeaderName name, Supplier<List<String>> defaultSupplier);
 
     /**
      * Whether these headers contain a header with the provided name.
@@ -55,7 +55,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @param name header name
      * @return {@code true} if the header is defined
      */
-    boolean contains(Http.HeaderName name);
+    boolean contains(HeaderName name);
 
     /**
      * Whether these headers contain a header with the provided name and value.
@@ -72,11 +72,11 @@ public interface Headers extends Iterable<Http.Header> {
      * @return value if present
      * @throws java.util.NoSuchElementException in case the header is not present
      */
-    Http.Header get(Http.HeaderName name);
+    Http.Header get(HeaderName name);
 
     /**
      * Returns a header value as a single {@link String} potentially concatenated using comma character
-     * from {@link #all(io.helidon.http.Http.HeaderName, java.util.function.Supplier)} header fields.
+     * from {@link #all(HeaderName, java.util.function.Supplier)} header fields.
      * <p>
      * According to <a href="https://tools.ietf.org/html/rfc2616#section-4.2">RFC2616, Message Headers</a>:
      * <blockquote>
@@ -92,10 +92,10 @@ public interface Headers extends Iterable<Http.Header> {
      * @param headerName the header name
      * @return all header values concatenated using comma separator
      * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #all(io.helidon.http.Http.HeaderName, java.util.function.Supplier)
-     * @see #values(io.helidon.http.Http.HeaderName)
+     * @see #all(HeaderName, java.util.function.Supplier)
+     * @see #values(HeaderName)
      */
-    default Optional<String> value(Http.HeaderName headerName) {
+    default Optional<String> value(HeaderName headerName) {
         if (contains(headerName)) {
             List<String> hdrs = all(headerName, List::of);
             return Optional.of(String.join(",", hdrs));
@@ -110,7 +110,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @return the first value
      * @throws NullPointerException if {@code headerName} is {@code null}
      */
-    default Optional<String> first(Http.HeaderName headerName) {
+    default Optional<String> first(HeaderName headerName) {
         if (contains(headerName)) {
             return Optional.of(get(headerName).get());
         }
@@ -130,10 +130,10 @@ public interface Headers extends Iterable<Http.Header> {
      * @param headerName the header name
      * @return a {@code List} of values with zero or greater size, never {@code null}
      * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #all(io.helidon.http.Http.HeaderName, java.util.function.Supplier)
-     * @see #value(io.helidon.http.Http.HeaderName)
+     * @see #all(HeaderName, java.util.function.Supplier)
+     * @see #value(HeaderName)
      */
-    default List<String> values(Http.HeaderName headerName) {
+    default List<String> values(HeaderName headerName) {
         return all(headerName, List::of)
                 .stream()
                 .flatMap(val -> Utils.tokenize(',', "\"", true, val).stream())

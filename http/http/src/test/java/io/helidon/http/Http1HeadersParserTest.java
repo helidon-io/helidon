@@ -116,7 +116,7 @@ class Http1HeadersParserTest {
 
 
     private void testHeader(Headers headers, String header, String... values) {
-        Http.HeaderName headerName = Http.HeaderNames.create(header);
+        HeaderName headerName = Http.HeaderNames.create(header);
         assertThat("Headers should contain header: " + headerName.lowerCase(),
                    headers.contains(headerName),
                    is(true));

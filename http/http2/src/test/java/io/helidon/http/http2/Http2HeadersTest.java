@@ -19,9 +19,9 @@ package io.helidon.http.http2;
 import java.util.HexFormat;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;

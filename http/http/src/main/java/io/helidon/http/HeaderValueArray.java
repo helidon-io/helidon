@@ -19,8 +19,6 @@ package io.helidon.http;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.http.Http.HeaderName;
-
 class HeaderValueArray extends HeaderValueBase {
     private final String[] originalValues;
     private List<String> values;

@@ -133,7 +133,7 @@ public class ContentDisposition implements Http.Header {
     }
 
     @Override
-    public Http.HeaderName headerName() {
+    public HeaderName headerName() {
         return Http.HeaderNames.CONTENT_DISPOSITION;
     }
 

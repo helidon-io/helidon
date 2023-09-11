@@ -18,7 +18,7 @@ package io.helidon.http;
 
 import java.util.Objects;
 
-record HeaderNameImpl(String lowerCase, String defaultCase) implements Http.HeaderName {
+record HeaderNameImpl(String lowerCase, String defaultCase) implements HeaderName {
 
     @Override
     public boolean equals(Object obj) {

@@ -30,6 +30,7 @@ import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
@@ -110,7 +111,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param values header values
      * @return updated request
      */
-    default T header(Http.HeaderName name, String... values) {
+    default T header(HeaderName name, String... values) {
         return header(Http.Headers.create(name, true, false, values));
     }
 
@@ -121,7 +122,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param values header values
      * @return updated request
      */
-    default T header(Http.HeaderName name, List<String> values) {
+    default T header(HeaderName name, List<String> values) {
         return header(Http.Headers.create(name, values));
     }
 

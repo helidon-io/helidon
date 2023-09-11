@@ -28,7 +28,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderValueWriteable;
 
 @SuppressWarnings("unchecked")

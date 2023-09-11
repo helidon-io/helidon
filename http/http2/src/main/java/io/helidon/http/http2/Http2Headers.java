@@ -26,10 +26,10 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;

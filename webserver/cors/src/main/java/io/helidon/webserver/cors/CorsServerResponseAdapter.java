@@ -16,7 +16,7 @@
 package io.helidon.webserver.cors;
 
 import io.helidon.cors.CorsResponseAdapter;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerResponse;
 

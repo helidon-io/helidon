@@ -18,9 +18,9 @@ package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -94,7 +94,7 @@ public final class HttpHeaderMatcher {
      * @param value value(s) of the header
      * @return matcher validating the {@link io.helidon.http.Headers} does contain the provided header
      */
-    public static Matcher<Headers> hasHeader(Http.HeaderName name, String... value) {
+    public static Matcher<Headers> hasHeader(HeaderName name, String... value) {
         return new HasValueMatcher(Http.Headers.create(name, value));
     }
 

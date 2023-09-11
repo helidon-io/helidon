@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
@@ -48,8 +49,8 @@ import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
  * Narayana LRA coordinator client.
  */
 public class NarayanaClient implements CoordinatorClient {
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
+    private static final HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final System.Logger LOGGER = System.getLogger(NarayanaClient.class.getName());
 

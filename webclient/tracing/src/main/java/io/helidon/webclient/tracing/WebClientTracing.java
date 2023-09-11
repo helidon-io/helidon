@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.tracing.HeaderConsumer;
@@ -128,7 +129,7 @@ public class WebClientTracing implements WebClientService {
 
         @Override
         public void setIfAbsent(String key, String... values) {
-            Http.HeaderName name = Http.HeaderNames.create(key);
+            HeaderName name = Http.HeaderNames.create(key);
             if (!headers.contains(name)) {
                 headers.set(name, values);
             }

@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 
 /**
  * HTTP Headers that are mutable.

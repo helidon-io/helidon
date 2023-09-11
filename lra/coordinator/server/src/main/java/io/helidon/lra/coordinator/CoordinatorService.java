@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.scheduling.FixedRateInvocation;
 import io.helidon.scheduling.Scheduling;
@@ -72,8 +73,8 @@ public class CoordinatorService implements HttpService {
     static final String DEFAULT_COORDINATOR_URL = "http://localhost:8070/lra-coordinator";
 
     private static final System.Logger LOGGER = System.getLogger(CoordinatorService.class.getName());
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
-    private static final Http.HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
+    private static final HeaderName LRA_HTTP_CONTEXT_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_CONTEXT_HEADER);
+    private static final HeaderName LRA_HTTP_RECOVERY_HEADER = Http.HeaderNames.create(LRA.LRA_HTTP_RECOVERY_HEADER);
 
     private static final Set<LRAStatus> RECOVERABLE_STATUSES = Set.of(LRAStatus.Cancelling, LRAStatus.Closing, LRAStatus.Active);
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());

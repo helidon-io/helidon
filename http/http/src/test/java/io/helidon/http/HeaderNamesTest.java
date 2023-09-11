@@ -63,11 +63,11 @@ class HeaderNamesTest {
         // this is to test correct initialization (there may be an issue when the constants
         // are defined on the interface and implemented by enum outside of it)
         for (String constant : constants) {
-            if (!Http.HeaderName.class.equals(clazz.getField(constant).getType())) {
+            if (!HeaderName.class.equals(clazz.getField(constant).getType())) {
                 continue;
             }
 
-            Http.HeaderName value = (Http.HeaderName) clazz.getField(constant)
+            HeaderName value = (HeaderName) clazz.getField(constant)
                     .get(null);
 
             assertAll(
@@ -82,7 +82,7 @@ class HeaderNamesTest {
 
     @Test
     void testEqualsAndHashCodeKnownHeader() {
-        Http.HeaderName customAccept = Http.HeaderNames.create("ACCEPT");
+        HeaderName customAccept = Http.HeaderNames.create("ACCEPT");
 
         assertThat(customAccept, equalTo(Http.HeaderNames.ACCEPT));
         assertThat(Http.HeaderNames.ACCEPT, equalTo(customAccept));
@@ -98,8 +98,8 @@ class HeaderNamesTest {
 
     @Test
     void testEqualsAndHashCodeCustomHeader() {
-        Http.HeaderName custom1 = Http.HeaderNames.create("My-Custom-Header");
-        Http.HeaderName custom2 = Http.HeaderNames.create("my-custom-header");
+        HeaderName custom1 = Http.HeaderNames.create("My-Custom-Header");
+        HeaderName custom2 = Http.HeaderNames.create("my-custom-header");
 
 
         assertThat(custom1, equalTo(custom2));

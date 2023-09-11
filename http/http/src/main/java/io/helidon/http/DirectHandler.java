@@ -325,7 +325,7 @@ public interface DirectHandler {
              * @param values value of the header
              * @return updated builder
              */
-            public Builder header(Http.HeaderName name, String... values) {
+            public Builder header(HeaderName name, String... values) {
                 this.headers.set(name, List.of(values));
                 return this;
             }

@@ -18,8 +18,8 @@ package io.helidon.webserver.accesslog;
 
 import java.util.List;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 
 /**
  * Access log entry for header values.

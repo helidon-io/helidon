@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.parameters.Parameters;
-import io.helidon.http.Http.HeaderName;
 
 class ServerRequestHeadersImpl implements ServerRequestHeaders {
     private final Headers headers;

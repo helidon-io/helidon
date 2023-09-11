@@ -37,6 +37,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
@@ -75,7 +76,7 @@ class Http1ClientTest {
             Http.HeaderNames.create("X-Req-Chunked"), "true");
     private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.create(
             Http.HeaderNames.create("X-Req-Expect100"), "true");
-    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
     private static final Http1Client client = Http1Client.builder()
             .sendExpectContinue(false)

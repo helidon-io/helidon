@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.ApiRequest;
@@ -30,7 +31,7 @@ import io.helidon.webclient.api.HttpClientRequest;
 class AppRoleRestApi extends VaultRestApi {
     private static final System.Logger LOGGER = System.getLogger(AppRoleRestApi.class.getName());
 
-    private static final Http.HeaderName VAULT_TOKEN_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Token");
+    private static final HeaderName VAULT_TOKEN_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Token");
 
     private final AtomicReference<VaultTokenBase> currentToken = new AtomicReference<>();
 

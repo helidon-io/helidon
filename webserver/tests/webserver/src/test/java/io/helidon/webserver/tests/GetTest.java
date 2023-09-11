@@ -22,9 +22,9 @@ import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.Random;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;

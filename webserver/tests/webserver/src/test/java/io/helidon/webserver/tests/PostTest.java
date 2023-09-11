@@ -22,9 +22,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.Random;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Method;

@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Stream;
 
 import io.helidon.common.context.Contexts;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -107,7 +108,7 @@ class CoordinatorHeaderPropagationTest {
     private static final String PROPAGATED_HEADER = "xxx-tmm-propagated-header";
     private static final String EXTRA_COORDINATOR_PROPAGATED_HEADER = "xBb-tmm-extra-start-header";
     private static final String NOT_PROPAGATED_HEADER = "non-propagated-header";
-    private static final Http.HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
+    private static final HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
 
     private static volatile int port = -1;
 

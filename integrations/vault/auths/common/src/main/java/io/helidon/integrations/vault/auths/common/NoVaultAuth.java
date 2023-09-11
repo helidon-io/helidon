@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
@@ -31,7 +32,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
  */
 @Weight(1)
 public class NoVaultAuth implements VaultAuth {
-    private static final Http.HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Namespace");
+    private static final HeaderName VAULT_NAMESPACE_HEADER_NAME =  Http.HeaderNames.create("X-Vault-Namespace");
     /**
      * Required for service loader.
      */

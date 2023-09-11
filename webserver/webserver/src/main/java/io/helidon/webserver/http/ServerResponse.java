@@ -21,8 +21,8 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -59,7 +59,7 @@ public interface ServerResponse {
 
     /**
      * Set a header. If the values are constant, please use
-     * {@link io.helidon.http.Http.Headers#create(io.helidon.http.Http.HeaderName, String...)} and store the header
+     * {@link io.helidon.http.Http.Headers#create(io.helidon.http.HeaderName, String...)} and store the header
      * in a constant field and call {@link #header(io.helidon.http.Http.Header)}.
      *
      * @param name   header name

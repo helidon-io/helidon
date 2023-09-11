@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
@@ -74,7 +75,7 @@ class Http1ClientTest {
             Http.HeaderNames.create("X-Req-Chunked"), "true");
     private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
             Http.HeaderNames.create("X-Req-Expect100"), "true");
-    private static final Http.HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final long NO_CONTENT_LENGTH = -1L;
 

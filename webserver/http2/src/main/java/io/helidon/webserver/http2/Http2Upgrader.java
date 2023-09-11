@@ -22,8 +22,8 @@ import java.util.List;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;

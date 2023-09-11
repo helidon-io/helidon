@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.cors.CorsRequestAdapter;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderName;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;

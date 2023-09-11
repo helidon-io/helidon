@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.cors.LogHelper.Headers;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
@@ -747,11 +748,11 @@ public class CorsSupportHelper<Q, R> {
         return true;
     }
 
-    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(Http.HeaderName header) {
+    private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(HeaderName header) {
         return () -> new IllegalArgumentException(noRequiredHeader(header));
     }
 
-    private static String noRequiredHeader(Http.HeaderName header) {
+    private static String noRequiredHeader(HeaderName header) {
         return "CORS request does not have required header " + header.defaultCase();
     }
 

@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import io.helidon.http.Http.HeaderName;
-
 /**
  * Client request headers.
  */

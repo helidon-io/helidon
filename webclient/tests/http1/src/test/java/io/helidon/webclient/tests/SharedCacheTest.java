@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.tests;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.WebClient;
@@ -72,7 +73,7 @@ class SharedCacheTest {
 
     @Test
     void cacheHttp1NoRestart() {
-        Http.HeaderName clientPortHeader = Http.HeaderNames.create("client-port");
+        HeaderName clientPortHeader = Http.HeaderNames.create("client-port");
         WebServer webServer = null;
         try {
             HttpRouting routing = HttpRouting.builder()

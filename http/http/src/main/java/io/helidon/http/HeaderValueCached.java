@@ -26,7 +26,7 @@ class HeaderValueCached extends HeaderValueBase {
     private final String value;
     private final byte[] cachedHttp1Header;
 
-    HeaderValueCached(Http.HeaderName name, boolean changing, boolean sensitive, byte[] cached, String value) {
+    HeaderValueCached(HeaderName name, boolean changing, boolean sensitive, byte[] cached, String value) {
         super(name, changing, sensitive, value);
 
         this.value = value;

@@ -25,7 +25,7 @@ class HeaderValueLazy extends HeaderValueBase {
     private final LazyString value;
     private List<String> values;
 
-    HeaderValueLazy(Http.HeaderName name, boolean changing, boolean sensitive, LazyString value) {
+    HeaderValueLazy(HeaderName name, boolean changing, boolean sensitive, LazyString value) {
         super(name, changing, sensitive, null);
 
         this.value = value;

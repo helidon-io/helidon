@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.tests;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;

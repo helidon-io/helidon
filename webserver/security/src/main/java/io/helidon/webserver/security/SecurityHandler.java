@@ -35,6 +35,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
@@ -698,14 +699,14 @@ public final class SecurityHandler implements Handler {
     private void abortRequest(ServerResponse res,
                               SecurityResponse response,
                               int defaultCode,
-                              Map<Http.HeaderName, List<String>> defaultHeaders) {
+                              Map<HeaderName, List<String>> defaultHeaders) {
 
         int statusCode = ((null == response) ? defaultCode : response.statusCode().orElse(defaultCode));
-        Map<Http.HeaderName, List<String>> responseHeaders;
+        Map<HeaderName, List<String>> responseHeaders;
         if (response == null) {
             responseHeaders = defaultHeaders;
         } else {
-            Map<Http.HeaderName, List<String>> tmpHeaders = new HashMap<>();
+            Map<HeaderName, List<String>> tmpHeaders = new HashMap<>();
             response.responseHeaders()
                     .forEach((key, value) -> tmpHeaders.put(Http.HeaderNames.create(key), value));
             responseHeaders = tmpHeaders;
@@ -715,7 +716,7 @@ public final class SecurityHandler implements Handler {
 
         ServerResponseHeaders httpHeaders = res.headers();
 
-        for (Map.Entry<Http.HeaderName, List<String>> entry : responseHeaders.entrySet()) {
+        for (Map.Entry<HeaderName, List<String>> entry : responseHeaders.entrySet()) {
             httpHeaders.set(entry.getKey(), entry.getValue());
         }
 

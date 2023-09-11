@@ -28,8 +28,8 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Random;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;

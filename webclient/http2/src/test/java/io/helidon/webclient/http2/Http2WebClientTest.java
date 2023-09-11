@@ -33,6 +33,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
@@ -59,10 +60,10 @@ import static org.hamcrest.Matchers.is;
 @ServerTest
 class Http2WebClientTest {
 
-    private static final Http.HeaderName CLIENT_CUSTOM_HEADER_NAME = Http.HeaderNames.create("client-custom-header");
-    private static final Http.HeaderName SERVER_CUSTOM_HEADER_NAME = Http.HeaderNames.create("server-custom-header");
-    private static final Http.HeaderName SERVER_HEADER_FROM_PARAM_NAME = Http.HeaderNames.create("header-from-param");
-    private static final Http.HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.HeaderNames.create("client-user-agent");
+    private static final HeaderName CLIENT_CUSTOM_HEADER_NAME = Http.HeaderNames.create("client-custom-header");
+    private static final HeaderName SERVER_CUSTOM_HEADER_NAME = Http.HeaderNames.create("server-custom-header");
+    private static final HeaderName SERVER_HEADER_FROM_PARAM_NAME = Http.HeaderNames.create("header-from-param");
+    private static final HeaderName CLIENT_USER_AGENT_HEADER_NAME = Http.HeaderNames.create("client-user-agent");
     private static ExecutorService executorService;
     private static int plainPort;
     private static int tlsPort;

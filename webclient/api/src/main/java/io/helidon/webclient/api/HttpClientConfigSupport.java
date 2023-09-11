@@ -24,6 +24,7 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -72,7 +73,7 @@ class HttpClientConfigSupport {
          * @param value value of the header
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, String value) {
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, String value) {
             builder.addHeader(Http.Headers.create(name, value));
         }
 
@@ -84,7 +85,7 @@ class HttpClientConfigSupport {
          * @param value value of the header
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, int value) {
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, int value) {
             builder.addHeader(Http.Headers.create(name, value));
         }
 
@@ -96,14 +97,14 @@ class HttpClientConfigSupport {
          * @param value value of the header
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, long value) {
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, long value) {
             builder.addHeader(Http.Headers.create(name, value));
         }
 
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
-         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.Http.HeaderName}
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
          * or {@link io.helidon.http.Http.Header}.
          *
          * @param builder builder to update
@@ -118,7 +119,7 @@ class HttpClientConfigSupport {
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
-         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.Http.HeaderName}
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
          * or {@link io.helidon.http.Http.Header}.
          *
          * @param builder builder to update
@@ -133,7 +134,7 @@ class HttpClientConfigSupport {
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
-         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.Http.HeaderName}
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
          * or {@link io.helidon.http.Http.Header}.
          *
          * @param builder builder to update

@@ -33,12 +33,12 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     }
 
     @Override
-    public List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier) {
+    public List<String> all(HeaderName name, Supplier<List<String>> defaultSupplier) {
         return headers.all(name, defaultSupplier);
     }
 
     @Override
-    public boolean contains(Http.HeaderName name) {
+    public boolean contains(HeaderName name) {
         return headers.contains(name);
     }
 
@@ -48,7 +48,7 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     }
 
     @Override
-    public Http.Header get(Http.HeaderName name) {
+    public Http.Header get(HeaderName name) {
         return headers.get(name);
     }
 

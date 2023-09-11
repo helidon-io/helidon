@@ -16,9 +16,9 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.http.HeaderName;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 
 import io.grpc.Status;
