@@ -402,8 +402,11 @@ class Registry implements MetricRegistry {
             if (existingMetric != null) {
 
                 // This is a bit odd. We've been notified that a new meter was created by the neutral metrics implementation,
-                // but we seem to already have the corresponding metric in place. Validate the new meter against the
-                // existing metric anyway but report a warning about the duplicate registration attempt.
+                // but we seem to already have the corresponding metric in place. (This *can* happen if the metric or all metrics
+                // are disabled.)
+                //
+                // Validate the new meter against the existing metric anyway but report a warning about the duplicate
+                // registration attempt.
 
                 collector.warn(String.format("unexpected attempted re-registration of metric %s by meter %s",
                                              newMetricID,
@@ -542,6 +545,15 @@ class Registry implements MetricRegistry {
                                        HelidonMetric<?> existingMetric,
                                        Meter meter) {
 
+        /*
+         Watch out for a corner case. If metrics are disabled then we get notification of a new meter when we might not expect
+         it. Functional counters in the Helidon metrics API are converted to gauges in the Helidon implementation of the MP
+         metrics API, so a simple type comparison will fail in that case.
+         */
+        if (meter instanceof FunctionalCounter
+                && io.helidon.metrics.api.Gauge.class.isAssignableFrom(existingMetric.delegateType())) {
+            return;
+        }
         if (!existingMetric.delegateType().isInstance(meter)) {
             collector.fatal(String.format("existing metric %s is compatible with type %s but new meter is %s",
                                           metricID,
