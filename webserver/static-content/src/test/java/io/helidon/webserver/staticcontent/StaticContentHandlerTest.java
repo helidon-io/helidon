@@ -43,10 +43,10 @@ import io.helidon.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import static io.helidon.http.Http.HeaderNames.ETAG;
-import static io.helidon.http.Http.HeaderNames.IF_MATCH;
-import static io.helidon.http.Http.HeaderNames.IF_NONE_MATCH;
-import static io.helidon.http.Http.HeaderNames.LOCATION;
+import static io.helidon.http.HeaderNames.ETAG;
+import static io.helidon.http.HeaderNames.IF_MATCH;
+import static io.helidon.http.HeaderNames.IF_NONE_MATCH;
+import static io.helidon.http.HeaderNames.LOCATION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;

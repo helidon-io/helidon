@@ -31,8 +31,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
@@ -65,7 +65,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.spi.ServerConnection;
 
-import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static io.helidon.http.http2.Http2Util.PREFACE_LENGTH;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;

@@ -30,6 +30,7 @@ import java.util.function.Function;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2Settings;
@@ -51,11 +52,11 @@ import static java.lang.System.Logger.Level.TRACE;
 // this may use one or more connections (depending on parallel streams)
 class Http2ClientConnectionHandler {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnectionHandler.class.getName());
-    private static final Http.Header CONNECTION_UPGRADE_HEADER = Http.Headers.createCached(Http.HeaderNames.CONNECTION,
+    private static final Http.Header CONNECTION_UPGRADE_HEADER = Http.Headers.createCached(HeaderNames.CONNECTION,
                                                                                            "Upgrade, HTTP2-Settings");
     // h2c stands for HTTP/2 plaintext protocol (only used without TLS)
-    private static final Http.Header UPGRADE_HEADER = Http.Headers.createCached(Http.HeaderNames.UPGRADE, "h2c");
-    private static final HeaderName HTTP2_SETTINGS_HEADER = Http.HeaderNames.create("HTTP2-Settings");
+    private static final Http.Header UPGRADE_HEADER = Http.Headers.createCached(HeaderNames.UPGRADE, "h2c");
+    private static final HeaderName HTTP2_SETTINGS_HEADER = HeaderNames.create("HTTP2-Settings");
 
     // todo requires handling of timeouts and removal from this queue
     private final Map<ClientConnection, Http2ClientConnection> h2ConnByConn =

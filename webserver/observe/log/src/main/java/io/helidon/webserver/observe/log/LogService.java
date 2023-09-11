@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
@@ -263,7 +264,7 @@ class LogService implements HttpService {
     static class Builder implements io.helidon.common.Builder<Builder, LogService> {
         private boolean permitAll = false;
         private boolean logStreamEnabled = true;
-        private Http.Header logStreamMediaTypeHeader = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE,
+        private Http.Header logStreamMediaTypeHeader = Http.Headers.create(HeaderNames.CONTENT_TYPE,
                                                                            HttpMediaTypes.PLAINTEXT_UTF_8.text());
         private Charset logStreamCharset = StandardCharsets.UTF_8;
         private long logStreamSleepSeconds = 5L;
@@ -306,7 +307,7 @@ class LogService implements HttpService {
         }
 
         Builder logStreamMediaType(HttpMediaType logStreamMediaType) {
-            this.logStreamMediaTypeHeader = Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE, logStreamMediaType.text());
+            this.logStreamMediaTypeHeader = Http.Headers.createCached(HeaderNames.CONTENT_TYPE, logStreamMediaType.text());
             this.logStreamCharset = logStreamMediaType.charset().map(Charset::forName).orElse(StandardCharsets.UTF_8);
             return this;
         }

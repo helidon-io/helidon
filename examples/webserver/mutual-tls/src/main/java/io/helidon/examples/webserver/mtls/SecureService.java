@@ -19,7 +19,7 @@ import io.helidon.http.Http;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 
-import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 
 class SecureService implements HttpService {
     @Override

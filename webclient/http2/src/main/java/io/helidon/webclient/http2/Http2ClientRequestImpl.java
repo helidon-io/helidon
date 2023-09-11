@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientRequestBase;
@@ -163,11 +163,11 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
             int code = clientResponse.status().code();
             if (code < 300 || code >= 400) {
                 return clientResponse;
-            } else if (!clientResponse.headers().contains(Http.HeaderNames.LOCATION)) {
-                throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the response! "
+            } else if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
+                throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the response! "
                                                         + "It is not clear where to redirect.");
             }
-            String redirectedUri = clientResponse.headers().get(Http.HeaderNames.LOCATION).value();
+            String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).value();
             URI newUri = URI.create(redirectedUri);
             ClientUri redirectUri = ClientUri.create(newUri);
 

@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 
 import io.helidon.cors.CorsSupportHelper.RequestType;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 
 class LogHelper {

@@ -33,8 +33,8 @@ import java.util.function.Function;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
@@ -82,7 +82,7 @@ abstract class StaticContentHandler implements StaticContentService {
         // Put ETag into the response
         responseHeaders.set(HeaderNames.ETAG, '"' + etag + '"');
         // Process If-None-Match header
-        if (requestHeaders.contains(Http.HeaderNames.IF_NONE_MATCH)) {
+        if (requestHeaders.contains(HeaderNames.IF_NONE_MATCH)) {
             List<String> ifNoneMatches = requestHeaders.get(HeaderNames.IF_NONE_MATCH).allValues();
             for (String ifNoneMatch : ifNoneMatches) {
                 ifNoneMatch = unquoteETag(ifNoneMatch);
@@ -93,7 +93,7 @@ abstract class StaticContentHandler implements StaticContentService {
             }
         }
 
-        if (requestHeaders.contains(Http.HeaderNames.IF_MATCH)) {
+        if (requestHeaders.contains(HeaderNames.IF_MATCH)) {
             // Process If-Match header
             List<String> ifMatches = requestHeaders.get(HeaderNames.IF_MATCH).allValues();
             if (!ifMatches.isEmpty()) {

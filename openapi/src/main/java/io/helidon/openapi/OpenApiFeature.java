@@ -38,7 +38,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -392,7 +392,7 @@ public abstract class OpenApiFeature extends HelidonFeatureSupport {
         ServerRequestHeaders headersToCheck = req.headers();
         if (headersToCheck.acceptedTypes().isEmpty()) {
             WritableHeaders<?> writableHeaders = WritableHeaders.create(headersToCheck);
-            writableHeaders.add(Http.HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
+            writableHeaders.add(HeaderNames.ACCEPT, DEFAULT_RESPONSE_MEDIA_TYPE.toString());
             headersToCheck = ServerRequestHeaders.create(writableHeaders);
         }
         return headersToCheck

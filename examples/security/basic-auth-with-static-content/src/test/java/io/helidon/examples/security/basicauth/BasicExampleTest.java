@@ -19,7 +19,7 @@ package io.helidon.examples.security.basicauth;
 import java.net.URI;
 import java.util.Set;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
@@ -132,7 +132,7 @@ public abstract class BasicExampleTest {
         try (Http1ClientResponse response = client.get().uri(uri).request()) {
 
             assertThat(response.status(), is(Status.UNAUTHORIZED_401));
-            String header = response.headers().get(Http.HeaderNames.WWW_AUTHENTICATE).value();
+            String header = response.headers().get(HeaderNames.WWW_AUTHENTICATE).value();
 
             assertThat(header.toLowerCase(), containsString("basic"));
             assertThat(header, containsString("helidon"));

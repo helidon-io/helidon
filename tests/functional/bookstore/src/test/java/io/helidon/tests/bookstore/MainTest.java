@@ -32,7 +32,7 @@ import java.util.Objects;
 import java.util.Queue;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -353,7 +353,7 @@ class MainTest {
 
             String payload = webClient.get()
                     .path("/metrics")
-                    .header(Http.HeaderNames.ACCEPT, MediaTypes.WILDCARD.text())
+                    .header(HeaderNames.ACCEPT, MediaTypes.WILDCARD.text())
                     .requestEntity(String.class);
             assertThat("Making sure we got Prometheus format", payload, anyOf(startsWith("# TYPE"), startsWith("# HELP")));
 
@@ -363,7 +363,7 @@ class MainTest {
             if (!Objects.equals(jsonLibrary, "jackson")) {
                 jsonObject = webClient.get()
                         .path("/metrics")
-                        .header(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                        .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                         .requestEntity(JsonObject.class);
                 String scopeTagName = edition.equals("se") ? "scope" : "mp_scope";
                 assertThat("Checking request count",
@@ -372,7 +372,7 @@ class MainTest {
 
             jsonObject = webClient.get()
                     .path("/health")
-                    .header(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                    .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .requestEntity(JsonObject.class);
             assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
             if (edition.equals("mp")) {
@@ -395,7 +395,7 @@ class MainTest {
 
             HttpClientResponse response = webClient.get()
                     .path("/badurl")
-                    .header(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                    .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .request();
             assertThat("Checking encode URL response", response.status(), is(Status.NOT_FOUND_404));
         } finally {

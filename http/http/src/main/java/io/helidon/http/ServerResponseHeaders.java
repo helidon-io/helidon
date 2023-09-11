@@ -24,9 +24,9 @@ import java.time.ZonedDateTime;
 
 import io.helidon.common.media.type.MediaType;
 
-import static io.helidon.http.Http.HeaderNames.EXPIRES;
-import static io.helidon.http.Http.HeaderNames.LAST_MODIFIED;
-import static io.helidon.http.Http.HeaderNames.LOCATION;
+import static io.helidon.http.HeaderNames.EXPIRES;
+import static io.helidon.http.HeaderNames.LAST_MODIFIED;
+import static io.helidon.http.HeaderNames.LOCATION;
 
 /**
  * Mutable headers of a server response.
@@ -55,7 +55,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
 
     /**
      * Adds one or more acceptedTypes path document formats
-     * (header {@link io.helidon.http.Http.HeaderNames#ACCEPT_PATCH}).
+     * (header {@link HeaderNames#ACCEPT_PATCH}).
      *
      * @param acceptableMediaTypes media types to add.
      * @return this instance
@@ -66,7 +66,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
             MediaType acceptableMediaType = acceptableMediaTypes[i];
             values[i] = acceptableMediaType.text();
         }
-        return add(Http.Headers.create(Http.HeaderNames.ACCEPT_PATCH,
+        return add(Http.Headers.create(HeaderNames.ACCEPT_PATCH,
                                        values));
     }
 
@@ -113,7 +113,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     ServerResponseHeaders clearCookie(String name);
 
     /**
-     * Sets the value of {@link io.helidon.http.Http.HeaderNames#LAST_MODIFIED} header.
+     * Sets the value of {@link HeaderNames#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object
      *
@@ -126,7 +126,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     }
 
     /**
-     * Sets the value of {@link io.helidon.http.Http.HeaderNames#LAST_MODIFIED} header.
+     * Sets the value of {@link HeaderNames#LAST_MODIFIED} header.
      * <p>
      * The last modified date for the requested object
      *
@@ -138,7 +138,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     }
 
     /**
-     * Sets the value of {@link io.helidon.http.Http.HeaderNames#LOCATION} header.
+     * Sets the value of {@link HeaderNames#LOCATION} header.
      * <p>
      * Used in redirection, or when a new resource has been created.
      *
@@ -150,7 +150,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     }
 
     /**
-     * Sets the value of {@link io.helidon.http.Http.HeaderNames#EXPIRES} header.
+     * Sets the value of {@link HeaderNames#EXPIRES} header.
      * <p>
      * The date/time after which the response is considered stale.
      *
@@ -162,7 +162,7 @@ public interface ServerResponseHeaders extends ClientResponseHeaders,
     }
 
     /**
-     * Sets the value of {@link io.helidon.http.Http.HeaderNames#EXPIRES} header.
+     * Sets the value of {@link HeaderNames#EXPIRES} header.
      * <p>
      * The date/time after which the response is considered stale.
      *

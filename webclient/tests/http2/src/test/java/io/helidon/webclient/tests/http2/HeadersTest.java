@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
@@ -130,9 +131,9 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .request()) {
             Headers h = res.headers();
-            assertThat(h.first(Http.HeaderNames.create("test")).orElse(null), is("before"));
+            assertThat(h.first(HeaderNames.create("test")).orElse(null), is("before"));
             assertThat(res.as(String.class), is(DATA));
-            assertThat(h.first(Http.HeaderNames.create("Trailer-header")).orElse(null), is("trailer-test"));
+            assertThat(h.first(HeaderNames.create("Trailer-header")).orElse(null), is("trailer-test"));
         }
     }
 
@@ -149,7 +150,7 @@ class HeadersTest {
             Headers h = res.headers();
             for (int i = 0; i < 500; i++) {
                 String name = "test-header-" + i;
-                assertThat("Headers " + name, h.first(Http.HeaderNames.create(name)).orElse(null), is(DATA));
+                assertThat("Headers " + name, h.first(HeaderNames.create(name)).orElse(null), is(DATA));
             }
 
             assertThat(res.as(String.class), is(DATA));

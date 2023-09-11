@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
@@ -41,7 +42,7 @@ import io.helidon.http.WritableHeaders;
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class StringSupport implements MediaSupport {
-    private static final Header HEADER_PLAIN_TEXT = Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+    private static final Header HEADER_PLAIN_TEXT = Http.Headers.createCached(HeaderNames.CONTENT_TYPE,
                                                                               HttpMediaTypes.PLAINTEXT_UTF_8.text());
     private static final EntityReader READER = new StringReader();
     private static final EntityWriter WRITER = new StringWriter();
@@ -162,7 +163,7 @@ public class StringSupport implements MediaSupport {
                            OutputStream outputStream,
                            WritableHeaders<?> writableHeaders) {
             Charset charset;
-            if (writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+            if (writableHeaders.contains(HeaderNames.CONTENT_TYPE)) {
                 charset = writableHeaders.contentType()
                         .flatMap(HttpMediaType::charset)
                         .map(Charset::forName)
@@ -185,7 +186,7 @@ public class StringSupport implements MediaSupport {
 
         private StringInstanceWriter(String object, WritableHeaders<?> headers) {
             Charset charset;
-            if (headers.contains(Http.HeaderNames.CONTENT_TYPE)) {
+            if (headers.contains(HeaderNames.CONTENT_TYPE)) {
                 charset = headers.contentType()
                         .flatMap(HttpMediaType::charset)
                         .map(Charset::forName)

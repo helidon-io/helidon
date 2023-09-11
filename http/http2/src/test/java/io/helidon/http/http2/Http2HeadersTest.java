@@ -20,9 +20,8 @@ import java.util.HexFormat;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers.DynamicTable;
@@ -77,7 +76,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Headers requestHeaders = headers(hexEncoded, dynamicTable).httpHeaders();
 
-        assertThat(requestHeaders.get(Http.HeaderNames.create("password")).value(), is("secret"));
+        assertThat(requestHeaders.get(HeaderNames.create("password")).value(), is("secret"));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
     }
 
@@ -125,13 +124,13 @@ class Http2HeadersTest {
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
-        assertThat(requestHeaders.get(Http.HeaderNames.create("cache-control")).value(), is("no-cache"));
+        assertThat(requestHeaders.get(HeaderNames.create("cache-control")).value(), is("no-cache"));
 
         assertThat("Dynamic table should not be empty", dynamicTable.currentTableSize(), not(0));
 
         assertThat(dynamicTable.currentTableSize(), is(110));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
-        assertThat(headerRecord.headerName(), is(Http.HeaderNames.CACHE_CONTROL));
+        assertThat(headerRecord.headerName(), is(HeaderNames.CACHE_CONTROL));
         assertThat(headerRecord.value(), is("no-cache"));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 2);
         assertThat(headerRecord.headerName(), is(Http2Headers.AUTHORITY_NAME));
@@ -221,7 +220,7 @@ class Http2HeadersTest {
 
         assertThat(dynamicTable.currentTableSize(), is(110));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
-        assertThat(headerRecord.headerName(), is(Http.HeaderNames.CACHE_CONTROL));
+        assertThat(headerRecord.headerName(), is(HeaderNames.CACHE_CONTROL));
         assertThat(headerRecord.value(), is("no-cache"));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 2);
         assertThat(headerRecord.headerName(), is(Http2Headers.AUTHORITY_NAME));

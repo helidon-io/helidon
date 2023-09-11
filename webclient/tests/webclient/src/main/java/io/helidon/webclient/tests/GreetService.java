@@ -28,7 +28,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
@@ -105,8 +105,8 @@ public class GreetService implements HttpService {
 
     private void contentLength(ServerRequest serverRequest, ServerResponse serverResponse) {
         serverRequest.headers().contentLength()
-                .ifPresentOrElse(value -> serverResponse.send(Http.HeaderNames.CONTENT_LENGTH + " is " + value),
-                        () -> serverResponse.send("No " + Http.HeaderNames.CONTENT_LENGTH + " has been set"));
+                .ifPresentOrElse(value -> serverResponse.send(HeaderNames.CONTENT_LENGTH + " is " + value),
+                        () -> serverResponse.send("No " + HeaderNames.CONTENT_LENGTH + " has been set"));
     }
 
     private void basicAuthOutbound(ServerRequest request, ServerResponse response) {
@@ -168,17 +168,17 @@ public class GreetService implements HttpService {
      * @param response the server response
      */
     private void redirect(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
+        response.headers().add(HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet");
         response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectPath(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, "/greet");
+        response.headers().add(HeaderNames.LOCATION, "/greet");
         response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectInfinite(ServerRequest request, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
+        response.headers().add(HeaderNames.LOCATION, "http://localhost:" + request.requestedUri().port() + "/greet/redirect/infinite");
         response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 

@@ -23,6 +23,7 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.Method;
@@ -69,11 +70,11 @@ record CachedHandlerInMemory(MediaType mediaType,
     private void send(ServerRequest request, ServerResponse response) {
         ServerRequestHeaders headers = request.headers();
 
-        if (headers.contains(Http.HeaderNames.RANGE)) {
+        if (headers.contains(HeaderNames.RANGE)) {
             long contentLength = contentLength();
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
-                                                                   headers.get(Http.HeaderNames.RANGE).values(),
+                                                                   headers.get(HeaderNames.RANGE).values(),
                                                                    contentLength);
             if (ranges.size() == 1) {
                 // single response

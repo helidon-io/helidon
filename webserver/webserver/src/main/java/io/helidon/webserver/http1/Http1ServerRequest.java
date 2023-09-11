@@ -26,6 +26,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
@@ -172,7 +173,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
 
     @Override
     public String authority() {
-        return headers.get(Http.HeaderNames.HOST).value();
+        return headers.get(HeaderNames.HOST).value();
     }
 
     @Override

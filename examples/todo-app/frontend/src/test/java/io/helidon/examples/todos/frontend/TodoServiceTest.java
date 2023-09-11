@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Base64;
 
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Status;
@@ -52,7 +53,7 @@ class TodoServiceTest {
 
     private static final JsonObject TODO = Json.createObjectBuilder().add("msg", "todo").build();
     private static final String ENCODED_ID = Base64.getEncoder().encodeToString("john:password".getBytes());
-    private static final Header BASIC_AUTH = Http.Headers.create(Http.HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID);
+    private static final Header BASIC_AUTH = Http.Headers.create(HeaderNames.AUTHORIZATION, "Basic " + ENCODED_ID);
 
     private static URI backendUri;
     private final Http1Client client;

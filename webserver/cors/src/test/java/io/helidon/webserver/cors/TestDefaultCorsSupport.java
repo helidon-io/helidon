@@ -15,9 +15,8 @@
  */
 package io.helidon.webserver.cors;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -28,7 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -87,7 +86,7 @@ class TestDefaultCorsSupport {
 
             try (HttpClientResponse response = client.get("/greet")
                     .header(HeaderNames.ORIGIN, "http://foo.com")
-                    .header(Http.HeaderNames.HOST, "bar.com")
+                    .header(HeaderNames.HOST, "bar.com")
                     .request()) {
 
                 Headers headers = response.headers();
@@ -114,8 +113,8 @@ class TestDefaultCorsSupport {
                     .build();
 
             try (HttpClientResponse response = client.get("/greet")
-                    .header(Http.HeaderNames.ORIGIN, "http://foo.com")
-                    .header(Http.HeaderNames.HOST, "bar.com")
+                    .header(HeaderNames.ORIGIN, "http://foo.com")
+                    .header(HeaderNames.HOST, "bar.com")
                     .request()) {
 
                 assertThat(response.headers(), noHeader(ACCESS_CONTROL_ALLOW_ORIGIN));

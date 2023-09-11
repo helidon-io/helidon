@@ -325,9 +325,9 @@ restrictive-cors:
                                 <value>io.helidon.cors.CrossOriginConfig</value>
                             </list>
                             <list key="MainTest-static-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
-                                <value>io.helidon.http.Http.HeaderNames.HOST</value>
-                                <value>io.helidon.http.Http.HeaderNames.ORIGIN</value>
+                                <value>io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN</value>
+                                <value>io.helidon.http.HeaderNames.HOST</value>
+                                <value>io.helidon.http.HeaderNames.ORIGIN</value>
                             </list>
                             <list key="MainTest-static-imports">
                                 <value if="${flavor} == 'se'">org.hamcrest.CoreMatchers.containsString</value>

@@ -22,6 +22,7 @@ import java.util.Optional;
 import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.ServerResponseHeaders;
@@ -203,7 +204,7 @@ public interface ServerResponse {
      * @param length content length
      */
     default void contentLength(long length) {
-        header(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
+        header(Http.Headers.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(length)));
     }
 
     /**

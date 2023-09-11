@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.Status;
@@ -55,20 +55,20 @@ class Continue100ImmediatelyTest {
 
     private static final Handler ANY_HANDLER = (req, res) -> {
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.HeaderNames.create("test-fail-before-read"))
+                .first(HeaderNames.create("test-fail-before-read"))
                 .orElse("false"))) {
             res.status(Status.EXPECTATION_FAILED_417).send();
             return;
         }
 
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.HeaderNames.create("test-throw-before-read"))
+                .first(HeaderNames.create("test-throw-before-read"))
                 .orElse("false"))) {
             throw new RuntimeException("BOOM!!!");
         }
 
         Optional<String> blockId = req.headers()
-                .first(Http.HeaderNames.create("test-block-id"));
+                .first(HeaderNames.create("test-block-id"));
         // Block request content dump if blocker assigned
         blockId.map(BLOCKER_MAP::get)
                 .orElse(CompletableFuture.completedFuture(""))
@@ -78,7 +78,7 @@ class Continue100ImmediatelyTest {
         String s = req.content().as(String.class);
 
         if (Boolean.parseBoolean(req.headers()
-                .first(Http.HeaderNames.create("test-throw-after-read"))
+                .first(HeaderNames.create("test-throw-after-read"))
                 .orElse("false"))) {
             throw new RuntimeException("BOOM!!!");
         }
@@ -107,10 +107,10 @@ class Continue100ImmediatelyTest {
                      PathMatchers.exact("/redirect"), (req, res) ->
 
                              res.status(Status.MOVED_PERMANENTLY_301)
-                                     .header(Http.HeaderNames.LOCATION, "/")
+                                     .header(HeaderNames.LOCATION, "/")
                                      // force 301 to not use chunked encoding
                                      // https://github.com/helidon-io/helidon/issues/5713
-                                     .header(Http.HeaderNames.CONTENT_LENGTH, "0")
+                                     .header(HeaderNames.CONTENT_LENGTH, "0")
                                      .send()
                 )
                 .route(Method.predicate(Method.PUT, Method.POST),

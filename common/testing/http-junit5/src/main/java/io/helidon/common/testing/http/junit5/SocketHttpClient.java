@@ -34,7 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -138,7 +138,7 @@ public class SocketHttpClient implements AutoCloseable {
             if (i < 0) {
                 throw new AssertionError("Header without semicolon - " + line);
             }
-            headers.add(Http.HeaderNames.create(line.substring(0, i).trim()), line.substring(i + 1).trim());
+            headers.add(HeaderNames.create(line.substring(0, i).trim()), line.substring(i + 1).trim());
         }
         return ClientResponseHeaders.create(headers);
     }

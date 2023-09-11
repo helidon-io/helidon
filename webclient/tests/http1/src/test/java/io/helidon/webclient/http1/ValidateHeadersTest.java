@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -84,7 +85,7 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
             assertThat(response.status(), is(Status.OK_200));
@@ -103,11 +104,11 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
             assertThat(response.status(), is(Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
@@ -125,14 +126,14 @@ class ValidateHeadersTest {
                 .sendExpectContinue(false)
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.outputStream(it -> {
                 it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
                 it.close();
             });
             assertThat(response.status(), is(Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(
@@ -154,10 +155,10 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
         HttpClientResponse response = request.request();
         assertThat(response.status(), is(Status.OK_200));
-        String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+        String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
@@ -165,7 +166,7 @@ class ValidateHeadersTest {
         ServerRequestHeaders headers = request.headers();
         request.headers().toMap().forEach((k, v) -> {
             if (k.contains("Header")) {
-                response.headers().add(Http.Headers.create(Http.HeaderNames.create(k), v));
+                response.headers().add(Http.Headers.create(HeaderNames.create(k), v));
             }
         });
         response.send("any");

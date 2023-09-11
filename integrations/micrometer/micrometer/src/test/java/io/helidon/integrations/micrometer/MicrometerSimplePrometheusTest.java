@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -87,7 +87,7 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         ClientResponseTyped<String> response = webClient.get()
-                .header(Http.HeaderNames.ACCEPT, MediaTypes.TEXT_PLAIN.text())
+                .header(HeaderNames.ACCEPT, MediaTypes.TEXT_PLAIN.text())
                 .path("/micrometer")
                 .request(String.class);
 
@@ -102,7 +102,7 @@ public class MicrometerSimplePrometheusTest {
         counter1.increment(3);
         gauge1.set(4);
         ClientResponseTyped<String> response = webClient.get()
-                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+                .header(HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .queryParam("type", "prometheus")
                 .request(String.class);
@@ -113,7 +113,7 @@ public class MicrometerSimplePrometheusTest {
     @Test
     public void checkNoMatch() throws ExecutionException, InterruptedException {
         try(HttpClientResponse response = webClient.get()
-                .header(Http.HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
+                .header(HeaderNames.ACCEPT, MediaTypes.create(MediaTypes.TEXT_PLAIN.type(), "special").toString())
                 .path("/micrometer")
                 .request()) {
 

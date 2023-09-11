@@ -23,7 +23,7 @@ import java.util.List;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
@@ -42,7 +42,7 @@ public class Http2Upgrader implements Http1Upgrader {
                     + "Connection: Upgrade\r\n"
                     + "Upgrade: h2c\r\n\r\n")
             .getBytes(StandardCharsets.UTF_8);
-    private static final HeaderName HTTP2_SETTINGS_HEADER_NAME = Http.HeaderNames.create("HTTP2-Settings");
+    private static final HeaderName HTTP2_SETTINGS_HEADER_NAME = HeaderNames.create("HTTP2-Settings");
     private static final Base64.Decoder BASE_64_DECODER = Base64.getDecoder();
 
     private final Http2Config config;
@@ -85,7 +85,7 @@ public class Http2Upgrader implements Http1Upgrader {
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.path(prologue.uriPath().rawPath());
         http2Headers.method(prologue.method());
-        headers.remove(Http.HeaderNames.HOST,
+        headers.remove(HeaderNames.HOST,
                        it -> http2Headers.authority(it.value()));
         http2Headers.scheme("http"); // TODO need to get if https (ctx)?
 

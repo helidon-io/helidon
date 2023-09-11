@@ -33,6 +33,7 @@ import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.HttpPrologue;
@@ -51,7 +52,7 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 import io.helidon.webserver.spi.ServerConnection;
 
-import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -145,8 +146,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.headers(ctx, headers);
 
                 if (canUpgrade) {
-                    if (headers.contains(Http.HeaderNames.UPGRADE)) {
-                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(Http.HeaderNames.UPGRADE).get());
+                    if (headers.contains(HeaderNames.UPGRADE)) {
+                        Http1Upgrader upgrader = upgradeProviderMap.get(headers.get(HeaderNames.UPGRADE).get());
                         if (upgrader != null) {
                             ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
                             // upgrader may decide not to upgrade this connection
@@ -291,9 +292,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         if (headers.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
-        } else if (headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+        } else if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
             try {
-                this.currentEntitySize = headers.get(Http.HeaderNames.CONTENT_LENGTH).get(long.class);
+                this.currentEntitySize = headers.get(HeaderNames.CONTENT_LENGTH).get(long.class);
                 if (maxPayloadSize != -1 && currentEntitySize > maxPayloadSize) {
                     throw RequestException.builder()
                             .type(EventType.BAD_REQUEST)
@@ -346,8 +347,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         ContentDecoder decoder;
         if (contentEncodingContext.contentDecodingEnabled()) {
             // there may be some decoder used
-            if (headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
-                String contentEncoding = headers.get(Http.HeaderNames.CONTENT_ENCODING).get();
+            if (headers.contains(HeaderNames.CONTENT_ENCODING)) {
+                String contentEncoding = headers.get(HeaderNames.CONTENT_ENCODING).get();
                 if (contentEncodingContext.contentDecodingSupported(contentEncoding)) {
                     decoder = contentEncodingContext.decoder(contentEncoding);
                 } else {
@@ -362,7 +363,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             }
         } else {
             // Check whether Content-Encoding header is present when headers validation is enabled
-            if (http1Config.validateRequestHeaders() && headers.contains(Http.HeaderNames.CONTENT_ENCODING)) {
+            if (http1Config.validateRequestHeaders() && headers.contains(HeaderNames.CONTENT_ENCODING)) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
                         .request(DirectTransportRequest.create(prologue, headers))
@@ -442,7 +443,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             headers.set(Http.Headers.CONNECTION_CLOSE);
         }
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+        headers.set(Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 
         Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
                                            http1Config.validateResponseHeaders());

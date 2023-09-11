@@ -23,7 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
@@ -54,19 +54,19 @@ class FollowRedirectTest {
     static void router(HttpRouting.Builder router) {
         router.route(Method.PUT, "/infiniteRedirect", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.HeaderNames.LOCATION, "/infiniteRedirect2")
+                    .header(HeaderNames.LOCATION, "/infiniteRedirect2")
                     .send();
         }).route(Method.PUT, "/infiniteRedirect2", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.HeaderNames.LOCATION, "/infiniteRedirect")
+                    .header(HeaderNames.LOCATION, "/infiniteRedirect")
                     .send();
         }).route(Method.PUT, "/redirect", (req, res) -> {
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.HeaderNames.LOCATION, "/plain")
+                    .header(HeaderNames.LOCATION, "/plain")
                     .send();
         }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
             res.status(Status.FOUND_302)
-                    .header(Http.HeaderNames.LOCATION, "/plain")
+                    .header(HeaderNames.LOCATION, "/plain")
                     .send();
         }).route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
@@ -88,7 +88,7 @@ class FollowRedirectTest {
                     BUFFER.append("\n").append(new String(buffer, 0, read));
                 }
                 res.status(Status.SEE_OTHER_303)
-                        .header(Http.HeaderNames.LOCATION, "/afterUpload")
+                        .header(HeaderNames.LOCATION, "/afterUpload")
                         .send();
             } catch (Exception e) {
                 res.status(INTERNAL_SERVER_ERROR_500)

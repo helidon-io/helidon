@@ -19,6 +19,7 @@ package io.helidon.http.tests.media.string;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.HttpMediaType;
@@ -41,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class StringTest {
     private static final HttpMediaType TEXT_ISO_8859_2 = HttpMediaType.create(MediaTypes.TEXT_PLAIN)
             .withCharset("ISO-8859-2");
-    private static final Header ISO_8859_CONTENT_TYPE = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE,
+    private static final Header ISO_8859_CONTENT_TYPE = Http.Headers.create(HeaderNames.CONTENT_TYPE,
                                                                             TEXT_ISO_8859_2.text());
     private static final String UTF_8_TEXT = "český řízný text";
 

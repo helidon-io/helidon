@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.http2.Http2Headers;
@@ -64,8 +64,8 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
         // we know this is HTTP/2, so no need to check protocol and version
         Headers httpHeaders = headers.httpHeaders();
 
-        if (httpHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
-            String contentType = httpHeaders.get(Http.HeaderNames.CONTENT_TYPE).value();
+        if (httpHeaders.contains(HeaderNames.CONTENT_TYPE)) {
+            String contentType = httpHeaders.get(HeaderNames.CONTENT_TYPE).value();
 
             if (contentType.startsWith("application/grpc")) {
                 GrpcRouting routing = router.routing(GrpcRouting.class, GrpcRouting.empty());

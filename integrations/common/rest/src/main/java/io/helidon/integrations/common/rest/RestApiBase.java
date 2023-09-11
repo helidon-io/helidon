@@ -31,7 +31,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.faulttolerance.FtHandler;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
@@ -227,7 +227,7 @@ public abstract class RestApiBase implements RestApi {
      */
     protected void addHeaders(HttpClientRequest request, Map<String, List<String>> headers) {
         request.headers(clientHeaders -> {
-            headers.forEach((key, value) -> clientHeaders.set(Http.HeaderNames.create(key), value));
+            headers.forEach((key, value) -> clientHeaders.set(HeaderNames.create(key), value));
         });
     }
 

@@ -18,21 +18,20 @@ package io.helidon.webclient.tests;
 import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.http.Http;
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.common.tls.Tls;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Http;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.HeaderNames.X_HELIDON_CN;
-
+import static io.helidon.http.HeaderNames.X_HELIDON_CN;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;

@@ -39,6 +39,7 @@ import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
@@ -63,7 +64,7 @@ import io.helidon.webserver.security.SecurityFeature;
 
 import jakarta.json.JsonObject;
 
-import static io.helidon.http.Http.HeaderNames.HOST;
+import static io.helidon.http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -322,7 +323,7 @@ public final class OidcFeature implements HttpFeature {
             headers.addCookie(tenantCookieHandler.removeCookie().build());
 
             res.status(Status.TEMPORARY_REDIRECT_307)
-                    .header(Http.HeaderNames.LOCATION, sb.toString())
+                    .header(HeaderNames.LOCATION, sb.toString())
                     .send();
         } catch (Exception e) {
             sendError(res, e);
@@ -463,7 +464,7 @@ public final class OidcFeature implements HttpFeature {
         }
 
         state = increaseRedirectCounter(state);
-        res.headers().add(Http.HeaderNames.LOCATION, state);
+        res.headers().add(HeaderNames.LOCATION, state);
 
         if (oidcConfig.useCookie()) {
             try {

@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 
 import io.helidon.common.Errors;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;

@@ -16,7 +16,7 @@
 
 package io.helidon.metrics.prometheus;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -84,7 +84,7 @@ public class PrometheusSupportTest {
     public void simpleCall() {
         try (Http1ClientResponse response = client.get("/metrics").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null),
+            assertThat(response.headers().first(HeaderNames.CONTENT_TYPE).orElse(null),
                     StringStartsWith.startsWith("text/plain"));
             String body = response.as(String.class);
             assertThat(body, containsString("# HELP beta"));
@@ -100,7 +100,7 @@ public class PrometheusSupportTest {
     @Test
     public void doubleCall() {
         try (Http1ClientResponse response = client.get("/metrics").request()) {
-            assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null),
+            assertThat(response.headers().first(HeaderNames.CONTENT_TYPE).orElse(null),
                     StringStartsWith.startsWith("text/plain"));
             String body = response.as(String.class);
             assertThat(body, containsString("alpha_total{method=\"bar\",} 6.0"));

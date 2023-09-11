@@ -23,9 +23,9 @@ import java.io.UncheckedIOException;
 import java.util.Random;
 
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
-import static io.helidon.http.Http.HeaderNames.CONTENT_LENGTH;
+import static io.helidon.http.HeaderNames.CONTENT_LENGTH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class PostTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-REquEst-HEADeR");
+    private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
     private static final Header REQUEST_HEADER_VALUE = Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");

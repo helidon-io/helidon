@@ -27,10 +27,10 @@ import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -63,12 +63,12 @@ public class Http2Headers {
     /**
      * Header name of the path pseudo header.
      */
-    public static final HeaderName PATH_NAME = Http.HeaderNames.create(PATH);
+    public static final HeaderName PATH_NAME = HeaderNames.create(PATH);
     static final String SCHEME = ":scheme";
     /**
      * Header name of the scheme pseudo header.
      */
-    public static final HeaderName SCHEME_NAME = Http.HeaderNames.create(SCHEME);
+    public static final HeaderName SCHEME_NAME = HeaderNames.create(SCHEME);
     static final String STATUS = ":status";
     /**
      * Header name of the status pseudo header.
@@ -338,7 +338,7 @@ public class Http2Headers {
         if (pseudoHeaders.hasStatus()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, ":status in request headers");
         }
-        if (headers.contains(Http.HeaderNames.CONNECTION)) {
+        if (headers.contains(HeaderNames.CONNECTION)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Connection in request headers");
         }
         if (headers.contains(HeaderNames.TE)) {
@@ -529,7 +529,7 @@ public class Http2Headers {
                                              "Received invalid pseudo-header field (or explicit value instead of indexed)\n"
                                                      + BufferData.create(name).debugDataHex());
                 }
-                headerName = Http.HeaderNames.create(name);
+                headerName = HeaderNames.create(name);
             } else {
                 headerName = record.headerName();
             }
@@ -759,52 +759,52 @@ public class Http2Headers {
         STATUS_404(13, STATUS_NAME, "404"),
         STATUS_500(14, STATUS_NAME, "500"),
         ACCEPT_CHARSET(15, HeaderNames.ACCEPT_CHARSET),
-        ACCEPT_ENCODING(16, Http.HeaderNames.ACCEPT_ENCODING, "gzip, deflate", false),
+        ACCEPT_ENCODING(16, HeaderNames.ACCEPT_ENCODING, "gzip, deflate", false),
         ACCEPT_LANGUAGE(17, HeaderNames.ACCEPT_LANGUAGE),
         ACCEPT_RANGES(18, HeaderNames.ACCEPT_RANGES),
         ACCEPT(19, HeaderNames.ACCEPT),
         ACCESS_CONTROL_ALLOW_ORIGIN(20, HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN),
         AGE(21, HeaderNames.AGE),
-        ALLOW(22, Http.HeaderNames.ALLOW),
-        AUTHORIZATION(23, Http.HeaderNames.AUTHORIZATION),
+        ALLOW(22, HeaderNames.ALLOW),
+        AUTHORIZATION(23, HeaderNames.AUTHORIZATION),
         CACHE_CONTROL(24, HeaderNames.CACHE_CONTROL),
-        CONTENT_DISPOSITION(25, Http.HeaderNames.CONTENT_DISPOSITION),
-        CONTENT_ENCODING(26, Http.HeaderNames.CONTENT_ENCODING),
-        CONTENT_LANGUAGE(27, Http.HeaderNames.CONTENT_LANGUAGE),
+        CONTENT_DISPOSITION(25, HeaderNames.CONTENT_DISPOSITION),
+        CONTENT_ENCODING(26, HeaderNames.CONTENT_ENCODING),
+        CONTENT_LANGUAGE(27, HeaderNames.CONTENT_LANGUAGE),
         CONTENT_LENGTH(28, HeaderNames.CONTENT_LENGTH),
         CONTENT_LOCATION(29, HeaderNames.CONTENT_LOCATION),
-        CONTENT_RANGE(30, Http.HeaderNames.CONTENT_RANGE),
-        CONTENT_TYPE(31, Http.HeaderNames.CONTENT_TYPE),
-        COOKIE(32, Http.HeaderNames.COOKIE),
+        CONTENT_RANGE(30, HeaderNames.CONTENT_RANGE),
+        CONTENT_TYPE(31, HeaderNames.CONTENT_TYPE),
+        COOKIE(32, HeaderNames.COOKIE),
         DATE(33, HeaderNames.DATE),
         ETAG(34, HeaderNames.ETAG),
         EXPECT(35, HeaderNames.EXPECT),
         EXPIRES(36, HeaderNames.EXPIRES),
         FROM(37, HeaderNames.FROM),
-        HOST(38, Http.HeaderNames.HOST),
-        IF_MATCH(39, Http.HeaderNames.IF_MATCH),
+        HOST(38, HeaderNames.HOST),
+        IF_MATCH(39, HeaderNames.IF_MATCH),
         IF_MODIFIED_SINCE(40, HeaderNames.IF_MODIFIED_SINCE),
         IF_NONE_MATCH(41, HeaderNames.IF_NONE_MATCH),
-        IF_RANGE(42, Http.HeaderNames.IF_RANGE),
+        IF_RANGE(42, HeaderNames.IF_RANGE),
         IF_UNMODIFIED_SINCE(43, HeaderNames.IF_UNMODIFIED_SINCE),
-        LAST_MODIFIED(44, Http.HeaderNames.LAST_MODIFIED),
+        LAST_MODIFIED(44, HeaderNames.LAST_MODIFIED),
         LINK(45, HeaderNames.LINK),
         LOCATION(46, HeaderNames.LOCATION),
-        MAX_FORWARDS(47, Http.HeaderNames.MAX_FORWARDS),
+        MAX_FORWARDS(47, HeaderNames.MAX_FORWARDS),
         PROXY_AUTHENTICATE(48, HeaderNames.PROXY_AUTHENTICATE),
-        PROXY_AUTHORIZATION(49, Http.HeaderNames.PROXY_AUTHORIZATION),
-        RANGE(50, Http.HeaderNames.CONTENT_LOCATION),
-        REFERER(51, Http.HeaderNames.REFERER),
-        REFRESH(52, Http.HeaderNames.REFRESH),
-        RETRY_AFTER(53, Http.HeaderNames.RETRY_AFTER),
+        PROXY_AUTHORIZATION(49, HeaderNames.PROXY_AUTHORIZATION),
+        RANGE(50, HeaderNames.CONTENT_LOCATION),
+        REFERER(51, HeaderNames.REFERER),
+        REFRESH(52, HeaderNames.REFRESH),
+        RETRY_AFTER(53, HeaderNames.RETRY_AFTER),
         SERVER(54, HeaderNames.SERVER),
         SET_COOKIE(55, HeaderNames.SET_COOKIE),
         STRICT_TRANSPORT_SECURITY(56, HeaderNames.STRICT_TRANSPORT_SECURITY),
-        TRANSFER_ENCODING(57, Http.HeaderNames.TRANSFER_ENCODING),
-        USER_AGENT(58, Http.HeaderNames.USER_AGENT),
+        TRANSFER_ENCODING(57, HeaderNames.TRANSFER_ENCODING),
+        USER_AGENT(58, HeaderNames.USER_AGENT),
         VARY(59, HeaderNames.VARY),
         VIA(60, HeaderNames.VIA),
-        WWW_AUTHENTICATE(61, Http.HeaderNames.WWW_AUTHENTICATE);
+        WWW_AUTHENTICATE(61, HeaderNames.WWW_AUTHENTICATE);
 
         /**
          * Maximal index of the static table of headers.

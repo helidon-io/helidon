@@ -17,7 +17,7 @@
 package io.helidon.webserver.tests.upgrade.test;
 
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
@@ -52,7 +52,7 @@ class SharedHttp2CacheTest {
     @MethodSource("params")
     void cacheHttp2WithServerRestart(Param param) {
         LogConfig.configureRuntime();
-        HeaderName clientPortHeader = Http.HeaderNames.create("client-port");
+        HeaderName clientPortHeader = HeaderNames.create("client-port");
         WebServer webServer = null;
         try {
             HttpRouting routing = HttpRouting.builder()

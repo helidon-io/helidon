@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -127,10 +128,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public UpgradeResponse upgrade(String protocol) {
-        if (!headers().contains(Http.HeaderNames.UPGRADE)) {
-            headers().set(Http.HeaderNames.UPGRADE, protocol);
+        if (!headers().contains(HeaderNames.UPGRADE)) {
+            headers().set(HeaderNames.UPGRADE, protocol);
         }
-        Http.Header requestedUpgrade = headers().get(Http.HeaderNames.UPGRADE);
+        Http.Header requestedUpgrade = headers().get(HeaderNames.UPGRADE);
         Http1ClientResponseImpl response;
 
         if (followRedirects()) {

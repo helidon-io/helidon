@@ -22,8 +22,8 @@ import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;

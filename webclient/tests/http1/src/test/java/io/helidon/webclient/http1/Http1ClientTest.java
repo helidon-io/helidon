@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
@@ -72,10 +73,10 @@ that is why this tests is in this module, but in the wrong package
 @ServerTest
 class Http1ClientTest {
     private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
-            Http.HeaderNames.create("X-Req-Chunked"), "true");
+            HeaderNames.create("X-Req-Chunked"), "true");
     private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
-            Http.HeaderNames.create("X-Req-Expect100"), "true");
-    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+            HeaderNames.create("X-Req-Expect100"), "true");
+    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final long NO_CONTENT_LENGTH = -1L;
 
@@ -166,7 +167,7 @@ class Http1ClientTest {
         long contentLength = requestEntityParts[0].length();
 
         HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
-                .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+                .header(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, false, contentLength, requestEntityParts[0]);
@@ -433,13 +434,13 @@ class Http1ClientTest {
 
     private static void redirect(ServerRequest req, ServerResponse res) {
         res.status(Status.FOUND_302)
-                .header(Http.HeaderNames.LOCATION, "/afterRedirect")
+                .header(HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
     private static void redirectKeepMethod(ServerRequest req, ServerResponse res) {
         res.status(Status.TEMPORARY_REDIRECT_307)
-                .header(Http.HeaderNames.LOCATION, "/afterRedirect")
+                .header(HeaderNames.LOCATION, "/afterRedirect")
                 .send();
     }
 
@@ -481,8 +482,8 @@ class Http1ClientTest {
         if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
-        if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).get());
+        if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+            res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
         }
         if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
             res.headers().set(REQ_CHUNKED_HEADER);

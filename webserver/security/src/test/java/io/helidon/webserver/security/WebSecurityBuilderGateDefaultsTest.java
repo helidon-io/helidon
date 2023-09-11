@@ -22,7 +22,7 @@ import java.util.Set;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.Status;
 import io.helidon.security.AuditEvent;
@@ -175,13 +175,13 @@ class WebSecurityBuilderGateDefaultsTest {
                         is(Status.UNAUTHORIZED_401));
             }
 
-            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
+            assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 
         try (HttpClientResponse response = callProtected("/noRoles", "invalidUser", "invalidPassword")) {
             assertThat(response.status(), is(Status.UNAUTHORIZED_401));
-            assertThat(response.headers().first(Http.HeaderNames.WWW_AUTHENTICATE),
+            assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
                     optionalValue(is("Basic realm=\"mic\"")));
         }
 

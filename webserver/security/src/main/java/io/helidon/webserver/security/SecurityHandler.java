@@ -36,6 +36,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
@@ -674,7 +675,7 @@ public final class SecurityHandler implements Handler {
         abortRequest(res,
                      response,
                      Status.UNAUTHORIZED_401.code(),
-                     Map.of(Http.HeaderNames.WWW_AUTHENTICATE,
+                     Map.of(HeaderNames.WWW_AUTHENTICATE,
                             List.of("Basic realm=\"Security Realm\"")));
         return true;
     }
@@ -708,7 +709,7 @@ public final class SecurityHandler implements Handler {
         } else {
             Map<HeaderName, List<String>> tmpHeaders = new HashMap<>();
             response.responseHeaders()
-                    .forEach((key, value) -> tmpHeaders.put(Http.HeaderNames.create(key), value));
+                    .forEach((key, value) -> tmpHeaders.put(HeaderNames.create(key), value));
             responseHeaders = tmpHeaders;
         }
 

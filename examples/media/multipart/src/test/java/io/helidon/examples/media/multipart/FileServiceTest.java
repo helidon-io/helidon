@@ -22,7 +22,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.http.media.multipart.WriteableMultiPart;
 import io.helidon.http.media.multipart.WriteablePart;
@@ -110,7 +110,7 @@ public class FileServiceTest {
     public void testDownload() {
         try (Http1ClientResponse response = client.get("/api").path("foo.txt").request()) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers().first(Http.HeaderNames.CONTENT_DISPOSITION).orElse(null),
+            assertThat(response.headers().first(HeaderNames.CONTENT_DISPOSITION).orElse(null),
                     containsString("filename=\"foo.txt\""));
             byte[] bytes = response.as(byte[].class);
             assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));

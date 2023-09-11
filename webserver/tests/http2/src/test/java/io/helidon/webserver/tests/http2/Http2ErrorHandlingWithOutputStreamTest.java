@@ -30,7 +30,7 @@ import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -59,8 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class Http2ErrorHandlingWithOutputStreamTest {
 
-    private static final HeaderName MAIN_HEADER_NAME = Http.HeaderNames.create("main-handler");
-    private static final HeaderName ERROR_HEADER_NAME = Http.HeaderNames.create("error-handler");
+    private static final HeaderName MAIN_HEADER_NAME = HeaderNames.create("main-handler");
+    private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
     private static HttpClient httpClient;
     private final int plainPort;
     private final int tlsPort;

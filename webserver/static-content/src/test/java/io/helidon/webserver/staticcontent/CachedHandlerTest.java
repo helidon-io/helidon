@@ -26,6 +26,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -49,8 +50,8 @@ import static org.mockito.Mockito.when;
 
 class CachedHandlerTest {
     private static final MediaType MEDIA_TYPE_ICON = MediaTypes.create("image/x-icon");
-    private static final Http.Header ICON_TYPE = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
-    private static final Http.Header RESOURCE_CONTENT_LENGTH = Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, 7);
+    private static final Http.Header ICON_TYPE = Http.Headers.create(HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
+    private static final Http.Header RESOURCE_CONTENT_LENGTH = Http.Headers.create(HeaderNames.CONTENT_LENGTH, 7);
 
     private static ClassPathContentHandler classpathHandler;
     private static FileSystemContentHandler fsHandler;
@@ -102,8 +103,8 @@ class CachedHandlerTest {
 
         assertThat("Handler should have found favicon.ico", result, is(true));
         assertThat(responseHeaders, hasHeader(ICON_TYPE));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));
+        assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
     }
 
     @Test
@@ -123,8 +124,8 @@ class CachedHandlerTest {
         assertThat("Handler should have found resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));
+        assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
 
         // now make sure it is cached
         Optional<CachedHandler> cachedHandler = classpathHandler.cacheHandler("web/resource.txt");
@@ -154,7 +155,7 @@ class CachedHandlerTest {
         boolean result = classpathHandler.doHandle(Method.GET, "/nested", req, res, false);
 
         assertThat("Handler should have redirected", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.LOCATION, "/nested/"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LOCATION, "/nested/"));
 
         // now make sure it is cached
         Optional<CachedHandler> cachedHandler = classpathHandler.cacheHandler("web/nested");
@@ -198,8 +199,8 @@ class CachedHandlerTest {
 
         assertThat("Handler should have found nested/resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));
+        assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
     }
 
     @Test
@@ -219,8 +220,8 @@ class CachedHandlerTest {
         assertThat("Handler should have found resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.ETAG));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.LAST_MODIFIED));
+        assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
 
         // now make sure it is cached
         Optional<CachedHandler> cachedHandler = fsHandler.cacheHandler("resource.txt");
@@ -250,7 +251,7 @@ class CachedHandlerTest {
         boolean result = fsHandler.doHandle(Method.GET, "nested", req, res, false);
 
         assertThat("Handler should have redirected", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.HeaderNames.LOCATION, "/nested/"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.LOCATION, "/nested/"));
 
         // now make sure it is cached
         Optional<CachedHandler> cachedHandler = fsHandler.cacheHandler("nested");

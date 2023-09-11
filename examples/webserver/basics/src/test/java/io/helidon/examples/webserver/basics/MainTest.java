@@ -18,7 +18,7 @@ package io.helidon.examples.webserver.basics;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaContextConfig;
 import io.helidon.webclient.http1.Http1Client;
@@ -41,7 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 public class MainTest {
 
-    private static final HeaderName FOO_HEADER = Http.HeaderNames.create("foo");
+    private static final HeaderName FOO_HEADER = HeaderNames.create("foo");
 
     private final Http1Client client;
 
@@ -158,7 +158,7 @@ public class MainTest {
         // Static content
         try (Http1ClientResponse response = client.get("/supports/index.html").request()) {
             assertThat(response.status(), is(OK_200));
-            assertThat(response.headers().first(Http.HeaderNames.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
+            assertThat(response.headers().first(HeaderNames.CONTENT_TYPE).orElse(null), is(MediaTypes.TEXT_HTML.text()));
         }
 
         // JSON

@@ -18,6 +18,7 @@ package io.helidon.webclient.tests;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -97,12 +98,12 @@ class CookieTest {
     }
 
     private static void getHandler(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(Http.HeaderNames.COOKIE)) {
-            Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
+        if (req.headers().contains(HeaderNames.COOKIE)) {
+            Http.Header cookies = req.headers().get(HeaderNames.COOKIE);
             if (cookies.allValues().size() == 2
                     && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
                     && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
-                res.header(Http.HeaderNames.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
+                res.header(HeaderNames.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
                 res.status(Status.OK_200).send();
             } else {
                 res.status(Status.BAD_REQUEST_400).send();
@@ -113,17 +114,17 @@ class CookieTest {
     }
 
     private static void putHandler(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(Http.HeaderNames.COOKIE)) {
-            Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
+        if (req.headers().contains(HeaderNames.COOKIE)) {
+            Http.Header cookies = req.headers().get(HeaderNames.COOKIE);
             if (cookies.allValues().size() == 4
                     && cookies.allValues().contains("flavor1=chocolate")
                     && cookies.allValues().contains("flavor2=vanilla")
                     && cookies.allValues().contains("flavor3=strawberry")
                     && cookies.allValues().contains("flavor4=raspberry")) {
                 // clear flavor1 and flavor2
-                res.header(Http.HeaderNames.SET_COOKIE,
-                        "flavor1=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0",
-                        "flavor2=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0");
+                res.header(HeaderNames.SET_COOKIE,
+                           "flavor1=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0",
+                           "flavor2=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0");
                 res.status(Status.OK_200).send();
             } else {
                 res.status(Status.BAD_REQUEST_400).send();

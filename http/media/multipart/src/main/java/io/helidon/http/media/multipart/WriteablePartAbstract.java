@@ -26,9 +26,9 @@ import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 

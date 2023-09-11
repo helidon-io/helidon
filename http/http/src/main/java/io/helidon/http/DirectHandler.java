@@ -381,9 +381,9 @@ public interface DirectHandler {
             public Builder entity(byte[] entity) {
                 this.entity = Arrays.copyOf(entity, entity.length);
                 if (this.entity.length == 0) {
-                    this.headers.remove(Http.HeaderNames.CONTENT_LENGTH);
+                    this.headers.remove(HeaderNames.CONTENT_LENGTH);
                 } else {
-                    header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length));
+                    header(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length));
                 }
                 return this;
             }

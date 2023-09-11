@@ -34,7 +34,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -48,10 +48,10 @@ import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_PARENT_
 import static org.eclipse.microprofile.lra.annotation.ws.rs.LRA.LRA_HTTP_RECOVERY_HEADER;
 
 class Lra {
-    static final HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
-    static final HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_ENDED_CONTEXT_HEADER);
-    static final HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_PARENT_CONTEXT_HEADER);
-    static final HeaderName LRA_HTTP_RECOVERY_HEADER_NAME = Http.HeaderNames.create(LRA_HTTP_RECOVERY_HEADER);
+    static final HeaderName LRA_HTTP_CONTEXT_HEADER_NAME = HeaderNames.create(LRA_HTTP_CONTEXT_HEADER);
+    static final HeaderName LRA_HTTP_ENDED_CONTEXT_HEADER_NAME = HeaderNames.create(LRA_HTTP_ENDED_CONTEXT_HEADER);
+    static final HeaderName LRA_HTTP_PARENT_CONTEXT_HEADER_NAME = HeaderNames.create(LRA_HTTP_PARENT_CONTEXT_HEADER);
+    static final HeaderName LRA_HTTP_RECOVERY_HEADER_NAME = HeaderNames.create(LRA_HTTP_RECOVERY_HEADER);
 
     private static final System.Logger LOGGER = System.getLogger(Lra.class.getName());
 

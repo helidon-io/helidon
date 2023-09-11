@@ -44,7 +44,7 @@ enum HeaderNameEnum implements HeaderName {
     EXPECT("Expect"),
     FORWARDED("Forwarded"),
     FROM("From"),
-    HOST(Http.HeaderNames.HOST_STRING),
+    HOST(HeaderNames.HOST_STRING),
     IF_MATCH("If-Match"),
     IF_MODIFIED_SINCE("If-Modified-Since"),
     IF_NONE_MATCH("If-None-Match"),

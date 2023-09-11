@@ -16,12 +16,12 @@
 
 package io.helidon.examples.webserver.tutorial;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.DirectClient;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +56,7 @@ public class UserFilterTest {
         }
 
         try (Http1ClientResponse response = client.get()
-                                                  .header(Http.HeaderNames.COOKIE, "Unauthenticated-User-Alias=Foo")
+                                                  .header(HeaderNames.COOKIE, "Unauthenticated-User-Alias=Foo")
                                                   .request()) {
             assertThat(response.entity().as(String.class), is("Foo"));
         }

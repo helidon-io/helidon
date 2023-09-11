@@ -18,7 +18,7 @@ package io.helidon.webserver.security;
 
 import java.util.Set;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
@@ -103,9 +103,9 @@ abstract class WebSecurityTests {
             assertThat(response.status(), is(Status.UNAUTHORIZED_401));
 
             String header = response.headers()
-                    .first(Http.HeaderNames.WWW_AUTHENTICATE)
+                    .first(HeaderNames.WWW_AUTHENTICATE)
                     .orElseThrow(() -> new IllegalStateException(
-                            "Header " + Http.HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
+                            "Header " + HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
 
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
@@ -114,9 +114,9 @@ abstract class WebSecurityTests {
             assertThat(response.status(), is(Status.UNAUTHORIZED_401));
 
             String header = response.headers()
-                    .first(Http.HeaderNames.WWW_AUTHENTICATE)
+                    .first(HeaderNames.WWW_AUTHENTICATE)
                     .orElseThrow(() -> new IllegalStateException(
-                            "Header " + Http.HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
+                            "Header " + HeaderNames.WWW_AUTHENTICATE + " is" + " not present in response!"));
             assertThat(header.toLowerCase(), is("basic realm=\"mic\""));
         }
     }

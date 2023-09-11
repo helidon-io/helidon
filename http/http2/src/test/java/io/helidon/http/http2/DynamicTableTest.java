@@ -16,8 +16,7 @@
 
 package io.helidon.http.http2;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderNames;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,11 +37,11 @@ class DynamicTableTest {
         assertThat(table.protocolMaxTableSize(), is(80L));
 
         // index 1
-        table.add(Http.HeaderNames.create("a"), "b");
+        table.add(HeaderNames.create("a"), "b");
         assertThat(table.currentTableSize(), is(34)); // 32 + name.length + value.length (on bytes)
         testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "a", "b");
         // index (now index 1)
-        table.add(Http.HeaderNames.create("b"), "c");
+        table.add(HeaderNames.create("b"), "c");
 
         assertThat(table.currentTableSize(), is(68));
         testRecord(table, Http2Headers.StaticHeader.MAX_INDEX + 1, "b", "c");

@@ -63,8 +63,8 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     @Override
     public List<HttpMediaType> acceptedTypes() {
         if (mediaTypes == null) {
-            if (delegate.contains(Http.HeaderNames.ACCEPT)) {
-                List<String> accepts = delegate.get(Http.HeaderNames.ACCEPT).allValues(true);
+            if (delegate.contains(HeaderNames.ACCEPT)) {
+                List<String> accepts = delegate.get(HeaderNames.ACCEPT).allValues(true);
 
                 List<HttpMediaType> mediaTypes = new ArrayList<>(accepts.size());
                 for (String accept : accepts) {

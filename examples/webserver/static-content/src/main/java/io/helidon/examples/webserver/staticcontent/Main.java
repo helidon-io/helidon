@@ -16,6 +16,7 @@
 
 package io.helidon.examples.webserver.staticcontent;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
@@ -27,7 +28,7 @@ import io.helidon.webserver.staticcontent.StaticContentService;
  * The application main class.
  */
 public final class Main {
-    private static final Http.Header UI_REDIRECT = Http.Headers.createCached(Http.HeaderNames.LOCATION, "/ui");
+    private static final Http.Header UI_REDIRECT = Http.Headers.createCached(HeaderNames.LOCATION, "/ui");
 
     /**
      * Cannot be instantiated.

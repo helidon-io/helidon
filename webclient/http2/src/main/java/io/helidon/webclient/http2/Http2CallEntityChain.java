@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.EntityWriter;
@@ -55,7 +56,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
             entityBytes = entityBytes(entity, headers);
         }
 
-        headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, entityBytes.length));
+        headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, entityBytes.length));
 
         ClientUri uri = serviceRequest.uri();
 

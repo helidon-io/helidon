@@ -25,7 +25,7 @@ import io.helidon.cors.CorsResponseAdapter;
 import io.helidon.cors.CorsSupportBase;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -112,7 +112,7 @@ class CorsSupportMp extends CorsSupportBase<ContainerRequestContext, Response, C
         @Override
         public String authority() {
             // TODO we want authority - we should set it in integration with WebServer as request property
-            return firstHeader(Http.HeaderNames.HOST).orElse("localhost");
+            return firstHeader(HeaderNames.HOST).orElse("localhost");
         }
 
         @Override

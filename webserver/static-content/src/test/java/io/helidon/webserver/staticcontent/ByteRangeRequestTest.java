@@ -18,9 +18,9 @@ package io.helidon.webserver.staticcontent;
 
 import java.util.List;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -49,7 +49,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testFromUntil() {
-        Http.Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=49-49");
+        Http.Header header = Http.Headers.create(HeaderNames.RANGE, "bytes=49-49");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -64,7 +64,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testLast() {
-        Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=-1");
+        Header header = Http.Headers.create(HeaderNames.RANGE, "bytes=-1");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -79,7 +79,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeMultiValue() {
-        Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
+        Header header = Http.Headers.create(HeaderNames.RANGE, "bytes=-1", "bytes=47-48", "bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 
@@ -104,7 +104,7 @@ class ByteRangeRequestTest {
 
     @Test
     void testMultiRangeSingleValue() {
-        Http.Header header = Http.Headers.create(Http.HeaderNames.RANGE, "bytes=-1, bytes=47-48, s bytes=0-");
+        Http.Header header = Http.Headers.create(HeaderNames.RANGE, "bytes=-1, bytes=47-48, s bytes=0-");
         ServerRequest req = Mockito.mock(ServerRequest.class);
         ServerResponse res = Mockito.mock(ServerResponse.class);
 

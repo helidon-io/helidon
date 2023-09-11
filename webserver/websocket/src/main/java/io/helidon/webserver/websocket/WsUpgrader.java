@@ -27,9 +27,9 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
@@ -153,8 +153,8 @@ public class WsUpgrader implements Http1Upgrader {
         }
 
         if (!anyOrigin()) {
-            if (headers.contains(Http.HeaderNames.ORIGIN)) {
-                String origin = headers.get(Http.HeaderNames.ORIGIN).value();
+            if (headers.contains(HeaderNames.ORIGIN)) {
+                String origin = headers.get(HeaderNames.ORIGIN).value();
                 if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")

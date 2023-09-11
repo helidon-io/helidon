@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
@@ -37,7 +38,7 @@ class MultiPartWriter implements EntityWriter<WriteableMultiPart> {
 
     MultiPartWriter(MediaContext context, HttpMediaType mediaType, String boundary) {
         this.context = context;
-        this.contentType = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE, false, false, mediaType.text());
+        this.contentType = Http.Headers.create(HeaderNames.CONTENT_TYPE, false, false, mediaType.text());
         this.boundaryPrefix = ("--" + boundary).getBytes(StandardCharsets.UTF_8);
     }
 

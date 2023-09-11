@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -44,7 +45,7 @@ import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.WebClientService;
 
-import static io.helidon.http.Http.HeaderNames.CONTENT_ENCODING;
+import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -77,8 +78,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
-        requestHeaders.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
-        requestHeaders.remove(Http.HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
+        requestHeaders.setIfAbsent(Http.Headers.create(HeaderNames.HOST, uri.authority()));
+        requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         ConnectionKey connectionKey = connectionKey(serviceRequest);

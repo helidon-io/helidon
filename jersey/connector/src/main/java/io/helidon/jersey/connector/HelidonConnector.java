@@ -32,6 +32,7 @@ import io.helidon.common.Version;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntity;
@@ -127,7 +128,7 @@ class HelidonConnector implements Connector {
         // map request headers
         request.getRequestHeaders().forEach((key, value) -> {
             String[] values = value.toArray(new String[0]);
-            httpRequest.header(Http.HeaderNames.create(key), values);
+            httpRequest.header(HeaderNames.create(key), values);
         });
 
         // SSL context

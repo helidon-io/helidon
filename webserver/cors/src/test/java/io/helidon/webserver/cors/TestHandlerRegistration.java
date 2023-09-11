@@ -25,12 +25,12 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS;
-import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
-import static io.helidon.http.Http.HeaderNames.ORIGIN;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS;
+import static io.helidon.http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
+import static io.helidon.http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

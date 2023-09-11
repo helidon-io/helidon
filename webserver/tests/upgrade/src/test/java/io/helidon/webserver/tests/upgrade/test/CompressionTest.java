@@ -16,14 +16,14 @@
 
 package io.helidon.integration.webserver.upgrade.test;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,8 +36,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 public class CompressionTest {
-    private static final Http.Header CONTENT_ENCODING_GZIP = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "gzip");
-    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(Http.HeaderNames.CONTENT_ENCODING, "deflate");
+    private static final Http.Header CONTENT_ENCODING_GZIP = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "gzip");
+    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "deflate");
 
     private final Http1Client webClient;
 
@@ -56,7 +56,7 @@ public class CompressionTest {
     @Test
     public void testGzip() {
         Http1ClientRequest request = webClient.get();
-        request.header(Http.Headers.create(Http.HeaderNames.ACCEPT_ENCODING, "gzip"));
+        request.header(Http.Headers.create(HeaderNames.ACCEPT_ENCODING, "gzip"));
         try (Http1ClientResponse response = request.path("/compressed").request()) {
             assertThat(response.entity().as(String.class), equalTo("It works!"));
             assertThat(response.headers(), hasHeader(CONTENT_ENCODING_GZIP));

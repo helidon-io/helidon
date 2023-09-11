@@ -22,8 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;

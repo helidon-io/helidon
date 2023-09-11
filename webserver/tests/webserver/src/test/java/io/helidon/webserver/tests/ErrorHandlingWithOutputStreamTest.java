@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -42,8 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ServerTest
 class ErrorHandlingWithOutputStreamTest {
 
-    private static final HeaderName MAIN_HEADER_NAME = Http.HeaderNames.create("main-handler");
-    private static final HeaderName ERROR_HEADER_NAME = Http.HeaderNames.create("error-handler");
+    private static final HeaderName MAIN_HEADER_NAME = HeaderNames.create("main-handler");
+    private static final HeaderName ERROR_HEADER_NAME = HeaderNames.create("error-handler");
 
     private final Http1Client client;
 

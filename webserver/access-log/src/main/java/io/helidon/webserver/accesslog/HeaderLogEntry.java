@@ -19,7 +19,7 @@ package io.helidon.webserver.accesslog;
 import java.util.List;
 
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 
 /**
  * Access log entry for header values.
@@ -82,7 +82,7 @@ public final class HeaderLogEntry extends AbstractLogEntry {
         private final HeaderName headerName;
 
         private Builder(String headerName) {
-            this.headerName = Http.HeaderNames.create(headerName);
+            this.headerName = HeaderNames.create(headerName);
         }
 
         /**

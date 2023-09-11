@@ -20,7 +20,7 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
@@ -37,7 +37,7 @@ import io.helidon.webserver.http.HttpRouting;
  */
 public final class Main {
 
-    static final HeaderName USER_IDENTITY_HEADER = Http.HeaderNames.create("user-identity");
+    static final HeaderName USER_IDENTITY_HEADER = HeaderNames.create("user-identity");
 
     private Main() {
     }

@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
@@ -93,7 +93,7 @@ public class GreetService implements HttpService {
     private void redirect(ServerRequest request,
                           ServerResponse response) {
         int port = request.context().get(WebServer.class).orElseThrow().port();
-        response.headers().add(Http.HeaderNames.LOCATION, "http://localhost:" + port + "/greet/");
+        response.headers().add(HeaderNames.LOCATION, "http://localhost:" + port + "/greet/");
         response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 

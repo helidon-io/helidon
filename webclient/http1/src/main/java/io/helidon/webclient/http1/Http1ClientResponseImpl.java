@@ -28,8 +28,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Status;
@@ -95,7 +95,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         } else if (responseHeaders.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = -1;
         }
-        if (responseHeaders.contains(Http.HeaderNames.TRAILER)) {
+        if (responseHeaders.contains(HeaderNames.TRAILER)) {
             this.hasTrailers = true;
             this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
         } else {

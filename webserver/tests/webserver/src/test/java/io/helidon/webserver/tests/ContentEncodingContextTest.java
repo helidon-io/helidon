@@ -18,8 +18,8 @@ package io.helidon.webserver.tests;
 
 import java.util.NoSuchElementException;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncoder;
@@ -113,7 +113,7 @@ class ContentEncodingContextTest {
 
         @Override
         public ContentEncoder encoder(Headers headers) {
-            if (headers.contains(Http.HeaderNames.ACCEPT_ENCODING)) {
+            if (headers.contains(HeaderNames.ACCEPT_ENCODING)) {
                 ACCEPT_ENCODING_COUNT++;
             } else {
                 NO_ACCEPT_ENCODING_COUNT++;

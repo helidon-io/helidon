@@ -20,7 +20,7 @@ import io.helidon.common.parameters.Parameters;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.HeaderNames.COOKIE;
+import static io.helidon.http.HeaderNames.COOKIE;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;

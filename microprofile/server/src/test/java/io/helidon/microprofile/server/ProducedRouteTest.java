@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.AddExtension;
@@ -66,13 +66,13 @@ public class ProducedRouteTest {
     static final String UNFILTERED_PATH = "/unfiltered";
 
     static final String COOL_HEADER = "Cool-Header";
-    static final HeaderName COOL_HEADER_NAME = Http.HeaderNames.create(COOL_HEADER);
+    static final HeaderName COOL_HEADER_NAME = HeaderNames.create(COOL_HEADER);
     static final String COOL_VALUE = "cool value";
     static final String COOLER_HEADER = "Cooler-Header";
-    static final HeaderName COOLER_HEADER_NAME = Http.HeaderNames.create(COOLER_HEADER);
+    static final HeaderName COOLER_HEADER_NAME = HeaderNames.create(COOLER_HEADER);
     static final String COOLER_VALUE = "cooler value";
     static final String COOLEST_HEADER = "Coolest-Header";
-    static final HeaderName COOLEST_HEADER_NAME = Http.HeaderNames.create(COOLEST_HEADER);
+    static final HeaderName COOLEST_HEADER_NAME = HeaderNames.create(COOLEST_HEADER);
     static final String COOLEST_VALUE = "coolest value";
 
     @Test

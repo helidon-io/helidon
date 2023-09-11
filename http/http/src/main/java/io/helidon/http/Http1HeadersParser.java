@@ -117,7 +117,7 @@ public final class Http1HeadersParser {
         }
 
         String headerName = reader.readAsciiString(col);
-        HeaderName header = Http.HeaderNames.create(headerName);
+        HeaderName header = HeaderNames.create(headerName);
         reader.skip(1); // skip the colon character
 
         return header;

@@ -27,7 +27,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.Vault;
 import io.helidon.integrations.vault.VaultApiException;
@@ -40,7 +40,7 @@ import io.helidon.integrations.vault.spi.VaultAuth;
 @Weight(Weighted.DEFAULT_WEIGHT + 50)
 public class K8sVaultAuth implements VaultAuth {
     private static final System.Logger LOGGER = System.getLogger(K8sVaultAuth.class.getName());
-    private static final HeaderName VAULT_NAMESPACE_HEADER_NAME = Http.HeaderNames.create("X-Vault-Namespace");
+    private static final HeaderName VAULT_NAMESPACE_HEADER_NAME = HeaderNames.create("X-Vault-Namespace");
     private final String serviceAccountToken;
     private final String tokenRole;
     private final String tokenLocation;

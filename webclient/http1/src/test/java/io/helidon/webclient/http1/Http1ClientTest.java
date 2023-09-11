@@ -38,6 +38,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
@@ -73,10 +74,10 @@ class Http1ClientTest {
     public static final String BAD_HEADER_PATH = "/badHeader";
     public static final String HEADER_NAME_VALUE_DELIMETER = "->";
     private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.create(
-            Http.HeaderNames.create("X-Req-Chunked"), "true");
+            HeaderNames.create("X-Req-Chunked"), "true");
     private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.create(
-            Http.HeaderNames.create("X-Req-Expect100"), "true");
-    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = Http.HeaderNames.create("X-Req-ContentLength");
+            HeaderNames.create("X-Req-Expect100"), "true");
+    private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
     private static final Http1Client client = Http1Client.builder()
             .sendExpectContinue(false)
@@ -151,7 +152,7 @@ class Http1ClientTest {
         long contentLength = requestEntityParts[0].length();
 
         Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
-                .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
+                .header(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -363,7 +364,7 @@ class Http1ClientTest {
         if (expectsValid) {
             HttpClientResponse response = request.submit(headerNameAndValue);
             assertThat(response.status(), is(Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.submit(headerNameAndValue));
@@ -383,7 +384,7 @@ class Http1ClientTest {
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = request.submit(headerName + HEADER_NAME_VALUE_DELIMETER + headerValue);
         assertThat(response.status(), is(Status.OK_200));
-        String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+        String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
@@ -786,8 +787,8 @@ class Http1ClientTest {
                         serverReader.skip(2);
                         entitySize += chunkLength;
                     }
-                } else if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-                    entitySize = reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).get(int.class);
+                } else if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+                    entitySize = reqHeaders.get(HeaderNames.CONTENT_LENGTH).get(int.class);
                     if (entitySize > 0) {
                         entity.write(serverReader.getBuffer(entitySize));
                     }
@@ -802,8 +803,8 @@ class Http1ClientTest {
                 if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
                     resHeaders.set(REQ_EXPECT_100_HEADER_NAME);
                 }
-                if (reqHeaders.contains(Http.HeaderNames.CONTENT_LENGTH)) {
-                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(Http.HeaderNames.CONTENT_LENGTH).get());
+                if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+                    resHeaders.set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
                 }
                 if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
                     resHeaders.set(REQ_CHUNKED_HEADER);
@@ -820,7 +821,7 @@ class Http1ClientTest {
             serverWriter.write(BufferData.create(responseMessage.getBytes(StandardCharsets.UTF_8)));
 
             // Send the headers
-            resHeaders.add(Http.HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
+            resHeaders.add(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
             for (Http.Header header : resHeaders) {
 header.writeHttp1Header(entityBuffer);

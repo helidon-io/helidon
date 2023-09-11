@@ -21,8 +21,8 @@ import java.util.Objects;
 import io.helidon.common.GenericType;
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
@@ -179,7 +179,7 @@ public class JacksonSupport implements MediaSupport {
 
     @Override
     public <T> WriterResponse<T> writer(GenericType<T> type, WritableHeaders<?> requestHeaders) {
-        if (requestHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+        if (requestHeaders.contains(HeaderNames.CONTENT_TYPE)) {
             if (requestHeaders.contains(CONTENT_TYPE_JSON)) {
                 if (objectMapper.canSerialize(type.rawType())) {
                     return new WriterResponse<>(SupportLevel.COMPATIBLE, this::writer);

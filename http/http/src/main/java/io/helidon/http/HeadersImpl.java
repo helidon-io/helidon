@@ -93,8 +93,8 @@ class HeadersImpl<T extends WritableHeaders<T>> implements WritableHeaders<T> {
 
     @Override
     public List<HttpMediaType> acceptedTypes() {
-        if (contains(Http.HeaderNames.ACCEPT)) {
-            List<String> accepts = get(Http.HeaderNames.ACCEPT).allValues(true);
+        if (contains(HeaderNames.ACCEPT)) {
+            List<String> accepts = get(HeaderNames.ACCEPT).allValues(true);
 
             List<HttpMediaType> mediaTypes = new ArrayList<>(accepts.size());
             for (String accept : accepts) {

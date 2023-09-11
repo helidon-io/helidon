@@ -144,7 +144,7 @@ public interface Headers extends Iterable<Http.Header> {
      * Content length if defined.
      *
      * @return content length or empty if not defined
-     * @see io.helidon.http.Http.HeaderNames#CONTENT_LENGTH
+     * @see HeaderNames#CONTENT_LENGTH
      */
     default OptionalLong contentLength() {
         if (contains(HeaderNameEnum.CONTENT_LENGTH)) {
@@ -157,7 +157,7 @@ public interface Headers extends Iterable<Http.Header> {
      * Content type (if defined).
      *
      * @return content type, empty if content type is not present
-     * @see io.helidon.http.Http.HeaderNames#CONTENT_TYPE
+     * @see HeaderNames#CONTENT_TYPE
      */
     default Optional<HttpMediaType> contentType() {
         if (contains(HeaderNameEnum.CONTENT_TYPE)) {
@@ -175,7 +175,7 @@ public interface Headers extends Iterable<Http.Header> {
     int size();
 
     /**
-     * Returns a list of acceptedTypes ({@link io.helidon.http.Http.HeaderNames#ACCEPT} header) content discoveryTypes in
+     * Returns a list of acceptedTypes ({@link HeaderNames#ACCEPT} header) content discoveryTypes in
      * quality factor order. Never {@code null}.
      * Returns an empty list by default.
      *

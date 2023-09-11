@@ -20,6 +20,7 @@ import java.net.URI;
 import java.time.Duration;
 
 import io.helidon.common.parameters.Parameters;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.security.SecurityException;
@@ -62,7 +63,7 @@ class IdcsSupport {
                 // get the jwk from server
                 JsonObject jwkJson = generalClient.get()
                         .uri(signJwkUri)
-                        .header(Http.HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
+                        .header(HeaderNames.AUTHORIZATION, "Bearer " + accessToken)
                         .requestEntity(JsonObject.class);
 
                 return JwkKeys.create(jwkJson);

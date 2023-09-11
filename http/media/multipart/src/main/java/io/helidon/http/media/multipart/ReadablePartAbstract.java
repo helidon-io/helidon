@@ -19,8 +19,8 @@ package io.helidon.http.media.multipart;
 import java.util.Optional;
 
 import io.helidon.http.ContentDisposition;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.media.ReadableEntity;
@@ -79,8 +79,8 @@ abstract class ReadablePartAbstract implements ReadablePart {
     protected abstract void finish();
 
     private void contentDisposition() {
-        if (headers.contains(Http.HeaderNames.CONTENT_DISPOSITION)) {
-            this.contentDisposition = ContentDisposition.parse(headers.get(Http.HeaderNames.CONTENT_DISPOSITION).value());
+        if (headers.contains(HeaderNames.CONTENT_DISPOSITION)) {
+            this.contentDisposition = ContentDisposition.parse(headers.get(HeaderNames.CONTENT_DISPOSITION).value());
         } else {
             this.contentDisposition = ContentDisposition.empty();
         }

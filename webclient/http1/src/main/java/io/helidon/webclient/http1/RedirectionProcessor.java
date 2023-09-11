@@ -19,7 +19,7 @@ package io.helidon.webclient.http1;
 import java.net.URI;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientUri;
@@ -48,12 +48,12 @@ class RedirectionProcessor {
                 return clientResponse;
             }
             try (clientResponse) {
-                if (!clientResponse.headers().contains(Http.HeaderNames.LOCATION)) {
-                    throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION
+                if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
+                    throw new IllegalStateException("There is no " + HeaderNames.LOCATION
                                                             + " header present in the response! "
                                                             + "It is not clear where to redirect.");
                 }
-                String redirectedUri = clientResponse.headers().get(Http.HeaderNames.LOCATION).value();
+                String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).value();
                 URI newUri = URI.create(redirectedUri);
                 ClientUri redirectUri = ClientUri.create(newUri);
 

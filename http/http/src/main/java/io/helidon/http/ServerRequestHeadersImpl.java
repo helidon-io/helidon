@@ -76,7 +76,7 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
         }
         List<HttpMediaType> acceptedTypes;
 
-        List<String> acceptValues = all(Http.HeaderNames.ACCEPT, List::of);
+        List<String> acceptValues = all(HeaderNames.ACCEPT, List::of);
         if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.value().equals(acceptValues.get(0))) {
             acceptedTypes = HUC_ACCEPT_DEFAULT_TYPES;
         } else {

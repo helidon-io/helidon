@@ -33,6 +33,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestException;
@@ -123,8 +124,8 @@ public class TyrusUpgrader extends WsUpgrader {
 
         // Validate origin
         if (!anyOrigin()) {
-            if (headers.contains(Http.HeaderNames.ORIGIN)) {
-                String origin = headers.get(Http.HeaderNames.ORIGIN).value();
+            if (headers.contains(HeaderNames.ORIGIN)) {
+                String origin = headers.get(HeaderNames.ORIGIN).value();
                 if (!origins().contains(origin)) {
                     throw RequestException.builder()
                             .message("Invalid Origin")
@@ -230,7 +231,7 @@ public class TyrusUpgrader extends WsUpgrader {
         upgradeResponse.getHeaders()
                 .forEach((key, value) -> headers.add(
                         Http.Headers.create(
-                                Http.HeaderNames.create(key, key.toLowerCase(Locale.ROOT)),
+                                HeaderNames.create(key, key.toLowerCase(Locale.ROOT)),
                                 value)));
         return upgradeInfo;
     }

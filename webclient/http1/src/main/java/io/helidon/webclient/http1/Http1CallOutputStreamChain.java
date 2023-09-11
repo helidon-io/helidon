@@ -31,6 +31,7 @@ import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
@@ -126,7 +127,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
             checkRedirectHeaders(responseHeaders);
-            URI newUri = URI.create(responseHeaders.get(Http.HeaderNames.LOCATION).value());
+            URI newUri = URI.create(responseHeaders.get(HeaderNames.LOCATION).value());
             ClientUri redirectUri = ClientUri.create(newUri);
             if (newUri.getHost() == null) {
                 UriInfo resolvedUri = cos.lastRequest.resolvedUri();
@@ -160,8 +161,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
     }
 
     private static void checkRedirectHeaders(Headers headerValues) {
-        if (!headerValues.contains(Http.HeaderNames.LOCATION)) {
-            throw new IllegalStateException("There is no " + Http.HeaderNames.LOCATION + " header present in the"
+        if (!headerValues.contains(HeaderNames.LOCATION)) {
+            throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the"
                                                     + " response! "
                                                     + "It is not clear where to redirect.");
         }
@@ -277,7 +278,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 }
                 writer.write(terminating);
             } else {
-                headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
+                headers.remove(HeaderNames.TRANSFER_ENCODING);
                 if (noData) {
                     headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
                     contentLength = 0;
@@ -357,7 +358,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
             if (chunked) {
                 // Add chunked encoding, if there is no other transfer-encoding headers
-                if (!headers.contains(Http.HeaderNames.TRANSFER_ENCODING)) {
+                if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
                     headers.set(Http.Headers.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
@@ -365,7 +366,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         headers.add(Http.Headers.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
-                headers.remove(Http.HeaderNames.CONTENT_LENGTH);
+                headers.remove(HeaderNames.CONTENT_LENGTH);
             }
 
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
@@ -436,7 +437,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         }
 
         private void redirect(Status lastStatus, WritableHeaders<?> headerValues) {
-            String redirectedUri = headerValues.get(Http.HeaderNames.LOCATION).value();
+            String redirectedUri = headerValues.get(HeaderNames.LOCATION).value();
             ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
@@ -488,7 +489,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                             method = Method.GET;
                             sendEntity = false;
                         }
-                        redirectedUri = response.headers().get(Http.HeaderNames.LOCATION).value();
+                        redirectedUri = response.headers().get(HeaderNames.LOCATION).value();
                     }
                 } else {
                     if (!sendEntity) {

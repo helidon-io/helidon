@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -49,7 +49,7 @@ class WebClientService implements HttpService {
         this.context = "http://localhost:" + config.get("port").asInt().orElse(7076);
         client = WebClient.builder()
                 .baseUri(context)
-                .addHeader(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                .addHeader(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                 .config(config.get("client"))
                 .build();
     }
@@ -64,12 +64,12 @@ class WebClientService implements HttpService {
 
     private void redirect(ServerRequest request,
                           ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, context + "/wc/endpoint");
+        response.headers().add(HeaderNames.LOCATION, context + "/wc/endpoint");
         response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 
     private void redirectInfinite(ServerRequest serverRequest, ServerResponse response) {
-        response.headers().add(Http.HeaderNames.LOCATION, context + "/wc/redirect/infinite");
+        response.headers().add(HeaderNames.LOCATION, context + "/wc/redirect/infinite");
         response.status(Status.MOVED_PERMANENTLY_301).send();
     }
 

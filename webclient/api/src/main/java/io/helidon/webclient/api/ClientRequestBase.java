@@ -38,6 +38,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
@@ -55,7 +56,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Helidon user agent request header.
      */
-    public static final Http.Header USER_AGENT_HEADER = Http.Headers.create(Http.HeaderNames.USER_AGENT,
+    public static final Http.Header USER_AGENT_HEADER = Http.Headers.create(HeaderNames.USER_AGENT,
                                                                             "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");

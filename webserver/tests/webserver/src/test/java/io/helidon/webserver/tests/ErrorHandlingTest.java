@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests;
 
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -41,7 +42,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
 class ErrorHandlingTest {
-    private static final HeaderName CONTROL_HEADER = Http.HeaderNames.create("X-HELIDON-JUNIT");
+    private static final HeaderName CONTROL_HEADER = HeaderNames.create("X-HELIDON-JUNIT");
     private static final Http.Header FIRST = Http.Headers.create(CONTROL_HEADER, "first");
     private static final Http.Header SECOND = Http.Headers.create(CONTROL_HEADER, "second");
     private static final Http.Header ROUTING = Http.Headers.create(CONTROL_HEADER, "routing");

@@ -18,6 +18,7 @@ package io.helidon.webserver.tests;
 
 import java.util.stream.Stream;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -78,7 +79,7 @@ class ValidateRequestHeadersTest {
     @MethodSource("requestHeaders")
     void testHeadersFromResponse(String headerName, String headerValue, boolean expectsValid) {
         Http1ClientRequest request = client.get("/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
         HttpClientResponse response = request.submit("any");
         if (expectsValid) {
             assertThat(response.status(), is(Status.OK_200));

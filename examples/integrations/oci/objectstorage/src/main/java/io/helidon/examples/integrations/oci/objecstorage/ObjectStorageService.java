@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -110,9 +110,9 @@ public class ObjectStorageService implements HttpService {
             byte[] objectContent = fileStream.readAllBytes();
             response
                     .status(Status.OK_200)
-                    .header(Http.HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
+                    .header(HeaderNames.CONTENT_DISPOSITION.defaultCase(), "attachment; filename=\"" + fileName + "\"")
                     .header("opc-request-id", getObjectResponse.getOpcRequestId())
-                    .header(Http.HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
+                    .header(HeaderNames.CONTENT_LENGTH.defaultCase(), getObjectResponse.getContentLength().toString());
 
             response.send(objectContent);
         } catch (IOException e) {

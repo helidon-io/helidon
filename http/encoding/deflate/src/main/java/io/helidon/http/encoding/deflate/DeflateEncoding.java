@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
@@ -32,7 +33,7 @@ import io.helidon.http.encoding.ContentEncoding;
  */
 public class DeflateEncoding implements ContentEncoding {
     private static final Http.Header CONTENT_ENCODING_DEFLATE =
-            Http.Headers.createCached(Http.HeaderNames.CONTENT_ENCODING,
+            Http.Headers.createCached(HeaderNames.CONTENT_ENCODING,
                                       false,
                                       false,
                                       "deflate");
@@ -92,7 +93,7 @@ public class DeflateEncoding implements ContentEncoding {
             @Override
             public void headers(WritableHeaders<?> headers) {
                 headers.add(CONTENT_ENCODING_DEFLATE);
-                headers.remove(Http.HeaderNames.CONTENT_LENGTH);
+                headers.remove(HeaderNames.CONTENT_LENGTH);
             }
         };
     }

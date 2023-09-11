@@ -21,9 +21,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;

@@ -27,7 +27,7 @@ import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -64,8 +64,8 @@ import jakarta.json.JsonBuilderFactory;
 public class Main {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
-    private static final HeaderName BAR_HEADER = Http.HeaderNames.create("bar");
-    private static final HeaderName FOO_HEADER = Http.HeaderNames.create("foo");
+    private static final HeaderName BAR_HEADER = HeaderNames.create("bar");
+    private static final HeaderName FOO_HEADER = HeaderNames.create("foo");
 
     // ---------------- EXAMPLES
 

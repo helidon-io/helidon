@@ -16,7 +16,7 @@
 
 package io.helidon.microprofile.cors;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.microprofile.tests.junit5.AddBean;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
@@ -26,7 +26,7 @@ import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.HeaderNames.ORIGIN;
+import static io.helidon.http.HeaderNames.ORIGIN;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,11 +52,11 @@ class ErrorResponseTest {
         Response res = target.path("/notfound")
                 .request()
                 .header(ORIGIN.defaultCase(), "http://foo.bar")
-                .header(Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "GET")
+                .header(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD.defaultCase(), "GET")
                 .get();
         assertThat("Status from missing endpoint request", res.getStatusInfo(), is(Response.Status.NOT_FOUND));
         assertThat("With CORS enabled, headers in 404 response",
                    res.getHeaders().keySet(),
-                   hasItem(Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()));
+                   hasItem(HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.defaultCase()));
     }
 }

@@ -32,9 +32,9 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -139,7 +139,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         writeBuffer.clear();
         prologue(writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
+        headers.setIfAbsent(Http.Headers.create(HeaderNames.HOST, uri.authority()));
 
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }
@@ -156,7 +156,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             // When CONNECT, the first line contains the remote host:port, in the same way as the HOST header.
             nonEntityData.writeAscii(request.method().text()
                     + " "
-                    + request.headers().get(Http.HeaderNames.HOST).value()
+                    + request.headers().get(HeaderNames.HOST).value()
                     + " HTTP/1.1\r\n");
         } else {
             // When proxy is set, ensure that the request uses absolute URI because of Section 5.1.2 Request-URI in
@@ -244,7 +244,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         ContentDecoder decoder;
 
-        if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(Http.HeaderNames.CONTENT_ENCODING)) {
+        if (encodingSupport.contentDecodingEnabled() && responseHeaders.contains(HeaderNames.CONTENT_ENCODING)) {
             String contentEncoding = responseHeaders.get(HeaderNames.CONTENT_ENCODING).value();
             if (encodingSupport.contentDecodingSupported(contentEncoding)) {
                 decoder = encodingSupport.decoder(contentEncoding);

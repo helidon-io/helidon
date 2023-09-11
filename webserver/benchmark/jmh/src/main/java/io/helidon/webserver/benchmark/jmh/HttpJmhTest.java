@@ -24,8 +24,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
@@ -43,10 +43,10 @@ import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
 public class HttpJmhTest {
-    private static final Http.Header CONTENT_TYPE = Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+    private static final Http.Header CONTENT_TYPE = Http.Headers.createCached(HeaderNames.CONTENT_TYPE,
                                                                               "text/plain; charset=UTF-8");
     private static final Http.Header CONTENT_LENGTH = Http.Headers.createCached(HeaderNames.CONTENT_LENGTH, "13");
-    private static final Http.Header SERVER = Http.Headers.createCached(Http.HeaderNames.SERVER, "Helidon");
+    private static final Http.Header SERVER = Http.Headers.createCached(HeaderNames.SERVER, "Helidon");
     private static final byte[] RESPONSE_BYTES = "Hello, World!".getBytes(StandardCharsets.UTF_8);
     private WebServer server;
     private int serverPort;

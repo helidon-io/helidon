@@ -47,7 +47,7 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.servicecommon.HelidonFeatureSupport;
 
-import static io.helidon.http.Http.HeaderNames.ALLOW;
+import static io.helidon.http.HeaderNames.ALLOW;
 import static io.helidon.http.Status.METHOD_NOT_ALLOWED_405;
 import static io.helidon.http.Status.NOT_FOUND_404;
 import static io.helidon.http.Status.OK_200;

@@ -129,12 +129,12 @@ public class ContentDisposition implements Http.Header {
 
     @Override
     public String name() {
-        return Http.HeaderNames.CONTENT_DISPOSITION.defaultCase();
+        return HeaderNames.CONTENT_DISPOSITION.defaultCase();
     }
 
     @Override
     public HeaderName headerName() {
-        return Http.HeaderNames.CONTENT_DISPOSITION;
+        return HeaderNames.CONTENT_DISPOSITION;
     }
 
     @Override
