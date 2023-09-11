@@ -154,8 +154,8 @@ public class MetricsTest extends MetricsBaseTest {
         // The @Gauge overrides the default units. Plus, the Prometheus output from Micrometer now includes the mp_scope tag and
         // the value formatted as a double (that's Prometheus exposition format standard).
         assertThat(promData, containsString("# TYPE gaugeForInjectionTest_minutes gauge"));
-        assertThat(promData, containsString("\n# HELP gaugeForInjectionTest_minutes"));
-        assertThat(promData, containsString("\ngaugeForInjectionTest_minutes{mp_scope=\"application\",} "
+        assertThat(promData, containsString("# HELP gaugeForInjectionTest_minutes"));
+        assertThat(promData, containsString("gaugeForInjectionTest_minutes{mp_scope=\"application\",} "
                 + (double) expectedValue));
     }
 
