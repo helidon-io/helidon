@@ -14,11 +14,19 @@
  * limitations under the License.
  */
 
+import io.helidon.common.features.api.Feature;
+import io.helidon.common.features.api.Preview;
+
 /**
  * Injection Config-Driven Services Module.
  */
+@Feature(value = "Config Driven",
+         since = "4.0.0",
+         path = {"Inject", "Config Driven"},
+         description = "Config Driven Services")
+@Preview
 module io.helidon.inject.configdriven.runtime {
-
+    requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
     requires static jakarta.annotation;
     requires static jakarta.inject;
