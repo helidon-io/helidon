@@ -17,8 +17,8 @@
 package io.helidon.examples.webserver.echo;
 
 import io.helidon.http.Header;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -27,8 +27,8 @@ import io.helidon.webclient.api.WebClient;
  * A client that invokes the echo server.
  */
 public class EchoClient {
-    private static final Header HEADER = Http.Headers.create("MY-HEADER", "header-value");
-    private static final Header HEADERS = Http.Headers.create("MY-HEADERS", "ha", "hb", "hc");
+    private static final Header HEADER = HeaderValues.create("MY-HEADER", "header-value");
+    private static final Header HEADERS = HeaderValues.create("MY-HEADERS", "ha", "hb", "hc");
 
     private EchoClient() {
     }

@@ -34,8 +34,8 @@ import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
@@ -289,7 +289,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private void route(HttpPrologue prologue, WritableHeaders<?> headers) {
         EntityStyle entity = EntityStyle.NONE;
 
-        if (headers.contains(Headers.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             entity = EntityStyle.CHUNKED;
             this.currentEntitySize = -1;
         } else if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
@@ -326,7 +326,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                    writer,
                                                                    request,
                                                                    !request.headers()
-                                                                           .contains(Headers.CONNECTION_CLOSE),
+                                                                           .contains(HeaderValues.CONNECTION_CLOSE),
                                                                    http1Config.validateResponseHeaders());
 
             routing.route(ctx, request, response);
@@ -337,7 +337,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         boolean expectContinue = false;
 
         // Expect: 100-continue
-        if (headers.contains(Headers.EXPECT_100)) {
+        if (headers.contains(HeaderValues.EXPECT_100)) {
             if (this.http1Config.continueImmediately()) {
                 writer.writeNow(BufferData.create(CONTINUE_100));
             }
@@ -390,7 +390,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                                                writer,
                                                                request,
                                                                !request.headers()
-                                                                       .contains(Headers.CONNECTION_CLOSE),
+                                                                       .contains(HeaderValues.CONNECTION_CLOSE),
                                                                http1Config.validateResponseHeaders());
 
         routing.route(ctx, request, response);
@@ -409,7 +409,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private void consumeEntity(Http1ServerRequest request, Http1ServerResponse response) {
-        if (response.headers().contains(Headers.CONNECTION_CLOSE) || request.content().consumed()) {
+        if (response.headers().contains(HeaderValues.CONNECTION_CLOSE) || request.content().consumed()) {
             // we do not care about request entity if connection is getting closed
             return;
         }
@@ -417,7 +417,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             request.content().consume();
         } catch (Exception e) {
-            boolean keepAlive = request.content().consumed() && response.headers().contains(Headers.CONNECTION_KEEP_ALIVE);
+            boolean keepAlive = request.content().consumed() && response.headers().contains(HeaderValues.CONNECTION_KEEP_ALIVE);
             // we must close connection, as we could not consume request
             if (!response.isSent()) {
                 throw new InternalServerException(e.getMessage(), e, keepAlive);
@@ -440,10 +440,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         BufferData buffer = BufferData.growing(128);
         ServerResponseHeaders headers = response.headers();
         if (!e.keepAlive()) {
-            headers.set(Http.Headers.CONNECTION_CLOSE);
+            headers.set(HeaderValues.CONNECTION_CLOSE);
         }
         byte[] message = response.entity().orElse(BufferData.EMPTY_BYTES);
-        headers.set(Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(message.length)));
 
         Http1ServerResponse.nonEntityBytes(headers, response.status(), buffer, response.keepAlive(),
                                            http1Config.validateResponseHeaders());

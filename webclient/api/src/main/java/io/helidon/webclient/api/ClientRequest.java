@@ -32,8 +32,8 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Status;
@@ -113,7 +113,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     default T header(HeaderName name, String... values) {
-        return header(Http.Headers.create(name, true, false, values));
+        return header(HeaderValues.create(name, true, false, values));
     }
 
     /**
@@ -124,7 +124,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @return updated request
      */
     default T header(HeaderName name, List<String> values) {
-        return header(Http.Headers.create(name, values));
+        return header(HeaderValues.create(name, values));
     }
 
     /**

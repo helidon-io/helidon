@@ -25,7 +25,7 @@ import io.helidon.common.mapper.Value;
 /**
  * HTTP Header with {@link io.helidon.http.HeaderName} and value.
  *
- * @see io.helidon.http.Http.Headers
+ * @see io.helidon.http.HeaderValues
  */
 public interface Header extends Value<String> {
 

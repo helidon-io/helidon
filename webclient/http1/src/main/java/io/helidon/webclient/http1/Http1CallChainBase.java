@@ -34,8 +34,8 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -140,7 +140,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
 
         writeBuffer.clear();
         prologue(writeBuffer, serviceRequest, uri);
-        headers.setIfAbsent(Http.Headers.create(HeaderNames.HOST, uri.authority()));
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
 
         return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
     }
@@ -260,7 +260,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             return decoder.apply(new ContentLengthInputStream(helidonSocket, reader, whenComplete, response, length));
-        } else if (responseHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+        } else if (responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             return new ChunkedInputStream(helidonSocket, reader, whenComplete, response);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
@@ -269,7 +269,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
-        if (responseHeaders.contains(Http.Headers.CONTENT_LENGTH_ZERO)) {
+        if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
         if (responseStatus == Status.NO_CONTENT_204) {
@@ -277,7 +277,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         }
         if ((
                 responseHeaders.contains(HeaderNames.UPGRADE)
-                        && !responseHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED))) {
+                        && !responseHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED))) {
             // this is an upgrade response and there is no entity
             return false;
         }

@@ -32,8 +32,8 @@ import io.helidon.common.GenericType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -73,9 +73,9 @@ that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
 class Http1ClientTest {
-    private static final Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
+    private static final Header REQ_CHUNKED_HEADER = HeaderValues.createCached(
             HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
+    private static final Header REQ_EXPECT_100_HEADER_NAME = HeaderValues.createCached(
             HeaderNames.create("X-Req-Expect100"), "true");
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
@@ -159,7 +159,7 @@ class Http1ClientTest {
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
-        assertThat(response.headers(), hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
+        assertThat(response.headers(), hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     @Test
@@ -189,7 +189,7 @@ class Http1ClientTest {
         String[] requestEntityParts = {"First"};
 
         HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
-                .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                .header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
@@ -480,13 +480,13 @@ class Http1ClientTest {
 
     private static void customHandler(ServerRequest req, ServerResponse res, boolean chunkResponse) throws IOException {
         Headers reqHeaders = req.headers();
-        if (reqHeaders.contains(Http.Headers.EXPECT_100)) {
+        if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
             res.headers().set(REQ_EXPECT_100_HEADER_NAME);
         }
         if (reqHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             res.headers().set(REQ_CONTENT_LENGTH_HEADER_NAME, reqHeaders.get(HeaderNames.CONTENT_LENGTH).get());
         }
-        if (reqHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+        if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             res.headers().set(REQ_CHUNKED_HEADER);
         }
 

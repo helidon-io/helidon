@@ -33,7 +33,7 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -48,13 +48,13 @@ class WsClientImpl implements WsClient {
      * Supported WebSocket version.
      */
     static final String SUPPORTED_VERSION = "13";
-    static final Header HEADER_UPGRADE_WS = Http.Headers.createCached(HeaderNames.UPGRADE, "websocket");
+    static final Header HEADER_UPGRADE_WS = HeaderValues.createCached(HeaderNames.UPGRADE, "websocket");
     static final HeaderName HEADER_WS_PROTOCOL = HeaderNames.create("Sec-WebSocket-Protocol");
-    private static final Header HEADER_WS_VERSION = Http.Headers.createCached(HeaderNames.create(
+    private static final Header HEADER_WS_VERSION = HeaderValues.createCached(HeaderNames.create(
             "Sec-WebSocket-Version"), SUPPORTED_VERSION);
 
     private static final System.Logger LOGGER = System.getLogger(WsClient.class.getName());
-    private static final Header HEADER_CONN_UPGRADE = Http.Headers.create(HeaderNames.CONNECTION, "Upgrade");
+    private static final Header HEADER_CONN_UPGRADE = HeaderValues.create(HeaderNames.CONNECTION, "Upgrade");
     private static final HeaderName HEADER_WS_ACCEPT = HeaderNames.create("Sec-WebSocket-Accept");
     private static final HeaderName HEADER_WS_KEY = HeaderNames.create("Sec-WebSocket-Key");
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);
@@ -75,7 +75,7 @@ class WsClientImpl implements WsClient {
         ClientRequestHeaders headers = http1Client.prototype().defaultRequestHeaders();
         headers.set(HEADER_UPGRADE_WS);
         headers.set(HEADER_WS_VERSION);
-        headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
+        headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
         if (clientConfig.protocolConfig().subProtocols().isEmpty()) {
             headers.remove(HEADER_WS_PROTOCOL);
         } else {
@@ -114,7 +114,7 @@ class WsClientImpl implements WsClient {
             upgradeRequest.uri(ClientUri.create(resolvedUri).scheme("https"));
         }
 
-        upgradeRequest.headers(headers -> headers.setIfAbsent(Http.Headers.create(HeaderNames.HOST, resolvedUri
+        upgradeRequest.headers(headers -> headers.setIfAbsent(HeaderValues.create(HeaderNames.HOST, resolvedUri
                 .authority())));
 
         UpgradeResponse upgradeResponse = upgradeRequest.upgrade("websocket");

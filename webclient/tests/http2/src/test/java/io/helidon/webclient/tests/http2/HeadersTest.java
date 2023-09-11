@@ -27,8 +27,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeoutException;
 
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
@@ -168,7 +168,7 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.Headers.createCached("test-header-" + i, DATA + i));
+                        hv.add(HeaderValues.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })
@@ -189,7 +189,7 @@ class HeadersTest {
                 .priorKnowledge(true)
                 .headers(hv -> {
                     for (int i = 0; i < 500; i++) {
-                        hv.add(Http.Headers.createCached("test-header-" + i, DATA + i));
+                        hv.add(HeaderValues.createCached("test-header-" + i, DATA + i));
                         expected.add("test-header-" + i + "=" + DATA + i);
                     }
                 })

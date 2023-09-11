@@ -32,7 +32,7 @@ import java.util.zip.GZIPOutputStream;
 
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
@@ -56,7 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class GzipEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
     private static final byte[] GZIP_ENTITY;
-    private static final Header CONTENT_ENCODING_GZIP = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "gzip");
+    private static final Header CONTENT_ENCODING_GZIP = HeaderValues.create(HeaderNames.CONTENT_ENCODING, "gzip");
 
     static {
         ByteArrayOutputStream baos;

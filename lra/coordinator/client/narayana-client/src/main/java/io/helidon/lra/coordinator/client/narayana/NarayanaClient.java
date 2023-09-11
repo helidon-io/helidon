@@ -32,7 +32,7 @@ import io.helidon.faulttolerance.Retry;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
@@ -203,7 +203,7 @@ public class NarayanaClient implements CoordinatorClient {
                     .queryParam(QUERY_PARAM_TIME_LIMIT, String.valueOf(timeLimit))
                     .headers(h -> {
                         // links are expected either in header
-                        h.add(Http.Headers.createCached(HEADER_LINK, links));
+                        h.add(HeaderValues.createCached(HEADER_LINK, links));
                         // header propagation
                         headers.toMap().forEach((name, value) -> h.set(HeaderNames.create(name), value));
                     });

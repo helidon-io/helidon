@@ -26,8 +26,8 @@ import java.util.Random;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http2.Http2Client;
@@ -49,10 +49,10 @@ class PostTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final Header REQUEST_HEADER_VALUE = Http.Headers.createCached(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final Header REQUEST_HEADER_VALUE = HeaderValues.createCached(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final Header RESPONSE_HEADER_VALUE = Http.Headers.create(RESPONSE_HEADER_NAME,
+    private static final Header RESPONSE_HEADER_VALUE = HeaderValues.create(RESPONSE_HEADER_NAME,
                                                                             RESPONSE_HEADER_VALUE_STRING);
 
     private static WebServer server;

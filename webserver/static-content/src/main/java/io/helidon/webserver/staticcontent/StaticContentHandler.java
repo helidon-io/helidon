@@ -35,6 +35,7 @@ import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.InternalServerException;
@@ -315,7 +316,7 @@ abstract class StaticContentHandler implements StaticContentService {
 
     void cacheInMemory(String resource, MediaType contentType, byte[] bytes, Optional<Instant> lastModified) {
         int contentLength = bytes.length;
-        Header contentLengthHeader = Http.Headers.create(HeaderNames.CONTENT_LENGTH, contentLength);
+        Header contentLengthHeader = HeaderValues.create(HeaderNames.CONTENT_LENGTH, contentLength);
 
         CachedHandlerInMemory inMemoryResource;
         if (lastModified.isEmpty()) {
@@ -327,7 +328,7 @@ abstract class StaticContentHandler implements StaticContentService {
                                                          contentLengthHeader);
         } else {
             // we can cache this, as this is a jar record
-            Header lastModifiedHeader = Http.Headers.create(HeaderNames.LAST_MODIFIED,
+            Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
                                                             true,
                                                             false,
                                                             formatLastModified(lastModified.get()));

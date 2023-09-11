@@ -365,7 +365,7 @@ public interface DirectHandler {
              * @return updated builder
              */
             public Builder entity(String entity) {
-                this.headers.setIfAbsent(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
+                this.headers.setIfAbsent(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
                 return entity(entity.getBytes(StandardCharsets.UTF_8));
             }
 

@@ -42,7 +42,7 @@ import java.util.jar.JarFile;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
@@ -246,7 +246,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                     null));
         } else {
             // we can cache this, as this is a jar record
-            Header lastModifiedHeader = Http.Headers.create(HeaderNames.LAST_MODIFIED,
+            Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
                                                             true,
                                                             false,
                                                             formatLastModified(lastModified));

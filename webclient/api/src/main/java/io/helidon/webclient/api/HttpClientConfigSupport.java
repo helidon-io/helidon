@@ -25,7 +25,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.spi.DnsResolver;
@@ -74,7 +74,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, String value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
@@ -86,7 +86,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, int value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
@@ -98,7 +98,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, long value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
 
@@ -114,7 +114,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
@@ -129,7 +129,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, int value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
@@ -144,7 +144,7 @@ class HttpClientConfigSupport {
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, long value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
     }
 

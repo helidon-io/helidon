@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
@@ -74,7 +74,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         // Content-Range: bytes 0-1023/146515
         // Content-Length: 1024
         long last = (offset + length) - 1;
-        response.header(Http.Headers.create(HeaderNames.CONTENT_RANGE, true,
+        response.header(HeaderValues.create(HeaderNames.CONTENT_RANGE, true,
                                             false,
                                             "bytes " + offset + "-" + last + "/" + fileLength));
         response.contentLength(length);

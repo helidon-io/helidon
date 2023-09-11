@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -85,7 +85,7 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
             assertThat(response.status(), is(Status.OK_200));
@@ -104,7 +104,7 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
             assertThat(response.status(), is(Status.OK_200));
@@ -126,7 +126,7 @@ class ValidateHeadersTest {
                 .sendExpectContinue(false)
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.outputStream(it -> {
                 it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
@@ -155,7 +155,7 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         HttpClientResponse response = request.request();
         assertThat(response.status(), is(Status.OK_200));
         String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
@@ -166,7 +166,7 @@ class ValidateHeadersTest {
         ServerRequestHeaders headers = request.headers();
         request.headers().toMap().forEach((k, v) -> {
             if (k.contains("Header")) {
-                response.headers().add(Http.Headers.create(HeaderNames.create(k), v));
+                response.headers().add(HeaderValues.create(HeaderNames.create(k), v));
             }
         });
         response.send("any");

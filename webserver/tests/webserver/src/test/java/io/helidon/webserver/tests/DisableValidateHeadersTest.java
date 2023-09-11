@@ -19,7 +19,7 @@ package io.helidon.webserver.tests;
 import java.util.stream.Stream;
 
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -80,7 +80,7 @@ class DisableValidateHeadersTest {
     @MethodSource("customHeaders")
     void testHeaders(String headerName, String headerValue, boolean expectsValid) {
         Http1ClientRequest request = client.get("/test");
-        request.header(Http.Headers.create(HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
             assertThat(response.status(), is(Status.OK_200));
@@ -95,7 +95,7 @@ class DisableValidateHeadersTest {
         ServerRequestHeaders headers = request.headers();
         request.headers().toMap().forEach((k, v) -> {
             if (k.contains("Header")) {
-                response.headers().add(Http.Headers.create(HeaderNames.create(k), v));
+                response.headers().add(HeaderValues.create(HeaderNames.create(k), v));
             }
         });
         response.send("any");

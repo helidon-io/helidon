@@ -25,8 +25,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Headers.ACCEPT_EVENT_STREAM;
-import static io.helidon.http.Http.Headers.ACCEPT_JSON;
+import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
+import static io.helidon.http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 

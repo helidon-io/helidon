@@ -23,8 +23,8 @@ import java.io.UncheckedIOException;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.http2.FlowControl;
@@ -85,11 +85,11 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         // handle content encoding
         byte[] bytes = entityBytes(entityBytes);
 
-        headers.setIfAbsent(Headers.create(HeaderNames.CONTENT_LENGTH,
-                                           true,
-                                           false,
-                                           String.valueOf(bytes.length)));
-        headers.setIfAbsent(Headers.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                true,
+                                                false,
+                                                String.valueOf(bytes.length)));
+        headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
 
         Http2Headers http2Headers = Http2Headers.create(headers);
         http2Headers.status(status());
@@ -269,16 +269,16 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         private void sendFirstChunkOnly() {
             int contentLength;
             if (firstBuffer == null) {
-                headers.set(Headers.CONTENT_LENGTH_ZERO);
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(Headers.create(HeaderNames.CONTENT_LENGTH,
-                                           true,
-                                           false,
-                                           String.valueOf(firstBuffer.available())));
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH,
+                                                true,
+                                                false,
+                                                String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
-            headers.setIfAbsent(Headers.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);
@@ -308,7 +308,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
         }
 
         private void sendHeadersAndPrepare() {
-            headers.setIfAbsent(Headers.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
+            headers.setIfAbsent(HeaderValues.create(HeaderNames.DATE, true, false, Http.DateTime.rfc1123String()));
 
             Http2Headers http2Headers = Http2Headers.create(headers);
             http2Headers.status(status);

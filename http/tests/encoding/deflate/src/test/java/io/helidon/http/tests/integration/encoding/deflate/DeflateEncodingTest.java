@@ -33,7 +33,7 @@ import java.util.zip.InflaterInputStream;
 
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientResponseTyped;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class DeflateEncodingTest {
     private static final String ENTITY = "Some arbitrary text we want to try to compress";
     private static final byte[] DEFLATED_ENTITY;
-    private static final Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "deflate");
+    private static final Header CONTENT_ENCODING_DEFLATE = HeaderValues.create(HeaderNames.CONTENT_ENCODING, "deflate");
 
     static {
         ByteArrayOutputStream baos;

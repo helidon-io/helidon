@@ -28,8 +28,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 
@@ -79,7 +79,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
     }
 
     protected void send(OutputStream outputStream, WritableHeaders<?> headers, byte[] bytes) {
-        headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, true, false, String.valueOf(bytes.length)));
 
         try (outputStream) {
             sendHeaders(outputStream, headers);
@@ -101,7 +101,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
                 disposition.add("form-data");
                 disposition.add("name=\"" + URLEncoder.encode(name(), UTF_8) + "\"");
                 fileName().ifPresent(it -> disposition.add("filename=\"" + URLEncoder.encode(it, UTF_8) + "\""));
-                headers.setIfAbsent(Http.Headers.create(HeaderNames.CONTENT_DISPOSITION, String.join("; ", disposition)));
+                headers.setIfAbsent(HeaderValues.create(HeaderNames.CONTENT_DISPOSITION, String.join("; ", disposition)));
             }
         }
         if (!headers.contains(HeaderNames.CONTENT_TYPE)) {

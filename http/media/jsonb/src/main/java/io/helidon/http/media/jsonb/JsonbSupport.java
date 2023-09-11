@@ -33,7 +33,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 
-import static io.helidon.http.Http.Headers.CONTENT_TYPE_JSON;
+import static io.helidon.http.HeaderValues.CONTENT_TYPE_JSON;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.

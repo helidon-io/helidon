@@ -37,8 +37,8 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 
@@ -253,7 +253,7 @@ public class FormParamsSupport implements MediaSupport {
 
     private static class FormParamsUrlWriter extends FormParamsWriter {
         private static final Header CONTENT_TYPE_URL_ENCODED =
-                Http.Headers.createCached(HeaderNames.CONTENT_TYPE,
+                HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                           HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
                                                  .withCharset("utf-8")
                                                  .text());
@@ -268,7 +268,7 @@ public class FormParamsSupport implements MediaSupport {
 
     private static class FormParamsPlaintextWriter extends FormParamsWriter {
         private static final Header CONTENT_TYPE_TEXT =
-                Http.Headers.createCached(HeaderNames.CONTENT_TYPE,
+                HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                           HttpMediaType.create(MediaTypes.TEXT_PLAIN)
                                                  .withCharset("utf-8")
                                                  .text());

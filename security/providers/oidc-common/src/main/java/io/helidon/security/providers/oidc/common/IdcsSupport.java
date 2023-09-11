@@ -21,7 +21,7 @@ import java.time.Duration;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.security.SecurityException;
 import io.helidon.security.jwt.jwk.JwkKeys;
@@ -52,7 +52,7 @@ class IdcsSupport {
 
         try (HttpClientResponse response = appWebClient.post()
                 .uri(tokenEndpointUri)
-                .header(Http.Headers.ACCEPT_JSON)
+                .header(HeaderValues.ACCEPT_JSON)
                 .submit(form)) {
 
             if (response.status().family() == Status.Family.SUCCESSFUL) {

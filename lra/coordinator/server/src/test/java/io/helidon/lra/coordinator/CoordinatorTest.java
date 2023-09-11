@@ -22,12 +22,12 @@ import java.util.concurrent.CompletableFuture;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.testing.junit5.Socket;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.Socket;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonValue;

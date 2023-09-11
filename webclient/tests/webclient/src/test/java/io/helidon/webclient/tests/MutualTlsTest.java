@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -183,7 +183,7 @@ public class MutualTlsTest {
         routing.get("/", (req, res) -> {
 
             // close to avoid re-using cached connections on the client side
-            res.header(Http.Headers.CONNECTION_CLOSE);
+            res.header(HeaderValues.CONNECTION_CLOSE);
             res.send("Hello " + req.headers().value(X_HELIDON_CN).orElse("Unknown CN") + "!");
         });
     }

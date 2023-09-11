@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.Errors;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
@@ -119,7 +119,7 @@ class TenantAuthenticationHandler {
                 HttpClientRequest post = tenant.appWebClient()
                         .post()
                         .uri(tenant.introspectUri())
-                        .header(Http.Headers.ACCEPT_JSON)
+                        .header(HeaderValues.ACCEPT_JSON)
                         .headers(it -> it.add(HeaderNames.CACHE_CONTROL, "no-cache, no-store, must-revalidate"));
 
                 OidcUtil.updateRequest(OidcConfig.RequestType.INTROSPECT_JWT, tenantConfig, form);

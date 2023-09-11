@@ -22,7 +22,7 @@ import java.io.UncheckedIOException;
 import java.util.stream.Stream;
 
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
@@ -125,7 +125,7 @@ class ValidateResponseHeadersTest {
 
     private static void setHeader(ServerRequest request, ServerResponse response) {
         String[] header = request.content().as(String.class).split(HEADER_NAME_VALUE_DELIMETER);
-        response.headers().add(Http.Headers.create(header[0], header[1]));
+        response.headers().add(HeaderValues.create(header[0], header[1]));
     }
 
     private static Stream<Arguments> responseHeaders() {

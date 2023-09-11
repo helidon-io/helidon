@@ -34,7 +34,7 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RequestException;
 import io.helidon.http.WritableHeaders;
@@ -230,7 +230,7 @@ public class TyrusUpgrader extends WsUpgrader {
         // Map Tyrus response headers back to Helidon
         upgradeResponse.getHeaders()
                 .forEach((key, value) -> headers.add(
-                        Http.Headers.create(
+                        HeaderValues.create(
                                 HeaderNames.create(key, key.toLowerCase(Locale.ROOT)),
                                 value)));
         return upgradeInfo;

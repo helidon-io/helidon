@@ -29,7 +29,7 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
@@ -60,7 +60,7 @@ class AccessLogFeatureTest {
     private static final int STATUS_CODE = Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "0";
     private static final long TIME_TAKEN_MICROS = 1140000;
-    private static final Header REFERER_HEADER = Http.Headers.create(HeaderNames.REFERER, "first", "second");
+    private static final Header REFERER_HEADER = HeaderValues.create(HeaderNames.REFERER, "first", "second");
 
     @Test
     void testHelidonFormat() {

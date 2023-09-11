@@ -17,7 +17,7 @@
 package io.helidon.webserver.tests;
 
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
@@ -168,7 +168,7 @@ class MultiPortTest {
                 .request()) {
             assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
             assertThat(response.headers(),
-                       hasHeader(Http.Headers.create(HeaderNames.LOCATION, "http://localhost:" + server.port() + "/foo")));
+                       hasHeader(HeaderValues.create(HeaderNames.LOCATION, "http://localhost:" + server.port() + "/foo")));
         }
     }
 

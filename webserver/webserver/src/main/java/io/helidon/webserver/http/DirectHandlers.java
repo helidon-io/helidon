@@ -21,7 +21,7 @@ import java.util.Map;
 
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
@@ -90,7 +90,7 @@ public class DirectHandlers {
         response.headers()
                 .forEach(res::header);
         if (!keepAlive) {
-            res.header(Http.Headers.CONNECTION_CLOSE);
+            res.header(HeaderValues.CONNECTION_CLOSE);
         }
 
         if (res.isSent()) {

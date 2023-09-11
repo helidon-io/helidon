@@ -28,7 +28,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
@@ -51,8 +51,8 @@ import static org.mockito.Mockito.when;
 
 class CachedHandlerTest {
     private static final MediaType MEDIA_TYPE_ICON = MediaTypes.create("image/x-icon");
-    private static final Header ICON_TYPE = Http.Headers.create(HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
-    private static final Header RESOURCE_CONTENT_LENGTH = Http.Headers.create(HeaderNames.CONTENT_LENGTH, 7);
+    private static final Header ICON_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
+    private static final Header RESOURCE_CONTENT_LENGTH = HeaderValues.create(HeaderNames.CONTENT_LENGTH, 7);
 
     private static ClassPathContentHandler classpathHandler;
     private static FileSystemContentHandler fsHandler;
@@ -123,7 +123,7 @@ class CachedHandlerTest {
         boolean result = classpathHandler.doHandle(Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
         assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
         assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
@@ -199,7 +199,7 @@ class CachedHandlerTest {
         boolean result = fsHandler.doHandle(Method.GET, "nested/resource.txt", req, res, false);
 
         assertThat("Handler should have found nested/resource.txt", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
         assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));
     }
@@ -219,7 +219,7 @@ class CachedHandlerTest {
         boolean result = fsHandler.doHandle(Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
-        assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
+        assertThat(responseHeaders, hasHeader(HeaderValues.CONTENT_TYPE_TEXT_PLAIN));
         assertThat(responseHeaders, hasHeader(RESOURCE_CONTENT_LENGTH));
         assertThat(responseHeaders, hasHeader(HeaderNames.ETAG));
         assertThat(responseHeaders, hasHeader(HeaderNames.LAST_MODIFIED));

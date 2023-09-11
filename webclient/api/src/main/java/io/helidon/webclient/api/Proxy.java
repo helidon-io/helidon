@@ -47,7 +47,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 
@@ -58,7 +58,7 @@ public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
     private static final Header PROXY_CONNECTION =
-            Http.Headers.create("Proxy-Connection", "keep-alive");
+            HeaderValues.create("Proxy-Connection", "keep-alive");
 
     /**
      * No proxy instance.
@@ -115,7 +115,7 @@ public class Proxy {
             // Making the password char[] to String looks not correct, but it is done in the same way in HttpBasicAuthProvider
             String b64 = Base64.getEncoder().encodeToString((username.get() + ":" + new String(pass))
                     .getBytes(StandardCharsets.UTF_8));
-            this.proxyAuthHeader = Optional.of(Http.Headers.create(HeaderNames.PROXY_AUTHORIZATION, "Basic " + b64));
+            this.proxyAuthHeader = Optional.of(HeaderValues.create(HeaderNames.PROXY_AUTHORIZATION, "Basic " + b64));
         } else {
             this.proxyAuthHeader = Optional.empty();
         }
@@ -475,7 +475,7 @@ public class Proxy {
                 .header(HeaderNames.HOST, targetAddress.getHostName() + ":" + targetAddress.getPort())
                 .accept(MediaTypes.WILDCARD);
         if (clientConfig.keepAlive()) {
-            request.header(Http.Headers.CONNECTION_KEEP_ALIVE)
+            request.header(HeaderValues.CONNECTION_KEEP_ALIVE)
                 .header(PROXY_CONNECTION);
         }
         proxy.proxyAuthHeader.ifPresent(request::header);

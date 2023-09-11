@@ -34,7 +34,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Http.DateTime;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
@@ -58,7 +58,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final HeaderName STREAM_STATUS_NAME = HeaderNames.create("stream-status");
     private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     private static final Header STREAM_TRAILERS =
-            Http.Headers.create(HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
+            HeaderValues.create(HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
     @SuppressWarnings("rawtypes")
@@ -124,10 +124,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         // either content-length or chunked encoding
         // if content length - make sure to compare it when writing actual entity (streaming and send(entity))
         if (keepAlive) {
-            headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
+            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
         } else {
             // we must override even if user sets keep alive, as close was requested
-            headers.set(Http.Headers.CONNECTION_CLOSE);
+            headers.set(HeaderValues.CONNECTION_CLOSE);
         }
 
         // write headers followed by empty line
@@ -294,9 +294,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         int contentLength = bytes.length;
         boolean forcedChunkedEncoding = false;
-        headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
+        headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
-        if (headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
+        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
@@ -378,7 +378,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
-            this.forcedChunked = headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.validateHeaders = validateHeaders;
         }
 
@@ -449,7 +449,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (isChunked || forcedChunked) {
-                if (request.headers().contains(Http.Headers.TE_TRAILERS)) {
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
                     // not optimized, trailers enabled: we need to write trailers
                     trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
                     trailers.set(STREAM_RESULT_NAME, streamResult.get());
@@ -516,7 +516,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                if (request.headers().contains(Http.Headers.TE_TRAILERS)) {
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
                     // proper stream with multiple buffers, write status amd headers
                     headers.add(STREAM_TRAILERS);
                 }
@@ -533,10 +533,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private void sendFirstChunkOnly() {
             int contentLength;
             if (firstBuffer == null) {
-                headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(Http.Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
             isChunked = false;
@@ -566,11 +566,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 contentLength = -1;
                 // Add chunked encoding, if there is no other transfer-encoding headers
                 if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
-                    headers.set(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
-                        headers.add(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
             }

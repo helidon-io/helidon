@@ -34,7 +34,7 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.Grant;
@@ -451,7 +451,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
 
             HttpClientRequest request = webClient.post()
                     .uri(tokenEndpointUri)
-                    .header(Http.Headers.ACCEPT_JSON);
+                    .header(HeaderValues.ACCEPT_JSON);
 
             try (HttpClientResponse response = request.submit(params)) {
                 if (response.status().family() == Status.Family.SUCCESSFUL) {

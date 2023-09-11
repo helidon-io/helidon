@@ -40,7 +40,7 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
 import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -382,7 +382,7 @@ public final class OidcFeature implements HttpFeature {
 
         HttpClientRequest post = webClient.post()
                 .uri(tenant.tokenEndpointUri())
-                .header(Http.Headers.ACCEPT_JSON);
+                .header(HeaderValues.ACCEPT_JSON);
 
         OidcUtil.updateRequest(OidcConfig.RequestType.CODE_TO_TOKEN, tenantConfig, form);
 

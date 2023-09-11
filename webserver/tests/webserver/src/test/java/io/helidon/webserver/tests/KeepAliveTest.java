@@ -20,8 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -77,7 +76,7 @@ class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithKeepAlive() {
         try (HttpClientResponse response = testCall(webClient, true, "/plain", OK_200)) {
-            assertThat(response.headers(), hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
 
     }
@@ -85,7 +84,7 @@ class KeepAliveTest {
     @RepeatedTest(100)
     void sendWithoutKeepAlive() {
         try (HttpClientResponse response = testCall(webClient, false, "/plain", OK_200)) {
-            assertThat(response.headers(), not(hasHeader(Headers.CONNECTION_KEEP_ALIVE)));
+            assertThat(response.headers(), not(hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE)));
         }
     }
 
@@ -93,7 +92,7 @@ class KeepAliveTest {
     void sendWithKeepAliveExpectKeepAlive() {
         // we attempt to fully consume request entity, if succeeded, we keep connection keep-alive
         try (HttpClientResponse response = testCall(webClient, true, "/close", INTERNAL_SERVER_ERROR_500)) {
-            assertThat(response.headers(), hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
 
@@ -106,7 +105,7 @@ class KeepAliveTest {
                 .uri(path);
 
         if (!keepAlive) {
-            request.header(Http.Headers.CONNECTION_CLOSE);
+            request.header(HeaderValues.CONNECTION_CLOSE);
         }
 
         Http1ClientResponse response = request

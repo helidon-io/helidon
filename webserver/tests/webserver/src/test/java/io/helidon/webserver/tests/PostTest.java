@@ -25,8 +25,7 @@ import java.util.Random;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -52,11 +51,11 @@ class PostTest {
     private static final byte[] BYTES = new byte[256];
     private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create("X-REquEst-HEADeR");
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
-    private static final Header REQUEST_HEADER_VALUE = Headers.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
+    private static final Header REQUEST_HEADER_VALUE = HeaderValues.create(REQUEST_HEADER_NAME, REQUEST_HEADER_VALUE_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final Header RESPONSE_HEADER_VALUE = Headers.create(RESPONSE_HEADER_NAME,
-                                                                       RESPONSE_HEADER_VALUE_STRING);
+    private static final Header RESPONSE_HEADER_VALUE = HeaderValues.create(RESPONSE_HEADER_NAME,
+                                                                            RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -90,8 +89,8 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
@@ -106,8 +105,8 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
-        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, String.valueOf(BYTES.length))));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
@@ -126,8 +125,8 @@ class PostTest {
             assertThat(entity, is(BYTES));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Http.Headers.TRANSFER_ENCODING_CHUNKED));
-        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
     }
 
     @Test
@@ -143,8 +142,8 @@ class PostTest {
             assertThat(entity, is("Hello"));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Headers.create(CONTENT_LENGTH, "5")));
-        assertThat(headers, hasHeader(Headers.CONNECTION_KEEP_ALIVE));
+        assertThat(headers, hasHeader(HeaderValues.create(CONTENT_LENGTH, "5")));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         assertThat(headers, hasHeader(REQUEST_HEADER_VALUE));
         assertThat(headers, hasHeader(RESPONSE_HEADER_VALUE));
     }
@@ -160,12 +159,12 @@ class PostTest {
             assertThrows(IllegalStateException.class, () -> response.entity().as(String.class));
             headers = response.headers();
         }
-        assertThat(headers, hasHeader(Headers.CONNECTION_CLOSE));
+        assertThat(headers, hasHeader(HeaderValues.CONNECTION_CLOSE));
     }
 
     private static class Routes {
         public static void close(ServerRequest req, ServerResponse res) {
-            res.header(Headers.CONNECTION_CLOSE);
+            res.header(HeaderValues.CONNECTION_CLOSE);
             res.status(Status.NO_CONTENT_204);
             res.send();
         }

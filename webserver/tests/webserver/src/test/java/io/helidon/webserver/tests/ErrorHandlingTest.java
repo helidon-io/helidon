@@ -19,7 +19,7 @@ package io.helidon.webserver.tests;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -44,10 +44,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @RoutingTest
 class ErrorHandlingTest {
     private static final HeaderName CONTROL_HEADER = HeaderNames.create("X-HELIDON-JUNIT");
-    private static final Header FIRST = Http.Headers.create(CONTROL_HEADER, "first");
-    private static final Header SECOND = Http.Headers.create(CONTROL_HEADER, "second");
-    private static final Header ROUTING = Http.Headers.create(CONTROL_HEADER, "routing");
-    private static final Header CUSTOM = Http.Headers.create(CONTROL_HEADER, "custom");
+    private static final Header FIRST = HeaderValues.create(CONTROL_HEADER, "first");
+    private static final Header SECOND = HeaderValues.create(CONTROL_HEADER, "second");
+    private static final Header ROUTING = HeaderValues.create(CONTROL_HEADER, "routing");
+    private static final Header CUSTOM = HeaderValues.create(CONTROL_HEADER, "custom");
 
     private final Http1Client client;
 
@@ -102,7 +102,7 @@ class ErrorHandlingTest {
                 .header(ROUTING)
                 .request()) {
             assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONTENT_LENGTH_ZERO));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
         }
     }
 

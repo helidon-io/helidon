@@ -29,8 +29,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -593,7 +593,7 @@ public class Http2Headers {
             }
 
             if (!isPseudoHeader) {
-                headers.add(Http.Headers.create(headerName,
+                headers.add(HeaderValues.create(headerName,
                                                 !approach.addToIndex,
                                                 approach.neverIndex,
                                                 value));

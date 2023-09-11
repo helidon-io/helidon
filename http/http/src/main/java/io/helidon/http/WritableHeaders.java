@@ -70,7 +70,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B add(HeaderName header, String... value) {
-        return add(Http.Headers.create(header, value));
+        return add(HeaderValues.create(header, value));
     }
 
     /**
@@ -81,7 +81,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B add(HeaderName header, int value) {
-        return add(Http.Headers.create(header, value));
+        return add(HeaderValues.create(header, value));
     }
 
     /**
@@ -92,7 +92,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B add(HeaderName header, long value) {
-        return add(Http.Headers.create(header, value));
+        return add(HeaderValues.create(header, value));
     }
 
     /**
@@ -120,7 +120,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentType(MediaType contentType) {
-        return set(Http.Headers.create(HeaderNameEnum.CONTENT_TYPE, contentType.text()));
+        return set(HeaderValues.create(HeaderNameEnum.CONTENT_TYPE, contentType.text()));
     }
 
     /**
@@ -142,7 +142,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B set(HeaderName name, String... values) {
-        return set(Http.Headers.create(name, true, false, values));
+        return set(HeaderValues.create(name, true, false, values));
     }
 
 
@@ -157,7 +157,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B set(HeaderName name, int value) {
-        return set(Http.Headers.create(name, true, false, value));
+        return set(HeaderValues.create(name, true, false, value));
     }
 
     /**
@@ -171,7 +171,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B set(HeaderName name, long value) {
-        return set(Http.Headers.create(name, true, false, value));
+        return set(HeaderValues.create(name, true, false, value));
     }
 
     /**
@@ -185,7 +185,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B set(HeaderName name, Collection<String> values) {
-        return set(Http.Headers.create(name, values));
+        return set(HeaderValues.create(name, values));
     }
 
     /**
@@ -198,7 +198,7 @@ public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
      * @return this instance
      */
     default B contentLength(long length) {
-        return set(Http.Headers.create(HeaderNameEnum.CONTENT_LENGTH,
+        return set(HeaderValues.create(HeaderNameEnum.CONTENT_LENGTH,
                                        true,
                                        false,
                                        String.valueOf(length)));

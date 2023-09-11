@@ -30,7 +30,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.ContentDisposition;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.ReadablePart;
@@ -51,7 +51,7 @@ import static io.helidon.http.Status.NOT_FOUND_404;
  * File service.
  */
 public final class FileService implements HttpService {
-    private static final Header UI_LOCATION = Http.Headers.createCached(HeaderNames.LOCATION, "/ui");
+    private static final Header UI_LOCATION = HeaderValues.createCached(HeaderNames.LOCATION, "/ui");
     private final JsonBuilderFactory jsonFactory;
     private final Path storage;
 

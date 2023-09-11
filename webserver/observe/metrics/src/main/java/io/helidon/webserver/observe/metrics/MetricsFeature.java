@@ -28,7 +28,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.ConfiguredOption;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.metrics.api.Meter;
@@ -252,7 +252,7 @@ public class MetricsFeature extends HelidonFeatureSupport {
                              Iterable<String> scopeSelection,
                              Iterable<String> nameSelection) {
         MediaType mediaType = bestAccepted(req);
-        res.header(Http.Headers.CACHE_NO_CACHE);
+        res.header(HeaderValues.CACHE_NO_CACHE);
         if (mediaType == null) {
             res.status(Status.NOT_ACCEPTABLE_406);
             res.send();

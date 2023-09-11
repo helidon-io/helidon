@@ -32,6 +32,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -526,7 +527,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             // initial request from outside
             io.helidon.http.Headers httpHeaders = upgradeHeaders.httpHeaders();
             boolean hasEntity = httpHeaders.contains(HeaderNames.CONTENT_LENGTH)
-                    || httpHeaders.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    || httpHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             // we now have all information needed to execute
             Http2ServerStream stream = stream(1).stream();
             stream.prologue(upgradePrologue);

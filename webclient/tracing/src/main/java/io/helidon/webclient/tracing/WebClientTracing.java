@@ -26,7 +26,7 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
@@ -139,7 +139,7 @@ public class WebClientTracing implements WebClientService {
 
         @Override
         public void set(String key, String... values) {
-            headers.set(Http.Headers.create(key, values));
+            headers.set(HeaderValues.create(key, values));
         }
 
         @Override

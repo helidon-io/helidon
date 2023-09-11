@@ -24,11 +24,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import io.helidon.common.config.Config;
-import io.helidon.http.Http;
-import io.helidon.http.HttpMediaType;
-import io.helidon.http.WritableHeaders;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 
@@ -74,7 +74,7 @@ class JsonpMediaTest {
         res.supplier().get()
                 .write(JSON_OBJECT_TYPE, createObject("test-title"), os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.Headers.CONTENT_TYPE_JSON));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"test-title\""));
@@ -101,7 +101,7 @@ class JsonpMediaTest {
         res.supplier().get()
                 .write(JSON_ARRAY_TYPE, JsonObjects, os, headers);
 
-        assertThat(headers, HttpHeaderMatcher.hasHeader(Http.Headers.CONTENT_TYPE_JSON));
+        assertThat(headers, HttpHeaderMatcher.hasHeader(HeaderValues.CONTENT_TYPE_JSON));
         String result = os.toString(StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"first\""));

@@ -21,8 +21,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -79,10 +78,10 @@ class MaxPayloadSizeTest {
     void testContentLengthExceeded() {
         try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
-                .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
+                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .submit(new byte[512])) {
             assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
-            assertThat(response.headers(), hasHeader(Headers.CONNECTION_CLOSE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
         }
     }
 
@@ -93,10 +92,10 @@ class MaxPayloadSizeTest {
     void testContentLengthExceededWithPayload() {
         try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
-                .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
+                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD)) {
             assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
-            assertThat(response.headers(), hasHeader(Headers.CONNECTION_CLOSE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
         }
     }
 
@@ -109,8 +108,8 @@ class MaxPayloadSizeTest {
     void testActualLengthExceededWithPayload() {
         try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
-                .header(Headers.CONTENT_TYPE_OCTET_STREAM)
-                .header(Headers.TRANSFER_ENCODING_CHUNKED)
+                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
+                .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
                 .outputStream(it -> {
                     it.write(PAYLOAD_BYTES);
                     it.write(PAYLOAD_BYTES);
@@ -118,7 +117,7 @@ class MaxPayloadSizeTest {
                     it.close();
                 })) {
             assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONNECTION_CLOSE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
         }
     }
 
@@ -129,26 +128,26 @@ class MaxPayloadSizeTest {
     void testMixedGoodAndBadPayloads() {
         try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
-                .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
+                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD.substring(0, 100))) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers(), hasHeader(Headers.CONNECTION_KEEP_ALIVE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
 
         try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
-                .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
+                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD)) {
             assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONNECTION_CLOSE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
         }
 
         try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
-                .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
+                .header(HeaderValues.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD.substring(0, (int) MAX_PAYLOAD_SIZE))) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.headers(), hasHeader(Http.Headers.CONNECTION_KEEP_ALIVE));
+            assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
     }
 }

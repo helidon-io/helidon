@@ -15,7 +15,7 @@
  */
 package io.helidon.webserver.cors;
 
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -55,7 +55,7 @@ abstract class AbstractCorsTest extends CorsRouting {
     @Test
     void testSimple() {
         try (Http1ClientResponse response = client().get(contextRoot())
-                .header(Http.Headers.ACCEPT_TEXT)
+                .header(HeaderValues.ACCEPT_TEXT)
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
@@ -236,7 +236,7 @@ abstract class AbstractCorsTest extends CorsRouting {
     void test1ActualAllowedOrigin() {
         Http1ClientRequest request = client().method(Method.PUT)
                 .uri(TestUtil.path(SERVICE_1))
-                .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
 
         request.header(ORIGIN, "http://foo.bar");
         request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
@@ -252,7 +252,7 @@ abstract class AbstractCorsTest extends CorsRouting {
     void test2ActualAllowedOrigin() {
         Http1ClientRequest request = client().method(Method.PUT)
                 .uri(TestUtil.path(SERVICE_2))
-                .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
 
         request.header(ORIGIN, "http://foo.bar");
 
@@ -267,7 +267,7 @@ abstract class AbstractCorsTest extends CorsRouting {
     @Test
     void test2ErrorResponse() {
         Http1ClientRequest request = client().get(TestUtil.path(SERVICE_2) + "/notfound")
-                .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN);
 
         request.header(ORIGIN, "http://foo.bar");
 

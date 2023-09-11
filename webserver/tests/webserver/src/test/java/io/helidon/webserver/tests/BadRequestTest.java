@@ -23,7 +23,7 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -47,7 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class BadRequestTest {
     public static final String CUSTOM_REASON_PHRASE = "Custom-bad-request";
     public static final String CUSTOM_ENTITY = "There we go";
-    private static final Header LOCATION_ERROR_PAGE = Http.Headers.create(HeaderNames.LOCATION, "/errorPage");
+    private static final Header LOCATION_ERROR_PAGE = HeaderValues.create(HeaderNames.LOCATION, "/errorPage");
 
     private final Http1Client client;
     private final SocketHttpClient socketClient;

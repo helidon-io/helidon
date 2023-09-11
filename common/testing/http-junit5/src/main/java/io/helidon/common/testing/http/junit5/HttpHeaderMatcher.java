@@ -20,8 +20,8 @@ import java.util.List;
 
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -96,7 +96,7 @@ public final class HttpHeaderMatcher {
      * @return matcher validating the {@link io.helidon.http.Headers} does contain the provided header
      */
     public static Matcher<Headers> hasHeader(HeaderName name, String... value) {
-        return new HasValueMatcher(Http.Headers.create(name, value));
+        return new HasValueMatcher(HeaderValues.create(name, value));
     }
 
     /**

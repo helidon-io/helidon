@@ -32,8 +32,8 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -215,7 +215,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.clientConfig = clientConfig;
             this.protocolConfig = protocolConfig;
             this.contentLength = headers.contentLength().orElse(-1);
-            this.chunked = contentLength == -1 || headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+            this.chunked = contentLength == -1 || headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
             this.originalRequest = originalRequest;
             this.lastRequest = originalRequest;
@@ -280,7 +280,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             } else {
                 headers.remove(HeaderNames.TRANSFER_ENCODING);
                 if (noData) {
-                    headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
+                    headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                     contentLength = 0;
                 }
                 if (noData || firstPacket != null) {
@@ -353,17 +353,17 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private void sendPrologueAndHeader() {
             boolean expects100Continue = clientConfig.sendExpectContinue() && !noData;
             if (expects100Continue) {
-                headers.add(Http.Headers.EXPECT_100);
+                headers.add(HeaderValues.EXPECT_100);
             }
 
             if (chunked) {
                 // Add chunked encoding, if there is no other transfer-encoding headers
                 if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
-                    headers.set(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
-                        headers.add(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
                 headers.remove(HeaderNames.CONTENT_LENGTH);
@@ -466,8 +466,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 Http1ClientResponseImpl response;
                 if (sendEntity) {
                     response = (Http1ClientResponseImpl) clientRequest
-                            .header(Http.Headers.EXPECT_100)
-                            .header(Http.Headers.TRANSFER_ENCODING_CHUNKED)
+                            .header(HeaderValues.EXPECT_100)
+                            .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
                             .readTimeout(originalRequest.readContinueTimeout())
                             .request();
                     response.connection().readTimeout(originalRequest.readTimeout());

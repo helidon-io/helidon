@@ -29,8 +29,8 @@ import java.util.OptionalLong;
 import io.helidon.common.GenericType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.WritableHeaders;
@@ -42,7 +42,7 @@ import io.helidon.http.WritableHeaders;
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class StringSupport implements MediaSupport {
-    private static final Header HEADER_PLAIN_TEXT = Http.Headers.createCached(HeaderNames.CONTENT_TYPE,
+    private static final Header HEADER_PLAIN_TEXT = HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                                                               HttpMediaTypes.PLAINTEXT_UTF_8.text());
     private static final EntityReader READER = new StringReader();
     private static final EntityWriter WRITER = new StringWriter();

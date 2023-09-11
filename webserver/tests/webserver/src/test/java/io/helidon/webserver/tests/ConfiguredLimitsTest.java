@@ -18,7 +18,7 @@ package io.helidon.webserver.tests;
 
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
@@ -130,7 +130,7 @@ class ConfiguredLimitsTest {
         String headerValue = "m".repeat(size);
 
         try (Http1ClientResponse response = client.get("any")
-                .header(Http.Headers.create(CUSTOM_HEADER, headerValue))
+                .header(HeaderValues.create(CUSTOM_HEADER, headerValue))
                 .request()) {
             if (success) {
                 assertThat("Header of size " + size + " should have passed",

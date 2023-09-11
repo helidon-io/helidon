@@ -30,7 +30,7 @@ class CookieParserTest {
     @Test
     public void rfc2965() throws Exception {
         String header = "$version=1; foo=bar; $Domain=google.com, aaa=bbb, c=cool; $Domain=google.com; $Path=\"/foo\"";
-        Parameters p = CookieParser.parse(Http.Headers.create(COOKIE, header));
+        Parameters p = CookieParser.parse(HeaderValues.create(COOKIE, header));
         assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb"));
@@ -42,7 +42,7 @@ class CookieParserTest {
 
     @Test
     public void unquote() throws Exception {
-        Parameters p = CookieParser.parse(Http.Headers.create(COOKIE, "foo=\"bar\"; aaa=bbb; c=\"what_the_hell\"; aaa=\"ccc\""));
+        Parameters p = CookieParser.parse(HeaderValues.create(COOKIE, "foo=\"bar\"; aaa=bbb; c=\"what_the_hell\"; aaa=\"ccc\""));
         assertThat(p, notNullValue());
         assertThat(p.all("foo"), contains("bar"));
         assertThat(p.all("aaa"), contains("bbb", "ccc"));
@@ -56,7 +56,7 @@ class CookieParserTest {
 
     @Test
     void testMultiValueSingleHeader() {
-        Parameters cookies = CookieParser.parse(Http.Headers.create(COOKIE, "foo=bar; aaa=bbb; c=here; aaa=ccc"));
+        Parameters cookies = CookieParser.parse(HeaderValues.create(COOKIE, "foo=bar; aaa=bbb; c=here; aaa=ccc"));
         assertThat(cookies, notNullValue());
         assertThat(cookies.all("foo"), contains("bar"));
         assertThat(cookies.all("aaa"), contains("bbb", "ccc"));
@@ -65,7 +65,7 @@ class CookieParserTest {
 
     @Test
     void testMultiValueMultiHeader() {
-        Parameters cookies = CookieParser.parse(Http.Headers.create(COOKIE, "foo=bar; aaa=bbb; c=here", "aaa=ccc"));
+        Parameters cookies = CookieParser.parse(HeaderValues.create(COOKIE, "foo=bar; aaa=bbb; c=here", "aaa=ccc"));
         assertThat(cookies, notNullValue());
         assertThat(cookies.all("foo"), contains("bar"));
         assertThat(cookies.all("aaa"), contains("bbb", "ccc"));

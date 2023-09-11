@@ -20,7 +20,7 @@ import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http.Headers;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class TransferEncodingTest {
-    private static final Header CONTENT_LENGTH_NINE = Headers.create(HeaderNames.CONTENT_LENGTH, "9");
+    private static final Header CONTENT_LENGTH_NINE = HeaderValues.create(HeaderNames.CONTENT_LENGTH, "9");
     private final SocketHttpClient socketHttpClient;
 
     TransferEncodingTest(SocketHttpClient socketHttpClient) {
@@ -56,7 +56,7 @@ class TransferEncodingTest {
                 })
                 .get("/chunked", (req, res) -> {
                     String payload = "It works!";
-                    res.headers().add(Headers.TRANSFER_ENCODING_CHUNKED);
+                    res.headers().add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     res.send(payload);
                 })
                 .get("/optimized", (req, res) -> {
@@ -67,7 +67,7 @@ class TransferEncodingTest {
                     res.send();
                 })
                 .get("/emptychunked", (req, res) -> {
-                    res.headers().add(Headers.TRANSFER_ENCODING_CHUNKED);
+                    res.headers().add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     res.send();
                 });
     }
@@ -80,7 +80,7 @@ class TransferEncodingTest {
         String s = socketHttpClient.sendAndReceive(Method.GET, "/empty", null);
 
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Headers.CONTENT_LENGTH_ZERO));
+        assertThat(headers, hasHeader(HeaderValues.CONTENT_LENGTH_ZERO));
     }
 
     /**
@@ -90,7 +90,7 @@ class TransferEncodingTest {
     void testEmptyChunked() {
         String s = socketHttpClient.sendAndReceive(Method.GET, "/emptychunked", null);
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Headers.TRANSFER_ENCODING_CHUNKED));
+        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     /**
@@ -112,7 +112,7 @@ class TransferEncodingTest {
         String s = socketHttpClient.sendAndReceive(Method.GET, "/chunked", null);
         assertThat(cutPayloadAndCheckHeadersFormat(s), is("9\nIt works!\n0\n\n"));
         ClientResponseHeaders headers = SocketHttpClient.headersFromResponse(s);
-        assertThat(headers, hasHeader(Headers.TRANSFER_ENCODING_CHUNKED));
+        assertThat(headers, hasHeader(HeaderValues.TRANSFER_ENCODING_CHUNKED));
     }
 
     /**

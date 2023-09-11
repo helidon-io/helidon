@@ -37,7 +37,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerResponseHeaders;
@@ -623,7 +623,7 @@ public final class SecurityHandler implements Handler {
             AuthenticationResponse response = clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit();
             // copy headers to be returned with the current response
             response.responseHeaders()
-                    .forEach((key, value) -> res.headers().set(Http.Headers.create(key, value)));
+                    .forEach((key, value) -> res.headers().set(HeaderValues.create(key, value)));
 
             switch (response.status()) {
             case SUCCESS:
