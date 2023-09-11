@@ -32,6 +32,7 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
@@ -84,7 +85,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     static void writeHeaders(Headers headers, BufferData bufferData, boolean validate) {
-        for (Http.Header header : headers) {
+        for (Header header : headers) {
             if (validate) {
                 header.validate();
             }

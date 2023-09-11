@@ -20,9 +20,9 @@ import java.net.URI;
 import java.util.Base64;
 
 import io.helidon.config.Config;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 import io.helidon.http.Status;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.security.Security;

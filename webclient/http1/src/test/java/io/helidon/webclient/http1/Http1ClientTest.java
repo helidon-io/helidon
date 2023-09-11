@@ -37,6 +37,7 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -73,9 +74,9 @@ class Http1ClientTest {
     public static final String VALID_HEADER_NAME = "Valid-Header-Name";
     public static final String BAD_HEADER_PATH = "/badHeader";
     public static final String HEADER_NAME_VALUE_DELIMETER = "->";
-    private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.create(
+    private static final Header REQ_CHUNKED_HEADER = Http.Headers.create(
             HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.create(
+    private static final Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.create(
             HeaderNames.create("X-Req-Expect100"), "true");
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final long NO_CONTENT_LENGTH = -1L;
@@ -311,7 +312,7 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("headers")
-    void testHeaders(Http.Header header, boolean expectsValid) {
+    void testHeaders(Header header, boolean expectsValid) {
         Http1Client clientValidateRequestHeaders = Http1Client.builder()
                 .protocolConfig(it -> {
                     it.validateRequestHeaders(true);
@@ -331,7 +332,7 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("headers")
-    void testDisableHeaderValidation(Http.Header header, boolean expectsValid) {
+    void testDisableHeaderValidation(Header header, boolean expectsValid) {
         Http1Client clientWithDisabledHeaderValidation = Http1Client.builder()
                 .protocolConfig(it -> {
                     it.validateRequestHeaders(false);
@@ -757,8 +758,8 @@ class Http1ClientTest {
             WritableHeaders<?> reqHeaders = null;
             try {
                 reqHeaders = Http1HeadersParser.readHeaders(serverReader, 16384, false);
-                for (Iterator<Http.Header> it = reqHeaders.iterator(); it.hasNext(); ) {
-                    Http.Header header = it.next();
+                for (Iterator<Header> it = reqHeaders.iterator(); it.hasNext(); ) {
+                    Header header = it.next();
                     header.validate();
                 }
             } catch (IllegalArgumentException e) {
@@ -823,7 +824,7 @@ class Http1ClientTest {
             // Send the headers
             resHeaders.add(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize));
             BufferData entityBuffer = BufferData.growing(128);
-            for (Http.Header header : resHeaders) {
+            for (Header header : resHeaders) {
 header.writeHttp1Header(entityBuffer);
             }
             entityBuffer.write(Bytes.CR_BYTE);

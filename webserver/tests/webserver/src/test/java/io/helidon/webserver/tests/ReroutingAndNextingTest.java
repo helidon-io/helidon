@@ -16,8 +16,8 @@
 
 package io.helidon.webserver.tests;
 
+import io.helidon.http.Header;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;

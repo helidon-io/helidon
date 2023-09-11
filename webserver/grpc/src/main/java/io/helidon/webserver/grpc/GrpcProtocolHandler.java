@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Flag;

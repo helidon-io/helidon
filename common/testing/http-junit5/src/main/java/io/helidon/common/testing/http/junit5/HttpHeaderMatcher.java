@@ -18,6 +18,7 @@ package io.helidon.common.testing.http.junit5;
 
 import java.util.List;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
@@ -77,7 +78,7 @@ public final class HttpHeaderMatcher {
      * @param header http header with values
      * @return matcher validating the {@link io.helidon.http.Headers} does contain the provided header
      */
-    public static Matcher<Headers> hasHeader(Http.Header header) {
+    public static Matcher<Headers> hasHeader(Header header) {
         return new HasValueMatcher(header);
     }
 
@@ -160,7 +161,7 @@ public final class HttpHeaderMatcher {
         private final HeaderName name;
         private final Matcher<Iterable<? extends String>> valuesMatcher;
 
-        HasValueMatcher(Http.Header header) {
+        HasValueMatcher(Header header) {
             this.name = header.headerName();
             this.valuesMatcher = Matchers.containsInAnyOrder(header.allValues().toArray(new String[0]));
         }
@@ -214,7 +215,7 @@ public final class HttpHeaderMatcher {
         @Override
         protected boolean matchesSafely(Headers httpHeaders) {
             if (httpHeaders.contains(name)) {
-                Http.Header headerValue = httpHeaders.get(name);
+                Header headerValue = httpHeaders.get(name);
                 if (headerValue.allValues().size() == 1) {
                     return valuesMatcher.matches(headerValue.value());
                 }

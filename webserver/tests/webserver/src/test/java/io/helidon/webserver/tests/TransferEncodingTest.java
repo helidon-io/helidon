@@ -18,8 +18,8 @@ package io.helidon.webserver.tests;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
 import io.helidon.http.Http.Headers;
 import io.helidon.http.Method;
 import io.helidon.webserver.http.HttpRules;
@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 class TransferEncodingTest {
-    private static final Http.Header CONTENT_LENGTH_NINE = Headers.create(HeaderNames.CONTENT_LENGTH, "9");
+    private static final Header CONTENT_LENGTH_NINE = Headers.create(HeaderNames.CONTENT_LENGTH, "9");
     private final SocketHttpClient socketHttpClient;
 
     TransferEncodingTest(SocketHttpClient socketHttpClient) {

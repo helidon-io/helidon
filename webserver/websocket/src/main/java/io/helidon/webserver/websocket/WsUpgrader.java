@@ -26,6 +26,7 @@ import java.util.Set;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.DirectHandler;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -87,7 +88,7 @@ public class WsUpgrader implements Http1Upgrader {
     /**
      * Supported version header.
      */
-    protected static final Http.Header SUPPORTED_VERSION_HEADER = Http.Headers.create(WS_VERSION, SUPPORTED_VERSION);
+    protected static final Header SUPPORTED_VERSION_HEADER = Http.Headers.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);

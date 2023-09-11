@@ -460,20 +460,20 @@ public interface RequestedUriDiscoveryContext {
      */
     enum RequestedUriDiscoveryType {
         /**
-         * The {@code io.helidon.http.Http.Header#FORWARDED} header is used to discover the original requested URI.
+         * The {@code io.helidon.http.Header#FORWARDED} header is used to discover the original requested URI.
          */
         FORWARDED,
         /**
          * The
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_PROTO},
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_HOST},
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_PORT},
-         * {@code io.helidon.http.Http.Header#X_FORWARDED_PREFIX}
+         * {@code io.helidon.http.Header#X_FORWARDED_PROTO},
+         * {@code io.helidon.http.Header#X_FORWARDED_HOST},
+         * {@code io.helidon.http.Header#X_FORWARDED_PORT},
+         * {@code io.helidon.http.Header#X_FORWARDED_PREFIX}
          * headers are used to discover the original requested URI.
          */
         X_FORWARDED,
         /**
-         * This is the default, only the {@code io.helidon.http.Http.Header#HOST} header is used to discover
+         * This is the default, only the {@code io.helidon.http.Header#HOST} header is used to discover
          * requested URI.
          */
         HOST

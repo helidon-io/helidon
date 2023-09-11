@@ -19,6 +19,7 @@ package io.helidon.webserver.tests;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
@@ -40,7 +41,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 class RoutingTestBase {
-    private static final Http.Header MULTI_HANDLER = Http.Headers.createCached(
+    private static final Header MULTI_HANDLER = Http.Headers.createCached(
             HeaderNames.create("X-Multi-Handler"), "true");
     static Http1Client client;
     // Functions that will be used to execute http webclient shortcut methods

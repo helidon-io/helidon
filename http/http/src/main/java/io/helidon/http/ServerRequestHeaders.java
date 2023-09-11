@@ -24,7 +24,6 @@ import java.util.Optional;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.http.Http.Header;
 
 /**
  * HTTP headers of a server request.
@@ -36,8 +35,8 @@ public interface ServerRequestHeaders extends Headers {
      *
      * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8163921">JDK-8163921</a>
      */
-    Http.Header HUC_ACCEPT_DEFAULT = Http.Headers.create(HeaderNames.ACCEPT,
-                                                         "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
+    Header HUC_ACCEPT_DEFAULT = Http.Headers.create(HeaderNames.ACCEPT,
+                                                    "text/html, image/gif, image/jpeg, *; q=.2, */*; q=.2");
 
     /**
      * Accepted types for {@link #HUC_ACCEPT_DEFAULT}.
@@ -96,7 +95,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> ifUnmodifiedSince() {
         if (contains(HeaderNames.IF_UNMODIFIED_SINCE)) {
             return Optional.of(get(HeaderNames.IF_UNMODIFIED_SINCE))
-                    .map(Http.Header::value)
+                    .map(Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();
@@ -187,7 +186,7 @@ public interface ServerRequestHeaders extends Headers {
     default Optional<ZonedDateTime> acceptDatetime() {
         if (contains(HeaderNames.ACCEPT_DATETIME)) {
             return Optional.of(get(HeaderNames.ACCEPT_DATETIME))
-                    .map(Http.Header::value)
+                    .map(Header::value)
                     .map(Http.DateTime::parse);
         }
         return Optional.empty();

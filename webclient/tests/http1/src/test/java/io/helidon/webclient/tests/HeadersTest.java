@@ -20,9 +20,9 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -63,7 +63,7 @@ class HeadersTest {
                 .path("/test/invalidContentType")
                 .request()) {
             ClientResponseHeaders h = res.headers();
-            Http.Header contentType = h.get(HeaderNames.CONTENT_TYPE);
+            Header contentType = h.get(HeaderNames.CONTENT_TYPE);
             assertThat(res.status(), is(Status.OK_200));
             assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_VALUE));
         }
@@ -78,7 +78,7 @@ class HeadersTest {
             assertThat(res.status(), is(Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
+            Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value is invalid, IllegalArgumentException shall be thrown
             try {
@@ -103,7 +103,7 @@ class HeadersTest {
             assertThat(res.status(), is(Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
+            Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value
             Optional<HttpMediaType> contentType = h.contentType();

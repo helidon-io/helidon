@@ -55,7 +55,7 @@ class HeaderValueCached extends HeaderValueBase {
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         throw new UnsupportedOperationException("Cannot change values of a cached header " + name());
     }
 

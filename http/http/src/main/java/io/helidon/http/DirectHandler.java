@@ -337,7 +337,7 @@ public interface DirectHandler {
              * @param header header value
              * @return updated builder
              */
-            public Builder header(Http.Header header) {
+            public Builder header(Header header) {
                 this.headers.add(header);
                 return this;
             }

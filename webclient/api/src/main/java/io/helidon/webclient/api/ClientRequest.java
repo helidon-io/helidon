@@ -30,6 +30,7 @@ import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
@@ -102,7 +103,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param header header to set
      * @return updated request
      */
-    T header(Http.Header header);
+    T header(Header header);
 
     /**
      * Set an HTTP header.

@@ -38,6 +38,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
@@ -56,8 +57,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Helidon user agent request header.
      */
-    public static final Http.Header USER_AGENT_HEADER = Http.Headers.create(HeaderNames.USER_AGENT,
-                                                                            "Helidon " + Version.VERSION);
+    public static final Header USER_AGENT_HEADER = Http.Headers.create(HeaderNames.USER_AGENT,
+                                                                       "Helidon " + Version.VERSION);
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -158,14 +159,14 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
-    public T header(Http.Header header) {
+    public T header(Header header) {
         this.headers.set(header);
         return identity();
     }
 
     @Override
     public T headers(Headers headers) {
-        for (Http.Header header : headers) {
+        for (Header header : headers) {
             this.headers.add(header);
         }
         return identity();

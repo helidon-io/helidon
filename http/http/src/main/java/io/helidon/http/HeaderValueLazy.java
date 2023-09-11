@@ -32,7 +32,7 @@ class HeaderValueLazy extends HeaderValueBase {
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         if (values == null) {
             values = new ArrayList<>(2);
             values.add(this.value.stripOws());

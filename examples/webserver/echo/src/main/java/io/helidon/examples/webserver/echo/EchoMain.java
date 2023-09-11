@@ -22,8 +22,8 @@ import java.util.Set;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
@@ -77,7 +77,7 @@ public class EchoMain {
             res.header("R-QUERY_" + queryName, query.all(queryName).toString());
         }
 
-        for (Http.Header header : headers) {
+        for (Header header : headers) {
             res.header("R-" + header.name(), header.allValues().toString());
         }
 

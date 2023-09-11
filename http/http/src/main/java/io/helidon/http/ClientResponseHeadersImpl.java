@@ -43,12 +43,12 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     }
 
     @Override
-    public boolean contains(Http.Header headerWithValue) {
+    public boolean contains(Header headerWithValue) {
         return headers.contains(headerWithValue);
     }
 
     @Override
-    public Http.Header get(HeaderName name) {
+    public Header get(HeaderName name) {
         return headers.get(name);
     }
 
@@ -68,7 +68,7 @@ class ClientResponseHeadersImpl implements ClientResponseHeaders {
     }
 
     @Override
-    public Iterator<Http.Header> iterator() {
+    public Iterator<Header> iterator() {
         return headers.iterator();
     }
 

@@ -46,12 +46,12 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public boolean contains(Http.Header headerWithValue) {
+    public boolean contains(Header headerWithValue) {
         return delegate.contains(headerWithValue);
     }
 
     @Override
-    public Http.Header get(HeaderName name) {
+    public Header get(HeaderName name) {
         return delegate.get(name);
     }
 
@@ -81,13 +81,13 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public ClientRequestHeaders setIfAbsent(Http.Header header) {
+    public ClientRequestHeaders setIfAbsent(Header header) {
         delegate.setIfAbsent(header);
         return this;
     }
 
     @Override
-    public ClientRequestHeaders add(Http.Header header) {
+    public ClientRequestHeaders add(Header header) {
         delegate.add(header);
         return this;
     }
@@ -99,19 +99,19 @@ class ClientRequestHeadersImpl implements ClientRequestHeaders {
     }
 
     @Override
-    public ClientRequestHeaders remove(HeaderName name, Consumer<Http.Header> removedConsumer) {
+    public ClientRequestHeaders remove(HeaderName name, Consumer<Header> removedConsumer) {
         delegate.remove(name, removedConsumer);
         return this;
     }
 
     @Override
-    public ClientRequestHeaders set(Http.Header header) {
+    public ClientRequestHeaders set(Header header) {
         delegate.set(header);
         return this;
     }
 
     @Override
-    public Iterator<Http.Header> iterator() {
+    public Iterator<Header> iterator() {
         return delegate.iterator();
     }
 

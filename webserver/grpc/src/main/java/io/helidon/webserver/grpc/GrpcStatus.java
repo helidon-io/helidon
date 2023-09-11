@@ -16,10 +16,10 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 
 import io.grpc.Status;
 
@@ -46,7 +46,7 @@ public final class GrpcStatus {
     /**
      * The operation was cancelled (typically by the caller).
      */
-    public static final Http.Header CANCELLED = Http.Headers.createCached(STATUS_NAME, Status.Code.CANCELLED.value());
+    public static final Header CANCELLED = Http.Headers.createCached(STATUS_NAME, Status.Code.CANCELLED.value());
     /**
      * Unknown error.  An example of where this error may be returned is
      * if a Status value received from another address space belongs to
@@ -54,7 +54,7 @@ public final class GrpcStatus {
      * errors raised by APIs that do not return enough error information
      * may be converted to this error.
      */
-    public static final Http.Header UNKNOWN = Http.Headers.createCached(STATUS_NAME, Status.Code.UNKNOWN.value());
+    public static final Header UNKNOWN = Http.Headers.createCached(STATUS_NAME, Status.Code.UNKNOWN.value());
     /**
      * Client specified an invalid argument.  Note that this differs
      * from FAILED_PRECONDITION.  INVALID_ARGUMENT indicates arguments
@@ -69,7 +69,7 @@ public final class GrpcStatus {
      * successful response from a server could have been delayed long
      * enough for the deadline to expire.
      */
-    public static final Http.Header DEADLINE_EXCEEDED =
+    public static final Header DEADLINE_EXCEEDED =
             Http.Headers.createCached(STATUS_NAME, Status.Code.DEADLINE_EXCEEDED.value());
     /**
      * Some requested entity (e.g., file or directory) was not found.
@@ -87,13 +87,13 @@ public final class GrpcStatus {
      * used if the caller cannot be identified (use UNAUTHENTICATED
      * instead for those errors).
      */
-    public static final Http.Header PERMISSION_DENIED =
+    public static final Header PERMISSION_DENIED =
             Http.Headers.createCached(STATUS_NAME, Status.Code.PERMISSION_DENIED.value());
     /**
      * Some resource has been exhausted, perhaps a per-user quota, or
      * perhaps the entire file system is out of space.
      */
-    public static final Http.Header RESOURCE_EXHAUSTED =
+    public static final Header RESOURCE_EXHAUSTED =
             Http.Headers.createCached(STATUS_NAME, Status.Code.RESOURCE_EXHAUSTED.value());
     /**
      * Operation was rejected because the system is not in a state
@@ -112,8 +112,8 @@ public final class GrpcStatus {
      * should be returned since the client should not retry unless
      * they have first fixed up the directory by deleting files from it.
      */
-    public static final Http.Header FAILED_PRECONDITION = Http.Headers.createCached(STATUS_NAME,
-                                                                                    Status.Code.FAILED_PRECONDITION.value());
+    public static final Header FAILED_PRECONDITION = Http.Headers.createCached(STATUS_NAME,
+                                                                               Status.Code.FAILED_PRECONDITION.value());
     /**
      * The operation was aborted, typically due to a concurrency issue
      * like sequencer check failures, transaction aborts, etc.
@@ -138,11 +138,11 @@ public final class GrpcStatus {
      * so that callers who are iterating through
      * a space can easily look for an OUT_OF_RANGE error to detect when they are done.
      */
-    public static final Http.Header OUT_OF_RANGE = Http.Headers.createCached(STATUS_NAME, Status.Code.OUT_OF_RANGE.value());
+    public static final Header OUT_OF_RANGE = Http.Headers.createCached(STATUS_NAME, Status.Code.OUT_OF_RANGE.value());
     /**
      * Operation is not implemented or not supported/enabled in this service.
      */
-    public static final Http.Header UNIMPLEMENTED = Http.Headers.createCached(STATUS_NAME, Status.Code.UNIMPLEMENTED.value());
+    public static final Header UNIMPLEMENTED = Http.Headers.createCached(STATUS_NAME, Status.Code.UNIMPLEMENTED.value());
     /**
      * Internal errors.  Means some invariants expected by underlying
      * system has been broken.  If you see one of these errors,
@@ -162,12 +162,12 @@ public final class GrpcStatus {
     /**
      * Unrecoverable data loss or corruption.
      */
-    public static final Http.Header DATA_LOSS = Http.Headers.createCached(STATUS_NAME, Status.Code.DATA_LOSS.value());
+    public static final Header DATA_LOSS = Http.Headers.createCached(STATUS_NAME, Status.Code.DATA_LOSS.value());
     /**
      * The request does not have valid authentication credentials for the
      * operation.
      */
-    public static final Http.Header UNAUTHENTICATED = Http.Headers.createCached(STATUS_NAME, Status.Code.UNAUTHENTICATED.value());
+    public static final Header UNAUTHENTICATED = Http.Headers.createCached(STATUS_NAME, Status.Code.UNAUTHENTICATED.value());
 
     private GrpcStatus() {
     }

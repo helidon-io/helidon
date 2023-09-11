@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
@@ -69,7 +70,7 @@ abstract class WriteablePartAbstract implements WriteablePart {
 
     protected void sendHeaders(OutputStream outputStream, Headers headers) throws IOException {
         BufferData bufferData = BufferData.growing(128);
-        for (Http.Header header : headers) {
+        for (Header header : headers) {
             header.writeHttp1Header(bufferData);
         }
         bufferData.writeTo(outputStream);

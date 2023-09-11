@@ -35,11 +35,11 @@ import io.helidon.common.media.type.MediaType;
  * case.
  * When you configure headers to be sent using HTTP/2, all names will be lowercase.
  * When you configure headers to be sent using HTTP/1, names will be sent as configured.
- * When you receive headers, the stored values (as can be obtained by {@link io.helidon.http.Http.Header#name()})
+ * When you receive headers, the stored values (as can be obtained by {@link Header#name()})
  * will be as sent on the transport. These value will be available using any cased names (though performance may be worse
  * if uppercase letters are used to obtain HTTP/2 headers).
  */
-public interface Headers extends Iterable<Http.Header> {
+public interface Headers extends Iterable<Header> {
     /**
      * Get all values of a header.
      *
@@ -63,7 +63,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @param value value of the header
      * @return {@code true} if the header is defined
      */
-    boolean contains(Http.Header value);
+    boolean contains(Header value);
 
     /**
      * Get a header value.
@@ -72,7 +72,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @return value if present
      * @throws java.util.NoSuchElementException in case the header is not present
      */
-    Http.Header get(HeaderName name);
+    Header get(HeaderName name);
 
     /**
      * Returns a header value as a single {@link String} potentially concatenated using comma character
@@ -215,7 +215,7 @@ public interface Headers extends Iterable<Http.Header> {
      *
      * @return stream of header values
      */
-    default Stream<Http.Header> stream() {
+    default Stream<Header> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
 }

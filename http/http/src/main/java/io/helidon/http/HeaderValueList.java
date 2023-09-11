@@ -30,7 +30,7 @@ class HeaderValueList extends HeaderValueBase {
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         values.add(value);
         return this;
     }

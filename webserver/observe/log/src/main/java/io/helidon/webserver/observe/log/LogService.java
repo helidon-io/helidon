@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import io.helidon.common.config.Config;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
@@ -70,7 +71,7 @@ class LogService implements HttpService {
     private final AtomicBoolean logHandlingInitialized = new AtomicBoolean();
     private final boolean permitAll;
     private final boolean logStreamEnabled;
-    private final Http.Header logStreamMediaTypeHeader;
+    private final Header logStreamMediaTypeHeader;
     private final long logStreamSleepSeconds;
     private final int logStreamQueueSize;
     private final String logStreamIdleString;
@@ -264,8 +265,8 @@ class LogService implements HttpService {
     static class Builder implements io.helidon.common.Builder<Builder, LogService> {
         private boolean permitAll = false;
         private boolean logStreamEnabled = true;
-        private Http.Header logStreamMediaTypeHeader = Http.Headers.create(HeaderNames.CONTENT_TYPE,
-                                                                           HttpMediaTypes.PLAINTEXT_UTF_8.text());
+        private Header logStreamMediaTypeHeader = Http.Headers.create(HeaderNames.CONTENT_TYPE,
+                                                                      HttpMediaTypes.PLAINTEXT_UTF_8.text());
         private Charset logStreamCharset = StandardCharsets.UTF_8;
         private long logStreamSleepSeconds = 5L;
         private int logStreamQueueSize = 100;

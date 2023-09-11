@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
@@ -61,7 +62,7 @@ public interface ServerResponse {
     /**
      * Set a header. If the values are constant, please use
      * {@link io.helidon.http.Http.Headers#create(io.helidon.http.HeaderName, String...)} and store the header
-     * in a constant field and call {@link #header(io.helidon.http.Http.Header)}.
+     * in a constant field and call {@link #header(io.helidon.http.Header)}.
      *
      * @param name   header name
      * @param values value(s) of the header
@@ -74,7 +75,7 @@ public interface ServerResponse {
     /**
      * Not optimized method for setting a header.
      * Use for unknown headers, where {@link HeaderName} cannot be cached.
-     * Use {@link #header(io.helidon.http.Http.Header)} or {@link #header(HeaderName, String...)}
+     * Use {@link #header(io.helidon.http.Header)} or {@link #header(HeaderName, String...)}
      * otherwise.
      *
      * @param name   name of the header
@@ -92,7 +93,7 @@ public interface ServerResponse {
      * @return this instance
      * @see HeaderName
      */
-    ServerResponse header(Http.Header header);
+    ServerResponse header(Header header);
 
     /**
      * Send a response with no entity.

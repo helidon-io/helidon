@@ -16,6 +16,7 @@
 
 package io.helidon.integration.webserver.upgrade.test;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.webclient.http1.Http1Client;
@@ -36,8 +37,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @ServerTest
 public class CompressionTest {
-    private static final Http.Header CONTENT_ENCODING_GZIP = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "gzip");
-    private static final Http.Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "deflate");
+    private static final Header CONTENT_ENCODING_GZIP = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "gzip");
+    private static final Header CONTENT_ENCODING_DEFLATE = Http.Headers.create(HeaderNames.CONTENT_ENCODING, "deflate");
 
     private final Http1Client webClient;
 

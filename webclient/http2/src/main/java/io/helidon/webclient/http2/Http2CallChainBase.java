@@ -27,6 +27,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Method;
@@ -228,12 +229,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                                  clientRequest.proxy());
     }
 
-    private static final class LogHeaderConsumer implements Consumer<Http.Header> {
+    private static final class LogHeaderConsumer implements Consumer<Header> {
         private static final System.Logger LOGGER = System.getLogger(LogHeaderConsumer.class.getName());
         private static final LogHeaderConsumer INSTANCE = new LogHeaderConsumer();
 
         @Override
-        public void accept(Http.Header httpHeader) {
+        public void accept(Header httpHeader) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,
                            "HTTP/2 request contains wrong header, removing {0}", httpHeader);

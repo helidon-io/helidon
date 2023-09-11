@@ -26,6 +26,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
@@ -50,8 +51,8 @@ import static org.mockito.Mockito.when;
 
 class CachedHandlerTest {
     private static final MediaType MEDIA_TYPE_ICON = MediaTypes.create("image/x-icon");
-    private static final Http.Header ICON_TYPE = Http.Headers.create(HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
-    private static final Http.Header RESOURCE_CONTENT_LENGTH = Http.Headers.create(HeaderNames.CONTENT_LENGTH, 7);
+    private static final Header ICON_TYPE = Http.Headers.create(HeaderNames.CONTENT_TYPE, MEDIA_TYPE_ICON.text());
+    private static final Header RESOURCE_CONTENT_LENGTH = Http.Headers.create(HeaderNames.CONTENT_LENGTH, 7);
 
     private static ClassPathContentHandler classpathHandler;
     private static FileSystemContentHandler fsHandler;

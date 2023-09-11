@@ -26,9 +26,9 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
@@ -177,7 +177,7 @@ abstract class Http1ServerRequest implements RoutingRequest {
     }
 
     @Override
-    public void header(Http.Header header) {
+    public void header(Header header) {
         if (writable == null) {
             writable = WritableHeaders.create(headers);
         }

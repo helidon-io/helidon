@@ -30,7 +30,7 @@ class HeaderValueArray extends HeaderValueBase {
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         if (values == null) {
             values = new ArrayList<>(originalValues.length + 1);
             values.addAll(List.of(originalValues));

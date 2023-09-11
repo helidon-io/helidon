@@ -19,9 +19,9 @@ package io.helidon.http.tests.media.string;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
 import io.helidon.http.Method;

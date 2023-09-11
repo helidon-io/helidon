@@ -32,8 +32,8 @@ import io.helidon.common.Version;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.Proxy;
@@ -186,7 +186,7 @@ class HelidonConnector implements Connector {
         }, request);
 
         // copy headers
-        for (Http.Header header : httpResponse.headers()) {
+        for (Header header : httpResponse.headers()) {
             for (String v : header.allValues()) {
                 response.getHeaders().add(header.name(), v);
             }

@@ -15,6 +15,7 @@
  */
 package io.helidon.examples.media.multipart;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
 import io.helidon.http.Status;
@@ -26,7 +27,7 @@ import io.helidon.webserver.staticcontent.StaticContentService;
  * This application provides a simple file upload service with a UI to exercise multipart.
  */
 public final class Main {
-    private static final Http.Header UI_LOCATION = Http.Headers.createCached(HeaderNames.LOCATION, "/ui");
+    private static final Header UI_LOCATION = Http.Headers.createCached(HeaderNames.LOCATION, "/ui");
 
     private Main() {
     }

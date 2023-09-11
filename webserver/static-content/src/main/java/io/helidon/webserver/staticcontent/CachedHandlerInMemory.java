@@ -23,8 +23,8 @@ import java.util.function.BiConsumer;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
@@ -41,7 +41,7 @@ record CachedHandlerInMemory(MediaType mediaType,
                              BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                              byte[] bytes,
                              int contentLength,
-                             Http.Header contentLengthHeader) implements CachedHandler {
+                             Header contentLengthHeader) implements CachedHandler {
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,

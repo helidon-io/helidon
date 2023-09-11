@@ -24,8 +24,8 @@ import java.util.function.Consumer;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
 import io.helidon.http.Method;
 
 import org.junit.jupiter.api.Test;
@@ -141,7 +141,7 @@ class HttpClientTest {
         }
 
         @Override
-        public FakeHttpClientRequest header(Http.Header header) {
+        public FakeHttpClientRequest header(Header header) {
             return this;
         }
 

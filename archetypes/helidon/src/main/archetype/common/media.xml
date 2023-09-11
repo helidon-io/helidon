@@ -172,7 +172,7 @@
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
                                 <value>io.helidon.http.Http</value>
-                                <value>io.helidon.http.Http.Header</value>
+                                <value>io.helidon.http.Header</value>
                                 <value>io.helidon.webserver.staticcontent.StaticContentService</value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">

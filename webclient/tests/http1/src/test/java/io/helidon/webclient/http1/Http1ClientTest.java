@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.GenericType;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -72,9 +73,9 @@ that is why this tests is in this module, but in the wrong package
  */
 @ServerTest
 class Http1ClientTest {
-    private static final Http.Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
+    private static final Header REQ_CHUNKED_HEADER = Http.Headers.createCached(
             HeaderNames.create("X-Req-Chunked"), "true");
-    private static final Http.Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
+    private static final Header REQ_EXPECT_100_HEADER_NAME = Http.Headers.createCached(
             HeaderNames.create("X-Req-Expect100"), "true");
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";

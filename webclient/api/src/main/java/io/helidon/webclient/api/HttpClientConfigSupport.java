@@ -105,12 +105,12 @@ class HttpClientConfigSupport {
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
          * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
-         * or {@link io.helidon.http.Http.Header}.
+         * or {@link io.helidon.http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Http.Header)
+         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
@@ -120,12 +120,12 @@ class HttpClientConfigSupport {
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
          * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
-         * or {@link io.helidon.http.Http.Header}.
+         * or {@link io.helidon.http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Http.Header)
+         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, int value) {
@@ -135,12 +135,12 @@ class HttpClientConfigSupport {
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
          * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
-         * or {@link io.helidon.http.Http.Header}.
+         * or {@link io.helidon.http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Http.Header)
+         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, long value) {

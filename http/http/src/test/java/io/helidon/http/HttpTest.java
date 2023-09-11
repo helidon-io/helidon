@@ -61,7 +61,7 @@ class HttpTest {
     @ParameterizedTest
     @MethodSource("headers")
     void testHeaderValidation(String headerName, String headerValues, boolean expectsValid) {
-        Http.Header header = Http.Headers.create(headerName, headerValues);
+        Header header = Http.Headers.create(headerName, headerValues);
         if (expectsValid) {
             header.validate();
         } else {

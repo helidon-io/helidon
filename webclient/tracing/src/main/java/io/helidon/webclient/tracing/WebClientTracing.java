@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
@@ -144,7 +145,7 @@ public class WebClientTracing implements WebClientService {
         @Override
         public Iterable<String> keys() {
             return headers.stream()
-                    .map(Http.Header::name)
+                    .map(Header::name)
                     .toList();
         }
 

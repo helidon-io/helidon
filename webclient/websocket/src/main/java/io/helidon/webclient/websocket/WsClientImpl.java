@@ -30,6 +30,7 @@ import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
@@ -47,13 +48,13 @@ class WsClientImpl implements WsClient {
      * Supported WebSocket version.
      */
     static final String SUPPORTED_VERSION = "13";
-    static final Http.Header HEADER_UPGRADE_WS = Http.Headers.createCached(HeaderNames.UPGRADE, "websocket");
+    static final Header HEADER_UPGRADE_WS = Http.Headers.createCached(HeaderNames.UPGRADE, "websocket");
     static final HeaderName HEADER_WS_PROTOCOL = HeaderNames.create("Sec-WebSocket-Protocol");
-    private static final Http.Header HEADER_WS_VERSION = Http.Headers.createCached(HeaderNames.create(
+    private static final Header HEADER_WS_VERSION = Http.Headers.createCached(HeaderNames.create(
             "Sec-WebSocket-Version"), SUPPORTED_VERSION);
 
     private static final System.Logger LOGGER = System.getLogger(WsClient.class.getName());
-    private static final Http.Header HEADER_CONN_UPGRADE = Http.Headers.create(HeaderNames.CONNECTION, "Upgrade");
+    private static final Header HEADER_CONN_UPGRADE = Http.Headers.create(HeaderNames.CONNECTION, "Upgrade");
     private static final HeaderName HEADER_WS_ACCEPT = HeaderNames.create("Sec-WebSocket-Accept");
     private static final HeaderName HEADER_WS_KEY = HeaderNames.create("Sec-WebSocket-Key");
     private static final LazyValue<Random> RANDOM = LazyValue.create(SecureRandom::new);

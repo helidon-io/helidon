@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Random;
 
+import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Http;
@@ -55,8 +56,8 @@ class GetTest {
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
     private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create(REQUEST_HEADER_NAME_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create(RESPONSE_HEADER_NAME_STRING);
-    private static final Http.Header RESPONSE_HEADER_VALUE = Http.Headers.createCached(RESPONSE_HEADER_NAME,
-                                                                                       RESPONSE_HEADER_VALUE_STRING);
+    private static final Header RESPONSE_HEADER_VALUE = Http.Headers.createCached(RESPONSE_HEADER_NAME,
+                                                                                  RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();

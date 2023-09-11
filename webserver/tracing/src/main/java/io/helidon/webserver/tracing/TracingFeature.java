@@ -26,8 +26,8 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Status;
 import io.helidon.tracing.HeaderProvider;
@@ -369,7 +369,7 @@ public class TracingFeature implements HttpFeature, Weighted {
         @Override
         public Iterable<String> keys() {
             List<String> result = new LinkedList<>();
-            for (Http.Header header : request.headers()) {
+            for (Header header : request.headers()) {
                 result.add(header.headerName().lowerCase());
             }
             return result;

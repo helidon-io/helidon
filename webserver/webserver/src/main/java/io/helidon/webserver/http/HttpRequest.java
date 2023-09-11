@@ -20,7 +20,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 
@@ -85,7 +85,7 @@ public interface HttpRequest {
      *
      * @param header header to set
      */
-    void header(Http.Header header);
+    void header(Header header);
 
     /**
      * Request ID on this connection.

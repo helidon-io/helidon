@@ -18,8 +18,8 @@ package io.helidon.webclient.tests;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
-import io.helidon.http.Http;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -99,7 +99,7 @@ class CookieTest {
 
     private static void getHandler(ServerRequest req, ServerResponse res) {
         if (req.headers().contains(HeaderNames.COOKIE)) {
-            Http.Header cookies = req.headers().get(HeaderNames.COOKIE);
+            Header cookies = req.headers().get(HeaderNames.COOKIE);
             if (cookies.allValues().size() == 2
                     && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
                     && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
@@ -115,7 +115,7 @@ class CookieTest {
 
     private static void putHandler(ServerRequest req, ServerResponse res) {
         if (req.headers().contains(HeaderNames.COOKIE)) {
-            Http.Header cookies = req.headers().get(HeaderNames.COOKIE);
+            Header cookies = req.headers().get(HeaderNames.COOKIE);
             if (cookies.allValues().size() == 4
                     && cookies.allValues().contains("flavor1=chocolate")
                     && cookies.allValues().contains("flavor2=vanilla")
