@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,10 @@
  */
 package io.helidon.openapi;
 
+import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -80,6 +83,21 @@ public class ServerTest {
         TestUtil.shutdownServer(timeWebServer);
     }
 
+    @Test
+    void testWithEmptyAccept() throws IOException {
+        URL url = new URL("http://localhost:" + greetingWebServer.port() + GREETING_PATH);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
+        conn.setRequestProperty("Accept", ""); // Yes, to test a bug fix specify Accept with nothing.
+        Map<String, Object> openAPIDocument = TestUtil.yamlFromResponse(conn);
+
+        // Check one simple value.
+        ArrayList<Map<String, Object>> servers = TestUtil.as(
+                ArrayList.class, openAPIDocument.get("servers"));
+        Map<String, Object> server = servers.get(0);
+        assertThat("unexpected URL", server.get("url"), is("http://localhost:8000"));
+        assertThat("unexpected description", server.get("description"), is("Local test server"));
+    }
 
     /**
      * Accesses the OpenAPI endpoint, requesting a YAML response payload, and
