@@ -14,34 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.http;
+package io.helidon.http;
 
-import io.helidon.http.Method;
-import io.helidon.inject.api.Contract;
+import java.util.Set;
+import java.util.function.Predicate;
 
 /**
- * This class is only used by generated code.
- *
- * @deprecated please do not use directly, designed for generated code
- * @see io.helidon.webserver.http1.Http1Route
- * @see Handler
+ * HTTP Method predicate.
  */
-@Deprecated(since = "4.0.0")
-@Contract
-public interface GeneratedHandler extends Handler {
+public interface MethodPredicate extends Predicate<Method> {
     /**
-     * HTTP Method of this handler.
+     * Methods accepted by this predicate, may be empty.
      *
-     * @return method
+     * @return set of methods accepted
      */
-    Method method();
-
-    /**
-     * Path this handler should be registered at.
-     *
-     * @return path, may include path parameter (template)
-     */
-    String path();
-
-
+    Set<Method> acceptedMethods();
 }

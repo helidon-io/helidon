@@ -23,19 +23,20 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
 import io.helidon.common.pki.Keys;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsClientAuth;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -133,7 +134,7 @@ class MtlsTest {
 
     @Test
     void testMutualTlsPrincipal() {
-        ClientResponseTyped<String> response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/name")
                 .request(String.class);
 
@@ -143,7 +144,7 @@ class MtlsTest {
 
     @Test
     void testMutualTlsCertificates() {
-        ClientResponseTyped<String> response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/certs")
                 .request(String.class);
 
@@ -153,20 +154,20 @@ class MtlsTest {
 
     @Test
     void testTlsReload() {
-        ClientResponseTyped<String> response = client.method(Http.Method.GET)
+        ClientResponseTyped<String> response = client.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
         assertThat(response.entity(), is("X.509:CN=Helidon-Test-Server|X.509:CN=Helidon-Test-CA"));
 
-        response = client.method(Http.Method.GET)
+        response = client.method(Method.GET)
                 .uri("/reload")
                 .request(String.class);
 
         assertThat(response.status(), is(Http.Status.OK_200));
 
-        response = client.method(Http.Method.GET)
+        response = client.method(Method.GET)
                 .uri("/serverCert")
                 .request(String.class);
 

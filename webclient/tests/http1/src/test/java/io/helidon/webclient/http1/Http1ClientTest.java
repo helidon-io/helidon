@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -140,7 +141,7 @@ class Http1ClientTest {
     void testChunk() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
@@ -150,7 +151,7 @@ class Http1ClientTest {
     void testChunkAndChunkResponse() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/chunkresponse");
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/chunkresponse");
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, String.join("", requestEntityParts));
@@ -162,7 +163,7 @@ class Http1ClientTest {
         String[] requestEntityParts = {"First"};
         long contentLength = requestEntityParts[0].length();
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
                 .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -173,7 +174,7 @@ class Http1ClientTest {
     void testForcedChunkNoContentLength() {
         String[] requestEntityParts = {"First"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
         validateChunkTransfer(response, true, NO_CONTENT_LENGTH, requestEntityParts[0]);
@@ -183,7 +184,7 @@ class Http1ClientTest {
     void testForcedChunkTransferEncodingChunked() {
         String[] requestEntityParts = {"First"};
 
-        HttpClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
+        HttpClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
                 .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
         HttpClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -517,7 +518,7 @@ class Http1ClientTest {
         });
     }
 
-    private HttpClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
+    private HttpClientRequest getHttp1ClientRequest(Method method, String uriPath) {
         return injectedHttp1client.method(method).uri(uriPath);
     }
 

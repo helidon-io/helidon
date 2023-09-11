@@ -17,19 +17,20 @@
 package io.helidon.webserver.cors;
 
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.http.Http.HeaderNames.ORIGIN;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -47,7 +48,7 @@ class TestHandlerRegistration extends CorsRouting {
 
     @Test
     void test4PreFlightAllowedHeaders2() {
-        try (HttpClientResponse response = client.method(Http.Method.OPTIONS)
+        try (HttpClientResponse response = client.method(Method.OPTIONS)
                 .uri(CORS4_CONTEXT_ROOT)
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")

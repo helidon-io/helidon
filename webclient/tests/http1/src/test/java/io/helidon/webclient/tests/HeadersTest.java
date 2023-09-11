@@ -18,19 +18,20 @@ package io.helidon.webclient.tests;
 
 import java.util.Optional;
 
+import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
-import io.helidon.common.media.type.ParserMode;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +57,7 @@ class HeadersTest {
     // Verify that invalid content type is present in response headers and is accessible
     @Test
     public void testInvalidContentType() {
-        try (HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidContentType")
                 .request()) {
             ClientResponseHeaders h = res.headers();
@@ -69,7 +70,7 @@ class HeadersTest {
     // Verify that "Content-Type: text" header parsing fails in strict mode
     @Test
     public void testInvalidTextContentTypeStrict() {
-        try (HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidTextContentType")
                 .request()) {
             assertThat(res.status(), is(Http.Status.OK_200));
@@ -94,7 +95,7 @@ class HeadersTest {
                 .from(this.client.prototype())
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
-        try (HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidTextContentType")
                 .request()) {
             assertThat(res.status(), is(Http.Status.OK_200));

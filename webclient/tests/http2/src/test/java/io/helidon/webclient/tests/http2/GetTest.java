@@ -31,13 +31,14 @@ import java.util.Random;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
-import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,10 +76,10 @@ class GetTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         // enforce http/2 so we know if upgrade failed
-        router.route(Http2Route.route(Http.Method.GET, "/string", Handler.create(Routes::string)))
-                .route(Http.Method.GET, "/bytes", Routes::bytes)
-                .route(Http.Method.GET, "/chunked", Routes::chunked)
-                .route(Http.Method.GET, "/headers", Routes::headers);
+        router.route(Http2Route.route(Method.GET, "/string", Handler.create(Routes::string)))
+                .route(Method.GET, "/bytes", Routes::bytes)
+                .route(Method.GET, "/chunked", Routes::chunked)
+                .route(Method.GET, "/headers", Routes::headers);
     }
 
     @Test

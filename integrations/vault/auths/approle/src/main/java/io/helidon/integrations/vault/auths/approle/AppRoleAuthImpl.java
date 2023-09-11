@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.auths.approle;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.VaultOptionalResponse;
 
@@ -57,7 +57,7 @@ class AppRoleAuthImpl implements AppRoleAuth {
     public GenerateSecretId.Response generateSecretId(GenerateSecretId.Request request) {
         String apiPath = "/auth/" + path + "/role/" + request.roleName() + "/secret-id";
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, GenerateSecretId.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, GenerateSecretId.Response.builder());
     }
 
     @Override
@@ -71,7 +71,7 @@ class AppRoleAuthImpl implements AppRoleAuth {
     public Login.Response login(Login.Request request) {
         String apiPath = "/auth/" + path + "/login";
 
-        return restApi.invokeWithResponse(Http.Method.POST,
+        return restApi.invokeWithResponse(Method.POST,
                                           apiPath,
                                           request,
                                           Login.Response.builder());

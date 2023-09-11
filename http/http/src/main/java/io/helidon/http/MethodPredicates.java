@@ -18,9 +18,6 @@ package io.helidon.http;
 
 import java.util.Set;
 
-import io.helidon.http.Http.Method;
-import io.helidon.http.Http.MethodPredicate;
-
 class MethodPredicates {
     static class TruePredicate implements MethodPredicate {
         private static final TruePredicate INSTANCE = new TruePredicate();
@@ -30,7 +27,7 @@ class MethodPredicates {
         }
 
         @Override
-        public boolean test(Http.Method t) {
+        public boolean test(Method t) {
             return true;
         }
 

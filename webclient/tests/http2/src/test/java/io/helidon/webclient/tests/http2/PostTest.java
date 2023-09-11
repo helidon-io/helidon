@@ -27,6 +27,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -66,11 +67,11 @@ class PostTest {
                 .host("localhost")
                 .port(-1)
                 .routing(routing -> routing
-                        .route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
-                        .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
-                        .route(Http.Method.POST, "/chunked", Routes::chunked)
-                        .route(Http.Method.POST, "/headers", Routes::headers)
-                        .route(Http.Method.POST, "/close", Routes::close)
+                        .route(Method.POST, "/string", Handler.create(String.class, Routes::string))
+                        .route(Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
+                        .route(Method.POST, "/chunked", Routes::chunked)
+                        .route(Method.POST, "/headers", Routes::headers)
+                        .route(Method.POST, "/close", Routes::close)
                 )
                 .build()
                 .start();
@@ -91,7 +92,7 @@ class PostTest {
     @Test
     void testStringRoute() {
         Http2ClientResponse response = client
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .uri("/string")
                 .submit("Hello");
 
@@ -105,7 +106,7 @@ class PostTest {
     @Test
     void testByteRoute() {
         Http2ClientResponse response = client
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .uri("/bytes")
                 .submit(BYTES);
 
@@ -119,7 +120,7 @@ class PostTest {
     @Test
     void testChunkedRoute() {
         Http2ClientResponse response = client
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .uri("/chunked")
                 .outputStream(outputStream -> {
                     outputStream.write(BYTES);
@@ -134,7 +135,7 @@ class PostTest {
     @Test
     void testHeadersRoute() {
         Http2ClientResponse response = client
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .uri("/headers")
                 .header(REQUEST_HEADER_VALUE)
                 .submit("Hello");
@@ -151,7 +152,7 @@ class PostTest {
     @Test
     void testCloseRoute() {
         Http2ClientResponse response = client
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .uri("/close")
                 .submit("Hello");
 

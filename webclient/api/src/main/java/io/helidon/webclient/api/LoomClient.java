@@ -27,7 +27,7 @@ import java.util.concurrent.Executors;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.inject.configdriven.api.ConfigDriven;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.HttpClientSpi;
@@ -133,7 +133,7 @@ class LoomClient implements WebClient {
     }
 
     @Override
-    public HttpClientRequest method(Http.Method method) {
+    public HttpClientRequest method(Method method) {
         ClientUri clientUri = prototype().baseUri()
                 .map(ClientUri::create) // create from base config
                 .orElseGet(ClientUri::create); // create as empty

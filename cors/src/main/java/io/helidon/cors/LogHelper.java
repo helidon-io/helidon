@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import io.helidon.cors.CorsSupportHelper.RequestType;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 
 class LogHelper {
 
@@ -129,8 +130,8 @@ class LogHelper {
         List<String> reasonsWhyCORS = new ArrayList<>(); // any reason is determinative
         List<String> factorsWhyPreflight = new ArrayList<>(); // factors contribute but, individually, do not determine
 
-        if (!methodName.equalsIgnoreCase(Http.Method.OPTIONS.text())) {
-            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Http.Method.OPTIONS.text()));
+        if (!methodName.equalsIgnoreCase(Method.OPTIONS.text())) {
+            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Method.OPTIONS.text()));
         } else {
             factorsWhyPreflight.add(String.format("method is %s", methodName));
         }

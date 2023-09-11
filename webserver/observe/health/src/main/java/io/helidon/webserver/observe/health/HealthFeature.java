@@ -41,8 +41,8 @@ import static io.helidon.health.HealthCheckType.STARTUP;
 
 /**
  * Observe health endpoints.
- * This service provides endpoints for {@link io.helidon.http.Http.Method#GET} and
- * {@link io.helidon.http.Http.Method#HEAD} methods.
+ * This service provides endpoints for {@link io.helidon.http.Method#GET} and
+ * {@link io.helidon.http.Method#HEAD} methods.
  */
 public class HealthFeature extends HelidonFeatureSupport {
     private static final System.Logger LOGGER = System.getLogger(HealthFeature.class.getName());

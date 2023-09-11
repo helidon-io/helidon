@@ -36,19 +36,19 @@ import io.helidon.common.reactive.BufferedEmittingPublisher;
 import io.helidon.common.reactive.Multi;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ConnectionSelector;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.PUT;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.PUT;
 import static java.lang.System.Logger.Level.DEBUG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

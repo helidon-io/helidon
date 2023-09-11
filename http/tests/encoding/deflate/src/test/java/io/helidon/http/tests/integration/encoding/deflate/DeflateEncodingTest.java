@@ -32,14 +32,15 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.webclient.api.ClientResponseTyped;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -85,7 +86,7 @@ class DeflateEncodingTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        builder.route(Http1Route.route(Http.Method.PUT,
+        builder.route(Http1Route.route(Method.PUT,
                                        "/http1",
                                        (req, res) -> {
                                            String entity = req.content().as(String.class);
@@ -95,7 +96,7 @@ class DeflateEncodingTest {
                                                res.send(entity);
                                            }
                                        }))
-                .route(Http2Route.route(Http.Method.PUT,
+                .route(Http2Route.route(Method.PUT,
                                         "/http2",
                                         (req, res) -> {
                                             String entity = req.content().as(String.class);

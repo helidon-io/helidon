@@ -42,6 +42,7 @@ import java.util.jar.JarFile;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Http;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -120,7 +121,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     @Override
-    boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
+    boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException, URISyntaxException {
 
         String rawPath = request.prologue().uriPath().rawPath();

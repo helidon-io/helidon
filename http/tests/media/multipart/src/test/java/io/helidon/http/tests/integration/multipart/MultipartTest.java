@@ -24,18 +24,19 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
-import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Method;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.ReadablePart;
 import io.helidon.http.media.multipart.WriteableMultiPart;
 import io.helidon.http.media.multipart.WriteablePart;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -92,7 +93,7 @@ class MultipartTest {
                                  .inputStream(() -> new ByteArrayInputStream(SECOND_PART_CONTENT.getBytes(StandardCharsets.UTF_8))))
                 .build();
 
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/multipart")
                 .submit(multiPart)) {
 

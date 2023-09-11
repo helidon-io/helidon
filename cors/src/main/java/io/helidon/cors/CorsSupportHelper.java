@@ -32,6 +32,7 @@ import io.helidon.common.config.Config;
 import io.helidon.cors.LogHelper.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 
 import static io.helidon.cors.LogHelper.DECISION_LEVEL;
 import static java.lang.Character.isDigit;
@@ -380,7 +381,7 @@ public class CorsSupportHelper<Q, R> {
     private RequestType inferCORSRequestType(CorsRequestAdapter<Q> requestAdapter, boolean silent) {
 
         String methodName = requestAdapter.method();
-        boolean isMethodOPTION = methodName.equalsIgnoreCase(Http.Method.OPTIONS.text());
+        boolean isMethodOPTION = methodName.equalsIgnoreCase(Method.OPTIONS.text());
         boolean requestContainsAccessControlRequestMethodHeader =
                 requestAdapter.headerContainsKey(Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD);
 

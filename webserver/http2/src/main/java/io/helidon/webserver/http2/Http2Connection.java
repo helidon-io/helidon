@@ -34,6 +34,7 @@ import io.helidon.common.tls.TlsUtils;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.Http2ConnectionWriter;
@@ -633,7 +634,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         receiveFrameListener.headers(ctx, streamId, headers);
         headers.validateRequest();
         String path = headers.path();
-        Http.Method method = headers.method();
+        Method method = headers.method();
         HttpPrologue httpPrologue = HttpPrologue.create(FULL_PROTOCOL,
                                                         PROTOCOL,
                                                         PROTOCOL_VERSION,

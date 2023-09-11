@@ -25,7 +25,7 @@ import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Method;
+import io.helidon.http.Method;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
 import io.helidon.webclient.api.WebClient;
@@ -59,7 +59,7 @@ public interface RestApi {
                                                         ApiRequest<?> request,
                                                         BuilderBase<?, T, JsonObject, R> responseBuilder) {
 
-        return invokeOptional(Http.Method.GET, path, request, responseBuilder);
+        return invokeOptional(Method.GET, path, request, responseBuilder);
     }
 
     /**
@@ -75,7 +75,7 @@ public interface RestApi {
     default <R, T extends ApiOptionalResponse<R>> T getEntityStream(String path,
                                                                     ApiRequest<?> request,
                                                                     BuilderBase<?, T, InputStream, R> responseBuilder) {
-        return invokeEntityResponse(Http.Method.GET, path, request, responseBuilder);
+        return invokeEntityResponse(Method.GET, path, request, responseBuilder);
     }
 
     /**
@@ -92,7 +92,7 @@ public interface RestApi {
     default <R, T extends ApiOptionalResponse<R>> T getBytes(String path,
                                                              ApiRequest<?> request,
                                                              BuilderBase<?, T, byte[], R> responseBuilder) {
-        return invokeBytesResponse(Http.Method.GET, path, request, responseBuilder);
+        return invokeBytesResponse(Method.GET, path, request, responseBuilder);
     }
 
     /**
@@ -108,7 +108,7 @@ public interface RestApi {
     default <T extends ApiResponse> T post(String path,
                                            ApiRequest<?> request,
                                            ApiResponse.Builder<?, T> responseBuilder) {
-        return invoke(Http.Method.POST, path, request, responseBuilder);
+        return invoke(Method.POST, path, request, responseBuilder);
     }
 
     /**
@@ -123,7 +123,7 @@ public interface RestApi {
      */
     default <T extends ApiResponse> T put(String path, ApiRequest<?> request,
                                           ApiResponse.Builder<?, T> responseBuilder) {
-        return invoke(Http.Method.PUT, path, request, responseBuilder);
+        return invoke(Method.PUT, path, request, responseBuilder);
     }
 
     /**
@@ -139,7 +139,7 @@ public interface RestApi {
     default <T extends ApiResponse> T delete(String path,
                                              ApiRequest<?> request,
                                              ApiResponse.Builder<?, T> responseBuilder) {
-        return invoke(Http.Method.DELETE, path, request, responseBuilder);
+        return invoke(Method.DELETE, path, request, responseBuilder);
     }
 
     /**
@@ -188,7 +188,7 @@ public interface RestApi {
      * @param <T>             type of the response
      * @return future with the response or error
      */
-    <T extends ApiResponse> T invokeBytesRequest(Http.Method method,
+    <T extends ApiResponse> T invokeBytesRequest(Method method,
                                                  String path,
                                                  ApiRequest<?> request,
                                                  InputStream is,
@@ -218,7 +218,7 @@ public interface RestApi {
      * Invoke API call that is expected to return bytes.
      * This method collects all bytes in memory, so it cannot be used for large data.
      * See
-     * {@link #invokeEntityResponse(io.helidon.http.Http.Method, String, ApiRequest, BuilderBase)}.
+     * {@link #invokeEntityResponse(io.helidon.http.Method, String, ApiRequest, BuilderBase)}.
      * <p>
      * The accepted media type must be provided in request, falls back to
      * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.

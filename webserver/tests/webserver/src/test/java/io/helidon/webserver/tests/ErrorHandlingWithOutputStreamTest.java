@@ -21,14 +21,15 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.ErrorHandler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -117,7 +118,7 @@ class ErrorHandlingWithOutputStreamTest {
 
     @Test
     void testGetOutputStreamWriteTwiceThenError_expect_invalidResponse() {
-        try (Http1ClientResponse response = client.method(Http.Method.GET)
+        try (Http1ClientResponse response = client.method(Method.GET)
                 .uri("/get-outputStream-writeTwiceThenError")
                 .request()) {
             assertThat(response.status(), is(Http.Status.OK_200));
@@ -127,7 +128,7 @@ class ErrorHandlingWithOutputStreamTest {
 
     @Test
     void testGetOutputStreamWriteFlushThenError_expect_invalidResponse() {
-        try (Http1ClientResponse response = client.method(Http.Method.GET)
+        try (Http1ClientResponse response = client.method(Method.GET)
                 .uri("/get-outputStream-writeFlushThenError")
                 .request()) {
 
@@ -138,7 +139,7 @@ class ErrorHandlingWithOutputStreamTest {
 
     @Test
     void testGetOutputStreamTryWithResourcesThenError_expect_CustomErrorHandlerMessage() {
-        try (Http1ClientResponse response = client.method(Http.Method.GET)
+        try (Http1ClientResponse response = client.method(Method.GET)
                 .uri("/get-outputStream-tryWithResources")
                 .request()) {
 

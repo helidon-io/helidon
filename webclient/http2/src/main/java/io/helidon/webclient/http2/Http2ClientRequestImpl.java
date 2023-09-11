@@ -23,6 +23,7 @@ import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -40,7 +41,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     private Duration timeout = Duration.ofSeconds(10);
 
     Http2ClientRequestImpl(Http2ClientImpl http2Client,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         super(http2Client.clientConfig(),
@@ -56,7 +57,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
     }
 
     Http2ClientRequestImpl(Http2ClientRequestImpl request,
-                           Http.Method method,
+                           Method method,
                            ClientUri clientUri,
                            Map<String, String> properties) {
         this(request.http2Client, method, clientUri, properties);
@@ -187,7 +188,7 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
             } else {
                 //It is possible to change to GET and send no entity with all other redirect codes
                 entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
-                clientRequest = new Http2ClientRequestImpl(clientRequest, Http.Method.GET, redirectUri, properties());
+                clientRequest = new Http2ClientRequestImpl(clientRequest, Method.GET, redirectUri, properties());
             }
         }
         throw new IllegalStateException("Maximum number of request redirections ("

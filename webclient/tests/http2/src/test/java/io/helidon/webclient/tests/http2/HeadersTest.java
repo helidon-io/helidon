@@ -28,6 +28,7 @@ import java.util.concurrent.TimeoutException;
 
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
@@ -124,7 +125,7 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/trailer")
                 .priorKnowledge(true)
                 .request()) {
@@ -140,7 +141,7 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/cont-in")
                 .priorKnowledge(true)
                 .request()) {
@@ -161,7 +162,7 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.GET)
+                .method(Method.GET)
                 .path("/cont-out")
                 .priorKnowledge(true)
                 .headers(hv -> {
@@ -182,7 +183,7 @@ class HeadersTest {
         try (Http2ClientResponse res = Http2Client.builder()
                 .baseUri("http://localhost:" + port + "/")
                 .build()
-                .method(Http.Method.POST)
+                .method(Method.POST)
                 .path("/cont-out")
                 .priorKnowledge(true)
                 .headers(hv -> {

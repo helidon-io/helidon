@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -198,7 +199,7 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public void assertConnectionIsOpen() {
         // get
-        request(Http.Method.GET, "/this/path/should/not/exist", null);
+        request(Method.GET, "/this/path/should/not/exist", null);
         // assert
         assertThat(receive(), containsString("HTTP/1.1"));
     }
@@ -208,7 +209,7 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public void assertConnectionIsClosed() {
         // get
-        request(Http.Method.POST, null);
+        request(Method.POST, null);
         // assert
         try {
             // when the connection is closed before we start reading, just "" is returned by receive()
@@ -232,7 +233,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      */
-    public String sendAndReceive(Http.Method method, String payload) {
+    public String sendAndReceive(Method method, String payload) {
         return sendAndReceive(method, "/", payload);
     }
 
@@ -245,7 +246,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      */
-    public String sendAndReceive(Http.Method method, String path, String payload) {
+    public String sendAndReceive(Method method, String path, String payload) {
         return sendAndReceive(method, path, payload, Collections.emptyList());
     }
 
@@ -259,7 +260,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param headers HTTP request headers
      * @return the exact string returned by webserver (including {@code HTTP/1.1 200 OK} line for instance)
      */
-    public String sendAndReceive(Http.Method method,
+    public String sendAndReceive(Method method,
                                  String path,
                                  String payload,
                                  Iterable<String> headers) {
@@ -367,7 +368,7 @@ public class SocketHttpClient implements AutoCloseable {
      *
      * @param method the http method
      */
-    public void request(Http.Method method) {
+    public void request(Method method) {
         request(method, null);
     }
 
@@ -378,7 +379,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param payload the payload to send (must be without the newlines;
      *                otherwise it's not a valid payload)
      */
-    public void request(Http.Method method, String payload) {
+    public void request(Method method, String payload) {
         request(method, "/", payload);
     }
 
@@ -390,7 +391,7 @@ public class SocketHttpClient implements AutoCloseable {
      * @param payload the payload to send (must be without the newlines;
      *                otherwise it's not a valid payload)
      */
-    public void request(Http.Method method, String path, String payload) {
+    public void request(Method method, String path, String payload) {
         request(method, path, payload, List.of("Content-Type: application/x-www-form-urlencoded"));
     }
 
@@ -403,7 +404,7 @@ public class SocketHttpClient implements AutoCloseable {
      *                otherwise it's not a valid payload)
      * @param headers the headers (e.g., {@code Content-Type: application/json})
      */
-    public void request(Http.Method method, String path, String payload, Iterable<String> headers) {
+    public void request(Method method, String path, String payload, Iterable<String> headers) {
         request(method.text(), path, "HTTP/1.1", "127.0.0.1", headers, payload);
     }
 

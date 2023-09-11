@@ -30,7 +30,7 @@ import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.http.ForbiddenException;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.UnauthorizedException;
 import io.helidon.security.EndpointConfig;
@@ -447,11 +447,11 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
         if (configuredPaths.isPresent()) {
             List<Config> paths = configuredPaths.get();
             for (Config pathConfig : paths) {
-                List<Http.Method> methods = pathConfig.get("methods").asNodeList().orElse(List.of())
+                List<Method> methods = pathConfig.get("methods").asNodeList().orElse(List.of())
                         .stream()
                         .map(Config::asString)
                         .map(ConfigValue::get)
-                        .map(Http.Method::create)
+                        .map(Method::create)
                         .collect(Collectors.toList());
 
                 String path = pathConfig.get("path")
@@ -462,7 +462,7 @@ public final class SecurityFeature implements HttpSecurity, HttpFeature, Weighte
                 if (methods.isEmpty()) {
                     routing.any(path, SecurityHandler.create(pathConfig, defaults));
                 } else {
-                    routing.route(Http.Method.predicate(methods),
+                    routing.route(Method.predicate(methods),
                                   PathMatchers.create(path),
                                   SecurityHandler.create(pathConfig, defaults));
                 }

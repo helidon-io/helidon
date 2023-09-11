@@ -24,7 +24,7 @@ import io.helidon.webserver.http1.Http1Route;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.POST;
+import static io.helidon.http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

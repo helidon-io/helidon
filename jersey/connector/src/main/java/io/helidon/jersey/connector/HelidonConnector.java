@@ -33,6 +33,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.http1.Http1Client;
@@ -108,7 +109,7 @@ class HelidonConnector implements Connector {
         // create WebClient request
         URI uri = request.getUri();
         Http1ClientRequest httpRequest = httpClient
-                .method(Http.Method.create(request.getMethod()))
+                .method(Method.create(request.getMethod()))
                 .proxy(requestProxy)
                 .uri(uri);
 

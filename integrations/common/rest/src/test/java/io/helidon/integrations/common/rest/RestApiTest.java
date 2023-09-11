@@ -25,14 +25,14 @@ import io.helidon.http.Http;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.jsonp.JsonpSupport;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -41,8 +41,8 @@ import jakarta.json.JsonObjectBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.PUT;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.PUT;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;

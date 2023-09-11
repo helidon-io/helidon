@@ -22,19 +22,20 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.http.Http;
 import io.helidon.http.Http.Headers;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.RepeatedTest;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Http.Status.INTERNAL_SERVER_ERROR_500;
 import static io.helidon.http.Http.Status.OK_200;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -49,7 +50,7 @@ class KeepAliveTest {
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
-        router.route(Http.Method.PUT, "/plain", (req, res) -> {
+        router.route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];
                 while (in.read(buffer) > 0) {
@@ -60,7 +61,7 @@ class KeepAliveTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        }).route(Http.Method.PUT, "/close", (req, res) -> {
+        }).route(Method.PUT, "/close", (req, res) -> {
             byte[] buffer = new byte[10];
             try (InputStream in = req.content().inputStream()) {
                 in.read(buffer);
@@ -100,7 +101,7 @@ class KeepAliveTest {
                                                String path,
                                                Http.Status expectedStatus) {
 
-        Http1ClientRequest request = client.method(Http.Method.PUT)
+        Http1ClientRequest request = client.method(Method.PUT)
                 .uri(path);
 
         if (!keepAlive) {

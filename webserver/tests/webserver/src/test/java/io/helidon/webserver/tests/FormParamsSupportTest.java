@@ -20,14 +20,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -60,7 +61,7 @@ class FormParamsSupportTest {
 
     @Test
     void urlEncodedTest() {
-        String result = client.method(Http.Method.PUT)
+        String result = client.method(Method.PUT)
                 .path("/params")
                 .header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
                 .submit("key1=val+1&key2=val2_1&key2=val2_2")
@@ -72,7 +73,7 @@ class FormParamsSupportTest {
 
     @Test
     void plainTextTest() {
-        String result = client.method(Http.Method.PUT)
+        String result = client.method(Method.PUT)
                 .path("/params")
                 .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN)
                 .submit("key1=val 1\nkey2=val2_1\nkey2=val2_2")

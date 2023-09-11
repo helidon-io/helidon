@@ -37,6 +37,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Method;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
@@ -180,7 +181,7 @@ abstract class StaticContentHandler implements StaticContentService {
 
     @Override
     public void routing(HttpRules rules) {
-        rules.route(Http.Method.predicate(Http.Method.GET, Http.Method.HEAD),
+        rules.route(Method.predicate(Method.GET, Method.HEAD),
                     PathMatchers.any(),
                     this::handle);
     }
@@ -200,7 +201,7 @@ abstract class StaticContentHandler implements StaticContentService {
      * @param response an HTTP response
      */
     void handle(ServerRequest request, ServerResponse response) {
-        Http.Method method = request.prologue().method();
+        Method method = request.prologue().method();
 
         // Resolve path
         String requestPath = request.path().rawPathNoParams();
@@ -241,7 +242,7 @@ abstract class StaticContentHandler implements StaticContentService {
      * @throws java.io.IOException                          if resource is not acceptable
      * @throws io.helidon.http.RequestException if some known WEB error
      */
-    abstract boolean doHandle(Http.Method method,
+    abstract boolean doHandle(Method method,
                               String requestedPath,
                               ServerRequest request,
                               ServerResponse response,

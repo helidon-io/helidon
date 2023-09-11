@@ -32,7 +32,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.faulttolerance.FtHandler;
 import io.helidon.http.Http;
-import io.helidon.http.Http.Method;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;

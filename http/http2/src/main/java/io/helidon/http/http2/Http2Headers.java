@@ -31,6 +31,7 @@ import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.WritableHeaders;
 
@@ -227,7 +228,7 @@ public class Http2Headers {
      *
      * @return method or null if none defined
      */
-    public Http.Method method() {
+    public Method method() {
         return pseudoHeaders.method();
     }
 
@@ -266,7 +267,7 @@ public class Http2Headers {
      * @param method HTTP method of the request
      * @return updated headers
      */
-    public Http2Headers method(Http.Method method) {
+    public Http2Headers method(Method method) {
         this.pseudoHeaders.method(method);
         return this;
     }
@@ -413,11 +414,11 @@ public class Http2Headers {
             }
         }
         if (pseudoHeaders.hasMethod()) {
-            Http.Method method = pseudoHeaders.method();
+            Method method = pseudoHeaders.method();
             StaticHeader indexed = null;
-            if (method == Http.Method.GET) {
+            if (method == Method.GET) {
                 indexed = StaticHeader.METHOD_GET;
-            } else if (method == Http.Method.POST) {
+            } else if (method == Method.POST) {
                 indexed = StaticHeader.METHOD_POST;
             }
             if (indexed == null) {
@@ -1292,7 +1293,7 @@ public class Http2Headers {
 
     private static class PseudoHeaders {
         private String authority;
-        private Http.Method method;
+        private Method method;
         private String path;
         private String scheme;
         private Http.Status status;
@@ -1320,10 +1321,10 @@ public class Http2Headers {
         }
 
         void method(String method) {
-            method(Http.Method.create(method));
+            method(Method.create(method));
         }
 
-        PseudoHeaders method(Http.Method method) {
+        PseudoHeaders method(Method method) {
             this.method = method;
             size++;
             return this;
@@ -1363,7 +1364,7 @@ public class Http2Headers {
             return method != null;
         }
 
-        Http.Method method() {
+        Method method() {
             return method;
         }
 

@@ -38,14 +38,14 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 import io.helidon.common.configurable.Resource;
-import io.helidon.http.Http;
-import io.helidon.webserver.tests.upgrade.Main;
-import io.helidon.logging.common.LogConfig;
 import io.helidon.common.tls.Tls;
-import io.helidon.webclient.http2.Http2Client;
+import io.helidon.http.Method;
+import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.tests.upgrade.Main;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
@@ -53,8 +53,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.HEAD;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.HEAD;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -219,10 +219,10 @@ class UpgradeCodecsCompositionTest {
 
         String expectedResponse = version + " route " + method + "\n";
 
-        assertThat(httpClient(Http.Method.create(method), url, version.contains("2") ? HTTP_2 : HTTP_1_1).body(),
+        assertThat(httpClient(Method.create(method), url, version.contains("2") ? HTTP_2 : HTTP_1_1).body(),
                    is(expectedResponse));
         var client = version.contains("2") ? webClient2 : webClient1;
-        try (HttpClientResponse response = doRequest(client, Http.Method.create(method), url)) {
+        try (HttpClientResponse response = doRequest(client, Method.create(method), url)) {
             assertThat(response.entity().as(String.class), is(expectedResponse));
         }
     }
@@ -250,7 +250,7 @@ class UpgradeCodecsCompositionTest {
         }
     }
 
-    private HttpResponse<String> httpClient(Http.Method method,
+    private HttpResponse<String> httpClient(Method method,
                                             String url,
                                             HttpClient.Version version) throws IOException, InterruptedException {
         HttpRequest.BodyPublisher body;
@@ -268,7 +268,7 @@ class UpgradeCodecsCompositionTest {
     }
 
     private HttpClientResponse doRequest(io.helidon.webclient.api.HttpClient<?> client,
-                                         Http.Method method,
+                                         Method method,
                                          String url) {
         return client.method(method)
                 .uri(resolveUri(url))

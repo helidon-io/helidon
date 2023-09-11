@@ -21,13 +21,14 @@ import java.io.IOException;
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 record CachedHandlerRedirect(String location) implements CachedHandler {
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
-                          Http.Method method,
+                          Method method,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) throws IOException {

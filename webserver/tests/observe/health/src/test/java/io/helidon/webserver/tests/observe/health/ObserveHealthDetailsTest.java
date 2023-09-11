@@ -18,16 +18,17 @@ package io.helidon.webserver.tests.observe.health;
 
 import java.io.IOException;
 
-import io.helidon.http.Http;
 import io.helidon.health.HealthCheckResponse;
+import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.health.HealthFeature;
 import io.helidon.webserver.observe.health.HealthObserveProvider;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -78,7 +79,7 @@ class ObserveHealthDetailsTest {
             assertThat(checks, hasSize(1));
         }
 
-        try (Http1ClientResponse response = httpClient.method(Http.Method.HEAD)
+        try (Http1ClientResponse response = httpClient.method(Method.HEAD)
                 .path("/observe/health")
                 .request()) {
 
@@ -99,7 +100,7 @@ class ObserveHealthDetailsTest {
             assertThat(checks, hasSize(1));
         }
 
-        try (Http1ClientResponse response = httpClient.method(Http.Method.HEAD)
+        try (Http1ClientResponse response = httpClient.method(Method.HEAD)
                 .path("/observe/health")
                 .request()) {
 

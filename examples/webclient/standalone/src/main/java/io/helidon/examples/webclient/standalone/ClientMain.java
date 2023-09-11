@@ -25,6 +25,7 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
@@ -154,7 +155,7 @@ public class ClientMain {
 
         //Creates new metric which will count all GET requests and has format of example.metric.GET.<host-name>
         WebClientService clientService = WebClientMetrics.counter()
-                .methods(Http.Method.GET)
+                .methods(Method.GET)
                 .nameFormat("example.metric.%1$s.%2$s")
                 .build();
 

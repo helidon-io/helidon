@@ -28,6 +28,7 @@ import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2Headers;
@@ -184,7 +185,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return ContentDecoder.NO_OP;
     }
 
-    protected Http2Headers prepareHeaders(Http.Method method, ClientRequestHeaders headers, ClientUri uri) {
+    protected Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
         Http2Headers h2Headers = Http2Headers.create(headers);
         h2Headers.method(method);
         h2Headers.path(uri.pathWithQueryAndFragment());

@@ -23,13 +23,14 @@ import java.nio.file.Paths;
 import java.util.Optional;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Http;
-import io.helidon.http.HttpPrologue;
-import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.ServerResponseHeaders;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Http;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -90,14 +91,14 @@ class CachedHandlerTest {
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
                                                             "http",
                                                             "1.1",
-                                                            Http.Method.GET,
+                                                            Method.GET,
                                                             "/favicon.ico",
                                                             false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
 
-        boolean result = classpathHandler.doHandle(Http.Method.GET, "favicon.ico", req, res, false);
+        boolean result = classpathHandler.doHandle(Method.GET, "favicon.ico", req, res, false);
 
         assertThat("Handler should have found favicon.ico", result, is(true));
         assertThat(responseHeaders, hasHeader(ICON_TYPE));
@@ -111,13 +112,13 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/resource.txt", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/resource.txt", false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = classpathHandler.doHandle(Http.Method.GET, "resource.txt", req, res, false);
+        boolean result = classpathHandler.doHandle(Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
@@ -143,14 +144,14 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/nested", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/nested", false));
         when(req.query()).thenReturn(UriQuery.empty());
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = classpathHandler.doHandle(Http.Method.GET, "/nested", req, res, false);
+        boolean result = classpathHandler.doHandle(Method.GET, "/nested", req, res, false);
 
         assertThat("Handler should have redirected", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.LOCATION, "/nested/"));
@@ -186,14 +187,14 @@ class CachedHandlerTest {
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
                                                             "http",
                                                             "1.1",
-                                                            Http.Method.GET,
+                                                            Method.GET,
                                                             "nested/resource.txt",
                                                             false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
 
-        boolean result = fsHandler.doHandle(Http.Method.GET, "nested/resource.txt", req, res, false);
+        boolean result = fsHandler.doHandle(Method.GET, "nested/resource.txt", req, res, false);
 
         assertThat("Handler should have found nested/resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
@@ -207,13 +208,13 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/resource.txt", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/resource.txt", false));
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = fsHandler.doHandle(Http.Method.GET, "resource.txt", req, res, false);
+        boolean result = fsHandler.doHandle(Method.GET, "resource.txt", req, res, false);
 
         assertThat("Handler should have found resource.txt", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.Headers.CONTENT_TYPE_TEXT_PLAIN));
@@ -239,14 +240,14 @@ class CachedHandlerTest {
 
         ServerRequest req = mock(ServerRequest.class);
         when(req.headers()).thenReturn(ServerRequestHeaders.create());
-        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Http.Method.GET, "/nested", false));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/nested", false));
         when(req.query()).thenReturn(UriQuery.empty());
 
         ServerResponse res = mock(ServerResponse.class);
         when(res.headers()).thenReturn(responseHeaders);
         when(res.outputStream()).thenReturn(new ByteArrayOutputStream());
 
-        boolean result = fsHandler.doHandle(Http.Method.GET, "nested", req, res, false);
+        boolean result = fsHandler.doHandle(Method.GET, "nested", req, res, false);
 
         assertThat("Handler should have redirected", result, is(true));
         assertThat(responseHeaders, hasHeader(Http.HeaderNames.LOCATION, "/nested/"));

@@ -18,20 +18,21 @@ package io.helidon.webserver.tests;
 
 import java.util.List;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.ServerResponseHeaders;
-import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http1.Http1Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,7 +57,7 @@ class BadRequestTest {
 
     @SetUpRoute
     static void routing(HttpRules builder) {
-        builder.route(Http1Route.route(Http.Method.GET,
+        builder.route(Http1Route.route(Method.GET,
                                        "/",
                                        (req, res) -> res.send("Hi")));
     }
@@ -72,7 +73,7 @@ class BadRequestTest {
     @SuppressWarnings("resource")
     @Test
     void testOk() {
-        String response = client.method(Http.Method.GET)
+        String response = client.method(Method.GET)
                 .request()
                 .as(String.class);
 
@@ -82,7 +83,7 @@ class BadRequestTest {
     @Test
     void testInvalidRequest() {
         // wrong content length
-        String response = socketClient.sendAndReceive(Http.Method.GET,
+        String response = socketClient.sendAndReceive(Method.GET,
                                                       "/",
                                                       null,
                                                       List.of("Content-Length: 47a"));
@@ -94,7 +95,7 @@ class BadRequestTest {
     @Test
     void testInvalidRequestWithRedirect() {
         // wrong content length
-        String response = socketClient.sendAndReceive(Http.Method.GET,
+        String response = socketClient.sendAndReceive(Method.GET,
                                                       "/redirect",
                                                       null,
                                                       List.of("Content-Length: 47a"));
@@ -108,7 +109,7 @@ class BadRequestTest {
     @Test
     void testInvalidUri() {
         // must fail on creation of bare request impl (URI.create())
-        String response = socketClient.sendAndReceive(Http.Method.GET,
+        String response = socketClient.sendAndReceive(Method.GET,
                                                       "/bad{",
                                                       null);
 

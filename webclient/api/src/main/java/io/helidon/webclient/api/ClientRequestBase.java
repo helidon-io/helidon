@@ -40,6 +40,7 @@ import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.spi.WebClientService;
 
@@ -63,7 +64,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final HttpClientConfig clientConfig;
     private final WebClientCookieManager cookieManager;
     private final String protocolId;
-    private final Http.Method method;
+    private final Method method;
     private final ClientUri clientUri;
     private final Map<String, String> properties;
     private final ClientRequestHeaders headers;
@@ -84,7 +85,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
-                                Http.Method method,
+                                Method method,
                                 ClientUri clientUri,
                                 Map<String, String> properties) {
         this.clientConfig = clientConfig;
@@ -276,7 +277,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @return HTTP method
      */
     @Override
-    public Http.Method method() {
+    public Method method() {
         return method;
     }
 
@@ -467,8 +468,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     private void rejectHeadWithEntity() {
-        if (this.method.equals(Http.Method.HEAD)) {
-            throw new IllegalArgumentException("Payload in method '" + Http.Method.HEAD + "' has no defined semantics");
+        if (this.method.equals(Method.HEAD)) {
+            throw new IllegalArgumentException("Payload in method '" + Method.HEAD + "' has no defined semantics");
         }
     }
 

@@ -25,7 +25,7 @@ import java.time.Instant;
 
 import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -34,7 +34,7 @@ record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHan
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
-                          Http.Method method,
+                          Method method,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) throws IOException {
@@ -53,7 +53,7 @@ record CachedHandlerUrlStream(MediaType mediaType, URL url) implements CachedHan
 
         response.headers().contentType(mediaType);
 
-        if (method == Http.Method.HEAD) {
+        if (method == Method.HEAD) {
             response.send();
             return true;
         }

@@ -40,6 +40,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -135,7 +136,7 @@ class Http1ClientTest {
     void testChunk() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -147,7 +148,7 @@ class Http1ClientTest {
         String[] requestEntityParts = {"First"};
         long contentLength = requestEntityParts[0].length();
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
                 .header(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength));
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
@@ -159,7 +160,7 @@ class Http1ClientTest {
     void testForcedChunkNoContentLength() {
         String[] requestEntityParts = {"First"};
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test");
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test");
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
 
@@ -170,7 +171,7 @@ class Http1ClientTest {
     void testForcedChunkTransferEncodingChunked() {
         String[] requestEntityParts = {"First"};
 
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/test")
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/test")
                 .header(Http.Headers.TRANSFER_ENCODING_CHUNKED);
         request.connection(new FakeHttp1ClientConnection());
         Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, requestEntityParts);
@@ -214,7 +215,7 @@ class Http1ClientTest {
     @Test
     void testSkipUrlEncoding() {
         //Fill with chars which should be encoded
-        Http1ClientRequest request = getHttp1ClientRequest(Http.Method.PUT, "/ěščžř")
+        Http1ClientRequest request = getHttp1ClientRequest(Method.PUT, "/ěščžř")
                 .queryParam("specialChar+", "someValue,").fragment("someFragment,");
         URI uri = request.resolvedUri().toUri();
         assertThat(uri.getRawPath(), is("/%C4%9B%C5%A1%C4%8D%C5%BE%C5%99"));
@@ -424,7 +425,7 @@ class Http1ClientTest {
         assertThat(responseEntity, is(entity));
     }
 
-    private static Http1ClientRequest getHttp1ClientRequest(Http.Method method, String uriPath) {
+    private static Http1ClientRequest getHttp1ClientRequest(Method method, String uriPath) {
         return client.method(method).uri("http://localhost:" + dummyPort + uriPath);
     }
 

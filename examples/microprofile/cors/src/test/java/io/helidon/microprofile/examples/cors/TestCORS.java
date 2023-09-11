@@ -18,13 +18,13 @@ package io.helidon.microprofile.examples.cors;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
+import io.helidon.http.Method;
 import io.helidon.microprofile.server.Server;
-import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -126,7 +126,7 @@ public class TestCORS {
 
         // Send the pre-flight request and check the response.
 
-        Http1ClientRequest req = client.method(Http.Method.OPTIONS)
+        Http1ClientRequest req = client.method(Method.OPTIONS)
                 .header(HeaderNames.ORIGIN, "http://foo.com")
                 .header(Http.HeaderNames.HOST, "here.com")
                 .header(HeaderNames.ACCESS_CONTROL_REQUEST_METHOD, "PUT");

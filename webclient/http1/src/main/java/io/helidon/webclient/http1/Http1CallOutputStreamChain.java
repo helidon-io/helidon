@@ -34,6 +34,7 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequest;
@@ -133,7 +134,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 redirectUri.port(resolvedUri.port());
             }
             Http1ClientRequestImpl request = new Http1ClientRequestImpl(cos.lastRequest,
-                                                                        Http.Method.GET,
+                                                                        Method.GET,
                                                                         redirectUri,
                                                                         cos.lastRequest.properties());
             Http1ClientResponseImpl clientResponse = RedirectionProcessor.invokeWithFollowRedirects(request,
@@ -436,14 +437,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private void redirect(Http.Status lastStatus, WritableHeaders<?> headerValues) {
             String redirectedUri = headerValues.get(Http.HeaderNames.LOCATION).value();
             ClientUri lastUri = originalRequest.uri();
-            Http.Method method;
+            Method method;
             boolean sendEntity;
             if (lastStatus == Http.Status.TEMPORARY_REDIRECT_307
                     || lastStatus == Http.Status.PERMANENT_REDIRECT_308) {
                 method = originalRequest.method();
                 sendEntity = true;
             } else {
-                method = Http.Method.GET;
+                method = Method.GET;
                 sendEntity = false;
             }
             for (int i = 0; i < clientConfig.maxRedirects(); i++) {
@@ -483,7 +484,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         checkRedirectHeaders(response.headers());
                         if (response.status() != Http.Status.TEMPORARY_REDIRECT_307
                                 && response.status() != Http.Status.PERMANENT_REDIRECT_308) {
-                            method = Http.Method.GET;
+                            method = Method.GET;
                             sendEntity = false;
                         }
                         redirectedUri = response.headers().get(Http.HeaderNames.LOCATION).value();

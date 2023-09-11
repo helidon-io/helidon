@@ -26,6 +26,7 @@ import java.time.Duration;
 
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.Handler;
@@ -65,7 +66,7 @@ public class HttpJmhTest {
                 .writeQueueLength(4000)
                 .host("127.0.0.1")
                 .backlog(8192)
-                .routing(router -> router.route(Http1Route.route(Http.Method.GET, "/plaintext", new PlaintextHandler())))
+                .routing(router -> router.route(Http1Route.route(Method.GET, "/plaintext", new PlaintextHandler())))
                 .build()
                 .start();
 

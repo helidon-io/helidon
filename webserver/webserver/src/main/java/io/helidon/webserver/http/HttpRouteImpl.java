@@ -18,14 +18,14 @@ package io.helidon.webserver.http;
 
 import java.util.function.Predicate;
 
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 
 class HttpRouteImpl extends HttpRouteBase implements HttpRoute {
     private final Handler handler;
-    private final Predicate<Http.Method> methodPredicate;
+    private final Predicate<Method> methodPredicate;
     private final PathMatcher pathMatcher;
 
     HttpRouteImpl(HttpRoute.Builder builder) {

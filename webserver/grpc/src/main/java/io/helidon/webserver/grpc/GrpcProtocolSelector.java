@@ -19,6 +19,7 @@ package io.helidon.webserver.grpc;
 import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
@@ -56,7 +57,7 @@ public class GrpcProtocolSelector implements Http2SubProtocolSelector {
                                          StreamFlowControl flowControl,
                                          Http2StreamState currentStreamState,
                                          Router router) {
-        if (prologue.method() != Http.Method.POST) {
+        if (prologue.method() != Method.POST) {
             return NOT_SUPPORTED;
         }
 

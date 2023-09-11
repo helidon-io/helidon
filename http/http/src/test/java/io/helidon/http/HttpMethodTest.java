@@ -30,7 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class HttpMethodTest {
-    private static final Class<Http.Method> clazz = Http.Method.class;
+    private static final Class<Method> clazz = Method.class;
     private static final Set<String> constants = Stream.of(clazz.getDeclaredFields())
             .filter(it -> Modifier.isStatic(it.getModifiers()))
             .filter(it -> Modifier.isFinal(it.getModifiers()))
@@ -44,7 +44,7 @@ class HttpMethodTest {
         // this is to test correct initialization (there may be an issue when the constants
         // are defined on the interface and implemented by enum outside of it)
         for (String constant : constants) {
-            Http.Method value = (Http.Method) clazz.getField(constant)
+            Method value = (Method) clazz.getField(constant)
                     .get(null);
 
             assertAll(

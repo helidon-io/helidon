@@ -31,12 +31,13 @@ import java.util.Random;
 
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -72,11 +73,11 @@ class PostTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
-                .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
-                .route(Http.Method.POST, "/streamed", Routes::streamed)
-                .route(Http.Method.POST, "/headers", Routes::headers)
-                .route(Http.Method.POST, "/nocontent", Routes::noContent);
+        router.route(Method.POST, "/string", Handler.create(String.class, Routes::string))
+                .route(Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
+                .route(Method.POST, "/streamed", Routes::streamed)
+                .route(Method.POST, "/headers", Routes::headers)
+                .route(Method.POST, "/nocontent", Routes::noContent);
     }
 
     @Test

@@ -21,11 +21,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import io.helidon.http.Http;
-import io.helidon.http.HttpPrologue;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Http;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
@@ -129,7 +130,7 @@ class ErrorHandlersTest {
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
                                                             "1.0",
-                                                            Http.Method.GET,
+                                                            Method.GET,
                                                             UriPath.create("/"),
                                                             UriQuery.empty(),
                                                             UriFragment.empty()));

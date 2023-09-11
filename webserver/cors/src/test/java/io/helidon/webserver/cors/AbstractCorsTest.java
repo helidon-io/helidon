@@ -16,6 +16,7 @@
 package io.helidon.webserver.cors;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -23,6 +24,8 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_HEADERS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_ALLOW_METHODS;
@@ -31,8 +34,6 @@ import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_MAX_AGE;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS;
 import static io.helidon.http.Http.HeaderNames.ACCESS_CONTROL_REQUEST_METHOD;
 import static io.helidon.http.Http.HeaderNames.ORIGIN;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_1;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_2;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -62,7 +63,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test1PreFlightAllowedHeaders1() {
-        try (Http1ClientResponse response = client().method(Http.Method.OPTIONS)
+        try (Http1ClientResponse response = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_1))
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -79,7 +80,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test1PreFlightAllowedHeaders2() {
-        try (Http1ClientResponse response = client().method(Http.Method.OPTIONS)
+        try (Http1ClientResponse response = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_1))
                 .header(ORIGIN, "http://foo.bar")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -99,7 +100,7 @@ abstract class AbstractCorsTest extends CorsRouting {
     @Test
     void test2PreFlightForbiddenOrigin() {
         Http.Status status;
-        try (Http1ClientResponse response = client().method(Http.Method.OPTIONS)
+        try (Http1ClientResponse response = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2))
                 .header(ORIGIN, "http://not.allowed")
                 .header(ACCESS_CONTROL_REQUEST_METHOD, "PUT")
@@ -113,7 +114,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2PreFlightAllowedOrigin() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
@@ -133,7 +134,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2PreFlightForbiddenMethod() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
@@ -149,7 +150,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2PreFlightForbiddenHeader() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
@@ -165,7 +166,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2PreFlightAllowedHeaders1() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(contextRoot(), SERVICE_2));
 
         request.header(ORIGIN, fooOrigin());
@@ -189,7 +190,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2PreFlightAllowedHeaders2() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
@@ -210,7 +211,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2PreFlightAllowedHeaders3() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
@@ -232,7 +233,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test1ActualAllowedOrigin() {
-        Http1ClientRequest request = client().method(Http.Method.PUT)
+        Http1ClientRequest request = client().method(Method.PUT)
                 .uri(TestUtil.path(SERVICE_1))
                 .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
 
@@ -248,7 +249,7 @@ abstract class AbstractCorsTest extends CorsRouting {
 
     @Test
     void test2ActualAllowedOrigin() {
-        Http1ClientRequest request = client().method(Http.Method.PUT)
+        Http1ClientRequest request = client().method(Method.PUT)
                 .uri(TestUtil.path(SERVICE_2))
                 .header(Http.Headers.CONTENT_TYPE_TEXT_PLAIN);
 
@@ -277,7 +278,7 @@ abstract class AbstractCorsTest extends CorsRouting {
     }
 
     HttpClientResponse runTest1PreFlightAllowedOrigin() {
-        Http1ClientRequest request = client().method(Http.Method.OPTIONS)
+        Http1ClientRequest request = client().method(Method.OPTIONS)
                 .uri(TestUtil.path(contextRoot(), SERVICE_1));
 
         request.header(ORIGIN, fooOrigin());

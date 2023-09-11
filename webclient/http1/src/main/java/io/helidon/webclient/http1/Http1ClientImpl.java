@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.http1;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -41,7 +41,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     }
 
     @Override
-    public Http1ClientRequest method(Http.Method method) {
+    public Http1ClientRequest method(Method method) {
         ClientUri clientUri = clientConfig.baseUri()
                 .map(ClientUri::create) // create from base config
                 .orElseGet(ClientUri::create); // create as empty

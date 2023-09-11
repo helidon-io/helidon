@@ -30,11 +30,12 @@ import java.util.Random;
 
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -69,10 +70,10 @@ class GetTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.GET, "/string", Routes::string)
-                .route(Http.Method.GET, "/bytes", Routes::bytes)
-                .route(Http.Method.GET, "/stream", Routes::outputStream)
-                .route(Http.Method.GET, "/headers", Routes::headers);
+        router.route(Method.GET, "/string", Routes::string)
+                .route(Method.GET, "/bytes", Routes::bytes)
+                .route(Method.GET, "/stream", Routes::outputStream)
+                .route(Method.GET, "/headers", Routes::headers);
     }
 
     @Test

@@ -22,16 +22,17 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import io.helidon.common.context.Context;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
-import io.helidon.http.HttpPrologue;
-import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.WritableHeaders;
 import io.helidon.common.security.SecurityContext;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Http;
+import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 
@@ -79,7 +80,7 @@ class AccessLogFeatureTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.PUT,
+                                                    Method.PUT,
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());
@@ -129,7 +130,7 @@ class AccessLogFeatureTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.PUT,
+                                                    Method.PUT,
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());
@@ -169,7 +170,7 @@ class AccessLogFeatureTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.PUT,
+                                                    Method.PUT,
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());

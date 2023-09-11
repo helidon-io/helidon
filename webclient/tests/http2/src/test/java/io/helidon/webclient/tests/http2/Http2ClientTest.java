@@ -16,27 +16,28 @@
 
 package io.helidon.webclient.tests.http2;
 
+import java.util.function.Supplier;
+
 import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.Http;
 import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderNames;
-import io.helidon.common.pki.Keys;
-import io.helidon.common.tls.Tls;
+import io.helidon.http.Method;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientResponse;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
-
-import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
@@ -95,7 +96,7 @@ class Http2ClientTest {
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
         // explicitly on HTTP/2 only, to make sure we do upgrade
-        router.route(Http2Route.route(Http.Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
+        router.route(Http2Route.route(Method.GET, "/", (req, res) -> res.header(TEST_HEADER)
                 .send(MESSAGE)));
     }
 

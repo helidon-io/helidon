@@ -25,6 +25,7 @@ import io.helidon.common.configurable.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
+import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.webserver.http.ServerRequest;
@@ -42,7 +43,7 @@ record CachedHandlerInMemory(MediaType mediaType,
 
     @Override
     public boolean handle(LruCache<String, CachedHandler> cache,
-                          Http.Method method,
+                          Method method,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) {
@@ -54,7 +55,7 @@ record CachedHandlerInMemory(MediaType mediaType,
 
         response.headers().contentType(mediaType);
 
-        if (method == Http.Method.GET) {
+        if (method == Method.GET) {
             send(request, response);
         } else {
             response.headers().set(contentLengthHeader());

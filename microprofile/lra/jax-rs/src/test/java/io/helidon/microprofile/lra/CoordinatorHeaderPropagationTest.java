@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 
 import io.helidon.common.context.Contexts;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.microprofile.config.ConfigCdiExtension;
@@ -165,7 +166,7 @@ class CoordinatorHeaderPropagationTest {
                             try (Http1ClientResponse clientResponse = Http1Client.builder()
                                     .baseUri(lraMap.get(lraId).get("after").toASCIIString())
                                     .build()
-                                    .method(Http.Method.PUT)
+                                    .method(Method.PUT)
                                     .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                                     .headers(reqHeaders -> {
                                         // relay all incoming headers
@@ -187,7 +188,7 @@ class CoordinatorHeaderPropagationTest {
                     try (Http1ClientResponse clientResponse = Http1Client.builder()
                             .baseUri(lraMap.get(lraId).get("complete").toASCIIString())
                             .build()
-                            .method(Http.Method.PUT)
+                            .method(Method.PUT)
                             .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                             .headers(reqHeaders -> {
                                 // relay all incoming headers
@@ -209,7 +210,7 @@ class CoordinatorHeaderPropagationTest {
                     try (Http1ClientResponse clientResponse = Http1Client.builder()
                             .baseUri(lraMap.get(lraId).get("compensate").toASCIIString())
                             .build()
-                            .method(Http.Method.PUT)
+                            .method(Method.PUT)
                             .header(LRA_HTTP_CONTEXT_HEADER_NAME, lraId)
                             .headers(reqHeaders -> {
                                 // relay all incoming headers

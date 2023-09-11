@@ -47,6 +47,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 
 /**
  * A definition of a proxy server to use for outgoing requests.
@@ -464,7 +465,7 @@ public class Proxy {
                                                                     })
                 .connect();
 
-        HttpClientRequest request = webClient.method(Http.Method.CONNECT)
+        HttpClientRequest request = webClient.method(Method.CONNECT)
                 .followRedirects(false) // do not follow redirects for proxy connect itself
                 .connection(connection)
                 .uri("http://" + proxyAddress.getHostName() + ":" + proxyAddress.getPort())

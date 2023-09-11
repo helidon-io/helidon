@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -92,7 +93,7 @@ class ResponseOrderingTest {
                     .append("\n");
         }
 
-        String response = client.method(Http.Method.POST)
+        String response = client.method(Method.POST)
                 .path("/stream")
                 .submit(sb.toString().getBytes())
                 .as(String.class);

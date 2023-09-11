@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -50,23 +51,23 @@ class FollowRedirectTest {
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
-        router.route(Http.Method.PUT, "/infiniteRedirect", (req, res) -> {
+        router.route(Method.PUT, "/infiniteRedirect", (req, res) -> {
             res.status(Http.Status.TEMPORARY_REDIRECT_307)
                     .header(Http.HeaderNames.LOCATION, "/infiniteRedirect2")
                     .send();
-        }).route(Http.Method.PUT, "/infiniteRedirect2", (req, res) -> {
+        }).route(Method.PUT, "/infiniteRedirect2", (req, res) -> {
             res.status(Http.Status.TEMPORARY_REDIRECT_307)
                     .header(Http.HeaderNames.LOCATION, "/infiniteRedirect")
                     .send();
-        }).route(Http.Method.PUT, "/redirect", (req, res) -> {
+        }).route(Method.PUT, "/redirect", (req, res) -> {
             res.status(Http.Status.TEMPORARY_REDIRECT_307)
                     .header(Http.HeaderNames.LOCATION, "/plain")
                     .send();
-        }).route(Http.Method.PUT, "/redirectNoEntity", (req, res) -> {
+        }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
             res.status(Http.Status.FOUND_302)
                     .header(Http.HeaderNames.LOCATION, "/plain")
                     .send();
-        }).route(Http.Method.PUT, "/plain", (req, res) -> {
+        }).route(Method.PUT, "/plain", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];
                 int read;
@@ -78,7 +79,7 @@ class FollowRedirectTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        }).route(Http.Method.PUT, "/redirectAfterUpload", (req, res) -> {
+        }).route(Method.PUT, "/redirectAfterUpload", (req, res) -> {
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];
                 int read;
@@ -92,11 +93,11 @@ class FollowRedirectTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        }).route(Http.Method.GET, "/afterUpload", (req, res) -> {
+        }).route(Method.GET, "/afterUpload", (req, res) -> {
             res.send("Upload completed!" + BUFFER);
-        }).route(Http.Method.GET, "/plain", (req, res) -> {
+        }).route(Method.GET, "/plain", (req, res) -> {
             res.send("GET plain endpoint reached");
-        }).route(Http.Method.PUT, "/close", (req, res) -> {
+        }).route(Method.PUT, "/close", (req, res) -> {
             byte[] buffer = new byte[10];
             try (InputStream in = req.content().inputStream()) {
                 in.read(buffer);
@@ -105,7 +106,7 @@ class FollowRedirectTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        }).route(Http.Method.PUT, "/wait", (req, res) -> {
+        }).route(Method.PUT, "/wait", (req, res) -> {
             TimeUnit.MILLISECONDS.sleep(500);
             try (InputStream in = req.content().inputStream()) {
                 byte[] buffer = new byte[128];

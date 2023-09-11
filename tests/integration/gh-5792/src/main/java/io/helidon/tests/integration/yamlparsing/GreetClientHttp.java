@@ -15,7 +15,7 @@
  */
 package io.helidon.tests.integration.yamlparsing;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.WebClient;
 
 /**
@@ -35,7 +35,7 @@ public class GreetClientHttp {
                 .baseUri("http://localhost:8080/greet")
                 .build();
 
-        String response = client.method(Http.Method.GET)
+        String response = client.method(Method.GET)
                 .requestEntity(String.class);
 
         System.out.println(response);

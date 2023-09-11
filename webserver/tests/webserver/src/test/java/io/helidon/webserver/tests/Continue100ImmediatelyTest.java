@@ -24,12 +24,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.http.Http;
-import io.helidon.http.PathMatchers;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.http.PathMatchers;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.Handler;
@@ -37,6 +35,9 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -101,7 +102,7 @@ class Continue100ImmediatelyTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
+        router.route(Method.predicate(Method.PUT, Method.POST),
                      PathMatchers.exact("/redirect"), (req, res) ->
 
                              res.status(Http.Status.MOVED_PERMANENTLY_301)
@@ -111,9 +112,9 @@ class Continue100ImmediatelyTest {
                                      .header(Http.HeaderNames.CONTENT_LENGTH, "0")
                                      .send()
                 )
-                .route(Http.Method.predicate(Http.Method.PUT, Http.Method.POST),
+                .route(Method.predicate(Method.PUT, Method.POST),
                        PathMatchers.exact("/"), ANY_HANDLER)
-                .route(Http.Method.predicate(Http.Method.GET),
+                .route(Method.predicate(Method.GET),
                        PathMatchers.exact("/"), (req, res) -> res.status(Http.Status.OK_200).send("GET TEST"));
     }
 

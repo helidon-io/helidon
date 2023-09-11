@@ -18,8 +18,8 @@ package io.helidon.webserver.http1;
 
 import java.util.function.Predicate;
 
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.webserver.http.Handler;
@@ -30,11 +30,11 @@ import io.helidon.webserver.http.HttpRoute;
  * To create a route valid for any version of HTTP, please use {@link io.helidon.webserver.http.HttpRoute}.
  */
 public class Http1Route implements HttpRoute {
-    private final Predicate<Http.Method> methodPredicate;
+    private final Predicate<Method> methodPredicate;
     private final PathMatcher pathMatcher;
     private final Handler handler;
 
-    private Http1Route(Predicate<Http.Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
+    private Http1Route(Predicate<Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
         this.methodPredicate = methodPredicate;
         this.pathMatcher = pathMatcher;
         this.handler = handler;
@@ -48,8 +48,8 @@ public class Http1Route implements HttpRoute {
      * @param handler handler
      * @return a new HTTP/1.1 specific route
      */
-    public static Http1Route route(Http.Method method, String path, Handler handler) {
-        return new Http1Route(Http.Method.predicate(method),
+    public static Http1Route route(Method method, String path, Handler handler) {
+        return new Http1Route(Method.predicate(method),
                               PathMatchers.create(path),
                               handler);
     }

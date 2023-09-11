@@ -23,13 +23,14 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.http.Http;
 import io.helidon.http.Http.Headers;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -75,7 +76,7 @@ class MaxPayloadSizeTest {
      */
     @Test
     void testContentLengthExceeded() {
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
                 .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
                 .submit(new byte[512])) {
@@ -89,7 +90,7 @@ class MaxPayloadSizeTest {
      */
     @Test
     void testContentLengthExceededWithPayload() {
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
                 .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD)) {
@@ -105,7 +106,7 @@ class MaxPayloadSizeTest {
      */
     @Test
     void testActualLengthExceededWithPayload() {
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
                 .header(Headers.CONTENT_TYPE_OCTET_STREAM)
                 .header(Headers.TRANSFER_ENCODING_CHUNKED)
@@ -125,7 +126,7 @@ class MaxPayloadSizeTest {
      */
     @Test
     void testMixedGoodAndBadPayloads() {
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
                 .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD.substring(0, 100))) {
@@ -133,7 +134,7 @@ class MaxPayloadSizeTest {
             assertThat(response.headers(), hasHeader(Headers.CONNECTION_KEEP_ALIVE));
         }
 
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
                 .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD)) {
@@ -141,7 +142,7 @@ class MaxPayloadSizeTest {
             assertThat(response.headers(), hasHeader(Http.Headers.CONNECTION_CLOSE));
         }
 
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .path("/maxpayload")
                 .header(Http.Headers.CONTENT_TYPE_OCTET_STREAM)
                 .submit(PAYLOAD.substring(0, (int) MAX_PAYLOAD_SIZE))) {

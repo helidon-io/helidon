@@ -36,6 +36,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.security.AuditEvent;
@@ -553,7 +554,7 @@ public final class SecurityHandler implements Handler {
 
     private void processAudit(ServerRequest req, ServerResponse res, SecurityContext securityContext) {
 
-        Http.Method method = req.prologue().method();
+        Method method = req.prologue().method();
 
         // make sure we actually should audit
         if (!audited.orElse(true)) {
@@ -563,7 +564,7 @@ public final class SecurityHandler implements Handler {
 
         if (audited.isEmpty()) {
             // use defaults
-            if (method == Http.Method.GET || method == Http.Method.HEAD) {
+            if (method == Method.GET || method == Method.HEAD) {
                 // get and head are not audited by default
                 return;
             }

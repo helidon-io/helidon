@@ -22,13 +22,13 @@ import java.util.concurrent.CompletionStage;
 
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 
 class ServiceRequestImpl implements WebClientServiceRequest {
     private final Map<String, String> properties;
     private final String protocolId;
     private final ClientUri uri;
-    private final Http.Method method;
+    private final Method method;
     private final ClientRequestHeaders headers;
     private final Context context;
     private final CompletionStage<WebClientServiceResponse> whenComplete;
@@ -37,7 +37,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
     private String requestId;
 
     ServiceRequestImpl(ClientUri uri,
-                       Http.Method method,
+                       Method method,
                        String protocolId,
                        ClientRequestHeaders headers,
                        Context context,
@@ -62,7 +62,7 @@ class ServiceRequestImpl implements WebClientServiceRequest {
     }
 
     @Override
-    public Http.Method method() {
+    public Method method() {
         return method;
     }
 

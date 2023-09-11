@@ -32,6 +32,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Http;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
@@ -153,7 +154,7 @@ class StaticContentHandlerTest {
         when(req.query()).thenReturn(UriQuery.empty());
 
         CachedHandlerRedirect redirectHandler = new CachedHandlerRedirect("/foo/");
-        redirectHandler.handle(LruCache.create(), Http.Method.GET, req, res, "/foo");
+        redirectHandler.handle(LruCache.create(), Method.GET, req, res, "/foo");
         verify(res).status(Http.Status.MOVED_PERMANENTLY_301);
         verify(resh).set(LOCATION, "/foo/");
         verify(res).send();
@@ -161,7 +162,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleRoot() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
@@ -171,7 +172,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleValid() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/foo/some.txt");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/foo/some.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
@@ -182,7 +183,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleOutside() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/../foo/some.txt");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/../foo/some.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(true);
         handler.handle(request, response);
@@ -192,7 +193,7 @@ class StaticContentHandlerTest {
 
     @Test
     void handleNextOnFalse() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "/");
+        ServerRequest request = mockRequestWithPath(Method.GET, "/");
         ServerResponse response = mock(ServerResponse.class);
         TestContentHandler handler = TestContentHandler.create(false);
         handler.handle(request, response);
@@ -202,7 +203,7 @@ class StaticContentHandlerTest {
 
     @Test
     void classpathHandleSpaces() {
-        ServerRequest request = mockRequestWithPath(Http.Method.GET, "foo/I have spaces.txt");
+        ServerRequest request = mockRequestWithPath(Method.GET, "foo/I have spaces.txt");
         ServerResponse response = mock(ServerResponse.class);
         TestClassPathContentHandler handler = TestClassPathContentHandler.create();
         handler.handle(request, response);
@@ -222,7 +223,7 @@ class StaticContentHandlerTest {
         }
     }
 
-    private ServerRequest mockRequestWithPath(Http.Method method, String path) {
+    private ServerRequest mockRequestWithPath(Method method, String path) {
         UriPath uriPath = UriPath.create(path);
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
@@ -287,7 +288,7 @@ class StaticContentHandlerTest {
         }
 
         @Override
-        boolean doHandle(Http.Method method,
+        boolean doHandle(Method method,
                          String requestedResource,
                          ServerRequest req,
                          ServerResponse res,
@@ -315,7 +316,7 @@ class StaticContentHandlerTest {
         }
 
         @Override
-        boolean doHandle(Http.Method method, String path, ServerRequest request, ServerResponse response, boolean mapped)
+        boolean doHandle(Method method, String path, ServerRequest request, ServerResponse response, boolean mapped)
                 throws IOException, URISyntaxException {
             super.doHandle(method, path, request, response, mapped);
             this.counter.incrementAndGet();

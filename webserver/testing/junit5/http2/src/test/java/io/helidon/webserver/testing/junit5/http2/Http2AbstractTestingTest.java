@@ -17,12 +17,13 @@
 package io.helidon.webserver.testing.junit5.http2;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.Socket;
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webserver.http.HttpRules;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,12 +39,12 @@ abstract class Http2AbstractTestingTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.route(Http2Route.route(Http.Method.GET, "/greet", (req, res) -> res.send("hello")));
+        rules.route(Http2Route.route(Method.GET, "/greet", (req, res) -> res.send("hello")));
     }
 
     @SetUpRoute("custom")
     static void customRouting(HttpRules rules) {
-        rules.route(Http2Route.route(Http.Method.GET, "/greet", (req, res) -> res.send("custom")));
+        rules.route(Http2Route.route(Method.GET, "/greet", (req, res) -> res.send("custom")));
     }
 
     @Test

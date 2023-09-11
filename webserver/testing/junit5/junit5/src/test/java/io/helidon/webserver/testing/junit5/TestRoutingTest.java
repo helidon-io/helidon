@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -116,7 +117,7 @@ class TestRoutingTest {
 
     @Test
     void testPost() {
-        Http1ClientResponse response = client.method(Http.Method.POST)
+        Http1ClientResponse response = client.method(Method.POST)
                 .uri("/post")
                 .submit(ENTITY);
 
@@ -127,7 +128,7 @@ class TestRoutingTest {
     void testMutualTlsPrincipal() {
         String principal = "Custom principal name";
         client.clientTlsPrincipal(new TestPrincipal(principal));
-        Http1ClientResponse response = client.method(Http.Method.GET)
+        Http1ClientResponse response = client.method(Method.GET)
                 .uri("/name")
                 .request();
 

@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.vault.VaultTokenBase;
 import io.helidon.integrations.vault.auths.common.VaultRestApi;
@@ -50,7 +51,7 @@ class K8sRestApi extends VaultRestApi {
     protected HttpClientRequest updateRequestBuilderCommon(HttpClientRequest requestBuilder,
                                                             String path,
                                                             ApiRequest<?> request,
-                                                            Http.Method method,
+                                                            Method method,
                                                             String requestId) {
         VaultTokenBase k8sToken = currentToken.get();
 

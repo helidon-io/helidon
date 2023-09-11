@@ -27,14 +27,14 @@ class HttpPrologueTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.GET,
+                                                    Method.GET,
                                                     "/admin;a=b/list;c=d;e=f?first=second#fragment",
                                                     true);
 
         assertThat(prologue.rawProtocol(), is("HTTP/1.1"));
         assertThat(prologue.protocol(), is("HTTP"));
         assertThat(prologue.protocolVersion(), is("1.1"));
-        assertThat(prologue.method(), is(Http.Method.GET));
+        assertThat(prologue.method(), is(Method.GET));
         assertThat(prologue.uriPath().rawPathNoParams(), is("/admin/list"));
         assertThat(prologue.query().rawValue(), is("first=second"));
         assertThat(prologue.fragment().hasValue(), is(true));
@@ -48,14 +48,14 @@ class HttpPrologueTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.GET,
+                                                    Method.GET,
                                                     path,
                                                     true);
 
         assertThat(prologue.rawProtocol(), is("HTTP/1.1"));
         assertThat(prologue.protocol(), is("HTTP"));
         assertThat(prologue.protocolVersion(), is("1.1"));
-        assertThat(prologue.method(), is(Http.Method.GET));
+        assertThat(prologue.method(), is(Method.GET));
         assertThat(prologue.uriPath().rawPathNoParams(), is("/one/two"));
         assertThat(prologue.query().rawValue(), is("a=b%26c=d&e=f&e=g&h=x%63%23e%3c"));
         assertThat(prologue.fragment().hasValue(), is(true));

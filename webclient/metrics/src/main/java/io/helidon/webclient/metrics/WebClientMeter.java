@@ -15,7 +15,7 @@
  */
 package io.helidon.webclient.metrics;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -31,7 +31,7 @@ public class WebClientMeter extends WebClientMetric {
 
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
-        Http.Method method = request.method();
+        Method method = request.method();
         try {
             WebClientServiceResponse response = chain.proceed(request);
             int code = response.status().code();

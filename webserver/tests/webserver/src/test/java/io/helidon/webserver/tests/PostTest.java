@@ -27,20 +27,21 @@ import io.helidon.http.Http.Header;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
 import io.helidon.http.Http.Headers;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.HeaderNames.CONTENT_LENGTH;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static io.helidon.http.Http.HeaderNames.CONTENT_LENGTH;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -69,17 +70,17 @@ class PostTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.POST, "/string", Handler.create(String.class, Routes::string))
-                .route(Http.Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
-                .route(Http.Method.POST, "/chunked", Routes::chunked)
-                .route(Http.Method.POST, "/headers", Routes::headers)
-                .route(Http.Method.POST, "/close", Routes::close);
+        router.route(Method.POST, "/string", Handler.create(String.class, Routes::string))
+                .route(Method.POST, "/bytes", Handler.create(byte[].class, Routes::bytes))
+                .route(Method.POST, "/chunked", Routes::chunked)
+                .route(Method.POST, "/headers", Routes::headers)
+                .route(Method.POST, "/close", Routes::close);
     }
 
     @Test
     void testStringRoute() {
         io.helidon.http.Headers headers;
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .uri("/string")
                 .submit("Hello")) {
 
@@ -95,7 +96,7 @@ class PostTest {
     @Test
     void testByteRoute() {
         io.helidon.http.Headers headers;
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .uri("/bytes")
                 .submit(BYTES)) {
 
@@ -112,7 +113,7 @@ class PostTest {
     @Disabled("Optimization kicks in")
     void testChunkedRoute() {
         io.helidon.http.Headers headers;
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .uri("/chunked")
                 .outputStream(outputStream -> {
                     outputStream.write(BYTES);
@@ -131,7 +132,7 @@ class PostTest {
     @Test
     void testHeadersRoute() {
         io.helidon.http.Headers headers;
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .uri("/headers")
                 .header(REQUEST_HEADER_VALUE)
                 .submit("Hello")) {
@@ -150,7 +151,7 @@ class PostTest {
     @Test
     void testCloseRoute() {
         io.helidon.http.Headers headers;
-        try (Http1ClientResponse response = client.method(Http.Method.POST)
+        try (Http1ClientResponse response = client.method(Method.POST)
                 .uri("/close")
                 .submit("Hello")) {
 

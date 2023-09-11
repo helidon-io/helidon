@@ -27,10 +27,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
-import io.helidon.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.accesslog.AccessLogFeature;
@@ -40,6 +39,8 @@ import io.helidon.webserver.accesslog.StatusLogEntry;
 import io.helidon.webserver.accesslog.TimestampLogEntry;
 import io.helidon.webserver.accesslog.UserLogEntry;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -88,7 +89,7 @@ class AccessLogTest {
         response = client.get("/wrong").request();
         assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
 
-        String socketResponse = socketClient.sendAndReceive(Http.Method.GET,
+        String socketResponse = socketClient.sendAndReceive(Method.GET,
                                                             "/access",
                                                             null,
                                                             List.of("Content-Length: 47a"));

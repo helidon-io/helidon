@@ -49,9 +49,9 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.helidon.http.Http.HeaderNames.USER_AGENT;
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.POST;
-import static io.helidon.http.Http.Method.PUT;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.POST;
+import static io.helidon.http.Method.PUT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 

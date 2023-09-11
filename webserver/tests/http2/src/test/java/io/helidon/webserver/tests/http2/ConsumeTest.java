@@ -31,8 +31,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Method.GET;
-import static io.helidon.http.Http.Method.PUT;
+import static io.helidon.http.Method.GET;
+import static io.helidon.http.Method.PUT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.fail;

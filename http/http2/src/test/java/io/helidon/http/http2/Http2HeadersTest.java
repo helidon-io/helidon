@@ -23,6 +23,7 @@ import io.helidon.http.Headers;
 import io.helidon.http.Http;
 import io.helidon.http.Http.HeaderName;
 import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers.DynamicTable;
 import io.helidon.http.http2.Http2Headers.HeaderRecord;
@@ -89,7 +90,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
     }
 
@@ -104,7 +105,7 @@ class Http2HeadersTest {
 
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -120,7 +121,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         Headers requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -141,7 +142,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("https"));
         assertThat(http2Headers.path(), is("/index.html"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -166,7 +167,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         WritableHeaders<?> headers = WritableHeaders.create();
         Http2Headers http2Headers = Http2Headers.create(headers);
-        http2Headers.method(Http.Method.GET);
+        http2Headers.method(Method.GET);
         http2Headers.scheme("http");
         http2Headers.path("/");
         http2Headers.authority("www.example.com");
@@ -193,7 +194,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -210,7 +211,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         Headers requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -231,7 +232,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("https"));
         assertThat(http2Headers.path(), is("/index.html"));
         assertThat(http2Headers.authority(), is("www.example.com"));

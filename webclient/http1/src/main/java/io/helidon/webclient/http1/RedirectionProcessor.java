@@ -20,6 +20,7 @@ import java.net.URI;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientUri;
 
 class RedirectionProcessor {
@@ -77,7 +78,7 @@ class RedirectionProcessor {
                     //It is possible to change to GET and send no entity with all other redirect codes
                     entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
-                                                               Http.Method.GET,
+                                                               Method.GET,
                                                                redirectUri,
                                                                request.properties());
                 }
