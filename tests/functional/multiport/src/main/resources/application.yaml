@@ -37,8 +37,8 @@ metrics:
   # default is added automatically
   vendor-metrics-routings: ["metrics", "health"]
   # possibility to disable base metrics
-  base:
-    thread:
-      daemon.count.enabled: false
-      max.count.enabled: false
-      count.enabled: false
+  scoping:
+    scopes:
+      - name: base
+        filter:
+          exclude: thread\.daemon\.count|thread\.max\.count|thread\.count
