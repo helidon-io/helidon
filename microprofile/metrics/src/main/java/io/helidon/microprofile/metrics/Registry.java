@@ -17,6 +17,7 @@ package io.helidon.microprofile.metrics;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -93,7 +94,14 @@ class Registry implements MetricRegistry {
      * @param tags  explicitly-defined tags from the application code
      * @return iterable ot Helidon tags
      */
-    protected static Iterable<io.helidon.metrics.api.Tag> allTags(String scope, Tag[] tags) {
+    protected static Iterable<io.helidon.metrics.api.Tag> validatedAllTags(String scope, Tag[] tags) {
+        if (tags != null && tags.length > 0) {
+            List<String> tagNames = Arrays.stream(tags).map(Tag::getTagName).toList();
+            Collection<String> reservedTagNamesUsed = SystemTagsManager.instance().reservedTagNamesUsed(tagNames);
+            if (!reservedTagNamesUsed.isEmpty()) {
+                throw new IllegalArgumentException("Illegal use of reserved tag name(s): " + reservedTagNamesUsed);
+            }
+        }
         return toHelidonTags(SystemTagsManager.instance().withScopeTag(iterableEntries(tags), scope));
     }
 
@@ -144,7 +152,7 @@ class Registry implements MetricRegistry {
     @Override
     public <T, R extends Number> Gauge<R> gauge(Metadata metadata, T object, Function<T, R> func, Tag... tags) {
         return Objects.requireNonNullElseGet(getGauge(metricID(metadata, tags)),
-                                             () -> createGauge(metadata, object, func));
+                                             () -> createGauge(metadata, object, func, tags));
     }
 
     @Override
@@ -521,6 +529,9 @@ class Registry implements MetricRegistry {
     }
 
     private static Iterable<Map.Entry<String, String>> iterableEntries(Tag... tags) {
+        if (tags == null) {
+            return Set.of();
+        }
         List<Map.Entry<String, String>> result = new ArrayList<>();
         for (Tag tag : tags) {
             result.add(new AbstractMap.SimpleEntry<>(tag.getTagName(), tag.getTagValue()));
@@ -590,7 +601,7 @@ class Registry implements MetricRegistry {
                                      .scope(scope)
                                      .description(metadata.getDescription())
                                      .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                     .tags(allTags(scope, tags)));
+                                     .tags(validatedAllTags(scope, tags)));
     }
 
     private HelidonCounter createCounter(io.helidon.metrics.api.Counter.Builder counterBuilder) {
@@ -606,7 +617,7 @@ class Registry implements MetricRegistry {
                                                                                           .apply(object))
                                                      .scope(scope)
                                                      .description(metadata.getDescription())
-                                                     .tags(allTags(scope, tags))
+                                                     .tags(validatedAllTags(scope, tags))
                                                      .baseUnit(sanitizeUnit(metadata.getUnit())));
 
     }
@@ -616,7 +627,7 @@ class Registry implements MetricRegistry {
                                                                 supplier)
                                    .scope(scope)
                                    .description(metadata.getDescription())
-                                   .tags(allTags(scope, tags))
+                                   .tags(validatedAllTags(scope, tags))
                                    .baseUnit(sanitizeUnit(metadata.getUnit())));
 
     }
@@ -641,7 +652,7 @@ class Registry implements MetricRegistry {
                                        .scope(scope)
                                        .description(metadata.getDescription())
                                        .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                       .tags(allTags(scope, tags)));
+                                       .tags(validatedAllTags(scope, tags)));
 
     }
 
@@ -655,7 +666,7 @@ class Registry implements MetricRegistry {
                                    .scope(scope)
                                    .description(metadata.getDescription())
                                    .baseUnit(sanitizeUnit(metadata.getUnit()))
-                                   .tags(allTags(scope, tags)));
+                                   .tags(validatedAllTags(scope, tags)));
     }
 
     private HelidonTimer createTimer(io.helidon.metrics.api.Timer.Builder tBuilder) {
