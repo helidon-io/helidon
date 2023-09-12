@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
-import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -255,7 +254,7 @@ public class SystemMetersProvider implements MetersProvider {
                                                      T object,
                                                      Function<T, R> fn,
                                                      Tag... tags) {
-            result.add(Gauge.builder(metadata.name, object, obj -> fn.apply(obj).doubleValue())
+            result.add(metricsFactory.gaugeBuilder(metadata.name, object, obj -> fn.apply(obj).doubleValue())
                                .scope(SCOPE)
                                .description(metadata.description)
                                .baseUnit(metadata.baseUnit)
@@ -272,10 +271,6 @@ public class SystemMetersProvider implements MetersProvider {
                            .description(metadata.description)
                            .baseUnit(metadata.baseUnit)
                            .tags(Arrays.asList(tags)));
-    }
-
-    private static <T> Function<T, Long> intToLong(Function<T, Integer> fn) {
-        return t -> (long) fn.apply(t);
     }
 
     private static class Metadata {
