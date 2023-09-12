@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import io.helidon.common.Errors;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -490,12 +491,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
 
             onAddListeners.forEach(listener -> {
-                try {
-                    listener.accept(mMeter);
-                } catch (Exception ex) {
-                    LOGGER.log(Level.ERROR, "Error invoking on-add callback listener " + listener, ex);
-                    // Continue on with the next listener.
-                }
+                listener.accept(mMeter);
             });
 
         } finally {
@@ -574,6 +570,10 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
             M meter = registration.apply(delegate());
 
+            /*
+             Normally, the on-add listener will have removed the pending builder in scope, but do so here again if the listener
+             did not run--if the meter already exists in the Micrometer meter registry, for example.
+             */
             pendingBuildersInScope.remove(id);
 
             HM result = (HM) meters.get(meter);
