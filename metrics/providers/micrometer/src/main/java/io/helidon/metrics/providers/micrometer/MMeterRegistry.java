@@ -29,7 +29,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import io.helidon.common.Errors;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.MetricsConfig;
