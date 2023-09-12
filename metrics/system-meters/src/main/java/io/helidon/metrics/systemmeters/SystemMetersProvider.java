@@ -42,8 +42,6 @@ public class SystemMetersProvider implements MetersProvider {
 
     private static final String BYTES = "bytes";
     private static final String SECONDS = "seconds";
-    private static final String NONE = "";
-
     private static final String SCOPE = Meter.Scope.BASE;
     private static final Metadata MEMORY_USED_HEAP = Metadata.builder()
             .withName("memory.usedHeap")
@@ -91,12 +89,10 @@ public class SystemMetersProvider implements MetersProvider {
             .withName("thread.count")
             .withDescription("Displays the current number of live threads including both "
                                      + "daemon and nondaemon threads")
-            .withUnit(NONE)
             .build();
     private static final Metadata THREAD_DAEMON_COUNT = Metadata.builder()
             .withName("thread.daemon.count")
             .withDescription("Displays the current number of live daemon threads.")
-            .withUnit(NONE)
             .build();
     private static final Metadata THREAD_MAX_COUNT = Metadata.builder()
             .withName("thread.max.count")
@@ -104,25 +100,21 @@ public class SystemMetersProvider implements MetersProvider {
                                      + "virtual machine started or "
                                      + "peak was reset. This includes daemon and "
                                      + "non-daemon threads.")
-            .withUnit(NONE)
             .build();
     private static final Metadata CL_LOADED_COUNT = Metadata.builder()
             .withName("classloader.loadedClasses.count")
             .withDescription("Displays the number of classes that are currently loaded in "
                                      + "the Java virtual machine.")
-            .withUnit(NONE)
             .build();
     private static final Metadata CL_LOADED_TOTAL = Metadata.builder()
             .withName("classloader.loadedClasses.total")
             .withDescription("Displays the total number of classes that have been loaded "
                                      + "since the Java virtual machine has started execution.")
-            .withUnit(NONE)
             .build();
     private static final Metadata CL_UNLOADED_COUNT = Metadata.builder()
             .withName("classloader.unloadedClasses.total")
             .withDescription("Displays the total number of classes unloaded since the Java "
                                      + "virtual machine has started execution.")
-            .withUnit(NONE)
             .build();
     private static final Metadata OS_AVAILABLE_CPU = Metadata.builder()
             .withName("cpu.availableProcessors")
@@ -130,7 +122,6 @@ public class SystemMetersProvider implements MetersProvider {
                                      + "virtual machine. This "
                                      + "value may change during a particular invocation of"
                                      + " the virtual machine.")
-            .withUnit(NONE)
             .build();
     private static final Metadata OS_LOAD_AVERAGE = Metadata.builder()
             .withName("cpu.systemLoadAverage")
@@ -152,7 +143,6 @@ public class SystemMetersProvider implements MetersProvider {
                                      + " be unavailable on some "
                                      + "platforms where it is expensive to implement this "
                                      + "method.")
-            .withUnit(NONE)
             .build();
     private static final Metadata GC_TIME = Metadata.builder()
             .withName("gc.time")
@@ -170,7 +160,6 @@ public class SystemMetersProvider implements MetersProvider {
             .withDescription(
                     "Displays the total number of collections that have occurred. This attribute lists "
                             + "-1 if the collection count is undefined for this collector.")
-            .withUnit("")
             .build();
 
     private MetricsFactory metricsFactory;
@@ -213,34 +202,34 @@ public class SystemMetersProvider implements MetersProvider {
         MemoryMXBean memoryBean = ManagementFactory.getMemoryMXBean();
 
         // load all base metrics
-        registerFunctionalCounter(result,
-                                  MEMORY_USED_HEAP,
-                                  memoryBean,
-                                  typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getUsed));
-        registerFunctionalCounter(result,
-                                  MEMORY_USED_HEAP,
-                                  memoryBean,
-                                  typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getCommitted));
-        registerFunctionalCounter(result,
-                                  MEMORY_COMMITTED_HEAP,
-                                  memoryBean,
-                                  typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getMax));
+        registerGauge(result,
+                      MEMORY_USED_HEAP,
+                      memoryBean,
+                      typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getUsed));
+        registerGauge(result,
+                      MEMORY_COMMITTED_HEAP,
+                      memoryBean,
+                      typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getCommitted));
+        registerGauge(result,
+                      MEMORY_MAX_HEAP,
+                      memoryBean,
+                      typedFn(MemoryMXBean::getHeapMemoryUsage, MemoryUsage::getMax));
 
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-        registerFunctionalCounter(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
+        registerGauge(result, JVM_UPTIME, runtimeBean, RuntimeMXBean::getUptime);
 
         ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
-        registerFunctionalCounter(result, THREAD_COUNT, threadBean, intToLong(ThreadMXBean::getThreadCount));
-        registerFunctionalCounter(result, THREAD_DAEMON_COUNT, threadBean, intToLong(ThreadMXBean::getDaemonThreadCount));
-        registerFunctionalCounter(result, THREAD_MAX_COUNT, threadBean, intToLong(ThreadMXBean::getPeakThreadCount));
+        registerGauge(result, THREAD_COUNT, threadBean, ThreadMXBean::getThreadCount);
+        registerGauge(result, THREAD_DAEMON_COUNT, threadBean, ThreadMXBean::getDaemonThreadCount);
+        registerGauge(result, THREAD_MAX_COUNT, threadBean, ThreadMXBean::getPeakThreadCount);
 
         ClassLoadingMXBean clBean = ManagementFactory.getClassLoadingMXBean();
-        registerFunctionalCounter(result, CL_LOADED_COUNT, clBean, intToLong(ClassLoadingMXBean::getLoadedClassCount));
+        registerGauge(result, CL_LOADED_COUNT, clBean, ClassLoadingMXBean::getLoadedClassCount);
         registerFunctionalCounter(result, CL_LOADED_TOTAL, clBean, ClassLoadingMXBean::getTotalLoadedClassCount);
         registerFunctionalCounter(result, CL_UNLOADED_COUNT, clBean, ClassLoadingMXBean::getUnloadedClassCount);
 
         OperatingSystemMXBean osBean = ManagementFactory.getOperatingSystemMXBean();
-        registerFunctionalCounter(result, OS_AVAILABLE_CPU, osBean, intToLong(OperatingSystemMXBean::getAvailableProcessors));
+        registerGauge(result, OS_AVAILABLE_CPU, osBean, OperatingSystemMXBean::getAvailableProcessors);
         registerGauge(result, OS_LOAD_AVERAGE, osBean, OperatingSystemMXBean::getSystemLoadAverage);
 
         List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
@@ -252,10 +241,10 @@ public class SystemMetersProvider implements MetersProvider {
                           GarbageCollectorMXBean::getCollectionCount,
                           Tag.create("name", poolName));
             // Express the GC time in seconds.
-            registerGauge(result,
+            registerFunctionalCounter(result,
                           GC_TIME,
                           gcBean,
-                          bean -> bean.getCollectionTime() / 1000.0D,
+                          bean -> (long) (bean.getCollectionTime() / 1000.0D),
                           Tag.create("name", poolName));
         }
         return result;
