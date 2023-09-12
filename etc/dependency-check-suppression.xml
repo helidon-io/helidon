@@ -122,5 +122,18 @@
    <cve>CVE-2023-35116</cve>
 </suppress>
 
+<!--
+    This CVE is is concerning proper use of Netty's hostname verification. Helidon enables hostname
+    verification by default and therefore this CVE does not apply. Some more info on the CVE here:
+    https://github.com/jeremylong/DependencyCheck/issues/5912
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: netty-handler-4.1.94.Final.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.netty/netty\-handler@.*$</packageUrl>
+   <vulnerabilityName>CVE-2023-4586</vulnerabilityName>
+</suppress>
+
 
 </suppressions>
