@@ -54,5 +54,5 @@ Helidon MP is Helidon’s MicroProfile implementation and in Helidon 4 it suppor
 == Helidon SE
 Helidon SE is Helidon’s foundational set of API’s. The big change in Helidon 4 is that the use of virtual threads have enabled these APIs to change from asynchronous to blocking. This results in much simpler code that is easier to write, maintain, debug and understand. Existing Helidon 3 SE code will require modification to run on these new APIs, but the effort is well worth the improved performance and simplicity of the resulting code.
 
-To give a very simple example of the differences between Helidon 3 SE and Helidon 4 SE let’s take a look at extracting a JSON body from an HTTP request and doing something with it.
+To give a very simple example of the differences between Helidon 3 SE and Helidon 4 SE, let’s take a look at extracting a JSON body from an HTTP request and doing something with it.
 
