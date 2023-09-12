@@ -326,8 +326,8 @@ To set up requested URI discovery on the default socket for your server, use the
 .Requested URI set-up for the default server socket
 ----
 import io.helidon.common.configurable.AllowList;
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.FORWARDED;
-import static io.helidon.webserver.SocketConfiguration.RequestedUriDiscoveryType.X_FORWARDED;
+import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscoveryType.FORWARDED;
+import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscoveryType.X_FORWARDED;
 
 AllowList trustedProxies = AllowList.builder()
         .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
@@ -374,7 +374,7 @@ Your code obtains the requested URI information from the Helidon server request 
 [source,java]
 .Retrieving Requested URI Information
 ----
-import io.helidon.common.http.UriInfo;
+import io.helidon.http.UriInfo;
 
 public class MyHandler implements Handler {
 
@@ -385,7 +385,7 @@ public class MyHandler implements Handler {
     }
 }
 ----
-See the link:{common-http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
+See the link:{http-javadoc-base-url}/io/helidon/common/http/UriInfo.html[`UriInfo`] JavaDoc for more information.
 
 == Error Handling
 
@@ -937,7 +937,7 @@ include::{rootdir}/includes/server/access-log-config-common.adoc[leveloffset=+1]
 
 Configure TLS either programmatically, or by the Helidon configuration framework.
 
-=== Configuring TLS in your code
+=== Configuring TLS in Your Code
 
 To configure TLS in WebServer programmatically create your keystore configuration and pass it to the WebServer builder.
 
@@ -1028,7 +1028,7 @@ server:
 
 === Configuration Options
 
-// include::{rootdir}/config/io_helidon_webserver_WebServerTls.adoc[leveloffset=+2,tag=config]
+include::{rootdir}/config/io_helidon_reactive_webserver_WebServerTls.adoc[leveloffset=+2,tag=config]
 
 
 == HTTP Compression
