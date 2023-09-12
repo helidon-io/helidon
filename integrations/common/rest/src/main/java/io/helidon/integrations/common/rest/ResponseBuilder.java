@@ -18,7 +18,7 @@ package io.helidon.integrations.common.rest;
 
 import io.helidon.common.Builder;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 /**
  * Response builder extracted as an interface, to work around the restriction that we cannot
@@ -35,7 +35,7 @@ public interface ResponseBuilder<B extends ResponseBuilder<B, T, X>, T, X> exten
      * @param status HTTP status
      * @return updated builder
      */
-    B status(Http.Status status);
+    B status(Status status);
 
     /**
      * Configure the HTTP headers returned by the API call.

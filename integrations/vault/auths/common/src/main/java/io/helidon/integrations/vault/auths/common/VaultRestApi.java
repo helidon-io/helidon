@@ -20,7 +20,7 @@ import java.lang.System.Logger.Level;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.ApiRequest;
 import io.helidon.integrations.common.rest.ApiRestException;
 import io.helidon.integrations.common.rest.ResponseBuilder;
@@ -57,7 +57,7 @@ public class VaultRestApi extends RestApiBase {
     @Override
     protected <T> T emptyResponse(String path,
                                   ApiRequest<?> request,
-                                  Http.Method method,
+                                  Method method,
                                   String requestId,
                                   HttpClientResponse response,
                                   ResponseBuilder<?, T, ?> responseBuilder) {
@@ -89,7 +89,7 @@ public class VaultRestApi extends RestApiBase {
     @Override
     protected ApiRestException readError(String path,
                                          ApiRequest<?> request,
-                                         Http.Method method,
+                                         Method method,
                                          String requestId,
                                          HttpClientResponse response,
                                          JsonObject entity) {

@@ -25,7 +25,7 @@ import io.helidon.common.buffers.Ascii;
  * Do not add random headers here. These headers are optimized for performance, and each header added to this enum
  * will slightly increase the memory used by each HTTP request.
  */
-enum HeaderNameEnum implements Http.HeaderName {
+enum HeaderNameEnum implements HeaderName {
     ACCEPT("Accept"),
     ACCEPT_CHARSET("Accept-Charset"),
     ACCEPT_ENCODING("Accept-Encoding"),
@@ -44,7 +44,7 @@ enum HeaderNameEnum implements Http.HeaderName {
     EXPECT("Expect"),
     FORWARDED("Forwarded"),
     FROM("From"),
-    HOST(Http.HeaderNames.HOST_STRING),
+    HOST(HeaderNames.HOST_STRING),
     IF_MATCH("If-Match"),
     IF_MODIFIED_SINCE("If-Modified-Since"),
     IF_NONE_MATCH("If-None-Match"),
@@ -101,12 +101,12 @@ enum HeaderNameEnum implements Http.HeaderName {
     X_FORWARDED_PROTO("X-Forwarded-Proto"),
     X_HELIDON_CN("X-HELIDON-CN");
 
-    private static final Map<String, Http.HeaderName> BY_NAME;
-    private static final Map<String, Http.HeaderName> BY_CAP_NAME;
+    private static final Map<String, HeaderName> BY_NAME;
+    private static final Map<String, HeaderName> BY_CAP_NAME;
 
     static {
-        Map<String, Http.HeaderName> byName = new HashMap<>();
-        Map<String, Http.HeaderName> byCapName = new HashMap<>();
+        Map<String, HeaderName> byName = new HashMap<>();
+        Map<String, HeaderName> byCapName = new HashMap<>();
         for (HeaderNameEnum value : HeaderNameEnum.values()) {
             byName.put(value.lowerCase(), value);
             byCapName.put(value.defaultCase(), value);
@@ -125,15 +125,15 @@ enum HeaderNameEnum implements Http.HeaderName {
         this.index = this.ordinal();
     }
 
-    static Http.HeaderName byCapitalizedName(String name) {
-        Http.HeaderName found = BY_CAP_NAME.get(name);
+    static HeaderName byCapitalizedName(String name) {
+        HeaderName found = BY_CAP_NAME.get(name);
         if (found == null) {
             return byName(Ascii.toLowerCase(name));
         }
         return found;
     }
 
-    static Http.HeaderName byName(String lowerCase) {
+    static HeaderName byName(String lowerCase) {
         return BY_NAME.get(lowerCase);
     }
 

@@ -25,7 +25,7 @@ import java.util.concurrent.Semaphore;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
-import io.helidon.http.Http;
+import io.helidon.http.DateTime;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.websocket.WsCloseCodes;
@@ -62,7 +62,7 @@ class TyrusConnection implements ServerConnection, WsSession {
         this.ctx = ctx;
         this.upgradeInfo = upgradeInfo;
         this.listener = new TyrusListener();
-        this.lastRequestTimestamp = Http.DateTime.timestamp();
+        this.lastRequestTimestamp = DateTime.timestamp();
     }
 
     @Override
@@ -77,9 +77,9 @@ class TyrusConnection implements ServerConnection, WsSession {
                         readingNetwork = true;
                         BufferData buffer = dataReader.readBuffer();
                         readingNetwork = false;
-                        lastRequestTimestamp = Http.DateTime.timestamp();
+                        lastRequestTimestamp = DateTime.timestamp();
                         listener.onMessage(this, buffer, true);
-                        lastRequestTimestamp = Http.DateTime.timestamp();
+                        lastRequestTimestamp = DateTime.timestamp();
                     } catch (Exception e) {
                         listener.onError(this, e);
                         listener.onClose(this, WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
@@ -132,7 +132,7 @@ class TyrusConnection implements ServerConnection, WsSession {
 
     @Override
     public Duration idleTime() {
-        return Duration.between(lastRequestTimestamp, Http.DateTime.timestamp());
+        return Duration.between(lastRequestTimestamp, DateTime.timestamp());
     }
 
     @Override

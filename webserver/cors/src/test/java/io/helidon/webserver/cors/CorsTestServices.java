@@ -17,7 +17,7 @@ package io.helidon.webserver.cors;
 
 import java.util.List;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -51,7 +51,7 @@ class CorsTestServices {
         }
 
         void ok(ServerRequest request, ServerResponse response) {
-            response.status(Http.Status.OK_200);
+            response.status(Status.OK_200);
             response.send();
         }
     }

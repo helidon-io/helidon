@@ -35,10 +35,11 @@ import java.util.concurrent.TimeUnit;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriPath;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Status;
 import io.helidon.microprofile.server.HelidonHK2InjectionManagerFactory.InjectionManagerWrapper;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
@@ -333,16 +334,16 @@ class JaxRsService implements HttpService {
                 String name = entry.getKey();
                 List<String> values = entry.getValue();
                 if (values.size() == 1) {
-                    res.header(Http.Headers.create(HeaderNames.create(name), values.get(0)));
+                    res.header(HeaderValues.create(HeaderNames.create(name), values.get(0)));
                 } else {
-                    res.header(Http.Headers.create(entry.getKey(), entry.getValue()));
+                    res.header(HeaderValues.create(entry.getKey(), entry.getValue()));
                 }
             }
             Response.StatusType statusInfo = containerResponse.getStatusInfo();
-            res.status(Http.Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
+            res.status(Status.create(statusInfo.getStatusCode(), statusInfo.getReasonPhrase()));
 
             if (contentLength > 0) {
-                res.header(Http.Headers.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
+                res.header(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(contentLength)));
             }
             this.outputStream = new NoFlushOutputStream(res.outputStream());
             return outputStream;

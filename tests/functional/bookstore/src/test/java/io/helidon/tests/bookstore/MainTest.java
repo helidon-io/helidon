@@ -31,8 +31,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 
@@ -293,7 +294,7 @@ class MainTest {
             HttpClientResponse response = webClient
                     .post("/books")
                     .submit(json);
-            assertThat("HTTP response POST", response.status(), is(Http.Status.OK_200));
+            assertThat("HTTP response POST", response.status(), is(Status.OK_200));
 
             JsonObject book = webClient
                     .get("/books/123456")
@@ -303,12 +304,12 @@ class MainTest {
             response = webClient.get()
                     .path("/books/0000")
                     .request();
-            assertThat("HTTP response GET bad ISBN", response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat("HTTP response GET bad ISBN", response.status(), is(Status.NOT_FOUND_404));
 
             response = webClient.delete()
                     .path("/books/123456")
                     .request();
-            assertThat("HTTP response DELETE", response.status(), is(Http.Status.OK_200));
+            assertThat("HTTP response DELETE", response.status(), is(Status.OK_200));
 
             bookArray = webClient.get()
                     .path("/books")
@@ -352,7 +353,7 @@ class MainTest {
 
             String payload = webClient.get()
                     .path("/metrics")
-                    .header(Http.HeaderNames.ACCEPT, MediaTypes.WILDCARD.text())
+                    .header(HeaderNames.ACCEPT, MediaTypes.WILDCARD.text())
                     .requestEntity(String.class);
             assertThat("Making sure we got Prometheus format", payload, anyOf(startsWith("# TYPE"), startsWith("# HELP")));
 
@@ -362,7 +363,7 @@ class MainTest {
             if (!Objects.equals(jsonLibrary, "jackson")) {
                 jsonObject = webClient.get()
                         .path("/metrics")
-                        .header(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                        .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                         .requestEntity(JsonObject.class);
                 String scopeTagName = edition.equals("se") ? "scope" : "mp_scope";
                 assertThat("Checking request count",
@@ -371,7 +372,7 @@ class MainTest {
 
             jsonObject = webClient.get()
                     .path("/health")
-                    .header(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                    .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .requestEntity(JsonObject.class);
             assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
             if (edition.equals("mp")) {
@@ -394,9 +395,9 @@ class MainTest {
 
             HttpClientResponse response = webClient.get()
                     .path("/badurl")
-                    .header(Http.HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
+                    .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .request();
-            assertThat("Checking encode URL response", response.status(), is(Http.Status.NOT_FOUND_404));
+            assertThat("Checking encode URL response", response.status(), is(Status.NOT_FOUND_404));
         } finally {
             application.stop();
         }

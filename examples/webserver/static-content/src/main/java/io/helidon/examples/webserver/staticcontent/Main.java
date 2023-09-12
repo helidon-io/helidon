@@ -16,7 +16,10 @@
 
 package io.helidon.examples.webserver.staticcontent;
 
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
@@ -26,7 +29,7 @@ import io.helidon.webserver.staticcontent.StaticContentService;
  * The application main class.
  */
 public final class Main {
-    private static final Http.Header UI_REDIRECT = Http.Headers.createCached(Http.HeaderNames.LOCATION, "/ui");
+    private static final Header UI_REDIRECT = HeaderValues.createCached(HeaderNames.LOCATION, "/ui");
 
     /**
      * Cannot be instantiated.
@@ -58,7 +61,7 @@ public final class Main {
     static void routing(HttpRouting.Builder routing) {
         routing.any("/", (req, res) -> {
                     // showing the capability to run on any path, and redirecting from root
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
+                    res.status(Status.MOVED_PERMANENTLY_301);
                     res.headers().set(UI_REDIRECT);
                     res.send();
                 })

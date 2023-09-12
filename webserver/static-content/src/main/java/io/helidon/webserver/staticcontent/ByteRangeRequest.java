@@ -22,9 +22,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -73,17 +74,17 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         // Content-Range: bytes 0-1023/146515
         // Content-Length: 1024
         long last = (offset + length) - 1;
-        response.header(Http.Headers.create(HeaderNames.CONTENT_RANGE, true,
+        response.header(HeaderValues.create(HeaderNames.CONTENT_RANGE, true,
                                             false,
                                             "bytes " + offset + "-" + last + "/" + fileLength));
         response.contentLength(length);
-        response.status(Http.Status.PARTIAL_CONTENT_206);
+        response.status(Status.PARTIAL_CONTENT_206);
     }
 
     private static ByteRangeRequest create(ServerRequest req, ServerResponse res, long offset, long last, long fileLength) {
         if (offset >= fileLength || last < offset) {
             res.header(HeaderNames.CONTENT_RANGE, "*/" + fileLength);
-            throw new HttpException("Wrong range", Http.Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
+            throw new HttpException("Wrong range", Status.REQUESTED_RANGE_NOT_SATISFIABLE_416, true);
         }
 
         long length = (last - offset) + 1;

@@ -16,34 +16,14 @@
 
 package io.helidon.webclient.http1;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
-import java.util.concurrent.TimeUnit;
 
-import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.media.EntityReader;
-import io.helidon.http.media.EntityWriter;
-import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.MediaContextConfig;
-import io.helidon.common.GenericType;
-import io.helidon.webclient.api.ClientConnection;
-import io.helidon.webclient.api.ClientResponseTyped;
-import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
-import io.helidon.webclient.api.Proxy;
-import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
@@ -56,7 +36,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -65,15 +44,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
-import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Test for validating client side outbound/inbound headers (request/response headers)
@@ -115,10 +85,10 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
         }
@@ -134,11 +104,11 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            assertThat(response.status(), is(Status.OK_200));
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
@@ -156,14 +126,14 @@ class ValidateHeadersTest {
                 .sendExpectContinue(false)
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.outputStream(it -> {
                 it.write("Foo Bar".getBytes(StandardCharsets.UTF_8));
                 it.close();
             });
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            assertThat(response.status(), is(Status.OK_200));
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(
@@ -185,10 +155,10 @@ class ValidateHeadersTest {
                 })
         );
         Http1ClientRequest request = client.put(baseURI + "/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         HttpClientResponse response = request.request();
-        assertThat(response.status(), is(Http.Status.OK_200));
-        String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+        assertThat(response.status(), is(Status.OK_200));
+        String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
@@ -196,7 +166,7 @@ class ValidateHeadersTest {
         ServerRequestHeaders headers = request.headers();
         request.headers().toMap().forEach((k, v) -> {
             if (k.contains("Header")) {
-                response.headers().add(Http.Headers.create(Http.HeaderNames.create(k), v));
+                response.headers().add(HeaderValues.create(HeaderNames.create(k), v));
             }
         });
         response.send("any");

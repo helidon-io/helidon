@@ -55,7 +55,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Grant;
@@ -116,13 +116,13 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     /**
      * Configuration of Cookie property name which contains JWT token.
      *
-     * This will be ignored unless {@link #CONFIG_JWT_HEADER} is set to {@link io.helidon.http.Http.HeaderNames#COOKIE}.
+     * This will be ignored unless {@link #CONFIG_JWT_HEADER} is set to {@link io.helidon.http.HeaderNames#COOKIE}.
      */
     private static final String CONFIG_COOKIE_PROPERTY_NAME = "mp.jwt.token.cookie";
     /**
      * Configuration of the header where the JWT token is set.
      *
-     * Default value is {@link io.helidon.http.Http.HeaderNames#AUTHORIZATION}.
+     * Default value is {@link io.helidon.http.HeaderNames#AUTHORIZATION}.
      */
     private static final String CONFIG_JWT_HEADER = "mp.jwt.token.header";
     private static final System.Logger LOGGER = System.getLogger(JwtAuthProvider.class.getName());
@@ -312,7 +312,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
     }
 
     private Optional<String> findCookie(Map<String, List<String>> headers) {
-        List<String> cookies = headers.get(Http.HeaderNames.COOKIE.defaultCase());
+        List<String> cookies = headers.get(HeaderNames.COOKIE.defaultCase());
         if ((null == cookies) || cookies.isEmpty()) {
             return Optional.empty();
         }
@@ -1151,7 +1151,7 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
          * @return updated builder instance
          */
         public Builder jwtHeader(String header) {
-            if (Http.HeaderNames.COOKIE.defaultCase().equalsIgnoreCase(header)) {
+            if (HeaderNames.COOKIE.defaultCase().equalsIgnoreCase(header)) {
                 useCookie = true;
             } else {
                 useCookie = false;

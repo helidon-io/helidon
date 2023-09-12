@@ -17,7 +17,8 @@ package io.helidon.webclient.metrics;
 
 import java.time.Duration;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -34,10 +35,10 @@ class WebClientTimer extends WebClientMetric {
     @Override
     public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
         long start = System.nanoTime();
-        Http.Method method = request.method();
+        Method method = request.method();
         try {
             WebClientServiceResponse response = chain.proceed(request);
-            Http.Status status = response.status();
+            Status status = response.status();
             if (shouldContinueOnError(method, status.code())) {
                 updateTimer(createMetadata(request, response), start);
             }

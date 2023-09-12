@@ -28,12 +28,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.http.Http;
-import io.helidon.http.HttpMediaType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -261,7 +261,7 @@ public class TestUtil {
             HttpURLConnection cnx,
             MediaType expectedMediaType) throws Exception {
         assertThat("Unexpected response code", cnx.getResponseCode(),
-                is(Http.Status.OK_200.code()));
+                is(Status.OK_200.code()));
         HttpMediaType expectedMT = expectedMediaType != null
                 ? HttpMediaType.create(expectedMediaType)
                 : HttpMediaType.create(OpenApiFeature.DEFAULT_RESPONSE_MEDIA_TYPE);

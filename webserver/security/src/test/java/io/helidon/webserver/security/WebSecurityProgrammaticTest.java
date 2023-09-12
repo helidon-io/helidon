@@ -21,18 +21,18 @@ import java.util.regex.Pattern;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
-import io.helidon.http.Http;
-import io.helidon.http.HttpMediaTypes;
 import io.helidon.config.Config;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.HttpMediaTypes;
+import io.helidon.http.Status;
+import io.helidon.security.Security;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.util.TokenHandler;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.context.ContextFeature;
-import io.helidon.security.Security;
-import io.helidon.security.SecurityContext;
-import io.helidon.security.util.TokenHandler;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 /**
  * Unit test for {@link SecurityFeature}.
@@ -75,7 +75,7 @@ public class WebSecurityProgrammaticTest extends WebSecurityTests {
                         .get("/user[/{*}]", SecurityFeature.rolesAllowed("user"))
                         .get("/admin", SecurityFeature.rolesAllowed("admin"))
                         .get("/deny", SecurityFeature.rolesAllowed("deny"), (req, res) -> {
-                            res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                            res.status(Status.INTERNAL_SERVER_ERROR_500);
                             res.send("Should not get here, this role doesn't exist");
                         })
                         .get("/auditOnly", SecurityFeature

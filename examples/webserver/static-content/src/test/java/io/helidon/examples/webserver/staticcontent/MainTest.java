@@ -16,12 +16,13 @@
 
 package io.helidon.examples.webserver.staticcontent;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
@@ -47,15 +48,15 @@ class MainTest {
     void testUi() {
         assertThat(allCounter(), is(1));
         try (Http1ClientResponse response = client.get("/ui/index.html").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().contentType().orElseThrow().text(), is("text/html"));
         }
         try (Http1ClientResponse response = client.get("/ui/css/app.css").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().contentType().orElseThrow().text(), is("text/css"));
         }
         try (Http1ClientResponse response = client.get("/ui/js/app.js").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().contentType().orElseThrow().text(), is("text/javascript"));
         }
         assertThat(allCounter(), is(5));        // includes /ui/api/counter calls
@@ -63,7 +64,7 @@ class MainTest {
 
     private int allCounter() {
         try (Http1ClientResponse response = client.get("/ui/api/counter").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             JsonNumber number = (JsonNumber) response.as(JsonObject.class).get("all");
             return number.intValue();
         }

@@ -24,7 +24,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.parameters.Parameters;
-import io.helidon.http.Http.HeaderName;
 
 class ServerRequestHeadersImpl implements ServerRequestHeaders {
     private final Headers headers;
@@ -47,12 +46,12 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
     }
 
     @Override
-    public boolean contains(Http.Header headerWithValue) {
+    public boolean contains(Header headerWithValue) {
         return headers.contains(headerWithValue);
     }
 
     @Override
-    public Http.Header get(HeaderName name) {
+    public Header get(HeaderName name) {
         return headers.get(name);
     }
 
@@ -77,7 +76,7 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
         }
         List<HttpMediaType> acceptedTypes;
 
-        List<String> acceptValues = all(Http.HeaderNames.ACCEPT, List::of);
+        List<String> acceptValues = all(HeaderNames.ACCEPT, List::of);
         if (acceptValues.size() == 1 && HUC_ACCEPT_DEFAULT.value().equals(acceptValues.get(0))) {
             acceptedTypes = HUC_ACCEPT_DEFAULT_TYPES;
         } else {
@@ -97,7 +96,7 @@ class ServerRequestHeadersImpl implements ServerRequestHeaders {
     }
 
     @Override
-    public Iterator<Http.Header> iterator() {
+    public Iterator<Header> iterator() {
         return headers.iterator();
     }
 

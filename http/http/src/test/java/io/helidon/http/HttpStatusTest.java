@@ -35,7 +35,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class HttpStatusTest {
-    private static final Class<Http.Status> clazz = Http.Status.class;
+    private static final Class<Status> clazz = Status.class;
     private static final Set<String> constants = Stream.of(clazz.getDeclaredFields())
             .filter(it -> Modifier.isStatic(it.getModifiers()))
             .filter(it -> Modifier.isFinal(it.getModifiers()))
@@ -43,20 +43,20 @@ class HttpStatusTest {
             .map(Field::getName)
             .collect(Collectors.toSet());
 
-    Http.Status custom999_1 = Http.Status.create(999);
-    Http.Status custom999_2 = Http.Status.create(999);
+    Status custom999_1 = Status.create(999);
+    Status custom999_2 = Status.create(999);
 
     @Test
     void testSameInstanceForKnownStatus() {
-        Http.Status ok = Http.Status.create(200);
-        Http.Status okFromBoth = Http.Status.create(200, Http.Status.OK_200.reasonPhrase());
-        Http.Status custom = Http.Status.create(200, "Very-Fine");
+        Status ok = Status.create(200);
+        Status okFromBoth = Status.create(200, Status.OK_200.reasonPhrase());
+        Status custom = Status.create(200, "Very-Fine");
 
-        assertThat("Status from code must be the enum instance", ok, sameInstance(Http.Status.OK_200));
+        assertThat("Status from code must be the enum instance", ok, sameInstance(Status.OK_200));
         assertThat("Status from code an reason phrase that matches must be the enum instance",
                    okFromBoth,
-                   sameInstance(Http.Status.OK_200));
-        assertThat("Status from code with custom phrase must differ", custom, not(sameInstance(Http.Status.OK_200)));
+                   sameInstance(Status.OK_200));
+        assertThat("Status from code with custom phrase must differ", custom, not(sameInstance(Status.OK_200)));
         assertThat("Custom reason phrase should be present", custom.reasonPhrase(), is("Very-Fine"));
     }
 
@@ -71,7 +71,7 @@ class HttpStatusTest {
         // this is to test correct initialization (there may be an issue when the constants
         // are defined on the interface and implemented by enum outside of it)
         for (String constant : constants) {
-            Http.Status value = (Http.Status) clazz.getField(constant)
+            Status value = (Status) clazz.getField(constant)
                     .get(null);
 
             assertAll(
@@ -83,7 +83,7 @@ class HttpStatusTest {
                     () -> assertThat(constant, endsWith("_" + value.code())),
                     () -> {
                         // except for teapot
-                        if (value != Http.Status.I_AM_A_TEAPOT_418) {
+                        if (value != Status.I_AM_A_TEAPOT_418) {
                             assertThat(constant,
                                        startsWith(value.reasonPhrase()
                                                           .toUpperCase(Locale.ROOT)

@@ -15,7 +15,7 @@
  */
 package io.helidon.examples.mp.httpstatuscount;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.ws.rs.GET;
@@ -43,7 +43,7 @@ public class StatusResource {
             status = Integer.parseInt(statusText);
             msg = "Successful conversion";
         } catch (NumberFormatException ex) {
-            status = Http.Status.INTERNAL_SERVER_ERROR_500.code();
+            status = Status.INTERNAL_SERVER_ERROR_500.code();
             msg = "Unsuccessful conversion";
         }
         return status == 204 ? Response.status(204).build() : Response.status(status).entity(msg).build();

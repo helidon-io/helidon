@@ -53,7 +53,7 @@
         try (Http1ClientResponse response = client.get("/greet")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat(json.getString("message"), is("Hello World!"));
         }
@@ -113,7 +113,7 @@
     @Test
     void testGreet() {
         try (Http1ClientResponse response = client.get("/greet").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(Message.class).getMessage(), is("Hello World!"));
         }
     }
@@ -121,7 +121,7 @@
     @Test
     void testGreetJoe() {
         try (Http1ClientResponse response = client.get("/greet/Joe").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(Message.class).getMessage(), is("Hello Joe!"));
         }
     }
@@ -171,14 +171,16 @@
                                 <value>jersey.media.multipart</value>
                             </list>
                             <list key="Main-helidon-imports" if="${flavor} == 'se'">
-                                <value>io.helidon.http.Http</value>
-                                <value>io.helidon.http.Http.Header</value>
+                                <value>io.helidon.http.Header</value>
+                                <value>io.helidon.http.Status</value>
+                                <value>io.helidon.http.HeaderNames</value>
+                                <value>io.helidon.http.HeaderValues</value>
                                 <value>io.helidon.webserver.staticcontent.StaticContentService</value>
                             </list>
                             <list key="Main-routing-builder" if="${flavor} == 'se'">
                                 <value order="1"><![CDATA[.any("/", (req, res) -> {
-                    res.status(Http.Status.MOVED_PERMANENTLY_301);
-                    res.header(Http.Headers.createCached(Http.HeaderNames.LOCATION, "/ui"));
+                    res.status(Status.MOVED_PERMANENTLY_301);
+                    res.header(HeaderValues.createCached(HeaderNames.LOCATION, "/ui"));
                     res.send();
                 })
                 .register("/ui", StaticContentService.builder("WEB")
@@ -191,7 +193,7 @@
     @Test
     void testFileService() {
         try (Http1ClientResponse response = client.get("/api").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 ]]></value>

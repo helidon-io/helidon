@@ -24,7 +24,8 @@ import java.util.UUID;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityClientBuilder;
 import io.helidon.security.OutboundSecurityResponse;
@@ -185,7 +186,7 @@ public class WebClientSecurity implements WebClientService {
                 }
 
                 //replace existing
-                Http.HeaderName headerName = Http.HeaderNames.create(entry.getKey());
+                HeaderName headerName = HeaderNames.create(entry.getKey());
                 clientHeaders.set(headerName, entry.getValue().toArray(new String[0]));
             }
             span.end();

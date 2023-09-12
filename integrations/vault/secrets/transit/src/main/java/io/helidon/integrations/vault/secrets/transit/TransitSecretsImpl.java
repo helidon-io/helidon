@@ -16,7 +16,7 @@
 
 package io.helidon.integrations.vault.secrets.transit;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.integrations.common.rest.RestApi;
 import io.helidon.integrations.vault.ListSecrets;
 import io.helidon.integrations.vault.Vault;
@@ -69,48 +69,48 @@ class TransitSecretsImpl implements TransitSecrets {
     public Encrypt.Response encrypt(Encrypt.Request request) {
         String apiPath = "/" + mount + "/encrypt/" + request.encryptionKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Encrypt.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, Encrypt.Response.builder());
     }
 
     @Override
     public EncryptBatch.Response encrypt(EncryptBatch.Request request) {
         String apiPath = "/" + mount + "/encrypt/" + request.encryptionKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, EncryptBatch.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, EncryptBatch.Response.builder());
     }
 
     @Override
     public Decrypt.Response decrypt(Decrypt.Request request) {
         String apiPath = "/" + mount + "/decrypt/" + request.encryptionKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Decrypt.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, Decrypt.Response.builder());
     }
 
     @Override
     public DecryptBatch.Response decrypt(DecryptBatch.Request request) {
         String apiPath = "/" + mount + "/decrypt/" + request.encryptionKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, DecryptBatch.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, DecryptBatch.Response.builder());
     }
 
     @Override
     public Hmac.Response hmac(Hmac.Request request) {
         String apiPath = "/" + mount + "/hmac/" + request.hmacKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Hmac.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, Hmac.Response.builder());
     }
 
     @Override
     public Sign.Response sign(Sign.Request request) {
         String apiPath = "/" + mount + "/sign/" + request.signatureKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Sign.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, Sign.Response.builder());
     }
 
     @Override
     public Verify.Response verify(Verify.Request request) {
         String apiPath = "/" + mount + "/verify/" + request.digestKeyName();
 
-        return restApi.invokeWithResponse(Http.Method.POST, apiPath, request, Verify.Response.builder());
+        return restApi.invokeWithResponse(Method.POST, apiPath, request, Verify.Response.builder());
     }
 }

@@ -18,15 +18,15 @@ package io.helidon.webserver.examples.multiport;
 
 import java.util.stream.Stream;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -72,20 +72,20 @@ public class MainTest {
         final String METRICS_PATH = "/health";
 
         return Stream.of(
-                new Params(Socket.PUBLIC, PUBLIC_PATH, Http.Status.OK_200),
-                new Params(Socket.PUBLIC, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
-                new Params(Socket.PUBLIC, HEALTH_PATH, Http.Status.NOT_FOUND_404),
-                new Params(Socket.PUBLIC, METRICS_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PUBLIC, PUBLIC_PATH, Status.OK_200),
+                new Params(Socket.PUBLIC, PRIVATE_PATH, Status.NOT_FOUND_404),
+                new Params(Socket.PUBLIC, HEALTH_PATH, Status.NOT_FOUND_404),
+                new Params(Socket.PUBLIC, METRICS_PATH, Status.NOT_FOUND_404),
 
-                new Params(Socket.PRIVATE, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
-                new Params(Socket.PRIVATE, PRIVATE_PATH, Http.Status.OK_200),
-                new Params(Socket.PRIVATE, HEALTH_PATH, Http.Status.NOT_FOUND_404),
-                new Params(Socket.PRIVATE, METRICS_PATH, Http.Status.NOT_FOUND_404),
+                new Params(Socket.PRIVATE, PUBLIC_PATH, Status.NOT_FOUND_404),
+                new Params(Socket.PRIVATE, PRIVATE_PATH, Status.OK_200),
+                new Params(Socket.PRIVATE, HEALTH_PATH, Status.NOT_FOUND_404),
+                new Params(Socket.PRIVATE, METRICS_PATH, Status.NOT_FOUND_404),
 
-                new Params(Socket.ADMIN, PUBLIC_PATH, Http.Status.NOT_FOUND_404),
-                new Params(Socket.ADMIN, PRIVATE_PATH, Http.Status.NOT_FOUND_404),
-                new Params(Socket.ADMIN, HEALTH_PATH, Http.Status.OK_200),
-                new Params(Socket.ADMIN, METRICS_PATH, Http.Status.OK_200));
+                new Params(Socket.ADMIN, PUBLIC_PATH, Status.NOT_FOUND_404),
+                new Params(Socket.ADMIN, PRIVATE_PATH, Status.NOT_FOUND_404),
+                new Params(Socket.ADMIN, HEALTH_PATH, Status.OK_200),
+                new Params(Socket.ADMIN, METRICS_PATH, Status.OK_200));
     }
 
     @MethodSource("initParams")
@@ -116,7 +116,7 @@ public class MainTest {
         }
     }
 
-    private record Params(Socket socket, String path, Http.Status httpStatus) {
+    private record Params(Socket socket, String path, Status httpStatus) {
 
         @Override
         public String toString() {

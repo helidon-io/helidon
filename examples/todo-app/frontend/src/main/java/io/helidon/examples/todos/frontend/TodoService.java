@@ -15,7 +15,7 @@
  */
 package io.helidon.examples.todos.frontend;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -88,7 +88,7 @@ public final class TodoService implements HttpService {
     private void create(ServerRequest req, ServerResponse res) {
         JsonObject jsonObject = bsc.create(req.content().as(JsonObject.class));
         createCounter.increment();
-        res.status(Http.Status.CREATED_201);
+        res.status(Status.CREATED_201);
         res.send(jsonObject);
     }
 

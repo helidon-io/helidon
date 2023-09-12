@@ -16,7 +16,7 @@
 
 package io.helidon.webserver.http;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.inject.api.Contract;
 
 /**
@@ -34,7 +34,7 @@ public interface GeneratedHandler extends Handler {
      *
      * @return method
      */
-    Http.Method method();
+    Method method();
 
     /**
      * Path this handler should be registered at.

@@ -19,10 +19,10 @@ package io.helidon.http.http2;
 import java.util.HexFormat;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers.DynamicTable;
 import io.helidon.http.http2.Http2Headers.HeaderRecord;
@@ -76,7 +76,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Headers requestHeaders = headers(hexEncoded, dynamicTable).httpHeaders();
 
-        assertThat(requestHeaders.get(Http.HeaderNames.create("password")).value(), is("secret"));
+        assertThat(requestHeaders.get(HeaderNames.create("password")).value(), is("secret"));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
     }
 
@@ -89,7 +89,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat("Dynamic table should be empty", dynamicTable.currentTableSize(), is(0));
     }
 
@@ -104,7 +104,7 @@ class Http2HeadersTest {
 
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -120,17 +120,17 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         Headers requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
-        assertThat(requestHeaders.get(Http.HeaderNames.create("cache-control")).value(), is("no-cache"));
+        assertThat(requestHeaders.get(HeaderNames.create("cache-control")).value(), is("no-cache"));
 
         assertThat("Dynamic table should not be empty", dynamicTable.currentTableSize(), not(0));
 
         assertThat(dynamicTable.currentTableSize(), is(110));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
-        assertThat(headerRecord.headerName(), is(Http.HeaderNames.CACHE_CONTROL));
+        assertThat(headerRecord.headerName(), is(HeaderNames.CACHE_CONTROL));
         assertThat(headerRecord.value(), is("no-cache"));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 2);
         assertThat(headerRecord.headerName(), is(Http2Headers.AUTHORITY_NAME));
@@ -141,7 +141,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("https"));
         assertThat(http2Headers.path(), is("/index.html"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -166,7 +166,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         WritableHeaders<?> headers = WritableHeaders.create();
         Http2Headers http2Headers = Http2Headers.create(headers);
-        http2Headers.method(Http.Method.GET);
+        http2Headers.method(Method.GET);
         http2Headers.scheme("http");
         http2Headers.path("/");
         http2Headers.authority("www.example.com");
@@ -193,7 +193,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
         Http2Headers http2Headers = headers(hexEncoded, dynamicTable);
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -210,7 +210,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         Headers requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("http"));
         assertThat(http2Headers.path(), is("/"));
         assertThat(http2Headers.authority(), is("www.example.com"));
@@ -220,7 +220,7 @@ class Http2HeadersTest {
 
         assertThat(dynamicTable.currentTableSize(), is(110));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 1);
-        assertThat(headerRecord.headerName(), is(Http.HeaderNames.CACHE_CONTROL));
+        assertThat(headerRecord.headerName(), is(HeaderNames.CACHE_CONTROL));
         assertThat(headerRecord.value(), is("no-cache"));
         headerRecord = dynamicTable.get(Http2Headers.StaticHeader.MAX_INDEX + 2);
         assertThat(headerRecord.headerName(), is(Http2Headers.AUTHORITY_NAME));
@@ -231,7 +231,7 @@ class Http2HeadersTest {
         http2Headers = headers(hexEncoded, dynamicTable);
         requestHeaders = http2Headers.httpHeaders();
 
-        assertThat(http2Headers.method(), is(Http.Method.GET));
+        assertThat(http2Headers.method(), is(Method.GET));
         assertThat(http2Headers.scheme(), is("https"));
         assertThat(http2Headers.path(), is("/index.html"));
         assertThat(http2Headers.authority(), is("www.example.com"));

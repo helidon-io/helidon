@@ -16,7 +16,7 @@
 
 package io.helidon.webclient.api;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 
 /**
  * HTTP client.
@@ -30,7 +30,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @param method HTTP method
      * @return a new request (not thread safe)
      */
-    REQ method(Http.Method method);
+    REQ method(Method method);
 
     /**
      * Shortcut for get method with a path.
@@ -39,7 +39,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ get(String uri) {
-        return (REQ) method(Http.Method.GET).uri(uri);
+        return (REQ) method(Method.GET).uri(uri);
     }
 
     /**
@@ -48,7 +48,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ get() {
-        return method(Http.Method.GET);
+        return method(Method.GET);
     }
 
     /**
@@ -58,7 +58,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ post(String uri) {
-        return (REQ) method(Http.Method.POST).uri(uri);
+        return (REQ) method(Method.POST).uri(uri);
     }
 
     /**
@@ -67,7 +67,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ post() {
-        return method(Http.Method.POST);
+        return method(Method.POST);
     }
 
     /**
@@ -77,7 +77,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ put(String uri) {
-        return (REQ) method(Http.Method.PUT).uri(uri);
+        return (REQ) method(Method.PUT).uri(uri);
     }
 
     /**
@@ -86,7 +86,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ put() {
-        return method(Http.Method.PUT);
+        return method(Method.PUT);
     }
 
     /**
@@ -96,7 +96,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ delete(String uri) {
-        return (REQ) method(Http.Method.DELETE).uri(uri);
+        return (REQ) method(Method.DELETE).uri(uri);
     }
 
     /**
@@ -105,7 +105,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ delete() {
-        return method(Http.Method.DELETE);
+        return method(Method.DELETE);
     }
 
     /**
@@ -115,7 +115,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ head(String uri) {
-        return (REQ) method(Http.Method.HEAD).uri(uri);
+        return (REQ) method(Method.HEAD).uri(uri);
     }
 
     /**
@@ -124,7 +124,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ head() {
-        return method(Http.Method.HEAD);
+        return method(Method.HEAD);
     }
 
     /**
@@ -134,7 +134,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ options(String uri) {
-        return (REQ) method(Http.Method.OPTIONS).uri(uri);
+        return (REQ) method(Method.OPTIONS).uri(uri);
     }
 
     /**
@@ -143,7 +143,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ options() {
-        return method(Http.Method.OPTIONS);
+        return method(Method.OPTIONS);
     }
 
     /**
@@ -153,7 +153,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ trace(String uri) {
-        return (REQ) method(Http.Method.TRACE).uri(uri);
+        return (REQ) method(Method.TRACE).uri(uri);
     }
 
     /**
@@ -162,7 +162,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ trace() {
-        return method(Http.Method.TRACE);
+        return method(Method.TRACE);
     }
 
     /**
@@ -172,7 +172,7 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ patch(String uri) {
-        return (REQ) method(Http.Method.PATCH).uri(uri);
+        return (REQ) method(Method.PATCH).uri(uri);
     }
 
     /**
@@ -181,6 +181,6 @@ public interface HttpClient<REQ extends ClientRequest<REQ>> {
      * @return a new request (not thread safe)
      */
     default REQ patch() {
-        return method(Http.Method.PATCH);
+        return method(Method.PATCH);
     }
 }

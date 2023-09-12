@@ -16,15 +16,15 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.DirectClient;
-import io.helidon.webserver.testing.junit5.RoutingTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.DirectClient;
+import io.helidon.webserver.testing.junit5.RoutingTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -46,7 +46,7 @@ class UnsentResponseTest {
         try (Http1ClientResponse response = client.get("/no-response")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
             assertThat(response.entity().as(String.class), is("Internal Server Error"));
         }
     }
@@ -56,7 +56,7 @@ class UnsentResponseTest {
         try (Http1ClientResponse response = client.get("/response")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 

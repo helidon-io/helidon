@@ -25,7 +25,7 @@ import java.util.concurrent.Callable;
 
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.RequestException;
@@ -157,7 +157,7 @@ public final class ErrorHandlers {
         boolean keepAlive = e.keepAlive();
         if (keepAlive && !request.content().consumed()) {
             // there is a chance, that the 100-Continue was already sent! In such a case, we MUST consume entity
-            if (request.headers().contains(Http.Headers.EXPECT_100) && !request.continueSent()) {
+            if (request.headers().contains(HeaderValues.EXPECT_100) && !request.continueSent()) {
                 // No content is coming, reset connection
                 request.reset();
             } else {

@@ -21,7 +21,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 
@@ -73,8 +73,8 @@ public interface HttpRules {
      * @param handler     handler to process HTTP request
      * @return updated rules
      */
-    default HttpRules route(Http.Method method, String pathPattern, Handler handler) {
-        return route(Http.Method.predicate(method), PathMatchers.create(pathPattern), handler);
+    default HttpRules route(Method method, String pathPattern, Handler handler) {
+        return route(Method.predicate(method), PathMatchers.create(pathPattern), handler);
     }
 
     /**
@@ -85,19 +85,19 @@ public interface HttpRules {
      * @param handler     handler to process HTTP request
      * @return updated rules
      */
-    default HttpRules route(Http.Method method, PathMatcher pathMatcher, Handler handler) {
-        return route(Http.Method.predicate(method), pathMatcher, handler);
+    default HttpRules route(Method method, PathMatcher pathMatcher, Handler handler) {
+        return route(Method.predicate(method), pathMatcher, handler);
     }
 
     /**
      * Add a route.
      *
-     * @param methodPredicate HTTP method predicate, see {@link Http.Method#predicate(io.helidon.http.Http.Method...)}
+     * @param methodPredicate HTTP method predicate, see {@link io.helidon.http.Method#predicate(io.helidon.http.Method...)}
      * @param pathMatcher     URI path matcher, see {@link io.helidon.http.PathMatchers#create(String)}
      * @param handler         handler to process HTTP request
      * @return updated rules
      */
-    default HttpRules route(Predicate<Http.Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
+    default HttpRules route(Predicate<Method> methodPredicate, PathMatcher pathMatcher, Handler handler) {
         return route(HttpRoute.builder()
                              .methods(methodPredicate)
                              .path(pathMatcher)
@@ -112,7 +112,7 @@ public interface HttpRules {
      * @param handler handler to process HTTP request
      * @return updated rules
      */
-    default HttpRules route(Http.Method method, Handler handler) {
+    default HttpRules route(Method method, Handler handler) {
         return route(HttpRoute.builder()
                              .methods(method)
                              .handler(handler)
@@ -128,7 +128,7 @@ public interface HttpRules {
      */
     default HttpRules get(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.GET, pathPattern, handler);
+            route(Method.GET, pathPattern, handler);
         }
         return this;
     }
@@ -141,7 +141,7 @@ public interface HttpRules {
      */
     default HttpRules get(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.GET, handler);
+            route(Method.GET, handler);
         }
         return this;
     }
@@ -155,7 +155,7 @@ public interface HttpRules {
      */
     default HttpRules post(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.POST, pathPattern, handler);
+            route(Method.POST, pathPattern, handler);
         }
         return this;
     }
@@ -168,7 +168,7 @@ public interface HttpRules {
      */
     default HttpRules post(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.POST, handler);
+            route(Method.POST, handler);
         }
         return this;
     }
@@ -182,7 +182,7 @@ public interface HttpRules {
      */
     default HttpRules put(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.PUT, pathPattern, handler);
+            route(Method.PUT, pathPattern, handler);
         }
         return this;
     }
@@ -195,7 +195,7 @@ public interface HttpRules {
      */
     default HttpRules put(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.PUT, handler);
+            route(Method.PUT, handler);
         }
         return this;
     }
@@ -209,7 +209,7 @@ public interface HttpRules {
      */
     default HttpRules delete(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.DELETE, pathPattern, handler);
+            route(Method.DELETE, pathPattern, handler);
         }
         return this;
     }
@@ -222,7 +222,7 @@ public interface HttpRules {
      */
     default HttpRules delete(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.DELETE, handler);
+            route(Method.DELETE, handler);
         }
         return this;
     }
@@ -236,7 +236,7 @@ public interface HttpRules {
      */
     default HttpRules head(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.HEAD, pathPattern, handler);
+            route(Method.HEAD, pathPattern, handler);
         }
         return this;
     }
@@ -249,7 +249,7 @@ public interface HttpRules {
      */
     default HttpRules head(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.HEAD, handler);
+            route(Method.HEAD, handler);
         }
         return this;
     }
@@ -263,7 +263,7 @@ public interface HttpRules {
      */
     default HttpRules options(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.OPTIONS, pathPattern, handler);
+            route(Method.OPTIONS, pathPattern, handler);
         }
         return this;
     }
@@ -276,7 +276,7 @@ public interface HttpRules {
      */
     default HttpRules options(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.OPTIONS, handler);
+            route(Method.OPTIONS, handler);
         }
         return this;
     }
@@ -290,7 +290,7 @@ public interface HttpRules {
      */
     default HttpRules trace(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.TRACE, pathPattern, handler);
+            route(Method.TRACE, pathPattern, handler);
         }
         return this;
     }
@@ -303,7 +303,7 @@ public interface HttpRules {
      */
     default HttpRules trace(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.TRACE, handler);
+            route(Method.TRACE, handler);
         }
         return this;
     }
@@ -317,7 +317,7 @@ public interface HttpRules {
      */
     default HttpRules patch(String pathPattern, Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.PATCH, pathPattern, handler);
+            route(Method.PATCH, pathPattern, handler);
         }
         return this;
     }
@@ -330,7 +330,7 @@ public interface HttpRules {
      */
     default HttpRules patch(Handler... handlers) {
         for (Handler handler : handlers) {
-            route(Http.Method.PATCH, handler);
+            route(Method.PATCH, handler);
         }
         return this;
     }
@@ -373,7 +373,7 @@ public interface HttpRules {
      * @param handler     handler as a consumer of {@link ServerRequest}
      * @return updated builder
      */
-    default HttpRules route(Http.Method method, String pathPattern, Consumer<ServerRequest> handler) {
+    default HttpRules route(Method method, String pathPattern, Consumer<ServerRequest> handler) {
         return route(HttpRoute.builder()
                              .methods(method)
                              .path(pathPattern)
@@ -388,7 +388,7 @@ public interface HttpRules {
      * @param handler     handler as a function that gets {@link ServerRequest} and returns an entity
      * @return updated builder
      */
-    default HttpRules route(Http.Method method, String pathPattern, Function<ServerRequest, ?> handler) {
+    default HttpRules route(Method method, String pathPattern, Function<ServerRequest, ?> handler) {
         return route(HttpRoute.builder()
                              .methods(method)
                              .path(pathPattern)
@@ -403,7 +403,7 @@ public interface HttpRules {
      * @param handler     supplier of entity
      * @return updated builder
      */
-    default HttpRules route(Http.Method method, String pathPattern, Supplier<?> handler) {
+    default HttpRules route(Method method, String pathPattern, Supplier<?> handler) {
         return route(HttpRoute.builder()
                              .methods(method)
                              .path(pathPattern)

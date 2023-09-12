@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
@@ -66,7 +66,7 @@ public class DirectWebClient implements WebClient {
     }
 
     @Override
-    public HttpClientRequest method(Http.Method method) {
+    public HttpClientRequest method(Method method) {
         if (clientHost == null) {
             clientHost = "localhost";
         }

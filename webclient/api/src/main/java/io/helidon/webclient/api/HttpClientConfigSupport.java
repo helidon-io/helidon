@@ -24,7 +24,8 @@ import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.spi.DnsResolver;
@@ -72,8 +73,8 @@ class HttpClientConfigSupport {
          * @param value value of the header
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, String value) {
-            builder.addHeader(Http.Headers.create(name, value));
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, String value) {
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
@@ -84,8 +85,8 @@ class HttpClientConfigSupport {
          * @param value value of the header
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, int value) {
-            builder.addHeader(Http.Headers.create(name, value));
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, int value) {
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
@@ -96,54 +97,54 @@ class HttpClientConfigSupport {
          * @param value value of the header
          */
         @Prototype.BuilderMethod
-        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, Http.HeaderName name, long value) {
-            builder.addHeader(Http.Headers.create(name, value));
+        static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, HeaderName name, long value) {
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
-         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.Http.HeaderName}
-         * or {@link io.helidon.http.Http.Header}.
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
+         * or {@link io.helidon.http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Http.Header)
+         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, String value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
-         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.Http.HeaderName}
-         * or {@link io.helidon.http.Http.Header}.
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
+         * or {@link io.helidon.http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Http.Header)
+         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, int value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
 
         /**
          * Add default header value. This method is not optimal and should only be used when the header name is really
-         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.Http.HeaderName}
-         * or {@link io.helidon.http.Http.Header}.
+         * obtained from a string, in other cases, use an alternative with {@link io.helidon.http.HeaderName}
+         * or {@link io.helidon.http.Header}.
          *
          * @param builder builder to update
          * @param name name of the header
          * @param value value of the header
-         * @see #addHeader(io.helidon.http.Http.Header)
+         * @see #addHeader(io.helidon.http.Header)
          */
         @Prototype.BuilderMethod
         static void addHeader(HttpClientConfig.BuilderBase<?, ?> builder, String name, long value) {
-            builder.addHeader(Http.Headers.create(name, value));
+            builder.addHeader(HeaderValues.create(name, value));
         }
     }
 

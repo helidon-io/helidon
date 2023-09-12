@@ -19,12 +19,12 @@ package io.helidon.examples.webserver.faulttolerance;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.DirectClient;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +66,7 @@ class MainTest {
 
         try (Http1ClientResponse response = client.get("/ft/bulkhead/10000").request()) {
             // registered an error handler in Main
-            assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
             assertThat(response.as(String.class), is("bulkhead"));
         } finally {
             executor.close();
@@ -93,7 +93,7 @@ class MainTest {
         try (Http1ClientResponse response = client.get("/ft/circuitBreaker/true").request()) {
 
             // registered an error handler in Main
-            assertThat(response.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+            assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
             assertThat(response.as(String.class), is("circuit breaker"));
         }
     }
@@ -125,7 +125,7 @@ class MainTest {
 
         try (Http1ClientResponse response = client.get("/ft/retry/4").request()) {
             // no error handler specified
-            assertThat(response.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
             assertThat(response.as(String.class), is("java.lang.RuntimeException: failure"));
         }
     }
@@ -138,7 +138,7 @@ class MainTest {
 
         try (Http1ClientResponse response = client.get("/ft/timeout/1000").request()) {
             // error handler specified in Main
-            assertThat(response.status(), is(Http.Status.REQUEST_TIMEOUT_408));
+            assertThat(response.status(), is(Status.REQUEST_TIMEOUT_408));
             assertThat(response.as(String.class), is("timeout"));
         }
     }

@@ -35,9 +35,13 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthenticationResponse;
 import io.helidon.security.AuthorizationResponse;
@@ -544,7 +548,7 @@ public final class SecurityHandler implements Handler {
         } catch (Exception e) {
             tracing.error(e);
             LOGGER.log(Level.SEVERE, "Unexpected exception during security processing", e);
-            abortRequest(res, null, Http.Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
+            abortRequest(res, null, Status.INTERNAL_SERVER_ERROR_500.code(), Map.of());
         }
 
         // auditing
@@ -553,7 +557,7 @@ public final class SecurityHandler implements Handler {
 
     private void processAudit(ServerRequest req, ServerResponse res, SecurityContext securityContext) {
 
-        Http.Method method = req.prologue().method();
+        Method method = req.prologue().method();
 
         // make sure we actually should audit
         if (!audited.orElse(true)) {
@@ -563,7 +567,7 @@ public final class SecurityHandler implements Handler {
 
         if (audited.isEmpty()) {
             // use defaults
-            if (method == Http.Method.GET || method == Http.Method.HEAD) {
+            if (method == Method.GET || method == Method.HEAD) {
                 // get and head are not audited by default
                 return;
             }
@@ -619,7 +623,7 @@ public final class SecurityHandler implements Handler {
             AuthenticationResponse response = clientBuilder.explicitProvider(explicitAuthenticator.orElse(null)).submit();
             // copy headers to be returned with the current response
             response.responseHeaders()
-                    .forEach((key, value) -> res.headers().set(Http.Headers.create(key, value)));
+                    .forEach((key, value) -> res.headers().set(HeaderValues.create(key, value)));
 
             switch (response.status()) {
             case SUCCESS:
@@ -670,8 +674,8 @@ public final class SecurityHandler implements Handler {
 
         abortRequest(res,
                      response,
-                     Http.Status.UNAUTHORIZED_401.code(),
-                     Map.of(Http.HeaderNames.WWW_AUTHENTICATE,
+                     Status.UNAUTHORIZED_401.code(),
+                     Map.of(HeaderNames.WWW_AUTHENTICATE,
                             List.of("Basic realm=\"Security Realm\"")));
         return true;
     }
@@ -681,7 +685,7 @@ public final class SecurityHandler implements Handler {
             LOGGER.finest("Authentication failed, but was optional, so assuming anonymous");
             return false;
         } else {
-            int defaultStatusCode = Http.Status.UNAUTHORIZED_401.code();
+            int defaultStatusCode = Status.UNAUTHORIZED_401.code();
 
             abortRequest(res, response, defaultStatusCode, Map.of());
             return true;
@@ -689,23 +693,23 @@ public final class SecurityHandler implements Handler {
     }
 
     private void atnFinish(ServerResponse res, AuthenticationResponse response) {
-        int defaultStatusCode = Http.Status.OK_200.code();
+        int defaultStatusCode = Status.OK_200.code();
         abortRequest(res, response, defaultStatusCode, Map.of());
     }
 
     private void abortRequest(ServerResponse res,
                               SecurityResponse response,
                               int defaultCode,
-                              Map<Http.HeaderName, List<String>> defaultHeaders) {
+                              Map<HeaderName, List<String>> defaultHeaders) {
 
         int statusCode = ((null == response) ? defaultCode : response.statusCode().orElse(defaultCode));
-        Map<Http.HeaderName, List<String>> responseHeaders;
+        Map<HeaderName, List<String>> responseHeaders;
         if (response == null) {
             responseHeaders = defaultHeaders;
         } else {
-            Map<Http.HeaderName, List<String>> tmpHeaders = new HashMap<>();
+            Map<HeaderName, List<String>> tmpHeaders = new HashMap<>();
             response.responseHeaders()
-                    .forEach((key, value) -> tmpHeaders.put(Http.HeaderNames.create(key), value));
+                    .forEach((key, value) -> tmpHeaders.put(HeaderNames.create(key), value));
             responseHeaders = tmpHeaders;
         }
 
@@ -713,11 +717,11 @@ public final class SecurityHandler implements Handler {
 
         ServerResponseHeaders httpHeaders = res.headers();
 
-        for (Map.Entry<Http.HeaderName, List<String>> entry : responseHeaders.entrySet()) {
+        for (Map.Entry<HeaderName, List<String>> entry : responseHeaders.entrySet()) {
             httpHeaders.set(entry.getKey(), entry.getValue());
         }
 
-        res.status(Http.Status.create(statusCode));
+        res.status(Status.create(statusCode));
         res.send();
     }
 
@@ -749,14 +753,14 @@ public final class SecurityHandler implements Handler {
             if (explicitAuthorizer.isPresent()) {
                 if (rolesSet.stream().noneMatch(role -> context.isUserInRole(role, explicitAuthorizer.get()))) {
                     auditRoleMissing(context, req.path(), context.user(), rolesSet);
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
+                    abortRequest(res, null, Status.FORBIDDEN_403.code(), Map.of());
                     atzTracing.finish();
                     return AtxResult.STOP;
                 }
             } else {
                 if (rolesSet.stream().noneMatch(context::isUserInRole)) {
                     auditRoleMissing(context, req.path(), context.user(), rolesSet);
-                    abortRequest(res, null, Http.Status.FORBIDDEN_403.code(), Map.of());
+                    abortRequest(res, null, Status.FORBIDDEN_403.code(), Map.of());
                     atzTracing.finish();
                     return AtxResult.STOP;
                 }
@@ -780,8 +784,8 @@ public final class SecurityHandler implements Handler {
             case FAILURE_FINISH:
             case SUCCESS_FINISH:
                 int defaultStatus = (response.status() == AuthenticationResponse.SecurityStatus.FAILURE_FINISH)
-                        ? Http.Status.FORBIDDEN_403.code()
-                        : Http.Status.OK_200.code();
+                        ? Status.FORBIDDEN_403.code()
+                        : Status.OK_200.code();
 
                 atzTracing.finish();
                 abortRequest(res, response, defaultStatus, Map.of());
@@ -789,7 +793,7 @@ public final class SecurityHandler implements Handler {
             case ABSTAIN:
             case FAILURE:
                 atzTracing.finish();
-                abortRequest(res, response, Http.Status.FORBIDDEN_403.code(), Map.of());
+                abortRequest(res, response, Status.FORBIDDEN_403.code(), Map.of());
                 return AtxResult.STOP;
             default:
                 throw new SecurityException("Invalid SecurityStatus returned: " + response.status());

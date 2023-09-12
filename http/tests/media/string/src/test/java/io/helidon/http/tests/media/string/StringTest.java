@@ -18,16 +18,19 @@ package io.helidon.http.tests.media.string;
 
 import java.util.Optional;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.HttpMediaTypes;
-import io.helidon.common.media.type.MediaTypes;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class StringTest {
     private static final HttpMediaType TEXT_ISO_8859_2 = HttpMediaType.create(MediaTypes.TEXT_PLAIN)
             .withCharset("ISO-8859-2");
-    private static final Header ISO_8859_CONTENT_TYPE = Http.Headers.create(Http.HeaderNames.CONTENT_TYPE,
+    private static final Header ISO_8859_CONTENT_TYPE = HeaderValues.create(HeaderNames.CONTENT_TYPE,
                                                                             TEXT_ISO_8859_2.text());
     private static final String UTF_8_TEXT = "český řízný text";
 
@@ -64,7 +67,7 @@ class StringTest {
                 .request();
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type plain/text; charset=UTF-8",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaTypes.PLAINTEXT_UTF_8))),
@@ -77,7 +80,7 @@ class StringTest {
                 .request();
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type plain/text; charset=ISO_8859_2",
                                  response.headers().contentType(),
                                  is(Optional.of(TEXT_ISO_8859_2))),
@@ -86,12 +89,12 @@ class StringTest {
 
     @Test
     void testPostUtf8NoContentType() {
-        Http1ClientResponse response = client.method(Http.Method.POST)
+        Http1ClientResponse response = client.method(Method.POST)
                 .uri("/request")
                 .submit(UTF_8_TEXT);
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type plain/text; charset=UTF-8",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaTypes.PLAINTEXT_UTF_8))),

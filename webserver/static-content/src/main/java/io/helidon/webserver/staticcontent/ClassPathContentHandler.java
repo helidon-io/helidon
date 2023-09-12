@@ -40,8 +40,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import io.helidon.common.media.type.MediaType;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.InternalServerException;
+import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
@@ -120,7 +123,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     @SuppressWarnings("checkstyle:RegexpSinglelineJava")
     @Override
-    boolean doHandle(Http.Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
+    boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException, URISyntaxException {
 
         String rawPath = request.prologue().uriPath().rawPath();
@@ -243,10 +246,10 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                     null));
         } else {
             // we can cache this, as this is a jar record
-            Http.Header lastModifiedHeader = Http.Headers.create(Http.HeaderNames.LAST_MODIFIED,
-                                                                 true,
-                                                                 false,
-                                                                 formatLastModified(lastModified));
+            Header lastModifiedHeader = HeaderValues.create(HeaderNames.LAST_MODIFIED,
+                                                            true,
+                                                            false,
+                                                            formatLastModified(lastModified));
             return Optional.of(new CachedHandlerJar(extrEntry.tempFile,
                                                     detectType(extrEntry.entryName),
                                                     extrEntry.lastModified(),

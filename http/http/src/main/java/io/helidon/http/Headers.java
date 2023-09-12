@@ -35,11 +35,11 @@ import io.helidon.common.media.type.MediaType;
  * case.
  * When you configure headers to be sent using HTTP/2, all names will be lowercase.
  * When you configure headers to be sent using HTTP/1, names will be sent as configured.
- * When you receive headers, the stored values (as can be obtained by {@link io.helidon.http.Http.Header#name()})
+ * When you receive headers, the stored values (as can be obtained by {@link Header#name()})
  * will be as sent on the transport. These value will be available using any cased names (though performance may be worse
  * if uppercase letters are used to obtain HTTP/2 headers).
  */
-public interface Headers extends Iterable<Http.Header> {
+public interface Headers extends Iterable<Header> {
     /**
      * Get all values of a header.
      *
@@ -47,7 +47,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @param defaultSupplier supplier to obtain default values if the header is not present
      * @return list of header values
      */
-    List<String> all(Http.HeaderName name, Supplier<List<String>> defaultSupplier);
+    List<String> all(HeaderName name, Supplier<List<String>> defaultSupplier);
 
     /**
      * Whether these headers contain a header with the provided name.
@@ -55,7 +55,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @param name header name
      * @return {@code true} if the header is defined
      */
-    boolean contains(Http.HeaderName name);
+    boolean contains(HeaderName name);
 
     /**
      * Whether these headers contain a header with the provided name and value.
@@ -63,7 +63,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @param value value of the header
      * @return {@code true} if the header is defined
      */
-    boolean contains(Http.Header value);
+    boolean contains(Header value);
 
     /**
      * Get a header value.
@@ -72,11 +72,11 @@ public interface Headers extends Iterable<Http.Header> {
      * @return value if present
      * @throws java.util.NoSuchElementException in case the header is not present
      */
-    Http.Header get(Http.HeaderName name);
+    Header get(HeaderName name);
 
     /**
      * Returns a header value as a single {@link String} potentially concatenated using comma character
-     * from {@link #all(io.helidon.http.Http.HeaderName, java.util.function.Supplier)} header fields.
+     * from {@link #all(HeaderName, java.util.function.Supplier)} header fields.
      * <p>
      * According to <a href="https://tools.ietf.org/html/rfc2616#section-4.2">RFC2616, Message Headers</a>:
      * <blockquote>
@@ -92,10 +92,10 @@ public interface Headers extends Iterable<Http.Header> {
      * @param headerName the header name
      * @return all header values concatenated using comma separator
      * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #all(io.helidon.http.Http.HeaderName, java.util.function.Supplier)
-     * @see #values(io.helidon.http.Http.HeaderName)
+     * @see #all(HeaderName, java.util.function.Supplier)
+     * @see #values(HeaderName)
      */
-    default Optional<String> value(Http.HeaderName headerName) {
+    default Optional<String> value(HeaderName headerName) {
         if (contains(headerName)) {
             List<String> hdrs = all(headerName, List::of);
             return Optional.of(String.join(",", hdrs));
@@ -110,7 +110,7 @@ public interface Headers extends Iterable<Http.Header> {
      * @return the first value
      * @throws NullPointerException if {@code headerName} is {@code null}
      */
-    default Optional<String> first(Http.HeaderName headerName) {
+    default Optional<String> first(HeaderName headerName) {
         if (contains(headerName)) {
             return Optional.of(get(headerName).get());
         }
@@ -130,10 +130,10 @@ public interface Headers extends Iterable<Http.Header> {
      * @param headerName the header name
      * @return a {@code List} of values with zero or greater size, never {@code null}
      * @throws NullPointerException if {@code headerName} is {@code null}
-     * @see #all(io.helidon.http.Http.HeaderName, java.util.function.Supplier)
-     * @see #value(io.helidon.http.Http.HeaderName)
+     * @see #all(HeaderName, java.util.function.Supplier)
+     * @see #value(HeaderName)
      */
-    default List<String> values(Http.HeaderName headerName) {
+    default List<String> values(HeaderName headerName) {
         return all(headerName, List::of)
                 .stream()
                 .flatMap(val -> Utils.tokenize(',', "\"", true, val).stream())
@@ -144,7 +144,7 @@ public interface Headers extends Iterable<Http.Header> {
      * Content length if defined.
      *
      * @return content length or empty if not defined
-     * @see io.helidon.http.Http.HeaderNames#CONTENT_LENGTH
+     * @see HeaderNames#CONTENT_LENGTH
      */
     default OptionalLong contentLength() {
         if (contains(HeaderNameEnum.CONTENT_LENGTH)) {
@@ -157,7 +157,7 @@ public interface Headers extends Iterable<Http.Header> {
      * Content type (if defined).
      *
      * @return content type, empty if content type is not present
-     * @see io.helidon.http.Http.HeaderNames#CONTENT_TYPE
+     * @see HeaderNames#CONTENT_TYPE
      */
     default Optional<HttpMediaType> contentType() {
         if (contains(HeaderNameEnum.CONTENT_TYPE)) {
@@ -175,7 +175,7 @@ public interface Headers extends Iterable<Http.Header> {
     int size();
 
     /**
-     * Returns a list of acceptedTypes ({@link io.helidon.http.Http.HeaderNames#ACCEPT} header) content discoveryTypes in
+     * Returns a list of acceptedTypes ({@link HeaderNames#ACCEPT} header) content discoveryTypes in
      * quality factor order. Never {@code null}.
      * Returns an empty list by default.
      *
@@ -215,7 +215,7 @@ public interface Headers extends Iterable<Http.Header> {
      *
      * @return stream of header values
      */
-    default Stream<Http.Header> stream() {
+    default Stream<Header> stream() {
         return StreamSupport.stream(spliterator(), false);
     }
 }

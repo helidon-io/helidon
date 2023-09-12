@@ -26,8 +26,10 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Status;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
@@ -316,7 +318,7 @@ public class TracingFeature implements HttpFeature, Weighted {
 
                 Contexts.runInContext(context, chain::proceed);
 
-                Http.Status status = res.status();
+                Status status = res.status();
                 span.tag(Tag.HTTP_STATUS.create(status.code()));
 
                 if (status.code() >= 400) {
@@ -367,7 +369,7 @@ public class TracingFeature implements HttpFeature, Weighted {
         @Override
         public Iterable<String> keys() {
             List<String> result = new LinkedList<>();
-            for (Http.Header header : request.headers()) {
+            for (Header header : request.headers()) {
                 result.add(header.headerName().lowerCase());
             }
             return result;
@@ -375,17 +377,17 @@ public class TracingFeature implements HttpFeature, Weighted {
 
         @Override
         public Optional<String> get(String key) {
-            return request.headers().first(Http.HeaderNames.create(key));
+            return request.headers().first(HeaderNames.create(key));
         }
 
         @Override
         public Iterable<String> getAll(String key) {
-            return request.headers().all(Http.HeaderNames.create(key), List::of);
+            return request.headers().all(HeaderNames.create(key), List::of);
         }
 
         @Override
         public boolean contains(String key) {
-            return request.headers().contains(Http.HeaderNames.create(key));
+            return request.headers().contains(HeaderNames.create(key));
         }
     }
 }

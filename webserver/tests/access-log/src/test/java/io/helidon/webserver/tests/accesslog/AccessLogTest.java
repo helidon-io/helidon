@@ -27,10 +27,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
-import io.helidon.http.Http;
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.accesslog.AccessLogFeature;
@@ -40,6 +39,8 @@ import io.helidon.webserver.accesslog.StatusLogEntry;
 import io.helidon.webserver.accesslog.TimestampLogEntry;
 import io.helidon.webserver.accesslog.UserLogEntry;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -82,17 +83,17 @@ class AccessLogTest {
     @Test
     void testRequestsAndValidateAccessLog() {
         Http1ClientResponse response = client.get("/access").request();
-        assertThat(response.status(), is(Http.Status.OK_200));
+        assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity().as(String.class), is("Hello World!"));
 
         response = client.get("/wrong").request();
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
 
-        String socketResponse = socketClient.sendAndReceive(Http.Method.GET,
+        String socketResponse = socketClient.sendAndReceive(Method.GET,
                                                             "/access",
                                                             null,
                                                             List.of("Content-Length: 47a"));
-        assertThat(socketResponse, startsWith("HTTP/1.1 " + Http.Status.BAD_REQUEST_400.text()));
+        assertThat(socketResponse, startsWith("HTTP/1.1 " + Status.BAD_REQUEST_400.text()));
 
         // Use retry since no happens-before relationship between log entry and assertion
         assertThatWithRetry("Check log entry for /access exist",

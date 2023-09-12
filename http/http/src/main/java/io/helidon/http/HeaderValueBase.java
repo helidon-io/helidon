@@ -24,9 +24,8 @@ import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.MapperManager;
 import io.helidon.common.mapper.Value;
-import io.helidon.http.Http.HeaderName;
 
-abstract class HeaderValueBase implements Http.HeaderValueWriteable {
+abstract class HeaderValueBase implements HeaderWriteable {
     private static final String[] QUALIFIER = new String[] {"http", "header"};
     private final HeaderName name;
     private final String actualName;
@@ -43,7 +42,7 @@ abstract class HeaderValueBase implements Http.HeaderValueWriteable {
     }
 
     @Override
-    public abstract Http.HeaderValueWriteable addValue(String value);
+    public abstract HeaderWriteable addValue(String value);
 
     @Override
     public String name() {

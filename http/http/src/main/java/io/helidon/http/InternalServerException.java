@@ -17,7 +17,7 @@
 package io.helidon.http;
 
 /**
- * A runtime exception indicating a {@link Http.Status#INTERNAL_SERVER_ERROR_500 internal server error}.
+ * A runtime exception indicating a {@link Status#INTERNAL_SERVER_ERROR_500 internal server error}.
  */
 public class InternalServerException extends HttpException {
     /**
@@ -27,7 +27,7 @@ public class InternalServerException extends HttpException {
      * @param cause the cause of this exception
      */
     public InternalServerException(String message, Throwable cause) {
-        super(message, Http.Status.INTERNAL_SERVER_ERROR_500, cause);
+        super(message, Status.INTERNAL_SERVER_ERROR_500, cause);
     }
 
     /**
@@ -38,6 +38,6 @@ public class InternalServerException extends HttpException {
      * @param keepAlive whether to keep the connection alive (if keep alives are enabled)
      */
     public InternalServerException(String message, Throwable cause, boolean keepAlive) {
-        super(message, Http.Status.INTERNAL_SERVER_ERROR_500, cause, keepAlive);
+        super(message, Status.INTERNAL_SERVER_ERROR_500, cause, keepAlive);
     }
 }

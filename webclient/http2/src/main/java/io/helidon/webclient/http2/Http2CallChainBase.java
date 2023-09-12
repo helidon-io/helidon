@@ -27,7 +27,11 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http2.Http2Headers;
@@ -42,7 +46,7 @@ import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.WebClientService;
 
-import static io.helidon.http.Http.HeaderNames.CONTENT_ENCODING;
+import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
 import static io.helidon.webclient.api.ClientRequestBase.USER_AGENT_HEADER;
 
 abstract class Http2CallChainBase implements WebClientService.Chain {
@@ -56,7 +60,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     private Http2ClientStream stream;
     private HttpClientResponse response;
     private ClientRequestHeaders requestHeaders;
-    private Http.Status responseStatus;
+    private Status responseStatus;
 
     Http2CallChainBase(Http2ClientImpl http2Client,
                        Http2ClientRequestImpl clientRequest,
@@ -75,8 +79,8 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         ClientUri uri = serviceRequest.uri();
         requestHeaders = serviceRequest.headers();
 
-        requestHeaders.setIfAbsent(Http.Headers.create(Http.HeaderNames.HOST, uri.authority()));
-        requestHeaders.remove(Http.HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
+        requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+        requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         ConnectionKey connectionKey = connectionKey(serviceRequest);
@@ -104,7 +108,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return requestHeaders;
     }
 
-    Http.Status responseStatus() {
+    Status responseStatus() {
         return responseStatus;
     }
 
@@ -184,7 +188,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return ContentDecoder.NO_OP;
     }
 
-    protected Http2Headers prepareHeaders(Http.Method method, ClientRequestHeaders headers, ClientUri uri) {
+    protected Http2Headers prepareHeaders(Method method, ClientRequestHeaders headers, ClientUri uri) {
         Http2Headers h2Headers = Http2Headers.create(headers);
         h2Headers.method(method);
         h2Headers.path(uri.pathWithQueryAndFragment());
@@ -225,12 +229,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
                                  clientRequest.proxy());
     }
 
-    private static final class LogHeaderConsumer implements Consumer<Http.Header> {
+    private static final class LogHeaderConsumer implements Consumer<Header> {
         private static final System.Logger LOGGER = System.getLogger(LogHeaderConsumer.class.getName());
         private static final LogHeaderConsumer INSTANCE = new LogHeaderConsumer();
 
         @Override
-        public void accept(Http.Header httpHeader) {
+        public void accept(Header httpHeader) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 LOGGER.log(System.Logger.Level.DEBUG,
                            "HTTP/2 request contains wrong header, removing {0}", httpHeader);

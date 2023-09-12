@@ -19,20 +19,20 @@ package io.helidon.webserver.http;
 import java.util.List;
 import java.util.function.Predicate;
 
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.webserver.ConnectionContext;
 
 class ServiceRoute extends HttpRouteBase implements HttpRoute {
     private final HttpService theService;
-    private final Predicate<Http.Method> methodPredicate;
+    private final Predicate<Method> methodPredicate;
     private final PathMatcher pathMatcher;
     private final List<HttpRouteBase> routes;
 
     ServiceRoute(HttpService theService,
-                 Predicate<Http.Method> methodPredicate,
+                 Predicate<Method> methodPredicate,
                  PathMatcher pathMatcher,
                  List<HttpRouteBase> routes) {
         this.theService = theService;

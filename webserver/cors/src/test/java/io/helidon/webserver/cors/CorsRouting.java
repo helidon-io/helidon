@@ -16,12 +16,12 @@
 
 package io.helidon.webserver.cors;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.cors.CrossOriginConfig;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_3;
 
@@ -67,12 +67,12 @@ abstract class CorsRouting {
                           new TestUtil.GreetService("Other Hello"))
                 .any(TestHandlerRegistration.CORS4_CONTEXT_ROOT,
                      CorsSupport.create(somewhatRestrictedConfig), // handler settings from config subnode
-                     (req, resp) -> resp.status(Http.Status.OK_200).send())
+                     (req, resp) -> resp.status(Status.OK_200).send())
                 .get(TestHandlerRegistration.CORS4_CONTEXT_ROOT,                       // handler settings in-line
                      CorsSupport.builder()
                              .allowOrigins("*")
                              .allowMethods("GET")
                              .build(),
-                     (req, resp) -> resp.status(Http.Status.OK_200).send());
+                     (req, resp) -> resp.status(Status.OK_200).send());
     }
 }

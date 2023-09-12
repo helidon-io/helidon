@@ -16,13 +16,13 @@
 
 package io.helidon.examples.employee;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
+import io.helidon.http.Status;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.DirectClient;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-import io.helidon.webclient.http1.Http1ClientResponse;
-import io.helidon.webserver.http.HttpRouting;
 
 import jakarta.json.JsonArray;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ public class MainTest {
     public void testEmployees() {
         try (Http1ClientResponse response = client.get("/employees")
                                                   .request()) {
-            assertThat("HTTP response2", response.status(), is(Http.Status.OK_200));
+            assertThat("HTTP response2", response.status(), is(Status.OK_200));
             assertThat(response.as(JsonArray.class).size(), is(40));
         }
     }

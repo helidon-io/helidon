@@ -26,13 +26,13 @@ import java.util.function.BiConsumer;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.Status;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http.spi.Sink;
 
-import static io.helidon.http.Http.Headers.CONTENT_TYPE_EVENT_STREAM;
+import static io.helidon.http.HeaderValues.CONTENT_TYPE_EVENT_STREAM;
 
 /**
  * Implementation of an SSE sink. Emits {@link SseEvent}s.
@@ -57,7 +57,7 @@ public class SseSink implements Sink<SseEvent> {
     SseSink(ServerResponse serverResponse, BiConsumer<Object, MediaType> eventConsumer, Runnable closeRunnable) {
         // Verify response has no status or content type
         HttpMediaType ct = serverResponse.headers().contentType().orElse(null);
-        if (serverResponse.status().code() != Http.Status.OK_200.code()
+        if (serverResponse.status().code() != Status.OK_200.code()
                 || ct != null && !CONTENT_TYPE_EVENT_STREAM.values().equals(ct.mediaType().text())) {
             throw new IllegalStateException("ServerResponse instance cannot be used to create SseResponse");
         }

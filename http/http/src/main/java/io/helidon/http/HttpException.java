@@ -25,26 +25,26 @@ package io.helidon.http;
  */
 public class HttpException extends RuntimeException {
 
-    private final Http.Status status;
+    private final Status status;
     private final boolean keepAlive;
 
     /**
-     * Creates {@link HttpException} associated with {@link Http.Status#INTERNAL_SERVER_ERROR_500}.
+     * Creates {@link HttpException} associated with {@link Status#INTERNAL_SERVER_ERROR_500}.
      *
      * @param message the message
      */
     public HttpException(String message) {
-        this(message, Http.Status.INTERNAL_SERVER_ERROR_500);
+        this(message, Status.INTERNAL_SERVER_ERROR_500);
     }
 
     /**
-     * Creates {@link HttpException} associated with {@link Http.Status#INTERNAL_SERVER_ERROR_500}.
+     * Creates {@link HttpException} associated with {@link Status#INTERNAL_SERVER_ERROR_500}.
      *
      * @param message the message
      * @param cause the cause of this exception
      */
     public HttpException(String message, Throwable cause) {
-        this(message, Http.Status.INTERNAL_SERVER_ERROR_500, cause);
+        this(message, Status.INTERNAL_SERVER_ERROR_500, cause);
     }
 
     /**
@@ -53,7 +53,7 @@ public class HttpException extends RuntimeException {
      * @param message the message
      * @param status the http status
      */
-    public HttpException(String message, Http.Status status) {
+    public HttpException(String message, Status status) {
         this(message, status, null);
     }
 
@@ -64,7 +64,7 @@ public class HttpException extends RuntimeException {
      * @param status the http status
      * @param keepAlive whether to keep the connection alive
      */
-    public HttpException(String message, Http.Status status, boolean keepAlive) {
+    public HttpException(String message, Status status, boolean keepAlive) {
         this(message, status, null, keepAlive);
     }
 
@@ -76,7 +76,7 @@ public class HttpException extends RuntimeException {
      * @param status the http status
      * @param cause the cause of this exception
      */
-    public HttpException(String message, Http.Status status, Throwable cause) {
+    public HttpException(String message, Status status, Throwable cause) {
         this(message, status, cause, false);
     }
 
@@ -88,7 +88,7 @@ public class HttpException extends RuntimeException {
      * @param cause the cause of this exception
      * @param keepAlive whether to keep this connection alive
      */
-    public HttpException(String message, Http.Status status, Throwable cause, boolean keepAlive) {
+    public HttpException(String message, Status status, Throwable cause, boolean keepAlive) {
         super(message, cause);
 
         this.status = status;
@@ -100,7 +100,7 @@ public class HttpException extends RuntimeException {
      *
      * @return the http status
      */
-    public final Http.Status status() {
+    public final Status status() {
         return status;
     }
 

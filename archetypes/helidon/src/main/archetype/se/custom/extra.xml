@@ -29,7 +29,7 @@
                 </map>
             </list>
             <list key="Main-helidon-imports" if="${extra} contains 'fault-tolerance'">
-                <value>io.helidon.http.Http</value>
+                <value>io.helidon.http.Status</value>
                 <value>io.helidon.faulttolerance.BulkheadException</value>
                 <value>io.helidon.faulttolerance.CircuitBreakerOpenException</value>
                 <value>io.helidon.faulttolerance.TimeoutException</value>
@@ -37,13 +37,13 @@
             <list key="Main-routing-builder" if="${extra} contains 'fault-tolerance'">
                 <value><![CDATA[.register("/", new FtService())
                 .error(BulkheadException.class,
-                        (req, res, ex) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503).send("bulkhead"))
+                        (req, res, ex) -> res.status(Status.SERVICE_UNAVAILABLE_503).send("bulkhead"))
                 .error(CircuitBreakerOpenException.class,
-                        (req, res, ex) -> res.status(Http.Status.SERVICE_UNAVAILABLE_503).send("circuit breaker"))
+                        (req, res, ex) -> res.status(Status.SERVICE_UNAVAILABLE_503).send("circuit breaker"))
                 .error(TimeoutException.class,
-                        (req, res, ex) -> res.status(Http.Status.REQUEST_TIMEOUT_408).send("timeout"))
+                        (req, res, ex) -> res.status(Status.REQUEST_TIMEOUT_408).send("timeout"))
                 .error(Throwable.class,
-                        (req, res, ex) -> res.status(Http.Status.INTERNAL_SERVER_ERROR_500)
+                        (req, res, ex) -> res.status(Status.INTERNAL_SERVER_ERROR_500)
                                 .send(ex.getClass().getName() + ": " + ex.getMessage()))]]></value>
             </list>
             <list key="Abstract-tests" if="${extra} contains 'fault-tolerance'">
@@ -75,7 +75,7 @@
 
         try (Http1ClientResponse third = client.get().path("/bulkhead/10000").request()) {
             // registered an error handler in Main
-            assertThat(third.status(), is(Http.Status.OK_200));
+            assertThat(third.status(), is(Status.OK_200));
             assertThat(third.as(String.class), is("Call rejected: 1"));
         }
     }
@@ -114,7 +114,7 @@
                 .request();
 
         // registered an error handler in Main
-        assertThat(clientResponse.status(), is(Http.Status.SERVICE_UNAVAILABLE_503));
+        assertThat(clientResponse.status(), is(Status.SERVICE_UNAVAILABLE_503));
         assertThat(clientResponse.as(String.class), is("circuit breaker"));
     }
 
@@ -163,7 +163,7 @@
                 .request()) {
 
             // no error handler specified
-            assertThat(clientResponse.status(), is(Http.Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(clientResponse.status(), is(Status.INTERNAL_SERVER_ERROR_500));
             assertThat(clientResponse.as(String.class), is("java.lang.RuntimeException: reactive failure"));
         }
     }
@@ -181,7 +181,7 @@
                 .path("/timeout/1000")
                 .request()) {
             // error handler specified in Main
-            assertThat(clientResponse.status(), is(Http.Status.REQUEST_TIMEOUT_408));
+            assertThat(clientResponse.status(), is(Status.REQUEST_TIMEOUT_408));
             assertThat(clientResponse.as(String.class), is("timeout"));
         }
     }

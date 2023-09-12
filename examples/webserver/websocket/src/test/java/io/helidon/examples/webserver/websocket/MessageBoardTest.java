@@ -20,16 +20,16 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.websocket.WsCloseCodes;
 import io.helidon.websocket.WsListener;
 import io.helidon.websocket.WsSession;
-import io.helidon.webclient.websocket.WsClient;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +62,7 @@ public class MessageBoardTest {
         // Post messages using REST resource
         for (String message : MESSAGES) {
             try (Http1ClientResponse response = client.post("/rest/board").submit(message)) {
-                assertThat(response.status(), is(Http.Status.NO_CONTENT_204));
+                assertThat(response.status(), is(Status.NO_CONTENT_204));
                 LOGGER.info("Posting message '" + message + "'");
             }
         }

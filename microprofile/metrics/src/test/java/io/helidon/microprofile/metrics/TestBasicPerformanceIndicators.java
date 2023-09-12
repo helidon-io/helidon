@@ -15,7 +15,7 @@
  */
 package io.helidon.microprofile.metrics;
 
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.microprofile.tests.junit5.AddConfig;
 import io.helidon.microprofile.tests.junit5.HelidonTest;
 
@@ -53,7 +53,7 @@ class TestBasicPerformanceIndicators {
                 .accept(MediaType.APPLICATION_JSON_TYPE)
                 .get();
 
-        assertThat("Metrics /metrics/vendor URL HTTP status", response.getStatus(), is(Http.Status.OK_200.code()));
+        assertThat("Metrics /metrics/vendor URL HTTP status", response.getStatus(), is(Status.OK_200.code()));
 
         JsonObject vendorMetrics = response.readEntity(JsonObject.class);
 

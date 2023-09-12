@@ -19,14 +19,15 @@ package io.helidon.http.tests.integration.media.jsonp;
 import java.util.Map;
 import java.util.Optional;
 
-import io.helidon.http.Http;
-import io.helidon.http.HttpMediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -64,7 +65,7 @@ class JsonpTest {
                 .request();
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 () -> assertThat("Should contain content type application/json",
                                  response.headers().contentType(),
                                  is(Optional.of(HttpMediaType.create(MediaTypes.APPLICATION_JSON)))),
@@ -73,12 +74,12 @@ class JsonpTest {
 
     @Test
     void testPost() {
-        Http1ClientResponse response = client.method(Http.Method.POST)
+        Http1ClientResponse response = client.method(Method.POST)
                 .uri("/jsonp")
                 .submit(MESSAGE);
 
         assertAll(
-                () -> assertThat(response.status(), is(Http.Status.OK_200)),
+                () -> assertThat(response.status(), is(Status.OK_200)),
                 // todo matcher for headers
                 () -> assertThat("Should contain content type application/json",
                                  response.headers().contentType(),

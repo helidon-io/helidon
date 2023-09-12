@@ -24,11 +24,11 @@ import java.util.function.Supplier;
 import io.helidon.common.Reflected;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.PropagatedHeaders;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -147,12 +147,12 @@ class NonJaxRsResource {
                     // to a @Compensate or @Complete method invocation
                     // then it MAY report 410 Gone HTTP status code
                     // or in the case of non-JAX-RS method returning ParticipantStatus null.
-                    () -> res.status(Http.Status.GONE_410).send());
+                    () -> res.status(Status.GONE_410).send());
         }
         default -> {
             LOGGER.log(Level.ERROR, "Unexpected non Jax-Rs LRA compensation type "
                     + type + ": " + req.path().absolute().path());
-            res.status(Http.Status.NOT_FOUND_404).send();
+            res.status(Status.NOT_FOUND_404).send();
         }
         }
     }
@@ -182,7 +182,7 @@ class NonJaxRsResource {
     }
 
     private void sendResponse(ServerResponse res, Response response) {
-        res.status(Http.Status.create(response.getStatus()));
+        res.status(Status.create(response.getStatus()));
         response.getHeaders()
                 .forEach((k, values) -> res.header(HeaderNames.create(k),
                                                    values.stream()

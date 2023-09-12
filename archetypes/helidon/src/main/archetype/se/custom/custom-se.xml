@@ -46,7 +46,7 @@
     @Test
     void testSimpleGreet() {
         try (Http1ClientResponse response = client.get("/simple-greet").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("Hello World!"));
         }
     }

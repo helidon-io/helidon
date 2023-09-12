@@ -19,7 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.http.BadRequestException;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRules;
@@ -68,7 +68,7 @@ public final class TranslatorFrontendService implements HttpService {
                     .request()) {
 
                 final String result;
-                if (clientRes.status().family() == Http.Status.Family.SUCCESSFUL) {
+                if (clientRes.status().family() == Status.Family.SUCCESSFUL) {
                     result = clientRes.entity().as(String.class);
                 } else {
                     result = "Error: " + clientRes.entity().as(String.class);

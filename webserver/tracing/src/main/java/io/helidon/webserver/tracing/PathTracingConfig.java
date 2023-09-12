@@ -21,7 +21,8 @@ import java.util.List;
 
 import io.helidon.common.uri.UriPath;
 import io.helidon.config.Config;
-import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.http.MethodPredicate;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.tracing.config.TracingConfig;
@@ -56,7 +57,7 @@ public interface PathTracingConfig {
      * @param path invoked path
      * @return {@code true} if matched
      */
-    boolean matches(Http.Method method, UriPath path);
+    boolean matches(Method method, UriPath path);
 
     /**
      * Associated configuration of tracing valid for the configured path and (possibly) methods.
@@ -79,17 +80,17 @@ public interface PathTracingConfig {
         @Override
         public PathTracingConfig build() {
             // immutable
-            final Collection<Http.Method> finalMethods = methods.stream()
-                    .map(Http.Method::create)
+            final Collection<Method> finalMethods = methods.stream()
+                    .map(Method::create)
                     .toList();
             final TracingConfig finalTracingConfig = tracedConfig;
 
             PathMatcher pathMatcher = PathMatchers.create(path);
-            Http.MethodPredicate methodPredicate = Http.Method.predicate(finalMethods);
+            MethodPredicate methodPredicate = Method.predicate(finalMethods);
 
             return new PathTracingConfig() {
                 @Override
-                public boolean matches(Http.Method method, UriPath path) {
+                public boolean matches(Method method, UriPath path) {
                     return methodPredicate.test(method) && pathMatcher.match(path).accepted();
                 }
 

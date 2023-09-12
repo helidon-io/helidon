@@ -18,19 +18,22 @@ package io.helidon.webclient.tests;
 
 import java.util.Optional;
 
-import io.helidon.http.ClientResponseHeaders;
-import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.HttpMediaType;
 import io.helidon.common.media.type.ParserMode;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
+import io.helidon.http.HttpMediaType;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -56,12 +59,12 @@ class HeadersTest {
     // Verify that invalid content type is present in response headers and is accessible
     @Test
     public void testInvalidContentType() {
-        try (HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidContentType")
                 .request()) {
             ClientResponseHeaders h = res.headers();
-            Http.Header contentType = h.get(Http.HeaderNames.CONTENT_TYPE);
-            assertThat(res.status(), is(Http.Status.OK_200));
+            Header contentType = h.get(HeaderNames.CONTENT_TYPE);
+            assertThat(res.status(), is(Status.OK_200));
             assertThat(contentType.value(), is(TestService.INVALID_CONTENT_TYPE_VALUE));
         }
     }
@@ -69,13 +72,13 @@ class HeadersTest {
     // Verify that "Content-Type: text" header parsing fails in strict mode
     @Test
     public void testInvalidTextContentTypeStrict() {
-        try (HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidTextContentType")
                 .request()) {
-            assertThat(res.status(), is(Http.Status.OK_200));
+            assertThat(res.status(), is(Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.Header rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
+            Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value is invalid, IllegalArgumentException shall be thrown
             try {
@@ -94,13 +97,13 @@ class HeadersTest {
                 .from(this.client.prototype())
                 .mediaTypeParserMode(ParserMode.RELAXED)
                 .build();
-        try (HttpClientResponse res = client.method(Http.Method.GET)
+        try (HttpClientResponse res = client.method(Method.GET)
                 .path("/test/invalidTextContentType")
                 .request()) {
-            assertThat(res.status(), is(Http.Status.OK_200));
+            assertThat(res.status(), is(Status.OK_200));
             Headers h = res.headers();
             // Raw protocol data value
-            Http.Header rawContentType = h.get(Http.HeaderNames.CONTENT_TYPE);
+            Header rawContentType = h.get(HeaderNames.CONTENT_TYPE);
             assertThat(rawContentType.value(), is(TestService.INVALID_CONTENT_TYPE_TEXT));
             // Media type parsed value
             Optional<HttpMediaType> contentType = h.contentType();
@@ -124,7 +127,7 @@ class HeadersTest {
         private static final String INVALID_CONTENT_TYPE_VALUE = "invalid header value";
 
         private void invalidContentType(ServerRequest request, ServerResponse response) {
-            response.header(Http.HeaderNames.CONTENT_TYPE, INVALID_CONTENT_TYPE_VALUE)
+            response.header(HeaderNames.CONTENT_TYPE, INVALID_CONTENT_TYPE_VALUE)
                     .send();
         }
 
@@ -133,7 +136,7 @@ class HeadersTest {
 
         // Returns Content-Type: text instead of text/plain
         private void invalidTextContentType(ServerRequest request, ServerResponse response) {
-            response.header(Http.HeaderNames.CONTENT_TYPE, INVALID_CONTENT_TYPE_TEXT)
+            response.header(HeaderNames.CONTENT_TYPE, INVALID_CONTENT_TYPE_TEXT)
                     .send();
         }
 

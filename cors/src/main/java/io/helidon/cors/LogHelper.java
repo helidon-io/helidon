@@ -30,8 +30,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.cors.CorsSupportHelper.RequestType;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Method;
 
 class LogHelper {
 
@@ -45,15 +46,15 @@ class LogHelper {
      * Collects headers for assignment to a request or response and logging during assignment.
      */
     static class Headers {
-        private final List<Map.Entry<Http.HeaderName, Object>> headers = new ArrayList<>();
+        private final List<Map.Entry<HeaderName, Object>> headers = new ArrayList<>();
         private final List<String> notes = CorsSupportHelper.LOGGER.isLoggable(DECISION_LEVEL) ? new ArrayList<>() : null;
 
-        Headers add(Http.HeaderName key, Object value) {
+        Headers add(HeaderName key, Object value) {
             headers.add(new AbstractMap.SimpleEntry<>(key, value));
             return this;
         }
 
-        Headers add(Http.HeaderName key, Object value, String note) {
+        Headers add(HeaderName key, Object value, String note) {
             add(key, value);
             if (notes != null) {
                 notes.add(note);
@@ -61,7 +62,7 @@ class LogHelper {
             return this;
         }
 
-        void setAndLog(BiConsumer<Http.HeaderName, Object> consumer, String note) {
+        void setAndLog(BiConsumer<HeaderName, Object> consumer, String note) {
             headers.forEach(entry -> consumer.accept(entry.getKey(), entry.getValue()));
             CorsSupportHelper.LOGGER.log(DECISION_LEVEL, () -> note + ": " + headers + (notes == null ? "" : notes));
         }
@@ -129,8 +130,8 @@ class LogHelper {
         List<String> reasonsWhyCORS = new ArrayList<>(); // any reason is determinative
         List<String> factorsWhyPreflight = new ArrayList<>(); // factors contribute but, individually, do not determine
 
-        if (!methodName.equalsIgnoreCase(Http.Method.OPTIONS.text())) {
-            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Http.Method.OPTIONS.text()));
+        if (!methodName.equalsIgnoreCase(Method.OPTIONS.text())) {
+            reasonsWhyCORS.add(String.format("method is %s, not %s", methodName, Method.OPTIONS.text()));
         } else {
             factorsWhyPreflight.add(String.format("method is %s", methodName));
         }

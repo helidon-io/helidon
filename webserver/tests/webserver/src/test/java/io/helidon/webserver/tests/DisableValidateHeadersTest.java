@@ -18,14 +18,13 @@ package io.helidon.webserver.tests;
 
 import java.util.stream.Stream;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
@@ -37,13 +36,11 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
@@ -83,11 +80,11 @@ class DisableValidateHeadersTest {
     @MethodSource("customHeaders")
     void testHeaders(String headerName, String headerValue, boolean expectsValid) {
         Http1ClientRequest request = client.get("/test");
-        request.header(Http.Headers.create(Http.HeaderNames.create(headerName), headerValue));
+        request.header(HeaderValues.create(HeaderNames.create(headerName), headerValue));
         if (expectsValid) {
             HttpClientResponse response = request.request();
-            assertThat(response.status(), is(Http.Status.OK_200));
-            String responseHeaderValue = response.headers().get(Http.HeaderNames.create(headerName)).values();
+            assertThat(response.status(), is(Status.OK_200));
+            String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
             assertThrows(IllegalArgumentException.class, () -> request.request());
@@ -98,7 +95,7 @@ class DisableValidateHeadersTest {
         ServerRequestHeaders headers = request.headers();
         request.headers().toMap().forEach((k, v) -> {
             if (k.contains("Header")) {
-                response.headers().add(Http.Headers.create(Http.HeaderNames.create(k), v));
+                response.headers().add(HeaderValues.create(HeaderNames.create(k), v));
             }
         });
         response.send("any");

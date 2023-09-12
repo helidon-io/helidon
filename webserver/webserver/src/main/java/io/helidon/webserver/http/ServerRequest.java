@@ -93,7 +93,7 @@ public interface ServerRequest extends HttpRequest {
     HttpSecurity security();
 
     /**
-     * Whether we have already sent the {@link io.helidon.http.Http.Status#CONTINUE_100} when expect continue is
+     * Whether we have already sent the {@link io.helidon.http.Status#CONTINUE_100} when expect continue is
      * present. This method returns {@code true} for cases where expect continue is not set.
      * This method returns {@code false} for requests without entity.
      *

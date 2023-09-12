@@ -29,7 +29,7 @@ public class HttpPrologue {
     private final String rawProtocol;
     private final String protocol;
     private final String protocolVersion;
-    private final Http.Method method;
+    private final Method method;
     private final UriPath uriPath;
     private final String rawQuery;
     private final String rawFragment;
@@ -49,7 +49,7 @@ public class HttpPrologue {
     private HttpPrologue(String rawProtocol,
                          String protocol,
                          String protocolVersion,
-                         Http.Method method,
+                         Method method,
                          UriPath path,
                          String rawQuery,
                          String rawFragment) {
@@ -65,7 +65,7 @@ public class HttpPrologue {
     private HttpPrologue(String rawProtocol,
                          String protocol,
                          String protocolVersion,
-                         Http.Method httpMethod,
+                         Method httpMethod,
                          UriPath uriPath,
                          UriQuery uriQuery,
                          UriFragment uriFragment) {
@@ -95,7 +95,7 @@ public class HttpPrologue {
     public static HttpPrologue create(String rawProtocol,
                                       String protocol,
                                       String protocolVersion,
-                                      Http.Method httpMethod,
+                                      Method httpMethod,
                                       String unresolvedPath,
                                       boolean validatePath) {
 
@@ -148,7 +148,7 @@ public class HttpPrologue {
     public static HttpPrologue create(String rawProtocol,
                                       String protocol,
                                       String protocolVersion,
-                                      Http.Method httpMethod,
+                                      Method httpMethod,
                                       UriPath uriPath,
                                       UriQuery uriQuery,
                                       UriFragment uriFragment) {
@@ -187,7 +187,7 @@ public class HttpPrologue {
      *
      * @return method
      */
-    public Http.Method method() {
+    public Method method() {
         return method;
     }
 

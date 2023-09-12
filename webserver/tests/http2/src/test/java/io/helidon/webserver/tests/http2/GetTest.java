@@ -28,13 +28,17 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Random;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,12 +48,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class GetTest {
     private static final byte[] BYTES = new byte[256];
-    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create("X-ReQUEst-header");
+    private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create("X-ReQUEst-header");
     private static final String REQUEST_HEADER_VALUE = "some nice value";
-    private static final HeaderName RESPONSE_HEADER_NAME = Http.HeaderNames.create("X-REsponSE-HeADER");
+    private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create("X-REsponSE-HeADER");
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final Http.Header RESPONSE_HEADER_VALUE = Http.Headers.create(RESPONSE_HEADER_NAME,
-                                                                                 RESPONSE_HEADER_VALUE_STRING);
+    private static final Header RESPONSE_HEADER_VALUE = HeaderValues.create(RESPONSE_HEADER_NAME,
+                                                                            RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -69,10 +73,10 @@ class GetTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
-        router.route(Http.Method.GET, "/string", Routes::string)
-                .route(Http.Method.GET, "/bytes", Routes::bytes)
-                .route(Http.Method.GET, "/stream", Routes::outputStream)
-                .route(Http.Method.GET, "/headers", Routes::headers);
+        router.route(Method.GET, "/string", Routes::string)
+                .route(Method.GET, "/bytes", Routes::bytes)
+                .route(Method.GET, "/stream", Routes::outputStream)
+                .route(Method.GET, "/headers", Routes::headers);
     }
 
     @Test
@@ -83,7 +87,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();
@@ -99,7 +103,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -115,7 +119,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         byte[] entity = response.body();
         assertThat(entity, is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
@@ -133,7 +137,7 @@ class GetTest {
                                                             .GET()
                                                             .build(), HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         String entity = response.body();
         assertThat(entity, is("Hello"));
         java.net.http.HttpHeaders headers = response.headers();

@@ -16,12 +16,12 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class ReasonPhraseTest {
     private static final String CUSTOM_PHRASE = "Custom error";
-    private static final Http.Status CUSTOM_STATUS = Http.Status.create(400, CUSTOM_PHRASE);
+    private static final Status CUSTOM_STATUS = Status.create(400, CUSTOM_PHRASE);
 
     private final Http1Client client;
 
@@ -41,7 +41,7 @@ class ReasonPhraseTest {
 
     @SetUpRoute
     static void routing(HttpRules routing) {
-        routing.get("/default", (req, res) -> res.status(Http.Status.BAD_REQUEST_400).send())
+        routing.get("/default", (req, res) -> res.status(Status.BAD_REQUEST_400).send())
                 .get("/custom", (req, res) -> res.status(CUSTOM_STATUS).send());
     }
 
@@ -49,7 +49,7 @@ class ReasonPhraseTest {
     void testDefaultPhrase() {
         try (Http1ClientResponse response = client.get("/default")
                 .request()) {
-            assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.BAD_REQUEST_400));
         }
     }
 

@@ -35,9 +35,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
 
@@ -181,7 +182,7 @@ public class FormParamsSupport implements MediaSupport {
         private final String separator;
         private final Function<String, String> nameEncoder;
         private final Function<String, String> valueEncoder;
-        private final Http.Header contentTypeHeader;
+        private final Header contentTypeHeader;
 
         private FormParamsWriter(String separator,
                                  Function<String, String> nameEncoder,
@@ -215,7 +216,7 @@ public class FormParamsSupport implements MediaSupport {
                            WritableHeaders<?> writableHeaders) {
 
             Charset charset;
-            if (writableHeaders.contains(Http.HeaderNames.CONTENT_TYPE)) {
+            if (writableHeaders.contains(HeaderNames.CONTENT_TYPE)) {
                 charset = writableHeaders.contentType()
                         .flatMap(HttpMediaType::charset)
                         .map(Charset::forName)
@@ -251,8 +252,8 @@ public class FormParamsSupport implements MediaSupport {
     }
 
     private static class FormParamsUrlWriter extends FormParamsWriter {
-        private static final Http.Header CONTENT_TYPE_URL_ENCODED =
-                Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+        private static final Header CONTENT_TYPE_URL_ENCODED =
+                HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                           HttpMediaType.create(MediaTypes.APPLICATION_FORM_URLENCODED)
                                                  .withCharset("utf-8")
                                                  .text());
@@ -266,8 +267,8 @@ public class FormParamsSupport implements MediaSupport {
     }
 
     private static class FormParamsPlaintextWriter extends FormParamsWriter {
-        private static final Http.Header CONTENT_TYPE_TEXT =
-                Http.Headers.createCached(Http.HeaderNames.CONTENT_TYPE,
+        private static final Header CONTENT_TYPE_TEXT =
+                HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                           HttpMediaType.create(MediaTypes.TEXT_PLAIN)
                                                  .withCharset("utf-8")
                                                  .text());

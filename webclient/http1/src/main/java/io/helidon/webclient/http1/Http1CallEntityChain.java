@@ -22,7 +22,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -51,7 +52,7 @@ class Http1CallEntityChain extends Http1CallChainBase {
                                               DataReader reader,
                                               BufferData writeBuffer) {
 
-        headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, entity.length));
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
 
         writeHeaders(headers, writeBuffer, protocolConfig().validateRequestHeaders());
         // we have completed writing the headers

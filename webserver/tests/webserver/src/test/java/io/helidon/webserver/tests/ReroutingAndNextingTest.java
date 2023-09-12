@@ -16,13 +16,14 @@
 
 package io.helidon.webserver.tests;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.Header;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class ReroutingAndNextingTest {
-    private static final Header NEXTED_HEADER = Http.Headers.create("NEXTED", "yes");
+    private static final Header NEXTED_HEADER = HeaderValues.create("NEXTED", "yes");
 
     private final Http1Client client;
 
@@ -60,7 +61,7 @@ class ReroutingAndNextingTest {
         try (Http1ClientResponse response = client.get("/reroute")
                 .request()) {
 
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers().contains(NEXTED_HEADER), is(true));
             assertThat(response.as(String.class), is("Direct"));
         }

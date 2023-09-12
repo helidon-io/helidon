@@ -16,17 +16,17 @@
 
 package io.helidon.webserver.tests.sse;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.http.Http.Headers.ACCEPT_EVENT_STREAM;
-import static io.helidon.http.Http.Headers.ACCEPT_JSON;
+import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
+import static io.helidon.http.HeaderValues.ACCEPT_JSON;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -85,13 +85,13 @@ class SseServerTest extends SseBaseTest {
     @Test
     void testWrongAcceptType() {
         try (Http1ClientResponse response = client.get("/sseString1").header(ACCEPT_JSON).request()) {
-            assertThat(response.status(), is(Http.Status.NOT_ACCEPTABLE_406));
+            assertThat(response.status(), is(Status.NOT_ACCEPTABLE_406));
         }
     }
 
     private void testSse(String path, String result) {
         try (Http1ClientResponse response = client.get(path).header(ACCEPT_EVENT_STREAM).request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is(result));
         }
     }

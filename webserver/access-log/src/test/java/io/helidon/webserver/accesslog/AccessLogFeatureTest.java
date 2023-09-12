@@ -22,16 +22,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
 import io.helidon.common.context.Context;
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderNames;
-import io.helidon.http.HttpPrologue;
-import io.helidon.http.ServerRequestHeaders;
-import io.helidon.http.WritableHeaders;
 import io.helidon.common.security.SecurityContext;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
+import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 
@@ -54,10 +57,10 @@ class AccessLogFeatureTest {
     private static final String PATH = "/greet/World";
     private static final String HTTP_VERSION = "HTTP/1.1";
 
-    private static final int STATUS_CODE = Http.Status.I_AM_A_TEAPOT_418.code();
+    private static final int STATUS_CODE = Status.I_AM_A_TEAPOT_418.code();
     private static final String CONTENT_LENGTH = "0";
     private static final long TIME_TAKEN_MICROS = 1140000;
-    private static final Http.Header REFERER_HEADER = Http.Headers.create(HeaderNames.REFERER, "first", "second");
+    private static final Header REFERER_HEADER = HeaderValues.create(HeaderNames.REFERER, "first", "second");
 
     @Test
     void testHelidonFormat() {
@@ -79,14 +82,14 @@ class AccessLogFeatureTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.PUT,
+                                                    Method.PUT,
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());
         when(request.prologue()).thenReturn(prologue);
 
         RoutingResponse response = mock(RoutingResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
+        when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
         AccessLogContext accessLogContext = mock(AccessLogContext.class);
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
@@ -129,14 +132,14 @@ class AccessLogFeatureTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.PUT,
+                                                    Method.PUT,
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());
         when(request.prologue()).thenReturn(prologue);
 
         RoutingResponse response = mock(RoutingResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
+        when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
         AccessLogContext accessLogContext = mock(AccessLogContext.class);
         when(accessLogContext.requestDateTime()).thenReturn(BEGIN_TIME);
@@ -169,7 +172,7 @@ class AccessLogFeatureTest {
         HttpPrologue prologue = HttpPrologue.create("HTTP/1.1",
                                                     "HTTP",
                                                     "1.1",
-                                                    Http.Method.PUT,
+                                                    Method.PUT,
                                                     UriPath.create(PATH),
                                                     UriQuery.empty(),
                                                     UriFragment.empty());
@@ -182,7 +185,7 @@ class AccessLogFeatureTest {
         when(request.headers()).thenReturn(ServerRequestHeaders.create(headers));
 
         RoutingResponse response = mock(RoutingResponse.class);
-        when(response.status()).thenReturn(Http.Status.I_AM_A_TEAPOT_418);
+        when(response.status()).thenReturn(Status.I_AM_A_TEAPOT_418);
 
         String logRecord = accessLog.createLogRecord(request,
                                                      response,

@@ -32,7 +32,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.http.ClientRequestHeaders;
-import io.helidon.http.Http;
+import io.helidon.http.Header;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -114,7 +114,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * @return default headers
      */
     @Option.Singular
-    Set<Http.Header> headers();
+    Set<Header> headers();
 
     /**
      * Default headers as a headers object. Creates a new instance for each call, so the returned value

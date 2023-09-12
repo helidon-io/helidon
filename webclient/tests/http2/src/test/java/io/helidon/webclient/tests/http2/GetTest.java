@@ -28,16 +28,19 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Random;
 
-import io.helidon.http.Http;
-import io.helidon.http.Http.HeaderName;
-import io.helidon.http.Http.HeaderNames;
-import io.helidon.webserver.http2.Http2Route;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http2.Http2Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
@@ -51,10 +54,10 @@ class GetTest {
     private static final String REQUEST_HEADER_VALUE_STRING = "some nice value";
     private static final String RESPONSE_HEADER_NAME_STRING = "X-REsponSE-HeADER";
     private static final String RESPONSE_HEADER_VALUE_STRING = "another nice value";
-    private static final HeaderName REQUEST_HEADER_NAME = Http.HeaderNames.create(REQUEST_HEADER_NAME_STRING);
+    private static final HeaderName REQUEST_HEADER_NAME = HeaderNames.create(REQUEST_HEADER_NAME_STRING);
     private static final HeaderName RESPONSE_HEADER_NAME = HeaderNames.create(RESPONSE_HEADER_NAME_STRING);
-    private static final Http.Header RESPONSE_HEADER_VALUE = Http.Headers.createCached(RESPONSE_HEADER_NAME,
-                                                                                       RESPONSE_HEADER_VALUE_STRING);
+    private static final Header RESPONSE_HEADER_VALUE = HeaderValues.createCached(RESPONSE_HEADER_NAME,
+                                                                                  RESPONSE_HEADER_VALUE_STRING);
 
     static {
         Random random = new Random();
@@ -75,10 +78,10 @@ class GetTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder router) {
         // enforce http/2 so we know if upgrade failed
-        router.route(Http2Route.route(Http.Method.GET, "/string", Handler.create(Routes::string)))
-                .route(Http.Method.GET, "/bytes", Routes::bytes)
-                .route(Http.Method.GET, "/chunked", Routes::chunked)
-                .route(Http.Method.GET, "/headers", Routes::headers);
+        router.route(Http2Route.route(Method.GET, "/string", Handler.create(Routes::string)))
+                .route(Method.GET, "/bytes", Routes::bytes)
+                .route(Method.GET, "/chunked", Routes::chunked)
+                .route(Method.GET, "/headers", Routes::headers);
     }
 
     @Test
@@ -89,7 +92,7 @@ class GetTest {
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         assertThat(response.body(), is("Hello"));
 
         java.net.http.HttpHeaders headers = response.headers();
@@ -105,7 +108,7 @@ class GetTest {
                 .build();
         HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         assertThat(response.body(), is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
         assertThat(headers.firstValueAsLong(HeaderNames.CONTENT_LENGTH.defaultCase()),
@@ -121,7 +124,7 @@ class GetTest {
                 .build();
         HttpResponse<byte[]> response = httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         assertThat(response.body(), is(BYTES));
         java.net.http.HttpHeaders headers = response.headers();
         assertThat(headers.firstValueAsLong(HeaderNames.CONTENT_LENGTH.defaultCase()),
@@ -138,11 +141,11 @@ class GetTest {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertThat(response.statusCode(), is(Http.Status.OK_200.code()));
+        assertThat(response.statusCode(), is(Status.OK_200.code()));
         assertThat(response.body(), is("Hello"));
 
         java.net.http.HttpHeaders headers = response.headers();
-        assertThat(headers.firstValueAsLong(Http.HeaderNames.CONTENT_LENGTH.defaultCase()),
+        assertThat(headers.firstValueAsLong(HeaderNames.CONTENT_LENGTH.defaultCase()),
                    is(OptionalLong.of(5)));
         assertThat("Should contain echoed request header",
                    headers.firstValue(REQUEST_HEADER_NAME_STRING), is(Optional.of(REQUEST_HEADER_VALUE_STRING)));

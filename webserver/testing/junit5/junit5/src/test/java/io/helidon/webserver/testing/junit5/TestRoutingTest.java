@@ -22,7 +22,8 @@ import java.security.cert.X509Certificate;
 import java.util.LinkedList;
 import java.util.List;
 
-import io.helidon.http.Http;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -49,16 +50,16 @@ class TestRoutingTest {
                 .post("/post", (req, res) -> {
                     String requestEntity = req.content().as(String.class);
                     if (ENTITY.equals(requestEntity)) {
-                        res.status(Http.Status.CREATED_201);
+                        res.status(Status.CREATED_201);
                     } else {
-                        res.status(Http.Status.INTERNAL_SERVER_ERROR_500);
+                        res.status(Status.INTERNAL_SERVER_ERROR_500);
                     }
                     res.send();
                 })
                 .get("/name", (req, res) -> {
                     String name = req.remotePeer().tlsPrincipal().map(Principal::getName).orElse(null);
                     if (name == null) {
-                        res.status(Http.Status.BAD_REQUEST_400).send("Expected client principal");
+                        res.status(Status.BAD_REQUEST_400).send("Expected client principal");
                     } else {
                         res.send(name);
                     }
@@ -66,7 +67,7 @@ class TestRoutingTest {
                 .get("/certs", (req, res) -> {
                     Certificate[] certs = req.remotePeer().tlsCertificates().orElse(null);
                     if (certs == null) {
-                        res.status(Http.Status.BAD_REQUEST_400).send("Expected client certificate");
+                        res.status(Status.BAD_REQUEST_400).send("Expected client certificate");
                     } else {
                         List<String> certDefs = new LinkedList<>();
                         for (Certificate cert : certs) {
@@ -116,22 +117,22 @@ class TestRoutingTest {
 
     @Test
     void testPost() {
-        Http1ClientResponse response = client.method(Http.Method.POST)
+        Http1ClientResponse response = client.method(Method.POST)
                 .uri("/post")
                 .submit(ENTITY);
 
-        assertThat(response.status(), is(Http.Status.CREATED_201));
+        assertThat(response.status(), is(Status.CREATED_201));
     }
 
     @Test
     void testMutualTlsPrincipal() {
         String principal = "Custom principal name";
         client.clientTlsPrincipal(new TestPrincipal(principal));
-        Http1ClientResponse response = client.method(Http.Method.GET)
+        Http1ClientResponse response = client.method(Method.GET)
                 .uri("/name")
                 .request();
 
-        assertAll(() -> assertThat(response.status(), is(Http.Status.OK_200)),
+        assertAll(() -> assertThat(response.status(), is(Status.OK_200)),
                   () -> assertThat(response.as(String.class), is(principal)));
     }
 

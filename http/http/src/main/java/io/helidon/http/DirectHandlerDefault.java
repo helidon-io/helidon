@@ -25,7 +25,7 @@ final class DirectHandlerDefault implements DirectHandler {
     @Override
     public TransportResponse handle(TransportRequest request,
                                     EventType eventType,
-                                    Http.Status defaultStatus,
+                                    Status defaultStatus,
                                     ServerResponseHeaders headers,
                                     String message) {
         return TransportResponse.builder()

@@ -30,7 +30,7 @@ import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.tracing.TracingFeature;
 
-import static io.helidon.http.Http.Method.GET;
+import static io.helidon.http.Method.GET;
 
 /**
  * Tracing example.

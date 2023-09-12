@@ -21,15 +21,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-import io.helidon.http.Http;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.http.media.multipart.WriteableMultiPart;
 import io.helidon.http.media.multipart.WriteablePart;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
@@ -71,7 +72,7 @@ public class FileServiceTest {
                                                   .submit(WriteableMultiPart.builder()
                                                                             .addPart(writeablePart("file[]", "foo.txt", file))
                                                                             .build())) {
-            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+            assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
         }
     }
 
@@ -88,7 +89,7 @@ public class FileServiceTest {
                                                           .addPart(writeablePart("file[]", "streamed-foo.txt", file))
                                                           .addPart(writeablePart("otherPart", "streamed-foo2.txt", file2))
                                                           .build())) {
-            assertThat(response.status(), is(Http.Status.MOVED_PERMANENTLY_301));
+            assertThat(response.status(), is(Status.MOVED_PERMANENTLY_301));
         }
     }
 
@@ -96,7 +97,7 @@ public class FileServiceTest {
     @Order(3)
     public void testList() {
         try (Http1ClientResponse response = client.get("/api").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat(json, Matchers.is(notNullValue()));
             List<String> files = json.getJsonArray("files").getValuesAs(v -> ((JsonString) v).getString());
@@ -108,8 +109,8 @@ public class FileServiceTest {
     @Order(4)
     public void testDownload() {
         try (Http1ClientResponse response = client.get("/api").path("foo.txt").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
-            assertThat(response.headers().first(Http.HeaderNames.CONTENT_DISPOSITION).orElse(null),
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().first(HeaderNames.CONTENT_DISPOSITION).orElse(null),
                     containsString("filename=\"foo.txt\""));
             byte[] bytes = response.as(byte[].class);
             assertThat(new String(bytes, StandardCharsets.UTF_8), Matchers.is("bar\n"));

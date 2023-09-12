@@ -16,13 +16,13 @@
 
 package io.helidon.webclient.http1;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import io.helidon.common.buffers.DataReader;
-import io.helidon.http.Http.Status;
+import io.helidon.http.Status;
 
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1StatusParserTest {
 

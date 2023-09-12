@@ -28,7 +28,7 @@ import java.util.Optional;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
@@ -128,7 +128,7 @@ public class SseEvent {
             WritableHeaders<?> headers;
             if (!mediaType.equals(MediaTypes.WILDCARD)) {
                 headers = WritableHeaders.create();
-                headers.set(Http.HeaderNames.CONTENT_TYPE, mediaType.text());
+                headers.set(HeaderNames.CONTENT_TYPE, mediaType.text());
             } else {
                 headers = EMPTY_HEADERS;
             }

@@ -21,8 +21,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.http.Http;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.webclient.websocket.WsClient;
 import io.helidon.webclient.websocket.WsClientConfig;
 import io.helidon.webserver.websocket.WsRoute;
@@ -54,7 +54,7 @@ public class DirectWsClient implements WsClient {
 
     @Override
     public void connect(URI uri, WsListener clientListener) {
-        HttpPrologue prologue = HttpPrologue.create("ws", "ws", "13", Http.Method.GET, uri.getRawPath(), false);
+        HttpPrologue prologue = HttpPrologue.create("ws", "ws", "13", Method.GET, uri.getRawPath(), false);
         WsRoute route = routing.findRoute(prologue);
         DirectWsConnection directWsConnection = DirectWsConnection.create(prologue, clientListener, route);
         directWsConnection.start();

@@ -16,14 +16,14 @@
 
 package io.helidon.webserver.tests.gh2631;
 
-import io.helidon.http.Http;
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -58,7 +58,7 @@ class Gh2631Test {
     @Test
     void testClasspathNoFallbackMissing() {
         Http1ClientResponse response = getResponse("/simple/second/");
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
     }
 
     @Test
@@ -95,7 +95,7 @@ class Gh2631Test {
     @Test
     void testFileNoFallbackMissing() {
         HttpClientResponse response = getResponse("/simpleFile/second/");
-        assertThat(response.status(), is(Http.Status.NOT_FOUND_404));
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
     }
 
     @Test

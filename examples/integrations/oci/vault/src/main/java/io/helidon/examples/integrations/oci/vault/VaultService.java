@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Base64Value;
-import io.helidon.http.Http;
+import io.helidon.http.Status;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
@@ -111,7 +111,7 @@ class VaultService implements HttpService {
                 res.send(Base64Value.createFromEncoded(((Base64SecretBundleContentDetails) content).getContent())
                         .toDecodedString());
             } else {
-                res.status(Http.Status.INTERNAL_SERVER_ERROR_500).send("Invalid secret content type");
+                res.status(Status.INTERNAL_SERVER_ERROR_500).send("Invalid secret content type");
             }
         }, res);
 
@@ -218,7 +218,7 @@ class VaultService implements HttpService {
             consumer.accept(response);
         } catch (Throwable error) {
             LOGGER.log(Level.WARNING, "OCI Exception", error);
-            response.status(Http.Status.INTERNAL_SERVER_ERROR_500).send(error.getMessage());
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send(error.getMessage());
         }
     }
 }

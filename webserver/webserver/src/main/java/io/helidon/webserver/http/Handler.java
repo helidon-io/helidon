@@ -29,7 +29,7 @@ import io.helidon.webserver.ServerLifecycle;
  */
 public interface Handler extends ServerLifecycle {
     /**
-     * Create a handler that only runs code and returns {@link io.helidon.http.Http.Status#OK_200}.
+     * Create a handler that only runs code and returns {@link io.helidon.http.Status#OK_200}.
      *
      * @param handler runnable to run
      * @return handler
@@ -42,7 +42,7 @@ public interface Handler extends ServerLifecycle {
     }
 
     /**
-     * Create a handler that consumes a {@link ServerRequest} and returns {@link io.helidon.http.Http.Status#OK_200}.
+     * Create a handler that consumes a {@link ServerRequest} and returns {@link io.helidon.http.Status#OK_200}.
      *
      * @param handler consumer of request
      * @return handler
@@ -96,7 +96,7 @@ public interface Handler extends ServerLifecycle {
     }
 
     /**
-     * Create a handler that consumes typed request entity and sends {@link io.helidon.http.Http.Status#OK_200}.
+     * Create a handler that consumes typed request entity and sends {@link io.helidon.http.Status#OK_200}.
      *
      * @param type    type of request entity
      * @param handler consumer of request entity

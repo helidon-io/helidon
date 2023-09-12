@@ -31,12 +31,14 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.http.Http;
-import io.helidon.http.Http.DateTime;
-import io.helidon.http.Http.Header;
-import io.helidon.http.Http.HeaderName;
+import io.helidon.http.DateTime;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
@@ -53,10 +55,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static final byte[] OK_200 = "HTTP/1.1 200 OK\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
-    private static final HeaderName STREAM_STATUS_NAME = Http.HeaderNames.create("stream-status");
-    private static final HeaderName STREAM_RESULT_NAME = Http.HeaderNames.create("stream-result");
+    private static final HeaderName STREAM_STATUS_NAME = HeaderNames.create("stream-status");
+    private static final HeaderName STREAM_RESULT_NAME = HeaderNames.create("stream-result");
     private static final Header STREAM_TRAILERS =
-            Http.Headers.create(Http.HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
+            HeaderValues.create(HeaderNames.TRAILER, STREAM_STATUS_NAME.defaultCase()
                     + "," + STREAM_RESULT_NAME.defaultCase());
 
     @SuppressWarnings("rawtypes")
@@ -97,13 +99,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     }
 
     static void nonEntityBytes(ServerResponseHeaders headers,
-                               Http.Status status,
+                               Status status,
                                BufferData buffer,
                                boolean keepAlive,
                                boolean validateHeaders) {
 
         // first write status
-        if (status == null || status == Http.Status.OK_200) {
+        if (status == null || status == Status.OK_200) {
             buffer.write(OK_200);
         } else {
             buffer.write(HTTP_BYTES);
@@ -113,7 +115,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             buffer.write('\n');
         }
         // date header
-        if (!headers.contains(Http.HeaderNames.DATE)) {
+        if (!headers.contains(HeaderNames.DATE)) {
             buffer.write(DATE);
             byte[] dateBytes = DateTime.http1Bytes();
             buffer.write(dateBytes);
@@ -122,10 +124,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         // either content-length or chunked encoding
         // if content length - make sure to compare it when writing actual entity (streaming and send(entity))
         if (keepAlive) {
-            headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
+            headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
         } else {
             // we must override even if user sets keep alive, as close was requested
-            headers.set(Http.Headers.CONNECTION_CLOSE);
+            headers.set(HeaderValues.CONNECTION_CLOSE);
         }
 
         // write headers followed by empty line
@@ -243,7 +245,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
         }
         // Request not acceptable if provider not found
-        throw new HttpException("Unable to find sink provider for request", Http.Status.NOT_ACCEPTABLE_406);
+        throw new HttpException("Unable to find sink provider for request", Status.NOT_ACCEPTABLE_406);
     }
 
     private void handleSinkData(Object data, MediaType mediaType) {
@@ -262,7 +264,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
                 } else {
                     GenericType<Object> type = GenericType.create(data);
                     WritableHeaders<?> resHeaders = WritableHeaders.create();
-                    resHeaders.set(Http.HeaderNames.CONTENT_TYPE, mediaType.text());
+                    resHeaders.set(HeaderNames.CONTENT_TYPE, mediaType.text());
                     EntityWriter<Object> writer = mediaContext.writer(type, EMPTY_HEADERS, resHeaders);
                     writer.write(type, data, outputStream, EMPTY_HEADERS, resHeaders);
                 }
@@ -292,19 +294,19 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         int contentLength = bytes.length;
         boolean forcedChunkedEncoding = false;
-        headers.setIfAbsent(Http.Headers.CONNECTION_KEEP_ALIVE);
+        headers.setIfAbsent(HeaderValues.CONNECTION_KEEP_ALIVE);
 
-        if (headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
-            headers.remove(Http.HeaderNames.CONTENT_LENGTH);
+        if (headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+            headers.remove(HeaderNames.CONTENT_LENGTH);
             // chunked enforced (and even if empty entity, will be used)
             forcedChunkedEncoding = true;
         } else {
-            if (!headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+            if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 headers.contentLength(contentLength);
             }
         }
 
-        Http.Status usedStatus = status();
+        Status usedStatus = status();
         sendListener.status(ctx, usedStatus);
         sendListener.headers(ctx, headers);
 
@@ -333,7 +335,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
     private static class BlockingOutputStream extends OutputStream {
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
-        private final Supplier<Http.Status> status;
+        private final Supplier<Status> status;
         private final DataWriter dataWriter;
         private final Runnable responseCloseRunnable;
         private final ConnectionContext ctx;
@@ -355,7 +357,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
 
         private BlockingOutputStream(ServerResponseHeaders headers,
                                      WritableHeaders<?> trailers,
-                                     Supplier<Http.Status> status,
+                                     Supplier<Status> status,
                                      Supplier<String> streamResult,
                                      DataWriter dataWriter,
                                      Runnable responseCloseRunnable,
@@ -372,11 +374,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             this.responseCloseRunnable = responseCloseRunnable;
             this.ctx = ctx;
             this.sendListener = sendListener;
-            this.isChunked = !headers.contains(Http.HeaderNames.CONTENT_LENGTH);
+            this.isChunked = !headers.contains(HeaderNames.CONTENT_LENGTH);
             this.contentLength = headers.contentLength().orElse(-1);
             this.request = request;
             this.keepAlive = keepAlive;
-            this.forcedChunked = headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+            this.forcedChunked = headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.validateHeaders = validateHeaders;
         }
 
@@ -447,7 +449,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (isChunked || forcedChunked) {
-                if (request.headers().contains(Http.Headers.TE_TRAILERS)) {
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
                     // not optimized, trailers enabled: we need to write trailers
                     trailers.set(STREAM_STATUS_NAME, String.valueOf(status.get().code()));
                     trailers.set(STREAM_RESULT_NAME, streamResult.get());
@@ -485,7 +487,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             if (!isChunked) {
                 if (firstByte) {
                     firstByte = false;
-                    Http.Status usedStatus = status.get();
+                    Status usedStatus = status.get();
                     sendListener.status(ctx, usedStatus);
                     sendListener.headers(ctx, headers);
                     // write headers and payload part in one buffer to avoid TCP/ACK delay problems
@@ -514,7 +516,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
             }
 
             if (firstByte) {
-                if (request.headers().contains(Http.Headers.TE_TRAILERS)) {
+                if (request.headers().contains(HeaderValues.TE_TRAILERS)) {
                     // proper stream with multiple buffers, write status amd headers
                     headers.add(STREAM_TRAILERS);
                 }
@@ -531,17 +533,17 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         private void sendFirstChunkOnly() {
             int contentLength;
             if (firstBuffer == null) {
-                headers.set(Http.Headers.CONTENT_LENGTH_ZERO);
+                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
                 contentLength = 0;
             } else {
-                headers.set(Http.Headers.create(Http.HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
+                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(firstBuffer.available())));
                 contentLength = firstBuffer.available();
             }
             isChunked = false;
-            headers.remove(Http.HeaderNames.TRANSFER_ENCODING);
+            headers.remove(HeaderNames.TRANSFER_ENCODING);
 
             // at this moment, we must send headers
-            Http.Status usedStatus = status.get();
+            Status usedStatus = status.get();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(contentLength + 256);
@@ -557,24 +559,24 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> {
         }
 
         private void sendHeadersAndPrepare() {
-            if (headers.contains(Http.HeaderNames.CONTENT_LENGTH)) {
+            if (headers.contains(HeaderNames.CONTENT_LENGTH)) {
                 contentLength = headers.contentLength().orElse(-1);
                 isChunked = false;
             } else {
                 contentLength = -1;
                 // Add chunked encoding, if there is no other transfer-encoding headers
-                if (!headers.contains(Http.HeaderNames.TRANSFER_ENCODING)) {
-                    headers.set(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+                    headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                 } else {
                     // Add chunked encoding, if it's not part of existing transfer-encoding headers
-                    if (!headers.contains(Http.Headers.TRANSFER_ENCODING_CHUNKED)) {
-                        headers.add(Http.Headers.TRANSFER_ENCODING_CHUNKED);
+                    if (!headers.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
                     }
                 }
             }
 
             // at this moment, we must send headers
-            Http.Status usedStatus = status.get();
+            Status usedStatus = status.get();
             sendListener.status(ctx, usedStatus);
             sendListener.headers(ctx, headers);
             BufferData bufferData = BufferData.growing(256);

@@ -16,9 +16,11 @@
 
 package io.helidon.webclient.tests;
 
-import io.helidon.http.Http;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.Header;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -75,7 +77,7 @@ class CookieTest {
     @Order(1)
     void testCookieGet() {
         try (Http1ClientResponse response = client.get("/cookie").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 
@@ -83,7 +85,7 @@ class CookieTest {
     @Order(2)
     void testCookiePut() {
         try (Http1ClientResponse response = client.put("/cookie").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 
@@ -91,44 +93,44 @@ class CookieTest {
     @Order(3)
     void testCookieGetAfterPut() {
         try (Http1ClientResponse response = client.get("/cookie").request()) {
-            assertThat(response.status(), is(Http.Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 
     private static void getHandler(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(Http.HeaderNames.COOKIE)) {
-            Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
+        if (req.headers().contains(HeaderNames.COOKIE)) {
+            Header cookies = req.headers().get(HeaderNames.COOKIE);
             if (cookies.allValues().size() == 2
                     && cookies.allValues().contains("flavor3=strawberry")       // in application.yaml
                     && cookies.allValues().contains("flavor4=raspberry")) {     // in application.yaml
-                res.header(Http.HeaderNames.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
-                res.status(Http.Status.OK_200).send();
+                res.header(HeaderNames.SET_COOKIE, "flavor1=chocolate", "flavor2=vanilla");
+                res.status(Status.OK_200).send();
             } else {
-                res.status(Http.Status.BAD_REQUEST_400).send();
+                res.status(Status.BAD_REQUEST_400).send();
             }
         } else {
-            res.status(Http.Status.BAD_REQUEST_400).send();
+            res.status(Status.BAD_REQUEST_400).send();
         }
     }
 
     private static void putHandler(ServerRequest req, ServerResponse res) {
-        if (req.headers().contains(Http.HeaderNames.COOKIE)) {
-            Http.Header cookies = req.headers().get(Http.HeaderNames.COOKIE);
+        if (req.headers().contains(HeaderNames.COOKIE)) {
+            Header cookies = req.headers().get(HeaderNames.COOKIE);
             if (cookies.allValues().size() == 4
                     && cookies.allValues().contains("flavor1=chocolate")
                     && cookies.allValues().contains("flavor2=vanilla")
                     && cookies.allValues().contains("flavor3=strawberry")
                     && cookies.allValues().contains("flavor4=raspberry")) {
                 // clear flavor1 and flavor2
-                res.header(Http.HeaderNames.SET_COOKIE,
-                        "flavor1=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0",
-                        "flavor2=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0");
-                res.status(Http.Status.OK_200).send();
+                res.header(HeaderNames.SET_COOKIE,
+                           "flavor1=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0",
+                           "flavor2=; Expires=Thu, 01-Jan-1970 00:00:10 GMT; Max-Age=0");
+                res.status(Status.OK_200).send();
             } else {
-                res.status(Http.Status.BAD_REQUEST_400).send();
+                res.status(Status.BAD_REQUEST_400).send();
             }
         } else {
-            res.status(Http.Status.BAD_REQUEST_400).send();
+            res.status(Status.BAD_REQUEST_400).send();
         }
     }
 }

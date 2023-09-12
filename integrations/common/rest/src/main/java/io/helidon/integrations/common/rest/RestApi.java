@@ -24,8 +24,7 @@ import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.FaultTolerance;
 import io.helidon.faulttolerance.FtHandler;
-import io.helidon.http.Http;
-import io.helidon.http.Http.Method;
+import io.helidon.http.Method;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.integrations.common.rest.ApiOptionalResponse.BuilderBase;
 import io.helidon.webclient.api.WebClient;
@@ -43,10 +42,10 @@ import jakarta.json.JsonWriterFactory;
  */
 public interface RestApi {
     /**
-     * Get with an optional response. In case the call returns {@link io.helidon.http.Http.Status#NOT_FOUND_404}
+     * Get with an optional response. In case the call returns {@link io.helidon.http.Status#NOT_FOUND_404}
      * this would return an empty optional entity, rather than fail.
      * This may also be the case for requests that use {@code If-Modified-Since} that return a
-     * {@link Http.Status#NOT_MODIFIED_304} response code.
+     * {@link io.helidon.http.Status#NOT_MODIFIED_304} response code.
      *
      * @param path            path to invoke
      * @param request         request to use
@@ -59,7 +58,7 @@ public interface RestApi {
                                                         ApiRequest<?> request,
                                                         BuilderBase<?, T, JsonObject, R> responseBuilder) {
 
-        return invokeOptional(Http.Method.GET, path, request, responseBuilder);
+        return invokeOptional(Method.GET, path, request, responseBuilder);
     }
 
     /**
@@ -75,7 +74,7 @@ public interface RestApi {
     default <R, T extends ApiOptionalResponse<R>> T getEntityStream(String path,
                                                                     ApiRequest<?> request,
                                                                     BuilderBase<?, T, InputStream, R> responseBuilder) {
-        return invokeEntityResponse(Http.Method.GET, path, request, responseBuilder);
+        return invokeEntityResponse(Method.GET, path, request, responseBuilder);
     }
 
     /**
@@ -92,7 +91,7 @@ public interface RestApi {
     default <R, T extends ApiOptionalResponse<R>> T getBytes(String path,
                                                              ApiRequest<?> request,
                                                              BuilderBase<?, T, byte[], R> responseBuilder) {
-        return invokeBytesResponse(Http.Method.GET, path, request, responseBuilder);
+        return invokeBytesResponse(Method.GET, path, request, responseBuilder);
     }
 
     /**
@@ -108,7 +107,7 @@ public interface RestApi {
     default <T extends ApiResponse> T post(String path,
                                            ApiRequest<?> request,
                                            ApiResponse.Builder<?, T> responseBuilder) {
-        return invoke(Http.Method.POST, path, request, responseBuilder);
+        return invoke(Method.POST, path, request, responseBuilder);
     }
 
     /**
@@ -123,7 +122,7 @@ public interface RestApi {
      */
     default <T extends ApiResponse> T put(String path, ApiRequest<?> request,
                                           ApiResponse.Builder<?, T> responseBuilder) {
-        return invoke(Http.Method.PUT, path, request, responseBuilder);
+        return invoke(Method.PUT, path, request, responseBuilder);
     }
 
     /**
@@ -139,7 +138,7 @@ public interface RestApi {
     default <T extends ApiResponse> T delete(String path,
                                              ApiRequest<?> request,
                                              ApiResponse.Builder<?, T> responseBuilder) {
-        return invoke(Http.Method.DELETE, path, request, responseBuilder);
+        return invoke(Method.DELETE, path, request, responseBuilder);
     }
 
     /**
@@ -188,7 +187,7 @@ public interface RestApi {
      * @param <T>             type of the response
      * @return future with the response or error
      */
-    <T extends ApiResponse> T invokeBytesRequest(Http.Method method,
+    <T extends ApiResponse> T invokeBytesRequest(Method method,
                                                  String path,
                                                  ApiRequest<?> request,
                                                  InputStream is,
@@ -218,7 +217,7 @@ public interface RestApi {
      * Invoke API call that is expected to return bytes.
      * This method collects all bytes in memory, so it cannot be used for large data.
      * See
-     * {@link #invokeEntityResponse(io.helidon.http.Http.Method, String, ApiRequest, BuilderBase)}.
+     * {@link #invokeEntityResponse(io.helidon.http.Method, String, ApiRequest, BuilderBase)}.
      * <p>
      * The accepted media type must be provided in request, falls back to
      * {@link io.helidon.common.media.type.MediaTypes#APPLICATION_OCTET_STREAM}.
@@ -239,7 +238,7 @@ public interface RestApi {
 
     /**
      * Invoke a request that may yield an entity.
-     * The entity is expected to be missing if {@link Http.Status#NOT_FOUND_404} is returned by the API call (and for some
+     * The entity is expected to be missing if {@link io.helidon.http.Status#NOT_FOUND_404} is returned by the API call (and for some
      * other cases, such as not modified).
      *
      * @param method          HTTP method to invoke

@@ -23,14 +23,14 @@ class HeaderValueSingle extends HeaderValueBase {
     private final String value;
     private List<String> values;
 
-    HeaderValueSingle(Http.HeaderName name, boolean changing, boolean sensitive, String value) {
+    HeaderValueSingle(HeaderName name, boolean changing, boolean sensitive, String value) {
         super(name, changing, sensitive, value);
 
         this.value = value;
     }
 
     @Override
-    public Http.HeaderValueWriteable addValue(String value) {
+    public HeaderWriteable addValue(String value) {
         if (values == null) {
             values = new ArrayList<>(2);
             values.add(this.value);
