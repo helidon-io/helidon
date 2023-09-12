@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -262,11 +262,7 @@ public class SingleTest {
 
     @Test
     public void testMapNullMapper() {
-        try {
-            Single.just("foo").map(null);
-            fail("NullPointerException should be thrown");
-        } catch (NullPointerException ex) {
-        }
+        assertThrows(NullPointerException.class, () -> Single.just("foo").map(null), "NullPointerException should be thrown");
     }
 
     @Test
@@ -375,11 +371,7 @@ public class SingleTest {
 
     @Test
     public void testFlatMapNullMapper() {
-        try {
-            Single.just("bar").flatMap(null);
-            fail("NullPointerException should have been thrown");
-        } catch (NullPointerException ex) {
-        }
+        assertThrows(NullPointerException.class, () -> Single.just("bar").flatMap(null), "NullPointerException should have been thrown");
     }
 
     @Test
