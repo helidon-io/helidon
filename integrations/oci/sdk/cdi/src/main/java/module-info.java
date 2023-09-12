@@ -30,6 +30,7 @@ module io.helidon.integrations.oci.sdk.cdi {
     requires transitive jakarta.cdi;
     requires jakarta.inject;
     requires jakarta.ws.rs;
+    requires io.helidon.config.mp;
     requires io.helidon.integrations.oci.sdk.runtime;
     requires microprofile.config.api;
     requires oci.java.sdk.common;

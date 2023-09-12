@@ -63,6 +63,8 @@ import jakarta.inject.Singleton;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 
+import static io.helidon.config.mp.MpConfig.toHelidonConfig;
+import static io.helidon.integrations.oci.sdk.runtime.OciExtension.fallbackConfigSupplier;
 import static io.helidon.integrations.oci.sdk.runtime.OciExtension.ociAuthenticationProvider;
 import static java.lang.invoke.MethodType.methodType;
 
@@ -663,14 +665,17 @@ public final class OciExtension implements Extension {
     }
 
     private void afterBeanDiscovery(@Observes AfterBeanDiscovery event, BeanManager bm) {
-        for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
-            if (serviceTaqs.isEmpty()) {
-                installAdps(event, bm, serviceTaqs.qualifiers());
-            } else {
-                TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
-                TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
-                installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient, this.lenientClassloading);
-                installServiceClient(event, bm, serviceClient, serviceTaqs.serviceInterface(), serviceClientBuilder);
+        if (!this.serviceTaqs.isEmpty()) {
+            fallbackConfigSupplier(() -> toHelidonConfig(ConfigProvider.getConfig()));
+            for (ServiceTaqs serviceTaqs : this.serviceTaqs) {
+                if (serviceTaqs.isEmpty()) {
+                    installAdps(event, bm, serviceTaqs.qualifiers());
+                } else {
+                    TypeAndQualifiers serviceClientBuilder = serviceTaqs.serviceClientBuilder();
+                    TypeAndQualifiers serviceClient = serviceTaqs.serviceClient();
+                    installServiceClientBuilder(event, bm, serviceClientBuilder, serviceClient, this.lenientClassloading);
+                    installServiceClient(event, bm, serviceClient, serviceTaqs.serviceInterface(), serviceClientBuilder);
+                }
             }
         }
     }

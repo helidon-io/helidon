@@ -62,6 +62,10 @@
             </exclusions>
         </dependency>
         <dependency>
+          <groupId>io.helidon.config</groupId>
+          <artifactId>helidon-config-mp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.integrations.oci.sdk</groupId>
             <artifactId>helidon-integrations-oci-sdk-runtime</artifactId>
         </dependency>
