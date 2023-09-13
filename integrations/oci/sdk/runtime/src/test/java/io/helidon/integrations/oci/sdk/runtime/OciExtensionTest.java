@@ -29,6 +29,7 @@ import io.helidon.config.MapConfigSource;
 import com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ConfigFileAuthenticationDetailsProvider;
 import com.oracle.bmc.auth.ResourcePrincipalAuthenticationDetailsProvider;
+import com.oracle.bmc.auth.SimpleAuthenticationDetailsProvider;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,19 +67,19 @@ class OciExtensionTest {
                 .get(OciConfig.CONFIG_KEY);
         OciConfig cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains("config", "config-file", "instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies("auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains("config", "config-file", "instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "auto"))
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains("config", "config-file", "instance-principals", "resource-principal"));
 
         config = createTestConfig(ociAuthConfigStrategies(null, "instance-principals", "resource-principal"))
                 .get(OciConfig.CONFIG_KEY);
@@ -108,7 +109,7 @@ class OciExtensionTest {
                 .get(OciConfig.CONFIG_KEY);
         cfg = OciConfig.create(config);
         assertThat(cfg.potentialAuthStrategies(),
-                   contains("instance-principals", "resource-principal", "config", "config-file"));
+                   contains("config", "config-file", "instance-principals", "resource-principal"));
     }
 
     @Test
@@ -270,6 +271,25 @@ class OciExtensionTest {
         assertSame(Objects.requireNonNull(OciExtension.configSupplier()),
                    OciExtension.configSupplier(),
                    "The oci configuration from the config source should be cached");
+    }
+
+    @Test
+    void fallbackConfigSupplier() {
+        Config fallbackCfg = Config.just(
+                ConfigSources.create(
+                        Map.of("oci.auth", "config"),
+                        "test-fallback-cfg"));
+        OciExtension.fallbackConfigSupplier(() -> fallbackCfg);
+
+        assertThat("when there is no oci.yaml present then we should be looking at the fallback config",
+                   OciExtension.configuredAuthenticationDetailsProvider(false),
+                   equalTo(SimpleAuthenticationDetailsProvider.class));
+
+        OciExtension.ociConfigFileName("test-oci-resource-principal.yaml");
+        OciExtension.fallbackConfigSupplier(() -> fallbackCfg);
+        assertThat("when there is an oci.yaml present then we should NOT be looking at the fallback config",
+                   OciExtension.configuredAuthenticationDetailsProvider(false),
+                   equalTo(ResourcePrincipalAuthenticationDetailsProvider.class));
     }
 
     static Config createTestConfig(MapConfigSource.Builder... builders) {

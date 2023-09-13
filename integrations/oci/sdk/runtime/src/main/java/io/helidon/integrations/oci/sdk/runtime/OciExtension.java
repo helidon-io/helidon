@@ -16,6 +16,9 @@
 
 package io.helidon.integrations.oci.sdk.runtime;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -46,6 +49,9 @@ import static java.util.function.Predicate.not;
  * target="_top">Oracle Cloud Infrastructure Java SDK</a>
  */
 public final class OciExtension {
+    /**
+     * The name for the OCI bootstrap configuration file (value = {@value}).
+     */
     static final String DEFAULT_OCI_GLOBAL_CONFIG_FILE = "oci.yaml";
     static final System.Logger LOGGER = System.getLogger(OciExtension.class.getName());
     static final LazyValue<OciConfig> DEFAULT_OCI_CONFIG_BEAN = LazyValue.create(() -> OciConfig.builder()
@@ -56,6 +62,7 @@ public final class OciExtension {
             .build());
     private static String overrideOciConfigFile;
     private static volatile Supplier<Config> ociConfigSupplier;
+    private static volatile Supplier<Config> fallbackConfigSupplier;
 
     private OciExtension() {
     }
@@ -114,32 +121,56 @@ public final class OciExtension {
      * The supplier for the raw config-backed by the OCI config source(s).
      *
      * @return the supplier for the raw config-backed by the OCI config source(s)
-     * @see #ociAuthenticationProvider()
      * @see #configSupplier(Supplier)
+     * @see #fallbackConfigSupplier(Supplier)
+     * @see #ociAuthenticationProvider()
      */
     public static Supplier<Config> configSupplier() {
-        if (ociConfigSupplier == null) {
-            configSupplier(() -> {
-                // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
-                // (not advertised in the javadoc)
-                String ociConfigFile = ociConfigFilename();
-                return Config.create(
-                        ConfigSources.classpath(ociConfigFile).optional(),
-                        ConfigSources.file(ociConfigFile).optional());
-            });
+        if (ociConfigSupplier != null) {
+            return ociConfigSupplier;
         }
+
+        String ociConfigFile = ociConfigFilename();
+        Path ociConfigFilePath = Paths.get(ociConfigFilename());
+        boolean ociConfigResourceExists = (OciExtension.class.getClassLoader().getResource(ociConfigFile) != null);
+        if (fallbackConfigSupplier != null
+                && !(ociConfigResourceExists || Files.exists(ociConfigFilePath))) {
+            return fallbackConfigSupplier;
+        }
+
+        configSupplier(() -> {
+            // we do it this way to allow for any system and env vars to be used for the auth-strategy definition
+            // (not advertised in the javadoc)
+            return Config.create(
+                    ConfigSources.classpath(ociConfigFile).optional(),
+                    ConfigSources.file(ociConfigFilePath).optional());
+        });
 
         return ociConfigSupplier;
     }
 
     /**
-     * Establishes the supplier for the raw config-backed by the OCI config source(s).
+     * Establishes the supplier for the raw config-backed by the OCI config source(s). Setting this will override the usage of
+     * the {@link #DEFAULT_OCI_GLOBAL_CONFIG_FILE} as the backing configuration file.
      *
      * @param configSupplier the config supplier
      * @see #configSupplier()
      */
     public static void configSupplier(Supplier<Config> configSupplier) {
-        ociConfigSupplier = configSupplier;
+        ociConfigSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
+    }
+
+    /**
+     * Establishes the fallback config supplier used only when the {@link #DEFAULT_OCI_GLOBAL_CONFIG_FILE} is not physically
+     * present, and there has been no config supplier explicitly established via {@link #configSupplier(Supplier)}.
+     * <p>
+     * This method is typically used when running in CDI in order to allow for the fallback of using microprofile configuration.
+     *
+     * @param configSupplier the fallback config supplier
+     * @see #configSupplier()
+     */
+    public static void fallbackConfigSupplier(Supplier<Config> configSupplier) {
+        fallbackConfigSupplier = Objects.requireNonNull(configSupplier, "configSupplier");
     }
 
     /**
@@ -159,6 +190,7 @@ public final class OciExtension {
     static void ociConfigFileName(String fileName) {
         overrideOciConfigFile = fileName;
         ociConfigSupplier = null;
+        fallbackConfigSupplier = null;
     }
 
     // in support for testing a variant of oci.yaml

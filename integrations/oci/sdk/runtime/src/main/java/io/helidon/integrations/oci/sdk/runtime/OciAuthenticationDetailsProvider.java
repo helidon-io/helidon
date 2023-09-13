@@ -59,10 +59,10 @@ class OciAuthenticationDetailsProvider implements Provider<AbstractAuthenticatio
     static final String VAL_RESOURCE_PRINCIPAL = "resource-principal";
 
     // order is important here - see the tests and the docs
-    static final List<String> ALL_STRATEGIES = List.of(VAL_INSTANCE_PRINCIPALS,
-                                                       VAL_RESOURCE_PRINCIPAL,
-                                                       VAL_CONFIG,
-                                                       VAL_CONFIG_FILE);
+    static final List<String> ALL_STRATEGIES = List.of(VAL_CONFIG,
+                                                       VAL_CONFIG_FILE,
+                                                       VAL_INSTANCE_PRINCIPALS,
+                                                       VAL_RESOURCE_PRINCIPAL);
 
     OciAuthenticationDetailsProvider() {
     }
