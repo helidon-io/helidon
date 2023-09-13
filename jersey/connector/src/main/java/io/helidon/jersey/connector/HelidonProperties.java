@@ -16,7 +16,11 @@
 
 package io.helidon.jersey.connector;
 
+import java.util.List;
+
+import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
+import io.helidon.webclient.api.WebClient;
 
 /**
  * Configuration options specific to the Client API that utilizes {@link HelidonConnector}.
@@ -27,8 +31,37 @@ public final class HelidonProperties {
     }
 
     /**
-     * A Helidon {@link Config} instance used to create the corresponding {@link io.helidon.webclient.api.WebClient}.
+     * Property name to set a {@link Config} instance to by used by underlying {@link WebClient}.
      * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
+     *      
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#config(io.helidon.common.config.Config) 
      */
     public static final String CONFIG = "jersey.connector.helidon.config";
+
+    /**
+     * Property name to set a {@link Tls} instance to be used by underlying {@link WebClient}.
+     * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
+     * 
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#tls(Tls) 
+     */
+    public static final String TLS = "jersey.connector.helidon.tls";
+
+    /**
+     * Property name to set a {@code List<String>} instance with a list of protocol preferences
+     * to be used by underlying {@link WebClient}.
+     * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
+     *
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#addProtocolPreference(List)
+     */
+    public static final String PROTOCOL_PREFERENCE = "jersey.connector.helidon.protocolPreference";
+
+    /**
+     * Property name to set a {@code List<? extends  ProtocolConfig>} instance with a list of
+     * protocol configs to be used by underlying {@link WebClient}.
+     * This property is settable on {@link jakarta.ws.rs.core.Configurable#property(String, Object)}.
+     * 
+     * @see io.helidon.webclient.api.WebClientConfig.Builder#protocolConfigs(List) 
+     */
+    public static final String PROTOCOL_CONFIG = "jersey.connector.helidon.protocolConfig";
+
 }

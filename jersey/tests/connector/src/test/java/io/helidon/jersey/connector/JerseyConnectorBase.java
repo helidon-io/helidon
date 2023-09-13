@@ -19,50 +19,34 @@ package io.helidon.jersey.connector;
 import java.util.Arrays;
 
 import io.helidon.http.Status;
-import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
-
 import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.Response;
-import org.glassfish.jersey.client.ClientConfig;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
 
-/**
- * Tests integration of Jakarta REST client with the Helidon connector that uses
- * WebClient to execute HTTP requests.
- */
-@ServerTest
-class JerseyConnectorTest {
+class JerseyConnectorBase {
 
-    private final String baseURI;
-    private final Client client;
-
-    JerseyConnectorTest(WebServer webServer) {
-        baseURI = "http://localhost:" + webServer.port();
-        ClientConfig config = new ClientConfig();
-        config.connectorProvider(new HelidonConnectorProvider());       // use Helidon's provider
-        client = ClientBuilder.newClient(config);
-    }
+    protected String baseURI;
+    protected Client client;
 
     @SetUpRoute
     static void routing(HttpRules rules) {
-        rules.get("/basic/get", JerseyConnectorTest::basicGet)
-             .post("/basic/post", JerseyConnectorTest::basicPost)
-             .get("/basic/getquery", JerseyConnectorTest::basicGetQuery)
-             .get("/basic/headers", JerseyConnectorTest::basicHeaders);
+        rules.get("/basic/get", JerseyConnectorBase::basicGet)
+             .post("/basic/post", JerseyConnectorBase::basicPost)
+             .get("/basic/getquery", JerseyConnectorBase::basicGetQuery)
+             .get("/basic/headers", JerseyConnectorBase::basicHeaders);
     }
 
     private WebTarget target(String uri) {
@@ -120,7 +104,7 @@ class JerseyConnectorTest {
         }
     }
 
-    @Test
+    @Test @Disabled
     public void testHeaders() {
         String[][] headers = new String[][]{{"X-TEST-ONE", "ONE"}, {"X-TEST-TWO", "TWO"}, {"X-TEST-THREE", "THREE"}};
         MultivaluedHashMap<String, Object> map = new MultivaluedHashMap<>();

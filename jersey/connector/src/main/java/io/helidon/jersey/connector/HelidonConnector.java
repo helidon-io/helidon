@@ -18,6 +18,7 @@ package io.helidon.jersey.connector;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -36,11 +37,13 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.media.ReadableEntity;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
-import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
 
+import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientConfig;
+import io.helidon.webclient.spi.ProtocolConfig;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.core.Configuration;
 import jakarta.ws.rs.core.Response;
@@ -50,6 +53,9 @@ import org.glassfish.jersey.client.spi.AsyncConnectorCallback;
 import org.glassfish.jersey.client.spi.Connector;
 import org.glassfish.jersey.internal.util.PropertiesHelper;
 
+import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_CONFIG;
+import static io.helidon.jersey.connector.HelidonProperties.PROTOCOL_PREFERENCE;
+import static io.helidon.jersey.connector.HelidonProperties.TLS;
 import static org.glassfish.jersey.client.ClientProperties.CONNECT_TIMEOUT;
 import static org.glassfish.jersey.client.ClientProperties.FOLLOW_REDIRECTS;
 import static org.glassfish.jersey.client.ClientProperties.READ_TIMEOUT;
@@ -68,15 +74,16 @@ class HelidonConnector implements Connector {
                     Thread.ofVirtual().name("helidon-connector-", 0).factory()));
 
     private final Client client;
-    private final Http1Client httpClient;
-    private Proxy proxy;
+    private final WebClient webClient;
+    private final Proxy proxy;
+    private boolean hasTls;
 
     HelidonConnector(Client client, Configuration config) {
         this.client = client;
 
         // create underlying HTTP client
         Map<String, Object> properties = config.getProperties();
-        var builder = Http1Client.builder();
+        var builder = WebClientConfig.builder();
 
         // use config for client
         builder.config(helidonConfig(config).orElse(Config.empty()));
@@ -94,22 +101,36 @@ class HelidonConnector implements Connector {
         if (properties.containsKey(FOLLOW_REDIRECTS)) {
             builder.followRedirects(getValue(properties, FOLLOW_REDIRECTS, true));
         }
-        httpClient = builder.build();
+        if (properties.containsKey(TLS)) {
+            builder.tls(getValue(properties, TLS, Tls.class));
+            hasTls = true;
+        }
+        if (properties.containsKey(PROTOCOL_PREFERENCE)) {
+            builder.addProtocolPreference(getValue(properties, PROTOCOL_PREFERENCE, List.of("")));
+        }
+        if (properties.containsKey(PROTOCOL_CONFIG)) {
+            List<? extends ProtocolConfig> protocolConfigs =
+                    (List<? extends ProtocolConfig>) properties.get(PROTOCOL_CONFIG);
+            if (protocolConfigs != null) {
+                builder.addProtocolConfigs(protocolConfigs);
+            }
+        }
+        webClient = builder.build();
     }
 
     /**
-     * Map a Jersey request to a Helidon HTTP/1.1 request.
+     * Map a Jersey request to a Helidon HTTP request.
      *
      * @param request the request to map
      * @return the mapped request
      */
-    private Http1ClientRequest mapRequest(ClientRequest request) {
+    private HttpClientRequest mapRequest(ClientRequest request) {
         // possibly override proxy in request
         Proxy requestProxy = ProxyBuilder.createProxy(request).orElse(proxy);
 
         // create WebClient request
         URI uri = request.getUri();
-        Http1ClientRequest httpRequest = httpClient
+        HttpClientRequest httpRequest = webClient
                 .method(Method.create(request.getMethod()))
                 .proxy(requestProxy)
                 .uri(uri);
@@ -132,8 +153,10 @@ class HelidonConnector implements Connector {
         });
 
         // SSL context
-        SSLContext sslContext = client.getSslContext();
-        httpRequest.tls(Tls.builder().sslContext(sslContext).build());
+        if (!hasTls) {
+            SSLContext sslContext = client.getSslContext();
+            httpRequest.tls(Tls.builder().sslContext(sslContext).build());
+        }
 
         // request config
         if (request.hasProperty(FOLLOW_REDIRECTS)) {
@@ -167,7 +190,7 @@ class HelidonConnector implements Connector {
      * @param request the request
      * @return the mapped response
      */
-    private ClientResponse mapResponse(Http1ClientResponse httpResponse, ClientRequest request) {
+    private ClientResponse mapResponse(HttpClientResponse httpResponse, ClientRequest request) {
         ClientResponse response = new ClientResponse(new Response.StatusType() {
             @Override
             public int getStatusCode() {
@@ -211,8 +234,8 @@ class HelidonConnector implements Connector {
      */
     @Override
     public ClientResponse apply(ClientRequest request) {
-        Http1ClientResponse httpResponse;
-        Http1ClientRequest httpRequest = mapRequest(request);
+        HttpClientResponse httpResponse;
+        HttpClientRequest httpRequest = mapRequest(request);
 
         if (request.hasEntity()) {
             httpResponse = httpRequest.outputStream(os -> {
@@ -253,8 +276,8 @@ class HelidonConnector implements Connector {
     public void close() {
     }
 
-    Http1Client client() {
-        return httpClient;
+    WebClient client() {
+        return webClient;
     }
 
     Proxy proxy() {
