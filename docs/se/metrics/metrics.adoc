@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -26,13 +26,19 @@ include::{rootdir}/includes/se.adoc[]
 
 == Contents
 
-- <<Overview, Overview>>
-- <<Maven Coordinates, Maven Coordinates>>
-- <<Usage, Usage>>
-- <<API, API>>
-- <<Configuration, Configuration>>
-- <<Examples, Examples>>
-- <<Additional Information, Additional Information>>
+ - <<Overview, Overview>>
+ - <<Maven Coordinates, Maven Coordinates>>
+** <<Other Packaging Options, Other Packaging Options>>
+ - <<Usage, Usage>>
+** <<Enabling the MetricsSupport REST Service, Enabling the MetricsSupport REST Service>>
+ - <<API, API>>
+** <<Helidon Metrics API, Helidon Metrics API>>
+ - <<Configuration, Configuration>>
+ - <<Examples, Examples>>
+** <<Example Application Code, Example Application Code>>
+** <<Example Configuration, Example Configuration>>
+ - <<Additional Information, Additional Information>>
+** <<Support for the Prometheus Metrics API, Support for the Prometheus Metrics API>>
 
 == Overview
 Helidon SE metrics is inspired by--but does not fully implement--the MicroProfile Metrics specification.
@@ -53,14 +59,14 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 Adding this dependency packages the full-featured metrics implementation with your service.
 
-=== Other packaging options
+=== Other Packaging Options
 Helidon gives you flexibility in how you make metrics available to your service. xref:{rootdir}/se/metrics/metrics-capable-components.adoc[This document] explains your options.
 
 == Usage
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
-=== Enabling the `MetricsSupport` REST Service
+===  Enabling the MetricsSupport REST Service
 To enable the metrics REST endpoint:
 
 . Create an instance of link:{metrics-serviceapi-javadoc-base-url}/MetricsSupport.html[`MetricsSupport`], either directly as shown below or using its link:{metrics-serviceapi-javadoc-base-url}/MetricsSupport.Builder.html[`Builder`].
@@ -106,6 +112,10 @@ The following table summarizes the metric types.
 
 | link:{microprofile-metrics-javadoc-metric-url}/Gauge.html[`Gauge`]
 | Access to a value managed by other code in the service.
+
+|link:{microprofile-metrics-javadoc-metric-url}/Histogram.html[`Histogram`]
+|Calculates the distribution of a value.
+
 
 | link:{microprofile-metrics-javadoc-metric-url}/Meter.html[`Meter`]
 | Count of invocations and how frequently invocations have occurred.
@@ -176,6 +186,10 @@ include::{rootdir}/includes/metrics/metrics-config.adoc[tag=config-examples]
 == Additional Information
 
 === Support for the Prometheus Metrics API
+- <<Maven Coordinates, Maven Coordinates>>
+- <<Usage, Usage>>
+- <<API, API>>
+
 Helidon provides optional support for the Prometheus metrics API.
 
 To use it, your service registers Prometheus support with your routing set-up.
