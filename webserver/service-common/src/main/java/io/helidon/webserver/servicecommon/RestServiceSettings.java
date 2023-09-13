@@ -85,7 +85,7 @@ public interface RestServiceSettings {
     /**
      * Builder for {@link RestServiceSettings}.
      */
-    @Configured()
+    @Configured
     interface Builder extends io.helidon.common.Builder<Builder, RestServiceSettings> {
 
         /**

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2023 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,14 +22,14 @@ ifndef::rootdir[:rootdir: {docdir}/..]
 :basic-table-intro: The table below lists the configuration keys that configure io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider
 include::{rootdir}/includes/attributes.adoc[]
 
-= IdcsRoleMapperRxProvider (security.providers.idcs.mapper) Configuration
+= IdcsRoleMapperProvider (security.providers.idcs.mapper) Configuration
 
 // tag::config[]
 
 IDCS role mapping provider
 
 
-Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsRoleMapperRxProvider.html[io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider]
+Type: link:{javadoc-base-url}/io.helidon.security.providers.idcs.mapper/io/helidon/security/providers/idcs/mapper/IdcsRoleMapperProvider.html[io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider]
 
 
 [source,text]
