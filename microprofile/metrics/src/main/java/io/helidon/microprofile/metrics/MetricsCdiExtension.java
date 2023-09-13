@@ -43,6 +43,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.ConfigValue;
 import io.helidon.config.mp.MpConfig;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.microprofile.metrics.MetricAnnotationInfo.RegistrationPrep;
@@ -208,9 +209,11 @@ public class MetricsCdiExtension extends HelidonRestCdiExtension<MetricsFeature>
         Contexts.globalContext().register(metricsFactory);
         MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder().config(metricsConfigNode);
         MetricsConfig metricsConfig = metricsConfigBuilder.build();
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry(metricsConfig);
+        RegistryFactory.getInstance(meterRegistry); // initialize before first use
         MetricsFeature.Builder builder = MetricsFeature.builder()
                 .metricsConfig(metricsConfigBuilder)
-                .meterRegistry(metricsFactory.globalRegistry(metricsConfig))
+                .meterRegistry(meterRegistry)
                 .metricsConfig(MetricsConfig.builder(metricsConfig))
                 .webContext("/metrics")
                 .config(metricsConfigNode);

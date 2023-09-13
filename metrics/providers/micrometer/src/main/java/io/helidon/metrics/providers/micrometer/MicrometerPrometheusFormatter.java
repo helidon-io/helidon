@@ -190,7 +190,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
 
         for (Meter meter : prometheusMeterRegistry.getMeters()) {
             String meterName = meter.getId().getName();
-            if (!namePredicate.test(meterName)) {
+            if (!namePredicate.test(meterName) || !scopePredicate.test(meter)) {
                 continue;
             }
             Set<String> allUnitsForMeterName = new HashSet<>();
@@ -202,13 +202,11 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                     .meters()
                     .forEach(m -> {
                         Meter.Id meterId = m.getId();
-                        if (scopePredicate.test(m)) {
-                            String normalizedUnit = normalizeUnit(meterId.getBaseUnit());
-                            if (!normalizedUnit.isBlank()) {
-                                allUnitsForMeterName.add("_" + normalizedUnit);
-                            }
-                            allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
+                        String normalizedUnit = normalizeUnit(meterId.getBaseUnit());
+                        if (!normalizedUnit.isBlank()) {
+                            allUnitsForMeterName.add("_" + normalizedUnit);
                         }
+                        allSuffixesForMeterName.addAll(meterNameSuffixes(meterId.getType()));
                     });
 
             String normalizedMeterName = normalizeNameToPrometheus(meterName);

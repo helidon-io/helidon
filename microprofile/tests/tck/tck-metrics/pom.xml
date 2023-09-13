@@ -36,6 +36,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics</groupId>
+            <artifactId>helidon-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.microprofile.tests</groupId>
             <artifactId>helidon-arquillian</artifactId>
             <version>${project.version}</version>

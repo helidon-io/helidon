@@ -201,12 +201,18 @@ class MMeter<M extends io.micrometer.core.instrument.Meter> implements Meter {
 
         public HB description(String description) {
             this.description = description;
-            return delegateDescription(description);
+            if (description != null && !description.isBlank()) {
+                delegateDescription(description);
+            }
+            return identity();
         }
 
         public HB baseUnit(String baseUnit) {
             this.baseUnit = baseUnit;
-            return delegateBaseUnit(baseUnit);
+            if (baseUnit != null && !baseUnit.isBlank()) {
+                delegateBaseUnit(baseUnit);
+            }
+            return identity();
         }
 
         public HB scope(String scope) {

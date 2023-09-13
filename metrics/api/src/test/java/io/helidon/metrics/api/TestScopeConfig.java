@@ -16,27 +16,26 @@
 package io.helidon.metrics.api;
 
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import io.helidon.config.Config;
+import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-// TODO enabled once patterns are back
-@Disabled
 class TestScopeConfig {
 
     @Test
     void checkEnableAllPattern() {
         ScopeConfig mts = ScopeConfig.builder()
                 .name("test")
-                .include(".*")
+                .include(Pattern.compile(".*"))
                 .build();
 
         assertThat("Specific metric enabled with global pattern",
@@ -50,7 +49,7 @@ class TestScopeConfig {
     void checkPrefixPattern() {
         ScopeConfig mts = ScopeConfig.builder()
                 .name("test")
-                .include("mine\\..*")
+                .include(Pattern.compile("mine\\..*"))
                 .build();
 
         assertThat("Specific metric enabled with prefix 'mine.'",
@@ -107,30 +106,16 @@ class TestScopeConfig {
     }
 
     @Test
-    // TODO remove after patterns created
-    @Disabled
     void testInvalidConfig() {
         Map<String, String> configMap = Map.of("filter.include", "mine\\..*|bad(one");
         Config config = Config.just(ConfigSources.create(configMap));
 
-        Assertions.assertThrows(PatternSyntaxException.class, () -> {
+        Assertions.assertThrows(ConfigMappingException.class, () -> {
             ScopeConfig.builder()
                     .config(config)
                     .name("test")
                     .build();
         });
-    }
-
-    @Test
-    void testPassingEmptyListForPatterns() {
-        ScopeConfig mts = ScopeConfig.builder()
-                .include("")
-                .name("test")
-                .build();
-
-        assertThat("Specific metric 'should.work'",
-                   mts.isMeterEnabled("should.work"),
-                   is(true));
     }
 
     @Test
@@ -147,7 +132,7 @@ class TestScopeConfig {
     @Test
     void testSingleNegative() {
         ScopeConfig mts = ScopeConfig.builder()
-                .exclude("mine\\..*")
+                .exclude(Pattern.compile("mine\\..*"))
                 .name("test")
                 .build();
 
@@ -163,8 +148,8 @@ class TestScopeConfig {
     @Test
     void testMultipleMixedPatterns() {
         ScopeConfig mts = ScopeConfig.builder()
-                .include("mine\\..*")
-                .exclude("mine\\.nogood\\..*|yours\\.nogood\\.*")
+                .include(Pattern.compile("mine\\..*"))
+                .exclude(Pattern.compile("mine\\.nogood\\..*|yours\\.nogood\\.*"))
                 .name("test")
                 .build();
 
@@ -190,7 +175,7 @@ class TestScopeConfig {
         // Users are likely to use dots as literals rather than the regex wildcard; that usage should work so it kind-of does
         // what the user intended.
         ScopeConfig mts = ScopeConfig.builder()
-                .include("mine.*")
+                .include(Pattern.compile("mine.*"))
                 .name("test")
                 .build();
 

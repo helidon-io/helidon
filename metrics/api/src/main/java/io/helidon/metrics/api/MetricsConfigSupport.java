@@ -71,7 +71,10 @@ class MetricsConfigSupport {
      */
     @Prototype.PrototypeMethod
     static boolean isMeterEnabled(MetricsConfig metricsConfig, String name, String targetScope) {
-        return true;
+        return metricsConfig.enabled()
+                && isScopeEnabled(metricsConfig, targetScope)
+                && (metricsConfig.scoping().scopes().get(targetScope) == null
+                            || metricsConfig.scoping().scopes().get(targetScope).isMeterEnabled(name));
     }
 
     public static class BuilderDecorator implements Prototype.BuilderDecorator<MetricsConfig.BuilderBase<?, ?>> {

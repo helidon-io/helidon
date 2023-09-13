@@ -33,6 +33,7 @@ import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Timer;
@@ -141,6 +142,9 @@ public class OciMetricsSupport implements HttpService {
          */
         static String textType(Meter metric) {
             if (metric instanceof Counter) {
+                return "counter";
+            }
+            if (metric instanceof FunctionalCounter) {
                 return "counter";
             }
             if (metric instanceof Gauge) {

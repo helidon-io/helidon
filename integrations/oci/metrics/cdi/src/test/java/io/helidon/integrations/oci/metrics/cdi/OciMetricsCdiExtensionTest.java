@@ -67,7 +67,6 @@ import com.oracle.bmc.monitoring.responses.SummarizeMetricsDataResponse;
 import com.oracle.bmc.monitoring.responses.UpdateAlarmResponse;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -94,8 +93,6 @@ import static org.junit.jupiter.api.Assertions.fail;
            value = OciMetricsCdiExtensionTest.MetricDataDetailsOCIParams.resourceGroup)
 @AddConfig(key = "ocimetrics.initialDelay", value = "1")
 @AddConfig(key = "ocimetrics.delay", value = "2")
-// TODO metrics
-@Disabled
 class OciMetricsCdiExtensionTest {
     private static volatile int testMetricCount = 0;
     private static CountDownLatch countDownLatch = new CountDownLatch(1);
@@ -128,12 +125,15 @@ class OciMetricsCdiExtensionTest {
     }
 
     private void validateOciMetricsSupport(boolean enabled) throws InterruptedException {
-        registry.getOrCreate(Counter.builder("baseDummyCounter")
-                                     .scope(Meter.Scope.BASE)).increment();
-        registry.getOrCreate(Counter.builder("vendorDummyCounter")
-                                     .scope(Meter.Scope.VENDOR)).increment();
-        registry.getOrCreate(Counter.builder("appDummyCounter")
-                                     .scope(Meter.Scope.APPLICATION)).increment();
+        Counter c1 = registry.getOrCreate(Counter.builder("baseDummyCounter")
+                                     .scope(Meter.Scope.BASE));
+        c1.increment();
+        Counter c2 = registry.getOrCreate(Counter.builder("vendorDummyCounter")
+                                     .scope(Meter.Scope.VENDOR));
+        c2.increment();
+        Counter c3 = registry.getOrCreate(Counter.builder("appDummyCounter")
+                                     .scope(Meter.Scope.APPLICATION));
+        c3.increment();
 
         // Wait for signal from metric update that testMetricCount has been retrieved
         if (!countDownLatch.await(3, TimeUnit.SECONDS)) {
@@ -145,7 +145,12 @@ class OciMetricsCdiExtensionTest {
 
         if (enabled) {
             assertThat(activateOciMetricsSupportIsInvoked, is(true));
-            assertThat(testMetricCount, is(3));
+            // System meters in the registry might vary over time. Instead of looking for a specific number of meters,
+            // make sure the three we added are in the OCI metric data.
+            long dummyCounterCount = postMetricDataDetails.getMetricData().stream()
+                    .filter(details -> details.getName().contains("DummyCounter"))
+                    .count();
+            assertThat(dummyCounterCount, is(3L));
 
             MetricDataDetails metricDataDetails = postMetricDataDetails.getMetricData().get(0);
             assertThat(metricDataDetails.getCompartmentId(),
@@ -158,6 +163,9 @@ class OciMetricsCdiExtensionTest {
             // validate that OCI post metric is never called
             assertThat(postMetricDataDetails, is(equalTo(null)));
         }
+        registry.remove(c1);
+        registry.remove(c2);
+        registry.remove(c3);
     }
 
     interface MetricDataDetailsOCIParams {

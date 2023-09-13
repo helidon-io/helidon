@@ -69,6 +69,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
             <scope>provided</scope>

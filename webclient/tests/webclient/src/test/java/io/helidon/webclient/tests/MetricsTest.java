@@ -26,7 +26,6 @@ import io.helidon.webclient.metrics.WebClientMetrics;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -125,8 +124,6 @@ public class MetricsTest extends TestParent {
         assertThat(meterSuccess.count(), is(1L));
     }
 
-    // TODO metrics
-    @Disabled
     @Test
     public void testGaugeInProgress() {
         WebClientService inProgressAll = WebClientMetrics.gaugeInProgress().nameFormat("gauge.%1$s.%2$s").build();

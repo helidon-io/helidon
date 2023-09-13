@@ -230,8 +230,7 @@ public final class Mp1Main {
         validateBasicAuthProtectedResource(collector, target);
 
         // Metrics
-        // TODO metrics
-        //validateMetrics(collector, target);
+        validateMetrics(collector, target);
 
         // Access Log
         validateAccessLog(collector);
@@ -547,7 +546,7 @@ public final class Mp1Main {
                 .request(MediaType.APPLICATION_JSON)
                 .get(JsonObject.class);
 
-        int count = vendor.getInt("requests.count;mp_scope=vendor");
+        int count = vendor.getInt("requests.count");
         if (count == 0) {
             collector.fatal("Vendor metric \"requests.count\" must not be zero");
         }

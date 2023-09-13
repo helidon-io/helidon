@@ -157,5 +157,11 @@ public interface KeyPerformanceIndicatorSupport {
          */
         default void onRequestCompleted(boolean isSuccessful, long processingTimeMs) {
         }
+
+        /**
+         * Clear (particularly for between tests in the same JVM).
+         */
+        default void close() {
+        }
     }
 }

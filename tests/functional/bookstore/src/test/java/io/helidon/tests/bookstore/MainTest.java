@@ -365,9 +365,8 @@ class MainTest {
                         .path("/metrics")
                         .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                         .requestEntity(JsonObject.class);
-                String scopeTagName = edition.equals("se") ? "scope" : "mp_scope";
                 assertThat("Checking request count",
-                        jsonObject.getJsonObject("vendor").getInt("requests.count;" + scopeTagName + "=vendor"), greaterThan(0));
+                        jsonObject.getJsonObject("vendor").getInt("requests.count"), greaterThan(0));
             }
 
             jsonObject = webClient.get()

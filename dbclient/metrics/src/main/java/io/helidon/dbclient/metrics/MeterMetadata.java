@@ -61,6 +61,7 @@ class MeterMetadata {
         return new MeterMetadata.Builder(meter);
     }
 
+    private static final String SCOPE = "application";
     private final String name;
     private final String description;
     private final String unit;
@@ -118,6 +119,7 @@ class MeterMetadata {
         if (unit != null) {
             builder.baseUnit(unit);
         }
+        builder.scope(SCOPE);
         return builder;
     }
 

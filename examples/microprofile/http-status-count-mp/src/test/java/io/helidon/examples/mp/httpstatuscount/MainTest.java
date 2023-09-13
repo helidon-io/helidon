@@ -24,7 +24,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.metrics.Counter;
 import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -32,8 +31,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-// TODO metrics
-@Disabled
 @HelidonTest
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class MainTest {
