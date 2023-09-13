@@ -34,7 +34,7 @@ class KeyPerformanceIndicatorMetricsImpls {
     /**
      * Name for metric recording number of requests currently deferred (received but not yet processing).
      */
-    public static final String DEFERRED_NAME = "deferred";
+    static final String DEFERRED_NAME = "deferred";
     /**
      * Name for metric counting total requests received.
      */

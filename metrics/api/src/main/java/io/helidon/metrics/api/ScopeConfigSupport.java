@@ -15,6 +15,9 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Objects;
+import java.util.regex.Pattern;
+
 import io.helidon.builder.api.Prototype;
 
 class ScopeConfigSupport {
@@ -42,5 +45,31 @@ class ScopeConfigSupport {
                 && scopeConfig.exclude().map(excludePattern -> !excludePattern.matcher(name).matches()).orElse(true)
                 && scopeConfig.include().map(includePattern -> includePattern.matcher(name).matches()).orElse(true);
 
+    }
+
+    /**
+     * Sets the include expression using a {@link java.lang.String} compiled automatically
+     * into a {@link java.util.regex.Pattern}.
+     *
+     * @param builderBase builder
+     * @param includeString include string
+     */
+    @Prototype.BuilderMethod
+    static void include(ScopeConfig.BuilderBase<?, ?> builderBase, String includeString) {
+        Objects.requireNonNull(includeString, "include expression");
+        builderBase.include(Pattern.compile(includeString));
+    }
+
+    /**
+     * Sets the exclude expression using a {@link java.lang.String} compiled automatically
+     * into a {@link java.util.regex.Pattern}.
+     *
+     * @param builderBase builder
+     * @param excludeString exclude string
+     */
+    @Prototype.BuilderMethod
+    static void exclude(ScopeConfig.BuilderBase<?, ?> builderBase, String excludeString) {
+        Objects.requireNonNull(excludeString, "exclude expression");
+        builderBase.exclude(Pattern.compile(excludeString));
     }
 }

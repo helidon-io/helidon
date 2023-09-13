@@ -15,12 +15,12 @@
  */
 package io.helidon.metrics.api;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -33,8 +33,8 @@ import java.util.function.Predicate;
  */
 class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
-    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new ArrayList<>();
-    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new ArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
 
     static Builder builder() {
         return new Builder();

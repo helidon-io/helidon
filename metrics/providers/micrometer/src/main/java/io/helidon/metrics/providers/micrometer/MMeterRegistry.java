@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -79,8 +80,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
-    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new ArrayList<>();
-    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new ArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onAddListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<io.helidon.metrics.api.Meter>> onRemoveListeners = new CopyOnWriteArrayList<>();
 
     /**
      * Helidon API clock to be returned by the {@link #clock()} method.
