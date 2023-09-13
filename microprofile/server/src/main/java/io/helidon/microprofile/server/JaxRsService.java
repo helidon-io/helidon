@@ -31,9 +31,11 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -63,7 +65,6 @@ import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
@@ -98,12 +99,6 @@ class JaxRsService implements HttpService {
     static JaxRsService create(ResourceConfig resourceConfig, InjectionManager injectionManager) {
         resourceConfig.property(PROVIDER_DEFAULT_DISABLE, "ALL");
         resourceConfig.property(WADL_FEATURE_DISABLE, "true");
-
-        // TODO - temporary until MP OpenAPI TCK bug fix released. https://github.com/eclipse/microprofile-open-api/issues/557
-        if (System.getProperties().containsKey("io.helidon." + ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS)) {
-            resourceConfig.property(ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS,
-                                    Boolean.getBoolean("io.helidon." + ServerProperties.RESOURCE_VALIDATION_IGNORE_ERRORS));
-        }
 
         InjectionManager ij = injectionManager == null ? null : new InjectionManagerWrapper(injectionManager, resourceConfig);
         ApplicationHandler appHandler = new ApplicationHandler(resourceConfig,
@@ -219,6 +214,10 @@ class JaxRsService implements HttpService {
                                                                req.prologue().method().text(),
                                                                new HelidonMpSecurityContext(), new MapPropertiesDelegate(),
                                                                resourceConfig);
+        /*
+         MP CORS supports needs a way to obtain the UriInfo from the request context.
+         */
+        requestContext.setProperty(UriInfo.class.getName(), ((Supplier<UriInfo>) req::requestedUri));
 
         for (Header header : req.headers()) {
             requestContext.headers(header.name(),

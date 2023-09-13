@@ -19,6 +19,7 @@ package io.helidon.cors;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.uri.UriInfo;
 import io.helidon.http.HeaderName;
 
 /**
@@ -36,11 +37,11 @@ public interface CorsRequestAdapter<T> {
     String path();
 
     /**
-     * Authority of the request (host header, or obtained from forwarded header).
+     * Returns the {@link io.helidon.common.uri.UriInfo} for the request.
      *
-     * @return authority
+     * @return URI info for the request
      */
-    String authority();
+    UriInfo requestedUri();
 
     /**
      * Retrieves the first value for the specified header as a String.
