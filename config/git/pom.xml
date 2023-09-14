@@ -95,5 +95,11 @@
             <artifactId>slf4j-jdk14</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.lib.junit4}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>
