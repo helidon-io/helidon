@@ -96,7 +96,7 @@
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
         <version.lib.jersey>3.0.11</version.lib.jersey>
-        <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
+        <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.jsonp-impl>2.0.1</version.lib.jsonp-impl>
         <version.lib.junit>5.7.0</version.lib.junit>
         <version.lib.kafka>3.4.0</version.lib.kafka>
