@@ -90,7 +90,7 @@
         <version.lib.jaxb-core>3.0.2</version.lib.jaxb-core>
         <version.lib.jaxb-impl>3.0.2</version.lib.jaxb-impl>
         <version.lib.jboss.classfilewriter>1.2.5.Final</version.lib.jboss.classfilewriter>
-        <version.lib.jboss.logging>3.4.2.Final</version.lib.jboss.logging>
+        <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
         <version.lib.jboss.transaction-spi>7.6.1.Final</version.lib.jboss.transaction-spi>
         <!-- Force upgrade version used by maven-jaxb2-plugin. Needed to support Java 16 -->
         <version.lib.jaxb-runtime>3.0.2</version.lib.jaxb-runtime>
