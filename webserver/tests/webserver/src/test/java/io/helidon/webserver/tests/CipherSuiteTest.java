@@ -40,7 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
-public class CipherSuiteTest {
+class CipherSuiteTest {
 
     private static final Config CONFIG = Config.just(() -> ConfigSources.classpath("cipherSuiteConfig.yaml").build());
 
