@@ -87,7 +87,7 @@
         <version.lib.jaxb-runtime>2.3.3</version.lib.jaxb-runtime>
         <version.lib.jedis>3.6.3</version.lib.jedis>
         <version.lib.jersey>2.40</version.lib.jersey>
-        <version.lib.jgit>5.11.1.202105131744-r</version.lib.jgit>
+        <version.lib.jgit>6.7.0.202309050840-r</version.lib.jgit>
         <version.lib.jms-api>2.0</version.lib.jms-api>
         <version.lib.jsonb-api>1.0.2</version.lib.jsonb-api>
         <version.lib.jsonp-api>1.1.6</version.lib.jsonp-api>
